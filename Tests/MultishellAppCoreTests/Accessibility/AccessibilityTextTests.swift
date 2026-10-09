@@ -14,13 +14,23 @@ struct AccessibilityTextTests {
     ]
     #expect(
       AccessibilityText.workers(out)
-        == "1 subagent, 2 background shells, Explore, background shell, background shell")
+        == "1 subagent, 2 background shells, Explore, background shell, background shell"
+    )
     #expect(
       AccessibilityText.pane(
         SidebarPane(
-          id: UUID(), title: "claude", position: nil, isFocused: false, state: .running,
-          workers: out, agentID: nil, agentName: nil))
-        == "claude, tab, Working, 1 subagent, 2 background shells")
+          id: UUID(),
+          title: "claude",
+          position: nil,
+          isFocused: false,
+          state: .running,
+          workers: out,
+          agentID: nil,
+          agentName: nil,
+        )
+      )
+        == "claude, tab, Working, 1 subagent, 2 background shells"
+    )
   }
 
   @Test func theChipSaysEachWorkersNameAndDescriptionAndWhichFailed() {
@@ -35,7 +45,8 @@ struct AccessibilityTextTests {
       AccessibilityText.workers(out)
         == "2 subagents, 1 failed, code-review: Review, "
         + "general-purpose: Reuse angle under code-review, "
-        + "Explore: Map the hooks failed")
+        + "Explore: Map the hooks failed"
+    )
   }
 
   @Test func theChipSaysEachNestedWorkerUnderItsParent() {
@@ -46,6 +57,7 @@ struct AccessibilityTextTests {
     ]
     #expect(
       AccessibilityText.workers(out)
-        == "3 subagents, code-review, Reuse angle under code-review, Explore")
+        == "3 subagents, code-review, Reuse angle under code-review, Explore"
+    )
   }
 }

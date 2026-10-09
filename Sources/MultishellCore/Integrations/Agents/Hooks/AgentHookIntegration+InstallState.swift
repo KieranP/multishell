@@ -10,7 +10,8 @@ extension AgentHookIntegration {
   /// Whether any hook of ours is there, and whether it is current, from one
   /// read of the file, for a status that asks both of every agent on the main actor.
   public func installState(
-    in file: URL? = nil, helper: String = AgentHookCatalogue.helperReference
+    in file: URL? = nil,
+    helper: String = AgentHookCatalogue.helperReference,
   ) -> InstallState {
     let file = file ?? self.file
     if format.isOursAlone {

@@ -1,6 +1,8 @@
 import Foundation
 import MultishellCore
 
+// Declared order is the order allCases gives the UI.
+// swiftlint:disable sorted_enum_cases
 /// What a project hook is told, and what the settings panel calls each
 /// variable. One list, so neither can gain a case without the other.
 public enum HookVariable: CaseIterable, Sendable {
@@ -31,7 +33,9 @@ public enum HookVariable: CaseIterable, Sendable {
   }
 
   static func environment(
-    project: Project, worktreePath: URL, branch: String
+    project: Project,
+    worktreePath: URL,
+    branch: String,
   ) -> [String: String] {
     var environment: [String: String] = [:]
     for variable in allCases {
@@ -46,3 +50,4 @@ public enum HookVariable: CaseIterable, Sendable {
     return environment
   }
 }
+// swiftlint:enable sorted_enum_cases

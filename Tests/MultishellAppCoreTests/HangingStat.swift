@@ -7,10 +7,6 @@ final class HangingStat: Sendable {
   private let gate = DispatchSemaphore(value: 0)
   private let state = Mutex<(calls: Int, returned: Bool)>((0, false))
 
-  init() {
-    DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [gate] in gate.signal() }
-  }
-
   var calls: Int { state.withLock { $0.calls } }
   var hasReturned: Bool { state.withLock { $0.returned } }
 
@@ -21,6 +17,10 @@ final class HangingStat: Sendable {
       state.withLock { $0.returned = true }
       return true
     }
+  }
+
+  init() {
+    DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [gate] in gate.signal() }
   }
 
   func release() { gate.signal() }

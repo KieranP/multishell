@@ -31,6 +31,7 @@ struct SidebarFilterField: View {
           Image(systemName: "xmark.circle.fill")
             .font(.system(size: metrics.glyph))
             .foregroundStyle(theme.textTertiary)
+            .accessibilityHidden(true)
         }
       }
     }

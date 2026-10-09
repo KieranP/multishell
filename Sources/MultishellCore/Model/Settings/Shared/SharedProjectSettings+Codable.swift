@@ -39,7 +39,8 @@ extension SharedProjectSettings {
       worktreeSortOrder: sortOrder,
       showsActiveWorktreesFirst: bool(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
-      iconTint: container.decodeTolerantly(Int.self, forKey: .iconTint))
+      iconTint: container.decodeTolerantly(Int.self, forKey: .iconTint),
+    )
     let file = try decoder.container(keyedBy: RawCodingKey.self)
     let written = Set(try fields().keys)
     for key in file.allKeys where !written.contains(key.stringValue) {

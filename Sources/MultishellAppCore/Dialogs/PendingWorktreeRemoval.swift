@@ -37,18 +37,6 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// changed files it would count are unknown.
   let isStatusUnread: Bool
 
-  init(
-    worktree: Worktree, branchHandling: BranchHandling, customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true, isStatusUnread: Bool = false
-  ) {
-    self.worktree = worktree
-    self.branchHandling = branchHandling
-    self.customName = customName
-    self.mergeState = mergeState
-    self.trashes = trashes
-    self.isStatusUnread = isStatusUnread
-  }
-
   public var id: String { worktree.id }
 
   /// The remove buttons in the order the dialog shows them. A merged branch
@@ -58,6 +46,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     case .decided(let deletesBranch):
       let label = deletesBranch ? removeWithBranchLabel : removeLabel
       return [Choice(label: label, deletesBranch: deletesBranch)]
+
     case .offersBoth:
       let keep = Choice(label: removeLabel, deletesBranch: false)
       let delete = Choice(label: removeWithBranchLabel, deletesBranch: true)
@@ -65,19 +54,44 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     }
   }
 
+  init(
+    worktree: Worktree,
+    branchHandling: BranchHandling,
+    customName: String? = nil,
+    mergeState: WorktreeMergeState = .unknown,
+    trashes: Bool = true,
+    isStatusUnread: Bool = false,
+  ) {
+    self.worktree = worktree
+    self.branchHandling = branchHandling
+    self.customName = customName
+    self.mergeState = mergeState
+    self.trashes = trashes
+    self.isStatusUnread = isStatusUnread
+  }
+
   static func decide(
-    _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
-    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown, isStatusUnread: Bool = false
+    _ worktree: Worktree,
+    confirms: Bool,
+    alwaysDeletesBranch: Bool,
+    customName: String? = nil,
+    trashes: Bool = true,
+    mergeState: WorktreeMergeState = .unknown,
+    isStatusUnread: Bool = false,
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
     let asksAboutBranch = hasBranch && !alwaysDeletesBranch
     guard confirms || asksAboutBranch else { return .remove(deletesBranch: deletes) }
     return .ask(
-      PendingWorktreeRemoval(
+      Self(
         worktree: worktree,
         branchHandling: asksAboutBranch ? .offersBoth : .decided(deletesBranch: deletes),
-        customName: customName, mergeState: mergeState, trashes: trashes,
-        isStatusUnread: isStatusUnread))
+        customName: customName,
+        mergeState: mergeState,
+        trashes: trashes,
+        isStatusUnread: isStatusUnread,
+      )
+    )
   }
 }

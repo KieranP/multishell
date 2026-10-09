@@ -63,7 +63,8 @@ struct AppModelTabClosingTests {
     #expect(harness.model.workspace.tabs(in: harness.main.id).map(\.id) == [second.id])
     #expect(
       harness.model.workspace.activeTab(in: harness.main.id)?.id == second.id,
-      "the active one stays")
+      "the active one stays",
+    )
     #expect(harness.engine.closed == [first.focusedSessionID], "its shell went with it")
 
     harness.model.closeTab(UUID())
@@ -80,7 +81,12 @@ struct AppModelTabClosingTests {
     harness.model.select(harness.feature)
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: working.focusedSessionID, workingDirectory: nil, pid: nil))
+        state: .running,
+        sessionID: working.focusedSessionID,
+        workingDirectory: nil,
+        pid: nil,
+      )
+    )
 
     harness.model.closeTab(working.id)
 
@@ -111,8 +117,12 @@ struct AppModelTabClosingTests {
     let building = harness.model.workspace.activeTab(in: harness.main.id)!
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: building.focusedSessionID, command: "make",
-        isFromShellIntegration: true))
+        state: .running,
+        sessionID: building.focusedSessionID,
+        command: "make",
+        isFromShellIntegration: true,
+      )
+    )
 
     harness.model.closeTab(building.id)
 
@@ -161,7 +171,8 @@ struct AppModelTabClosingTests {
     let second = harness.model.workspace.activeTab(in: harness.main.id)!
     for tab in [first, second] {
       harness.stateSource.send(
-        SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+        SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+      )
     }
 
     harness.model.closeActivePane()

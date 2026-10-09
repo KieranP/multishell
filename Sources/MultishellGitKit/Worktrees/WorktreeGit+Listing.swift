@@ -3,13 +3,23 @@ import MultishellCore
 import MultishellProcess
 
 extension WorktreeGit {
+  /// git records no creation time, so the sidebar sorts by the directory's
+  /// birth time, stamped on here to keep the parser off the filesystem.
+  private static func datedByDirectory(_ worktree: Worktree) -> Worktree {
+    var dated = worktree
+    dated.createdAt = try? worktree.path.resourceValues(forKeys: [.creationDateKey]).creationDate
+    return dated
+  }
+
   /// Every repository has at least its main worktree, so an empty list is
   /// git failing quietly; taken as a result it drops every tab.
   public func list(_ project: Project) async throws -> [Worktree] {
     let worktrees = try await parsedList(in: project.path, projectID: project.id)
     guard !worktrees.isEmpty else {
       throw ProcessFailure.unreportedByGit(
-        ["worktree", "list"], message: "git listed no worktrees for \(project.path.path)")
+        ["worktree", "list"],
+        message: "git listed no worktrees for \(project.path.path)",
+      )
     }
     // Stats, each of which a dead mount holds; see worktrees.md.
     return await runOnDispatch { worktrees.map(Self.datedByDirectory).map(Self.judgedInitializing) }
@@ -27,20 +37,14 @@ extension WorktreeGit {
     }
   }
 
-  /// git records no creation time, so the sidebar sorts by the directory's
-  /// birth time, stamped on here to keep the parser off the filesystem.
-  private static func datedByDirectory(_ worktree: Worktree) -> Worktree {
-    var dated = worktree
-    dated.createdAt = try? worktree.path.resourceValues(forKeys: [.creationDateKey]).creationDate
-    return dated
-  }
-
   /// The main worktree of the repository `url` is in, from anywhere in it,
   /// which identifies a project so a subdirectory does not become a second.
   public func mainWorktreePath(containing url: URL) async throws -> URL {
     guard let main = try await parsedList(in: url, projectID: "").first else {
       throw ProcessFailure.unreportedByGit(
-        ["worktree", "list"], message: "no worktree listed for \(url.path)")
+        ["worktree", "list"],
+        message: "no worktree listed for \(url.path)",
+      )
     }
     return main.path
   }

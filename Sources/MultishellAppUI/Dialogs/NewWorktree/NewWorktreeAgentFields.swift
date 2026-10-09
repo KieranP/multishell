@@ -17,8 +17,10 @@ struct NewWorktreeAgentFields: View {
           }
         }
         TextField(
-          t("sheet.task"), text: $draft.task, prompt: Text(t("sheet.task-prompt")),
-          axis: .vertical
+          t("sheet.task"),
+          text: $draft.task,
+          prompt: Text(t("sheet.task-prompt")),
+          axis: .vertical,
         )
         .lineLimit(3...8)
       }

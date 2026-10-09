@@ -15,7 +15,9 @@ public enum TestRepository {
   /// The identity goes on the repository, so a developer's global config cannot change
   /// what tests commit as; the first commit makes `HEAD` resolvable.
   public static func initialise(
-    at url: URL, withFirstCommit: Bool, using git: GitRunner
+    at url: URL,
+    withFirstCommit: Bool,
+    using git: GitRunner,
   ) async throws {
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     _ = try await git.run(["init", "--initial-branch=\(initialBranch)"], in: url)
@@ -29,12 +31,17 @@ public enum TestRepository {
   /// One commit writing `files`, which with several is what a squash merge
   /// lands.
   public static func commit(
-    _ message: String, files: [String: String], in url: URL, using git: GitRunner
+    _ message: String,
+    files: [String: String],
+    in url: URL,
+    using git: GitRunner,
   ) async throws {
     for (file, content) in files {
       let path = url.appendingPathComponent(file)
       try FileManager.default.createDirectory(
-        at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
+        at: path.deletingLastPathComponent(),
+        withIntermediateDirectories: true,
+      )
       try content.write(to: path, atomically: true, encoding: .utf8)
     }
     _ = try await git.run(["add", "."], in: url)
@@ -44,7 +51,10 @@ public enum TestRepository {
   /// A bare clone of `repository` at `root/repo.git`, with `main` checked out
   /// in a linked worktree at `root/<worktree>`.
   public static func bareClone(
-    of repository: URL, in root: URL, worktree: String, using git: GitRunner
+    of repository: URL,
+    in root: URL,
+    worktree: String,
+    using git: GitRunner,
   ) async throws -> (bare: URL, checkout: URL) {
     let bare = root.appendingPathComponent("repo.git", isDirectory: true)
     _ = try await git.run(["clone", "-q", "--bare", repository.path, bare.path], in: root)
@@ -56,11 +66,16 @@ public enum TestRepository {
   /// A linked worktree at `directory` on a new branch cut at `startPoint`, as
   /// `git worktree add -b` run by hand.
   public static func addWorktree(
-    onNewBranch branch: String, from startPoint: String = "HEAD", at directory: URL,
-    in repository: URL, using git: GitRunner
+    onNewBranch branch: String,
+    at directory: URL,
+    in repository: URL,
+    using git: GitRunner,
+    from startPoint: String = "HEAD",
   ) async throws {
     _ = try await git.run(
-      ["worktree", "add", "-q", "-b", branch, directory.path, startPoint], in: repository)
+      ["worktree", "add", "-q", "-b", branch, directory.path, startPoint],
+      in: repository,
+    )
   }
 
   /// Local branch names, sorted.
@@ -72,7 +87,10 @@ public enum TestRepository {
   /// What a forge's squash merge leaves once `branch` is pushed: one commit of
   /// its whole tree on `main`, pushed, and the branch deleted on `origin`.
   public static func squashMergeOnTheRemote(
-    _ branch: String, files: [String: String], in mainCheckout: URL, using git: GitRunner
+    _ branch: String,
+    files: [String: String],
+    in mainCheckout: URL,
+    using git: GitRunner,
   ) async throws {
     try await commit("squashed work", files: files, in: mainCheckout, using: git)
     _ = try await git.run(["push", "-q", "origin", "main"], in: mainCheckout)
@@ -83,7 +101,9 @@ public enum TestRepository {
   /// A bare `origin` at `root/origin.git`, so a branch can be pushed and then
   /// deleted on the remote the way a merge does.
   public static func addOrigin(
-    to repository: URL, in root: URL, using git: GitRunner
+    to repository: URL,
+    in root: URL,
+    using git: GitRunner,
   )
     async throws
   {

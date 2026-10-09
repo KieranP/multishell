@@ -8,9 +8,7 @@ public struct DetectionOption: Identifiable, Equatable, Sendable {
 
   public let id: String
   public let label: String
-}
 
-extension DetectionOption {
   /// The shape the agent and editor dropdowns share: None, what is installed,
   /// the selected one if it is not, an unknown id, then Custom.
   static func catalogueOptions(
@@ -18,12 +16,12 @@ extension DetectionOption {
     isInstalled: (String) -> Bool,
     selected: String?,
     noneID: String,
-    customID: String
-  ) -> [DetectionOption] {
-    var options = [DetectionOption(id: noneID, label: t("option.none"))]
+    customID: String,
+  ) -> [Self] {
+    var options = [Self(id: noneID, label: t("option.none"))]
     for entry in entries {
       if isInstalled(entry.id) {
-        options.append(DetectionOption(id: entry.id, label: entry.name))
+        options.append(Self(id: entry.id, label: entry.name))
       } else if entry.id == selected {
         options.append(.notInstalled(entry.id, name: entry.name))
       }
@@ -33,11 +31,11 @@ extension DetectionOption {
     {
       options.append(.notInstalled(selected, name: selected))
     }
-    options.append(DetectionOption(id: customID, label: t("option.custom-command-item")))
+    options.append(Self(id: customID, label: t("option.custom-command-item")))
     return options
   }
 
-  static func notInstalled(_ id: String, name: String) -> DetectionOption {
-    DetectionOption(id: id, label: t("option.not-installed", name))
+  static func notInstalled(_ id: String, name: String) -> Self {
+    Self(id: id, label: t("option.not-installed", name))
   }
 }

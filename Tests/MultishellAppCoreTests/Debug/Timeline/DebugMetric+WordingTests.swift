@@ -6,8 +6,13 @@ import Testing
 struct DebugMetricWordingTests {
   private let slot = DebugTimelineSlot(samples: [
     DebugSample.sample(
-      sequence: 0, framesPerSecond: nil, gitRunsStartedCount: 3, appCPUPercent: 10,
-      childrenCPUPercent: 25, terminalMemory: 150)
+      sequence: 0,
+      framesPerSecond: nil,
+      gitRunsStartedCount: 3,
+      appCPUPercent: 10,
+      childrenCPUPercent: 25,
+      terminalMemory: 150,
+    )
   ])
 
   @Test func aSplitStripSaysTheAppsShareUnderItsTotal() {
@@ -16,7 +21,8 @@ struct DebugMetricWordingTests {
     #expect(
       DebugMetric.memory.detailText(of: slot)
         == "App \(DebugValueText.memory(250)) · Terminals \(DebugValueText.memory(150)) · "
-        + "Child processes \(DebugValueText.memory(1_000))")
+        + "Child processes \(DebugValueText.memory(1_000))"
+    )
   }
 
   @Test func aStripWithNoReadingOrNothingRunningSaysSo() {

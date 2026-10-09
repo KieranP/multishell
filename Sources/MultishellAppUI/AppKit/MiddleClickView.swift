@@ -19,7 +19,10 @@ final class MiddleClickView: AccessibilityHiddenView {
   }
 
   override func otherMouseUp(with event: NSEvent) {
-    guard event.buttonNumber == 2 else { return super.otherMouseUp(with: event) }
+    guard event.buttonNumber == 2 else {
+      super.otherMouseUp(with: event)
+      return
+    }
     if bounds.contains(convert(event.locationInWindow, from: nil)) { onMiddleClick?() }
   }
 }

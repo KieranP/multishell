@@ -23,7 +23,8 @@ struct AppModelFetchTests {
           printf 'refs/heads/main\\tAAA\\t\\t\\n' ;;
         *) exit 0 ;;
       esac
-      """)
+      """
+    )
     let project = harness.project
     #expect(!model.isFetching(project))
 

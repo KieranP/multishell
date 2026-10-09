@@ -10,7 +10,9 @@ struct SharedSettingsReading: Sendable {
 
   /// Confined here, off the main actor, as it resolves symlinks per path.
   init(
-    loaded: Result<SharedProjectSettings?, any Error>, modificationDate: Date, project: Project
+    loaded: Result<SharedProjectSettings?, any Error>,
+    modificationDate: Date,
+    project: Project,
   ) {
     self.loaded = loaded
     self.confined = (try? loaded.get())??.confined(to: project)
@@ -19,10 +21,10 @@ struct SharedSettingsReading: Sendable {
 
   /// The file, the confinement and the date it had, the date taken first so a
   /// write landing mid-read is caught by the next tick. Off the main actor.
-  static func read(from project: Project) -> SharedSettingsReading {
+  static func read(from project: Project) -> Self {
     let stamp = modificationDate(of: SharedProjectSettings.file(in: project.path))
     let loaded = Result { try SharedProjectSettings.load(from: project.path) }
-    return SharedSettingsReading(loaded: loaded, modificationDate: stamp, project: project)
+    return Self(loaded: loaded, modificationDate: stamp, project: project)
   }
 
   /// `.distantPast` for a file that is not there, so its arrival reads as a

@@ -22,21 +22,28 @@ final class ModelHarness {
     self.directory = directory
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let store = WorkspaceStore(
-      file: StateFile(fileURL: directory.appendingPathComponent("state.json")))
+      file: StateFile(fileURL: directory.appendingPathComponent("state.json"))
+    )
     project = store.addProject(at: directory)
     self.store = store
     model = MultishellAppUI.AppModel(
       store: store,
       host: NoEngine(),
       coordinator: nil,
-      watcher: NoWatcher())
+      watcher: NoWatcher(),
+    )
   }
 
   /// The project's own checkout as its one worktree.
   @discardableResult
   func addPrimaryWorktree(branch: String = "main", head: String = "abc1234") -> Worktree {
     let worktree = Worktree(
-      path: project.path, projectID: project.id, head: head, branch: branch, isPrimary: true)
+      path: project.path,
+      projectID: project.id,
+      head: head,
+      branch: branch,
+      isPrimary: true,
+    )
     store.replaceWorktrees([worktree], forProject: project.id)
     return worktree
   }

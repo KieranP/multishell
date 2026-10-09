@@ -5,8 +5,6 @@ import MultishellCore
 /// alone, so callers pass every level; coalesced for 400 ms.
 @MainActor
 public final class DispatchDirectoryWatcher: DirectoryWatcher {
-  public var onChange: (@MainActor ([URL]) -> Void)?
-
   /// The source watching a path, against the directory it was opened on: a
   /// descriptor follows its inode, never its name.
   private struct Watch {
@@ -25,6 +23,8 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     }
   }
 
+  public var onChange: (@MainActor ([URL]) -> Void)?
+
   private var watches: [URL: Watch] = [:]
   private var pending: Task<Void, Never>?
   private var fired: Set<URL> = []
@@ -39,6 +39,32 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
 
   init(opening openDirectory: @escaping @Sendable (String) -> Int32) {
     self.openDirectory = openDirectory
+  }
+
+  /// A known path whose inode moved is stale: `git worktree remove` then
+  /// `add` leaves the old source on an inode nothing will touch again.
+  nonisolated private static func scan(
+    _ wanted: Set<URL>,
+    known: [URL: Identity],
+    opening openDirectory: (String) -> Int32,
+  ) -> Scan {
+    var scan = Scan()
+    for url in wanted {
+      if let directory = known[url] {
+        guard Identity(ofPath: url.path) != directory else { continue }
+        scan.stale.insert(url)
+      }
+      let descriptor = openDirectory(url.path)
+      guard descriptor >= 0 else { continue }
+      // From the descriptor, not the path: the two could differ in between,
+      // and what is watched is whatever was opened.
+      guard let directory = Identity(ofDescriptor: descriptor) else {
+        close(descriptor)
+        continue
+      }
+      scan.opened[url] = (descriptor, directory)
+    }
+    return scan
   }
 
   /// The stats and opens run off the main actor: a repository on a stalled
@@ -63,30 +89,6 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     }
   }
 
-  /// A known path whose inode moved is stale: `git worktree remove` then
-  /// `add` leaves the old source on an inode nothing will touch again.
-  private nonisolated static func scan(
-    _ wanted: Set<URL>, known: [URL: Identity], opening openDirectory: (String) -> Int32
-  ) -> Scan {
-    var scan = Scan()
-    for url in wanted {
-      if let directory = known[url] {
-        guard Identity(ofPath: url.path) != directory else { continue }
-        scan.stale.insert(url)
-      }
-      let descriptor = openDirectory(url.path)
-      guard descriptor >= 0 else { continue }
-      // From the descriptor, not the path: the two could differ in between,
-      // and what is watched is whatever was opened.
-      guard let directory = Identity(ofDescriptor: descriptor) else {
-        close(descriptor)
-        continue
-      }
-      scan.opened[url] = (descriptor, directory)
-    }
-    return scan
-  }
-
   public func stop() {
     generation += 1
     for watch in watches.values {
@@ -100,7 +102,7 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     let source = DispatchSource.makeFileSystemObjectSource(
       fileDescriptor: descriptor,
       eventMask: [.write, .rename, .delete],
-      queue: .main
+      queue: .main,
     )
     source.setEventHandler { [weak self] in
       MainActor.assumeIsolated { self?.coalesce(url) }

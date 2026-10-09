@@ -4,10 +4,10 @@ extension SessionStates {
   /// The state and what it claimed go; the stamp and the note are left for
   /// `stampChanges`, which reads the transition.
   mutating func clear(_ key: Key) {
-    update(key) {
-      $0.state = nil
-      $0.pid = nil
-      $0.settleTurn()
+    update(key) { entry in
+      entry.state = nil
+      entry.pid = nil
+      entry.settleTurn()
     }
   }
 
@@ -21,11 +21,11 @@ extension SessionStates {
   /// about it and go; Done and Failed are about the user and stay.
   mutating func noteProcessGone(_ pid: Int32) {
     for (key, entry) in entries where entry.pid == pid {
-      update(key) {
-        if $0.state?.isFinished != true { $0.state = nil }
-        $0.pid = nil
+      update(key) { entry in
+        if entry.state?.isFinished != true { entry.state = nil }
+        entry.pid = nil
         // Its workers went with it, so nothing is owed and nothing is out.
-        $0.settleTurn()
+        entry.settleTurn()
       }
       ownConversationIDs[key] = nil
     }

@@ -4,8 +4,12 @@ extension Worker {
   /// `id` in place of the report's, for one an unnamed start was given.
   init(report: WorkerReport, id: String? = nil) {
     self.init(
-      id: id ?? report.id, type: report.type, name: report.name,
-      description: report.description, parentID: report.parentID)
+      id: id ?? report.id,
+      type: report.type,
+      name: report.name,
+      description: report.description,
+      parentID: report.parentID,
+    )
   }
 
   /// What a later report adds about the worker; a field it leaves out stays.

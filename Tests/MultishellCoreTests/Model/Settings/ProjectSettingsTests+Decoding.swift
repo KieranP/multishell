@@ -8,7 +8,10 @@ extension ProjectSettingsTests {
     let unknown = try decodeJSON(ProjectSettings.self, #"{ "preferredAgentID": "future-agent" }"#)
     #expect(unknown.preferredAgentID == "future-agent")
     #expect(try decodeJSON(ProjectSettings.self, "{}").preferredAgentID == nil)
-    #expect(try decodeJSON(ProjectSettings.self, "{}").autoStartsAgent == nil, "follows the global")
+    #expect(
+      try decodeJSON(ProjectSettings.self, "{}").autoStartsAgent == nil,
+      "follows the global",
+    )
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "autoStartAgent": false }"#).autoStartsAgent == false
     )
@@ -23,14 +26,18 @@ extension ProjectSettingsTests {
     let old = try decodeJSON(ProjectSettings.self, #"{ "autoStartAgent": true }"#)
     #expect(old.autoStartsAgentOnCreate == nil, "follows the global")
     let split = try decodeJSON(
-      ProjectSettings.self, #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#)
+      ProjectSettings.self,
+      #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#,
+    )
     #expect(split.autoStartsAgentOnCreate == false)
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "opensTerminalOnCreate": false }"#)
-        .opensTerminalOnCreate == false)
+        .opensTerminalOnCreate == false
+    )
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "opensTerminalOnSelect": false }"#)
-        .opensTerminalOnSelect == false)
+        .opensTerminalOnSelect == false
+    )
   }
 
   /// A nil override is an absent key, so seeding one field from another
@@ -51,7 +58,8 @@ extension ProjectSettingsTests {
     #expect(settings.preCreateHook == "" && settings.preDeleteHook == "")
     #expect(
       settings.linkedPaths == "" && settings.copiedPaths == "",
-      "a new worktree is linked to nothing and given nothing")
+      "a new worktree is linked to nothing and given nothing",
+    )
     #expect(settings.postCreateHook == "npm install")
     #expect(settings.preferredShellID == nil, "follows the global shell")
     #expect(settings.iconGlyph == nil && settings.iconTint == nil, "the folder, untinted")
@@ -69,7 +77,8 @@ extension ProjectSettingsTests {
     #expect(try decodeJSON(ProjectSettings.self, #"{ "agentFlags": "" }"#).agentFlags == "")
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "postCreateHook": "x" }"#).agentFlags == nil,
-      "absent follows the global")
+      "absent follows the global",
+    )
   }
 
   /// The absent key is what "follow the global" is written as, and it must
@@ -78,13 +87,18 @@ extension ProjectSettingsTests {
     var pinned = ProjectSettings()
     pinned.branchPrefix = ""
     let restored = try JSONDecoder().decode(
-      ProjectSettings.self, from: try JSONEncoder().encode(pinned))
+      ProjectSettings.self,
+      from: try JSONEncoder().encode(pinned),
+    )
     #expect(restored.branchPrefix == "", "pinned to no prefix, not following the global")
     #expect(restored.worktreeDirectory == nil, "untouched, so still following the global")
   }
 
   @Test func aProjectsUnknownSortOrderFollowsTheGlobal() throws {
-    let settings = try decodeJSON(ProjectSettings.self, #"{ "worktreeSortOrder": "byMergeState" }"#)
+    let settings = try decodeJSON(
+      ProjectSettings.self,
+      #"{ "worktreeSortOrder": "byMergeState" }"#,
+    )
     #expect(settings.worktreeSortOrder == nil)
   }
 
@@ -96,7 +110,7 @@ extension ProjectSettingsTests {
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "iconGlyph": "🚀", "iconTint": 3 }"#).iconGlyph
         == "🚀",
-      "kept as written, nothing on disk being rewritten behind the user; that it counts as no choice is ProjectIcon.normalizedGlyph's to say"
+      "kept as written, nothing on disk being rewritten behind the user; that it counts as no choice is ProjectIcon.normalizedGlyph's to say",
     )
   }
 
@@ -105,7 +119,8 @@ extension ProjectSettingsTests {
     #expect(empty.worktreeSortOrder == nil && empty.showsActiveWorktreesFirst == nil)
     let chosen = try decodeJSON(
       ProjectSettings.self,
-      #"{ "worktreeSortOrder": "createdOldestFirst", "showsActiveWorktreesFirst": false }"#)
+      #"{ "worktreeSortOrder": "createdOldestFirst", "showsActiveWorktreesFirst": false }"#,
+    )
     #expect(chosen.worktreeSortOrder == .createdOldestFirst)
     #expect(chosen.showsActiveWorktreesFirst == false, "an override that says off")
   }
@@ -119,23 +134,30 @@ extension ProjectSettingsTests {
     let digest = FileDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
     #expect(try decodeJSON(ProjectSettings.self, "{}").trustDecisions.isEmpty)
     let decided = try decodeJSON(
-      ProjectSettings.self, #"{ "sharedHooks": [{ "digest": "\#(digest)", "trusted": true }] }"#)
+      ProjectSettings.self,
+      #"{ "sharedHooks": [{ "digest": "\#(digest)", "trusted": true }] }"#,
+    )
     #expect(
-      decided.trustDecisions == [TrustDecision(digest: digest, isTrusted: true)])
+      decided.trustDecisions == [TrustDecision(digest: digest, isTrusted: true)]
+    )
     let broken = try decodeJSON(
-      ProjectSettings.self, #"{ "sharedHooks": "yes", "branchPrefix": "k/" }"#)
+      ProjectSettings.self,
+      #"{ "sharedHooks": "yes", "branchPrefix": "k/" }"#,
+    )
     #expect(broken.trustDecisions.isEmpty && broken.branchPrefix == "k/")
     let oneBrokenAnswer = try decodeJSON(
       ProjectSettings.self,
       #"""
       { "sharedHooks": [{ "digest": "\#(digest)" },
                         { "digest": "beef", "trusted": false }], "branchPrefix": "k/" }
-      """#)
+      """#,
+    )
     #expect(
       oneBrokenAnswer.trustDecisions == [
         TrustDecision(digest: "beef", isTrusted: false)
       ],
-      "an answer that will not decode costs that answer, not the others or the project")
+      "an answer that will not decode costs that answer, not the others or the project",
+    )
     #expect(oneBrokenAnswer.branchPrefix == "k/")
   }
 
@@ -158,7 +180,7 @@ extension ProjectSettingsTests {
   @Test func aDecisionStoredAgainstTheHookTextIsDroppedRatherThanTrusted() throws {
     let legacy = try decodeJSON(
       ProjectSettings.self,
-      #"{ "sharedHooks": { "hooks": "post-create:\nnpm ci", "trusted": true }, "branchPrefix": "k/" }"#
+      #"{ "sharedHooks": { "hooks": "post-create:\nnpm ci", "trusted": true }, "branchPrefix": "k/" }"#,
     )
     #expect(legacy.trustDecisions.isEmpty && legacy.branchPrefix == "k/")
   }

@@ -6,7 +6,9 @@ import Testing
 struct ProcessLabelTests {
   @Test func anInterpreterIsNamedWithTheScriptItRunsPastItsFlags() {
     let label = ProcessLabel.of(
-      name: "node", arguments: ["node", "--no-warnings", "/opt/homebrew/bin/gemini", "chat"])
+      name: "node",
+      arguments: ["node", "--no-warnings", "/opt/homebrew/bin/gemini", "chat"],
+    )
     #expect(label == "node gemini")
   }
 

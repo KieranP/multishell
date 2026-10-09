@@ -3,6 +3,9 @@ import Foundation
 /// The file Claude keeps beside its transcript for each worker: which worker
 /// launched it and what Claude calls it. No hook says either; see agents.md.
 struct ClaudeWorkerMetadata: Equatable {
+  /// Far more than the few hundred bytes Claude writes there.
+  private static let maximumBytes = 64 << 10
+
   /// The worker that launched this one, `nil` for one the agent launched itself.
   var parentID: String?
   /// The name it was launched under, or the skill it runs as.
@@ -18,19 +21,17 @@ struct ClaudeWorkerMetadata: Equatable {
       .appendingPathComponent("agent-\(workerID).meta.json").path
   }
 
-  /// Far more than the few hundred bytes Claude writes there.
-  private static let maximumBytes = 64 << 10
-
   /// `nil` where the file is missing or unreadable, as it is at the worker's
   /// start, which Claude announces before writing it.
-  static func read(ofWorker workerID: String, transcriptPath: String) -> ClaudeWorkerMetadata? {
+  static func read(ofWorker workerID: String, transcriptPath: String) -> Self? {
     guard isSafeWorkerID(workerID),
       let handle = FileHandle(
-        forReadingAtPath: path(ofWorker: workerID, transcriptPath: transcriptPath))
+        forReadingAtPath: path(ofWorker: workerID, transcriptPath: transcriptPath)
+      )
     else { return nil }
     defer { try? handle.close() }
     guard let data = try? handle.read(upToCount: maximumBytes) else { return nil }
-    return ClaudeWorkerMetadata(json: data)
+    return Self(json: data)
   }
 
   /// An id is put into a path, so one that could leave the folder is no worker's.
@@ -40,7 +41,8 @@ struct ClaudeWorkerMetadata: Equatable {
   }
 }
 
-/// A memberwise init stays synthesized for the tests to build one with.
+// A memberwise init stays synthesized for the tests to build one with.
+// swiftlint:disable:next no_grouping_extension
 extension ClaudeWorkerMetadata {
   init?(json data: Data) {
     guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

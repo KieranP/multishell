@@ -4,13 +4,13 @@ public enum AgentMark: Equatable, Hashable, Sendable {
   case claude
   case codex
   case copilot
-  case openCode
   case gemini
   case monogram(String)
+  case openCode
 
   /// The marks the app has art for, in no order that matters. Only these are
   /// parsed, so a mark left off the list draws nothing.
-  public static let drawn: [AgentMark] = [.claude, .codex, .copilot, .openCode, .gemini]
+  public static let drawn: [Self] = [.claude, .codex, .copilot, .openCode, .gemini]
 
   /// One letter from each of the first two words, or the first two of one
   /// word. Non-letters are passed over, so `claude-3` reads as `Cl`.

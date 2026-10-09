@@ -29,10 +29,12 @@ struct ProjectGeneralPage: View {
       }
 
       OverrideSection(
-        model: model, project: project, setting: .worktreeSortOrder,
+        model: model,
+        project: project,
+        setting: .worktreeSortOrder,
         global: model.workspace.worktreeSortOrder,
         label: t("project.sort-worktrees"),
-        info: t("project.sort-worktrees-info")
+        info: t("project.sort-worktrees-info"),
       ) { selection, isOverridden, _ in
         Picker(t("worktrees.sort"), selection: selection) {
           ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -43,10 +45,13 @@ struct ProjectGeneralPage: View {
       }
 
       OverrideSection(
-        model: model, project: project, setting: .showsActiveWorktreesFirst,
+        model: model,
+        project: project,
+        setting: .showsActiveWorktreesFirst,
         global: \.showsActiveWorktreesFirst,
         label: t("project.active-first"),
-        info: t("project.active-first-info"))
+        info: t("project.active-first-info"),
+      )
 
       ProjectIconSection(model: model, project: project)
 

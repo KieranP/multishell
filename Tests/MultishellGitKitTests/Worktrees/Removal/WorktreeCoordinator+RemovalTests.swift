@@ -13,7 +13,10 @@ struct WorktreeCoordinatorRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "keep", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "keep",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "keep")
 
     try await fixture.coordinator.removeUnlinking(worktree, in: fixture.project)
@@ -26,9 +29,15 @@ struct WorktreeCoordinatorRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "dirty", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "dirty",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     try "uncommitted\n".write(
-      to: path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
+      to: path.appendingPathComponent("work.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
     let worktree = try await fixture.worktree(onBranch: "dirty")
     let bin = fixture.root.appendingPathComponent("bin", isDirectory: true)
 
@@ -36,7 +45,8 @@ struct WorktreeCoordinatorRemovalTests {
 
     #expect(!FileManager.default.fileExists(atPath: path.path))
     #expect(
-      FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/work.txt").path))
+      FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/work.txt").path)
+    )
     #expect(try await fixture.coordinator.git.list(fixture.project).count == 1)
   }
 
@@ -46,25 +56,37 @@ struct WorktreeCoordinatorRemovalTests {
     var project = fixture.project
     project.settings = ProjectSettings(postDeleteHook: "echo gone > deleted.txt")
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "dirty", in: project, settings: fixture.worktreeSettings)
+      branch: "dirty",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     try "work\n".write(
-      to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
+      to: path.appendingPathComponent("wip.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
     let worktree = try await fixture.worktree(onBranch: "dirty", in: project)
     let bin = fixture.root.appendingPathComponent("bin", isDirectory: true)
     let steps = Recorder<WorktreeRemovalStep>()
 
     try await fixture.coordinator.remove(
-      worktree, in: project, trash: moveToBin(bin),
-      onStep: { steps.record($0) })
+      worktree,
+      in: project,
+      trash: moveToBin(bin),
+      onStep: { steps.record($0) },
+    )
 
     #expect(steps.received == [.removingWorktree, .postDeleteHook])
     #expect(try await fixture.coordinator.git.list(project).count == 1, "forgotten")
     #expect(
       FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/wip.txt").path),
-      "the work is where the Trash put it")
+      "the work is where the Trash put it",
+    )
     #expect(
       FileManager.default.fileExists(
-        atPath: project.path.appendingPathComponent("deleted.txt").path))
+        atPath: project.path.appendingPathComponent("deleted.txt").path
+      )
+    )
     #expect(WorktreeRemovalStep.first(for: project) == .removingWorktree)
   }
 
@@ -72,16 +94,24 @@ struct WorktreeCoordinatorRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "kept", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "kept",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "kept")
 
     await #expect(throws: TrashFailure.self) {
       try await fixture.coordinator.remove(
-        worktree, in: fixture.project, trash: { _ in throw CocoaError(.fileWriteNoPermission) })
+        worktree,
+        in: fixture.project,
+        trash: { _ in throw CocoaError(.fileWriteNoPermission) },
+      )
     }
     #expect(FileManager.default.fileExists(atPath: path.path))
     #expect(
-      try await fixture.coordinator.git.list(fixture.project).count == 2, "nothing was pruned")
+      try await fixture.coordinator.git.list(fixture.project).count == 2,
+      "nothing was pruned",
+    )
   }
 
   @Test func aRemovedWorktreeIsNoLongerListedAndThePostDeleteHookRunsInTheProject() async throws {
@@ -94,7 +124,10 @@ struct WorktreeCoordinatorRemovalTests {
 
     let coordinator = fixture.coordinator
     try await coordinator.createThenRunPostCreateHook(
-      branch: "scratch", in: project, settings: settings)
+      branch: "scratch",
+      in: project,
+      settings: settings,
+    )
 
     let worktree = try await fixture.worktree(onBranch: "scratch", in: project)
     try await coordinator.removeUnlinking(worktree, in: project)
@@ -102,7 +135,9 @@ struct WorktreeCoordinatorRemovalTests {
     #expect(try await coordinator.git.list(project).count == 1)
     #expect(
       FileManager.default.fileExists(
-        atPath: project.path.appendingPathComponent("deleted.txt").path))
+        atPath: project.path.appendingPathComponent("deleted.txt").path
+      )
+    )
   }
 
   @Test func removingCanDeleteTheBranchAfterThePostHookHasSeenIt() async throws {
@@ -110,16 +145,22 @@ struct WorktreeCoordinatorRemovalTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(
-      postDeleteHook: "git rev-parse --verify \"$MULTISHELL_BRANCH\" > hook-saw-branch.txt")
+      postDeleteHook: "git rev-parse --verify \"$MULTISHELL_BRANCH\" > hook-saw-branch.txt"
+    )
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "done", in: project, settings: fixture.worktreeSettings)
+      branch: "done",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "done", in: project)
 
-    try await fixture.coordinator.removeUnlinking(worktree, deletesBranch: true, in: project)
+    try await fixture.coordinator.removeUnlinking(worktree, in: project, deletesBranch: true)
 
     #expect(try await fixture.branches() == ["main"])
     let seen = try String(
-      contentsOf: project.path.appendingPathComponent("hook-saw-branch.txt"), encoding: .utf8)
+      contentsOf: project.path.appendingPathComponent("hook-saw-branch.txt"),
+      encoding: .utf8,
+    )
     #expect(!seen.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "the hook ran first")
   }
 
@@ -127,21 +168,33 @@ struct WorktreeCoordinatorRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "unmerged", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "unmerged",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     try await TestRepository.commit(
-      "unmerged", files: ["w.txt": "work\n"], in: path, using: fixture.runner)
+      "unmerged",
+      files: ["w.txt": "work\n"],
+      in: path,
+      using: fixture.runner,
+    )
     let worktree = try await fixture.worktree(onBranch: "unmerged")
 
     await #expect(throws: BranchDeletionFailure.self) {
       try await fixture.coordinator.removeUnlinking(
-        worktree, deletesBranch: true, in: fixture.project)
+        worktree,
+        in: fixture.project,
+        deletesBranch: true,
+      )
     }
 
     #expect(
-      try await fixture.coordinator.git.list(fixture.project).count == 1, "the worktree is gone")
+      try await fixture.coordinator.git.list(fixture.project).count == 1,
+      "the worktree is gone",
+    )
     #expect(try await fixture.branches() == ["main", "unmerged"], "the branch is kept")
 
-    try await fixture.coordinator.deleteBranch("unmerged", force: true, in: fixture.project)
+    try await fixture.coordinator.deleteBranch("unmerged", in: fixture.project, force: true)
     #expect(try await fixture.branches() == ["main"])
   }
 
@@ -150,16 +203,24 @@ struct WorktreeCoordinatorRemovalTests {
     defer { fixture.tearDown() }
     let path = fixture.worktreeSettings.worktreePath(forBranch: "detached", in: fixture.project)
     try FileManager.default.createDirectory(
-      at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: path.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     _ = try await fixture.runner.run(
-      ["worktree", "add", "-q", "--detach", path.path], in: fixture.project.path)
+      ["worktree", "add", "-q", "--detach", path.path],
+      in: fixture.project.path,
+    )
     let worktree = try #require(
-      try await fixture.coordinator.git.list(fixture.project).first {
-        $0.isDetached && !$0.isPrimary
-      })
+      try await fixture.coordinator.git.list(fixture.project).first { worktree in
+        worktree.isDetached && !worktree.isPrimary
+      }
+    )
 
     try await fixture.coordinator.removeUnlinking(
-      worktree, deletesBranch: true, in: fixture.project)
+      worktree,
+      in: fixture.project,
+      deletesBranch: true,
+    )
 
     #expect(try await fixture.branches() == ["main"])
   }
@@ -169,24 +230,38 @@ struct WorktreeCoordinatorRemovalTests {
     defer { fixture.tearDown() }
     let steps = Recorder<WorktreeRemovalStep>()
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "plain", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "plain",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let plain = try await fixture.worktree(onBranch: "plain")
 
     try await fixture.coordinator.removeUnlinking(
-      plain, in: fixture.project, onStep: { steps.record($0) })
+      plain,
+      in: fixture.project,
+      onStep: { steps.record($0) },
+    )
     #expect(steps.received == [.removingWorktree], "no hooks, branch kept")
     #expect(WorktreeRemovalStep.first(for: fixture.project) == .removingWorktree)
 
     var hooked = fixture.project
     hooked.settings = ProjectSettings(preDeleteHook: "true", postDeleteHook: "true")
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "hooked", in: hooked, settings: fixture.worktreeSettings)
+      branch: "hooked",
+      in: hooked,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "hooked", in: hooked)
     steps.clear()
     try await fixture.coordinator.removeUnlinking(
-      worktree, deletesBranch: true, in: hooked, onStep: { steps.record($0) })
+      worktree,
+      in: hooked,
+      deletesBranch: true,
+      onStep: { steps.record($0) },
+    )
     #expect(
-      steps.received == [.preDeleteHook, .removingWorktree, .postDeleteHook, .deletingBranch])
+      steps.received == [.preDeleteHook, .removingWorktree, .postDeleteHook, .deletingBranch]
+    )
     #expect(WorktreeRemovalStep.first(for: hooked) == .preDeleteHook)
   }
 
@@ -198,7 +273,8 @@ struct WorktreeCoordinatorRemovalTests {
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     project.settings = ProjectSettings(
       preDeleteHook: "touch pre-ran \"$MULTISHELL_WORKTREE_PATH/pre-ran\"",
-      postDeleteHook: "touch \"$MULTISHELL_WORKTREE_PATH/post-ran\"")
+      postDeleteHook: "touch \"$MULTISHELL_WORKTREE_PATH/post-ran\"",
+    )
 
     try await fixture.coordinator.removeUnlinking(stale, in: project, shellPath: "/bin/sh")
 
@@ -210,21 +286,31 @@ struct WorktreeCoordinatorRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "pinned", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "pinned",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     _ = try await fixture.runner.run(
-      ["worktree", "lock", "--reason", "external drive", path.path], in: fixture.project.path)
+      ["worktree", "lock", "--reason", "external drive", path.path],
+      in: fixture.project.path,
+    )
     let pinned = try await fixture.worktree(onBranch: "pinned")
     #expect(pinned.isLocked)
 
     await #expect(throws: TrashFailure.self) {
       try await fixture.coordinator.remove(
-        pinned, in: fixture.project, trash: { _ in throw CocoaError(.fileWriteNoPermission) })
+        pinned,
+        in: fixture.project,
+        trash: { _ in throw CocoaError(.fileWriteNoPermission) },
+      )
     }
 
     let after = try await fixture.worktree(onBranch: "pinned")
     #expect(after.isLocked, "the lock and its reason are the user's")
     let listed = try await fixture.runner.run(
-      ["worktree", "list", "--porcelain"], in: fixture.project.path)
+      ["worktree", "list", "--porcelain"],
+      in: fixture.project.path,
+    )
     #expect(listed.contains("locked external drive"))
   }
 
@@ -234,9 +320,15 @@ struct WorktreeCoordinatorRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "untouched", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "untouched",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     try "work\n".write(
-      to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
+      to: path.appendingPathComponent("wip.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
     let worktree = try await fixture.worktree(onBranch: "untouched")
 
     await #expect(throws: TrashFailure.self) {

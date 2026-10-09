@@ -22,8 +22,8 @@ extension URL {
       // keeps on `/var` and `/tmp`.
       if let resolved = realpath(existing.path, nil) {
         defer { free(resolved) }
-        return unmade.reduce(URL(fileURLWithPath: String(cString: resolved))) {
-          $0.appendingPathComponent($1)
+        return unmade.reduce(URL(fileURLWithPath: String(cString: resolved))) { url, component in
+          url.appendingPathComponent(component)
         }
       }
       guard keepingDanglingLinks, existing.pathComponents.count > 1 else { return nil }

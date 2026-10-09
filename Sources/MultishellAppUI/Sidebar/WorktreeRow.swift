@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-struct WorktreeRow: View {
+struct WorktreeRow: View, @MainActor Equatable {
   let worktree: Worktree
   /// The name the user gave this worktree, or `nil` for none. Shown in
   /// place of the branch, which drops to a second line under it.
@@ -57,7 +57,8 @@ struct WorktreeRow: View {
         status: status,
         terminalCount: terminalCount,
         theme: theme,
-        metrics: metrics)
+        metrics: metrics,
+      )
     }
     .padding(.leading, metrics.worktreeRowIndent)
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
@@ -69,8 +70,15 @@ struct WorktreeRow: View {
     .accessibilityElement(children: isRenaming ? .contain : .ignore)
     .accessibilityLabel(
       AccessibilityText.worktree(
-        worktree, customName: customName, state: state, status: status, operation: operation,
-        terminalCount: terminalCount, isSelected: isSelected, mergeState: mergeState)
+        worktree,
+        state: state,
+        status: status,
+        operation: operation,
+        terminalCount: terminalCount,
+        isSelected: isSelected,
+        customName: customName,
+        mergeState: mergeState,
+      )
     )
     .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
@@ -109,7 +117,8 @@ struct WorktreeRow: View {
         font: .system(size: metrics.secondary, weight: .medium),
         color: theme.textPrimary,
         commit: commitRename,
-        cancel: cancelRename)
+        cancel: cancelRename,
+      )
       branchLine
     }
   }
@@ -123,12 +132,10 @@ struct WorktreeRow: View {
       .lineLimit(1)
       .truncationMode(.middle)
   }
-}
 
-/// Everything but the closures, which are rebuilt on every sidebar render and
-/// capture nothing the rest does not already say.
-extension WorktreeRow: @MainActor Equatable {
-  static func == (a: WorktreeRow, b: WorktreeRow) -> Bool {
+  /// Everything but the closures, which are rebuilt on every sidebar render and
+  /// capture nothing the rest does not already say.
+  static func == (a: Self, b: Self) -> Bool {
     a.worktree == b.worktree && a.customName == b.customName && a.isRenaming == b.isRenaming
       && a.terminalCount == b.terminalCount && a.state == b.state && a.operation == b.operation
       && a.isSelected == b.isSelected && a.isDropTarget == b.isDropTarget

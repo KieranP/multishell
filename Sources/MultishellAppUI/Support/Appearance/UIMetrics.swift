@@ -3,43 +3,6 @@ import Foundation
 /// Every chrome size, derived from one number so the UI font slider scales
 /// the sidebar, tabs and header together and rows never clip their text.
 struct UIMetrics: Equatable {
-  let bodySize: Double
-
-  init(fontSize: Double) {
-    bodySize = fontSize
-  }
-
-  var secondary: Double { bodySize - 1 }
-  var caption: Double { bodySize - 2 }
-  var badge: Double { bodySize - 3 }
-  /// A row's chevron and lock, a worker's glyph, count and time, a pane's number.
-  var small: Double { bodySize - 4 }
-  var monospaced: Double { bodySize - 1 }
-  var glyph: Double { bodySize - 2 }
-  /// A pane's glyph, on its sidebar row and on its tab.
-  var paneGlyphSize: Double { glyph + 2 }
-  /// The same glyph on a board card's location line, sized to the card's text.
-  var cardPaneGlyphSize: Double { badge + 4 }
-  /// The split glyph beside a pane's number in its position badge.
-  var panePositionGlyphSize: Double { badge - 2 }
-  /// The chevron between project and worktree on a board card's location line.
-  var cardBreadcrumbChevronSize: Double { badge - 3 }
-
-  /// The square a project's glyph is drawn in, which the row's spinner and
-  /// state dot take over so nothing shifts.
-  static func projectIconSlot(forGlyphOf size: Double) -> Double { size + 6 }
-
-  /// The badge on a glyph's corner, a pane's state or a missing project's
-  /// mark: 0.6 of the glyph in whole points, and never below a legible seven.
-  static func cornerBadgeSize(onGlyphOf size: Double) -> Double {
-    max(7, (size * 0.6).rounded())
-  }
-
-  var rowHeight: Double { (bodySize * 2.15).rounded() }
-
-  /// The find bar's well height, and each of its glyph buttons' side.
-  var findControlSize: Double { (bodySize * 2.2).rounded() }
-
   /// Round a board column and a Debug Info block, which sit on the same fill.
   static let columnCornerRadius: Double = 8
 
@@ -78,4 +41,41 @@ struct UIMetrics: Equatable {
   /// Both settings windows, fixed, or a window would resize between tabs. 600
   /// is the tallest page plus slack; ViewSettingsWindowTests holds it.
   static let settingsWindowSize = CGSize(width: 560, height: 600)
+
+  let bodySize: Double
+
+  var secondary: Double { bodySize - 1 }
+  var caption: Double { bodySize - 2 }
+  var badge: Double { bodySize - 3 }
+  /// A row's chevron and lock, a worker's glyph, count and time, a pane's number.
+  var small: Double { bodySize - 4 }
+  var monospaced: Double { bodySize - 1 }
+  var glyph: Double { bodySize - 2 }
+  /// A pane's glyph, on its sidebar row and on its tab.
+  var paneGlyphSize: Double { glyph + 2 }
+  /// The same glyph on a board card's location line, sized to the card's text.
+  var cardPaneGlyphSize: Double { badge + 4 }
+  /// The split glyph beside a pane's number in its position badge.
+  var panePositionGlyphSize: Double { badge - 2 }
+  /// The chevron between project and worktree on a board card's location line.
+  var cardBreadcrumbChevronSize: Double { badge - 3 }
+
+  var rowHeight: Double { (bodySize * 2.15).rounded() }
+
+  /// The find bar's well height, and each of its glyph buttons' side.
+  var findControlSize: Double { (bodySize * 2.2).rounded() }
+
+  init(fontSize: Double) {
+    bodySize = fontSize
+  }
+
+  /// The square a project's glyph is drawn in, which the row's spinner and
+  /// state dot take over so nothing shifts.
+  static func projectIconSlot(forGlyphOf size: Double) -> Double { size + 6 }
+
+  /// The badge on a glyph's corner, a pane's state or a missing project's
+  /// mark: 0.6 of the glyph in whole points, and never below a legible seven.
+  static func cornerBadgeSize(onGlyphOf size: Double) -> Double {
+    max(7, (size * 0.6).rounded())
+  }
 }

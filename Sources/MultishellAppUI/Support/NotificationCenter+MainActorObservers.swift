@@ -6,7 +6,8 @@ extension NotificationCenter {
   @MainActor
   func observe<Owner: AnyObject & Sendable>(
     _ changes: [(NSNotification.Name, @MainActor @Sendable (Owner) -> Void)],
-    from object: Any? = nil, for owner: Owner
+    for owner: Owner,
+    from object: Any? = nil,
   ) -> [any NSObjectProtocol] {
     changes.map { name, change in
       addObserver(forName: name, object: object, queue: .main) { [weak owner] _ in

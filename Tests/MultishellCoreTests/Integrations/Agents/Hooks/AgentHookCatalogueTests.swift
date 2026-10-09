@@ -13,6 +13,7 @@ struct AgentHookCatalogueTests {
     #expect(
       AgentHookCatalogue.integrations.map(\.id) == [
         "claude", "codex", "gemini", "copilot", "opencode",
-      ])
+      ]
+    )
   }
 }

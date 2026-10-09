@@ -11,11 +11,12 @@ struct NoSelectionPlaceholder: View {
     DetailPlaceholder(
       title: NoSelectionText.title(hasProjects: hasProjects),
       caption: NoSelectionText.caption(hasProjects: hasProjects),
-      theme: theme
+      theme: theme,
     ) {
       Image(systemName: "arrow.trianglehead.branch")
         .font(.system(size: 40, weight: .light))
         .foregroundStyle(theme.textTertiary)
+        .accessibilityHidden(true)
     } footer: {
       if !hasProjects {
         Button(action: addProject) {

@@ -23,21 +23,26 @@ enum DetachedLaunch {
   /// Starts a child on descriptors the caller opened and returns its exit
   /// code, `whileRunning` being handed its pid between spawn and exit.
   static func run(
-    _ executable: URL, _ arguments: [String], in directory: URL,
+    _ executable: URL,
+    _ arguments: [String],
+    in directory: URL,
     environment: [String: String],
-    input: FileDescriptor, output: FileDescriptor, error: FileDescriptor,
+    input: FileDescriptor,
+    output: FileDescriptor,
+    error: FileDescriptor,
     closingOutputsAfterSpawn: Bool,
-    whileRunning: @escaping @Sendable (pid_t) async -> Void
+    whileRunning: @escaping @Sendable (pid_t) async -> Void,
   ) async throws -> Int32 {
     try await shielded {
       let result = try await Subprocess.run(
-        .path(FilePath(executable.path)), arguments: Arguments(arguments),
+        .path(FilePath(executable.path)),
+        arguments: Arguments(arguments),
         environment: Self.environment(overriding: environment),
         workingDirectory: FilePath(directory.path),
         platformOptions: platformOptions,
         input: .fileDescriptor(input, closeAfterSpawningProcess: false),
         output: .fileDescriptor(output, closeAfterSpawningProcess: closingOutputsAfterSpawn),
-        error: .fileDescriptor(error, closeAfterSpawningProcess: closingOutputsAfterSpawn)
+        error: .fileDescriptor(error, closeAfterSpawningProcess: closingOutputsAfterSpawn),
       ) { execution in await whileRunning(execution.processIdentifier.value) }
       return exitCode(of: result.terminationStatus)
     }
@@ -53,7 +58,8 @@ enum DetachedLaunch {
 
   private static func environment(overriding values: [String: String]) -> Environment {
     .inherit.updating(
-      Dictionary(uniqueKeysWithValues: values.map { (Environment.Key(stringLiteral: $0), $1) }))
+      Dictionary(uniqueKeysWithValues: values.map { (Environment.Key(stringLiteral: $0), $1) })
+    )
   }
 
   private static func exitCode(of status: TerminationStatus) -> Int32 {

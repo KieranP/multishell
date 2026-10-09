@@ -11,11 +11,14 @@ extension AppModel {
   /// is a scan of every session, so a strip asks this once per tab.
   public func agentIDAtThePrompt(of tab: TerminalTab) -> String? {
     agentIDAtThePrompt(
-      tab.focusedSessionID, orOpenedAs: workspace.session(tab.focusedSessionID)?.agentID)
+      tab.focusedSessionID,
+      orOpenedAs: workspace.session(tab.focusedSessionID)?.agentID,
+    )
   }
 
   private func agentIDAtThePrompt(
-    _ id: TerminalSession.ID, orOpenedAs openedAs: @autoclosure () -> String?
+    _ id: TerminalSession.ID,
+    orOpenedAs openedAs: @autoclosure () -> String?,
   ) -> String? {
     if let reported = reportedAgents[id], reported.isAtThePrompt { return reported.agentID }
     return commandAgentIDs[id] ?? openedAs()

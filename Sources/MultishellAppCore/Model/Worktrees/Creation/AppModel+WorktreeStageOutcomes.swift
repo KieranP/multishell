@@ -6,8 +6,10 @@ import MultishellGitKit
 extension AppModel {
   /// A file list that stopped short, with what the lists before it skipped.
   func finishOrFailFileListStage(
-    of worktree: Worktree, placing placement: WorktreeFilePlacement, _ failure: any Error,
-    skipped: [String]
+    of worktree: Worktree,
+    placing placement: WorktreeFilePlacement,
+    _ failure: any Error,
+    skipped: [String],
   ) {
     let stage = WorktreeOperation.Stage(placement)
     // The user's Cancel: the worktree is theirs, as after a stopped hook.
@@ -19,9 +21,11 @@ extension AppModel {
         finishStage(stage, of: worktree)
       } else {
         failStage(
-          stage, of: worktree,
+          stage,
+          of: worktree,
           WorktreeFileFailure(placement: placement, failures: stopped.failures)
-            .including(skipped: skipped))
+            .including(skipped: skipped),
+        )
       }
     } else if let failed = failure as? WorktreeFileFailure {
       failStage(stage, of: worktree, failed.including(skipped: skipped))
@@ -41,8 +45,10 @@ extension AppModel {
   /// A stage that failed says so on its pane, where it reads once the sheet
   /// has gone. An alert only where there is no pane to say it on.
   func failStage(
-    _ stage: WorktreeOperation.Stage, of worktree: Worktree, _ error: any Error,
-    didTimeOut: Bool = false
+    _ stage: WorktreeOperation.Stage,
+    of worktree: Worktree,
+    _ error: any Error,
+    didTimeOut: Bool = false,
   ) {
     // Gone while the stage ran, and the entry goes with it: paths are ids, so
     // the next worktree there would inherit an operation nothing can finish.
@@ -54,7 +60,11 @@ extension AppModel {
       return
     }
     let shownInPane = worktreeOperations.fail(
-      stage, on: worktree.id, message: PresentedError(error).message, didTimeOut: didTimeOut)
+      stage,
+      on: worktree.id,
+      message: PresentedError(error).message,
+      didTimeOut: didTimeOut,
+    )
     if !shownInPane { present(error) }
   }
 

@@ -8,9 +8,9 @@ extension SessionStates {
     where entries[key]?.state != previous.entries[key]?.state
       && (entries[key]?.since == nil || entries[key]?.since == previous.entries[key]?.since)
     {
-      update(key) {
-        $0.since = now
-        if $0.state == nil { $0.note = nil }
+      update(key) { entry in
+        entry.since = now
+        if entry.state == nil { entry.note = nil }
       }
     }
     for (key, entry) in entries where entry.roster.hasUnstampedTimes {

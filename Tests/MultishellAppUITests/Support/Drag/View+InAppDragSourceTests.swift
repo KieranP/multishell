@@ -16,12 +16,15 @@ struct ViewInAppDragSourceTests {
   }
 
   private func host(
-    _ harness: ModelHarness, _ worktree: Worktree, width: CGFloat,
-    button: PrimaryMouseButton = PrimaryMouseButton(isPressedOverride: false)
+    _ harness: ModelHarness,
+    _ worktree: Worktree,
+    width: CGFloat,
+    button: PrimaryMouseButton = PrimaryMouseButton(isPressedOverride: false),
   ) -> NSWindow {
     let host = NSHostingView(
       rootView: WorktreeTabGroups(model: harness.model, worktree: worktree, theme: .multishellDark)
-        .environment(\.primaryMouseButton, button))
+        .environment(\.primaryMouseButton, button)
+    )
     host.frame = CGRect(x: 0, y: 0, width: width, height: 400)
     let window = OffscreenWindow.holding(host)
     OffscreenWindow.settle(within: 0.25)
@@ -47,8 +50,11 @@ struct ViewInAppDragSourceTests {
     let (worktree, tabs) = threeTabs(harness)
     let metrics = harness.model.metrics
     let window = host(
-      harness, worktree, width: metrics.newTabMenuWidth + 2 * metrics.tabMinWidth,
-      button: PrimaryMouseButton(isPressedOverride: true))
+      harness,
+      worktree,
+      width: metrics.newTabMenuWidth + 2 * metrics.tabMinWidth,
+      button: PrimaryMouseButton(isPressedOverride: true),
+    )
     harness.model.beginTabDrag(tabs[2])
     harness.model.shuffleTab(tabs[2], .before, past: tabs[0])
     let shuffled = harness.model.workspace.tabs(in: worktree.id).map(\.id)

@@ -40,8 +40,11 @@ extension SessionStatesTests {
       _ = report(
         &states,
         .init(
-          state: .running, worker: worker,
-          workersOut: out.map { WorkerReport(id: $0, phase: .working) }))
+          state: .running,
+          worker: worker,
+          workersOut: out.map { WorkerReport(id: $0, phase: .working) },
+        ),
+      )
     }
     _ = report(&states, .running, started("a0"))
     _ = report(&states, .running, started("a1"))
@@ -77,8 +80,11 @@ extension SessionStatesTests {
     _ = report(
       &states,
       .init(
-        state: .running, worker: working("a0"),
-        launched: WorkerReport(id: "a1", type: "Explore", phase: .started, parentID: "a0")))
+        state: .running,
+        worker: working("a0"),
+        launched: WorkerReport(id: "a1", phase: .started, type: "Explore", parentID: "a0"),
+      ),
+    )
     #expect(states.workers(.session(a)).nested.map(\.depth) == [0, 1])
   }
 
@@ -86,12 +92,18 @@ extension SessionStatesTests {
     var states = SessionStates()
     let launchedByAgent = WorkerReport(id: "a0", phase: .started)
     _ = report(&states, .init(state: .running, launched: launchedByAgent))
-    _ = report(&states, .init(state: .done, workersOut: [WorkerReport(id: "a0", phase: .working)]))
+    _ = report(
+      &states,
+      .init(state: .done, workersOut: [WorkerReport(id: "a0", phase: .working)]),
+    )
     _ = report(
       &states,
       .init(
-        state: .running, worker: working("a0"),
-        launched: WorkerReport(id: "a1", phase: .started, parentID: "a0")))
+        state: .running,
+        worker: working("a0"),
+        launched: WorkerReport(id: "a1", phase: .started, parentID: "a0"),
+      ),
+    )
     _ = report(&states, .init(state: .running, startsTurn: true))
 
     #expect(workersOut(states) == ["a0", "a1"])
@@ -117,8 +129,10 @@ extension SessionStatesTests {
     let kills: [SessionStateReport] = [
       .init(state: .running, killedTaskID: "a0"),
       .init(
-        state: .running, worker: WorkerReport(id: "a1", phase: .working, isPaused: true),
-        workersOut: [WorkerReport(id: "a1", phase: .working)]),
+        state: .running,
+        worker: WorkerReport(id: "a1", phase: .working, isPaused: true),
+        workersOut: [WorkerReport(id: "a1", phase: .working)],
+      ),
     ]
     for kill in kills {
       var states = SessionStates()
@@ -365,7 +379,8 @@ extension SessionStatesTests {
 
     #expect(
       report(&states, .init(state: .running, startsTurn: true))
-        == .running)
+        == .running
+    )
     #expect(workersOut(states) == ["w1"], "a background worker outlives the turn")
     #expect(report(&states, .done) == .running, "and holds the next Stop")
     #expect(report(&states, .running, ended("w1")) == .done, "until it ends")
@@ -373,7 +388,11 @@ extension SessionStatesTests {
     var lifted = SessionStates()
     _ = report(&lifted, .running, started("w1"))
     _ = lifted.apply(
-      .init(state: .running, startsTurn: true), pid: 99, for: .session(a), isSeen: false)
+      .init(state: .running, startsTurn: true),
+      pid: 99,
+      for: .session(a),
+      isSeen: false,
+    )
     #expect(lifted[.session(a)] == .running, "the agent's own Working now")
     #expect(report(&lifted, .running, ended("w1")) == .running, "a late end takes nothing back")
   }

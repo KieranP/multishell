@@ -10,7 +10,9 @@ extension ReportListener {
   /// the helper had sent before it is on the line ahead of it.
   func linesUpToABarrier() async throws -> [String] {
     let barrier = try await HelperBinary.run(
-      ["state", "done", "--agent", "opencode"], environment: ["MULTISHELL_SOCKET": path.path])
+      ["state", "done", "--agent", "opencode"],
+      environment: ["MULTISHELL_SOCKET": path.path],
+    )
     #expect(barrier.succeeded, "\(barrier.standardError)")
     try await waitUntil {
       let last = SessionStateReport.parse(recorder.received.last ?? "")

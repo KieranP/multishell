@@ -18,9 +18,13 @@ struct AppleScriptRunnerTests {
 
   @Test func aHandlerGivesBackWhatItReturned() throws {
     let command = try AppleScriptRunner.call(
-      probe, handler: "buildCommand", arguments: ["/a/multishell", "/usr/local/bin/multishell"])
+      probe,
+      handler: "buildCommand",
+      arguments: ["/a/multishell", "/usr/local/bin/multishell"],
+    )
     #expect(
-      command == "mkdir -p /usr/local/bin && ln -sf '/a/multishell' '/usr/local/bin/multishell'")
+      command == "mkdir -p /usr/local/bin && ln -sf '/a/multishell' '/usr/local/bin/multishell'"
+    )
   }
 
   /// A home directory holding a quote used to close the AppleScript literal
@@ -28,7 +32,10 @@ struct AppleScriptRunnerTests {
   @Test func aPathHoldingQuotesAndSemicolonsArrivesAsOneArgument() throws {
     let hostile = #"/Users/od"d/x'; rm -rf /"#
     let command = try AppleScriptRunner.call(
-      probe, handler: "buildCommand", arguments: [hostile, "/usr/local/bin/multishell"])
+      probe,
+      handler: "buildCommand",
+      arguments: [hostile, "/usr/local/bin/multishell"],
+    )
 
     #expect(command?.contains("rm -rf /") == true, "it is in there")
     #expect(command?.hasSuffix("'/usr/local/bin/multishell'") == true, "and it ended nothing")

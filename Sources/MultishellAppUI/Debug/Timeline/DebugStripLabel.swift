@@ -5,6 +5,8 @@ import SwiftUI
 /// A strip's name, legend and the shown slot's value, the column beside its
 /// chart. Its width is the strip's to set; see `UIMetrics.debugStripLabelWidth`.
 struct DebugStripLabel: View {
+  private static let horizontalPadding = 12.0
+
   let metric: DebugMetric
   let slot: DebugTimelineSlot?
   let theme: Theme
@@ -34,8 +36,6 @@ struct DebugStripLabel: View {
     .lineLimit(1)
     .padding(.horizontal, Self.horizontalPadding)
   }
-
-  private static let horizontalPadding = 12.0
 
   private var valueColor: Color {
     metric.valueSmoothness(of: slot).map(theme.smoothnessColor) ?? theme.textPrimary

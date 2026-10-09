@@ -19,7 +19,8 @@ extension AccessibilityText {
 
   /// A Memory by tab row, read as one button where it opens to list processes.
   public static func debugMemoryRow(
-    _ row: DebugMemoryRow, disclosure: DebugRowDisclosure
+    _ row: DebugMemoryRow,
+    disclosure: DebugRowDisclosure,
   ) -> String {
     var parts = [row.title]
     if !row.subtitle.isEmpty { parts.append(row.subtitle) }
@@ -47,7 +48,8 @@ extension AccessibilityText {
   /// A process under an expanded row, its depth said where the arrow shows
   /// it: under the process that started it, or the terminal it runs in.
   public static func debugProcessRow(
-    _ process: DebugProcessRow, under row: DebugMemoryRow
+    _ process: DebugProcessRow,
+    under row: DebugMemoryRow,
   ) -> String {
     var parts = [process.process.name]
     if process.depth > 0 {

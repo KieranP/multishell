@@ -1,13 +1,13 @@
 /// Any JSON, kept as read. For the keys of a committed file this build has
 /// no field for, which an export writes back rather than drops.
 enum JSONValue: Codable, Hashable, Sendable {
-  case null
+  case array([Self])
   case bool(Bool)
   case integer(Int)
+  case null
   case number(Double)
+  case object([String: Self])
   case string(String)
-  case array([JSONValue])
-  case object([String: JSONValue])
 
   init(from decoder: any Decoder) throws {
     let single = try decoder.singleValueContainer()
@@ -21,10 +21,10 @@ enum JSONValue: Codable, Hashable, Sendable {
       self = .number(value)
     } else if let value = try? single.decode(String.self) {
       self = .string(value)
-    } else if let value = try? single.decode([JSONValue].self) {
+    } else if let value = try? single.decode([Self].self) {
       self = .array(value)
     } else {
-      self = .object(try single.decode([String: JSONValue].self))
+      self = .object(try single.decode([String: Self].self))
     }
   }
 

@@ -8,7 +8,9 @@ import Testing
 @Suite
 struct GitStatusBadgeFitTests {
   private func status(
-    hasLineChanges: Bool, unscoredFiles: Int = 0, ahead: Int = 0
+    hasLineChanges: Bool,
+    unscoredFiles: Int = 0,
+    ahead: Int = 0,
   ) -> WorktreeStatus {
     var status = WorktreeStatus()
     if hasLineChanges {
@@ -29,6 +31,7 @@ struct GitStatusBadgeFitTests {
 
   @Test func aBadgeOfArrowsAloneKeepsThemAtItsNarrowest() {
     #expect(
-      GitStatusBadgeFit.essentials.showsArrows(of: status(hasLineChanges: false, ahead: 2)))
+      GitStatusBadgeFit.essentials.showsArrows(of: status(hasLineChanges: false, ahead: 2))
+    )
   }
 }

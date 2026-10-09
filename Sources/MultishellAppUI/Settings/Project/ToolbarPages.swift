@@ -15,6 +15,10 @@ struct ToolbarPages: NSViewControllerRepresentable {
     }
   }
 
+  final class Coordinator {
+    var appliedToken: UUID?
+  }
+
   let pages: [Page]
   /// A value never seen before sends the window back to its first page: the
   /// controller owns the live selection, so an index binding goes stale.
@@ -45,9 +49,5 @@ struct ToolbarPages: NSViewControllerRepresentable {
       context.coordinator.appliedToken = firstPageToken
       controller.selectedTabViewItemIndex = 0
     }
-  }
-
-  final class Coordinator {
-    var appliedToken: UUID?
   }
 }

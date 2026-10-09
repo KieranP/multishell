@@ -7,11 +7,14 @@ import Testing
 struct DefaultBranchTests {
   @Test func theRemoteIsPreferredOverALocalBranchOfTheSameName() {
     let refs = DefaultBranch.candidateRefs(
-      override: nil, originHeadTarget: "refs/remotes/origin/main")
+      override: nil,
+      originHeadTarget: "refs/remotes/origin/main",
+    )
     #expect(refs.first == "refs/remotes/origin/main")
     #expect(refs.contains("refs/heads/main"))
     #expect(
-      refs.firstIndex(of: "refs/remotes/origin/main")! < refs.firstIndex(of: "refs/heads/main")!)
+      refs.firstIndex(of: "refs/remotes/origin/main")! < refs.firstIndex(of: "refs/heads/main")!
+    )
   }
 
   @Test func withoutAnOriginHeadTheUsualNamesAreTriedInOrder() {
@@ -19,18 +22,22 @@ struct DefaultBranchTests {
       DefaultBranch.candidateRefs(override: nil, originHeadTarget: nil) == [
         "refs/remotes/origin/main", "refs/remotes/origin/master",
         "refs/heads/main", "refs/heads/master",
-      ])
+      ]
+    )
   }
 
   @Test func anOverrideIsTriedOnTheRemoteThenLocallyAndNothingFallsBackAfterIt() {
     #expect(
       DefaultBranch.candidateRefs(override: " develop ", originHeadTarget: "origin/main") == [
         "refs/remotes/origin/develop", "refs/heads/develop", "refs/remotes/develop",
-      ])
+      ]
+    )
     // Typed in full, as the caption shows it.
     #expect(
       DefaultBranch.candidateRefs(override: "upstream/trunk", originHeadTarget: nil).contains(
-        "refs/remotes/upstream/trunk"))
+        "refs/remotes/upstream/trunk"
+      )
+    )
   }
 
   @Test func theClonesOwnDefaultIsReadFromTheSymbolicRefInTheSameScan() {
@@ -38,11 +45,15 @@ struct DefaultBranchTests {
       BranchRef(fullName: "refs/remotes/origin/main", tip: "a"),
       BranchRef(fullName: "refs/remotes/origin/trunk", tip: "b"),
       BranchRef(
-        fullName: RefName.originHead, tip: "b", symref: "refs/remotes/origin/trunk"),
+        fullName: RefName.originHead,
+        tip: "b",
+        symref: "refs/remotes/origin/trunk",
+      ),
     ]
     #expect(
       DefaultBranch.resolve(from: refs, override: nil)?.shortName == "origin/trunk",
-      "origin/HEAD wins over the origin/main guess that follows it")
+      "origin/HEAD wins over the origin/main guess that follows it",
+    )
   }
 
   @Test func resolvingTakesTheFirstCandidateTheRepositoryActuallyHas() {
@@ -54,8 +65,12 @@ struct DefaultBranchTests {
     #expect(
       resolved
         == DefaultBranch(
-          shortName: "origin/main", nameWithoutRemote: "main", tip: "remote",
-          fullName: "refs/remotes/origin/main"))
+          shortName: "origin/main",
+          nameWithoutRemote: "main",
+          tip: "remote",
+          fullName: "refs/remotes/origin/main",
+        )
+    )
 
     let localOnly = DefaultBranch.resolve(from: [refs[0]], override: nil)
     #expect(localOnly?.shortName == "main")

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// One of the selected worktree's panes: glyph, position in a split, title,
 /// chip. Bold is the one focused pane; see Docs/design/agents.md.
-struct PaneRow: View {
+struct PaneRow: View, @MainActor Equatable {
   let pane: SidebarPane
   let theme: Theme
   let metrics: UIMetrics
@@ -18,7 +18,7 @@ struct PaneRow: View {
         ringFill: theme.sidebarColor,
         plainTint: pane.isFocused ? theme.textPrimary : theme.textSecondary,
         theme: theme,
-        size: metrics.paneGlyphSize
+        size: metrics.paneGlyphSize,
       )
       .help(pane.state.shownState.displayName)
       if let position = pane.position {
@@ -43,12 +43,10 @@ struct PaneRow: View {
     .accessibilityLabel(AccessibilityText.pane(pane))
     .selectableButtonTraits(isSelected: pane.isFocused)
   }
-}
 
-/// Everything but `select`, which captures only the pane's id; see
-/// `WorktreeRow`'s.
-extension PaneRow: @MainActor Equatable {
-  static func == (a: PaneRow, b: PaneRow) -> Bool {
+  /// Everything but `select`, which captures only the pane's id; see
+  /// `WorktreeRow`'s.
+  static func == (a: Self, b: Self) -> Bool {
     a.pane == b.pane && a.theme == b.theme && a.metrics == b.metrics
   }
 }

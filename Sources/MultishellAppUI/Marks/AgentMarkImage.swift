@@ -6,6 +6,11 @@ import SwiftUI
 /// an AppKit menu, which takes a title and an image and nothing else.
 @MainActor
 enum AgentMarkImage {
+  private struct Key: Hashable {
+    let agentID: String?
+    let scale: CGFloat
+  }
+
   /// Sized against a menu title, not a tab: the marks run to the edges of
   /// their square, so 15 drew larger than the items read for.
   private static let size: Double = 13
@@ -13,11 +18,6 @@ enum AgentMarkImage {
   /// Keyed by the scale it was drawn at too: a window moved to a display of
   /// another one keeps the marks it rendered, and they would be soft there.
   private static var rendered: [Key: Image] = [:]
-
-  private struct Key: Hashable {
-    let agentID: String?
-    let scale: CGFloat
-  }
 
   /// A mark with a colour of its own keeps it; the rest are templates, which
   /// the menu tints itself. `nil` is the shell's terminal glyph.

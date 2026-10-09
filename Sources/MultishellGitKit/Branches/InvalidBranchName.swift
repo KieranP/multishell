@@ -6,11 +6,11 @@ import MultishellCore
 public struct InvalidBranchName: LocalizedError {
   let branch: String
 
-  init(_ branch: String) {
-    self.branch = branch
-  }
-
   public var errorDescription: String? {
     t("branch-name.invalid", branch)
+  }
+
+  init(_ branch: String) {
+    self.branch = branch
   }
 }

@@ -32,10 +32,17 @@ struct AgentHookEvent: Hashable, Sendable {
   let startsSession: Bool
 
   init(
-    _ name: String, _ state: SessionState, reportedName: String? = nil, matcher: String? = nil,
-    ignoredNotificationTypes: Set<String> = [], meansWaitingOnlyWhenPrompting: Bool = false,
-    isSilent: Bool = false, subagentPhase: WorkerReport.Phase? = nil,
-    isPrompt: Bool = false, startsSession: Bool = false, timeoutSeconds: Int? = nil
+    _ name: String,
+    _ state: SessionState,
+    reportedName: String? = nil,
+    matcher: String? = nil,
+    ignoredNotificationTypes: Set<String> = [],
+    meansWaitingOnlyWhenPrompting: Bool = false,
+    isSilent: Bool = false,
+    subagentPhase: WorkerReport.Phase? = nil,
+    isPrompt: Bool = false,
+    startsSession: Bool = false,
+    timeoutSeconds: Int? = nil,
   ) {
     self.name = name
     self.reportedName = reportedName ?? name
@@ -64,11 +71,11 @@ struct AgentHookEvent: Hashable, Sendable {
       // Any other event is a tool call, which is a worker's only where one
       // is named: an agent's own carries no id.
       guard let id = payload.subagentID else { return nil }
-      return WorkerReport(id: id, type: type, phase: .working)
+      return WorkerReport(id: id, phase: .working, type: type)
     }
     // A start or an end moved the roster by one, so one naming nobody takes
     // an unnamed place; read as the agent's own it leaves a worker over.
     let id = payload.subagentID ?? WorkerReport.anonymousID
-    return WorkerReport(id: id, type: type, phase: phase)
+    return WorkerReport(id: id, phase: phase, type: type)
   }
 }

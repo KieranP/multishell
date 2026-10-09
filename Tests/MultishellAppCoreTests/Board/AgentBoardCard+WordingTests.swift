@@ -22,25 +22,29 @@ struct AgentBoardCardWordingTests {
     let done = SessionNote(state: .done, duration: 194)
     #expect(
       AgentBoardCard.sample(occupant: .shell("zsh"), state: .done, note: done).message
-        == "Done · 3m 14s")
+        == "Done · 3m 14s"
+    )
 
     let failed = SessionNote(state: .failed, duration: 72)
     #expect(
       AgentBoardCard.sample(occupant: .shell("zsh"), state: .failed, note: failed).message
-        == "Failed · 1m 12s")
+        == "Failed · 1m 12s"
+    )
 
     let working = SessionNote(state: .running, duration: 5)
     #expect(
       AgentBoardCard.sample(occupant: .shell("zsh"), state: .running, note: working).message
         == nil,
-      "a command still running has taken no time yet")
+      "a command still running has taken no time yet",
+    )
   }
 
   @Test func aCardSaysHowLongItHasBeenInItsColumn() {
     let since = drawnAt.addingTimeInterval(-750)
     #expect(
       AgentBoardCard.sample(occupant: claude, state: .running, since: since).elapsed(at: drawnAt)
-        == "12m")
+        == "12m"
+    )
     #expect(AgentBoardCard.sample(occupant: claude).elapsed(at: drawnAt) == nil)
   }
 
@@ -50,6 +54,7 @@ struct AgentBoardCardWordingTests {
     let since = drawnAt.addingTimeInterval(8)
     #expect(
       AgentBoardCard.sample(occupant: claude, state: .running, since: since).elapsed(at: drawnAt)
-        == "0s")
+        == "0s"
+    )
   }
 }

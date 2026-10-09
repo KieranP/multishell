@@ -23,17 +23,26 @@ extension GhosttySurfaceView {
     syncPreedit(clearingIfEmpty: wasComposing)
 
     let deliveries = GhosttyKeyDown.deliveries(
-      wasComposing: wasComposing, isComposing: !markedText.isEmpty,
-      committed: textCommittedInKeyDown ?? [], characters: event.characters,
-      keyText: translation.ghosttyText, keyCode: translation.keyCode,
-      flags: translation.modifierFlags)
+      wasComposing: wasComposing,
+      isComposing: !markedText.isEmpty,
+      committed: textCommittedInKeyDown ?? [],
+      characters: event.characters,
+      keyText: translation.ghosttyText,
+      keyCode: translation.keyCode,
+      flags: translation.modifierFlags,
+    )
     for delivery in deliveries {
       switch delivery {
       case .committed(let text):
         send(GhosttyKeyInput(committing: text, action))
+
       case .key(let text, let isComposing):
         var input = GhosttyKeyInput(
-          event, action, translationFlags: translation.modifierFlags, text: text)
+          event,
+          action,
+          translationFlags: translation.modifierFlags,
+          text: text,
+        )
         input.isComposing = isComposing
         send(input)
       }
@@ -76,14 +85,17 @@ extension GhosttySurfaceView {
   /// the original where unchanged, as Korean input breaks on a copy.
   private func translated(_ event: NSEvent, on surface: ghostty_surface_t) -> NSEvent {
     let wanted = GhosttyModifiers.flags(
-      ghostty_surface_key_translation_mods(surface, GhosttyModifiers.mods(event.modifierFlags)))
+      ghostty_surface_key_translation_mods(surface, GhosttyModifiers.mods(event.modifierFlags))
+    )
     var flags = event.modifierFlags
     for flag in [NSEvent.ModifierFlags.shift, .control, .option, .command] {
       if wanted.contains(flag) { flags.insert(flag) } else { flags.remove(flag) }
     }
     guard flags != event.modifierFlags else { return event }
     return event.keyCopy(
-      modifierFlags: flags, characters: event.characters(byApplyingModifiers: flags) ?? "",
-      charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "") ?? event
+      characters: event.characters(byApplyingModifiers: flags) ?? "",
+      charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
+      modifierFlags: flags,
+    ) ?? event
   }
 }

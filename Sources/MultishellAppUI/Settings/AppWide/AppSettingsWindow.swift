@@ -3,12 +3,12 @@ import SwiftUI
 /// App-wide preferences, under Multishell > Settings. Help sits behind each
 /// row's (i); captions are kept for values computed live.
 struct AppSettingsWindow: View {
-  let model: AppModel
-  let platform: MacPlatform
-
   private enum Page: Hashable {
     case general, worktrees, terminal, agents, notifications, appearance
   }
+
+  let model: AppModel
+  let platform: MacPlatform
 
   @State private var page = Page.general
 

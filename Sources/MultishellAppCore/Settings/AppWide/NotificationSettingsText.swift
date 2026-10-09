@@ -17,10 +17,15 @@ public enum NotificationSettingsText {
       Row(state: state, title: state.displayName, info: info(for: state))
     }
 
+  /// True however the permission went. The tail is what "frontmost" means to
+  /// the reader, and is not droppable.
+  private static var shownTabNote: String { t("notifications.shown-tab") }
+
   /// The caption at the foot of the page, said once rather than behind each
   /// row's (i). A refusal replaces it; no desktop is named here.
   static func note(
-    for authorization: NotificationAuthorization, settingsLocation: String?
+    for authorization: NotificationAuthorization,
+    settingsLocation: String?,
   ) -> String {
     switch authorization {
     case .refused:
@@ -29,25 +34,26 @@ public enum NotificationSettingsText {
       } else {
         t("notifications.refused")
       }
+
     case .notAsked:
       t("notifications.not-asked", shownTabNote)
+
     case .allowed, .unavailable:
       shownTabNote
     }
   }
 
-  /// True however the permission went. The tail is what "frontmost" means to
-  /// the reader, and is not droppable.
-  private static var shownTabNote: String { t("notifications.shown-tab") }
-
   private static func info(for state: SessionState) -> String {
     switch state {
     case .attention:
       t("notifications.attention-info")
+
     case .failed:
       t("notifications.error-info", Int(NotificationPolicy.minimumNotifiedSeconds))
+
     case .done:
       t("notifications.done-info", Int(NotificationPolicy.minimumNotifiedSeconds))
+
     case .running, .idle:
       t("notifications.running-info")
     }

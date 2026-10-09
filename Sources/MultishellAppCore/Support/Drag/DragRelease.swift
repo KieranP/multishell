@@ -16,7 +16,8 @@ enum DragRelease {
   /// first, which is how a new drag takes over from the last one's watch.
   @MainActor
   static func watch(
-    isPressed: @escaping @MainActor () -> Bool, then end: @escaping @MainActor () -> Void
+    isPressed: @escaping @MainActor () -> Bool,
+    then end: @escaping @MainActor () -> Void,
   ) -> Task<Void, Never> {
     Task { @MainActor in
       await wait(isPressed: isPressed)

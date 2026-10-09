@@ -4,7 +4,7 @@ import SwiftUI
 
 /// One metric across the range, a shape per colour: a `Canvas` drew the
 /// whole panel through Metal, 105 MB of buffers (debug-tools.md).
-struct DebugStripChart: View {
+struct DebugStripChart: View, @MainActor Equatable {
   let metric: DebugMetric
   let timeline: DebugTimeline
   let theme: Theme
@@ -31,11 +31,9 @@ struct DebugStripChart: View {
       }
     }
   }
-}
 
-/// Every field, so a hover, which changes none, leaves the chart undrawn.
-extension DebugStripChart: @MainActor Equatable {
-  static func == (a: DebugStripChart, b: DebugStripChart) -> Bool {
+  /// Every field, so a hover, which changes none, leaves the chart undrawn.
+  static func == (a: Self, b: Self) -> Bool {
     a.metric == b.metric && a.timeline == b.timeline && a.theme == b.theme
   }
 }

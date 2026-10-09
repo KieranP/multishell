@@ -37,7 +37,10 @@ struct NewWorktreeDraftWordingTests {
   @Test func createNamesTheAgentItStartsAndIsPlainWithoutOne() {
     var draft = NewWorktreeDraft(projectID: "/repos/a")
     draft.fitAgent(
-      startsByDefault: true, preferred: "claude", offered: ["claude", AgentCatalogue.customID])
+      startsByDefault: true,
+      preferred: "claude",
+      offered: ["claude", AgentCatalogue.customID],
+    )
     #expect(draft.createTitle == "Create and Start Claude Code")
 
     draft.agentID = AgentCatalogue.customID

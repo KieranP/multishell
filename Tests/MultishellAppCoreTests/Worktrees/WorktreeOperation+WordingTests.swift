@@ -15,10 +15,13 @@ struct WorktreeOperationWordingTests {
     #expect(removal.stage == .preDeleteHook)
     #expect(removal.detail.contains("stays if the hook refuses"))
     #expect(
-      WorktreeOperation(.init(WorktreeRemovalStep.deletingBranch)).title == "Deleting the branch…")
+      WorktreeOperation(.init(WorktreeRemovalStep.deletingBranch)).title == "Deleting the branch…"
+    )
     #expect(
       WorktreeOperation(.init(WorktreeRemovalStep.postDeleteHook)).detail.contains(
-        "terminals close"))
+        "terminals close"
+      )
+    )
   }
 
   @Test func aFailureChangesTheTitleAndTheDetailAndEndsTheRun() {
@@ -42,18 +45,22 @@ struct WorktreeOperationWordingTests {
     #expect(deleting.detail.contains("deleted") && !deleting.detail.contains("Trash"))
     #expect(
       WorktreeOperation(.deletingWorktree, failure: "x").title
-        == "The worktree could not be removed")
+        == "The worktree could not be removed"
+    )
     #expect(WorktreeOperation(.linkingFiles).title == "Linking files into the worktree…")
     #expect(
       WorktreeOperation(.linkingFiles, failure: "x").title
-        == "Some files were not linked into the worktree")
+        == "Some files were not linked into the worktree"
+    )
     #expect(
       WorktreeOperation(.removingWorktree, failure: "x").title
-        == "The worktree could not be removed")
+        == "The worktree could not be removed"
+    )
     let timedOut = WorktreeOperation(.preDeleteHook, failure: "x", didTimeOut: true)
     #expect(timedOut.title == "The pre-delete hook did not finish")
     #expect(
       WorktreeOperation(.postCreateHook, failure: "x", didTimeOut: true).title
-        == "The post-create hook did not finish")
+        == "The post-create hook did not finish"
+    )
   }
 }

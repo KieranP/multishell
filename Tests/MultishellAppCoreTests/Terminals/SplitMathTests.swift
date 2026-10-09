@@ -7,10 +7,18 @@ import Testing
 @Suite
 struct SplitMathTests {
   private func drag(
-    _ translation: Double, weights: [Double], available: Double = 600, index: Int = 0
+    _ translation: Double,
+    weights: [Double],
+    available: Double = 600,
+    index: Int = 0,
   ) -> [Double] {
     SplitMath.transferring(
-      translation, acrossDividerAfter: index, in: weights, available: available, minimumPane: 80)
+      translation,
+      acrossDividerAfter: index,
+      in: weights,
+      available: available,
+      minimumPane: 80,
+    )
   }
 
   @Test func movingTheDividerTradesWeightBetweenItsTwoPanesOnly() {
@@ -58,7 +66,8 @@ struct SplitMathTests {
     #expect(after == weights, "a drag of one point rewrote them to [1, 0.375, 0.375, 0.25]")
     #expect(
       drag(-400, weights: weights, available: 382, index: 1) == weights,
-      "and nor does dragging it the other way")
+      "and nor does dragging it the other way",
+    )
   }
 
   @Test func invalidInputIsReturnedUnchanged() {

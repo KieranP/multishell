@@ -8,8 +8,11 @@ import Testing
 struct DestructiveAlertTests {
   private func alert(choices: [String]) -> NSAlert {
     let alert = DestructiveAlert.make(
-      title: "Remove worktree feat?", message: "Moves it to the Trash.",
-      choices: choices, cancel: "Abbrechen")
+      title: "Remove worktree feat?",
+      message: "Moves it to the Trash.",
+      choices: choices,
+      cancel: "Abbrechen",
+    )
     alert.layout()
     return alert
   }
@@ -47,7 +50,9 @@ struct DestructiveAlertTests {
     let bezel = try #require(bezelColour(of: lead, in: alert))
     #expect(
       bezel.redComponent > bezel.greenComponent + 0.08
-        && bezel.redComponent > bezel.blueComponent + 0.08, "\(bezel)")
+        && bezel.redComponent > bezel.blueComponent + 0.08,
+      "\(bezel)",
+    )
   }
 
   /// A point inside the bezel clear of the title, from the alert drawn offscreen.

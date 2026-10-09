@@ -8,7 +8,8 @@ struct NulPathListParserTests {
     #expect(NulPathListParser.parse("a.txt\0dir/b c.txt\0") == ["a.txt", "dir/b c.txt"])
     #expect(
       NulPathListParser.parse("odd\nname.txt\0b.txt\0") == ["odd\nname.txt", "b.txt"],
-      "the newline is part of the path, not a separator")
+      "the newline is part of the path, not a separator",
+    )
     #expect(NulPathListParser.parse("").isEmpty)
   }
 

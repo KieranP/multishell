@@ -12,7 +12,10 @@ struct WorktreeRecordsTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "work", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "work",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
     let before = WorktreeRecords.read(in: common)
     #expect(before.files.keys.contains("worktrees/work/HEAD"))
@@ -31,7 +34,10 @@ struct WorktreeRecordsTests {
     let empty = WorktreeRecords.read(in: common)
 
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "work", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "work",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let added = WorktreeRecords.read(in: common)
     #expect(added != empty)
 
@@ -44,7 +50,9 @@ struct WorktreeRecordsTests {
     #expect(locked != switched)
 
     _ = try await fixture.runner.run(
-      ["checkout", "-q", "-b", "main-moved"], in: fixture.project.path)
+      ["checkout", "-q", "-b", "main-moved"],
+      in: fixture.project.path,
+    )
     #expect(WorktreeRecords.read(in: common) != locked, "the main HEAD counts too")
   }
 
@@ -62,7 +70,10 @@ struct WorktreeRecordsTests {
     #expect(before.map(\.lastPathComponent) == [".git"])
 
     try await coordinator.createThenRunPostCreateHook(
-      branch: "one", in: project, settings: fixture.worktreeSettings)
+      branch: "one",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let after = WorktreeRecords.directoriesToWatch(in: common)
     #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])
   }

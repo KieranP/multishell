@@ -43,17 +43,27 @@ extension AppModel {
   /// The store's half alone, for a caller that reconciles later. The task
   /// waits for the tab's first launch.
   private func addAgentTab(
-    _ agentID: String, in worktree: Worktree, group: TabGroup.ID?, task: String = ""
+    _ agentID: String,
+    in worktree: Worktree,
+    group: TabGroup.ID?,
+    task: String = "",
   ) {
     let tab = store.openTab(
-      in: worktree.id, group: group, title: agentDisplayName(agentID), agentID: agentID)
+      in: worktree.id,
+      group: group,
+      title: agentDisplayName(agentID),
+      agentID: agentID,
+    )
     if let tab, !task.isEmpty { pendingAgentTasks[tab.focusedSessionID] = task }
   }
 
   /// What a new tab is by default here, and the first tab a worktree gets
   /// when selected or created.
-  func addDefaultTab(in worktree: Worktree, for reason: TabOpeningReason, group: TabGroup.ID? = nil)
-  {
+  func addDefaultTab(
+    in worktree: Worktree,
+    for reason: TabOpeningReason,
+    group: TabGroup.ID? = nil,
+  ) {
     if let agent = defaultAgent(in: worktree, for: reason) {
       addAgentTab(agent.id, in: worktree, group: group, task: agent.task)
     } else {
@@ -64,7 +74,8 @@ extension AppModel {
   /// The agent that tab runs and its task, `nil` for a shell. The sheet's
   /// answer for a worktree it created stands over the settings.
   private func defaultAgent(
-    in worktree: Worktree, for reason: TabOpeningReason
+    in worktree: Worktree,
+    for reason: TabOpeningReason,
   ) -> (id: String, task: String)? {
     if reason == .onCreate, let firstTab = newWorktreeFirstTabs[worktree.id] {
       guard case .agent(let id, let task) = firstTab else { return nil }
@@ -89,11 +100,14 @@ extension AppModel {
     let project = effectiveProject(of: worktree)
     return switch reason {
     case .byUser: true
+
     case .onSelect:
       project.map(workspace.opensTerminalOnSelect(for:)) ?? workspace.opensTerminalOnSelect
+
     case .onCreate:
       newWorktreeFirstTabs[worktree.id]?.startsAgent == true
         || (project.map(workspace.opensTerminalOnCreate(for:)) ?? workspace.opensTerminalOnCreate)
+
     case .never: false
     }
   }

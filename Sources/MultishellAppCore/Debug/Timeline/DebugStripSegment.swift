@@ -13,8 +13,8 @@ public struct DebugStripSegment: Sendable, Equatable {
     return points.enumerated().map { (Double(firstIndex + $0.offset) + 0.5, $0.element) }
   }
 
-  public static func segments(in points: [DebugStripPoint?]) -> [DebugStripSegment] {
-    var segments: [DebugStripSegment] = []
+  public static func segments(in points: [DebugStripPoint?]) -> [Self] {
+    var segments: [Self] = []
     var start = 0
     var current: [DebugStripPoint] = []
     for (index, point) in points.enumerated() {
@@ -22,11 +22,11 @@ public struct DebugStripSegment: Sendable, Equatable {
         if current.isEmpty { start = index }
         current.append(point)
       } else if !current.isEmpty {
-        segments.append(DebugStripSegment(firstIndex: start, points: current))
+        segments.append(Self(firstIndex: start, points: current))
         current = []
       }
     }
-    if !current.isEmpty { segments.append(DebugStripSegment(firstIndex: start, points: current)) }
+    if !current.isEmpty { segments.append(Self(firstIndex: start, points: current)) }
     return segments
   }
 }

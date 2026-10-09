@@ -11,7 +11,9 @@ extension WorktreeGit {
       // One --force for a tree git cannot inspect, the second for a lock,
       // which stays on the record until this moment rather than being unlocked.
       _ = try await runner.run(
-        ["worktree", "remove", "--force", "--force", worktree.path.path], in: project.path)
+        ["worktree", "remove", "--force", "--force", worktree.path.path],
+        in: project.path,
+      )
     } catch let refusal {
       // A record git cannot match to the path; see Docs/design/worktrees.md.
       do {
@@ -34,7 +36,8 @@ extension WorktreeGit {
     guard
       let output = await runner.output(
         ["rev-parse", Self.absolutePathsFlag, "--show-toplevel", "--git-common-dir"],
-        in: worktree.path)
+        in: worktree.path,
+      )
     else {
       // git refusing the directory, over ownership or a timeout, proves nothing
       // about whose it is; the `.git` file git wrote there does.
@@ -43,7 +46,9 @@ extension WorktreeGit {
           return false
         }
         return Self.sameComparablePath(
-          record.deletingLastPathComponent(), WorktreeRecords.worktreesDirectory(in: common))
+          record.deletingLastPathComponent(),
+          WorktreeRecords.worktreesDirectory(in: common),
+        )
       }
     }
     let lines = Self.absolutePaths(in: output, from: worktree.path)
@@ -76,17 +81,22 @@ extension WorktreeGit {
   /// The directory under `<common>/worktrees` whose `gitdir` names `checkout`,
   /// absolute or, as `worktree.useRelativePaths` writes it, relative to itself.
   private func recordDirectory(
-    whoseGitdirNames checkout: URL, in project: Project
+    whoseGitdirNames checkout: URL,
+    in project: Project,
   ) async throws -> URL? {
     let records = WorktreeRecords.worktreesDirectory(in: try await commonGitDirectory(project))
     return await runOnDispatch {
       let names =
         (try? FileManager.default.contentsOfDirectory(
-          at: records, includingPropertiesForKeys: nil)) ?? []
+          at: records,
+          includingPropertiesForKeys: nil,
+        )) ?? []
       return names.first { record in
         guard
           let target = Self.directoryNamed(
-            inFile: record.appendingPathComponent("gitdir"), relativeTo: record)
+            inFile: record.appendingPathComponent("gitdir"),
+            relativeTo: record,
+          )
         else { return false }
         return Self.sameComparablePath(target.deletingLastPathComponent(), checkout)
       }

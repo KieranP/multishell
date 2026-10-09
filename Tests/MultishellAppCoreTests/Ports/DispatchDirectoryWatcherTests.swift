@@ -6,6 +6,10 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct DispatchDirectoryWatcherTests {
+  /// The event and the wait share a busy main actor, so this is far above the
+  /// 400 ms coalesce; a loaded runner has taken over ten seconds to deliver.
+  private let deliveryBound: Double = 30
+
   /// Call before the change: the watcher delivers once per coalesced burst, so a
   /// callback with no listener is lost. An `async let` around the change lost that race.
   private func changes(of watcher: DispatchDirectoryWatcher) -> Recorder<[URL]> {
@@ -13,10 +17,6 @@ struct DispatchDirectoryWatcherTests {
     watcher.onChange = { changes.record($0) }
     return changes
   }
-
-  /// The event and the wait share a busy main actor, so this is far above the
-  /// 400 ms coalesce; a loaded runner has taken over ten seconds to deliver.
-  private let deliveryBound: Double = 30
 
   @Test func aFileCreatedInAWatchedDirectoryFires() async throws {
     let directory = try Scratch.directory("watch")
@@ -27,7 +27,10 @@ struct DispatchDirectoryWatcherTests {
 
     let changed = changes(of: watcher)
     try "x".write(
-      to: directory.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("new.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     try await waitUntil({ changed.received.count > 0 }, seconds: deliveryBound)
     #expect(changed.received.count > 0)
@@ -56,7 +59,10 @@ struct DispatchDirectoryWatcherTests {
 
     let changed = changes(of: watcher)
     try "x".write(
-      to: directory.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("new.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     try await waitUntil({ changed.received.count > 0 }, seconds: deliveryBound)
     #expect(changed.received.count > 0, "the source is still on the unlinked inode")
@@ -72,7 +78,10 @@ struct DispatchDirectoryWatcherTests {
     let changed = changes(of: watcher)
     for i in 0..<20 {
       try "x".write(
-        to: directory.appendingPathComponent("f\(i)"), atomically: true, encoding: .utf8)
+        to: directory.appendingPathComponent("f\(i)"),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
 
     try await waitUntil({ changed.received.count > 0 }, seconds: deliveryBound)
@@ -181,7 +190,10 @@ struct DispatchDirectoryWatcherTests {
 
     let changed = changes(of: watcher)
     try "x".write(
-      to: superseded.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
+      to: superseded.appendingPathComponent("ignored"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try "x".write(to: current.appendingPathComponent("seen"), atomically: true, encoding: .utf8)
     try await waitUntil({ reported(current, in: changed) }, seconds: deliveryBound)
     #expect(reported(current, in: changed))
@@ -201,7 +213,10 @@ struct DispatchDirectoryWatcherTests {
     let changed = changes(of: watcher)
     let liveChanges = changes(of: live)
     try "x".write(
-      to: directory.appendingPathComponent("after-stop"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("after-stop"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     try await waitUntil({ liveChanges.received.count > 0 }, seconds: deliveryBound)
     #expect(liveChanges.received.count > 0)

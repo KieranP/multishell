@@ -3,6 +3,10 @@ import Foundation
 /// What a project's `.multishell.json` said when last read, and what it may
 /// say here. Per run: `Project` leaves it out of coding and equality.
 public struct SharedSettingsSnapshot: Equatable, Sendable {
+  /// A project whose file has not been read. Every field is the right answer
+  /// for that, `modificationDate` included: `needsRead` says yes to it.
+  static let unread = Self()
+
   /// The file's own words. For export, which writes them back; every other
   /// reader wants `confined`.
   public internal(set) var asWritten: SharedProjectSettings?
@@ -19,8 +23,11 @@ public struct SharedSettingsSnapshot: Equatable, Sendable {
   public internal(set) var hasBeenRead: Bool
 
   init(
-    asWritten: SharedProjectSettings? = nil, confined: SharedProjectSettings? = nil,
-    modificationDate: Date = .distantPast, problem: String? = nil, hasBeenRead: Bool = false
+    asWritten: SharedProjectSettings? = nil,
+    confined: SharedProjectSettings? = nil,
+    modificationDate: Date = .distantPast,
+    problem: String? = nil,
+    hasBeenRead: Bool = false,
   ) {
     self.asWritten = asWritten
     self.confined = confined
@@ -29,22 +36,18 @@ public struct SharedSettingsSnapshot: Equatable, Sendable {
     self.hasBeenRead = hasBeenRead
   }
 
-  /// A project whose file has not been read. Every field is the right answer
-  /// for that, `modificationDate` included: `needsRead` says yes to it.
-  static let unread = SharedSettingsSnapshot()
-
   /// Whether the file's date has moved since it was read, which is what a
   /// tick asks before spending a read. True for a project never read.
   public func needsRead(at modificationDate: Date) -> Bool {
     self.modificationDate != modificationDate || !hasBeenRead
   }
-}
 
-extension SharedSettingsSnapshot {
   /// A read that parsed, confined by the reader, which asks the disk. The
   /// date is recorded either way, so an unparsable file is not re-read.
   public mutating func recordParsed(
-    _ settings: SharedProjectSettings?, confined: SharedProjectSettings?, modificationDate: Date
+    _ settings: SharedProjectSettings?,
+    confined: SharedProjectSettings?,
+    modificationDate: Date,
   ) {
     asWritten = settings
     self.confined = confined

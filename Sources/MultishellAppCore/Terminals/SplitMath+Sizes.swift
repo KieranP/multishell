@@ -8,8 +8,8 @@ extension SplitMath {
   /// weights sum to nothing.
   public static func sizes(of weights: [Double], sharing available: Double) -> [Double] {
     let total = weights.reduce(0, +)
-    return weights.map {
-      total > 0 ? available * ($0 / total) : available / Double(weights.count)
+    return weights.map { weight in
+      total > 0 ? available * (weight / total) : available / Double(weights.count)
     }
   }
 }

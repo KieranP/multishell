@@ -12,6 +12,15 @@ public protocol Platform: AnyObject, Sendable {
   /// Whether a keyboard command should act on the workspace: in any other
   /// window Cmd+W closes that window, not a pane nobody can see.
   var workspaceWindowIsKey: Bool { get }
+
+  /// The helper binary shipped with this build, or `nil` outside a bundle.
+  /// `HelperLink` points the stable link at it on launch.
+  var bundledHelper: URL? { get }
+
+  /// Where the desktop grants notification permission, as the user would find
+  /// it. `nil` where there is no such place to name.
+  var notificationSettingsLocation: String? { get }
+
   func closeKeyWindow()
 
   /// A directory picker, or `nil` when the user cancels.
@@ -28,10 +37,6 @@ public protocol Platform: AnyObject, Sendable {
   func applicationURL(forIdentifier identifier: String) -> URL?
   /// Hands a directory to an application found by `applicationURL`.
   func open(_ directory: URL, withApplication application: URL) async throws
-
-  /// The helper binary shipped with this build, or `nil` outside a bundle.
-  /// `HelperLink` points the stable link at it on launch.
-  var bundledHelper: URL? { get }
   /// Links the helper somewhere on the default PATH, behind whatever
   /// privilege prompt the platform needs.
   func installCommandLineTool() throws
@@ -39,10 +44,6 @@ public protocol Platform: AnyObject, Sendable {
   /// The count on the app's icon, `nil` for no badge: the Agents board's
   /// Waiting column. A platform with no such place does nothing.
   func setBadgeCount(_ count: Int?)
-
-  /// Where the desktop grants notification permission, as the user would find
-  /// it. `nil` where there is no such place to name.
-  var notificationSettingsLocation: String? { get }
 
   /// A line for the platform's log, for what is worth a note but not an
   /// alert.

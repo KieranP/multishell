@@ -1,5 +1,7 @@
 import Foundation
 
+// Extensions group concerns in the one file every writer must share.
+// swiftlint:disable file_length no_grouping_extension
 /// The single place workspace state changes; see Docs/design/state-and-store.md.
 /// One file, not an extension per collection: `private` reaches no further.
 @Observable
@@ -98,7 +100,8 @@ extension WorkspaceStore {
   /// This run's read of a project's `.multishell.json`. A read saying what the
   /// last one did touches nothing: a mutation here is a whole-workspace save.
   public func setSharedSettingsSnapshot(
-    _ snapshot: SharedSettingsSnapshot, forProject id: Project.ID
+    _ snapshot: SharedSettingsSnapshot,
+    forProject id: Project.ID,
   ) {
     guard let index = workspace.projectIndex(id),
       workspace.projects[index].sharedSettingsSnapshot != snapshot
@@ -117,7 +120,8 @@ extension WorkspaceStore {
   /// the ones that went. A refresh landing after a removal resurrects nothing.
   @discardableResult
   public func replaceWorktrees(
-    _ discovered: [Worktree], forProject id: Project.ID
+    _ discovered: [Worktree],
+    forProject id: Project.ID,
   )
     -> [Worktree.ID]
   {
@@ -145,7 +149,10 @@ extension WorkspaceStore {
   /// A row's worktree can be stale by the time the click lands, if a refresh
   /// dropped it in between; selecting nothing beats selecting a ghost.
   public func selectWorktree(_ id: Worktree.ID?) {
-    guard let id else { return workspace.selectedWorktreeID = nil }
+    guard let id else {
+      workspace.selectedWorktreeID = nil
+      return
+    }
     guard workspace.worktree(id) != nil else { return }
     workspace.selectedWorktreeID = id
   }
@@ -181,7 +188,7 @@ extension WorkspaceStore {
     group: TabGroup.ID? = nil,
     title: String? = nil,
     command: [String]? = nil,
-    agentID: String? = nil
+    agentID: String? = nil,
   ) -> TerminalTab? {
     guard
       let session = makeSession(in: worktreeID, title: title, command: command, agentID: agentID),
@@ -206,7 +213,9 @@ extension WorkspaceStore {
   /// worktree; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor: TerminalTab.ID
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    anchor: TerminalTab.ID,
   ) -> Bool {
     guard
       let movingIndex = workspace.tabIndex(id),
@@ -218,8 +227,10 @@ extension WorkspaceStore {
     // Taking the tab out shifts the anchor down by one where it sat after it.
     let landing = anchorIndex > movingIndex ? anchorIndex - 1 : anchorIndex
     relocate(
-      id, into: workspace.tabs[anchorIndex].groupID,
-      at: placement == .before ? landing : landing + 1)
+      id,
+      into: workspace.tabs[anchorIndex].groupID,
+      at: placement == .before ? landing : landing + 1,
+    )
     return true
   }
 
@@ -306,7 +317,9 @@ extension WorkspaceStore {
   /// half its width. `nil` when nothing moved, so the drag springs back.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, toNewGroupOf neighbour: TabGroup.ID
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    toNewGroupOf neighbour: TabGroup.ID,
   ) -> TabGroup? {
     guard
       let tabIndex = workspace.tabIndex(id),
@@ -337,11 +350,10 @@ extension WorkspaceStore {
     guard weights.count == groups.count, LayoutWeight.allUsable(weights) else {
       return
     }
-    var next = weights.makeIterator()
-    for index in workspace.tabGroups.indices
-    where workspace.tabGroups[index].worktreeID == worktreeID {
-      workspace.tabGroups[index].weight = next.next()!
+    let indices = workspace.tabGroups.indices.filter { index in
+      workspace.tabGroups[index].worktreeID == worktreeID
     }
+    for (index, weight) in zip(indices, weights) { workspace.tabGroups[index].weight = weight }
   }
 
   /// Which group the worktree's keystrokes go to. A click in a pane does
@@ -392,7 +404,9 @@ extension WorkspaceStore {
   }
 
   private func reselectShownTab(
-    ofGroupAt index: Int, among remaining: [TerminalTab], vacating slot: Int?
+    ofGroupAt index: Int,
+    among remaining: [TerminalTab],
+    vacating slot: Int?,
   ) {
     if let shown = workspace.tabGroups[index].shownTabID,
       remaining.contains(where: { $0.id == shown })
@@ -447,7 +461,9 @@ extension WorkspaceStore {
   /// Splits the focused pane of a tab, the new pane taking the focus.
   @discardableResult
   public func splitFocusedPane(
-    of tabID: TerminalTab.ID, axis: SplitAxis, command: [String]? = nil
+    of tabID: TerminalTab.ID,
+    axis: SplitAxis,
+    command: [String]? = nil,
   ) -> TerminalSession? {
     guard let index = workspace.tabIndex(tabID) else { return nil }
     let tab = workspace.tabs[index]
@@ -457,7 +473,10 @@ extension WorkspaceStore {
 
     workspace.sessions.append(session)
     workspace.tabs[index].root = tab.root.splitting(
-      tab.focusedSessionID, with: session.id, axis: axis)
+      tab.focusedSessionID,
+      with: session.id,
+      axis: axis,
+    )
     workspace.tabs[index].focusedSessionID = session.id
     return session
   }
@@ -474,7 +493,7 @@ extension WorkspaceStore {
     in worktreeID: Worktree.ID,
     title: String?,
     command: [String]?,
-    agentID: String? = nil
+    agentID: String? = nil,
   ) -> TerminalSession? {
     guard let worktree = workspace.worktree(worktreeID) else { return nil }
     return TerminalSession(
@@ -482,7 +501,7 @@ extension WorkspaceStore {
       workingDirectory: worktree.path,
       title: title ?? defaultTitle(for: command),
       command: command,
-      agentID: agentID
+      agentID: agentID,
     )
   }
 
@@ -597,3 +616,4 @@ extension WorkspaceStore {
     workspace.gitStatusIndicator = indicator
   }
 }
+// swiftlint:enable no_grouping_extension

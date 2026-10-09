@@ -5,17 +5,17 @@ import SwiftUI
 /// Under the chip: each worker's name and description under its parent, and
 /// its time out. Not its tool, which flashed; see Docs/design/agents.md.
 struct WorkerList: View {
-  let workers: [Worker]
-  let theme: Theme
-  let metrics: UIMetrics
-
-  @State private var now = Date()
-
   private static let rowSpacing: CGFloat = 7
   /// A description runs to 200 characters, which is cut short of this.
   static let maximumWidth: CGFloat = 420
   /// A nested worker's dot sits under its parent's name.
   private static let nestingIndent = UIMetrics.inlineStateDotDiameter + rowSpacing
+
+  let workers: [Worker]
+  let theme: Theme
+  let metrics: UIMetrics
+
+  @State private var now = Date()
 
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
@@ -31,7 +31,9 @@ struct WorkerList: View {
         let worker = nested.worker
         HStack(spacing: Self.rowSpacing) {
           StateDot(
-            state: worker.shownState, theme: theme, diameter: UIMetrics.inlineStateDotDiameter
+            state: worker.shownState,
+            theme: theme,
+            diameter: UIMetrics.inlineStateDotDiameter,
           )
           .padding(.leading, CGFloat(nested.depth) * Self.nestingIndent)
           Text(worker.displayName)

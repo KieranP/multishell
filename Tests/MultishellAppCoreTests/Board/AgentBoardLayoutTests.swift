@@ -27,7 +27,10 @@ struct AgentBoardLayoutTests {
   @Test func exactlyTheFloorDoesNotScroll() {
     let layout = AgentBoardLayout(available: floor * 4, count: 4, minimum: floor)
     #expect(layout.columnWidth == floor)
-    #expect(!layout.scrolls, "asked of the share, so a board that divides exactly is not a toss-up")
+    #expect(
+      !layout.scrolls,
+      "asked of the share, so a board that divides exactly is not a toss-up",
+    )
   }
 
   /// A window dragged narrow enough reaches this, and reading it as "no

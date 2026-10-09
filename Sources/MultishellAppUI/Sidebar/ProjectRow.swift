@@ -4,7 +4,7 @@ import SwiftUI
 
 /// A project in the sidebar: its chevron, icon, name, and the + that
 /// starts a new worktree. Its worktrees are `WorktreeRow`s below it.
-struct ProjectRow: View {
+struct ProjectRow: View, @MainActor Equatable {
   let project: Project
   /// What is on screen, which the filter can hold open over the stored flag.
   let isExpanded: Bool
@@ -57,14 +57,19 @@ struct ProjectRow: View {
           .scaleEffect(0.7)
           .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.fetching"))
+
       case .state(let state):
         StateDot(state: state, theme: theme)
           .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.collapsed-state", state.displayName))
+
       case .icon:
         ProjectIconView(
-          settings: settings, isMissing: isMissing, ringFill: theme.sidebarColor, theme: theme,
-          size: metrics.glyph
+          settings: settings,
+          isMissing: isMissing,
+          ringFill: theme.sidebarColor,
+          theme: theme,
+          size: metrics.glyph,
         )
         .help(project.path.path)
       }
@@ -82,8 +87,13 @@ struct ProjectRow: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
       AccessibilityText.project(
-        name: project.name, isExpanded: isExpanded, isMissing: isMissing, state: state,
-        worktreeCount: worktreeCount, isFetching: isFetching)
+        name: project.name,
+        isExpanded: isExpanded,
+        isMissing: isMissing,
+        state: state,
+        worktreeCount: worktreeCount,
+        isFetching: isFetching,
+      )
     )
     .accessibilityAddTraits(.isButton)
     .accessibilityAction(named: expansionActionName, toggleExpansion)
@@ -99,14 +109,13 @@ struct ProjectRow: View {
         .font(.system(size: metrics.glyph))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sidebarRowButtonWidth)
+        .accessibilityHidden(true)
     }
   }
-}
 
-/// Everything but the closures, which capture only the project; see
-/// `WorktreeRow`'s.
-extension ProjectRow: @MainActor Equatable {
-  static func == (a: ProjectRow, b: ProjectRow) -> Bool {
+  /// Everything but the closures, which capture only the project; see
+  /// `WorktreeRow`'s.
+  static func == (a: Self, b: Self) -> Bool {
     a.project == b.project && a.isExpanded == b.isExpanded && a.settings == b.settings
       && a.isMissing == b.isMissing
       && a.state == b.state && a.worktreeCount == b.worktreeCount

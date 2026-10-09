@@ -9,7 +9,8 @@ extension WorktreeSettingsPathsTests {
     let home = FileManager.default.homeDirectoryForCurrentUser.path
     #expect(
       WorktreeSettings(worktreeDirectory: "~/trees").worktreeContainer(for: project).path
-        == "\(home)/trees")
+        == "\(home)/trees"
+    )
     #expect(WorktreeSettings(worktreeDirectory: "~").worktreeContainer(for: project).path == home)
   }
 

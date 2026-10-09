@@ -61,7 +61,8 @@ struct AppModelFindTests {
       harness.engine.searched.map(\.command) == [
         .find("make"), .nearest, .previous, .next,
         .find("grep"), .nearest, .next,
-      ])
+      ]
+    )
   }
 
   @Test func reopeningABarStartsItsSearchAgainFromNearestThePrompt() {
@@ -96,13 +97,16 @@ struct AppModelFindTests {
     harness.model.closeFind()
     #expect(
       harness.model.findBarSessionIDs == [second],
-      "the field's own bar closed, not the focused pane's")
+      "the field's own bar closed, not the focused pane's",
+    )
     #expect(harness.engine.focused.last == first)
 
     harness.model.noteFindField(focused: false, of: first)
     harness.model.findNext()
     #expect(
-      harness.engine.searched.last?.id == second, "with no field focused, the pane in view's bar")
+      harness.engine.searched.last?.id == second,
+      "with no field focused, the pane in view's bar",
+    )
   }
 
   @Test func nextAndPreviousMoveOnlyOnceSomethingIsTyped() {
@@ -189,7 +193,9 @@ struct AppModelFindTests {
 
     harness.model.closeFind()
     #expect(
-      harness.model.findBarSessionIDs == [first], "no bar on the pane in view, nothing to close")
+      harness.model.findBarSessionIDs == [first],
+      "no bar on the pane in view, nothing to close",
+    )
   }
 
   @Test func findAsksForTheFieldOnceAndAgainOnEveryCmdFAndSearchesNothingTwice() {
@@ -275,13 +281,14 @@ struct AppModelFindTests {
     #expect(harness.model.findBarSessionIDs == [first])
     #expect(
       harness.engine.searched.map(\.id) == [first],
-      "the first pane's search was neither moved nor ended")
+      "the first pane's search was neither moved nor ended",
+    )
 
     harness.model.showFind()
     #expect(harness.model.findBarSessionIDs == [first, other])
     #expect(
       harness.model.findText(of: other) == "",
-      "a new bar starts empty, not with another pane's find text"
+      "a new bar starts empty, not with another pane's find text",
     )
   }
 

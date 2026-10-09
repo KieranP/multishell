@@ -63,7 +63,7 @@ One shell tab, idle, debug tools off: 193 MB.
 - **Opening a tab briefly charges about 217 MB of GPU memory** before it settles
   near 117 MB; four 32 MB surfaces were made, not three. Not traced further.
 - **Debug Info added 105 to 117 MB while open**, from its `Canvas` strips, now
-  shapes (debug-tools.md).
+  shapes (design/debug-tools.md).
 
 ## Freed memory is kept, not leaked
 

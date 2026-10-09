@@ -6,7 +6,9 @@ import Testing
 
 extension AgentHookIntegrationReportsTests {
   private func state(
-    _ integration: AgentHookIntegration, _ event: String, mode: String? = nil
+    _ integration: AgentHookIntegration,
+    _ event: String,
+    mode: String? = nil,
   ) -> SessionState? {
     integration.event(for: AgentHookPayload(eventName: event, permissionMode: mode))?.state
   }
@@ -19,7 +21,8 @@ extension AgentHookIntegrationReportsTests {
     #expect(claude.events.first { $0.name == "SubagentStop" }?.subagentPhase == .ended)
     #expect(
       claude.events.filter { $0.subagentPhase != nil }.count == 2,
-      "one event each way, or a worker never leaves the roster")
+      "one event each way, or a worker never leaves the roster",
+    )
   }
 
   /// Ctrl+C fires no hook and the workers it killed send no stop, so the
@@ -29,12 +32,14 @@ extension AgentHookIntegrationReportsTests {
     #expect(claude.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true)
     #expect(claude.events.filter(\.isPrompt).count == 1)
     #expect(
-      AgentHookCatalogue.codex.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true)
+      AgentHookCatalogue.codex.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true
+    )
     #expect(
       AgentHookCatalogue.copilot.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true
     )
     #expect(
-      AgentHookCatalogue.gemini.events.first { $0.name == "BeforeAgent" }?.isPrompt == true)
+      AgentHookCatalogue.gemini.events.first { $0.name == "BeforeAgent" }?.isPrompt == true
+    )
   }
 
   @Test func eachAgentsEventsMapToTheStatesTheyStandFor() {
@@ -51,7 +56,10 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(claude, "SessionStart") == .idle)
     #expect(state(claude, "SubagentStart") == .running)
     #expect(state(claude, "SubagentStop") == .running, "the agent is still working")
-    #expect(state(claude, "PostToolUseFailure") == .running, "a tool failing is not a turn failing")
+    #expect(
+      state(claude, "PostToolUseFailure") == .running,
+      "a tool failing is not a turn failing",
+    )
     #expect(state(claude, "Elicitation") == .attention)
     #expect(state(claude, "Elicitation", mode: "auto") == .attention, "no classifier answers it")
     #expect(state(claude, "ElicitationResult") == .running)
@@ -87,10 +95,13 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(codex, "PermissionRequest", mode: "dontAsk") == nil)
     #expect(state(codex, "PermissionRequest", mode: "bypassPermissions") == nil)
     #expect(
-      state(codex, "PermissionRequest", mode: nil) == .attention, "said nothing: assume it asks")
+      state(codex, "PermissionRequest", mode: nil) == .attention,
+      "said nothing: assume it asks",
+    )
     #expect(
       state(codex, "PermissionRequest", mode: "a-mode-from-a-later-codex") == .attention,
-      "a blue dot too early beats one that never comes")
+      "a blue dot too early beats one that never comes",
+    )
     #expect(state(codex, "Stop", mode: "dontAsk") == .done, "the mode governs that event only")
   }
 
@@ -104,7 +115,8 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(claude, "PermissionRequest", mode: "bypassPermissions") == nil)
     #expect(
       state(claude, "Notification", mode: "auto") == .attention,
-      "the mode governs that event only")
+      "the mode governs that event only",
+    )
   }
 
   /// Claude reports a standing prompt twice, immediately and again six
@@ -116,11 +128,15 @@ extension AgentHookIntegrationReportsTests {
     #expect(request.state == notification.state)
     #expect(request.isSilent)
     #expect(!notification.isSilent)
-    #expect(claude.events.filter(\.isSilent).map(\.name) == ["PermissionRequest", "Elicitation"])
     #expect(
-      AgentHookCatalogue.integrations.allSatisfy {
-        $0.events.filter(\.isSilent).allSatisfy { $0.state == .attention }
-      }, "only the immediate half of a prompt goes unheard")
+      claude.events.filter(\.isSilent).map { $0.name } == ["PermissionRequest", "Elicitation"]
+    )
+    #expect(
+      AgentHookCatalogue.integrations.allSatisfy { integration in
+        integration.events.filter(\.isSilent).allSatisfy { $0.state == .attention }
+      },
+      "only the immediate half of a prompt goes unheard",
+    )
   }
 
   /// An MCP server's question comes as Elicitation at once and as a Notification
@@ -130,7 +146,9 @@ extension AgentHookIntegrationReportsTests {
     let elicitation = try #require(claude.event(for: AgentHookPayload(eventName: "Elicitation")))
     let notification = try #require(
       claude.event(
-        for: AgentHookPayload(eventName: "Notification", notificationType: "elicitation_dialog")))
+        for: AgentHookPayload(eventName: "Notification", notificationType: "elicitation_dialog")
+      )
+    )
     #expect(elicitation.isSilent)
     #expect(!notification.isSilent)
     #expect(elicitation.state == notification.state)
@@ -163,17 +181,22 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(nil) == .attention, "a Claude from before the field keeps its banner")
     #expect(
       state("plan_approval_prompt") == .attention,
-      "a type this build has not heard of is taken to ask; see Docs/design/agents.md")
+      "a type this build has not heard of is taken to ask; see Docs/design/agents.md",
+    )
     #expect(
       claude.event(for: AgentHookPayload(eventName: "Stop", notificationType: "idle_prompt"))?
-        .state == .done, "the types govern that event only")
+        .state == .done,
+      "the types govern that event only",
+    )
     #expect(
       claude.events.allSatisfy { $0.state == .attention || $0.ignoredNotificationTypes.isEmpty },
-      "no event but a question is filtered by type")
+      "no event but a question is filtered by type",
+    )
     #expect(
       AgentHookCatalogue.integrations.filter { $0.id != AgentCatalogue.claudeID }
         .allSatisfy { $0.events.allSatisfy(\.ignoredNotificationTypes.isEmpty) },
-      "Claude is the only agent whose payload names a type")
+      "Claude is the only agent whose payload names a type",
+    )
   }
 
   /// Copilot takes `notification` in its file and reports `Notification`;
@@ -195,10 +218,12 @@ extension AgentHookIntegrationReportsTests {
     #expect(event.matcher == "permission_prompt|elicitation_dialog")
     #expect(
       AgentHookCatalogue.copilot.events.allSatisfy { $0.state == .attention || $0.matcher == nil },
-      "nothing else needs filtering")
+      "nothing else needs filtering",
+    )
     #expect(
       AgentHookCatalogue.gemini.events.allSatisfy { $0.matcher == nil },
-      "Gemini raises a Notification for a tool permission and nothing else")
+      "Gemini raises a Notification for a tool permission and nothing else",
+    )
   }
 
   @Test func codexNamesASubagentAsClaudeDoes() throws {
@@ -209,13 +234,18 @@ extension AgentHookIntegrationReportsTests {
       AgentHookPayload(
         json: Data(
           #"{"hook_event_name":"PreToolUse","agent_id":"t2","agent_type":"worker","tool_name":"shell"}"#
-            .utf8)))
+            .utf8
+        )
+      )
+    )
     #expect(
       codex.event(for: inCodex)?.workerChange(for: inCodex)
-        == WorkerReport(id: "t2", type: "worker", phase: .working))
+        == WorkerReport(id: "t2", phase: .working, type: "worker")
+    )
     #expect(
       AgentHookCatalogue.gemini.events.allSatisfy { $0.subagentPhase == nil },
-      "Gemini says nothing about a subagent to a hook")
+      "Gemini says nothing about a subagent to a hook",
+    )
   }
 
   /// Captured from Copilot 1.0.87: a subagent is a conversation of its own,
@@ -230,40 +260,53 @@ extension AgentHookIntegrationReportsTests {
     }
 
     let childStop = try payload(
-      #"{"hook_event_name":"Stop","session_id":"\#(child)","transcript_path":"\#(transcript)"}"#)
+      #"{"hook_event_name":"Stop","session_id":"\#(child)","transcript_path":"\#(transcript)"}"#
+    )
     #expect(copilot.event(for: childStop) == nil)
     let ownStop = try payload(
-      #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"\#(transcript)"}"#)
+      #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"\#(transcript)"}"#
+    )
     #expect(copilot.event(for: ownStop)?.state == .done)
     let fileNamedForItself = try payload(
       #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"/Users/dev/.copilot/session-state/\#(parent).jsonl"}"#
     )
     #expect(
       copilot.event(for: fileNamedForItself)?.state == .done,
-      "a transcript naming the conversation anywhere is its own")
+      "a transcript naming the conversation anywhere is its own",
+    )
     #expect(
       AgentHookCatalogue.claude.event(for: childStop)?.state == .done,
-      "only an agent that runs workers as conversations is read this way")
+      "only an agent that runs workers as conversations is read this way",
+    )
 
     let childTool = try payload(
-      #"{"hook_event_name":"PreToolUse","session_id":"\#(child)","tool_name":"Bash"}"#)
+      #"{"hook_event_name":"PreToolUse","session_id":"\#(child)","tool_name":"Bash"}"#
+    )
     #expect(
       copilot.report(for: childTool, sessionID: nil, workingDirectory: nil, pid: nil)?
-        .conversationID == child)
+        .conversationID == child
+    )
     #expect(
       AgentHookCatalogue.claude.report(
-        for: childTool, sessionID: nil, workingDirectory: nil, pid: nil)?
-        .conversationID
-        == nil)
+        for: childTool,
+        sessionID: nil,
+        workingDirectory: nil,
+        pid: nil,
+      )?
+      .conversationID
+        == nil
+    )
 
     let end = try payload(
       #"{"hook_event_name":"SubagentStop","session_id":"\#(parent)","transcript_path":"\#(transcript)","agent_id":"\#(child)","agent_type":"general-purpose","agent_name":"general-purpose"}"#
     )
     #expect(
       copilot.event(for: end)?.workerChange(for: end)
-        == WorkerReport(id: child, type: "general-purpose", phase: .ended))
+        == WorkerReport(id: child, phase: .ended, type: "general-purpose")
+    )
     #expect(
       !copilot.events.contains { $0.name == "SubagentStart" },
-      "its start names no id, and arrives in a spelling no event is read in")
+      "its start names no id, and arrives in a spelling no event is read in",
+    )
   }
 }

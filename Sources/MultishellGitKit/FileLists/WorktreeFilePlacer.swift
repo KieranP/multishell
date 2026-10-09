@@ -19,8 +19,11 @@ struct WorktreeFilePlacer {
   private let resolvedWorktree: URL
 
   init(
-    _ placement: WorktreeFilePlacement, from repository: URL, to worktree: URL,
-    isRepositoryList: Bool, isStopRequested: @escaping @Sendable () -> Bool
+    _ placement: WorktreeFilePlacement,
+    from repository: URL,
+    to worktree: URL,
+    isRepositoryList: Bool,
+    isStopRequested: @escaping @Sendable () -> Bool,
   ) {
     self.placement = placement
     self.repository = repository
@@ -29,6 +32,11 @@ struct WorktreeFilePlacer {
     self.isStopRequested = isStopRequested
     resolvedRepository = repository.resolvingSymlinksInPath()
     resolvedWorktree = worktree.resolvingSymlinksInPath()
+  }
+
+  /// Whether `url`, symlinks resolved, is `base` or something under it.
+  private static func isInside(_ url: URL, under base: URL) -> Bool {
+    url.resolvingSymlinksInPath().pathComponents(under: base) != nil
   }
 
   /// One expanded path. Throws only a stop, any other error being that
@@ -43,7 +51,8 @@ struct WorktreeFilePlacer {
     guard manager.fileExists(atPath: source.path) else { return .done }
     let landsInWorktree = Self.isInside(
       destination.deletingLastPathComponent().splitAtDeepestExisting().existing,
-      under: resolvedWorktree)
+      under: resolvedWorktree,
+    )
     if isRepositoryList {
       // Each end as on disk, the source itself included: `copyItem` carries
       // a symlink rather than following it. See Docs/design/hooks.md.
@@ -52,7 +61,8 @@ struct WorktreeFilePlacer {
         Self.isInside(source, under: resolvedRepository)
       else {
         return .failed(
-          WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape()))
+          WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape())
+        )
       }
     } else if !landsInWorktree {
       // The destination is mirrored from the entry rather than asked for,
@@ -62,12 +72,15 @@ struct WorktreeFilePlacer {
     guard !destination.hasEntryOnDisk else { return .done }
     do {
       try manager.createDirectory(
-        at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        at: destination.deletingLastPathComponent(),
+        withIntermediateDirectories: true,
+      )
       switch placement {
       case .link:
         // The repository's path unresolved, so the link reads as the
         // checkout the user sees. Absolute, as git records one.
         try manager.createSymbolicLink(at: destination, withDestinationURL: source)
+
       case .copy:
         try WorktreeFileCopy.copy(source, to: destination, isStopRequested: isStopRequested)
       }
@@ -77,10 +90,5 @@ struct WorktreeFilePlacer {
       return .failed(WorktreeFileFailure.PathFailure(path: path, underlying: error))
     }
     return .done
-  }
-
-  /// Whether `url`, symlinks resolved, is `base` or something under it.
-  private static func isInside(_ url: URL, under base: URL) -> Bool {
-    url.resolvingSymlinksInPath().pathComponents(under: base) != nil
   }
 }

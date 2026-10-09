@@ -10,7 +10,8 @@ extension View {
       DestructiveAlert.make(
         title: pending.title,
         message: t("dialog.agent-still-working"),
-        choices: [pending.buttonLabel])
+        choices: [pending.buttonLabel],
+      )
     } answer: { pending, choice in
       model.answerClose(pending, confirmed: choice != nil)
     }

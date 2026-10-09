@@ -9,12 +9,13 @@ extension View {
       model.presentedPlainError?.title ?? "",
       isPresented: Binding(
         get: { model.presentedPlainError != nil },
-        set: {
-          if !$0, let error = model.presentedPlainError {
+        set: { isPresented in
+          if !isPresented, let error = model.presentedPlainError {
             model.answerPresentedError(error, retrying: false)
           }
-        }),
-      presenting: model.presentedPlainError
+        },
+      ),
+      presenting: model.presentedPlainError,
     ) { _ in
     } message: { error in
       Text(error.message)
@@ -23,7 +24,8 @@ extension View {
       DestructiveAlert.make(
         title: error.title,
         message: error.message,
-        choices: error.retry.map { [$0.label] } ?? [])
+        choices: error.retry.map { [$0.label] } ?? [],
+      )
     } answer: { error, choice in
       model.answerPresentedError(error, retrying: choice != nil)
     }

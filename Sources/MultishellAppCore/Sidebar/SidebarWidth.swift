@@ -16,7 +16,9 @@ public enum SidebarWidth {
   /// Where a drag leaves the sidebar, `start` being its width as the drag
   /// began, held to what the window has room for now.
   public static func dragged(
-    from start: Double, by translation: Double, in range: ClosedRange<Double>
+    from start: Double,
+    by translation: Double,
+    in range: ClosedRange<Double>,
   ) -> Double {
     (start.clamped(to: range) + translation).clamped(to: range)
   }

@@ -7,10 +7,12 @@ extension AgentHookIntegration {
       var hooks: [String: Any] = [:]
       for event in events { hooks[event.name] = [ourGroup(for: event, helper: helper)] }
       return ["hooks": hooks]
+
     case .ownHookFile:
       var hooks: [String: Any] = [:]
       for event in events { hooks[event.name] = [handler(event, helper: helper)] }
       return ["version": 1, "hooks": hooks]
+
     case .plugin:
       return [:]
     }
@@ -40,9 +42,11 @@ extension AgentHookIntegration {
     switch format {
     case .userSettingsFile(let timeoutIsInMilliseconds):
       handler["timeout"] = timeoutIsInMilliseconds ? timeout * 1000 : timeout
+
     case .ownHookFile:
       handler["timeoutSec"] = timeout
       if let matcher = event.matcher { handler["matcher"] = matcher }
+
     case .plugin:
       break
     }

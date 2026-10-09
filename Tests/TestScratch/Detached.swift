@@ -8,33 +8,47 @@ import System
 /// the test run's terminal, where an interactive shell stops on SIGTTIN.
 public enum Detached {
   public enum StandardError: Sendable {
-    case withOutput
     case discarded
+    case withOutput
   }
 
   /// Everything the child wrote before it and every inheritor of its output
   /// closed it. `environment` is the whole environment, nothing inherited.
   public static func output(
-    of executable: String, _ arguments: [String], environment: [String: String],
-    in directory: URL? = nil, input: String = "", standardError: StandardError = .withOutput
+    of executable: String,
+    _ arguments: [String],
+    environment: [String: String],
+    in directory: URL? = nil,
+    input: String = "",
+    standardError: StandardError = .withOutput,
   ) async throws -> String {
     let configuration = Configuration(
-      executable: .path(FilePath(executable)), arguments: Arguments(arguments),
+      executable: .path(FilePath(executable)),
+      arguments: Arguments(arguments),
       environment: .custom(
         Dictionary(
-          uniqueKeysWithValues: environment.map { (Environment.Key(stringLiteral: $0), $1) })),
+          uniqueKeysWithValues: environment.map { (Environment.Key(stringLiteral: $0), $1) }
+        )
+      ),
       workingDirectory: directory.map { FilePath($0.path) },
-      platformOptions: DetachedLaunch.platformOptions)
+      platformOptions: DetachedLaunch.platformOptions,
+    )
     let limit = 16 << 20
     switch standardError {
     case .withOutput:
       return try await run(
-        configuration, input: .string(input), output: .string(limit: limit),
-        error: .combinedWithOutput
+        configuration,
+        input: .string(input),
+        output: .string(limit: limit),
+        error: .combinedWithOutput,
       ).standardOutput
+
     case .discarded:
       return try await run(
-        configuration, input: .string(input), output: .string(limit: limit), error: .discarded
+        configuration,
+        input: .string(input),
+        output: .string(limit: limit),
+        error: .discarded,
       ).standardOutput
     }
   }

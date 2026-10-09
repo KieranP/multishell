@@ -9,6 +9,8 @@ extension EditorCatalogue {
     let token = "{path}"
     let line = trimmed.contains(token) ? trimmed : "\(trimmed) \(token)"
     return ShellLine(
-      line, substituting: [token: (WorktreePlaceholder.worktreePath.variable, path.path)])
+      line,
+      substituting: [token: (WorktreePlaceholder.worktreePath.variable, path.path)],
+    )
   }
 }

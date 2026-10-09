@@ -30,10 +30,12 @@ struct PresentedErrorWorktreeAlertsTests {
 
   @Test func aTrashThatTookNothingSaysSoInTheReadersLanguage() {
     let presented = PresentedError(
-      TrashFailure(path: URL(fileURLWithPath: "/w/feature"), underlying: TrashTookNothing()))
+      TrashFailure(path: URL(fileURLWithPath: "/w/feature"), underlying: TrashTookNothing())
+    )
     #expect(
       presented.title
-        == "Worktree not removed: the directory could not be moved to the Trash or deleted")
+        == "Worktree not removed: the directory could not be moved to the Trash or deleted"
+    )
     #expect(presented.message.contains("/w/feature"))
     #expect(presented.message.contains("The directory is still there."))
     #expect(!presented.message.contains("TrashTookNothing"))

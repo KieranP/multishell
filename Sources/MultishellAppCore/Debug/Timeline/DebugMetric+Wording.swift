@@ -18,6 +18,7 @@ extension DebugMetric {
     return switch self {
     case .frameRate:
       slot.framesPerSecond.map(DebugValueText.framesPerSecond) ?? DebugValueText.noValue
+
     case .cpu: DebugValueText.percent(slot.totalCPUPercent)
     case .gitRuns: DebugValueText.perSecond(slot.gitRunsStartedPerSecond)
     case .stateReports: DebugValueText.perSecond(slot.stateReportsPerSecond)
@@ -36,14 +37,22 @@ extension DebugMetric {
     switch self {
     case .cpu:
       t(
-        "debug.split", DebugValueText.percent(slot.appCPUPercent),
-        DebugValueText.percent(slot.childrenCPUPercent))
+        "debug.split",
+        DebugValueText.percent(slot.appCPUPercent),
+        DebugValueText.percent(slot.childrenCPUPercent),
+      )
+
     case .memory:
       t(
-        "debug.split-memory", DebugValueText.memory(slot.appMemoryOutsideTerminals),
-        DebugValueText.memory(slot.terminalMemory), DebugValueText.memory(slot.childrenMemory))
+        "debug.split-memory",
+        DebugValueText.memory(slot.appMemoryOutsideTerminals),
+        DebugValueText.memory(slot.terminalMemory),
+        DebugValueText.memory(slot.childrenMemory),
+      )
+
     case .gitRuns where slot.gitRunningCount > 0:
       t("count.git-running", slot.gitRunningCount)
+
     case .frameRate, .gitRuns, .stateReports:
       nil
     }

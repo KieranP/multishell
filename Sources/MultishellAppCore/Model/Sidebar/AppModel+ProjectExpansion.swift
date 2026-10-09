@@ -5,7 +5,8 @@ extension AppModel {
   /// text alone, as the filter opened it; otherwise it sets the stored flag.
   public func toggleExpansion(of project: Project) {
     guard isFilteringSidebar else {
-      return setExpanded(!project.isExpanded, for: project)
+      setExpanded(!project.isExpanded, for: project)
+      return
     }
     guard projectsCollapsedWhileFiltering.contains(project.id) else {
       projectsCollapsedWhileFiltering.insert(project.id)

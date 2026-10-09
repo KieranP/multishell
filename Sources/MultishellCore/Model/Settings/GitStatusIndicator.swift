@@ -9,7 +9,7 @@ public enum GitStatusIndicator: String, Codable, Hashable, Sendable, CaseIterabl
 
   /// What people work in most of the time is unstaged, so a badge counting
   /// the index alone would read zero through most of a change.
-  public static let `default` = GitStatusIndicator.stagedAndUnstaged
+  public static let `default` = Self.stagedAndUnstaged
 
   public var displayName: String {
     switch self {

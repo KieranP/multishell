@@ -21,8 +21,9 @@ enum WorktreeFileCopy {
     // the copy reads as whole where `copyItem` would have thrown.
     var unread: (any Error)?
     let entries = manager.enumerator(
-      at: source, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
-      options: [.producesRelativePathURLs]
+      at: source,
+      includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+      options: [.producesRelativePathURLs],
     ) { _, error in
       unread = error
       return false

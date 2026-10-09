@@ -4,7 +4,8 @@ import Foundation
 /// the merging itself is in `+Merging`. See Docs/design/agents.md.
 extension AgentHookIntegration {
   public func install(
-    into file: URL? = nil, helper: String = AgentHookCatalogue.helperReference
+    into file: URL? = nil,
+    helper: String = AgentHookCatalogue.helperReference,
   ) throws {
     let file = file ?? self.file
     if format.isOursAlone {

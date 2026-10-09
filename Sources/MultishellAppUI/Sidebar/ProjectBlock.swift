@@ -22,7 +22,9 @@ struct ProjectBlock: View {
     let metrics = model.metrics
     let rows = isExpanded ? worktrees.map(model.sidebarWorktree) : []
     let insertion = projectInsertion?.insertionPlacement(
-      on: project.id, isDragging: model.draggedProjectID != nil)
+      on: project.id,
+      isDragging: model.draggedProjectID != nil,
+    )
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
       projectRow(metrics: metrics)
@@ -49,8 +51,9 @@ struct ProjectBlock: View {
           // project of ours moves nothing.
           if let moving { model.moveProject(moving, placement, of: project.id) }
           endProjectDrag()
-        }
-      ))
+        },
+      ),
+    )
   }
 
   private func projectRow(metrics: UIMetrics) -> some View {
@@ -65,7 +68,7 @@ struct ProjectBlock: View {
       theme: theme,
       metrics: metrics,
       toggleExpansion: { model.toggleExpansion(of: project) },
-      requestNewWorktree: { model.requestNewWorktree(in: project) }
+      requestNewWorktree: { model.requestNewWorktree(in: project) },
     )
     .equatable()
     .contextMenu { ProjectActions(model: model, project: project) }
@@ -76,7 +79,7 @@ struct ProjectBlock: View {
         return NSItemProvider(object: project.id as NSString)
       },
       onEnded: endProjectDrag,
-      onSourceLeft: { model.projectDragSourceLeft(project.id, isPressed: $0) }
+      onSourceLeft: { model.projectDragSourceLeft(project.id, isPressed: $0) },
     )
   }
 
@@ -97,7 +100,7 @@ struct ProjectBlock: View {
       metrics: metrics,
       beginRename: { model.beginRenamingWorktree(worktree) },
       commitRename: { model.commitWorktreeRename(of: worktree.id, to: $0) },
-      cancelRename: { model.cancelRenamingWorktree() }
+      cancelRename: { model.cancelRenamingWorktree() },
     )
     .equatable()
     .onTapGesture { model.select(worktree) }
@@ -110,7 +113,8 @@ struct ProjectBlock: View {
         worktreeID: worktree.id,
         target: $tabDropTarget,
         takes: { model.worktreeRowTakesDraggedTab($0) },
-        drop: { model.dropDraggedTab(on: .worktree($0)) })
+        drop: { model.dropDraggedTab(on: .worktree($0)) },
+      ),
     )
   }
 }

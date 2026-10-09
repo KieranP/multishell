@@ -17,12 +17,18 @@ extension ShellCommandTests {
       (".bash_profile", "bash_profile"), (".profile", "profile"),
     ] {
       try "export MULTISHELL_RC=\(marker)\n".write(
-        to: home.appendingPathComponent(file), atomically: true, encoding: .utf8)
+        to: home.appendingPathComponent(file),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
 
     let out = try await ShellCommand.runScript(
-      "printf '%s' \"$MULTISHELL_RC\"", in: home,
-      environment: shell.environment, shellPath: shell.path)
+      "printf '%s' \"$MULTISHELL_RC\"",
+      in: home,
+      shellPath: shell.path,
+      environment: shell.environment,
+    )
 
     #expect(out == "zshrc", ".zprofile then .zshrc, as a login interactive zsh reads them")
   }
@@ -35,11 +41,17 @@ extension ShellCommandTests {
     let worktree = try Scratch.directory("it's here")
     defer { Scratch.remove(worktree) }
     try "cd /\nchpwd() { echo noise; }\n".write(
-      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(".zshrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let out = try await ShellCommand.runScript(
-      "pwd -P", in: worktree, environment: shell.environment,
-      shellPath: shell.path)
+      "pwd -P",
+      in: worktree,
+      shellPath: shell.path,
+      environment: shell.environment,
+    )
 
     let expected = try #require(Scratch.physicalPath(of: worktree))
     #expect(out.trimmingCharacters(in: .newlines) == expected)
@@ -51,12 +63,18 @@ extension ShellCommandTests {
     defer { shell.tearDown() }
     let home = shell.home
     try "chpwd() { echo 'direnv: loading .envrc' >&2; }\n".write(
-      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(".zshrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let failure = await #expect(throws: ProcessFailure.self) {
       try await ShellCommand.runScript(
-        "echo 'hook failed' >&2\nexit 3", in: home,
-        environment: shell.environment, shellPath: shell.path)
+        "echo 'hook failed' >&2\nexit 3",
+        in: home,
+        shellPath: shell.path,
+        environment: shell.environment,
+      )
     }
 
     #expect(failure?.message == "hook failed")
@@ -68,11 +86,17 @@ extension ShellCommandTests {
     defer { shell.tearDown() }
     let home = shell.home
     try "chpwd() { false; }\n".write(
-      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(".zshrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let out = try await ShellCommand.runScript(
-      "printf ran", in: home, environment: shell.environment,
-      shellPath: shell.path)
+      "printf ran",
+      in: home,
+      shellPath: shell.path,
+      environment: shell.environment,
+    )
 
     #expect(out == "ran")
   }
@@ -85,12 +109,18 @@ extension ShellCommandTests {
     let worktree = try Scratch.directory("worktree")
     let marker = home.appendingPathComponent("ran")
     try "rmdir \(AnyShellQuoting.quote(worktree.path))\n".write(
-      to: home.appendingPathComponent(rcFile), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(rcFile),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     await #expect(throws: ProcessFailure.self) {
       try await ShellCommand.runScript(
-        "touch \(AnyShellQuoting.quote(marker.path))", in: worktree,
-        environment: scratchShell.environment, shellPath: shell)
+        "touch \(AnyShellQuoting.quote(marker.path))",
+        in: worktree,
+        shellPath: shell,
+        environment: scratchShell.environment,
+      )
     }
 
     #expect(!FileManager.default.fileExists(atPath: marker.path))
@@ -103,13 +133,20 @@ extension ShellCommandTests {
     let home = scratchShell.home
     let worktree = try Scratch.directory(#"it's here!x a\b"#)
     defer { Scratch.remove(worktree) }
-    for rc in [".zshrc", ".bash_profile", ".profile", ".tcshrc"] {
-      try "cd /\n".write(to: home.appendingPathComponent(rc), atomically: true, encoding: .utf8)
+    for startupFile in [".zshrc", ".bash_profile", ".profile", ".tcshrc"] {
+      try "cd /\n".write(
+        to: home.appendingPathComponent(startupFile),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
 
     let out = try await ShellCommand.runScript(
-      "pwd", in: worktree, environment: scratchShell.environment,
-      shellPath: shell)
+      "pwd",
+      in: worktree,
+      shellPath: shell,
+      environment: scratchShell.environment,
+    )
 
     #expect(out.trimmingCharacters(in: .newlines).hasSuffix(worktree.lastPathComponent))
   }
@@ -122,21 +159,29 @@ extension ShellCommandTests {
     let history = home.appendingPathComponent("zsh_history")
     let lines = LongHistory.lines
     try lines.write(to: history, atomically: true, encoding: .utf8)
-    for rc in [".bash_profile", ".profile"] {
+    for startupFile in [".bash_profile", ".profile"] {
       try "HISTFILESIZE=10\n".write(
-        to: home.appendingPathComponent(rc), atomically: true, encoding: .utf8)
+        to: home.appendingPathComponent(startupFile),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
 
     _ = try await ShellCommand.runScript(
-      "true", in: home, environment: ["HOME": home.path, "HISTFILE": history.path],
-      shellPath: shell)
+      "true",
+      in: home,
+      shellPath: shell,
+      environment: ["HOME": home.path, "HISTFILE": history.path],
+    )
 
     #expect(try String(contentsOf: history, encoding: .utf8) == lines)
   }
 
   @Test(
     arguments: InstalledShells.only(
-      ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"] + InstalledShells.fishCandidates))
+      ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"] + InstalledShells.fishCandidates
+    )
+  )
   func aScriptStopsAtItsFirstFailingLineWhateverTheLoginShell(path: String) async throws {
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
@@ -144,7 +189,11 @@ extension ShellCommandTests {
     defer { Scratch.remove(scriptDirectory) }
     func run(_ script: String) async throws -> String {
       try await ShellCommand.runScript(
-        script, in: scriptDirectory, environment: shell.environment, shellPath: shell.path)
+        script,
+        in: scriptDirectory,
+        shellPath: shell.path,
+        environment: shell.environment,
+      )
     }
 
     await #expect(throws: ProcessFailure.self) {
@@ -152,25 +201,33 @@ extension ShellCommandTests {
     }
     #expect(
       FileManager.default.fileExists(
-        atPath: scriptDirectory.appendingPathComponent("first.txt").path))
+        atPath: scriptDirectory.appendingPathComponent("first.txt").path
+      )
+    )
     #expect(
       !FileManager.default.fileExists(
-        atPath: scriptDirectory.appendingPathComponent("second.txt").path),
-      "the line after the failure ran")
+        atPath: scriptDirectory.appendingPathComponent("second.txt").path
+      ),
+      "the line after the failure ran",
+    )
 
     let out = try await run("printf a\nprintf b")
     #expect(out == "ab", "a sound script runs every line")
   }
 
   @Test(
-    arguments: InstalledShells.only(["/bin/zsh", "/bin/tcsh"] + InstalledShells.fishCandidates))
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/tcsh"] + InstalledShells.fishCandidates)
+  )
   func aScriptIsReadAsShWhateverTheLoginShell(path: String) async throws {
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
 
     let out = try await ShellCommand.runScript(
-      "for f in *.nomatch; do :; done; for f in a b; do printf %s \"$f\"; done", in: shell.home,
-      environment: shell.environment, shellPath: shell.path)
+      "for f in *.nomatch; do :; done; for f in a b; do printf %s \"$f\"; done",
+      in: shell.home,
+      shellPath: shell.path,
+      environment: shell.environment,
+    )
 
     #expect(out == "ab")
   }
@@ -180,11 +237,17 @@ extension ShellCommandTests {
     let shell = try ScratchShell("/bin/tcsh")
     defer { shell.tearDown() }
     try "setenv MULTISHELL_RC tcshrc\n".write(
-      to: shell.home.appendingPathComponent(".tcshrc"), atomically: true, encoding: .utf8)
+      to: shell.home.appendingPathComponent(".tcshrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let out = try await ShellCommand.runScript(
-      "printf '%s' \"$MULTISHELL_RC\"", in: shell.home, environment: shell.environment,
-      shellPath: shell.path)
+      "printf '%s' \"$MULTISHELL_RC\"",
+      in: shell.home,
+      shellPath: shell.path,
+      environment: shell.environment,
+    )
 
     #expect(out == "tcshrc")
   }
@@ -194,8 +257,11 @@ extension ShellCommandTests {
     defer { shell.tearDown() }
 
     let out = try await ShellCommand.runScript(
-      "env | grep -c MULTISHELL_SCRIPT || true", in: shell.home,
-      environment: shell.environment, shellPath: shell.path)
+      "env | grep -c MULTISHELL_SCRIPT || true",
+      in: shell.home,
+      shellPath: shell.path,
+      environment: shell.environment,
+    )
 
     #expect(out.trimmingCharacters(in: .whitespacesAndNewlines) == "0")
   }
@@ -208,7 +274,10 @@ extension ShellCommandTests {
     defer { shell.tearDown() }
     for file in [".zshrc", ".zprofile", ".zshenv", ".bashrc", ".bash_profile", ".profile"] {
       try "echo 'rc noise' >&2\n".write(
-        to: shell.home.appendingPathComponent(file), atomically: true, encoding: .utf8)
+        to: shell.home.appendingPathComponent(file),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
 
     let cases: [(script: String, message: String)] = [
@@ -220,7 +289,11 @@ extension ShellCommandTests {
     for (script, message) in cases {
       do {
         _ = try await ShellCommand.runScript(
-          script, in: shell.home, environment: shell.environment, shellPath: shell.path)
+          script,
+          in: shell.home,
+          shellPath: shell.path,
+          environment: shell.environment,
+        )
         Issue.record("the script did not fail")
       } catch let failure as ProcessFailure {
         #expect(failure.status == 3)
@@ -233,11 +306,16 @@ extension ShellCommandTests {
   @Test func aFailureMessageIsStdoutThenTheScriptsStderr() {
     let marker = ShellCommand.stderrStartMarker
     #expect(
-      ShellCommand.failureMessage(standardOutput: "hey\n", standardError: "noise\n\(marker)\nbad\n")
-        == "hey\nbad")
+      ShellCommand.failureMessage(
+        standardOutput: "hey\n",
+        standardError: "noise\n\(marker)\nbad\n",
+      )
+        == "hey\nbad"
+    )
     #expect(
       ShellCommand.failureMessage(standardOutput: "", standardError: "\(marker)\n") == "",
-      "silent")
+      "silent",
+    )
     #expect(ShellCommand.failureMessage(standardOutput: "  hey  ", standardError: "") == "hey")
   }
 

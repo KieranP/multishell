@@ -19,7 +19,8 @@ struct ClaudeHookReplay {
     directory = try Scratch.directory("claude-capture")
     try FileManager.default.createDirectory(
       at: directory.appendingPathComponent("session/subagents"),
-      withIntermediateDirectories: true)
+      withIntermediateDirectories: true,
+    )
   }
 
   /// Claude writes a worker's metadata just after its first start.
@@ -28,7 +29,8 @@ struct ClaudeHookReplay {
     let json = line.replacingOccurrences(of: "TRANSCRIPT", with: transcript)
     let payload = try #require(AgentHookPayload(json: Data(json.utf8)))
     let object = try #require(
-      try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+      try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+    )
     if let report = claude.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil) {
       if let launched = report.launched, let launcher = object["agent_id"] as? String {
         launcherByWorkerID[launched.id] = launcher
@@ -41,7 +43,8 @@ struct ClaudeHookReplay {
       startedWorkerIDs.insert(id).inserted, let metadata = ClaudeHookCapture.workerMetadata[id]
     {
       try Data(metadata.utf8).write(
-        to: directory.appendingPathComponent("session/subagents/agent-\(id).meta.json"))
+        to: directory.appendingPathComponent("session/subagents/agent-\(id).meta.json")
+      )
     }
   }
 }

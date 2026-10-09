@@ -26,7 +26,10 @@ struct EnvironmentDumpParserTests {
   @Test func aGreetingHoldingAnEqualsSignStillLeavesTheFirstEntryItsKey() {
     let text = "==== welcome ====\nPATH=/bin\0HOME=/Users/dev\0"
     let parsed = EnvironmentDumpParser.parse(nulSeparated: text)
-    #expect(parsed["PATH"] == "/bin", "the first `=` is the banner's, the key is after the newline")
+    #expect(
+      parsed["PATH"] == "/bin",
+      "the first `=` is the banner's, the key is after the newline",
+    )
     #expect(parsed["HOME"] == "/Users/dev")
     #expect(parsed.count == 2)
   }

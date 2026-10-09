@@ -14,9 +14,15 @@ struct AgentLaunchTests {
     // Every agent in the catalogue resumes today, so the no-flag arm is
     // shown against a descriptor rather than left uncovered.
     let flagless = AgentDescriptor(
-      id: "flagless", name: "Flagless", executable: "flagless", taskArgument: .operand,
-      mark: .monogram("Fl"))
+      id: "flagless",
+      name: "Flagless",
+      executable: "flagless",
+      taskArgument: .operand,
+      mark: .monogram("Fl"),
+    )
     #expect(
-      AgentLaunch.arguments(for: flagless, resume: true) == nil, "no resume flag: plain shell")
+      AgentLaunch.arguments(for: flagless, resume: true) == nil,
+      "no resume flag: plain shell",
+    )
   }
 }

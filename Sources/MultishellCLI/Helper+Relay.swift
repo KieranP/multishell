@@ -9,7 +9,9 @@ extension Helper {
   ]
 
   static func runRelay(
-    _ arguments: ArraySlice<String>, environment: [String: String], input: FileHandle
+    _ arguments: ArraySlice<String>,
+    environment: [String: String],
+    input: FileHandle,
   ) throws {
     let options = try CommandOptions(arguments, valued: ["pid"])
     relay(environment: environment, input: input, shellPID: options.int32("pid"))
@@ -40,10 +42,19 @@ extension Helper {
     guard fields.count == 3 else { return }
     switch fields[0] {
     case commandStartedName:
-      reportCommandStarted(environment: environment, shellPID: Int32(fields[1]), command: fields[2])
+      reportCommandStarted(
+        environment: environment,
+        shellPID: Int32(fields[1]),
+        command: fields[2],
+      )
+
     case commandFinishedName:
       reportCommandFinished(
-        environment: environment, exitCode: Int32(fields[1]), duration: Double(fields[2]))
+        environment: environment,
+        exitCode: Int32(fields[1]),
+        duration: Double(fields[2]),
+      )
+
     default:
       return
     }

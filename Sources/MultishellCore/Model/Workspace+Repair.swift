@@ -68,8 +68,9 @@ extension Workspace {
     // Where the two disagree the tab's answer wins: it is what the sidebar
     // lists the tab under, and what decides whether its shell starts.
     let pathOfWorktree = worktrees.keyedByID().mapValues(\.path)
-    for index in sessions.indices where sessions[index].worktreeID != owner[sessions[index].id] {
-      let worktree = owner[sessions[index].id]!
+    for index in sessions.indices {
+      guard let worktree = owner[sessions[index].id], worktree != sessions[index].worktreeID
+      else { continue }
       sessions[index].worktreeID = worktree
       // The directory goes with it, as when a tab is moved, or the shell
       // starts in another worktree's checkout.
@@ -125,7 +126,9 @@ extension Workspace {
         continue
       }
       let group = TabGroup(
-        worktreeID: tab.worktreeID, shownTabID: shownTabByWorktree[tab.worktreeID] ?? tab.id)
+        worktreeID: tab.worktreeID,
+        shownTabID: shownTabByWorktree[tab.worktreeID] ?? tab.id,
+      )
       tabGroups.append(group)
       minted[tab.worktreeID] = group.id
       tabs[index].groupID = group.id

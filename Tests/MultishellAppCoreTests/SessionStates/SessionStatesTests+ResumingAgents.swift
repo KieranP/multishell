@@ -6,16 +6,26 @@ import Testing
 
 extension SessionStatesTests {
   private func reportResuming(
-    _ states: inout SessionStates, _ state: SessionState, _ worker: WorkerReport? = nil,
-    shells: [Int32] = [], out: [String]? = nil, startsTurn: Bool = false,
-    conversation: String? = nil
+    _ states: inout SessionStates,
+    _ state: SessionState,
+    _ worker: WorkerReport? = nil,
+    shells: [Int32] = [],
+    out: [String]? = nil,
+    startsTurn: Bool = false,
+    conversation: String? = nil,
   ) -> SessionState? {
     report(
       &states,
       .init(
-        state: state, worker: worker, startsTurn: startsTurn, backgroundShells: shells,
-        resumesAfterWorkers: state == .done, conversationID: conversation,
-        workersOut: out.map { $0.map { WorkerReport(id: $0, phase: .working) } }))
+        state: state,
+        worker: worker,
+        startsTurn: startsTurn,
+        backgroundShells: shells,
+        resumesAfterWorkers: state == .done,
+        conversationID: conversation,
+        workersOut: out.map { $0.map { WorkerReport(id: $0, phase: .working) } },
+      ),
+    )
   }
 
   @Test func theWokenTurnsStopPaysTheDoneRatherThanTheLastShellOut() {
@@ -53,7 +63,8 @@ extension SessionStatesTests {
     _ = reportResuming(&states, .done, shells: [500])
     _ = states.applyShellExit(500)
     #expect(
-      reportResuming(&states, .running, WorkerReport(id: "w2", phase: .started)) == .running)
+      reportResuming(&states, .running, WorkerReport(id: "w2", phase: .started)) == .running
+    )
     #expect(reportResuming(&states, .running, ended("w2")) == .running)
     #expect(states[.session(a)] == .running)
     #expect(reportResuming(&states, .done) == .done)
@@ -63,7 +74,8 @@ extension SessionStatesTests {
     var states = SessionStates()
     #expect(reportResuming(&states, .done) == .done)
     #expect(
-      reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started)) == .running)
+      reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started)) == .running
+    )
     #expect(reportResuming(&states, .running, ended("w1")) == nil)
     #expect(states[.session(a)] == .running)
     #expect(reportResuming(&states, .done) == .done)
@@ -71,13 +83,19 @@ extension SessionStatesTests {
 
   /// A Stop that lists what is still out, as Claude's `background_tasks` does.
   private func stopListingWorkersOut(
-    _ states: inout SessionStates, out: [String], shells: [Int32] = []
+    _ states: inout SessionStates,
+    out: [String],
+    shells: [Int32] = [],
   ) -> SessionState? {
     report(
       &states,
       .init(
-        state: .done, backgroundShells: shells, resumesAfterWorkers: true,
-        workersOut: out.map { WorkerReport(id: $0, phase: .working) }))
+        state: .done,
+        backgroundShells: shells,
+        resumesAfterWorkers: true,
+        workersOut: out.map { WorkerReport(id: $0, phase: .working) },
+      ),
+    )
   }
 
   @Test func aStopListingNothingOutPaysTheDoneThoughAnEndNeverCame() {
@@ -85,7 +103,9 @@ extension SessionStatesTests {
     _ = reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started))
     #expect(stopListingWorkersOut(&states, out: ["w1"]) == .running)
     #expect(
-      stopListingWorkersOut(&states, out: []) == .done, "w1's SubagentStop is late or never comes")
+      stopListingWorkersOut(&states, out: []) == .done,
+      "w1's SubagentStop is late or never comes",
+    )
     #expect(states.workers(.session(a)).isEmpty)
 
     #expect(reportResuming(&states, .running, ended("w1")) == nil)
@@ -98,7 +118,8 @@ extension SessionStatesTests {
     #expect(states.workers(.session(a)).map(\.id) == ["w1"])
     _ = reportResuming(&states, .running, WorkerReport(id: "w1", phase: .working))
     #expect(
-      reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started)) == .running)
+      reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started)) == .running
+    )
     #expect(states.workers(.session(a)).first?.occurrences == 1, "the late start is w1's own")
 
     #expect(reportResuming(&states, .running, ended("w1")) == nil)
@@ -121,7 +142,10 @@ extension SessionStatesTests {
     _ = reportResuming(&states, .running, WorkerReport(id: "review", phase: .started))
     _ = reportResuming(&states, .running, WorkerReport(id: "angle", phase: .started))
     _ = reportResuming(
-      &states, .attention, WorkerReport(id: "angle", phase: .working, parentID: "review"))
+      &states,
+      .attention,
+      WorkerReport(id: "angle", phase: .working, parentID: "review"),
+    )
     _ = stopListingWorkersOut(&states, out: ["review"])
     #expect(states.workers(.session(a)).map(\.id) == ["review", "angle"])
     #expect(states[.session(a)] == .attention)
@@ -131,7 +155,10 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = reportResuming(&states, .running, WorkerReport(id: "review", phase: .started))
     _ = reportResuming(
-      &states, .running, WorkerReport(id: "angle", phase: .working, parentID: "review"))
+      &states,
+      .running,
+      WorkerReport(id: "angle", phase: .working, parentID: "review"),
+    )
     #expect(stopListingWorkersOut(&states, out: []) == .done)
     #expect(states.workers(.session(a)).isEmpty)
   }
@@ -149,7 +176,8 @@ extension SessionStatesTests {
     let shell = WorkerReport(id: "b1", phase: .working, isBackgroundShell: true)
     #expect(
       report(&states, .init(state: .done, resumesAfterWorkers: true, workersOut: [shell]))
-        == .running)
+        == .running
+    )
     #expect(states.workers(.session(a)).countText == "1 background shell")
     #expect(stopListingWorkersOut(&states, out: []) == .done)
   }
@@ -158,7 +186,8 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started))
     #expect(
-      reportResuming(&states, .attention, WorkerReport(id: "w1", phase: .working)) == .attention)
+      reportResuming(&states, .attention, WorkerReport(id: "w1", phase: .working)) == .attention
+    )
     #expect(stopListingWorkersOut(&states, out: []) == .done)
   }
 
@@ -180,7 +209,9 @@ extension SessionStatesTests {
     #expect(reportResuming(&states, .done) == .running)
     _ = reportResuming(&states, .running, ended("w1"))
     #expect(
-      reportResuming(&states, .running, cancelled("w2")) == nil, "w1's end is about to wake it")
+      reportResuming(&states, .running, cancelled("w2")) == nil,
+      "w1's end is about to wake it",
+    )
     #expect(reportResuming(&states, .done) == .done)
   }
 
@@ -232,7 +263,9 @@ extension SessionStatesTests {
     _ = reportResuming(&states, .running, WorkerReport(id: "w1", phase: .started))
     _ = reportResuming(&states, .running, ended("w1"))
     let held = report(
-      &states, .init(state: .done, resumesAfterWorkers: true, workersOut: [], turnFollows: true))
+      &states,
+      .init(state: .done, resumesAfterWorkers: true, workersOut: [], turnFollows: true),
+    )
     #expect(held == .running, "w1's notice starts a turn straight after")
     #expect(reportResuming(&states, .running) == .running)
     #expect(reportResuming(&states, .done, out: []) == .done)
@@ -271,7 +304,10 @@ extension SessionStatesTests {
     var states = SessionStates()
     #expect(reportResuming(&states, .done, out: ["w2"]) == .running)
     _ = reportResuming(&states, .running, ended("w1"))
-    #expect(reportResuming(&states, .running, cancelled("w2")) == .done, "nothing was woken for w2")
+    #expect(
+      reportResuming(&states, .running, cancelled("w2")) == .done,
+      "nothing was woken for w2",
+    )
   }
 
   @Test func aStopOverAFailureStillMarksItsWorkersOut() {
@@ -289,10 +325,16 @@ extension SessionStatesTests {
     _ = report(
       &states,
       .init(
-        state: .done, resumesAfterWorkers: true,
-        workersOut: [WorkerReport(id: "w1", type: "subagent", phase: .working)]))
+        state: .done,
+        resumesAfterWorkers: true,
+        workersOut: [WorkerReport(id: "w1", phase: .working, type: "subagent")],
+      ),
+    )
     _ = reportResuming(
-      &states, .running, WorkerReport(id: "w1", type: "Explore", phase: .started))
+      &states,
+      .running,
+      WorkerReport(id: "w1", phase: .started, type: "Explore"),
+    )
     #expect(states.workers(.session(a)).first?.type == "Explore")
   }
 
@@ -309,8 +351,10 @@ extension SessionStatesTests {
     let ids = (1...70).map { "w\($0)" }
     for id in ids { _ = reportResuming(&states, .running, WorkerReport(id: id, phase: .started)) }
     let listed = SessionStateReport(
-      state: .done, resumesAfterWorkers: true,
-      workersOut: ids.map { WorkerReport(id: $0, phase: .working) })
+      state: .done,
+      resumesAfterWorkers: true,
+      workersOut: ids.map { WorkerReport(id: $0, phase: .working) },
+    )
     _ = report(&states, listed)
     for id in ids.prefix(69) {
       _ = reportResuming(&states, .running, ended(id))
@@ -321,8 +365,8 @@ extension SessionStatesTests {
   @Test func aListCutAtItsLimitTakesNobodyOff() {
     var states = SessionStates()
     _ = reportResuming(&states, .running, WorkerReport(id: "w0", phase: .started))
-    let full = (1...SessionStateReport.maximumWorkersOut).map {
-      WorkerReport(id: "l\($0)", phase: .working)
+    let full = (1...SessionStateReport.maximumWorkersOut).map { number in
+      WorkerReport(id: "l\(number)", phase: .working)
     }
     _ = report(&states, .init(state: .done, resumesAfterWorkers: true, workersOut: full))
     #expect(states.workers(.session(a)).contains { $0.id == "w0" }, "the cut may have held it")

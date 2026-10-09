@@ -13,14 +13,21 @@ public struct SplitDrag: Equatable, Sendable {
   /// Measured from where the drag began, so the weights it started from are
   /// kept until it ends.
   public mutating func move(
-    dividerAfter index: Int, by translation: Double, over weights: [Double],
-    available: Double, minimumPane: Double
+    dividerAfter index: Int,
+    by translation: Double,
+    over weights: [Double],
+    available: Double,
+    minimumPane: Double,
   ) {
     let start = startWeights ?? weights
     if startWeights == nil { startWeights = start }
     let updated = SplitMath.transferring(
-      translation, acrossDividerAfter: index, in: start, available: available,
-      minimumPane: minimumPane)
+      translation,
+      acrossDividerAfter: index,
+      in: start,
+      available: available,
+      minimumPane: minimumPane,
+    )
     if updated != (shownWeights ?? start) { shownWeights = updated }
   }
 
@@ -29,7 +36,7 @@ public struct SplitDrag: Equatable, Sendable {
 
   /// The weights to hand the model, `nil` where the drag changed nothing.
   public mutating func end(over weights: [Double]) -> [Double]? {
-    defer { self = SplitDrag() }
+    defer { self = Self() }
     guard let shownWeights, shownWeights != weights else { return nil }
     return shownWeights
   }

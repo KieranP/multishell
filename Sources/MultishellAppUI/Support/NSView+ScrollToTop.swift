@@ -11,7 +11,8 @@ extension NSView {
       let beyondTop = document.frame.height + clip.bounds.height
       let proposed = CGRect(
         origin: CGPoint(x: 0, y: document.isFlipped ? -beyondTop : beyondTop),
-        size: clip.bounds.size)
+        size: clip.bounds.size,
+      )
       clip.scroll(to: clip.constrainBoundsRect(proposed).origin)
       scrollView.reflectScrolledClipView(clip)
     }

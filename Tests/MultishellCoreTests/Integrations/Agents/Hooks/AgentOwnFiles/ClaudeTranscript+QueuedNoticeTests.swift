@@ -72,9 +72,12 @@ struct ClaudeTranscriptQueuedNoticeTests {
     let filler =
       #"{"type":"user","message":{"content":""#
       + String(
-        repeating: "x", count: ClaudeTranscript.tailBytes) + #""}}"#
+        repeating: "x",
+        count: ClaudeTranscript.tailBytes,
+      ) + #""}}"#
     try lines([
-      stopped(at: "2026-09-30T10:00:00.000Z"), filler, queued("a1", at: "2026-09-30T10:00:05.000Z"),
+      stopped(at: "2026-09-30T10:00:00.000Z"), filler,
+      queued("a1", at: "2026-09-30T10:00:05.000Z"),
     ])
     .write(to: file)
     #expect(ClaudeTranscript.turnFollows(atPath: file.path))

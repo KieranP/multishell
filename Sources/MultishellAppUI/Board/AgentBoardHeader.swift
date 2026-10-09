@@ -12,8 +12,11 @@ struct AgentBoardHeader: View {
 
   var body: some View {
     PanelHeader(
-      title: t("label.agents"), summary: board.summary, summaryColor: theme.textTertiary,
-      theme: theme, metrics: metrics
+      title: t("label.agents"),
+      summary: board.summary,
+      summaryColor: theme.textTertiary,
+      theme: theme,
+      metrics: metrics,
     ) {
       allTerminalsToggle
     }

@@ -20,8 +20,10 @@ public struct SocketFailure: Error, CustomStringConvertible, Sendable {
     switch kind {
     case .pathTooLong:
       "\(path) is too long for a Unix socket address."
+
     case .inUse:
       "another process is already listening on \(path)."
+
     case .system(let operation, let code):
       "\(operation) on \(path) failed: \(String(cString: strerror(code))) (\(code))"
     }

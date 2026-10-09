@@ -4,7 +4,11 @@ extension AccessibilityText {
   /// A tab in the strip: its title, the agent its mark names, whether it is
   /// the one shown, its state and whether it is split.
   public static func tab(
-    title: String, isShown: Bool, isSplit: Bool, state: SessionState?, agentName: String?
+    title: String,
+    isShown: Bool,
+    isSplit: Bool,
+    state: SessionState?,
+    agentName: String?,
   )
     -> String
   {

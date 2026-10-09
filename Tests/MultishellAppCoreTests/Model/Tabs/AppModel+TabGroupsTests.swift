@@ -59,7 +59,8 @@ struct AppModelTabGroupsTests {
     #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id == firstsTab.id)
     #expect(
       harness.engine.focused.last == firstsTab.focusedSessionID,
-      "the pane of the group that took the focus")
+      "the pane of the group that took the focus",
+    )
 
     harness.model.focusNextGroup()
     #expect(harness.model.focusedGroup?.id == groups.second.id, "and it wraps")
@@ -88,14 +89,19 @@ struct AppModelTabGroupsTests {
 
     #expect(harness.model.workspace.tabs(inGroup: groups.first.id).count == before + 1)
     #expect(
-      harness.model.workspace.tabs(inGroup: groups.second.id).count == 1, "the other group stands")
+      harness.model.workspace.tabs(inGroup: groups.second.id).count == 1,
+      "the other group stands",
+    )
     #expect(
-      harness.model.focusedGroup?.id == groups.first.id, "opening a tab there is working in it")
+      harness.model.focusedGroup?.id == groups.first.id,
+      "opening a tab there is working in it",
+    )
 
     harness.model.newTab()
     #expect(
       harness.model.workspace.tabs(inGroup: groups.first.id).count == before + 2,
-      "the keystroke names no group and opens in the focused one")
+      "the keystroke names no group and opens in the focused one",
+    )
   }
 
   @Test func aGroupLastsAsLongAsItHasATab() {
@@ -145,7 +151,8 @@ struct AppModelTabGroupsTests {
     #expect(harness.model.focusedGroup?.id == groups.second.id)
 
     harness.stateSource.send(
-      SessionStateReport(state: .done, sessionID: watched, workingDirectory: nil, pid: nil))
+      SessionStateReport(state: .done, sessionID: watched, workingDirectory: nil, pid: nil)
+    )
 
     #expect(harness.model.sessionStates[.session(watched)] == .done, "in view, not looked at")
     #expect(harness.notifier.posted.isEmpty, "in view, so nothing to tell them")

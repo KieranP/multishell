@@ -44,7 +44,7 @@ extension AppModel {
       (
         agents: AgentDetection(searchPath: searchPath),
         shells: ShellDetection(searchPath: searchPath),
-        editors: EditorDetection(searchPath: searchPath) { applications[$0] }
+        editors: EditorDetection(searchPath: searchPath) { applications[$0] },
       )
     }
     // Together, after the scan: `agentCommand` reads a set environment as
@@ -61,7 +61,9 @@ extension AppModel {
     let hadGit = coordinator != nil
     guard
       let found = try? await WorktreeCoordinator.resolved(
-        searchPath: searchPath, replacing: coordinator)
+        searchPath: searchPath,
+        replacing: coordinator,
+      )
     else { return }
     coordinator = found
     // A git found for the first time has a log of its own to switch on.

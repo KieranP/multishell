@@ -8,32 +8,40 @@ extension PresentedError {
     case let entries as UnexpectedHookEntriesShape:
       return (
         t("error.unknown-hooks-title"),
-        t("error.unknown-hooks-message", entries.file.path, entries.event)
+        t("error.unknown-hooks-message", entries.file.path, entries.event),
       )
+
     case let section as UnexpectedHookSectionShape:
       return (
         t("error.unknown-hooks-title"),
-        t("error.unknown-hooks-section-message", section.file.path)
+        t("error.unknown-hooks-section-message", section.file.path),
       )
+
     case let unparsable as UnparsableSettingsFile:
       return (
         t("error.unparsable-settings-title"),
-        t("error.unparsable-settings-message", unparsable.file.path)
+        t("error.unparsable-settings-message", unparsable.file.path),
       )
+
     case let shape as UnexpectedSettingsShape:
       return (t("error.settings-shape-title"), t("error.settings-shape-message", shape.file.path))
+
     case let state as UnreadableStateFile:
       return (
         t("error.unreadable-state-title"),
         t(
           "error.unreadable-state-message",
-          state.backup.lastPathComponent, String(describing: state.underlying))
+          state.backup.lastPathComponent,
+          String(describing: state.underlying),
+        ),
       )
+
     case let state as UnmovableStateFile:
       return (
         t("error.unreadable-state-title"),
-        t("error.unmoved-state-message", state.fileURL.path, String(describing: state.underlying))
+        t("error.unmoved-state-message", state.fileURL.path, String(describing: state.underlying)),
       )
+
     default:
       return nil
     }

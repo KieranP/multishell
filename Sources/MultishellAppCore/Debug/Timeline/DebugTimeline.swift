@@ -8,6 +8,8 @@ public struct DebugTimeline: Sendable, Equatable {
 
   public var hasStalls: Bool { stalledSecondCount > 0 }
 
+  private var latestSlot: DebugTimelineSlot? { slots.last ?? nil }
+
   init(history: DebugHistory, range: DebugRange) {
     self.range = range
     stalledSecondCount = history.samples(in: range).filter { $0.smoothness == .stalled }.count
@@ -27,8 +29,6 @@ public struct DebugTimeline: Sendable, Equatable {
       samplesBySlotNumber[slotNumber].map(DebugTimelineSlot.init(samples:))
     }
   }
-
-  private var latestSlot: DebugTimelineSlot? { slots.last ?? nil }
 
   /// What a strip's label reads: the slot under the pointer, or the latest
   /// where the pointer is off the strip or over a second with no sample.
@@ -66,10 +66,12 @@ public struct DebugTimeline: Sendable, Equatable {
     let values = slots.map { $0.flatMap(metric.values(of:)) }
     let scale = metric.scale(forPeak: values.compactMap { $0?.total }.max() ?? 0)
     return values.map { value in
-      value.map {
+      value.map { point in
         DebugStripPoint(
-          app: min($0.app / scale, 1), appWithTerminals: min($0.appWithTerminals / scale, 1),
-          total: min($0.total / scale, 1))
+          app: min(point.app / scale, 1),
+          appWithTerminals: min(point.appWithTerminals / scale, 1),
+          total: min(point.total / scale, 1),
+        )
       }
     }
   }

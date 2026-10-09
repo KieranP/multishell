@@ -12,7 +12,8 @@ struct AppModelNewWorktreeSheetTests {
 
     #expect(
       harness.model.checkedOutBranches(for: NewWorktreeDraft(projectID: harness.project.id))
-        == ["main", "feature"])
+        == ["main", "feature"]
+    )
     #expect(harness.model.checkedOutBranches(for: NewWorktreeDraft(projectID: nil)).isEmpty)
   }
 
@@ -21,7 +22,8 @@ struct AppModelNewWorktreeSheetTests {
     harness.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
 
     #expect(
-      harness.model.branchPrefix(for: NewWorktreeDraft(projectID: harness.project.id)) == "team/")
+      harness.model.branchPrefix(for: NewWorktreeDraft(projectID: harness.project.id)) == "team/"
+    )
     #expect(harness.model.branchPrefix(for: NewWorktreeDraft(projectID: nil)) == "")
   }
 
@@ -76,13 +78,17 @@ struct AppModelNewWorktreeSheetTests {
     harness.model.fitAgent(of: &draft)
     #expect(draft.startsAgent, "the global turns it on")
 
-    harness.model.setSettings(ProjectSettings(autoStartsAgentOnCreate: false), for: harness.project)
+    harness.model.setSettings(
+      ProjectSettings(autoStartsAgentOnCreate: false),
+      for: harness.project,
+    )
     harness.model.fitAgent(of: &draft)
     #expect(!draft.startsAgent, "the project's own answer wins")
 
     harness.model.setSettings(
       ProjectSettings(preferredAgentID: "claude", autoStartsAgentOnCreate: true),
-      for: harness.project)
+      for: harness.project,
+    )
     harness.model.fitAgent(of: &draft)
     #expect(draft.startsAgent && draft.agentID == "claude", "on the project's own agent")
   }

@@ -21,6 +21,7 @@ extension Helper {
   /// from a prompt in one of its tabs that leaves the shell, whose exit clears.
   static func reportingPID(in environment: [String: String]) -> Int32 {
     ProcessAncestry.reportingPID(
-      stoppingAt: environment[SessionEnvironment.appPIDVariable].flatMap { Int32($0) })
+      stoppingAt: environment[SessionEnvironment.appPIDVariable].flatMap { Int32($0) }
+    )
   }
 }

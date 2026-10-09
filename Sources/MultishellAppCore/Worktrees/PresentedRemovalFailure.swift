@@ -5,6 +5,15 @@ import MultishellProcess
 /// How a failed stage of a worktree removal is shown: a pre-delete veto in
 /// the pane, a stop silently, everything else an alert.
 enum PresentedRemovalFailure: Equatable, Sendable {
+  /// An alert. `wasWorktreeRemoved` says whether the sidebar still has the
+  /// worktree, which decides whether the model refreshes or restores it.
+  case alert(title: String, message: String, retry: ForcedRetry?, wasWorktreeRemoved: Bool)
+  /// The user stopped the pre-delete hook. The worktree stays, quietly.
+  case stopped
+
+  /// The worktree stays; the pane shows this until the user dismisses it.
+  case vetoed(message: String, didTimeOut: Bool)
+
   enum ForcedRetry: Equatable, Sendable {
     /// `git branch -D` on a branch `-d` refused. The alert's title already
     /// names the branch, so the button says only what it does.
@@ -17,14 +26,6 @@ enum PresentedRemovalFailure: Equatable, Sendable {
     }
   }
 
-  /// The worktree stays; the pane shows this until the user dismisses it.
-  case vetoed(message: String, didTimeOut: Bool)
-  /// The user stopped the pre-delete hook. The worktree stays, quietly.
-  case stopped
-  /// An alert. `wasWorktreeRemoved` says whether the sidebar still has the
-  /// worktree, which decides whether the model refreshes or restores it.
-  case alert(title: String, message: String, retry: ForcedRetry?, wasWorktreeRemoved: Bool)
-
   /// `branch` is the worktree's branch when the removal was to delete it,
   /// `nil` otherwise.
   init(_ error: any Error, deletingBranch branch: String?) {
@@ -32,26 +33,37 @@ enum PresentedRemovalFailure: Equatable, Sendable {
     case let failure as HookFailure
     where !failure.stage.isAfterOperation && failure.stopReason == .byUser:
       self = .stopped
+
     case let failure as HookFailure where !failure.stage.isAfterOperation:
       self = .vetoed(
-        message: PresentedError(failure).message, didTimeOut: failure.stopReason != nil)
+        message: PresentedError(failure).message,
+        didTimeOut: failure.stopReason != nil,
+      )
+
     case let failure as HookFailure:
       // The branch is deleted after the post hook, so a hook that failed
       // kept it; the alert has to say so, or the user believes it went.
       let kept = branch.map { "\n\n" + t("removal.branch-was-kept", $0) } ?? ""
-      self = .presenting(failure, adding: kept, wasWorktreeRemoved: true)
+      self = .presenting(failure, wasWorktreeRemoved: true, adding: kept)
+
     case let failure as WorktreePathTaken:
       // Nothing was removed and nothing is worth retrying until it moves.
       self = .presenting(failure, wasWorktreeRemoved: false)
+
     case let failure as WorktreeRecordRemovalFailure:
       // The directory is in the Trash, so there is nothing to restore; the
       // refresh shows the record git kept, directory missing.
       self = .presenting(failure, wasWorktreeRemoved: true)
+
     case let failure as BranchDeletionFailure:
       // The worktree is gone; only the branch stayed, because it has
       // commits nothing else has. Offer the forced form.
       self = .presenting(
-        failure, retry: .deleteBranchAnyway(failure.branch), wasWorktreeRemoved: true)
+        failure,
+        wasWorktreeRemoved: true,
+        retry: .deleteBranchAnyway(failure.branch),
+      )
+
     default:
       // The Trash refused, so nothing moved and the worktree and its
       // terminals come back.
@@ -60,12 +72,17 @@ enum PresentedRemovalFailure: Equatable, Sendable {
   }
 
   private static func presenting(
-    _ error: any Error, adding extra: String = "", retry: ForcedRetry? = nil,
-    wasWorktreeRemoved: Bool
-  ) -> PresentedRemovalFailure {
+    _ error: any Error,
+    wasWorktreeRemoved: Bool,
+    adding extra: String = "",
+    retry: ForcedRetry? = nil,
+  ) -> Self {
     let presented = PresentedError(error)
     return .alert(
-      title: presented.title, message: presented.message + extra, retry: retry,
-      wasWorktreeRemoved: wasWorktreeRemoved)
+      title: presented.title,
+      message: presented.message + extra,
+      retry: retry,
+      wasWorktreeRemoved: wasWorktreeRemoved,
+    )
   }
 }

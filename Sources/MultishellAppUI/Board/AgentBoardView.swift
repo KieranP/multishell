@@ -5,12 +5,12 @@ import SwiftUI
 /// The Agents board: every open pane as a card. It decides nothing;
 /// `AgentBoard` and `AgentBoardLayout` do, and this draws the answer.
 struct AgentBoardView: View {
-  let model: AppModel
-  let theme: Theme
-
   /// One clock for every card's corner. Ten seconds, the shortest step a
   /// card's text takes past its first minute.
   private static let tickInterval: TimeInterval = 10
+
+  let model: AppModel
+  let theme: Theme
 
   /// The clock the cards read, held rather than taken from a `TimelineView`,
   /// which stood still under a body re-evaluated several times a second.
@@ -44,7 +44,8 @@ struct AgentBoardView: View {
               width: layout.columnWidth,
               now: now,
               theme: theme,
-              metrics: metrics)
+              metrics: metrics,
+            )
           }
         }
         .padding(metrics.boardPadding)

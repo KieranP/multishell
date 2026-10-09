@@ -13,7 +13,8 @@ struct ProjectIconTests {
     #expect(ProjectIcon.kind(of: "not.a.symbol") == .folder, "only the curated list is drawn")
     #expect(
       ProjectIcon.kind(of: "🚀") == .folder,
-      "an emoji a build that offered them stored draws the folder, not a blank")
+      "an emoji a build that offered them stored draws the folder, not a blank",
+    )
   }
 
   @Test func tintsOutsideTheThemeAreNone() {
@@ -37,7 +38,8 @@ struct ProjectIconTests {
     #expect(Set(groups.map(\.name)).count == groups.count)
     #expect(
       groups.first?.symbols.first == ProjectIcon.folderSymbol,
-      "the folder is the first cell, and picking it is what goes back to no glyph")
+      "the folder is the first cell, and picking it is what goes back to no glyph",
+    )
   }
 
   @Test func anySymbolNameIsKeptAsAGlyphButAnEmojiIsNot() {
@@ -45,7 +47,8 @@ struct ProjectIconTests {
     #expect(ProjectIcon.normalizedGlyph("  hammer  ") == "hammer")
     #expect(
       ProjectIcon.normalizedGlyph("sparkle.magnifyingglass") == "sparkle.magnifyingglass",
-      "a name this build does not carry may still be one a teammate's build draws")
+      "a name this build does not carry may still be one a teammate's build draws",
+    )
     #expect(ProjectIcon.normalizedGlyph("🚀") == nil, "no build draws an emoji any more")
     #expect(ProjectIcon.normalizedGlyph("") == nil)
     #expect(ProjectIcon.normalizedGlyph(nil) == nil)

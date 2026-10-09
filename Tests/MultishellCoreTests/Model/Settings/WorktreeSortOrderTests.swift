@@ -23,6 +23,7 @@ struct WorktreeSortOrderTests {
       WorktreeSortOrder.allCases.map(\.rawValue) == [
         "alphabetical", "createdNewestFirst", "createdOldestFirst", "committedNewestFirst",
         "committedOldestFirst",
-      ])
+      ]
+    )
   }
 }

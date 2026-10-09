@@ -23,7 +23,9 @@ extension View {
 
   /// A debug table's column titles, in faint caption type over the rows.
   func debugTableHeader(
-    _ theme: Theme, _ metrics: UIMetrics, leadingInset: Double = UIMetrics.debugTableInset
+    _ theme: Theme,
+    _ metrics: UIMetrics,
+    leadingInset: Double = UIMetrics.debugTableInset,
   ) -> some View {
     font(.system(size: metrics.caption))
       .foregroundStyle(theme.textTertiary)

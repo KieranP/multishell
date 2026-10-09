@@ -51,6 +51,7 @@ extension AppModel {
     switch outcome {
     case .success:
       hasReportedSaveFailure = false
+
     case .failure(let error):
       // Every change schedules a save, so a full disk or a bad permission
       // would otherwise put the same alert up after each keystroke.

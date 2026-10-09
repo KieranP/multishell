@@ -19,21 +19,37 @@ struct DebugMemoryTableView: View {
       ForEach(table.rows) { row in
         let disclosure = row.disclosure(isExpanded: expandedSources.contains(row.source))
         DebugMemoryRowView(
-          row: row, disclosure: disclosure, toggleExpansion: { toggleExpansion(of: row.source) },
-          layout: layout, theme: theme, metrics: metrics)
+          row: row,
+          disclosure: disclosure,
+          toggleExpansion: { toggleExpansion(of: row.source) },
+          layout: layout,
+          theme: theme,
+          metrics: metrics,
+        )
         if disclosure == .expanded {
           if let terminal = row.terminalRow {
             DebugNestedRowView(
-              name: terminal.title, namesAProcess: false, indentLevel: 0, memory: terminal,
-              accessibilityLabel: AccessibilityText.debugTerminalRow(terminal), layout: layout,
-              theme: theme, metrics: metrics)
+              name: terminal.title,
+              namesAProcess: false,
+              indentLevel: 0,
+              memory: terminal,
+              accessibilityLabel: AccessibilityText.debugTerminalRow(terminal),
+              layout: layout,
+              theme: theme,
+              metrics: metrics,
+            )
           }
           ForEach(row.processRows) { process in
             DebugNestedRowView(
-              name: process.process.name, namesAProcess: true,
-              indentLevel: row.indentLevel(of: process), memory: process,
+              name: process.process.name,
+              namesAProcess: true,
+              indentLevel: row.indentLevel(of: process),
+              memory: process,
               accessibilityLabel: AccessibilityText.debugProcessRow(process, under: row),
-              layout: layout, theme: theme, metrics: metrics)
+              layout: layout,
+              theme: theme,
+              metrics: metrics,
+            )
           }
         }
       }

@@ -8,9 +8,17 @@ func consistentWorkspace() -> (workspace: Workspace, tab: TerminalTab) {
   var workspace = Workspace()
   let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
   let worktree = Worktree(
-    path: project.path, projectID: project.id, head: "a", branch: "main", isPrimary: true)
+    path: project.path,
+    projectID: project.id,
+    head: "a",
+    branch: "main",
+    isPrimary: true,
+  )
   let session = TerminalSession(
-    worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
+    worktreeID: worktree.id,
+    workingDirectory: worktree.path,
+    title: "sh",
+  )
   var group = TabGroup(worktreeID: worktree.id)
   let tab = TerminalTab(worktreeID: worktree.id, groupID: group.id, session: session.id)
   group.shownTabID = tab.id

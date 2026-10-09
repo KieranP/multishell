@@ -18,7 +18,8 @@ extension WorktreeCoordinatorMergesTests {
           rm "$SCRATCH/running/$$"
           echo "+ 1111111111111111111111111111111111111111" ;;
       esac
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let coordinator = fake.coordinator
     let projects = try ["one", "two"].map { name in
@@ -35,9 +36,11 @@ extension WorktreeCoordinatorMergesTests {
 
     #expect(read.map(\.count) == [branches.count, branches.count])
     let counts = try String(
-      contentsOf: fake.directory.appendingPathComponent("counts"), encoding: .utf8)
-    let peak = counts.split(whereSeparator: \.isNewline).compactMap {
-      Int($0.trimmingCharacters(in: .whitespaces))
+      contentsOf: fake.directory.appendingPathComponent("counts"),
+      encoding: .utf8,
+    )
+    let peak = counts.split(whereSeparator: \.isNewline).compactMap { line in
+      Int(line.trimmingCharacters(in: .whitespaces))
     }.max()
     #expect(peak.map { $0 <= SharedReadState.maxConcurrentReads } == true, "\(peak ?? 0)")
   }

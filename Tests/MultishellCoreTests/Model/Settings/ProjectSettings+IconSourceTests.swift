@@ -49,7 +49,7 @@ struct ProjectSettingsIconSourceTests {
               || drawn.iconTint != own.iconTint
             #expect(
               own.takesIconFromSharedFile(shared) == fromFile,
-              "own \(String(describing: ownGlyph)) \(String(describing: ownTint)), shared \(String(describing: sharedGlyph)) \(String(describing: sharedTint))"
+              "own \(String(describing: ownGlyph)) \(String(describing: ownTint)), shared \(String(describing: sharedGlyph)) \(String(describing: sharedTint))",
             )
           }
         }

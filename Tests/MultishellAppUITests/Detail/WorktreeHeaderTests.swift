@@ -16,7 +16,9 @@ struct WorktreeHeaderTests {
     let bitmap = try #require(
       OffscreenWindow.pixels(
         ofHosted: WorktreeHeader(model: harness.model, worktree: worktree, theme: theme),
-        size: CGSize(width: 600, height: 40)))
+        size: CGSize(width: 600, height: 40),
+      )
+    )
     let sidebarColour = try #require(NSColor(theme.sidebarColor).usingColorSpace(bitmap.colorSpace))
     func isSidebarColour(_ x: Int, _ y: Int) -> Bool {
       guard let pixel = bitmap.colorAt(x: x, y: y) else { return false }
@@ -32,6 +34,7 @@ struct WorktreeHeaderTests {
 
     #expect(
       filledInSidebarColour.isEmpty,
-      "\(filledInSidebarColour.count) pixels filled in the sidebar's colour")
+      "\(filledInSidebarColour.count) pixels filled in the sidebar's colour",
+    )
   }
 }

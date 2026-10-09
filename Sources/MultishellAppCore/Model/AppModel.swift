@@ -257,6 +257,9 @@ public final class AppModel<Surface> {
 
   public var workspace: Workspace { store.workspace }
 
+  /// Shells actually running, as opposed to saved tabs waiting to be opened.
+  public var liveTerminalCount: Int { liveSessionIDs.count }
+
   /// Dependencies are passed in so tests run the whole model against fakes.
   /// The platform GUI passes its real ones.
   public init(
@@ -267,7 +270,7 @@ public final class AppModel<Surface> {
     platform: any Platform = NullPlatform(),
     stateSource: any SessionStateSource = NullSessionStateSource(),
     notifier: any SessionNotifier = NullNotifier(),
-    loadError: (any Error)? = nil
+    loadError: (any Error)? = nil,
   ) {
     self.store = store
     self.host = host
@@ -297,12 +300,6 @@ public final class AppModel<Surface> {
     observeForAutosave()
   }
 
-  deinit {
-    autosave?.cancel()
-    tabDragReleaseWatch?.cancel()
-    projectDragReleaseWatch?.cancel()
-  }
-
   /// The view a session draws into, from whichever engine opened it: the one
   /// thing a view takes from the host.
   public func surface(for id: TerminalSession.ID) -> Surface? {
@@ -315,10 +312,13 @@ public final class AppModel<Surface> {
     host.focus(id)
   }
 
-  /// Shells actually running, as opposed to saved tabs waiting to be opened.
-  public var liveTerminalCount: Int { liveSessionIDs.count }
-
   func liveTerminalCount(in worktree: Worktree.ID) -> Int {
     workspace.sessions(in: worktree).filter { liveSessionIDs.contains($0.id) }.count
+  }
+
+  deinit {
+    autosave?.cancel()
+    tabDragReleaseWatch?.cancel()
+    projectDragReleaseWatch?.cancel()
   }
 }

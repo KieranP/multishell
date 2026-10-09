@@ -8,8 +8,10 @@ extension ProcessRunnerTests {
     let runner = ProcessRunner()
     await #expect(throws: (any Error).self) {
       try await runner.run(
-        URL(fileURLWithPath: "/no/such/binary"), [],
-        in: URL(fileURLWithPath: NSTemporaryDirectory()))
+        URL(fileURLWithPath: "/no/such/binary"),
+        [],
+        in: URL(fileURLWithPath: NSTemporaryDirectory()),
+      )
     }
   }
 
@@ -17,7 +19,10 @@ extension ProcessRunnerTests {
     let runner = ProcessRunner()
     await #expect(throws: (any Error).self) {
       try await runner.run(
-        URL(fileURLWithPath: "/bin/sh"), ["-c", "true"], in: URL(fileURLWithPath: "/no/such/dir"))
+        URL(fileURLWithPath: "/bin/sh"),
+        ["-c", "true"],
+        in: URL(fileURLWithPath: "/no/such/dir"),
+      )
     }
   }
 
@@ -27,7 +32,10 @@ extension ProcessRunnerTests {
     let runner = ProcessRunner()
     func failToLaunch() async {
       _ = try? await runner.run(
-        URL(fileURLWithPath: "/bin/sh"), ["-c", "true"], in: URL(fileURLWithPath: "/no/such/dir"))
+        URL(fileURLWithPath: "/bin/sh"),
+        ["-c", "true"],
+        in: URL(fileURLWithPath: "/no/such/dir"),
+      )
     }
 
     for _ in 0..<5 { await failToLaunch() }

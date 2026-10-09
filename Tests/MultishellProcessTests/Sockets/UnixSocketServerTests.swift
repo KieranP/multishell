@@ -113,7 +113,9 @@ struct UnixSocketServerTests {
     try holder.run()
     defer { holder.terminate() }
     let announced = String(
-      decoding: output.fileHandleForReading.readData(ofLength: 5), as: UTF8.self)
+      decoding: output.fileHandleForReading.readData(ofLength: 5),
+      as: UTF8.self,
+    )
     #expect(announced.hasPrefix("held"), "the holder did not take the claim: \(announced)")
 
     do {
@@ -222,7 +224,9 @@ struct UnixSocketServerTests {
   /// of `sun_path`, and the refusal names the socket, not the staging file.
   @Test func aPathThatFitsOnlyWithoutItsStagingSuffixIsRefusedByItsOwnName() {
     for count in [102, 103] {
-      let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "z", count: count - 10) + ".sock")
+      let long = URL(
+        fileURLWithPath: "/tmp/" + String(repeating: "z", count: count - 10) + ".sock"
+      )
       #expect(long.path.utf8.count == count)
       let server = UnixSocketServer(path: long)
       defer {

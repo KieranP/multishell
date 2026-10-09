@@ -13,15 +13,21 @@ struct DebugStripView: View {
 
   var body: some View {
     let label = DebugStripLabel(
-      metric: metric, slot: timeline.shownSlot(hovering: hoveredSlotIndex),
-      theme: theme, metrics: metrics)
+      metric: metric,
+      slot: timeline.shownSlot(hovering: hoveredSlotIndex),
+      theme: theme,
+      metrics: metrics,
+    )
     HStack(spacing: 0) {
       label.frame(width: metrics.debugStripLabelWidth, alignment: .leading)
       DebugStripChart(metric: metric, timeline: timeline, theme: theme)
         .equatable()
         .overlay {
           DebugStripPointer(
-            slotIndex: hoveredSlotIndex, timeline: timeline, color: theme.textSecondary)
+            slotIndex: hoveredSlotIndex,
+            timeline: timeline,
+            color: theme.textSecondary,
+          )
         }
         .padding(.vertical, 5)
         .padding(.trailing, UIMetrics.debugChartTrailingInset)

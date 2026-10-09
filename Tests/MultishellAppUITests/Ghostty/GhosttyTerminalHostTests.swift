@@ -12,8 +12,11 @@ struct GhosttyTerminalHostTests {
     let delegate = RecordingTerminalHostDelegate()
     host.delegate = delegate
     let session = TerminalSession(
-      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()),
-      title: "Sleep", command: ["/bin/sleep", "60"])
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()),
+      title: "Sleep",
+      command: ["/bin/sleep", "60"],
+    )
     try host.open(session)
     let view = try #require(host.view(for: session.id) as? GhosttySurfaceView)
 
@@ -35,8 +38,11 @@ struct GhosttyTerminalHostTests {
     try autoreleasepool {
       for index in 0..<5 {
         let session = TerminalSession(
-          worktreeID: "/w", workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()),
-          title: "Sleep \(index)", command: ["/bin/sleep", "60"])
+          worktreeID: "/w",
+          workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()),
+          title: "Sleep \(index)",
+          command: ["/bin/sleep", "60"],
+        )
         try host.open(session)
         let view = try #require(host.view(for: session.id))
         view.frame = container.bounds

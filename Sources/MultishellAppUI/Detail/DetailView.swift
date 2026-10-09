@@ -10,20 +10,27 @@ struct DetailView: View {
       switch model.detailContent {
       case .cover(.agentBoard):
         AgentBoardView(model: model, theme: theme)
+
       case .cover(.debugInfo):
         DebugInfoView(model: model, theme: theme)
+
       case .operation(let worktree, let operation):
         WorktreeHeader(model: model, worktree: worktree, theme: theme)
         WorktreeOperationView(
-          operation: operation, theme: theme,
+          operation: operation,
+          theme: theme,
           cancel: { model.cancelStage(of: worktree) },
-          dismiss: { model.dismissOperationFailure(of: worktree) })
+          dismiss: { model.dismissOperationFailure(of: worktree) },
+        )
+
       case .tabGroups(let worktree):
         WorktreeHeader(model: model, worktree: worktree, theme: theme)
         WorktreeTabGroups(model: model, worktree: worktree, theme: theme)
+
       case .noTabs(let worktree):
         WorktreeHeader(model: model, worktree: worktree, theme: theme)
         Spacer()
+
       case .noSelection(let hasProjects):
         // Clears the title-bar band, like the header does.
         Color.clear.windowHeader()

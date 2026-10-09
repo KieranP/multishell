@@ -6,6 +6,8 @@ import MultishellProcess
 /// What the alert shows, built from the error types the app produces so
 /// git's stderr is the message rather than a struct's description.
 public struct PresentedError: Identifiable {
+  typealias Alert = (title: String, message: String)
+
   public let id = UUID()
   public let title: String
   public let message: String
@@ -32,8 +34,6 @@ public struct PresentedError: Identifiable {
     message = alert.message
     saysGitIsMissing = error is GitUnavailable
   }
-
-  typealias Alert = (title: String, message: String)
 
   /// What the cause said, a hook's startup noise cut away, then how it ended.
   /// Never the command line it ran as; a stop gives its reason instead.

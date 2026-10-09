@@ -18,7 +18,8 @@ struct DraggedFilePathsTests {
 
     #expect(!DraggedFilePaths.isTemporaryCopy(URL(fileURLWithPath: "/Users/x/Desktop/Shot.png")))
     #expect(
-      !DraggedFilePaths.isTemporaryCopy(URL(fileURLWithPath: "/repos/demo/Sources/App.swift")))
+      !DraggedFilePaths.isTemporaryCopy(URL(fileURLWithPath: "/repos/demo/Sources/App.swift"))
+    )
   }
 
   /// The name a copy carries is enough on its own, since a copy put outside

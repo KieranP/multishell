@@ -7,12 +7,6 @@ struct MultishellApp: App {
   @State private var model: AppModel
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
-  init() {
-    let platform = MacPlatform()
-    _platform = State(initialValue: platform)
-    _model = State(initialValue: AppModel(platform: platform))
-  }
-
   var body: some Scene {
     // One window, not a group: every surface is one NSView, and a second
     // window adopting the same views would steal them from the first.
@@ -51,5 +45,11 @@ struct MultishellApp: App {
     }
     .windowResizability(.contentSize)
     .defaultPosition(.center)
+  }
+
+  init() {
+    let platform = MacPlatform()
+    _platform = State(initialValue: platform)
+    _model = State(initialValue: AppModel(platform: platform))
   }
 }

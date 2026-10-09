@@ -10,8 +10,10 @@ extension AppModel {
 
   private var liveDebugSnapshot: DebugSnapshot {
     DebugSnapshot(
-      history: debugHistory, attribution: debugProcessAttribution,
-      terminalMemoryBySession: debugTerminalMemoryBySession)
+      history: debugHistory,
+      attribution: debugProcessAttribution,
+      terminalMemoryBySession: debugTerminalMemoryBySession,
+    )
   }
 
   /// View > Enable Debug Tools. Off drops every sample, stops git being

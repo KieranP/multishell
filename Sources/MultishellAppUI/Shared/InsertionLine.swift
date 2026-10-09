@@ -18,6 +18,7 @@ struct InsertionLine: View {
         .frame(width: 2)
         .padding(.vertical, 6)
         .offset(x: shift)
+
     case .horizontal:
       Capsule()
         .fill(Color.accentColor)

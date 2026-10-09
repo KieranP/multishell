@@ -15,11 +15,16 @@ extension WorktreeCoordinatorMergesTests {
 
     try await fixture.commitOnBranch("docs", file: "docs/one.md", content: "one\n")
     _ = try await fixture.runner.run(
-      ["merge", "-q", "--no-ff", "-m", "merge docs", "docs"], in: path)
+      ["merge", "-q", "--no-ff", "-m", "merge docs", "docs"],
+      in: path,
+    )
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
-      of: ["docs"], in: fixture.project, inputs: inputs)
+      of: ["docs"],
+      in: fixture.project,
+      inputs: inputs,
+    )
 
     #expect(states["docs"] == .merged(.ancestor, into: "main"))
   }
@@ -37,7 +42,9 @@ extension WorktreeCoordinatorMergesTests {
     // By refname, or git merges the tag: the ambiguity this is about reaches
     // the setup as readily as the reads.
     _ = try await fixture.runner.run(
-      ["merge", "-q", "--no-ff", "-m", "merge release", "refs/heads/release"], in: path)
+      ["merge", "-q", "--no-ff", "-m", "merge release", "refs/heads/release"],
+      in: path,
+    )
 
     let worktreeGit = WorktreeGit(runner: fixture.runner)
     let merged = await worktreeGit.mergedBranches(into: "main", in: fixture.project)
@@ -45,7 +52,10 @@ extension WorktreeCoordinatorMergesTests {
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
-      of: ["release"], in: fixture.project, inputs: inputs)
+      of: ["release"],
+      in: fixture.project,
+      inputs: inputs,
+    )
     #expect(states["release"] == .merged(.ancestor, into: "main"))
   }
 
@@ -58,7 +68,10 @@ extension WorktreeCoordinatorMergesTests {
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
-      of: ["feat"], in: fixture.project, inputs: inputs)
+      of: ["feat"],
+      in: fixture.project,
+      inputs: inputs,
+    )
 
     #expect(states["feat"] == .unmerged)
   }
@@ -74,7 +87,10 @@ extension WorktreeCoordinatorMergesTests {
     let inputs = try await mergeInputs(fixture)
     #expect(inputs.defaultBranch.shortName == "origin/main")
     let states = await fixture.coordinator.mergeStates(
-      of: ["feat"], in: fixture.project, inputs: inputs)
+      of: ["feat"],
+      in: fixture.project,
+      inputs: inputs,
+    )
 
     #expect(states["feat"] == .unmerged)
   }
@@ -88,11 +104,16 @@ extension WorktreeCoordinatorMergesTests {
     try await fixture.addOrigin()
 
     try await fixture.pushThenSquashMergeOnTheRemote(
-      "docs", work: [("docs/one.md", "one\n"), ("docs/two.md", "two\n")])
+      "docs",
+      work: [("docs/one.md", "one\n"), ("docs/two.md", "two\n")],
+    )
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
-      of: ["docs"], in: fixture.project, inputs: inputs)
+      of: ["docs"],
+      in: fixture.project,
+      inputs: inputs,
+    )
 
     #expect(states["docs"] == .merged(.upstreamGone, into: "origin/main"))
   }

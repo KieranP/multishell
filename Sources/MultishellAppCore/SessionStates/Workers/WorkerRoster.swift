@@ -4,6 +4,13 @@ import MultishellCore
 /// The workers one agent still has out, in the order they started; see
 /// Docs/design/agents.md.
 struct WorkerRoster: Equatable, Sendable {
+  /// A roster place a report touched, and whether more than one worker was
+  /// under it: a start repeated under one id makes which reported unknowable.
+  struct Place {
+    var id: String
+    var isShared = false
+  }
+
   var workers: [Worker] = []
   /// Workers past the roster limit by id, all under the one overflow place,
   /// so a tool call is told from a new worker and a stray end from their own.
@@ -12,18 +19,18 @@ struct WorkerRoster: Equatable, Sendable {
   /// after that parent ended is still drawn under it.
   var retired: [Worker] = []
 
-  /// A roster place a report touched, and whether more than one worker was
-  /// under it: a start repeated under one id makes which reported unknowable.
-  struct Place {
-    var id: String
-    var isShared = false
-  }
-
   var isEmpty: Bool { workers.isEmpty && overflowed.isEmpty }
 
   /// Whether anything is still working: a failed row is drawn until swept but
   /// holds no Working.
   var hasWorkOut: Bool { workers.contains { !$0.hasFailed } }
+
+  var firstNamedIndex: Int? {
+    workers.firstIndex { worker in
+      !worker.isBackgroundShell && !worker.hasEnded && !worker.hasFailed
+        && worker.id != Worker.overflowID
+    }
+  }
 
   /// A start or a tool call puts a worker on the roster, its end takes it off.
   /// Returns the place touched; `asking` are the workers with a prompt up.
@@ -33,6 +40,7 @@ struct WorkerRoster: Equatable, Sendable {
     switch report.phase {
     case .ended:
       return recordEnd(report, asking: asking)
+
     case .working where isAnonymous:
       // A tool call names no worker either, so it is one already out, and
       // only a start puts another unnamed place on the roster.
@@ -41,8 +49,10 @@ struct WorkerRoster: Equatable, Sendable {
       }
       if overflowedAnonymousID != nil { return overflowPlace }
       return add(Worker(id: Worker.anonymousPrefix + UUID().uuidString, type: report.type))
+
     case .working where report.isPaused == true:
       return recordOwnStop(report)
+
     case .started, .working:
       return recordStartOrToolCall(report, isAnonymous: isAnonymous)
     }
@@ -63,7 +73,8 @@ struct WorkerRoster: Equatable, Sendable {
   }
 
   private mutating func recordStartOrToolCall(
-    _ report: WorkerReport, isAnonymous: Bool
+    _ report: WorkerReport,
+    isAnonymous: Bool,
   ) -> Place {
     let id = isAnonymous ? Worker.anonymousPrefix + UUID().uuidString : report.id
     guard let index = workers.firstIndex(where: { $0.id == id }) else {
@@ -150,12 +161,6 @@ struct WorkerRoster: Equatable, Sendable {
     let askingIndex = workers.lastIndex { $0.isAnonymous && asking.contains($0.id) }
     // A background shell's end is its exit, never a hook's.
     return askingIndex ?? workers.lastIndex(where: \.isAnonymous) ?? firstNamedIndex
-  }
-
-  var firstNamedIndex: Int? {
-    workers.firstIndex {
-      !$0.isBackgroundShell && !$0.hasEnded && !$0.hasFailed && $0.id != Worker.overflowID
-    }
   }
 
   func place(at index: Int) -> Place {

@@ -16,30 +16,37 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
       let added = integration.adding(to: before, helper: helper)
       #expect(
         integration.hasOurHookUnderEveryEvent(in: added) == misshapen.isEmpty,
-        "seed \(seed) \(integration.id): installed unless an entry was of an unexpected shape")
+        "seed \(seed) \(integration.id): installed unless an entry was of an unexpected shape",
+      )
       let addedTwice = integration.adding(to: added, helper: helper)
       #expect(
         try hooksJSON(in: addedTwice) == hooksJSON(in: added),
-        "seed \(seed) \(integration.id): adding twice adds nothing")
+        "seed \(seed) \(integration.id): adding twice adds nothing",
+      )
 
       let after = integration.removing(from: added)
       #expect(
         foreign(in: after) == foreign(in: before),
-        "seed \(seed) \(integration.id): a hook of the user's did not come back")
+        "seed \(seed) \(integration.id): a hook of the user's did not come back",
+      )
       #expect(
         !integration.hasOurHookUnderEveryEvent(in: after) || integration.events.isEmpty,
-        "seed \(seed) \(integration.id): ours did not all come out")
+        "seed \(seed) \(integration.id): ours did not all come out",
+      )
       for (key, value) in before where key != "hooks" {
         #expect(
           String(describing: after[key] ?? "") == String(describing: value),
-          "seed \(seed) \(integration.id): \(key) was not left alone")
+          "seed \(seed) \(integration.id): \(key) was not left alone",
+        )
       }
     }
   }
 
   private func hooksJSON(in settings: [String: Any]) throws -> Data {
     try JSONSerialization.data(
-      withJSONObject: settings["hooks"] ?? NSNull(), options: [.sortedKeys, .fragmentsAllowed])
+      withJSONObject: settings["hooks"] ?? NSNull(),
+      options: [.sortedKeys, .fragmentsAllowed],
+    )
   }
 
   /// Every hook in the file that is not ours, by the command it runs, plus
@@ -52,8 +59,8 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
         continue
       }
       for group in groups {
-        let commands = (group["hooks"] as? [[String: Any]] ?? []).compactMap {
-          $0["command"] as? String
+        let commands = (group["hooks"] as? [[String: Any]] ?? []).compactMap { hook in
+          hook["command"] as? String
         }
         for command in commands where !AgentHookCatalogue.isOurHook(command) {
           found.insert("\(event)=\(command)")
@@ -66,17 +73,21 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
   /// Keys of the user's own, foreign hooks, ours from an older build, entries in a shape
   /// this cannot read, and events left out altogether.
   private func settings(
-    _ rng: inout SeededGenerator, events: [String]
+    _ rng: inout SeededGenerator,
+    events: [String],
   ) -> [String: Any] {
     var hooks: [String: Any] = [:]
     for event in events + ["PreCompact", "SomethingLater"] {
       switch Int.random(in: 0...5, using: &rng) {
       case 0: break
       case 1: hooks[event] = []
+
       case 2:
         hooks[event] = [["hooks": [["type": "command", "command": "echo \(event)"]]]]
+
       case 3:
         hooks[event] = [["hooks": [["type": "command", "command": legacyClaudeHookLine]]]]
+
       case 4: hooks[event] = "echo \(event)"
       default: hooks[event] = ["command": "echo \(event)"]
       }
@@ -153,7 +164,8 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     let twice = AgentHookCatalogue.claude.adding(to: added, helper: helper)
     #expect(
       (try #require(twice["hooks"] as? [String: Any])["Stop"] as? [[String: Any]])?.count == 1,
-      "adding again adds nothing")
+      "adding again adds nothing",
+    )
   }
 
   /// Two agents can share neither a file nor an event name, but the same
@@ -167,7 +179,8 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
       ]
     ]
     let removed = AgentHookCatalogue.claude.removing(
-      from: AgentHookCatalogue.claude.adding(to: existing, helper: helper))
+      from: AgentHookCatalogue.claude.adding(to: existing, helper: helper)
+    )
 
     let hooks = try #require(removed["hooks"] as? [String: Any])
     #expect(Set(hooks.keys) == ["Notification"], "Stop and the rest held only ours")
@@ -175,7 +188,8 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     #expect(!AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: removed))
 
     let bare = AgentHookCatalogue.claude.removing(
-      from: AgentHookCatalogue.claude.adding(to: [:], helper: helper))
+      from: AgentHookCatalogue.claude.adding(to: [:], helper: helper)
+    )
     #expect(bare["hooks"] == nil, "no hooks left means no hooks key")
   }
 
@@ -228,7 +242,8 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     #expect(stop.first?["timeout"] == nil)
     #expect(
       (stop.first?["hooks"] as? [[String: Any]])?.compactMap { $0["command"] as? String }
-        == ["~/bin/theirs.sh"])
+        == ["~/bin/theirs.sh"]
+    )
     #expect(stop.last?["command"] as? String == "~/bin/also-theirs.sh")
     #expect(stop.last?["hooks"] == nil)
     #expect(!AgentHookCatalogue.claude.holdsAnyOfOurHooks(removed))
@@ -250,8 +265,12 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     #expect(afterRemove["Stop"] as? [String] == ["echo done"], "a string list is not ours to drop")
     #expect(
       (afterRemove["PreToolUse"] as? [String: Any])?["command"] as? String == "echo before",
-      "nor is an object")
-    #expect((afterRemove["Notification"] as? [[String: Any]])?.count == 1, "and the readable stays")
+      "nor is an object",
+    )
+    #expect(
+      (afterRemove["Notification"] as? [[String: Any]])?.count == 1,
+      "and the readable stays",
+    )
 
     let added = AgentHookCatalogue.claude.adding(to: existing, helper: helper)
     let afterAdd = try #require(added["hooks"] as? [String: Any])

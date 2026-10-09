@@ -84,8 +84,12 @@ struct ProcessStopperTests {
     for shell in InstalledShells.only(["/bin/zsh", "/bin/bash"]) {
       let started = ContinuousClock.now
       let output = try await runner.capture(
-        URL(fileURLWithPath: shell), ["-i", "-c", "sleep 30 & echo $!; wait"], in: workingDirectory,
-        environment: ["HOME": workingDirectory.path, "HISTFILE": ""], timeout: .milliseconds(500))
+        URL(fileURLWithPath: shell),
+        ["-i", "-c", "sleep 30 & echo $!; wait"],
+        in: workingDirectory,
+        environment: ["HOME": workingDirectory.path, "HISTFILE": ""],
+        timeout: .milliseconds(500),
+      )
       let elapsed = ContinuousClock.now - started
       #expect(output.stopReason == .timedOut(after: .milliseconds(500)), "\(shell)")
       #expect(!output.succeeded, "\(shell)")
@@ -105,7 +109,11 @@ struct ProcessStopperTests {
     }
     let started = ContinuousClock.now
     let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "sleep 30"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(output.stopReason == .byUser)
     #expect(ContinuousClock.now - started < .seconds(12), "the child sleeps thirty")
   }
@@ -114,7 +122,11 @@ struct ProcessStopperTests {
     let stopper = ProcessStopper()
     stopper.stop()
     let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "sleep 30"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(output.stopReason == .byUser)
   }
 
@@ -123,8 +135,11 @@ struct ProcessStopperTests {
   @Test func aChildThatIgnoresSIGHUPIsKilledAfterTheGrace() async throws {
     let started = ContinuousClock.now
     let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "trap '' HUP; sleep 30"], in: workingDirectory,
-      timeout: .milliseconds(200))
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "trap '' HUP; sleep 30"],
+      in: workingDirectory,
+      timeout: .milliseconds(200),
+    )
     let elapsed = ContinuousClock.now - started
     #expect(output.stopReason == .timedOut(after: .milliseconds(200)))
     #expect(elapsed >= .seconds(ProcessStopper.killGrace), "the grace was skipped: \(elapsed)")
@@ -134,9 +149,12 @@ struct ProcessStopperTests {
   @Test func aChildThatFinishesInTimeHasNoStop() async throws {
     let stopper = ProcessStopper()
     let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: workingDirectory,
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "printf ok"],
+      in: workingDirectory,
       timeout: .seconds(5),
-      stopper: stopper)
+      stopper: stopper,
+    )
     #expect(output.stopReason == nil && output.succeeded)
     #expect(stopper.appliedStop == nil)
   }
@@ -146,16 +164,27 @@ struct ProcessStopperTests {
   @Test func aStopBetweenTwoChildrenCarriesToTheSecondRatherThanPoisoning() async throws {
     let stopper = ProcessStopper()
     let first = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "printf ok"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(first.succeeded)
 
     stopper.stop()
-    #expect(stopper.appliedStop == nil, "nothing was signalled: the first child had already exited")
+    #expect(
+      stopper.appliedStop == nil,
+      "nothing was signalled: the first child had already exited",
+    )
     #expect(stopper.isStopRequested, "but the ask stands for whatever runs next")
 
     let started = ContinuousClock.now
     let second = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "sleep 30"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(second.stopReason == .byUser, "the second hook is the one the Cancel was for")
     #expect(ContinuousClock.now - started < .seconds(12), "it slept its thirty")
   }
@@ -165,7 +194,11 @@ struct ProcessStopperTests {
   @Test func aTimeoutThatMissesItsChildDoesNotEndTheNextOne() async throws {
     let stopper = ProcessStopper()
     let first = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "printf ok"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(first.succeeded)
 
     // The race, run outright: the child is gone, and its timer fires anyway.
@@ -174,24 +207,32 @@ struct ProcessStopperTests {
     #expect(!stopper.isStopRequested, "a timeout dies with the run that armed it")
 
     let second = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf two"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "printf two"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(second.stopReason == nil && second.standardOutput == "two")
   }
 
   /// A child with SIGHUP blocked takes the timeout's signal as one already exiting
   /// does: it arrives and changes nothing. The child says when it has blocked it.
   private func startChildBlockingSIGHUP(
-    stopper: ProcessStopper, in scratch: URL
+    stopper: ProcessStopper,
+    in scratch: URL,
   ) -> Task<ProcessOutput, any Error> {
     let ready = scratch.appendingPathComponent("ready").path
-    let go = scratch.appendingPathComponent("go").path
+    let goFile = scratch.appendingPathComponent("go").path
     let script =
       "sigprocmask(SIG_BLOCK, POSIX::SigSet->new(SIGHUP)); open(my $f, '>', '\(ready)');"
-      + " close($f); select(undef, undef, undef, 0.02) until -e '\(go)'; exit 0"
+      + " close($f); select(undef, undef, undef, 0.02) until -e '\(goFile)'; exit 0"
     return Task {
       try await runner.capture(
-        URL(fileURLWithPath: "/usr/bin/perl"), ["-MPOSIX", "-e", script], in: workingDirectory,
-        stopper: stopper)
+        URL(fileURLWithPath: "/usr/bin/perl"),
+        ["-MPOSIX", "-e", script],
+        in: workingDirectory,
+        stopper: stopper,
+      )
     }
   }
 
@@ -229,7 +270,11 @@ struct ProcessStopperTests {
 
     #expect(stopper.isStopRequested)
     let next = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "sleep 30"],
+      in: workingDirectory,
+      stopper: stopper,
+    )
     #expect(next.stopReason == .byUser)
   }
 
@@ -238,8 +283,10 @@ struct ProcessStopperTests {
   @Test func aGrandchildThatTrapsSIGHUPIsKilledThoughTheShellWentAtOnce() async throws {
     let output = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"),
-      ["-c", "/bin/sh -c \"trap '' HUP; sleep 30\" & echo $!; wait"], in: workingDirectory,
-      timeout: .milliseconds(200))
+      ["-c", "/bin/sh -c \"trap '' HUP; sleep 30\" & echo $!; wait"],
+      in: workingDirectory,
+      timeout: .milliseconds(200),
+    )
     let child = try #require(sleepPID(in: output.standardOutput))
     #expect(await hasEnded(child), "left running as pid \(child)")
   }
@@ -253,7 +300,10 @@ struct ProcessStopperTests {
         "-c",
         "trap 'sleep 30 </dev/null >/dev/null 2>&1 & echo $!; exit 0' HUP; "
           + "while :; do sleep 0.05; done",
-      ], in: workingDirectory, timeout: .milliseconds(200))
+      ],
+      in: workingDirectory,
+      timeout: .milliseconds(200),
+    )
     let child = try #require(sleepPID(in: output.standardOutput))
     let polls = Int(ProcessStopper.killGrace * 10) + 50
     #expect(await hasEnded(child, polls: polls), "left running as pid \(child)")

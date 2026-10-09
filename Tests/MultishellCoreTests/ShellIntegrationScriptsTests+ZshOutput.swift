@@ -10,8 +10,11 @@ extension ShellIntegrationScriptsTests {
   static let scriptProgramPath = "/usr/bin/script"
 
   func zshOutput(
-    features: String?, input: String, usersRC: String? = nil, runsInputAsScript: Bool = false,
-    helper: String = "/bin/echo"
+    features: String?,
+    input: String,
+    usersRC: String? = nil,
+    runsInputAsScript: Bool = false,
+    helper: String = "/bin/echo",
   ) async throws -> String {
     try #require(FileManager.default.isExecutableFile(atPath: Self.zshPath))
     let files = try GeneratedIntegration(helper: helper)
@@ -30,13 +33,19 @@ extension ShellIntegrationScriptsTests {
       arguments.append(script.path)
     }
     return try await interactiveShellOutput(
-      Self.zshPath, arguments: arguments, environment: environment, input: input)
+      Self.zshPath,
+      arguments: arguments,
+      environment: environment,
+      input: input,
+    )
   }
 
   /// zle loads with a terminal, which a test's piped shell has none of, so
   /// the modules are loaded by hand before the generated file is read.
   func zleOutput(
-    features: String, before: String = "", after: String
+    features: String,
+    after: String,
+    before: String = "",
   ) async throws
     -> String
   {
@@ -53,7 +62,10 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: "ghostty")
     environment["GHOSTTY_SHELL_FEATURES"] = features
     return try await Detached.output(
-      of: Self.zshPath, ["-f", "-c", script], environment: environment)
+      of: Self.zshPath,
+      ["-f", "-c", script],
+      environment: environment,
+    )
   }
 
   /// The generated file read in a zsh on a terminal of its own, which `script`
@@ -69,7 +81,9 @@ extension ShellIntegrationScriptsTests {
       \(after)
       """
     return try await Detached.output(
-      of: Self.scriptProgramPath, ["-q", "/dev/null", Self.zshPath, "-f", "-c", script],
-      environment: files.environment(termProgram: "ghostty"))
+      of: Self.scriptProgramPath,
+      ["-q", "/dev/null", Self.zshPath, "-f", "-c", script],
+      environment: files.environment(termProgram: "ghostty"),
+    )
   }
 }

@@ -1,6 +1,10 @@
 /// An array whose elements decode one at a time, the rest dropped: a
 /// synthesized `[Element]` fails whole on its first bad element.
 struct LossyArray<Element: Decodable>: Decodable {
+  private struct Skipped: Decodable {
+    init(from decoder: any Decoder) throws {}
+  }
+
   let elements: [Element]
 
   init(from decoder: any Decoder) throws {
@@ -16,9 +20,5 @@ struct LossyArray<Element: Decodable>: Decodable {
       }
     }
     self.elements = elements
-  }
-
-  private struct Skipped: Decodable {
-    init(from decoder: any Decoder) throws {}
   }
 }

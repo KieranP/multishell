@@ -27,7 +27,15 @@ final class FakePlatform: Platform {
   var trashed: [URL] { fakeTrash.trashed }
   /// Per call, whether it came on the main thread, which it must not.
   var trashCallsOnMainThread: [Bool] { fakeTrash.onMainThread }
-  private nonisolated let fakeTrash = FakeTrash()
+  nonisolated private let fakeTrash = FakeTrash()
+  /// Every value the badge has been set to, in order, so a test can see it
+  /// clear as well as count.
+  var badges: [Int?] = []
+  var notificationSettingsLocation: String? = "System Settings > Notifications"
+  /// What the model asked to be called on each frame; a test calls it.
+  var onDisplayFrame: (@MainActor (ContinuousClock.Instant) -> Void)?
+
+  func log(_ message: String) { logged.append(message) }
 
   func closeKeyWindow() { closedKeyWindows += 1 }
   func chooseDirectory(prompt: String) async -> URL? { directoryToChoose }
@@ -38,7 +46,9 @@ final class FakePlatform: Platform {
     guard let trash = fakeTrash.destination else { throw TrashRefused() }
     try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
     try FileManager.default.moveItem(
-      at: url, to: trash.appendingPathComponent(url.lastPathComponent))
+      at: url,
+      to: trash.appendingPathComponent(url.lastPathComponent),
+    )
     fakeTrash.trashed.append(url)
   }
   func applicationURL(forIdentifier identifier: String) -> URL? { applications[identifier] }
@@ -47,14 +57,7 @@ final class FakePlatform: Platform {
   }
   func installCommandLineTool() throws { installedCommandLineTool = true }
   func handOverToRunningInstance() { handedOverToRunningInstance = true }
-  /// Every value the badge has been set to, in order, so a test can see it
-  /// clear as well as count.
-  var badges: [Int?] = []
   func setBadgeCount(_ count: Int?) { badges.append(count) }
-  var notificationSettingsLocation: String? = "System Settings > Notifications"
-  func log(_ message: String) { logged.append(message) }
-  /// What the model asked to be called on each frame; a test calls it.
-  var onDisplayFrame: (@MainActor (ContinuousClock.Instant) -> Void)?
   func startDisplayFrameCallbacks(
     _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
   ) { onDisplayFrame = onFrame }

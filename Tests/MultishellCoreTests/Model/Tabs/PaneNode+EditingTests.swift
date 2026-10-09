@@ -42,8 +42,11 @@ struct PaneNodeEditingTests {
     #expect(
       result
         == .split(
-          axis: .vertical, children: [.terminal(a), .terminal(b), .terminal(c)],
-          weights: [1, 0.5, 0.5]))
+          axis: .vertical,
+          children: [.terminal(a), .terminal(b), .terminal(c)],
+          weights: [1, 0.5, 0.5],
+        )
+    )
   }
 
   @Test func splittingAcrossTheAxisNests() {
@@ -93,7 +96,10 @@ struct PaneNodeEditingTests {
   /// children can be built; the same-axis split indexes weights by child.
   @Test func splittingAMisalignedSplitRealignsInsteadOfTrapping() {
     let tree = PaneNode.split(
-      axis: .vertical, children: [.terminal(a), .terminal(b)], weights: [])
+      axis: .vertical,
+      children: [.terminal(a), .terminal(b)],
+      weights: [],
+    )
     guard case .split(_, let children, let weights) = tree.splitting(b, with: c, axis: .vertical)
     else {
       Issue.record("shape")

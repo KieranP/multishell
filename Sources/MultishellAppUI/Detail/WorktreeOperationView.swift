@@ -19,6 +19,7 @@ struct WorktreeOperationView: View {
         Image(systemName: "exclamationmark.triangle.fill")
           .font(.system(size: 34, weight: .light))
           .foregroundStyle(theme.failureColor)
+          .accessibilityHidden(true)
       }
     } footer: {
       if operation.isRunning, let help = operation.stage.cancelHelp {

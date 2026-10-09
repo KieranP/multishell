@@ -20,6 +20,18 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// a copied directory or a filesystem with no birth time, sorted last.
   public var createdAt: Date?
 
+  public var id: String { path.path }
+  /// The branch, the short SHA when detached, or the folder for a bare
+  /// repository, which has neither.
+  public var name: String {
+    if isBare { return path.lastPathComponent }
+    return branch ?? String(head.prefix(7))
+  }
+  public var isDetached: Bool { branch == nil && !isBare }
+  /// What the menu offers Remove on and the coordinator agrees to take: the
+  /// main worktree is the repository itself, and a bare one has no checkout.
+  public var isRemovable: Bool { !isPrimary && !isBare }
+
   /// Synthesized decoding would keep whatever URL was written, so the
   /// directory normalisation from `init` is applied here too.
   public init(from decoder: any Decoder) throws {
@@ -37,18 +49,6 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.createdAt = container.decodeTolerantly(Date.self, forKey: .createdAt)
   }
 
-  public var id: String { path.path }
-  /// The branch, the short SHA when detached, or the folder for a bare
-  /// repository, which has neither.
-  public var name: String {
-    if isBare { return path.lastPathComponent }
-    return branch ?? String(head.prefix(7))
-  }
-  public var isDetached: Bool { branch == nil && !isBare }
-  /// What the menu offers Remove on and the coordinator agrees to take: the
-  /// main worktree is the repository itself, and a bare one has no checkout.
-  public var isRemovable: Bool { !isPrimary && !isBare }
-
   public init(
     path: URL,
     projectID: Project.ID,
@@ -58,7 +58,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     isLocked: Bool = false,
     isInitializing: Bool = false,
     isBare: Bool = false,
-    createdAt: Date? = nil
+    createdAt: Date? = nil,
   ) {
     self.path = path.normalizedDirectory
     self.projectID = projectID

@@ -9,7 +9,8 @@ struct PresentedErrorSettingsAndStateFileAlertsTests {
   @Test func unreadableStateNamesTheBackupFile() {
     let backup = URL(fileURLWithPath: "/tmp/state.2026.broken.json")
     let presented = PresentedError(
-      UnreadableStateFile(backup: backup, underlying: CocoaError(.coderReadCorrupt)))
+      UnreadableStateFile(backup: backup, underlying: CocoaError(.coderReadCorrupt))
+    )
     #expect(presented.title == "Saved state could not be read")
     #expect(presented.message.contains("state.2026.broken.json"))
   }
@@ -17,7 +18,8 @@ struct PresentedErrorSettingsAndStateFileAlertsTests {
   @Test func unmovedStateNamesTheFileStillStandingThere() {
     let file = URL(fileURLWithPath: "/tmp/state.json")
     let presented = PresentedError(
-      UnmovableStateFile(fileURL: file, underlying: CocoaError(.coderReadCorrupt)))
+      UnmovableStateFile(fileURL: file, underlying: CocoaError(.coderReadCorrupt))
+    )
     #expect(presented.title == "Saved state could not be read")
     #expect(presented.message.contains("/tmp/state.json"))
     #expect(presented.message.contains("Nothing will be saved over it"))

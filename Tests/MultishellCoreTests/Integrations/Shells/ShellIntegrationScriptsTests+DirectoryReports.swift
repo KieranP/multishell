@@ -32,7 +32,9 @@ extension ShellIntegrationScriptsTests {
     let output = try await zshOutput(features: nil, input: input)
     #expect(output.contains("x\ty>"), "the shell is in it")
     #expect(
-      output.contains(TerminalReports.directoryPrefix), "the directory before it was reported")
+      output.contains(TerminalReports.directoryPrefix),
+      "the directory before it was reported",
+    )
     #expect(output.contains("x\ty\u{7}") == false)
   }
 
@@ -40,7 +42,9 @@ extension ShellIntegrationScriptsTests {
   /// the cd hook too, which put the report in the captured value.
   @Test func aCdInsideACommandSubstitutionReportsNothingIntoIt() async throws {
     let output = try await zshOutput(
-      features: nil, input: "x=$(cd /usr; pwd); print -rn -- \"<$x>\"\nexit\n")
+      features: nil,
+      input: "x=$(cd /usr; pwd); print -rn -- \"<$x>\"\nexit\n",
+    )
     #expect(output.contains("</usr>"))
   }
 
@@ -48,7 +52,8 @@ extension ShellIntegrationScriptsTests {
   /// goes to a file put the report at the top of the file.
   @Test func aCdUnderARedirectReportsToTheTerminalNotTheFile() async throws {
     let output = try await terminalOutput(
-      after: "{ cd /usr; print hi; } > ~/out.txt; print -rn -- \"<$(<~/out.txt)>\"")
+      after: "{ cd /usr; print hi; } > ~/out.txt; print -rn -- \"<$(<~/out.txt)>\""
+    )
     #expect(output.contains("<hi>"))
     #expect(output.contains(TerminalReports.directoryPrefix), "still reported, to the terminal")
   }

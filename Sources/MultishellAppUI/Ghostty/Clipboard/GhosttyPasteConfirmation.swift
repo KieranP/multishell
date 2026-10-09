@@ -9,8 +9,9 @@ struct GhosttyPasteConfirmation: Sendable {
   /// `nil` for anything but a paste with text: a program's read or write is
   /// refused unasked; see Docs/design/terminals.md.
   init?(
-    _ request: GhosttyClipboardRequest, kind: ghostty_clipboard_request_e,
-    contents: UnsafeBufferPointer<ghostty_clipboard_content_s>
+    _ request: GhosttyClipboardRequest,
+    kind: ghostty_clipboard_request_e,
+    contents: UnsafeBufferPointer<ghostty_clipboard_content_s>,
   ) {
     guard kind == GHOSTTY_CLIPBOARD_REQUEST_PASTE,
       let text = GhosttyClipboardContents.plainText(in: contents)

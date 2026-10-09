@@ -15,14 +15,14 @@ struct AppShortcut {
     self.surfaceKeepsBinding = surfaceKeepsBinding
   }
 
-  /// Control-only, for the tab cycling that does not take Command.
-  static func control(_ key: KeyEquivalent, _ extra: EventModifiers = []) -> AppShortcut {
-    AppShortcut(key: key, modifiers: extra.union(.control), surfaceKeepsBinding: false)
-  }
-
   private init(key: KeyEquivalent, modifiers: EventModifiers, surfaceKeepsBinding: Bool) {
     self.key = key
     self.modifiers = modifiers
     self.surfaceKeepsBinding = surfaceKeepsBinding
+  }
+
+  /// Control-only, for the tab cycling that does not take Command.
+  static func control(_ key: KeyEquivalent, _ extra: EventModifiers = []) -> Self {
+    Self(key: key, modifiers: extra.union(.control), surfaceKeepsBinding: false)
   }
 }

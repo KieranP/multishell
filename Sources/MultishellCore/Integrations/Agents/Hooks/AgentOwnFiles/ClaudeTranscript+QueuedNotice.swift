@@ -46,12 +46,15 @@ extension ClaudeTranscript {
       guard operation == "enqueue" || operation == "remove" else { return nil }
       text = entry["content"]
       isQueued = operation == "enqueue"
+
     case "user":
       text = (entry["message"] as? [String: Any])?["content"]
       isQueued = false
+
     case "attachment":
       text = (entry["attachment"] as? [String: Any])?["prompt"]
       isQueued = false
+
     default:
       return nil
     }

@@ -16,7 +16,9 @@ extension AccessibilityText {
       t(
         "spoken.named",
         card.occupant.name,
-        card.occupant.isAgent ? t("spoken.agent") : t("spoken.shell")))
+        card.occupant.isAgent ? t("spoken.agent") : t("spoken.shell"),
+      )
+    )
     if let position = card.position { parts.append(panePosition(position)) }
     if !card.workers.isEmpty { parts.append(card.workers.countText) }
     if let elapsed = card.elapsed(at: now) { parts.append(t("spoken.elapsed", elapsed)) }

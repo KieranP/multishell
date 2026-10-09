@@ -24,7 +24,9 @@ extension AppModelStatusReadsTests {
     harness.model.worktreeOperations.finish(.copyingFiles, on: main.id)
     await harness.model.refreshStatuses()
     #expect(
-      harness.model.statuses[main.id]?.changedFiles == 1, "and the real count once it is done")
+      harness.model.statuses[main.id]?.changedFiles == 1,
+      "and the real count once it is done",
+    )
   }
 
   /// A removal's stages run on a worktree whose count holds until the directory
@@ -73,7 +75,9 @@ extension AppModelStatusReadsTests {
 
     await harness.model.refreshStatuses()
     #expect(
-      harness.model.statuses[main.id] == nil, "and the last checkout at this path leaves nothing")
+      harness.model.statuses[main.id] == nil,
+      "and the last checkout at this path leaves nothing",
+    )
 
     await harness.model.refreshStatus(of: main.id)
     #expect(harness.model.statuses[main.id] == nil, "a prompt's refresh reads no earlier")
@@ -86,18 +90,27 @@ extension AppModelStatusReadsTests {
     defer { try? Data().write(to: gate) }
     let repository = harness.project.path
     try await TestRepository.commit(
-      "slow", files: [".gitattributes": "*.dat filter=slow\n", "a.dat": "x\n"], in: repository,
-      using: harness.git)
+      "slow",
+      files: [".gitattributes": "*.dat filter=slow\n", "a.dat": "x\n"],
+      in: repository,
+      using: harness.git,
+    )
     _ = try await harness.git.run(
       [
         "config", "filter.slow.smudge",
         "while [ ! -f '\(gate.path)' ]; do sleep 0.02; done; cat",
-      ], in: repository)
+      ],
+      in: repository,
+    )
     let outside = harness.root.appendingPathComponent("outside", isDirectory: true)
     let git = harness.git
     let add = Task {
       try await TestRepository.addWorktree(
-        onNewBranch: "outside", at: outside, in: repository, using: git)
+        onNewBranch: "outside",
+        at: outside,
+        in: repository,
+        using: git,
+      )
     }
     let lock = repository.appendingPathComponent(".git/worktrees/outside/locked")
     try await waitUntil { FileManager.default.fileExists(atPath: lock.path) }
@@ -121,7 +134,11 @@ extension AppModelStatusReadsTests {
     defer { harness.tearDown() }
 
     await harness.model.createWorktree(
-      branch: "plain", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "plain",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     let created = try #require(harness.worktree(onBranch: "plain"))
     #expect(!harness.model.pathClaims.isClaimed(created.id))
@@ -153,11 +170,18 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     try "secret".write(
-      to: harness.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
+      to: harness.project.path.appendingPathComponent(".env"),
+      atomically: true,
+      encoding: .utf8,
+    )
     harness.model.setSettings(ProjectSettings(copiedPaths: ".env"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "listed", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "listed",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "listed"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     #expect(harness.model.worktreeOperations.isEmpty, "the copy is done")
@@ -178,10 +202,17 @@ extension AppModelStatusReadsTests {
         postCreateHook: """
           mkdir -p build && echo x > build/one && echo x > build/two
           while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
-          """), for: harness.project)
+          """
+      ),
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "slow", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "slow",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "slow"))
     let two = created.path.appendingPathComponent("build/two").path
     try await waitUntil({ FileManager.default.fileExists(atPath: two) }, seconds: 4)
@@ -194,6 +225,8 @@ extension AppModelStatusReadsTests {
     await harness.model.refreshStatuses()
 
     #expect(
-      harness.model.statuses[created.id]?.changedFiles == 1, "the one untracked directory, after")
+      harness.model.statuses[created.id]?.changedFiles == 1,
+      "the one untracked directory, after",
+    )
   }
 }

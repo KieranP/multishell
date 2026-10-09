@@ -7,6 +7,11 @@ import Testing
 @MainActor
 @Suite
 struct GhosttyPaneEventMonitorTests {
+  /// A window never ordered in cannot become key, which a pane needs to have the keyboard.
+  private final class KeyWindow: NSWindow {
+    override var isKeyWindow: Bool { true }
+  }
+
   @Test func aClickOnTheTopPaneOfAStackedSplitFindsTheTopPane() {
     let content = NSHostingView(rootView: Color.clear)
     content.frame = NSRect(x: 0, y: 0, width: 400, height: 400)
@@ -29,9 +34,17 @@ struct GhosttyPaneEventMonitorTests {
     let window = OffscreenWindow.holding(pane, deferred: false)
     let click = try #require(
       NSEvent.mouseEvent(
-        with: .leftMouseDown, location: NSPoint(x: 200, y: 200), modifierFlags: [], timestamp: 1,
-        windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1,
-        pressure: 1))
+        with: .leftMouseDown,
+        location: NSPoint(x: 200, y: 200),
+        modifierFlags: [],
+        timestamp: 1,
+        windowNumber: window.windowNumber,
+        context: nil,
+        eventNumber: 0,
+        clickCount: 1,
+        pressure: 1,
+      )
+    )
 
     let isTaken = withExtendedLifetime(window) { GhosttyPaneEventMonitor.deliver(click) }
 
@@ -67,8 +80,11 @@ struct GhosttyPaneEventMonitorTests {
   private func paneWithTheKeyboard() -> (GhosttySurfaceView, NSWindow) {
     let pane = GhosttySurfaceView(runtime: GhosttyRuntime(), launch: .sleeping)
     let window = KeyWindow(
-      contentRect: NSRect(x: 0, y: 0, width: 400, height: 400), styleMask: [.titled],
-      backing: .buffered, defer: false)
+      contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
+      styleMask: [.titled],
+      backing: .buffered,
+      defer: false,
+    )
     window.contentView = pane
     window.makeFirstResponder(pane)
     return (pane, window)
@@ -77,13 +93,17 @@ struct GhosttyPaneEventMonitorTests {
   private func keyUp(flags: NSEvent.ModifierFlags, in window: NSWindow) throws -> NSEvent {
     try #require(
       NSEvent.keyEvent(
-        with: .keyUp, location: .zero, modifierFlags: flags, timestamp: 1,
-        windowNumber: window.windowNumber, context: nil, characters: "c",
-        charactersIgnoringModifiers: "c", isARepeat: false, keyCode: 0x08))
-  }
-
-  /// A window never ordered in cannot become key, which a pane needs to have the keyboard.
-  private final class KeyWindow: NSWindow {
-    override var isKeyWindow: Bool { true }
+        with: .keyUp,
+        location: .zero,
+        modifierFlags: flags,
+        timestamp: 1,
+        windowNumber: window.windowNumber,
+        context: nil,
+        characters: "c",
+        charactersIgnoringModifiers: "c",
+        isARepeat: false,
+        keyCode: 0x08,
+      )
+    )
   }
 }

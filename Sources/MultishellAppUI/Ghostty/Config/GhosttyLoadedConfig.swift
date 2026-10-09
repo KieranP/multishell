@@ -13,14 +13,11 @@ final class GhosttyLoadedConfig {
     self.diagnostics = diagnostics
   }
 
-  deinit {
-    ghostty_config_free(config)
-  }
-
   /// `nil` where the text could not be written for libghostty to read, or
   /// libghostty made no config.
   static func load(
-    _ text: String, in directory: URL = FileManager.default.temporaryDirectory
+    _ text: String,
+    in directory: URL = FileManager.default.temporaryDirectory,
   ) -> GhosttyLoadedConfig? {
     let file = directory.appendingPathComponent("ghostty-config-\(UUID().uuidString).conf")
     defer { try? FileManager.default.removeItem(at: file) }
@@ -43,8 +40,8 @@ final class GhosttyLoadedConfig {
     guard let config = ghostty_config_new() else { return nil }
     fill(config)
     ghostty_config_finalize(config)
-    let diagnostics = (0..<ghostty_config_diagnostics_count(config)).map {
-      String(cString: ghostty_config_get_diagnostic(config, $0).message)
+    let diagnostics = (0..<ghostty_config_diagnostics_count(config)).map { index in
+      String(cString: ghostty_config_get_diagnostic(config, index).message)
     }
     return GhosttyLoadedConfig(config: config, diagnostics: diagnostics)
   }
@@ -55,5 +52,9 @@ final class GhosttyLoadedConfig {
     var value = false
     let found = key.withCStringAndLength { ghostty_config_get(config, &value, $0, $1) }
     return found ? value : nil
+  }
+
+  deinit {
+    ghostty_config_free(config)
   }
 }

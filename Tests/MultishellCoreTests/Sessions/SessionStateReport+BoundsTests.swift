@@ -39,7 +39,7 @@ struct SessionStateReportBoundsTests {
 
   @Test func aWorkersTypeAndIdAreBoundedGoingOntoTheChannelAsComingOffIt() throws {
     let long = String(repeating: "x", count: 70_000)
-    let worker = WorkerReport(id: long, type: long, phase: .working)
+    let worker = WorkerReport(id: long, phase: .working, type: long)
     #expect(worker.id == WorkerReport.anonymousID)
     #expect(worker.type?.count == WorkerReport.maximumTypeLength + 1)
     let line = try SessionStateReport(state: .running, worker: worker).encodedLine()
@@ -51,10 +51,12 @@ struct SessionStateReportBoundsTests {
     let out = (1...count).map { #"{"id":"w\#($0)","phase":"working"}"# }.joined(separator: ",")
     let long = String(repeating: "x", count: 200)
     let report = SessionStateReport.parse(
-      #"{"state":"done","out":[{"id":"\#(long)","phase":"working"},\#(out)]}"#)
+      #"{"state":"done","out":[{"id":"\#(long)","phase":"working"},\#(out)]}"#
+    )
     #expect(
       report?.workersOut?.count == SessionStateReport.maximumWorkersOut,
-      "as many as a roster's places and folds")
+      "as many as a roster's places and folds",
+    )
     #expect(report?.workersOut?.first?.id == "w1", "the unnamed one is dropped")
   }
 
@@ -63,7 +65,8 @@ struct SessionStateReportBoundsTests {
       #"{"state":"running","agent":"codex","cwd":"/w/repo","command":"/bin/make all","#
         + #""subagent":{"id":"t1","type":"Explore","phase":"working","parent":"t0","#
         + #""name":"reuse","description":"Efficiency angle"},"#
-        + #""launched":{"id":"b1","phase":"started","shell":true,"parent":"t1"}}"#)
+        + #""launched":{"id":"b1","phase":"started","shell":true,"parent":"t1"}}"#
+    )
 
     #expect(report?.agentID == "codex")
     #expect(report?.workingDirectory == "/w/repo")
@@ -71,23 +74,34 @@ struct SessionStateReportBoundsTests {
     #expect(
       report?.worker
         == WorkerReport(
-          id: "t1", type: "Explore", phase: .working, parentID: "t0", name: "reuse",
-          description: "Efficiency angle"))
+          id: "t1",
+          phase: .working,
+          type: "Explore",
+          parentID: "t0",
+          name: "reuse",
+          description: "Efficiency angle",
+        )
+    )
     #expect(
       report?.launched
-        == WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "t1"))
+        == WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "t1")
+    )
   }
 
   /// The channel drops a line over 64 KB, so an overlong message would lose the state too:
   /// Waiting for input, from a permission prompt quoting a very long command.
   @Test func aVeryLongMessageIsTrimmedSoItsReportStillFits() throws {
     let report = SessionStateReport(
-      state: .attention, workingDirectory: String(repeating: "d", count: 900),
-      message: String(repeating: "x", count: 200_000))
+      state: .attention,
+      workingDirectory: String(repeating: "d", count: 900),
+      message: String(repeating: "x", count: 200_000),
+    )
 
     let message = try #require(report.message)
     #expect(
-      message.count == SessionStateReport.maximumMessageLength + 1, "trimmed, with an ellipsis")
+      message.count == SessionStateReport.maximumMessageLength + 1,
+      "trimmed, with an ellipsis",
+    )
     #expect(message.hasSuffix("…"))
     #expect(try report.encodedLine().utf8.count < 64 * 1024, "the channel takes no more")
 
@@ -100,22 +114,28 @@ struct SessionStateReportBoundsTests {
   @Test func aLongMessageIsTrimmedComingOffTheChannelAndNotOnlyGoingOntoIt() throws {
     let long = String(repeating: "x", count: 60_000)
     let report = try #require(
-      SessionStateReport.parse(#"{"v":1,"state":"attention","message":"\#(long)"}"#))
+      SessionStateReport.parse(#"{"v":1,"state":"attention","message":"\#(long)"}"#)
+    )
 
     let message = try #require(report.message)
     #expect(
-      message.count == SessionStateReport.maximumMessageLength + 1, "trimmed, with an ellipsis")
+      message.count == SessionStateReport.maximumMessageLength + 1,
+      "trimmed, with an ellipsis",
+    )
     #expect(message.hasSuffix("…"))
   }
 
   @Test func aConversationIdLongerThanAnyAgentsIsDroppedComingOffTheChannel() throws {
     let long = String(repeating: "c", count: SessionStateReport.maximumIdentifierLength + 1)
     let dropped = try #require(
-      SessionStateReport.parse(#"{"v":1,"state":"running","conversation":"\#(long)"}"#))
+      SessionStateReport.parse(#"{"v":1,"state":"running","conversation":"\#(long)"}"#)
+    )
     #expect(dropped.conversationID == nil)
     let kept = try #require(
       SessionStateReport.parse(
-        #"{"v":1,"state":"running","conversation":"37880ecf-c5f3-42ce-afe0-82b221d75839"}"#))
+        #"{"v":1,"state":"running","conversation":"37880ecf-c5f3-42ce-afe0-82b221d75839"}"#
+      )
+    )
     #expect(kept.conversationID == "37880ecf-c5f3-42ce-afe0-82b221d75839")
     #expect(SessionStateReport(state: .running, conversationID: "").conversationID == nil)
   }
@@ -125,11 +145,13 @@ struct SessionStateReportBoundsTests {
   @Test func aDurationNoCommandCouldHaveTakenIsDroppedComingOffTheChannel() throws {
     for written in ["1e300", "-4", "1e9"] {
       let report = try #require(
-        SessionStateReport.parse(#"{"v":1,"state":"done","duration":\#(written)}"#))
+        SessionStateReport.parse(#"{"v":1,"state":"done","duration":\#(written)}"#)
+      )
       #expect(report.duration == nil, "\(written)")
     }
     let real = try #require(
-      SessionStateReport.parse(#"{"v":1,"state":"done","duration":41.5}"#))
+      SessionStateReport.parse(#"{"v":1,"state":"done","duration":41.5}"#)
+    )
     #expect(real.duration == 41.5, "what a command actually took is kept")
   }
 
@@ -137,15 +159,20 @@ struct SessionStateReportBoundsTests {
   /// user's can write the line it arrives on.
   @Test func aCommandIsCutToItsFirstWordWithoutItsPathOrDroppedEntirely() throws {
     let kept = try #require(
-      SessionStateReport.parse(#"{"v":1,"state":"running","command":"/opt/bin/codex --resume"}"#))
+      SessionStateReport.parse(#"{"v":1,"state":"running","command":"/opt/bin/codex --resume"}"#)
+    )
     #expect(kept.command == "codex")
     let trailing = try #require(
-      SessionStateReport.parse(#"{"v":1,"state":"running","command":"/opt/bin/"}"#))
+      SessionStateReport.parse(#"{"v":1,"state":"running","command":"/opt/bin/"}"#)
+    )
     #expect(
-      trailing.command == "bin", "a trailing slash names the directory, as every path API has it")
+      trailing.command == "bin",
+      "a trailing slash names the directory, as every path API has it",
+    )
     for written in ["/", "//", "   ", ""] {
       let report = try #require(
-        SessionStateReport.parse(#"{"v":1,"state":"running","command":"\#(written)"}"#))
+        SessionStateReport.parse(#"{"v":1,"state":"running","command":"\#(written)"}"#)
+      )
       #expect(report.command == nil, "[\(written)] names no program")
     }
   }

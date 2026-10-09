@@ -4,8 +4,8 @@ import MultishellCore
 /// collapsed worktrees' state, and either over the icon.
 public enum ProjectRowSlot: Equatable, Sendable {
   case fetching
-  case state(SessionState)
   case icon
+  case state(SessionState)
 
   public init(isFetching: Bool, state: SessionState?) {
     if isFetching {

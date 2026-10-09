@@ -16,13 +16,17 @@ extension WorkspaceRepairTests {
         "worktrees": [
           { "path": "file:///repos/demo/", "projectID": "/repos/gone", "head": "a", "branch": "dead" },
           { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "live" } ] }
-      """#)
+      """#,
+    )
     #expect(workspace.worktrees.count == 2, "decoding keeps both; repair is where they meet")
 
     workspace.repair()
 
     WorkspaceInvariants.check(workspace, "duplicate worktree")
-    #expect(workspace.worktrees.map(\.branch) == ["live"], "the dead copy was kept and then pruned")
+    #expect(
+      workspace.worktrees.map(\.branch) == ["live"],
+      "the dead copy was kept and then pruned",
+    )
   }
 
   /// First entry wins, so deduping before the dangling prune can keep the
@@ -43,14 +47,17 @@ extension WorkspaceRepairTests {
         "sessions": [
           { "id": "\#(live)", "worktreeID": "/repos/demo",
             "workingDirectory": "file:///repos/demo/", "title": "Shell" } ] }
-      """#)
+      """#,
+    )
     #expect(workspace.tabs.count == 2, "decoding keeps both; repair is where they meet")
 
     workspace.repair()
 
     WorkspaceInvariants.check(workspace, "duplicate tab")
     #expect(
-      workspace.tabs.map(\.worktreeID) == ["/repos/demo"], "the dead copy was kept and then pruned")
+      workspace.tabs.map(\.worktreeID) == ["/repos/demo"],
+      "the dead copy was kept and then pruned",
+    )
     #expect(workspace.sessions.map(\.id) == [live], "its session went with it")
   }
 
@@ -64,7 +71,8 @@ extension WorkspaceRepairTests {
         "worktrees": [
           { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" },
           { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ] }
-      """#)
+      """#,
+    )
     #expect(workspace.projects.count == 2, "decoding keeps both; repair is where they meet")
 
     workspace.repair()

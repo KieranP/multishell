@@ -21,13 +21,16 @@ public struct DebugQuickStats: Sendable, Equatable {
     totalMemory = latest?.totalMemory
     // A frameless second is a display asleep, not a drop to zero.
     frameRateTrend = Self.fractionsOfScale(
-      recent.compactMap { $0.frameRate?.framesPerSecond }, scaledAs: .frameRate)
+      recent.compactMap { $0.frameRate?.framesPerSecond },
+      scaledAs: .frameRate,
+    )
     cpuTrend = Self.fractionsOfScale(recent.map(\.totalCPUPercent), scaledAs: .cpu)
     memoryTrend = Self.fractionsBetweenExtremes(recent.map { Double($0.totalMemory) })
   }
 
   private static func fractionsOfScale(
-    _ values: [Double], scaledAs metric: DebugMetric
+    _ values: [Double],
+    scaledAs metric: DebugMetric,
   ) -> [Double] {
     let scale = metric.scale(forPeak: values.max() ?? 0)
     return values.map { min($0 / scale, 1) }

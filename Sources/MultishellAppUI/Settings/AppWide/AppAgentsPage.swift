@@ -21,17 +21,13 @@ struct AppAgentsPage: View {
 
   @State private var part: Part
 
-  init(model: AppModel, part: Part = .agent) {
-    self.model = model
-    _part = State(initialValue: part)
-  }
-
   var body: some View {
     Form {
       SplitPagePicker(label: t("label.agents"), selection: $part, title: \.title)
 
       switch part {
       case .agent: agentSection
+
       case .hooks:
         if !model.agentHooksRows.isEmpty {
           AgentHooksSection(model: model)
@@ -50,13 +46,15 @@ struct AppAgentsPage: View {
         selection: model.preferredAgentBinding,
         options: model.agentDetection.options(selected:),
         rescanning: model,
-        info: model.agentPathNote
+        info: model.agentPathNote,
       )
       if model.usesCustomAgent {
         CustomChoiceField(
-          label: t("label.command"), info: t("agents.command-info"),
+          label: t("label.command"),
+          info: t("agents.command-info"),
           prompt: t("agents.command-prompt"),
-          text: model.settingBinding(\.customAgentCommand, write: model.setCustomAgentCommand))
+          text: model.settingBinding(\.customAgentCommand, write: model.setCustomAgentCommand),
+        )
       } else if model.hasPreferredAgent {
         InfoLabeledContent(t("agents.flags"), info: t("agents.flags-info")) {
           // No prompt text: a greyed example in an empty field reads as a
@@ -65,14 +63,18 @@ struct AppAgentsPage: View {
         }
       }
       InfoToggle(
-        t("agents.auto-start-tab"), info: t("agents.auto-start-tab-info"),
-        isOn: model.settingBinding(\.autoStartsAgent, write: model.setAutoStartsAgent)
+        t("agents.auto-start-tab"),
+        info: t("agents.auto-start-tab-info"),
+        isOn: model.settingBinding(\.autoStartsAgent, write: model.setAutoStartsAgent),
       )
       .disabled(!model.hasPreferredAgent)
       InfoToggle(
-        t("agents.auto-start-create"), info: t("agents.auto-start-create-info"),
+        t("agents.auto-start-create"),
+        info: t("agents.auto-start-create-info"),
         isOn: model.settingBinding(
-          \.autoStartsAgentOnCreate, write: model.setAutoStartsAgentOnCreate)
+          \.autoStartsAgentOnCreate,
+          write: model.setAutoStartsAgentOnCreate,
+        ),
       )
       .disabled(!model.hasPreferredAgent)
     }
@@ -89,5 +91,10 @@ struct AppAgentsPage: View {
         }
       }
     }
+  }
+
+  init(model: AppModel, part: Part = .agent) {
+    self.model = model
+    _part = State(initialValue: part)
   }
 }

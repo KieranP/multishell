@@ -6,6 +6,7 @@ extension DragConfiguration {
   static var insideTheAppOnly: DragConfiguration {
     DragConfiguration(
       operationsWithinApp: .init(allowCopy: true, allowMove: true),
-      operationsOutsideApp: .init(allowCopy: false, allowMove: false, allowDelete: false))
+      operationsOutsideApp: .init(allowCopy: false, allowMove: false, allowDelete: false),
+    )
   }
 }

@@ -52,7 +52,8 @@ extension AgentHookIntegrationInstallAndRemoveTests {
     try openCode.install(into: file, helper: helper)
     let source = try String(contentsOf: file, encoding: .utf8)
     #expect(
-      source.contains("homedir() + \"/Library/Application Support/Multishell/bin/multishell\""))
+      source.contains("homedir() + \"/Library/Application Support/Multishell/bin/multishell\"")
+    )
     #expect(source.contains("\"state\", state, \"--agent\", \"opencode\""))
     for state in [SessionState.running, .attention, .done, .failed] {
       #expect(source.contains("report(\"\(state.rawValue)\""), "no \(state.rawValue)")

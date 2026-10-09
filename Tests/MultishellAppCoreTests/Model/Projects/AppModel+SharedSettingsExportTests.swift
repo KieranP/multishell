@@ -14,14 +14,16 @@ struct AppModelSharedSettingsExportTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let file = try harness.writeSharedSettings(
-      #"{ "$schema": "https://example.test/multishell.json", "branchPrefix": "team/" }"#)
+      #"{ "$schema": "https://example.test/multishell.json", "branchPrefix": "team/" }"#
+    )
     await harness.model.refreshWorktrees(of: harness.project)
     harness.model.setSettings(ProjectSettings(iconTint: 3), for: harness.project)
 
     await harness.model.exportSharedSettings(for: harness.project)
 
     let json = try #require(
-      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
     #expect(json["$schema"] as? String == "https://example.test/multishell.json")
     #expect(json["branchPrefix"] as? String == "team/" && json["iconTint"] as? Int == 3)
     #expect(
@@ -47,10 +49,15 @@ struct AppModelSharedSettingsExportTests {
     defer { harness.tearDown() }
     harness.model.setSettings(
       ProjectSettings(
-        branchPrefix: "team/", postCreateHook: "npm ci", linkedPaths: "node_modules",
+        branchPrefix: "team/",
+        postCreateHook: "npm ci",
+        linkedPaths: "node_modules",
         copiedPaths: ".env\n.env.*",
-        iconGlyph: "server.rack", iconTint: 3),
-      for: harness.project)
+        iconGlyph: "server.rack",
+        iconTint: 3,
+      ),
+      for: harness.project,
+    )
 
     await harness.model.exportSharedSettings(for: harness.project)
 
@@ -61,16 +68,21 @@ struct AppModelSharedSettingsExportTests {
     #expect(written.linkedPaths == "node_modules")
     #expect(
       written.trustCoveredText?.contains("copied:\n.env") == true,
-      "and are asked about beside them")
+      "and are asked about beside them",
+    )
     #expect(written.trustCoveredText?.contains("linked:\nnode_modules") == true)
     #expect(written.worktreeDirectory == nil, "following the global is not exported")
     #expect(
-      harness.project.sharedSettingsSnapshot.asWritten == written)
+      harness.project.sharedSettingsSnapshot.asWritten == written
+    )
     #expect(harness.model.pendingSharedSettingsTrust == nil, "it is all the user's own words")
     #expect(
-      harness.model.trustsSharedSettings(of: harness.project))
+      harness.model.trustsSharedSettings(of: harness.project)
+    )
     let text = try String(
-      contentsOf: SharedProjectSettings.file(in: harness.project.path), encoding: .utf8)
+      contentsOf: SharedProjectSettings.file(in: harness.project.path),
+      encoding: .utf8,
+    )
     #expect(text.hasPrefix("{\n  \"branchPrefix\""), "sorted and indented for a diff")
   }
 
@@ -83,7 +95,9 @@ struct AppModelSharedSettingsExportTests {
     await harness.model.refreshWorktrees(of: harness.project)
     try harness.answerTrust(false)
     harness.model.setSettings(
-      harness.project.settings.with { $0.branchPrefix = "mine/" }, for: harness.project)
+      harness.project.settings.with { $0.branchPrefix = "mine/" },
+      for: harness.project,
+    )
 
     await harness.model.exportSharedSettings(for: harness.project)
 
@@ -92,10 +106,13 @@ struct AppModelSharedSettingsExportTests {
     #expect(written.postCreateHook == "npm ci", "what they refused is still the file's")
     let project = harness.project
     #expect(
-      !harness.model.trustsSharedSettings(of: project), "and exporting is not a way to trust it")
+      !harness.model.trustsSharedSettings(of: project),
+      "and exporting is not a way to trust it",
+    )
     #expect(
       project.settings.trustDecision(about: written) == false,
-      "the no travels to the new digest, so nothing asks again")
+      "the no travels to the new digest, so nothing asks again",
+    )
   }
 
   /// The directory and the two path lists wait for the same yes the hooks do,
@@ -107,7 +124,8 @@ struct AppModelSharedSettingsExportTests {
       #"""
       { "worktreeDirectory": ".trees", "postCreateHook": "npm ci",
         "linkedPaths": "node_modules", "copiedPaths": ".env" }
-      """#)
+      """#
+    )
     await harness.model.refreshWorktrees(of: harness.project)
     harness.model.setSettings(ProjectSettings(branchPrefix: "mine/"), for: harness.project)
 
@@ -127,7 +145,8 @@ struct AppModelSharedSettingsExportTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     try harness.writeSharedSettings(
-      #"{ "worktreeDirectory": "../trees", "postCreateHook": "npm ci" }"#)
+      #"{ "worktreeDirectory": "../trees", "postCreateHook": "npm ci" }"#
+    )
     await harness.model.refreshWorktrees(of: harness.project)
     try harness.answerTrust(true)
 
@@ -135,7 +154,9 @@ struct AppModelSharedSettingsExportTests {
 
     let project = harness.project
     #expect(
-      harness.model.trustsSharedSettings(of: project), "the refused directory did not revoke it")
+      harness.model.trustsSharedSettings(of: project),
+      "the refused directory did not revoke it",
+    )
     #expect(harness.model.effectiveSettings(for: project).postCreateHook == "npm ci")
   }
 
@@ -169,6 +190,7 @@ struct AppModelSharedSettingsExportTests {
     let written = try #require(try SharedProjectSettings.load(from: harness.project.path))
     #expect(written.postCreateHook == "make setup")
     #expect(
-      harness.model.trustsSharedSettings(of: harness.project))
+      harness.model.trustsSharedSettings(of: harness.project)
+    )
   }
 }

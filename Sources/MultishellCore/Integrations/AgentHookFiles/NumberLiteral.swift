@@ -88,6 +88,9 @@ enum NumberLiteral {
 
   static func unmarking(_ rendered: String) -> String {
     rendered.replacingOccurrences(
-      of: "\"\\\\u0001\(token)([-+.0-9eE]+)\"", with: "$1", options: .regularExpression)
+      of: "\"\\\\u0001\(token)([-+.0-9eE]+)\"",
+      with: "$1",
+      options: .regularExpression,
+    )
   }
 }

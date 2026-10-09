@@ -9,10 +9,12 @@ struct NotificationPolicyTests {
 
   @Test func aBannerNeedsThePaneOffScreenAndItsStateInThePreference() {
     #expect(
-      !NotificationPolicy.shouldNotify(.attention, preference: .everyState, isOnScreen: true))
+      !NotificationPolicy.shouldNotify(.attention, preference: .everyState, isOnScreen: true)
+    )
     #expect(
       NotificationPolicy.shouldNotify(.attention, preference: .everyState, isOnScreen: false),
-      "on screen while the user is in another app is not seen")
+      "on screen while the user is in another app is not seen",
+    )
     #expect(NotificationPolicy.shouldNotify(.done, preference: .everyState, isOnScreen: false))
     #expect(!NotificationPolicy.shouldNotify(.done, preference: waitingOnly, isOnScreen: false))
     #expect(!NotificationPolicy.shouldNotify(.running, preference: .everyState, isOnScreen: false))
@@ -23,29 +25,58 @@ struct NotificationPolicyTests {
   @Test func aSilentReportMovesTheDotAndRaisesNoBanner() {
     #expect(
       !NotificationPolicy.shouldNotify(
-        .attention, preference: .everyState, isOnScreen: false, isSilent: true))
+        .attention,
+        preference: .everyState,
+        isOnScreen: false,
+        isSilent: true,
+      )
+    )
     #expect(
       NotificationPolicy.shouldNotify(
-        .attention, preference: .everyState, isOnScreen: false),
-      "the same report without the flag is the banner")
+        .attention,
+        preference: .everyState,
+        isOnScreen: false,
+      ),
+      "the same report without the flag is the banner",
+    )
   }
 
   @Test func aShortCommandDoesNotEarnABannerButAnAgentOrALongOneDoes() {
     #expect(
       !NotificationPolicy.shouldNotify(
-        .done, preference: .everyState, isOnScreen: false, duration: 0.2),
-      "ls in a background tab")
+        .done,
+        preference: .everyState,
+        isOnScreen: false,
+        duration: 0.2,
+      ),
+      "ls in a background tab",
+    )
     #expect(
       NotificationPolicy.shouldNotify(
-        .done, preference: .everyState, isOnScreen: false, duration: 45))
+        .done,
+        preference: .everyState,
+        isOnScreen: false,
+        duration: 45,
+      )
+    )
     #expect(
       NotificationPolicy.shouldNotify(
-        .done, preference: .everyState, isOnScreen: false, duration: nil),
-      "an agent's Stop hook carries no duration")
+        .done,
+        preference: .everyState,
+        isOnScreen: false,
+        duration: nil,
+      ),
+      "an agent's Stop hook carries no duration",
+    )
     #expect(
       NotificationPolicy.shouldNotify(
-        .attention, preference: .everyState, isOnScreen: false, duration: 0.1),
-      "waiting is never short")
+        .attention,
+        preference: .everyState,
+        isOnScreen: false,
+        duration: 0.1,
+      ),
+      "waiting is never short",
+    )
   }
 
   @Test func theBodyPrefersTheSourcesMessage() {
@@ -57,6 +88,7 @@ struct NotificationPolicyTests {
   @Test func theTitlePutsTheSubjectBeforeWhereItIs() {
     #expect(
       NotificationPolicy.title(subject: "claude", project: "acme", worktree: "feat")
-        == "claude · acme › feat")
+        == "claude · acme › feat"
+    )
   }
 }

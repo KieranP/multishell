@@ -22,7 +22,8 @@ struct PromisedDropCollectorTests {
         #expect(!Thread.isMainThread, "AppKit reports a promised file from its own queue")
         reader(
           file.url ?? URL(fileURLWithPath: "/nothing"),
-          file.url == nil ? CocoaError(.fileWriteUnknown) : nil)
+          file.url == nil ? CocoaError(.fileWriteUnknown) : nil,
+        )
       }
     }
   }
@@ -49,7 +50,10 @@ struct PromisedDropCollectorTests {
     let files = (0..<8).map { file("shot-\($0).png") }
     let collector = PromisedDropCollector(expecting: files.map { _ in 1 }) { delivery.record($0) }
 
-    report(files.enumerated().map { (index: $0.offset, url: $0.element) }.shuffled(), to: collector)
+    report(
+      files.enumerated().map { (index: $0.offset, url: $0.element) }.shuffled(),
+      to: collector,
+    )
 
     #expect(try await awaitDelivery(delivery) == files)
   }

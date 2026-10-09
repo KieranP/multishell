@@ -4,6 +4,16 @@ import MultishellCore
 /// One worker an agent has out, as the app knows it from the reports about
 /// it. Runtime only, kept by `SessionStates`; see Docs/design/agents.md.
 public struct Worker: Identifiable, Equatable, Sendable {
+  static let shellPrefix = "shell:"
+
+  /// The place every worker started past the roster limit shares.
+  static let overflowID = "overflow:"
+
+  /// Ids given to workers reported without one, so an unnamed end takes one of
+  /// those and never a named one.
+  static let anonymousPrefix = "anonymous:"
+  var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
+
   public let id: String
   /// What the agent calls the kind, `nil` where no report said.
   var type: String?
@@ -55,20 +65,16 @@ public struct Worker: Identifiable, Equatable, Sendable {
 
   var isBackgroundShell: Bool { pid != nil || isListedShell }
 
-  /// Drawn failed until swept, its stamp left for `stampChanges` and its
-  /// starts counted as one.
-  mutating func markFailed() {
-    hasFailed = true
-    failedAt = nil
-    occurrences = 1
-  }
-
   /// The dot its row draws.
   public var shownState: SessionState { hasFailed ? .failed : .running }
 
   init(
-    id: String, type: String?, name: String? = nil, description: String? = nil,
-    parentID: String? = nil, startedAt: Date? = nil
+    id: String,
+    type: String?,
+    name: String? = nil,
+    description: String? = nil,
+    parentID: String? = nil,
+    startedAt: Date? = nil,
   ) {
     self.id = id
     self.type = type
@@ -83,13 +89,11 @@ public struct Worker: Identifiable, Equatable, Sendable {
     self.pid = pid
   }
 
-  static let shellPrefix = "shell:"
-
-  /// The place every worker started past the roster limit shares.
-  static let overflowID = "overflow:"
-
-  /// Ids given to workers reported without one, so an unnamed end takes one of
-  /// those and never a named one.
-  static let anonymousPrefix = "anonymous:"
-  var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
+  /// Drawn failed until swept, its stamp left for `stampChanges` and its
+  /// starts counted as one.
+  mutating func markFailed() {
+    hasFailed = true
+    failedAt = nil
+    occurrences = 1
+  }
 }

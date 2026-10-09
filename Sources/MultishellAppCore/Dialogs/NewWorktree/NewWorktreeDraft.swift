@@ -31,6 +31,24 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// the picker, so a stale load cannot enable it.
   private(set) var loadedProjectID: Project.ID?
 
+  /// Whether what is typed is a name git would refuse, for the sheet to say
+  /// so. An empty field is not yet wrong.
+  public var branchNameIsRefused: Bool {
+    guard createsBranch else { return false }
+    return !trimmedBranch.isEmpty && !GitBranchName.isValid(trimmedBranch)
+  }
+
+  /// The name as git would be handed it, the field's stray spaces dropped.
+  var trimmedBranch: String {
+    branch.trimmingCharacters(in: .whitespaces)
+  }
+
+  /// What the new branch starts from; `nil` lets git use HEAD. Never the
+  /// empty string a cleared field would otherwise send.
+  public var startPoint: String? {
+    createsBranch && !baseBranch.isEmpty ? baseBranch : nil
+  }
+
   public init(projectID: Project.ID?) {
     self.projectID = projectID
   }
@@ -48,7 +66,9 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// What git said about `id`, ignored once the picker has moved on.
   /// `checkedOut` is what the existing-branch list must not offer.
   public mutating func finishLoading(
-    _ id: Project.ID, with read: NewWorktreeBranches, checkedOut: Set<String>
+    _ id: Project.ID,
+    with read: NewWorktreeBranches,
+    checkedOut: Set<String>,
   ) {
     guard id == projectID else { return }
     hasCommits = read.hasCommits
@@ -101,23 +121,5 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     return createsBranch
       ? GitBranchName.isValid(branch)
       : availableBranches(checkedOut: checkedOut).contains(branch)
-  }
-
-  /// Whether what is typed is a name git would refuse, for the sheet to say
-  /// so. An empty field is not yet wrong.
-  public var branchNameIsRefused: Bool {
-    guard createsBranch else { return false }
-    return !trimmedBranch.isEmpty && !GitBranchName.isValid(trimmedBranch)
-  }
-
-  /// The name as git would be handed it, the field's stray spaces dropped.
-  var trimmedBranch: String {
-    branch.trimmingCharacters(in: .whitespaces)
-  }
-
-  /// What the new branch starts from; `nil` lets git use HEAD. Never the
-  /// empty string a cleared field would otherwise send.
-  public var startPoint: String? {
-    createsBranch && !baseBranch.isEmpty ? baseBranch : nil
   }
 }

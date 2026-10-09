@@ -3,6 +3,30 @@ import MultishellCore
 /// What a tab drag is doing, for every group of one worktree at once, drawn
 /// from what the drop targets report as the pointer comes and goes.
 public struct TabDragState: Equatable, Sendable {
+  public enum TabLook: Equatable, Sendable {
+    case resting
+    case shuffling
+    case lifted
+  }
+
+  /// The tabs either side of the dragged one as the drag began, nearest first.
+  /// A shuffle moves only the dragged tab, so the rest still say where it was.
+  struct Home: Equatable, Sendable {
+    let earlier: [TerminalTab.ID]
+    let later: [TerminalTab.ID]
+  }
+
+  /// Where a dragged tab would land in a strip: on a tab, and which side.
+  public struct Insertion: Equatable, Sendable {
+    public let tabID: TerminalTab.ID
+    let placement: TerminalTab.Placement
+
+    public init(tabID: TerminalTab.ID, placement: TerminalTab.Placement) {
+      self.tabID = tabID
+      self.placement = placement
+    }
+  }
+
   /// The tab in the air, which the drop that lands has to name.
   public internal(set) var tabID: TerminalTab.ID?
   /// The tab the pointer is over and which side of it, for the insertion
@@ -50,14 +74,15 @@ public struct TabDragState: Equatable, Sendable {
 
   /// The side of this tab the insertion line goes, `nil` for none.
   public func insertionPlacement(
-    on id: TerminalTab.ID, isShuffling: Bool
+    on id: TerminalTab.ID,
+    isShuffling: Bool,
   ) -> TerminalTab.Placement? {
     guard isDragging, !isShuffling, let insertion, insertion.tabID == id else { return nil }
     return insertion.placement
   }
 
   mutating func begin(_ id: TerminalTab.ID, home: Home? = nil) {
-    self = TabDragState()
+    self = Self()
     tabID = id
     self.home = home
   }
@@ -65,30 +90,6 @@ public struct TabDragState: Equatable, Sendable {
   /// Every drag ends here: a drop through `AppModel.dropDraggedTab`, one that
   /// moves nothing included, and one no drop took through `endAbandonedTabDrag`.
   mutating func end() {
-    self = TabDragState()
-  }
-
-  public enum TabLook: Equatable, Sendable {
-    case resting
-    case shuffling
-    case lifted
-  }
-
-  /// The tabs either side of the dragged one as the drag began, nearest first.
-  /// A shuffle moves only the dragged tab, so the rest still say where it was.
-  struct Home: Equatable, Sendable {
-    let earlier: [TerminalTab.ID]
-    let later: [TerminalTab.ID]
-  }
-
-  /// Where a dragged tab would land in a strip: on a tab, and which side.
-  public struct Insertion: Equatable, Sendable {
-    public let tabID: TerminalTab.ID
-    let placement: TerminalTab.Placement
-
-    public init(tabID: TerminalTab.ID, placement: TerminalTab.Placement) {
-      self.tabID = tabID
-      self.placement = placement
-    }
+    self = Self()
   }
 }

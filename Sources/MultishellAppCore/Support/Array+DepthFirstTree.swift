@@ -2,9 +2,10 @@ extension Array {
   /// Each element after its parent, depth first, with its depth. An orphan starts a
   /// tree, then whatever a loop of parents left does, in `leftoverOrder`.
   func depthFirstTree<ID: Hashable>(
-    id: (Element) -> ID, parentID: (Element) -> ID?,
-    siblingOrder: ([Element]) -> [Element] = { $0 },
-    leftoverOrder: ([Element]) -> [Element] = { $0 }
+    id: (Element) -> ID,
+    parentID: (Element) -> ID?,
+    siblingOrder: ([Element]) -> [Element] = \.self,
+    leftoverOrder: ([Element]) -> [Element] = \.self,
   ) -> [(element: Element, depth: Int)] {
     let ids = Set(map(id))
     let parented = compactMap { element in

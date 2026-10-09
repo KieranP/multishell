@@ -9,7 +9,7 @@ struct WorktreeTests {
     // for directories. Identity and relative resolution must not change.
     let worktree = try decodeJSON(
       Worktree.self,
-      #"{ "path": "file:///repos/demo", "projectID": "/repos/demo", "head": "abc", "isPrimary": true, "isLocked": false }"#
+      #"{ "path": "file:///repos/demo", "projectID": "/repos/demo", "head": "abc", "isPrimary": true, "isLocked": false }"#,
     )
     #expect(worktree.id == "/repos/demo")
     #expect(worktree.branch == nil)
@@ -22,12 +22,13 @@ struct WorktreeTests {
   @Test func aWorktreeWithoutACreationDateHasNone() throws {
     let worktree = try decodeJSON(
       Worktree.self,
-      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc" }"#)
+      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc" }"#,
+    )
     #expect(worktree.createdAt == nil)
 
     let dated = try decodeJSON(
       Worktree.self,
-      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc", "createdAt": 1000 }"#
+      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc", "createdAt": 1000 }"#,
     )
     #expect(dated.createdAt == Date(timeIntervalSinceReferenceDate: 1000))
   }
@@ -40,7 +41,8 @@ struct WorktreeTests {
       #"""
       { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc",
         "createdAt": "2026-09-08T00:00:00Z" }
-      """#)
+      """#,
+    )
     #expect(odd.createdAt == nil)
     #expect(odd.id == "/repos/demo", "the worktree itself still loads")
 
@@ -54,7 +56,8 @@ struct WorktreeTests {
           { "path": "file:///repos/demo-feat/", "projectID": "/repos/demo", "head": "b",
             "createdAt": 1000 }
         ] }
-      """#)
+      """#,
+    )
     #expect(workspace.worktrees.count == 2)
     #expect(workspace.worktrees[0].createdAt == nil)
     #expect(workspace.worktrees[1].createdAt == Date(timeIntervalSinceReferenceDate: 1000))
@@ -62,11 +65,14 @@ struct WorktreeTests {
 
   @Test func aWorktreeWithoutTheBareFlagIsNotBare() throws {
     let worktree = try decodeJSON(
-      Worktree.self, #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo" }"#)
+      Worktree.self,
+      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo" }"#,
+    )
     #expect(!worktree.isBare)
     let bare = try decodeJSON(
       Worktree.self,
-      #"{ "path": "file:///repos/demo.git/", "projectID": "/repos/demo.git", "isBare": true }"#)
+      #"{ "path": "file:///repos/demo.git/", "projectID": "/repos/demo.git", "isBare": true }"#,
+    )
     #expect(bare.isBare && !bare.isDetached)
     #expect(bare.name == "demo.git", "a bare entry has no branch and no HEAD to name it by")
   }

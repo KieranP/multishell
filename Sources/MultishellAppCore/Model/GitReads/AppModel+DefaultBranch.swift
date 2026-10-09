@@ -2,6 +2,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
+  public static var usualDefaultBranchName: String { "main" }
+
   /// The branch this project's merges are measured against, `nil` while
   /// none has been resolved. What the settings panel shows as detected.
   func defaultBranch(of project: Project) -> DefaultBranch? {
@@ -13,8 +15,6 @@ extension AppModel {
   public func defaultBranchName(of project: Project) -> String {
     defaultBranch(of: project)?.nameWithoutRemote ?? Self.usualDefaultBranchName
   }
-
-  public static var usualDefaultBranchName: String { "main" }
 
   /// What the default-branch override says under its field: the branch merges
   /// are measured against, or that there is none and so no merged badge.

@@ -23,24 +23,28 @@ enum GeminiSettings {
   /// System defaults, user, project, system; the project's only where Gemini
   /// trusts it.
   private static func layersInMergeOrder(
-    environment: [String: String], directory: String?
+    environment: [String: String],
+    directory: String?,
   ) -> [[String: Any]] {
     let geminiDirectory = geminiDirectory(environment)
     let systemFile = URL(
       fileURLWithPath: environment["GEMINI_CLI_SYSTEM_SETTINGS_PATH"]
-        ?? "/Library/Application Support/GeminiCli/settings.json")
+        ?? "/Library/Application Support/GeminiCli/settings.json"
+    )
     let defaults = read(
       environment["GEMINI_CLI_SYSTEM_DEFAULTS_PATH"].map(URL.init(fileURLWithPath:))
-        ?? systemFile.deletingLastPathComponent().appendingPathComponent("system-defaults.json"))
+        ?? systemFile.deletingLastPathComponent().appendingPathComponent("system-defaults.json")
+    )
     let user = read(geminiDirectory.appendingPathComponent("settings.json"))
     let system = read(systemFile)
     var project: [String: Any]?
-    let outside = [defaults, user, system].compactMap { $0 }
+    let outside = [defaults, user, system].compactMap(\.self)
     if let directory, isTrusted(directory, environment: environment, settings: outside) {
       project = read(
-        URL(fileURLWithPath: directory).appendingPathComponent(".gemini/settings.json"))
+        URL(fileURLWithPath: directory).appendingPathComponent(".gemini/settings.json")
+      )
     }
-    return [defaults, user, project, system].compactMap { $0 }
+    return [defaults, user, project, system].compactMap(\.self)
   }
 
   /// An empty `HOME` is Gemini's cue for the temporary directory, unlike
@@ -65,7 +69,9 @@ enum GeminiSettings {
   /// Gemini's own rule: the longest rule path naming the folder decides, a
   /// parent rule standing for the folder above it, and no rule is no trust.
   private static func isTrusted(
-    _ directory: String, environment: [String: String], settings: [[String: Any]]
+    _ directory: String,
+    environment: [String: String],
+    settings: [[String: Any]],
   ) -> Bool {
     if environment["GEMINI_CLI_TRUST_WORKSPACE"] == "true" { return true }
     let enabled = settings.reduce(true) { enabled, file in

@@ -19,14 +19,17 @@ public enum PromisedDropCopies {
   /// Drops older than `retention` removed, off the directory's own timestamps
   /// rather than a record this would have to keep true.
   static func sweep(
-    in parent: URL = Paths.dropsDirectory, keeping retention: TimeInterval = retention,
-    now: Date = Date()
+    in parent: URL = Paths.dropsDirectory,
+    keeping retention: TimeInterval = retention,
+    now: Date = Date(),
   ) {
     let manager = FileManager.default
     let drops =
       (try? manager.contentsOfDirectory(
-        at: parent, includingPropertiesForKeys: [.contentModificationDateKey],
-        options: [.skipsHiddenFiles])) ?? []
+        at: parent,
+        includingPropertiesForKeys: [.contentModificationDateKey],
+        options: [.skipsHiddenFiles],
+      )) ?? []
     for drop in drops {
       let modified = try? drop.resourceValues(forKeys: [.contentModificationDateKey])
         .contentModificationDate

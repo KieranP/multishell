@@ -13,7 +13,8 @@ struct RepositoryContainmentTests {
   private func holdsDirectory(_ directory: String) -> Bool {
     RepositoryContainment.holds(
       directory: WorktreeSettings(worktreeDirectory: directory).worktreeContainer(for: project),
-      under: project.path)
+      under: project.path,
+    )
   }
 
   @Test func aDirectoryUnderTheCheckoutStands() {
@@ -40,10 +41,15 @@ struct RepositoryContainmentTests {
     try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
     try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
     try FileManager.default.createSymbolicLink(
-      at: repository.appendingPathComponent("trees"), withDestinationURL: elsewhere)
+      at: repository.appendingPathComponent("trees"),
+      withDestinationURL: elsewhere,
+    )
     #expect(
       !RepositoryContainment.holds(
-        directory: repository.appendingPathComponent("trees"), under: repository))
+        directory: repository.appendingPathComponent("trees"),
+        under: repository,
+      )
+    )
   }
 
   @Test func aCommittedSymlinkCannotCarryADirectoryNotYetMadeOutOfTheCheckout() throws {
@@ -54,22 +60,34 @@ struct RepositoryContainmentTests {
     try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
     try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
     try FileManager.default.createSymbolicLink(
-      at: repository.appendingPathComponent("wt"), withDestinationURL: elsewhere)
+      at: repository.appendingPathComponent("wt"),
+      withDestinationURL: elsewhere,
+    )
     try FileManager.default.createSymbolicLink(
       at: repository.appendingPathComponent("dangling"),
-      withDestinationURL: root.appendingPathComponent("nowhere"))
+      withDestinationURL: root.appendingPathComponent("nowhere"),
+    )
 
     #expect(
       !RepositoryContainment.holds(
-        directory: repository.appendingPathComponent("wt/new/deeper"), under: repository))
+        directory: repository.appendingPathComponent("wt/new/deeper"),
+        under: repository,
+      )
+    )
     #expect(
       !RepositoryContainment.holds(
-        directory: repository.appendingPathComponent("dangling/new"), under: repository),
-      "a link to nothing yet could be made to point anywhere")
+        directory: repository.appendingPathComponent("dangling/new"),
+        under: repository,
+      ),
+      "a link to nothing yet could be made to point anywhere",
+    )
     #expect(
       RepositoryContainment.holds(
-        directory: repository.appendingPathComponent("trees/new"), under: repository),
-      "a plain directory still to be made stays inside")
+        directory: repository.appendingPathComponent("trees/new"),
+        under: repository,
+      ),
+      "a plain directory still to be made stays inside",
+    )
   }
 
   @Test func aListedPathUnderTheCheckoutStands() {
@@ -79,7 +97,8 @@ struct RepositoryContainmentTests {
     ] {
       #expect(
         RepositoryContainment.holds(listedPath: path, under: project.path),
-        "\(path.debugDescription)")
+        "\(path.debugDescription)",
+      )
     }
   }
 
@@ -92,7 +111,8 @@ struct RepositoryContainmentTests {
     for path in outside {
       #expect(
         !RepositoryContainment.holds(listedPath: path, under: project.path),
-        "\(path.debugDescription)")
+        "\(path.debugDescription)",
+      )
     }
   }
 }

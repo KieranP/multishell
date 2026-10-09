@@ -22,7 +22,8 @@ struct GhosttyModifiersTests {
 
   @Test func theRightOptionKeyIsToldApartSoOptionAsAltCanNameASide() {
     let right = NSEvent.ModifierFlags(
-      rawValue: NSEvent.ModifierFlags.option.rawValue | UInt(NX_DEVICERALTKEYMASK))
+      rawValue: NSEvent.ModifierFlags.option.rawValue | UInt(NX_DEVICERALTKEYMASK)
+    )
     #expect(has(GhosttyModifiers.mods(right), GHOSTTY_MODS_ALT_RIGHT))
     #expect(!has(GhosttyModifiers.mods(.option), GHOSTTY_MODS_ALT_RIGHT))
   }
@@ -35,17 +36,21 @@ struct GhosttyModifiersTests {
   @Test func aRightHandKeyIsDownOnlyWhileItsOwnSideIsHeld() {
     let rightShiftKey: UInt16 = 0x3C
     #expect(
-      !GhosttyModifiers.isOwnSideDown(keyCode: rightShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK)))
+      !GhosttyModifiers.isOwnSideDown(keyCode: rightShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK))
+    )
     #expect(
-      GhosttyModifiers.isOwnSideDown(keyCode: rightShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK)))
+      GhosttyModifiers.isOwnSideDown(keyCode: rightShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK))
+    )
   }
 
   @Test func aLeftHandKeyIsDownOnlyWhileItsOwnSideIsHeld() {
     let leftShiftKey: UInt16 = 0x38
     #expect(
-      !GhosttyModifiers.isOwnSideDown(keyCode: leftShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK)))
+      !GhosttyModifiers.isOwnSideDown(keyCode: leftShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK))
+    )
     #expect(
-      GhosttyModifiers.isOwnSideDown(keyCode: leftShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK)))
+      GhosttyModifiers.isOwnSideDown(keyCode: leftShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK))
+    )
   }
 
   @Test func aModifierKeyWithNoSideReportedIsDown() {

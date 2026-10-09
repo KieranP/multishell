@@ -5,7 +5,9 @@ import MultishellCore
 /// installs the agent hooks. Silent from a hook, loud from the terminal.
 enum Helper {
   static func run(
-    _ arguments: [String], environment: [String: String], standardInput: FileHandle
+    _ arguments: [String],
+    environment: [String: String],
+    standardInput: FileHandle,
   )
     -> Int32
   {
@@ -13,30 +15,39 @@ enum Helper {
       switch arguments.first {
       case "state":
         return try runState(arguments.dropFirst(), environment: environment)
+
       case commandStartedName:
         try runCommandStarted(arguments.dropFirst(), environment: environment)
         return 0
+
       case commandFinishedName:
         try runCommandFinished(arguments.dropFirst(), environment: environment)
         return 0
+
       case "relay":
         try runRelay(arguments.dropFirst(), environment: environment, input: standardInput)
         return 0
+
       case AgentHookCatalogue.subcommand, AgentHookCatalogue.legacySubcommand:
         reportAgentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
+
       case "install-agent-hooks":
         try installAgentHooks(arguments.dropFirst())
         return 0
+
       case "remove-agent-hooks":
         try removeAgentHooks(arguments.dropFirst())
         return 0
+
       case "--version", "version":
         print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")
         return 0
+
       case nil, "help", "--help", "-h":
         FileHandle.standardError.write(Data(usage.utf8))
         return arguments.isEmpty ? 2 : 0
+
       default:
         throw UsageError("unknown command \(arguments[0])")
       }

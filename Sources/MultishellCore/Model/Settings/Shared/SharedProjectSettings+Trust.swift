@@ -1,4 +1,20 @@
 extension SharedProjectSettings {
+  /// What a yes covers, in the order the user is asked about them: every
+  /// field that runs something or puts a path on disk.
+  static let trustCoveredFields: [any WritableKeyPath<Self, String?> & Sendable] = [
+    \.worktreeDirectory, \.preCreateHook, \.postCreateHook, \.preDeleteHook, \.postDeleteHook,
+    \.linkedPaths, \.copiedPaths,
+  ]
+
+  /// The names the question gives `trustCoveredFields`, in its order.
+  private static var trustCoveredNames: [String] {
+    [
+      t("shared-settings.worktree-directory"), t("shared-settings.pre-create"),
+      t("shared-settings.post-create"), t("shared-settings.pre-delete"),
+      t("shared-settings.post-delete"), t("shared-settings.linked"), t("shared-settings.copied"),
+    ]
+  }
+
   /// Everything the user is asked about, as one text. Trust is stored against
   /// `digest`, never this text; see Docs/design/settings.md.
   public var trustCoveredText: String? {
@@ -20,21 +36,5 @@ extension SharedProjectSettings {
     var stripped = self
     for field in Self.trustCoveredFields { stripped[keyPath: field] = nil }
     return stripped
-  }
-
-  /// What a yes covers, in the order the user is asked about them: every
-  /// field that runs something or puts a path on disk.
-  static let trustCoveredFields: [any WritableKeyPath<Self, String?> & Sendable] = [
-    \.worktreeDirectory, \.preCreateHook, \.postCreateHook, \.preDeleteHook, \.postDeleteHook,
-    \.linkedPaths, \.copiedPaths,
-  ]
-
-  /// The names the question gives `trustCoveredFields`, in its order.
-  private static var trustCoveredNames: [String] {
-    [
-      t("shared-settings.worktree-directory"), t("shared-settings.pre-create"),
-      t("shared-settings.post-create"), t("shared-settings.pre-delete"),
-      t("shared-settings.post-delete"), t("shared-settings.linked"), t("shared-settings.copied"),
-    ]
   }
 }

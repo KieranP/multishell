@@ -6,7 +6,8 @@ import Testing
 
 extension AppModelWorktreeCreationTests {
   private func firstSession(
-    of branch: String, _ harness: GitHarness
+    of branch: String,
+    _ harness: GitHarness,
   ) throws -> (session: TerminalSession, command: String?) {
     let created = try #require(harness.worktree(onBranch: branch))
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
@@ -21,8 +22,12 @@ extension AppModelWorktreeCreationTests {
     harness.model.setOpensTerminalOnCreate(false)
 
     await harness.model.createWorktree(
-      branch: "redirect", basedOn: nil, createsBranch: true, in: harness.project,
-      firstTab: .agent("codex", task: "Fix the redirect"))
+      branch: "redirect",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+      firstTab: .agent("codex", task: "Fix the redirect"),
+    )
 
     let first = try firstSession(of: "redirect", harness)
     #expect(first.session.agentID == "codex", "the sheet's pick, not the project's agent")
@@ -37,15 +42,27 @@ extension AppModelWorktreeCreationTests {
     harness.model.setAutoStartsAgentOnCreate(true)
 
     await harness.model.createWorktree(
-      branch: "plain", basedOn: nil, createsBranch: true, in: harness.project, firstTab: .shell)
+      branch: "plain",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+      firstTab: .shell,
+    )
     #expect(try firstSession(of: "plain", harness).session.agentID == nil)
 
     harness.model.setOpensTerminalOnCreate(false)
     await harness.model.createWorktree(
-      branch: "quiet", basedOn: nil, createsBranch: true, in: harness.project, firstTab: .shell)
+      branch: "quiet",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+      firstTab: .shell,
+    )
     let quiet = try #require(harness.worktree(onBranch: "quiet"))
     #expect(
-      harness.model.workspace.tabs(in: quiet.id).isEmpty, "a shell still waits on its setting")
+      harness.model.workspace.tabs(in: quiet.id).isEmpty,
+      "a shell still waits on its setting",
+    )
     #expect(harness.model.newWorktreeFirstTabs.isEmpty)
   }
 
@@ -55,8 +72,12 @@ extension AppModelWorktreeCreationTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "true"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "hooked", basedOn: nil, createsBranch: true, in: harness.project,
-      firstTab: .agent("claude", task: "Fix the redirect"))
+      branch: "hooked",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+      firstTab: .agent("claude", task: "Fix the redirect"),
+    )
     let created = try #require(harness.worktree(onBranch: "hooked"))
     #expect(harness.model.workspace.tabs(in: created.id).isEmpty, "held back while the hook runs")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
@@ -73,8 +94,12 @@ extension AppModelWorktreeCreationTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "exit 3"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "hooked", basedOn: nil, createsBranch: true, in: harness.project,
-      firstTab: .agent("claude", task: "Fix the redirect"))
+      branch: "hooked",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+      firstTab: .agent("claude", task: "Fix the redirect"),
+    )
     let created = try #require(harness.worktree(onBranch: "hooked"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     harness.model.dismissOperationFailure(of: created)
@@ -89,8 +114,12 @@ extension AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
     harness.model.setSettings(ProjectSettings(postCreateHook: "exit 3"), for: harness.project)
     await harness.model.createWorktree(
-      branch: "hooked", basedOn: nil, createsBranch: true, in: harness.project,
-      firstTab: .agent("claude", task: "Fix the redirect"))
+      branch: "hooked",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+      firstTab: .agent("claude", task: "Fix the redirect"),
+    )
     let failed = try #require(harness.worktree(onBranch: "hooked"))
     await harness.model.stageHandles.setupTask(of: failed.id)?.value
     try await harness.removeOutsideTheApp(failed.path)
@@ -98,7 +127,11 @@ extension AppModelWorktreeCreationTests {
 
     harness.model.setSettings(ProjectSettings(), for: harness.project)
     await harness.model.createWorktree(
-      branch: "hooked", basedOn: nil, createsBranch: false, in: harness.project)
+      branch: "hooked",
+      basedOn: nil,
+      createsBranch: false,
+      in: harness.project,
+    )
     let remade = try #require(harness.worktree(onBranch: "hooked"))
     #expect(remade.id == failed.id)
     await harness.model.stageHandles.setupTask(of: remade.id)?.value

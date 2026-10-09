@@ -13,8 +13,12 @@ struct EngineCommandLineTests {
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(
-        forShell: "/bin/zsh", loginShell: "/bin/zsh", bashInit: bashInit)
-        == nil)
+        forShell: "/bin/zsh",
+        loginShell: "/bin/zsh",
+        bashInit: bashInit,
+      )
+        == nil
+    )
   }
 
   @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
@@ -22,17 +26,29 @@ struct EngineCommandLineTests {
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(
-        forShell: "/opt/homebrew/bin/fish", loginShell: "/bin/zsh", bashInit: bashInit)
-        == ["/opt/homebrew/bin/fish", "-l"])
+        forShell: "/opt/homebrew/bin/fish",
+        loginShell: "/bin/zsh",
+        bashInit: bashInit,
+      )
+        == ["/opt/homebrew/bin/fish", "-l"]
+    )
     #expect(
       EngineCommandLine.overrideCommand(
-        forShell: "/bin/zsh", loginShell: "/bin/bash", bashInit: bashInit)
-        == ["/bin/zsh", "-l"])
+        forShell: "/bin/zsh",
+        loginShell: "/bin/bash",
+        bashInit: bashInit,
+      )
+        == ["/bin/zsh", "-l"]
+    )
     #expect(
       EngineCommandLine.overrideCommand(
-        forShell: "/bin/bash", loginShell: "/bin/zsh", bashInit: bashInit)?
-        .first == "/bin/sh",
-      "bash keeps its init file route whichever shell is the login one")
+        forShell: "/bin/bash",
+        loginShell: "/bin/zsh",
+        bashInit: bashInit,
+      )?
+      .first == "/bin/sh",
+      "bash keeps its init file route whichever shell is the login one",
+    )
   }
 
   @Test func bashLaunchesWithTheGeneratedInitFile() throws {
@@ -43,7 +59,8 @@ struct EngineCommandLineTests {
         == [
           "/bin/sh", "-c",
           "exec /bin/bash --init-file \(AnyShellQuoting.quote(bashInit.path)) -i",
-        ])
+        ]
+    )
   }
 
   /// libghostty runs a surface's command as `exec -l <command>` under bash
@@ -55,14 +72,17 @@ struct EngineCommandLineTests {
     let home = try Scratch.directory("bash-home")
     defer { Scratch.remove(home) }
     let command = try #require(
-      EngineCommandLine.overrideCommand(forShell: "/bin/bash", bashInit: bashInit))
+      EngineCommandLine.overrideCommand(forShell: "/bin/bash", bashInit: bashInit)
+    )
     var environment = Scratch.shellEnvironment
     environment["HOME"] = home.path
 
     let output = try await Detached.output(
       of: "/bin/bash",
       ["--noprofile", "--norc", "-c", "exec -l \(AnyShellQuoting.commandLine(command))"],
-      environment: environment, input: "exit\n")
+      environment: environment,
+      input: "exit\n",
+    )
 
     #expect(output.contains("multishell-init-ran"))
   }
@@ -71,8 +91,12 @@ struct EngineCommandLineTests {
     let missing = URL(fileURLWithPath: "/no/such/init.bash")
     #expect(
       EngineCommandLine.overrideCommand(
-        forShell: "/bin/bash", loginShell: "/bin/bash", bashInit: missing)
-        == nil)
+        forShell: "/bin/bash",
+        loginShell: "/bin/bash",
+        bashInit: missing,
+      )
+        == nil
+    )
   }
 
   @Test func anUnknownShellIsLaunchedPlainly() throws {
@@ -80,14 +104,22 @@ struct EngineCommandLineTests {
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(
-        forShell: "/usr/local/bin/fish", loginShell: "/usr/local/bin/fish", bashInit: bashInit)
-        == nil)
+        forShell: "/usr/local/bin/fish",
+        loginShell: "/usr/local/bin/fish",
+        bashInit: bashInit,
+      )
+        == nil
+    )
   }
 
   @Test func aTabsCommandRunsInsteadOfItsChosenShellAsOneQuotedLine() {
     let session = TerminalSession(
-      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w"), title: "Agent",
-      command: ["claude", "--resume", "a b"], shellOverride: "/opt/homebrew/bin/fish")
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "Agent",
+      command: ["claude", "--resume", "a b"],
+      shellOverride: "/opt/homebrew/bin/fish",
+    )
     #expect(EngineCommandLine.of(session) == "claude --resume 'a b'")
   }
 }

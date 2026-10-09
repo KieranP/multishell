@@ -34,7 +34,8 @@ struct ProjectSettingsWindow: View {
           .init(.agents) {
             ProjectAgentsPage(model: model, project: project)
           },
-        ], firstPageToken: firstPageToken
+        ],
+        firstPageToken: firstPageToken,
       )
       .settingsWindow(platform: platform, showFirstPage: { firstPageToken = UUID() })
       .navigationTitle(t("window.project-settings-title", project.name))

@@ -5,8 +5,6 @@ import MultishellCore
 public struct WorktreeOperations: Equatable, Sendable {
   private var operations: [Worktree.ID: WorktreeOperation] = [:]
 
-  public subscript(id: Worktree.ID) -> WorktreeOperation? { operations[id] }
-
   /// Whether nothing is held, for the tests.
   var isEmpty: Bool { operations.isEmpty }
 
@@ -39,7 +37,10 @@ public struct WorktreeOperations: Equatable, Sendable {
   /// `message` until dismissed. Returns whether that stage was running.
   @discardableResult
   mutating func fail(
-    _ stage: WorktreeOperation.Stage, on id: Worktree.ID, message: String, didTimeOut: Bool = false
+    _ stage: WorktreeOperation.Stage,
+    on id: Worktree.ID,
+    message: String,
+    didTimeOut: Bool = false,
   )
     -> Bool
   {
@@ -75,4 +76,6 @@ public struct WorktreeOperations: Equatable, Sendable {
     guard let current = operations[id] else { return false }
     return current.isRunning && current.stage == stage
   }
+
+  public subscript(id: Worktree.ID) -> WorktreeOperation? { operations[id] }
 }

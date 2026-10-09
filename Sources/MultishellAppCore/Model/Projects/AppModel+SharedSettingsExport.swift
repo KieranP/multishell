@@ -30,8 +30,8 @@ extension AppModel {
     let answer =
       kept.trustCoveredText == mine.trustCoveredText
       ? true
-      : project.sharedSettingsSnapshot.confined.flatMap {
-        project.settings.trustDecision(about: $0)
+      : project.sharedSettingsSnapshot.confined.flatMap { confined in
+        project.settings.trustDecision(about: confined)
       }
     let (data, written) = try kept.fileContents()
     // Stored before the bytes can be read: a poll reading them first would
@@ -42,19 +42,27 @@ extension AppModel {
     let order = sharedSettingsExportOrders[project.id] ?? SaveOrder()
     sharedSettingsExportOrders[project.id] = order
     return SharedSettingsExport(
-      project: project, contents: data, written: written, order: order, ticket: order.issue())
+      project: project,
+      contents: data,
+      written: written,
+      order: order,
+      ticket: order.issue(),
+    )
   }
 
   func finishSharedSettingsExport(
-    _ export: SharedSettingsExport, _ outcome: Result<SharedSettingsReading?, any Error>
+    _ export: SharedSettingsExport,
+    _ outcome: Result<SharedSettingsReading?, any Error>,
   ) {
     let project = export.project
     guard workspace.project(project.id) != nil else { return }
     switch outcome {
     case .failure(let error):
       present(error)
+
     case .success(let reading?) where export.order.isLastLanded(export.ticket):
       applySharedSettingsReading(reading, for: project)
+
     case .success:
       break
     }

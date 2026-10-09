@@ -3,14 +3,19 @@ import MultishellCore
 extension AppModel {
   public func sidebarWorktree(_ worktree: Worktree) -> SidebarWorktree {
     SidebarWorktree(
-      worktree: worktree, customName: customName(of: worktree),
-      isRenaming: renamingWorktreeID == worktree.id, panes: sidebarPanes(of: worktree))
+      worktree: worktree,
+      customName: customName(of: worktree),
+      isRenaming: renamingWorktreeID == worktree.id,
+      panes: sidebarPanes(of: worktree),
+    )
   }
 
   /// The worktree rows carry the dots while they show; the project's row
   /// stands in for them only once they are collapsed away.
   public func projectRowState(
-    _ id: Project.ID, isExpanded: Bool, sessions: SessionIDsByWorktree
+    _ id: Project.ID,
+    isExpanded: Bool,
+    sessions: SessionIDsByWorktree,
   ) -> SessionState? {
     isExpanded ? nil : state(ofProject: id, sessions: sessions)
   }
@@ -34,7 +39,8 @@ extension AppModel {
             state: state(ofPane: id),
             workers: workers(ofPane: id),
             agentID: agentID,
-            agentName: agentID.map(agentDisplayName))
+            agentName: agentID.map(agentDisplayName),
+          )
         }
       }
     }
@@ -43,11 +49,13 @@ extension AppModel {
   /// The rows the sidebar draws, once a round: asked per row, the filter
   /// looked up the project and folded the text for every worktree.
   func sidebarRowIDs(
-    filteredBy text: String? = nil, collapsing collapsed: Set<Project.ID>? = nil
+    filteredBy text: String? = nil,
+    collapsing collapsed: Set<Project.ID>? = nil,
   ) -> Set<Worktree.ID> {
     let entries = sidebarEntries(
       filteredBy: text ?? sidebarFilterText,
-      collapsing: collapsed ?? projectsCollapsedWhileFiltering)
+      collapsing: collapsed ?? projectsCollapsedWhileFiltering,
+    )
     return Set(entries.filter(\.isExpanded).flatMap { $0.worktrees.map(\.id) })
   }
 }

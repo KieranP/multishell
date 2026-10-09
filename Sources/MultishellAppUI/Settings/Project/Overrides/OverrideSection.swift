@@ -39,10 +39,17 @@ extension OverrideSection where Footer == EmptyView {
     label: String,
     info: String,
     fallback: Value,
-    @ViewBuilder content: @escaping (Binding<Value>, Bool) -> Content
+    @ViewBuilder content: @escaping (Binding<Value>, Bool) -> Content,
   ) {
     self.init(
-      model: model, project: project, setting: setting, label: label, info: info,
-      fallback: fallback, content: content, footer: { EmptyView() })
+      model: model,
+      project: project,
+      setting: setting,
+      label: label,
+      info: info,
+      fallback: fallback,
+      content: content,
+      footer: { EmptyView() },
+    )
   }
 }

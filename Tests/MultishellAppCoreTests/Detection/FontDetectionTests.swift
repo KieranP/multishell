@@ -5,7 +5,9 @@ import Testing
 @Suite
 struct FontDetectionTests {
   private let fonts = FontDetection(
-    monospaced: ["Menlo", "JetBrains Mono"], otherFamilies: ["Helvetica", "Avenir"])
+    monospaced: ["Menlo", "JetBrains Mono"],
+    otherFamilies: ["Helvetica", "Avenir"],
+  )
 
   @Test func systemFirstThenMonospacedThenADividerThenTheRestSorted() {
     let ids = fonts.options(selected: nil).map(\.id)
@@ -13,7 +15,8 @@ struct FontDetectionTests {
       ids == [
         FontDetection.systemID, "JetBrains Mono", "Menlo", DetectionOption.dividerID, "Avenir",
         "Helvetica",
-      ])
+      ]
+    )
     #expect(fonts.options(selected: nil)[0].label == "System monospace")
   }
 
@@ -23,9 +26,10 @@ struct FontDetectionTests {
     #expect(missing?.label == "Fira Code (not installed)")
     #expect(!fonts.options(selected: "Menlo").contains { $0.label.hasSuffix("(not installed)") })
     #expect(
-      !fonts.options(selected: FontDetection.systemID).contains {
-        $0.label.hasSuffix("(not installed)")
-      })
+      !fonts.options(selected: FontDetection.systemID).contains { option in
+        option.label.hasSuffix("(not installed)")
+      }
+    )
   }
 
   @Test func withNoOtherFamiliesThereIsNoDivider() {

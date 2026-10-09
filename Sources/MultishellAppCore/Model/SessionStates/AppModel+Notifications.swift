@@ -4,13 +4,20 @@ extension AppModel {
   /// `state` is what the report meant, not what it said: a Done held back for
   /// background workers raises no banner, and the one releasing it does.
   func notifyIfNeeded(
-    _ report: SessionStateReport, as state: SessionState, key: SessionStates.Key,
-    worktreeID: Worktree.ID, isOnScreen: Bool
+    _ report: SessionStateReport,
+    as state: SessionState,
+    key: SessionStates.Key,
+    worktreeID: Worktree.ID,
+    isOnScreen: Bool,
   ) {
     guard
       NotificationPolicy.shouldNotify(
-        state, preference: workspace.notificationPreference, isOnScreen: isOnScreen,
-        duration: report.duration, isSilent: report.isSilent == true),
+        state,
+        preference: workspace.notificationPreference,
+        isOnScreen: isOnScreen,
+        duration: report.duration,
+        isSilent: report.isSilent == true,
+      ),
       let worktree = workspace.worktree(worktreeID)
     else { return }
     let project = workspace.project(worktree.projectID)?.name ?? ""
@@ -26,7 +33,8 @@ extension AppModel {
     notifier.notify(
       title: NotificationPolicy.title(subject: subject, project: project, worktree: place),
       body: NotificationPolicy.body(for: state, message: report.shownMessage),
-      about: key)
+      about: key,
+    )
     notifiedKeys.insert(key)
   }
 
@@ -47,6 +55,7 @@ extension AppModel {
       // a tab in it would rewrite what the selected worktree shows.
       guard select(worktree) else { return }
       activate(tab)
+
     case .worktree(let id):
       if let worktree = workspace.worktree(id) { select(worktree) }
     }

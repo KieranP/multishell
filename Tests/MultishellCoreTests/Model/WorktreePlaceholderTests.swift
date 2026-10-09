@@ -16,14 +16,22 @@ struct WorktreePlaceholderTests {
     #expect(values[.projectName] == "multishell")
     #expect(values[.projectPath] == "/Users/dev/Work/multishell")
     #expect(
-      values.count == WorktreePlaceholder.allCases.count, "a case with no value expands to nothing")
+      values.count == WorktreePlaceholder.allCases.count,
+      "a case with no value expands to nothing",
+    )
   }
 
   @Test func aDetachedWorktreeFallsBackToItsShortSHA() {
     let detached = Worktree(
-      path: URL(fileURLWithPath: "/w"), projectID: project.id, head: "abc1234def")
+      path: URL(fileURLWithPath: "/w"),
+      projectID: project.id,
+      head: "abc1234def",
+    )
     let values = WorktreePlaceholder.values(
-      project: project, worktree: detached, worktreeName: "abc1234")
+      project: project,
+      worktree: detached,
+      worktreeName: "abc1234",
+    )
     #expect(values[.branch] == "abc1234", "never the empty string: `--name=` is worse")
   }
 }

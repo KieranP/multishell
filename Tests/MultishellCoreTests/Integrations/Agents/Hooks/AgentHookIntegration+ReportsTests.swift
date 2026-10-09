@@ -17,7 +17,9 @@ struct AgentHookIntegrationReportsTests {
     func follows(_ integration: AgentHookIntegration, _ event: String) -> Bool? {
       let payload = AgentHookPayload(
         json: Data(
-          #"{"hook_event_name":"\#(event)","transcript_path":"\#(transcript.path)"}"#.utf8))!
+          #"{"hook_event_name":"\#(event)","transcript_path":"\#(transcript.path)"}"#.utf8
+        )
+      )!
       return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
         .turnFollows
     }
@@ -31,22 +33,26 @@ struct AgentHookIntegrationReportsTests {
     defer { Scratch.remove(directory) }
     let transcript = directory.appendingPathComponent("session.jsonl")
     func report(
-      lastToolCalled tool: String, answered: Bool = false,
-      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+      lastToolCalled tool: String,
+      answered: Bool = false,
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude,
     ) throws -> SessionStateReport? {
       var lines = [
         #"{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"\#(tool)"}]}}"#
       ]
       if answered {
         lines.append(
-          #"{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1"}]}}"#)
+          #"{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1"}]}}"#
+        )
       }
       try Data(lines.joined(separator: "\n").utf8).write(to: transcript)
       let payload = AgentHookPayload(
         json: Data(
           (#"{"hook_event_name":"Notification","message":"Claude needs your permission","#
             + #""notification_type":"permission_prompt","transcript_path":"\#(transcript.path)"}"#)
-            .utf8))!
+            .utf8
+        )
+      )!
       return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)
     }
     let question = try report(lastToolCalled: "AskUserQuestion")
@@ -56,7 +62,9 @@ struct AgentHookIntegrationReportsTests {
     #expect(try report(lastToolCalled: "AskUserQuestion", answered: true)?.asksQuestion == nil)
     #expect(
       try report(lastToolCalled: "AskUserQuestion", by: AgentHookCatalogue.copilot)?.asksQuestion
-        == nil, "Copilot's notifications share the type")
+        == nil,
+      "Copilot's notifications share the type",
+    )
   }
 
   @Test func aClaudeWorkersToolCallCarriesItsParentAndNameFromBesideTheTranscript() throws {
@@ -70,21 +78,29 @@ struct AgentHookIntegrationReportsTests {
         + #""parentAgentId":"a0","spawnDepth":2}"#).utf8
     ).write(to: subagentsFolder.appendingPathComponent("agent-a1.meta.json"))
     func worker(
-      _ event: String, id: String = "a1",
-      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+      _ event: String,
+      id: String = "a1",
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude,
     ) -> WorkerReport? {
       let payload = AgentHookPayload(
         json: Data(
           (#"{"hook_event_name":"\#(event)","agent_id":"\#(id)","agent_type":"general-purpose","#
-            + #""transcript_path":"\#(transcript.path)"}"#).utf8))!
+            + #""transcript_path":"\#(transcript.path)"}"#).utf8
+        )
+      )!
       return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
         .worker
     }
     #expect(
       worker("PreToolUse")
         == WorkerReport(
-          id: "a1", type: "general-purpose", phase: .working, parentID: "a0",
-          description: "Efficiency angle"))
+          id: "a1",
+          phase: .working,
+          type: "general-purpose",
+          parentID: "a0",
+          description: "Efficiency angle",
+        )
+    )
     #expect(worker("SubagentStop")?.parentID == nil, "an end is taken off whatever it was under")
     #expect(worker("PreToolUse", id: "a2")?.description == nil, "not yet written")
     #expect(worker("SubagentStart")?.phase == .working, "a start once its file is written resumes")
@@ -95,28 +111,37 @@ struct AgentHookIntegrationReportsTests {
   @Test func aClaudeWorkerStillListedAtItsOwnStopIsPausedAndTheStopSaysWhatIsOut() {
     func stop(
       out tasks: [(id: String, type: String)],
-      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude,
     ) -> SessionStateReport? {
       let listed = tasks.map { #"{"id":"\#($0.id)","type":"\#($0.type)","status":"running"}"# }
       let payload = AgentHookPayload(
         json: Data(
           (#"{"hook_event_name":"SubagentStop","agent_id":"a0","agent_type":"general-purpose","#
-            + #""background_tasks":[\#(listed.joined(separator: ","))]}"#).utf8))!
+            + #""background_tasks":[\#(listed.joined(separator: ","))]}"#).utf8
+        )
+      )!
       return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)
     }
     let paused = stop(out: [("a0", "subagent"), ("b1", "shell")])
     #expect(
       paused?.worker
-        == WorkerReport(id: "a0", type: "general-purpose", phase: .working, isPaused: true))
+        == WorkerReport(id: "a0", phase: .working, type: "general-purpose", isPaused: true)
+    )
     #expect(
       paused?.workersOut == [
-        WorkerReport(id: "a0", type: "subagent", phase: .working),
+        WorkerReport(id: "a0", phase: .working, type: "subagent"),
         WorkerReport(id: "b1", phase: .working, isBackgroundShell: true),
-      ])
+      ]
+    )
     #expect(stop(out: [("a1", "subagent")])?.worker?.phase == .ended)
-    #expect(stop(out: [("a0", "monitor")])?.worker?.phase == .ended, "a watcher is not the worker")
+    #expect(
+      stop(out: [("a0", "monitor")])?.worker?.phase == .ended,
+      "a watcher is not the worker",
+    )
     #expect(stop(out: [])?.workersOut == [])
-    #expect(stop(out: [("a0", "subagent")], by: AgentHookCatalogue.codex)?.worker?.phase == .ended)
+    #expect(
+      stop(out: [("a0", "subagent")], by: AgentHookCatalogue.codex)?.worker?.phase == .ended
+    )
   }
 
   @Test func aBackgroundClaudeWorkerItsOwnStopLeavesOutHasFailed() throws {
@@ -134,9 +159,15 @@ struct AgentHookIntegrationReportsTests {
       let payload = AgentHookPayload(
         json: Data(
           (#"{"hook_event_name":"SubagentStop","agent_id":"\#(id)","#
-            + #""transcript_path":"\#(transcript.path)"\#(list)}"#).utf8))!
+            + #""transcript_path":"\#(transcript.path)"\#(list)}"#).utf8
+        )
+      )!
       return AgentHookCatalogue.claude.report(
-        for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?.worker
+        for: payload,
+        sessionID: nil,
+        workingDirectory: nil,
+        pid: nil,
+      )?.worker
     }
     #expect(end(of: "a0") == WorkerReport(id: "a0", phase: .ended, hasFailed: true))
     #expect(end(of: "a1")?.hasFailed == nil, "a foreground worker is never listed")
@@ -145,14 +176,19 @@ struct AgentHookIntegrationReportsTests {
 
   @Test func claudesToolResultNamesTheWorkerOrShellItLaunchedInTheBackground() {
     func launched(
-      _ toolName: String, input: String, response: String, inside workerID: String? = "a0",
-      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+      _ toolName: String,
+      input: String,
+      response: String,
+      inside workerID: String? = "a0",
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude,
     ) -> WorkerReport? {
       let worker = workerID.map { #""agent_id":"\#($0)","agent_type":"general-purpose","# } ?? ""
       let payload = AgentHookPayload(
         json: Data(
           (#"{"hook_event_name":"PostToolUse",\#(worker)"tool_name":"\#(toolName)","#
-            + #""tool_input":\#(input),"tool_response":\#(response)}"#).utf8))!
+            + #""tool_input":\#(input),"tool_response":\#(response)}"#).utf8
+        )
+      )!
       return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
         .launched
     }
@@ -162,29 +198,43 @@ struct AgentHookIntegrationReportsTests {
     #expect(
       launched("Agent", input: agentInput, response: asyncLaunch)
         == WorkerReport(
-          id: "a1", type: "Explore", phase: .started, parentID: "a0", name: "scout",
-          description: "Map the hooks"))
+          id: "a1",
+          phase: .started,
+          type: "Explore",
+          parentID: "a0",
+          name: "scout",
+          description: "Map the hooks",
+        )
+    )
     #expect(
-      launched("Agent", input: agentInput, response: asyncLaunch, inside: nil)?.parentID == nil)
+      launched("Agent", input: agentInput, response: asyncLaunch, inside: nil)?.parentID == nil
+    )
     #expect(
       launched("Bash", input: #"{"command":"sleep 30"}"#, response: #"{"backgroundTaskId":"b1"}"#)
-        == WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0"))
+        == WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0")
+    )
     #expect(
       launched("Agent", input: agentInput, response: #"{"status":"completed","agentId":"a1"}"#)
-        == nil, "a foreground worker has ended by its result")
+        == nil,
+      "a foreground worker has ended by its result",
+    )
     #expect(
       launched("Agent", input: agentInput, response: asyncLaunch, by: AgentHookCatalogue.codex)
-        == nil)
+        == nil
+    )
   }
 
   @Test func claudesTaskStopResultNamesTheTaskItKilled() {
     func killed(
-      _ response: String, by integration: AgentHookIntegration = AgentHookCatalogue.claude
+      _ response: String,
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude,
     ) -> String? {
       let payload = AgentHookPayload(
         json: Data(
           (#"{"hook_event_name":"PostToolUse","tool_name":"TaskStop","#
-            + #""tool_input":{"task_id":"a0"},"tool_response":\#(response)}"#).utf8))!
+            + #""tool_input":{"task_id":"a0"},"tool_response":\#(response)}"#).utf8
+        )
+      )!
       return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
         .killedTaskID
     }
@@ -207,10 +257,17 @@ struct AgentHookIntegrationReportsTests {
     let payload = AgentHookPayload(
       json: Data(
         (#"{"hook_event_name":"PreToolUse","agent_id":"a1","#
-          + #""transcript_path":"\#(transcript.path)"}"#).utf8))!
+          + #""transcript_path":"\#(transcript.path)"}"#).utf8
+      )
+    )!
     let report = try #require(
       AgentHookCatalogue.claude.report(
-        for: payload, sessionID: nil, workingDirectory: nil, pid: nil))
+        for: payload,
+        sessionID: nil,
+        workingDirectory: nil,
+        pid: nil,
+      )
+    )
     #expect(try report.encodedLine().utf8.count < 1_000)
   }
 
@@ -228,14 +285,19 @@ struct AgentHookIntegrationReportsTests {
   @Test func claudesStopListsWhatIsOutShellsIncluded() {
     func stop(_ tasks: String) -> (report: SessionStateReport?, walked: Bool) {
       let payload = AgentHookPayload(
-        json: Data(#"{"hook_event_name":"Stop","background_tasks":\#(tasks)}"#.utf8))!
+        json: Data(#"{"hook_event_name":"Stop","background_tasks":\#(tasks)}"#.utf8)
+      )!
       var walked = false
       let report = AgentHookCatalogue.claude.report(
-        for: payload, sessionID: nil, workingDirectory: nil, pid: 7,
+        for: payload,
+        sessionID: nil,
+        workingDirectory: nil,
+        pid: 7,
         findBackgroundShells: { _ in
           walked = true
           return [500]
-        })
+        },
+      )
       return (report, walked)
     }
     let subagent =
@@ -253,10 +315,12 @@ struct AgentHookIntegrationReportsTests {
     let busy = stop("[\(subagent),\(dream),\(monitor),\(scan),\(cloud),\(shell)]")
     #expect(
       busy.report?.workersOut == [
-        WorkerReport(id: "a1", type: "Explore", phase: .working),
-        WorkerReport(id: "r1", type: "cloud session", phase: .working),
+        WorkerReport(id: "a1", phase: .working, type: "Explore"),
+        WorkerReport(id: "r1", phase: .working, type: "cloud session"),
         WorkerReport(id: "b1", phase: .working, isBackgroundShell: true),
-      ], "a watcher that never ends and housekeeping ending unannounced hold nothing")
+      ],
+      "a watcher that never ends and housekeeping ending unannounced hold nothing",
+    )
     #expect(!busy.walked, "the list names the shell")
     #expect(busy.report?.backgroundShells == nil)
   }

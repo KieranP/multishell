@@ -14,7 +14,11 @@ extension AppModelWorktreeOrderTests {
     // order disagree and only the file's answer can pass.
     for branch in ["zulu", "alpha"] {
       await harness.model.createWorktree(
-        branch: branch, basedOn: nil, createsBranch: true, in: harness.project)
+        branch: branch,
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
       try? await Task.sleep(for: .milliseconds(1100))
     }
     try harness.writeSharedSettings(#"{ "worktreeSortOrder": "createdOldestFirst" }"#)
@@ -24,17 +28,22 @@ extension AppModelWorktreeOrderTests {
     #expect(harness.model.workspace.worktreeSortOrder == .alphabetical, "the user's global")
     #expect(
       harness.model.orderedWorktrees(
-        all, in: harness.project, sessions: harness.model.sessionIDsByWorktree
+        all,
+        in: harness.project,
+        sessions: harness.model.sessionIDsByWorktree,
       ).map(\.name) == [
         "main", "zulu", "alpha",
       ],
-      "the file's order, which the global would have listed the other way")
+      "the file's order, which the global would have listed the other way",
+    )
 
     // A project overriding neither shows the file's value, said to come from the file, so
     // turning the override on seeds what the sidebar was already doing.
     let inherited = harness.model.inherited(
-      .worktreeSortOrder, global: harness.model.workspace.worktreeSortOrder,
-      for: harness.project)
+      .worktreeSortOrder,
+      global: harness.model.workspace.worktreeSortOrder,
+      for: harness.project,
+    )
     #expect(inherited == InheritedSetting(value: .createdOldestFirst, isFromRepository: true))
     #expect(inherited.caption.contains(SharedProjectSettings.fileName))
 
@@ -43,11 +52,14 @@ extension AppModelWorktreeOrderTests {
     harness.model.setSettings(settings, for: harness.project)
     #expect(
       harness.model.orderedWorktrees(
-        all, in: harness.project, sessions: harness.model.sessionIDsByWorktree
+        all,
+        in: harness.project,
+        sessions: harness.model.sessionIDsByWorktree,
       ).map(\.name) == [
         "main", "alpha", "zulu",
       ],
-      "the user's own order stands over the file's")
+      "the user's own order stands over the file's",
+    )
   }
 
   /// Export writes the order out, so a project set up by hand can be handed

@@ -18,8 +18,8 @@ extension AppModel {
   /// The draft's project's effective prefix, shown as fixed text so the user
   /// types only the part that varies.
   public func branchPrefix(for draft: NewWorktreeDraft) -> String {
-    draft.projectID.flatMap(workspace.project).map {
-      effectiveWorktreeSettings(for: $0).branchPrefix
+    draft.projectID.flatMap(workspace.project).map { project in
+      effectiveWorktreeSettings(for: project).branchPrefix
     } ?? ""
   }
 
@@ -39,7 +39,9 @@ extension AppModel {
     let project = draft.projectID.flatMap(workspace.project).map(effectiveProject)
     draft.fitAgent(
       startsByDefault: project.map(workspace.autoStartsAgentOnCreate) ?? false,
-      preferred: project.flatMap(workspace.effectiveAgentID), offered: newTabAgentIDs)
+      preferred: project.flatMap(workspace.effectiveAgentID),
+      offered: newTabAgentIDs,
+    )
   }
 
   /// The sheet's reads, `nil` once the task asking is cancelled: a project
@@ -52,8 +54,11 @@ extension AppModel {
     let current = await currentBranch(of: project)
     guard !Task.isCancelled else { return nil }
     return NewWorktreeBranches(
-      hasCommits: hasCommits, localBranches: local, remoteBranches: remote,
-      currentBranch: current)
+      hasCommits: hasCommits,
+      localBranches: local,
+      remoteBranches: remote,
+      currentBranch: current,
+    )
   }
 
   private func hasCommits(_ project: Project) async -> Bool {

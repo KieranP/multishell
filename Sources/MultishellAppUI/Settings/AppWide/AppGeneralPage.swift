@@ -13,16 +13,21 @@ struct AppGeneralPage: View {
         DetectionPicker(
           label: t("general.editor"),
           selection: model.settingBinding(
-            \.preferredEditorID, or: EditorCatalogue.noneID, write: model.setPreferredEditor),
+            \.preferredEditorID,
+            or: EditorCatalogue.noneID,
+            write: model.setPreferredEditor,
+          ),
           options: model.editorDetection.options(selected:),
           rescanning: model,
-          info: t("general.editor-info")
+          info: t("general.editor-info"),
         )
         if model.usesCustomEditor {
           CustomChoiceField(
-            label: t("label.command"), info: t("general.editor-command-info"),
+            label: t("label.command"),
+            info: t("general.editor-command-info"),
             prompt: t("general.editor-command-prompt"),
-            text: model.settingBinding(\.customEditorCommand, write: model.setCustomEditorCommand))
+            text: model.settingBinding(\.customEditorCommand, write: model.setCustomEditorCommand),
+          )
         }
       }
 

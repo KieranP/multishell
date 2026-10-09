@@ -5,6 +5,8 @@ enum UnixSocket {
   /// Bytes a path may have: `sun_path` less its terminator.
   static let maximumPathLength = MemoryLayout.size(ofValue: sockaddr_un().sun_path) - 1
 
+  private static var addressLength: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
+
   private static func address(for path: String) throws -> sockaddr_un {
     var address = sockaddr_un()
     let bytes = Array(path.utf8)
@@ -17,8 +19,6 @@ enum UnixSocket {
     }
     return address
   }
-
-  private static var addressLength: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
 
   static func newSocket(reportingAs path: String) throws -> Int32 {
     let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
@@ -42,7 +42,9 @@ enum UnixSocket {
 
   /// `operation` names the call in the failure, which reads its errno.
   private static func call(
-    _ operation: String, withAddressOf path: String, _ body: (UnsafePointer<sockaddr>) -> Int32
+    _ operation: String,
+    withAddressOf path: String,
+    _ body: (UnsafePointer<sockaddr>) -> Int32,
   ) throws {
     var socketAddress = try address(for: path)
     let result = withUnsafePointer(to: &socketAddress) { pointer in

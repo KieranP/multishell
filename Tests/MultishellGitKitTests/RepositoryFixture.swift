@@ -12,22 +12,32 @@ struct RepositoryFixture {
   let root: URL
   let project: Project
 
-  static func make(commit: Bool = true) async throws -> RepositoryFixture {
+  var coordinator: WorktreeCoordinator { TestGit.coordinator(runner: runner) }
+  var worktreeSettings: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
+
+  static func make(commit: Bool = true) async throws -> Self {
     let runner = try TestGit.runner()
     let root = Scratch.path("gitkit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
     try await TestRepository.initialise(at: repository, withFirstCommit: commit, using: runner)
-    return RepositoryFixture(runner: runner, root: root, project: Project(path: repository))
+    return Self(runner: runner, root: root, project: Project(path: repository))
   }
 
   /// A bare clone with its worktrees beside it. `project` is the bare repository, which
   /// `git worktree list` puts first; `checkout` is a linked worktree of `main`.
-  static func makeBare() async throws -> (fixture: RepositoryFixture, checkout: URL) {
+  static func makeBare() async throws -> (fixture: Self, checkout: URL) {
     let source = try await make()
     let (bare, checkout) = try await TestRepository.bareClone(
-      of: source.project.path, in: source.root, worktree: "main", using: source.runner)
-    let fixture = RepositoryFixture(
-      runner: source.runner, root: source.root, project: Project(path: bare))
+      of: source.project.path,
+      in: source.root,
+      worktree: "main",
+      using: source.runner,
+    )
+    let fixture = Self(
+      runner: source.runner,
+      root: source.root,
+      project: Project(path: bare),
+    )
     return (fixture, checkout)
   }
 
@@ -42,7 +52,10 @@ struct RepositoryFixture {
 
   /// A branch off `main` with one commit on it, the checkout back on `main` after.
   func commitOnBranch(
-    _ branch: String, _ message: String = "work", file: String, content: String
+    _ branch: String,
+    file: String,
+    content: String,
+    message: String = "work",
   ) async throws {
     _ = try await runner.run(["checkout", "-q", "-b", branch], in: project.path)
     try await commit(message, file: file, content: content)
@@ -53,7 +66,11 @@ struct RepositoryFixture {
   func addWorktree(onNewBranch branch: String) async throws -> URL {
     let tree = root.appendingPathComponent("trees/\(branch)", isDirectory: true)
     try await TestRepository.addWorktree(
-      onNewBranch: branch, at: tree, in: project.path, using: runner)
+      onNewBranch: branch,
+      at: tree,
+      in: project.path,
+      using: runner,
+    )
     return tree
   }
 
@@ -63,10 +80,15 @@ struct RepositoryFixture {
   ) async throws -> (record: Worktree, path: URL) {
     let branch = "old"
     let path = try await coordinator.createThenRunPostCreateHook(
-      branch: branch, in: project, settings: worktreeSettings)
+      branch: branch,
+      in: project,
+      settings: worktreeSettings,
+    )
     if let reason {
       _ = try await runner.run(
-        ["worktree", "lock", "--reason", reason, path.path], in: project.path)
+        ["worktree", "lock", "--reason", reason, path.path],
+        in: project.path,
+      )
     }
     let record = try await worktree(onBranch: branch)
     try FileManager.default.removeItem(at: path)
@@ -75,19 +97,18 @@ struct RepositoryFixture {
 
   func head(of directory: URL) async throws -> String {
     try await runner.run(["rev-parse", "HEAD"], in: directory).trimmingCharacters(
-      in: .whitespacesAndNewlines)
+      in: .whitespacesAndNewlines
+    )
   }
 
   func branches() async throws -> [String] {
     try await TestRepository.branches(in: project.path, using: runner)
   }
 
-  var coordinator: WorktreeCoordinator { TestGit.coordinator(runner: runner) }
-  var worktreeSettings: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
-
   func worktree(onBranch branch: String, in project: Project? = nil) async throws -> Worktree {
     try #require(
-      try await coordinator.git.list(project ?? self.project).first { $0.branch == branch })
+      try await coordinator.git.list(project ?? self.project).first { $0.branch == branch }
+    )
   }
 
   func tearDown() {

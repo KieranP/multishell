@@ -22,19 +22,6 @@ struct TabStrip: View {
     labelledAsGroup(strip)
   }
 
-  /// A worktree with one group has nothing to tell apart, so its strip is
-  /// no container a screen reader must step into.
-  @ViewBuilder
-  private func labelledAsGroup(_ strip: some View) -> some View {
-    if groupLabel.isEmpty {
-      strip
-    } else {
-      strip
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(groupLabel)
-    }
-  }
-
   private var strip: some View {
     GeometryReader { proxy in
       // One width for every tab, the strip's buttons taken off, so a drop
@@ -46,7 +33,8 @@ struct TabStrip: View {
         available: available,
         count: tabs.count,
         minimum: model.metrics.tabMinWidth,
-        maximum: model.metrics.tabMaxWidth)
+        maximum: model.metrics.tabMaxWidth,
+      )
       HStack(spacing: 0) {
         if layout.scrolls {
           // The scroller takes the whole strip and the buttons are pinned
@@ -57,7 +45,7 @@ struct TabStrip: View {
             layout: layout,
             available: available,
             tabIDs: tabs.map(\.id),
-            shownTabID: group.shownTabID
+            shownTabID: group.shownTabID,
           ) {
             tabViews(layout)
           }
@@ -81,14 +69,31 @@ struct TabStrip: View {
     // this one, and ends the drag, as every drop path must.
     .onDrop(
       of: [TabTransfer.contentType],
-      delegate: TabStripDropDelegate(drop: { model.dropDraggedTab(on: .strip(group.id)) })
+      delegate: TabStripDropDelegate(drop: { model.dropDraggedTab(on: .strip(group.id)) }),
     )
+  }
+
+  /// A worktree with one group has nothing to tell apart, so its strip is
+  /// no container a screen reader must step into.
+  @ViewBuilder
+  private func labelledAsGroup(_ strip: some View) -> some View {
+    if groupLabel.isEmpty {
+      strip
+    } else {
+      strip
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(groupLabel)
+    }
   }
 
   private func buttons(showsSplits: Bool) -> some View {
     TabStripButtons(
-      model: model, groupID: group.id, isFocusedGroup: isFocusedGroup,
-      showsSplits: showsSplits, theme: theme)
+      model: model,
+      groupID: group.id,
+      isFocusedGroup: isFocusedGroup,
+      showsSplits: showsSplits,
+      theme: theme,
+    )
   }
 
   @ViewBuilder
@@ -102,7 +107,7 @@ struct TabStrip: View {
         isShuffling: isShuffling,
         width: layout.tabWidth,
         theme: theme,
-        drag: $drag
+        drag: $drag,
       )
       .equatable()
     }

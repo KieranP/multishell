@@ -1,6 +1,11 @@
 /// A project's override where it has one, else the global. These read
 /// `project.settings`, so the project must be the one `AppModel.effectiveProject(_:)` made.
 extension Workspace {
+  /// The editor Open in Editor uses, or `nil` for none.
+  public var effectiveEditorID: String? {
+    EditorCatalogue.effectiveID(preferredEditorID)
+  }
+
   public func effectiveWorktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effectiveWorktreeSettings(defaults: worktreeDefaults)
   }
@@ -8,7 +13,9 @@ extension Workspace {
   /// The agent New Agent Tab starts in this project, or `nil` for none.
   public func effectiveAgentID(for project: Project) -> String? {
     AgentCatalogue.effectiveID(
-      global: preferredAgentID, override: project.settings.preferredAgentID)
+      global: preferredAgentID,
+      override: project.settings.preferredAgentID,
+    )
   }
 
   /// The project's flag line where it overrides, else the global one for
@@ -60,12 +67,9 @@ extension Workspace {
   /// The shell a new tab in this project runs, or `nil` for `$SHELL`.
   public func effectiveShellPath(for project: Project) -> String? {
     ShellChoice.effectivePath(
-      global: preferredShellID, override: project.settings.preferredShellID,
-      customPath: customShellPath)
-  }
-
-  /// The editor Open in Editor uses, or `nil` for none.
-  public var effectiveEditorID: String? {
-    EditorCatalogue.effectiveID(preferredEditorID)
+      global: preferredShellID,
+      override: project.settings.preferredShellID,
+      customPath: customShellPath,
+    )
   }
 }

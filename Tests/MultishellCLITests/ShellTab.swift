@@ -17,13 +17,18 @@ enum ShellTab {
   static func zshIntegrationDirectory(in root: URL, helper: URL? = nil) throws -> URL {
     let directory = root.appendingPathComponent("integration", isDirectory: true)
     try ShellIntegration.refresh(
-      zshDirectory: directory, bashInit: root.appendingPathComponent("bash/init.bash"),
-      helper: (try helper ?? HelperBinary.require()).path)
+      zshDirectory: directory,
+      bashInit: root.appendingPathComponent("bash/init.bash"),
+      helper: (try helper ?? HelperBinary.require()).path,
+    )
     return directory
   }
 
   static func environment(
-    socket: URL, session: UUID = UUID(), home: URL? = nil, worktree: String? = nil
+    socket: URL,
+    session: UUID = UUID(),
+    home: URL? = nil,
+    worktree: String? = nil,
   ) -> [String: String] {
     var environment = Scratch.shellEnvironment
     if let home { environment["HOME"] = home.path }
@@ -42,8 +47,12 @@ enum ShellTab {
   }
 
   static func zshEnvironment(
-    socket: URL, session: UUID = UUID(), home: URL? = nil, worktree: String? = nil,
-    integration: URL, userZdotdir: URL
+    socket: URL,
+    integration: URL,
+    userZdotdir: URL,
+    session: UUID = UUID(),
+    home: URL? = nil,
+    worktree: String? = nil,
   ) -> [String: String] {
     var environment = environment(socket: socket, session: session, home: home, worktree: worktree)
     environment["ZDOTDIR"] = integration.path
@@ -53,28 +62,44 @@ enum ShellTab {
 
   /// `script` run by an interactive bash under the generated init, as a tab's would be.
   static func runBash(
-    _ bash: String = "/bin/bash", initFile: URL, script: String, in home: URL,
-    environment: [String: String], timeout: Duration? = nil
+    initFile: URL,
+    script: String,
+    in home: URL,
+    environment: [String: String],
+    bash: String = "/bin/bash",
+    timeout: Duration? = nil,
   ) async throws -> ProcessOutput {
     try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: environment, timeout: timeout)
+      URL(fileURLWithPath: bash),
+      ["--init-file", initFile.path, "-i", "-c", script],
+      in: home,
+      environment: environment,
+      timeout: timeout,
+    )
   }
 
   /// `script` run by an interactive zsh.
   static func runZsh(
-    _ script: String, in directory: URL, environment: [String: String]
+    _ script: String,
+    in directory: URL,
+    environment: [String: String],
   ) async throws -> ProcessOutput {
     try await ProcessRunner().capture(
-      URL(fileURLWithPath: "/bin/zsh"), ["-i", "-c", script],
-      in: directory, environment: environment)
+      URL(fileURLWithPath: "/bin/zsh"),
+      ["-i", "-c", script],
+      in: directory,
+      environment: environment,
+    )
   }
 
   /// An interactive bash under the generated init reading `script` as its
   /// input, typed at its prompt rather than handed over with `-c`.
   static func runBash(
-    _ bash: String, initFile: URL, feeding script: URL, in home: URL,
-    environment: [String: String]
+    _ bash: String,
+    initFile: URL,
+    feeding script: URL,
+    in home: URL,
+    environment: [String: String],
   ) async throws -> ProcessOutput {
     try await ProcessRunner().capture(
       URL(fileURLWithPath: "/bin/sh"),
@@ -82,6 +107,9 @@ enum ShellTab {
         "-c",
         "exec \(bash) --init-file \(AnyShellQuoting.quote(initFile.path)) -i "
           + "< \(AnyShellQuoting.quote(script.path))",
-      ], in: home, environment: environment)
+      ],
+      in: home,
+      environment: environment,
+    )
   }
 }

@@ -1,3 +1,5 @@
+// Declared order is the order the helper's usage error lists them in.
+// swiftlint:disable sorted_enum_cases
 /// What a terminal's occupant last said about itself. Runtime only; `idle`
 /// is the absence of a state, reported only to clear one.
 public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
@@ -39,7 +41,7 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
 
   /// `nil` for idle, so a dictionary of states never holds an entry that
   /// means "no entry".
-  var nonIdle: SessionState? {
+  var nonIdle: Self? {
     self == .idle ? nil : self
   }
 
@@ -55,12 +57,13 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
 
   /// What a foreground command's exit code says. A code above 128 is a
   /// signal, usually the user's own Ctrl+C, and is not a failure.
-  public static func finished(exitCode: Int32?) -> SessionState {
+  public static func finished(exitCode: Int32?) -> Self {
     guard let exitCode, exitCode != 0, exitCode <= 128 else { return .done }
     return .failed
   }
 
-  public static func mostUrgent(_ states: some Sequence<SessionState>) -> SessionState? {
+  public static func mostUrgent(_ states: some Sequence<Self>) -> Self? {
     states.max { $0.urgency < $1.urgency }?.nonIdle
   }
 }
+// swiftlint:enable sorted_enum_cases

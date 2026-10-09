@@ -12,25 +12,36 @@ struct WorktreeGitInitializingTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "making", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "making",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let admin = fixture.project.path.appendingPathComponent(".git/worktrees/making")
     let lock = admin.appendingPathComponent("locked")
     try "initialisiere".write(to: lock, atomically: true, encoding: .utf8)
     try FileManager.default.removeItem(at: admin.appendingPathComponent("index"))
     let linkedAt = try #require(
       FileManager.default.attributesOfItem(atPath: admin.appendingPathComponent("gitdir").path)[
-        .modificationDate] as? Date)
+        .modificationDate
+      ] as? Date
+    )
     try FileManager.default.setAttributes(
-      [.modificationDate: linkedAt.addingTimeInterval(-1)], ofItemAtPath: lock.path)
+      [.modificationDate: linkedAt.addingTimeInterval(-1)],
+      ofItemAtPath: lock.path,
+    )
     try await TestRepository.addWorktree(
-      onNewBranch: "pinned", at: path.deletingLastPathComponent().appendingPathComponent("pinned"),
-      in: fixture.project.path, using: fixture.runner)
+      onNewBranch: "pinned",
+      at: path.deletingLastPathComponent().appendingPathComponent("pinned"),
+      in: fixture.project.path,
+      using: fixture.runner,
+    )
     _ = try await fixture.runner.run(
       [
         "worktree", "lock", "--reason", "initialisiere",
         path.deletingLastPathComponent().appendingPathComponent("pinned").path,
       ],
-      in: fixture.project.path)
+      in: fixture.project.path,
+    )
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
@@ -43,12 +54,17 @@ struct WorktreeGitInitializingTests {
     defer { fixture.tearDown() }
     let path = fixture.root.appendingPathComponent("unchecked").path
     _ = try await fixture.runner.run(
-      ["worktree", "add", "-q", "--no-checkout", "-b", "unchecked", path], in: fixture.project.path)
+      ["worktree", "add", "-q", "--no-checkout", "-b", "unchecked", path],
+      in: fixture.project.path,
+    )
     _ = try await fixture.runner.run(
-      ["worktree", "lock", "--reason", "on usb", path], in: fixture.project.path)
+      ["worktree", "lock", "--reason", "on usb", path],
+      in: fixture.project.path,
+    )
     let admin = fixture.project.path.appendingPathComponent(".git/worktrees/unchecked")
     try #require(
-      !FileManager.default.fileExists(atPath: admin.appendingPathComponent("index").path))
+      !FileManager.default.fileExists(atPath: admin.appendingPathComponent("index").path)
+    )
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
@@ -64,7 +80,8 @@ struct WorktreeGitInitializingTests {
       [
         "worktree", "add", "-q", "--lock", "--reason", "usb", "--no-checkout", "-b", "parked", path,
       ],
-      in: fixture.project.path)
+      in: fixture.project.path,
+    )
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
@@ -80,13 +97,18 @@ struct WorktreeGitInitializingTests {
     let reasons = ["killed": "initializing", "worded": "initialisiere"]
     for (branch, reason) in reasons {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: branch, in: fixture.project, settings: fixture.worktreeSettings)
+        branch: branch,
+        in: fixture.project,
+        settings: fixture.worktreeSettings,
+      )
       let admin = fixture.project.path.appendingPathComponent(".git/worktrees/\(branch)")
       let lock = admin.appendingPathComponent("locked")
       try reason.write(to: lock, atomically: true, encoding: .utf8)
       try FileManager.default.removeItem(at: admin.appendingPathComponent("index"))
       try FileManager.default.setAttributes(
-        [.modificationDate: Date(timeIntervalSinceNow: -3600)], ofItemAtPath: lock.path)
+        [.modificationDate: Date(timeIntervalSinceNow: -3600)],
+        ofItemAtPath: lock.path,
+      )
     }
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)

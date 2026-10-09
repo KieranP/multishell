@@ -30,7 +30,9 @@ extension AppModel {
     defaultBranches[project.id] = nil
     // Paths are ids, so the project re-added under the same filter text came back collapsed.
     setIfChanged(
-      \.projectsCollapsedWhileFiltering, projectsCollapsedWhileFiltering.subtracting([project.id]))
+      \.projectsCollapsedWhileFiltering,
+      projectsCollapsedWhileFiltering.subtracting([project.id]),
+    )
     // Or a project re-added while git still cannot read it would be dimmed
     // with no alert: the first failure is what reports one.
     missingProjects.remove(project.id)

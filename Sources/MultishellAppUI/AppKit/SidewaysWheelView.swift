@@ -11,7 +11,10 @@ final class SidewaysWheelView: AccessibilityHiddenView {
   }
 
   override func scrollWheel(with event: NSEvent) {
-    guard let scroller = reference?.scroller else { return super.scrollWheel(with: event) }
+    guard let scroller = reference?.scroller else {
+      super.scrollWheel(with: event)
+      return
+    }
     // A turn that goes sideways partway through can still arrive here, the
     // view a scroll is routed to being the one its first event hit.
     scroller.scrollWheel(with: isVertical(event) ? sideways(event) ?? event : event)

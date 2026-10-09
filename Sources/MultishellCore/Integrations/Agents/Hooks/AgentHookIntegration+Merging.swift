@@ -3,6 +3,9 @@ import Foundation
 /// Adding an agent's hooks to a settings object and taking them out again,
 /// without touching the disk; see Docs/design/agents.md.
 extension AgentHookIntegration {
+  /// What a bare hook of ours carries; a matcher is the group's and stays.
+  private static let bareHookKeys = ["type", "command", "timeout", "timeoutSec"]
+
   /// Whether any hook of ours is in there at all, so a half-written file
   /// still counts.
   func holdsAnyOfOurHooks(_ settings: [String: Any]) -> Bool {
@@ -17,7 +20,8 @@ extension AgentHookIntegration {
   /// One entry of ours per event, everything already there left alone.
   /// `install` refuses a file it cannot read rather than skipping an event.
   func adding(
-    to settings: [String: Any], helper: String
+    to settings: [String: Any],
+    helper: String,
   )
     -> [String: Any]
   {
@@ -82,8 +86,8 @@ extension AgentHookIntegration {
   /// One entry of the file, whichever of the two shapes it is in: a group
   /// of hooks, or a hook on its own. A mixed group holds one too.
   func holdsOurHook(_ entry: [String: Any]) -> Bool {
-    var commands = (entry["hooks"] as? [[String: Any]] ?? []).compactMap {
-      $0["command"] as? String
+    var commands = (entry["hooks"] as? [[String: Any]] ?? []).compactMap { hook in
+      hook["command"] as? String
     }
     if let command = entry["command"] as? String { commands.append(command) }
     return commands.contains(where: AgentHookCatalogue.isOurHook)
@@ -105,7 +109,4 @@ extension AgentHookIntegration {
     }
     return trimmed["hooks"] != nil || trimmed["command"] != nil ? trimmed : nil
   }
-
-  /// What a bare hook of ours carries; a matcher is the group's and stays.
-  private static let bareHookKeys = ["type", "command", "timeout", "timeoutSec"]
 }

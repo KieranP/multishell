@@ -3,6 +3,12 @@ import MultishellCore
 /// When and at what cost each worktree's `git status` was last read, the pace
 /// those readings are judged by, and which reads are in flight; see worktrees.md.
 struct StatusReadLog: Sendable {
+  struct Ticket: Sendable {
+    fileprivate let generation: Int
+    fileprivate let serial: Int
+    fileprivate let ids: [Worktree.ID]
+  }
+
   var pace = StatusPollPace.standard
 
   private var reads = LastReads()
@@ -64,11 +70,5 @@ struct StatusReadLog: Sendable {
     generation += 1
     reads.removeAll()
     inFlightSerial.removeAll()
-  }
-
-  struct Ticket: Sendable {
-    fileprivate let generation: Int
-    fileprivate let serial: Int
-    fileprivate let ids: [Worktree.ID]
   }
 }

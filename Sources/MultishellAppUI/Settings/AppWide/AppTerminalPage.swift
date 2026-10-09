@@ -15,24 +15,34 @@ struct AppTerminalPage: View {
           selection: model.preferredShellBinding,
           options: model.shellDetection.options(selected:),
           rescanning: model,
-          info: t("terminal.default-shell-info")
+          info: t("terminal.default-shell-info"),
         )
         if model.usesCustomShell {
           CustomChoiceField(
-            label: t("terminal.path"), info: t("terminal.path-info"),
+            label: t("terminal.path"),
+            info: t("terminal.path-info"),
             prompt: t("terminal.path-prompt"),
-            text: model.settingBinding(\.customShellPath, write: model.setCustomShellPath))
+            text: model.settingBinding(\.customShellPath, write: model.setCustomShellPath),
+          )
           if let problem = model.customShellPathProblem {
             SettingsCaption(problem)
           }
         }
         InfoToggle(
-          t("terminal.open-on-select"), info: t("terminal.open-on-select-info"),
-          isOn: model.settingBinding(\.opensTerminalOnSelect, write: model.setOpensTerminalOnSelect)
+          t("terminal.open-on-select"),
+          info: t("terminal.open-on-select-info"),
+          isOn: model.settingBinding(
+            \.opensTerminalOnSelect,
+            write: model.setOpensTerminalOnSelect,
+          ),
         )
         InfoToggle(
-          t("terminal.open-on-create"), info: t("terminal.open-on-create-info"),
-          isOn: model.settingBinding(\.opensTerminalOnCreate, write: model.setOpensTerminalOnCreate)
+          t("terminal.open-on-create"),
+          info: t("terminal.open-on-create-info"),
+          isOn: model.settingBinding(
+            \.opensTerminalOnCreate,
+            write: model.setOpensTerminalOnCreate,
+          ),
         )
       }
     }

@@ -46,13 +46,16 @@ extension AppModel {
     switch reading.loaded {
     case .success(let shared):
       applyParsedSharedSettings(shared, from: reading, for: project)
+
     case .failure(let error):
       applyUnreadableSharedSettings(error, from: reading, for: project)
     }
   }
 
   private func applyParsedSharedSettings(
-    _ shared: SharedProjectSettings?, from reading: SharedSettingsReading, for project: Project
+    _ shared: SharedProjectSettings?,
+    from reading: SharedSettingsReading,
+    for project: Project,
   ) {
     var snapshot = project.sharedSettingsSnapshot
     let isFirstRead = !snapshot.hasBeenRead
@@ -60,7 +63,10 @@ extension AppModel {
     // without changing them, and an unrecorded date is re-read every tick.
     let changed = snapshot.asWritten != shared || isFirstRead
     snapshot.recordParsed(
-      shared, confined: reading.confined, modificationDate: reading.modificationDate)
+      shared,
+      confined: reading.confined,
+      modificationDate: reading.modificationDate,
+    )
     store.setSharedSettingsSnapshot(snapshot, forProject: project.id)
     guard changed else { return }
     // A question already up is about a file the disk no longer has, and
@@ -75,15 +81,19 @@ extension AppModel {
   }
 
   private func applyUnreadableSharedSettings(
-    _ error: any Error, from reading: SharedSettingsReading, for project: Project
+    _ error: any Error,
+    from reading: SharedSettingsReading,
+    for project: Project,
   ) {
     // A question up names hooks the app no longer has, so it goes the way
     // a deleted file's does, and returns if the file parses again.
     dismissSharedSettingsTrust(for: project.id)
     var snapshot = project.sharedSettingsSnapshot
     let problem = t(
-      "error.shared-settings-unreadable", SharedProjectSettings.fileName,
-      String(describing: error))
+      "error.shared-settings-unreadable",
+      SharedProjectSettings.fileName,
+      String(describing: error),
+    )
     let isNew = snapshot.problem != problem
     snapshot.recordFailure(problem: problem, modificationDate: reading.modificationDate)
     store.setSharedSettingsSnapshot(snapshot, forProject: project.id)

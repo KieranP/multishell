@@ -5,6 +5,9 @@ extension GhosttySurfaceView {
   /// `hasKeyboard` is passed in, AppKit naming a new responder only afterwards.
   func syncSecureInput(hasKeyboard: Bool) {
     runtime.secureInput.update(
-      ObjectIdentifier(self), wantsSecureInput: wantsSecureInput, hasKeyboard: hasKeyboard)
+      ObjectIdentifier(self),
+      wantsSecureInput: wantsSecureInput,
+      hasKeyboard: hasKeyboard,
+    )
   }
 }

@@ -40,7 +40,8 @@ extension WorkspaceStoreTests {
             { "id": "\#(featureTab)", "worktreeID": "/repos/demo-feat", "focusedSessionID": "\#(lonely)",
               "root": { "terminal": { "_0": "\#(lonely)" } } } ],
           "activeTabByWorktree": { "/repos/demo": "\#(agentTab)" } }
-        """#)
+        """#
+    )
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     let (store, error) = WorkspaceStore.restored(from: StateFile(fileURL: file))

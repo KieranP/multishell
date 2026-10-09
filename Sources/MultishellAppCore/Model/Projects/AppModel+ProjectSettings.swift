@@ -40,7 +40,9 @@ extension AppModel {
   /// The value in force where this project does not override, and where it
   /// came from. What the settings forms show and seed an override with.
   public func inherited<Value: Equatable & Sendable>(
-    _ setting: InheritableSettingKeys<Value>, global: Value, for project: Project
+    _ setting: InheritableSettingKeys<Value>,
+    global: Value,
+    for project: Project,
   ) -> InheritedSetting<Value> {
     if let shared = sharedSettingsInForce(for: project)?[keyPath: setting.shared] {
       return InheritedSetting(value: shared, isFromRepository: true)

@@ -6,6 +6,16 @@ import Testing
 @Suite
 @MainActor
 struct LazyGhosttyRuntimeTests {
+  @MainActor
+  private final class BaseReads {
+    private(set) var count = 0
+
+    func read() -> String {
+      count += 1
+      return ""
+    }
+  }
+
   @Test func aThemeAppliedBeforeAnyTerminalBuildsNoRuntime() {
     let reads = BaseReads()
     let lazyRuntime = LazyGhosttyRuntime(readBase: reads.read)
@@ -28,15 +38,5 @@ struct LazyGhosttyRuntimeTests {
   @Test func theRuntimeStartsWithTheUsersBase() {
     let lazyRuntime = LazyGhosttyRuntime(readBase: { "macos-auto-secure-input = false" })
     #expect(!lazyRuntime.runtime.secureInput.followsPasswordPrompts)
-  }
-
-  @MainActor
-  private final class BaseReads {
-    private(set) var count = 0
-
-    func read() -> String {
-      count += 1
-      return ""
-    }
   }
 }

@@ -12,7 +12,9 @@ enum UntrackedLineCounter {
   /// Every line an insertion; a binary, empty or unread file unscored. Never one
   /// past `fileLimit`; see worktrees.md.
   static func count(
-    paths: [String], in directory: URL, memo: UntrackedLineMemo? = nil
+    paths: [String],
+    in directory: URL,
+    memo: UntrackedLineMemo? = nil,
   ) -> LineCounts {
     let known = memo?.entries(in: directory) ?? [:]
     var seen: [String: UntrackedLineMemo.Entry] = [:]

@@ -14,11 +14,11 @@ public struct SidebarListing: Sendable {
 
   private let filterText: String
 
+  var isFiltering: Bool { !filterText.isEmpty }
+
   init(filterText text: String) {
     filterText = text.trimmingCharacters(in: .whitespaces)
   }
-
-  var isFiltering: Bool { !filterText.isEmpty }
 
   func entries(in workspace: Workspace, collapsing collapsed: Set<Project.ID> = []) -> [Entry] {
     // One pass over the worktrees, not one per project; grouping keeps order.

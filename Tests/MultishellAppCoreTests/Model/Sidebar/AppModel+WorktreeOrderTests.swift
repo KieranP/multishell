@@ -11,9 +11,14 @@ struct AppModelWorktreeOrderTests {
     let harness = Harness()
     let extra = Worktree(
       path: harness.project.path.appendingPathComponent("aardvark"),
-      projectID: harness.project.id, head: "c", branch: "aardvark")
+      projectID: harness.project.id,
+      head: "c",
+      branch: "aardvark",
+    )
     harness.store.replaceWorktrees(
-      [harness.main, harness.feature, extra], forProject: harness.project.id)
+      [harness.main, harness.feature, extra],
+      forProject: harness.project.id,
+    )
     return (harness, extra)
   }
 
@@ -22,7 +27,10 @@ struct AppModelWorktreeOrderTests {
     let all = harness.model.workspace.worktrees
 
     let rows = harness.model.orderedWorktrees(
-      all, in: harness.project, sessions: harness.model.sessionIDsByWorktree)
+      all,
+      in: harness.project,
+      sessions: harness.model.sessionIDsByWorktree,
+    )
     #expect(rows.map(\.name) == ["main", "aardvark", "feature"])
     #expect(rows.first?.id == harness.main.id, "the trunk holds the top")
   }
@@ -39,28 +47,43 @@ struct AppModelWorktreeOrderTests {
     let all = harness.model.workspace.worktrees
     #expect(
       harness.model.orderedWorktrees(
-        all, in: harness.project, sessions: harness.model.sessionIDsByWorktree
+        all,
+        in: harness.project,
+        sessions: harness.model.sessionIDsByWorktree,
       ).map(\.name)
-        == ["main", "feature", "aardvark"], "the dated branch leads, the undated follows")
+        == ["main", "feature", "aardvark"],
+      "the dated branch leads, the undated follows",
+    )
   }
 
   @Test func activeMeansATerminalOrAReportedState() {
     let (harness, extra) = harnessWithThreeWorktrees()
     #expect(
       !harness.model.isActiveWorktree(
-        harness.feature.id, sessions: harness.model.sessionIDsByWorktree))
-    #expect(!harness.model.isActiveWorktree(extra.id, sessions: harness.model.sessionIDsByWorktree))
+        harness.feature.id,
+        sessions: harness.model.sessionIDsByWorktree,
+      )
+    )
+    #expect(
+      !harness.model.isActiveWorktree(extra.id, sessions: harness.model.sessionIDsByWorktree)
+    )
 
     harness.store.openTab(in: harness.feature.id)
     #expect(
       harness.model.isActiveWorktree(
-        harness.feature.id, sessions: harness.model.sessionIDsByWorktree), "a terminal is enough")
+        harness.feature.id,
+        sessions: harness.model.sessionIDsByWorktree,
+      ),
+      "a terminal is enough",
+    )
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, workingDirectory: extra.path.path))
+      SessionStateReport(state: .attention, workingDirectory: extra.path.path)
+    )
     #expect(
       harness.model.isActiveWorktree(extra.id, sessions: harness.model.sessionIDsByWorktree),
-      "so is a state with no terminal")
+      "so is a state with no terminal",
+    )
   }
 
   @Test func showActiveAtTheTopLiftsTheBusyRow() {
@@ -73,16 +96,24 @@ struct AppModelWorktreeOrderTests {
     let all = harness.model.workspace.worktrees
     #expect(
       harness.model.orderedWorktrees(
-        all, in: harness.project, sessions: harness.model.sessionIDsByWorktree
+        all,
+        in: harness.project,
+        sessions: harness.model.sessionIDsByWorktree,
       ).map(\.name)
-        == ["main", "feature", "aardvark"], "feature is busy, aardvark only sorts earlier")
+        == ["main", "feature", "aardvark"],
+      "feature is busy, aardvark only sorts earlier",
+    )
 
     settings.showsActiveWorktreesFirst = false
     harness.model.setSettings(settings, for: harness.project)
     #expect(
       harness.model.orderedWorktrees(
-        all, in: harness.project, sessions: harness.model.sessionIDsByWorktree
+        all,
+        in: harness.project,
+        sessions: harness.model.sessionIDsByWorktree,
       ).map(\.name)
-        == ["main", "aardvark", "feature"], "off, the name decides again")
+        == ["main", "aardvark", "feature"],
+      "off, the name decides again",
+    )
   }
 }

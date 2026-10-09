@@ -19,7 +19,8 @@ struct WorktreeMergeStateTests {
   @Test func aRebasedBranchSaysSoSoTheAbsentMergeCommitIsNotAPuzzle() {
     #expect(
       WorktreeMergeState.merged(.patchEquivalent, into: "origin/main").summary
-        == "Merged into origin/main, rebased")
+        == "Merged into origin/main, rebased"
+    )
   }
 
   @Test func theRemovalNoteWarnsWhereTheEvidenceIsOnlyAnUpstreamThatHasGone() {
@@ -37,18 +38,31 @@ struct WorktreeMergeStateTests {
 
   @Test func onlyALinkedWorktreeOnABranchOfItsOwnCanBeBadged() {
     let main = Worktree(
-      path: URL(fileURLWithPath: "/r"), projectID: "/r", head: "a",
-      branch: "main", isPrimary: true)
+      path: URL(fileURLWithPath: "/r"),
+      projectID: "/r",
+      head: "a",
+      branch: "main",
+      isPrimary: true,
+    )
     let trunk = Worktree(
-      path: URL(fileURLWithPath: "/t/main"), projectID: "/r", head: "a",
-      branch: "main")
+      path: URL(fileURLWithPath: "/t/main"),
+      projectID: "/r",
+      head: "a",
+      branch: "main",
+    )
     let feat = Worktree(
-      path: URL(fileURLWithPath: "/t/feat"), projectID: "/r", head: "a",
-      branch: "feat")
+      path: URL(fileURLWithPath: "/t/feat"),
+      projectID: "/r",
+      head: "a",
+      branch: "feat",
+    )
     let detached = Worktree(path: URL(fileURLWithPath: "/t/d"), projectID: "/r", head: "abc1234")
     let bare = Worktree(
-      path: URL(fileURLWithPath: "/r.git"), projectID: "/r", head: "a",
-      isBare: true)
+      path: URL(fileURLWithPath: "/r.git"),
+      projectID: "/r",
+      head: "a",
+      isBare: true,
+    )
 
     #expect(WorktreeMergeState.applies(to: feat, defaultBranchName: "main"))
     // The main worktree cannot be removed, so "safe to remove" cannot apply.

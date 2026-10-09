@@ -23,7 +23,11 @@ enum BranchRefParser {
     // rather than a dropped row; the badges do not read it.
     let committed = fields.count > 5 ? TimeInterval(fields[5]) : nil
     return BranchRef(
-      fullName: name, tip: tip, upstreamIsGone: tracksUpstream && track.contains("gone"),
-      symref: symref, committedAt: committed.map(Date.init(timeIntervalSince1970:)))
+      fullName: name,
+      tip: tip,
+      upstreamIsGone: tracksUpstream && track.contains("gone"),
+      symref: symref,
+      committedAt: committed.map(Date.init(timeIntervalSince1970:)),
+    )
   }
 }

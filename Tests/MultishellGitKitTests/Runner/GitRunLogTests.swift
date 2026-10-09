@@ -6,8 +6,11 @@ import Testing
 @Suite
 struct GitRunLogTests {
   private let run = GitRun(
-    command: "status", directory: URL(fileURLWithPath: "/tmp"), duration: .milliseconds(5),
-    exitUsage: nil)
+    command: "status",
+    directory: URL(fileURLWithPath: "/tmp"),
+    duration: .milliseconds(5),
+    exitUsage: nil,
+  )
 
   @Test func aLogThatIsNotRecordingTimesNothing() {
     let log = GitRunLog()
@@ -24,7 +27,8 @@ struct GitRunLogTests {
     log.endRun(run)
 
     #expect(
-      log.drain() == GitRunActivity(startedCount: 2, runningCount: 1, finishedRuns: [run]))
+      log.drain() == GitRunActivity(startedCount: 2, runningCount: 1, finishedRuns: [run])
+    )
     #expect(log.drain() == GitRunActivity(startedCount: 0, runningCount: 1, finishedRuns: []))
   }
 

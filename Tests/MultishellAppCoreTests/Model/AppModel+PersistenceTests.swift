@@ -89,7 +89,10 @@ struct AppModelPersistenceTests {
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     for i in 0..<10 {
       harness.engine.delegate?.terminalHost(
-        harness.engine, didRetitle: tab.focusedSessionID, to: "t\(i)")
+        harness.engine,
+        didRetitle: tab.focusedSessionID,
+        to: "t\(i)",
+      )
       harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: tab.focusedSessionID)
     }
     harness.model.statuses[harness.main.id] = WorktreeStatus()
@@ -112,6 +115,9 @@ struct AppModelPersistenceTests {
     harness.model.saveOffMain()
     harness.model.saveOffMain()
     harness.model.presentedError = nil
-    #expect(await harness.presentedErrorArrives() == nil, "the same alert, not a new one each time")
+    #expect(
+      await harness.presentedErrorArrives() == nil,
+      "the same alert, not a new one each time",
+    )
   }
 }

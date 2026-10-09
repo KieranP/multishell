@@ -14,10 +14,12 @@ struct ClaudeWorkerMetadataTests {
     #expect(
       metadata(
         #"{"agentType":"general-purpose","description":"/code-review . high","name":"code-review"}"#
-      ) == ClaudeWorkerMetadata(name: "code-review", description: "/code-review . high"))
+      ) == ClaudeWorkerMetadata(name: "code-review", description: "/code-review . high")
+    )
     #expect(
       metadata(#"{"description":"Reuse angle","parentAgentId":"ac15f9fedbcaa9669"}"#)
-        == ClaudeWorkerMetadata(parentID: "ac15f9fedbcaa9669", description: "Reuse angle"))
+        == ClaudeWorkerMetadata(parentID: "ac15f9fedbcaa9669", description: "Reuse angle")
+    )
   }
 
   @Test func aParentThatCouldNotBeAnIdIsNoParentAndAFileThatIsNotJSONIsNoMetadata() {
@@ -29,7 +31,8 @@ struct ClaudeWorkerMetadataTests {
   @Test func theFileSitsInTheSessionsFolderBesideItsTranscript() {
     #expect(
       ClaudeWorkerMetadata.path(ofWorker: "a1", transcriptPath: "/p/session.jsonl")
-        == "/p/session/subagents/agent-a1.meta.json")
+        == "/p/session/subagents/agent-a1.meta.json"
+    )
   }
 
   @Test func aWorkerIdThatWouldLeaveTheFolderIsNeverRead() throws {
@@ -38,7 +41,8 @@ struct ClaudeWorkerMetadataTests {
     try Data(#"{"name":"planted"}"#.utf8).write(to: directory.appendingPathComponent("x.meta.json"))
     try FileManager.default.createDirectory(
       at: directory.appendingPathComponent("session/subagents/agent-"),
-      withIntermediateDirectories: true)
+      withIntermediateDirectories: true,
+    )
     let transcript = directory.appendingPathComponent("session.jsonl").path
     #expect(ClaudeWorkerMetadata.read(ofWorker: "/../../../x", transcriptPath: transcript) == nil)
   }

@@ -8,14 +8,17 @@ import Testing
 struct AgentHooksRowTests {
   private func detection(_ ids: [String]) -> AgentDetection {
     AgentDetection(
-      found: Dictionary(uniqueKeysWithValues: ids.map { ($0, URL(fileURLWithPath: "/bin/\($0)")) }))
+      found: Dictionary(uniqueKeysWithValues: ids.map { ($0, URL(fileURLWithPath: "/bin/\($0)")) })
+    )
   }
 
   /// An agent this machine has gets a row, and so does one whose hooks are
   /// still installed after it has gone: those have to be removable.
   @Test func rowsAreForTheAgentsHereAndTheHooksLeftBehind() {
     let rows = AgentHooksRow.rows(
-      detection: detection(["claude", "gemini", "nonesuch"]), installed: ["codex"])
+      detection: detection(["claude", "gemini", "nonesuch"]),
+      installed: ["codex"],
+    )
 
     #expect(rows.map(\.id) == ["claude", "codex", "gemini"], "catalogue order")
     #expect(rows.first { $0.id == "codex" }?.isInstalled == true)
@@ -26,7 +29,10 @@ struct AgentHooksRowTests {
 
   @Test func aRowWhoseHooksAnOlderBuildWroteAsksForAnUpdate() throws {
     let rows = AgentHooksRow.rows(
-      detection: detection(["claude", "codex"]), installed: ["claude", "codex"], stale: ["codex"])
+      detection: detection(["claude", "codex"]),
+      installed: ["claude", "codex"],
+      stale: ["codex"],
+    )
 
     #expect(try #require(rows.first { $0.id == "codex" }).isStale)
     #expect(try !#require(rows.first { $0.id == "claude" }).isStale)
@@ -34,7 +40,9 @@ struct AgentHooksRowTests {
 
   @Test func eachRowNamesItsFileAndWhatWritingItDoes() throws {
     let rows = AgentHooksRow.rows(
-      detection: detection(["claude", "codex", "copilot", "opencode"]), installed: [])
+      detection: detection(["claude", "codex", "copilot", "opencode"]),
+      installed: [],
+    )
     let claude = try #require(rows.first { $0.id == "claude" })
     let codex = try #require(rows.first { $0.id == "codex" })
     let copilot = try #require(rows.first { $0.id == "copilot" })
@@ -46,7 +54,8 @@ struct AgentHooksRowTests {
     #expect(copilot.info.contains("Multishell's own file"), "nothing of the user's to keep")
     #expect(
       codex.info.contains("/hooks in Codex once to trust Multishell's"),
-      "it runs no hook it has not been told to trust")
+      "it runs no hook it has not been told to trust",
+    )
     #expect(!claude.info.contains("/hooks in Codex"))
     #expect(openCode.contentsLabel == "Plugin")
     for row in rows { #expect(row.info.contains(row.name)) }
@@ -54,8 +63,10 @@ struct AgentHooksRowTests {
 
   @Test func aRowSaysWhereItsHooksAreAndOffersWhatItsStateAllows() throws {
     let rows = AgentHooksRow.rows(
-      detection: detection(["claude", "codex", "gemini"]), installed: ["claude", "codex"],
-      stale: ["codex"])
+      detection: detection(["claude", "codex", "gemini"]),
+      installed: ["claude", "codex"],
+      stale: ["codex"],
+    )
     let current = try #require(rows.first { $0.id == "claude" })
     let stale = try #require(rows.first { $0.id == "codex" })
     let absent = try #require(rows.first { $0.id == "gemini" })
@@ -69,7 +80,9 @@ struct AgentHooksRowTests {
 
   @Test func everyRowsInfoFitsTwoHundredCharacters() {
     let rows = AgentHooksRow.rows(
-      detection: detection(AgentHookCatalogue.integrations.map(\.id)), installed: [])
+      detection: detection(AgentHookCatalogue.integrations.map(\.id)),
+      installed: [],
+    )
     #expect(rows.count == AgentHookCatalogue.integrations.count)
     for row in rows { #expect(row.info.count <= 200, "\(row.id) is \(row.info.count) characters") }
   }

@@ -124,13 +124,15 @@ extension WorkspaceStoreTests {
     store.closeTab(b.id)
     #expect(
       store.workspace.focusedGroup(in: worktree.id)?.id == last.id,
-      "the group to its right moved up into the slot")
+      "the group to its right moved up into the slot",
+    )
 
     store.focusGroup(last.id)
     store.closeTab(c.id)
     #expect(
       store.workspace.focusedGroup(in: worktree.id)?.id == first.id,
-      "nothing to its right, so the one to its left")
+      "nothing to its right, so the one to its left",
+    )
     #expect(store.workspace.tabs.map(\.id) == [a.id])
   }
 
@@ -146,11 +148,13 @@ extension WorkspaceStoreTests {
     store.moveTab(moving.id, .after, anchor: anchor.id)
 
     #expect(
-      store.workspace.tabs(inGroup: first.id).map(\.id) == [anchor.id, moving.id, neighbour.id])
+      store.workspace.tabs(inGroup: first.id).map(\.id) == [anchor.id, moving.id, neighbour.id]
+    )
     #expect(store.workspace.group(second.id) == nil)
     #expect(
       store.workspace.activeTab(in: worktree.id)?.id == moving.id,
-      "a tab dragged somewhere is the one being worked in")
+      "a tab dragged somewhere is the one being worked in",
+    )
     WorkspaceInvariants.check(store.workspace, "cross-group drop")
   }
 
@@ -194,7 +198,8 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.tabs(inGroup: first.id).last?.id == opened.id, "last in that strip")
     #expect(
       store.workspace.focusedGroup(in: worktree.id)?.id == first.id,
-      "opening a tab in a group is working in it")
+      "opening a tab in a group is working in it",
+    )
     #expect(store.workspace.group(second.id)?.shownTabID == moving.id, "the other group stands")
   }
 
@@ -223,7 +228,8 @@ extension WorkspaceStoreTests {
     store.setGroupWeights([.nan, 1], in: worktree.id)
     #expect(
       store.workspace.groups(in: worktree.id).map(\.weight) == [3, 1],
-      "a count that does not line up, a zero and a non-number are all refused")
+      "a count that does not line up, a zero and a non-number are all refused",
+    )
   }
 
   @Test func aClickInAPaneFocusesItsGroup() {
@@ -281,8 +287,7 @@ extension WorkspaceStoreTests {
     store.moveTab(moving.id, .after, toNewGroupOf: first.id)
     store.activateTab(shown.id)
 
-    #expect(
-      Set(store.workspace.shownTabs(in: worktree.id).map(\.id)) == [shown.id, moving.id])
+    #expect(Set(store.workspace.shownTabs(in: worktree.id).map(\.id)) == [shown.id, moving.id])
     #expect(!store.workspace.shownTabs(in: worktree.id).contains { $0.id == hidden.id })
   }
 

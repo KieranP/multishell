@@ -14,8 +14,10 @@ struct GroupDropBands: View {
       // A group too narrow to halve offers no band, rather than make two
       // groups nobody can read; the release reaches the area beneath.
       let canHalve = SplitMath.canHalve(
-        Double(proxy.size.width), minimumPane: UIMetrics.minimumPaneLength,
-        divider: UIMetrics.splitDividerThickness)
+        Double(proxy.size.width),
+        minimumPane: UIMetrics.minimumPaneLength,
+        divider: UIMetrics.splitDividerThickness,
+      )
       ZStack {
         // Under the bands and the whole area: what tells them the pointer
         // has arrived and, more to the point, that it has gone.
@@ -26,7 +28,8 @@ struct GroupDropBands: View {
             delegate: GroupAreaDropDelegate(
               groupID: group.id,
               drag: $drag,
-              drop: { model.dropDraggedTab(on: .area(group.id)) })
+              drop: { model.dropDraggedTab(on: .area(group.id)) },
+            ),
           )
           .accessibilityLabel(t("tab.move-to-this-group"))
         if canHalve, drag.showsBands(of: group.id) {
@@ -61,7 +64,8 @@ struct GroupDropBands: View {
         delegate: GroupBandDropDelegate(
           band: target,
           drag: $drag,
-          drop: { model.dropDraggedTab(on: .band(target)) })
+          drop: { model.dropDraggedTab(on: .band(target)) },
+        ),
       )
       .accessibilityLabel(AccessibilityText.newTabGroupBand(placement))
   }

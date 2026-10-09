@@ -148,40 +148,56 @@
   Darwin's, each wanting an `unsafe` that says nothing a reader can act on.
   `InternalImportsByDefault` and `ImmutableWeakCaptures` found nothing here, so
   they are left for Swift 7 to turn on.
-- **swift-format rules still off**: `NoLeadingUnderscores` (a persisted `_0`
-  coding key), `UseWhereClausesInForLoops` (a `guard … continue` reads as the
-  rest do), `NeverForceUnwrap` and `NeverUseForceTry` (invariants such as a UUID
-  literal, and fixtures loaded in a static `let`), and
-  `BeginDocumentationCommentWithOneLineSummary`, 875 doc comments written as
+- **swift-format rules still off**, listed here because `.swift-format` is JSON
+  and takes no comments: `NoLeadingUnderscores` (a persisted `_0` coding key),
+  `UseWhereClausesInForLoops` (a `guard … continue` reads as the rest do),
+  `NeverForceUnwrap` and `NeverUseForceTry` (SwiftLint's own rules cover
+  Sources), `AllPublicDeclarationsHaveDocumentation` (615 undocumented), and
+  `BeginDocumentationCommentWithOneLineSummary`, 878 doc comments written as
   prose.
-- **SwiftLint checks correctness, swift-format owns layout.** `.swiftlint.yml`
-  lists every lint, idiomatic and performance rule this code passes, 114 of 163,
-  so a new SwiftLint rule never fails CI on its own. Cost: CI installs whatever
-  Homebrew has, so an upgrade that changes an enabled rule can. Style and
-  metrics rules are left out: they fight swift-format's output.
-- **Off because they flag code that is right here**: `redundant_nil_coalescing`
-  (`?? nil` flattens a `String??`), `strict_fileprivate` (a nested type's
-  members shared with a sibling in the file), `reduce_boolean` (a last-wins fold
-  is not `allSatisfy`), `contains_over_range_nil_comparison` (on `Data` it swaps
-  Foundation's search for a naive one), `mark` (a doc line starting "mark:"),
-  `identical_operands` (a test of determinism), `nslocalizedstring_key` (the
-  `t()` wrapper), and `unneeded_escaping`, `async_without_await` and
-  `unneeded_throws_rethrows` (null and fake ports meeting a protocol).
-- **Off because a test reads better without them**: `empty_count` and
-  `empty_collection_literal`, since `#expect(x == [])` prints `x` when it fails
-  and `isEmpty` prints `false`; `force_try` and `force_cast`, for fixtures
-  loaded in a static `let`.
+- **Every SwiftLint rule runs but those in `disabled_rules`**, each listed in
+  `.swiftlint.yml` with its reason. Layout rules run beside swift-format where
+  the two agree; where they disagree, as on brace placement after a full header,
+  import order and a lone wrapped element's trailing comma, swift-format's
+  answer stands. They cost about 0.3 s of SwiftLint's 1.1 s uncached;
+  swift-format takes 4 s.
+- **SwiftLint is pinned by `swiftlint_version`**, and any other version refuses
+  to run. With every rule on, a newer SwiftLint would switch its new rules on
+  unasked, so a bump is when they are reviewed. CI downloads that release;
+  locally, Homebrew's must match.
+- **Sources take no force unwrap, `try!` or `as!`**; the one left is marked
+  where it stands. `Tests/.swiftlint.yml` lets a test stop on a broken fixture,
+  lets a suite run as long as its cases, and keeps `#expect(x == [])` over
+  `isEmpty`, since it prints `x` when it fails.
+- **Size and complexity limits sit just above the largest that exists**: 60-line
+  functions, complexity 15, 9 parameters, 4-member tuples, types nested two
+  deep, 120-column lines. They stop growth rather than force a split. Three
+  exceed them by choice and are marked: `SVGPathParser.path(fromData:)` (kept
+  whole on 2026-09-30), `OpenCodePlugin.javaScript`, one string literal, and
+  `Workspace.init(from:)`, a field per line; `WorkspaceStore` passes 400 lines
+  because every writer of its `private(set)` state must live in the file.
+  `closure_body_length` is off: a SwiftUI `Form` is one closure.
+- **Names are three letters or more**, bar `a`, `b`, `c`, `x`, `y`, `i`, `id`,
+  `at`, `on`, `to`, `up`, `fd` and the persisted `_0`.
+- **Members sit in SwiftLint's `type_contents_order`**: cases, type aliases,
+  nested types, static then instance properties, initializers, static then
+  instance methods, subscripts, `deinit`. Defaulted parameters come last.
+- **Enum cases are alphabetical unless the order means something**: what a
+  picker, the board, a strip or the helper's usage error lists in that order,
+  the order file lists are placed or a create or remove's stages run, the badge
+  fit's widest-first, and `ANSIColor`, whose raw value is the palette index.
+  Each such enum is marked with its reason.
+- **A type's extension in its own file is folded into it**, except where it
+  keeps a memberwise init synthesized, and `WorkspaceStore`'s concerns, which
+  must share its file. Those are marked.
+- **`prefer_key_path` is off in tests**: `#expect` cannot expand a key path
+  passed as its call's function, as `allSatisfy(\.isEmpty)` would be.
 - **SwiftLint's analyzer is not run.** Tried on 2026-10-09: over 30 minutes for
   one pass, `unused_declaration` found 4 and all 4 were wrong (a `@State` read
   through `$`, a protocol witness, a kept-alive `let`), and `unused_import`
   mostly asked for `Darwin` where `Foundation` already brings it. It needs
   SwiftPM's `@file` source lists expanded by hand, too. `MemberImportVisibility`
   already fails the build on a missing import.
-- **Off for now, with their counts**: `force_unwrapping` 230,
-  `discouraged_optional_boolean` 61, `discouraged_optional_collection` 47,
-  `empty_string` 48, `optional_data_string_conversion` 25,
-  `override_in_extension` 26, `incompatible_concurrency_annotation` 24,
-  `unused_parameter` 104, `variable_shadowing` 86.
 
 ## Before you say something works
 

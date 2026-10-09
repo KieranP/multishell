@@ -19,12 +19,14 @@ struct InheritedSettingTests {
   @Test func aSortOrderCaptionNamesItsLabelAndWhereItCameFrom() {
     let fromFile = InheritedSetting(
       value: WorktreeSortOrder.committedNewestFirst,
-      isFromRepository: true)
+      isFromRepository: true,
+    )
     #expect(fromFile.caption == "Using the value in .multishell.json: Last commit, newest first.")
 
     let fromGlobal = InheritedSetting(
       value: WorktreeSortOrder.alphabetical,
-      isFromRepository: false)
+      isFromRepository: false,
+    )
     #expect(fromGlobal.caption == "Using the global value: Name.")
   }
 }

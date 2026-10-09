@@ -5,14 +5,19 @@ import SwiftUI
 @MainActor
 enum OffscreenHost {
   static func read<Content: View, Result>(
-    _ content: Content, atWidth width: CGFloat, windowSize: CGSize,
+    _ content: Content,
+    atWidth width: CGFloat,
+    windowSize: CGSize,
     sizingOptions: NSHostingSizingOptions = .standardBounds,
-    _ read: (NSView) -> Result
+    _ read: (NSView) -> Result,
   ) -> Result {
     let host = NSHostingView(rootView: content.frame(width: width))
     host.sizingOptions = sizingOptions
     let window = OffscreenWindow.holding(
-      host, rect: NSRect(origin: .zero, size: windowSize), deferred: false)
+      host,
+      rect: NSRect(origin: .zero, size: windowSize),
+      deferred: false,
+    )
     return withExtendedLifetime(window) { read(host) }
   }
 }

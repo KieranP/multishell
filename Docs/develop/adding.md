@@ -33,7 +33,9 @@ What each addition needs beyond the code itself.
 - **A hook stage.** A case in the hook stage, an arm in each of the script and
   directory lookups, the call from the coordinator in order, an error title
   saying whether the operation happened, an editor on the Hooks page, and an
-  operation stage with its text.
+  operation stage with its text. A stage that runs after the git operation also
+  goes in `isAfterOperation`, which nothing forces; left out, a removal reads
+  its failure as a veto.
 - **A way a worktree stage can fail.** A failure type naming what is still on
   disk, an error title, and an arm in the removal describer saying whether the
   worktree is still there, which decides whether the row is restored or
@@ -209,8 +211,9 @@ What each addition needs beyond the code itself.
   which keep the shell, the auto-start pair and the trust answers under their
   old keys; one left out is never saved. ProjectSettingsTests counts them.
 - **A field on `Workspace`** needs a case in its hand-written coding keys too,
-  which keep the shell, the auto-start pair, the worktree names and the
-  notification preference under their old keys. WorkspaceTests counts them.
+  which keep the shell, the auto-start pair, the worktree names, the
+  notification preference and the hook timeout under their old keys.
+  WorkspaceTests counts them.
 - **A preference.** In order: the field on the workspace, a setter on the store,
   which must sit in that one file beside the private setter, a method on the
   model doing whatever else the change needs, and the row bound through the

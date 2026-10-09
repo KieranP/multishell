@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The entry above Projects that opens the board, carrying the waiting,
 /// working and done counts. Selected is the worktree rows' own outline.
-struct SidebarAgentsRow: View {
+struct SidebarAgentsRow: View, @MainActor Equatable {
   let counts: [AgentBoardLaneCount]
   let isSelected: Bool
   let theme: Theme
@@ -25,7 +25,10 @@ struct SidebarAgentsRow: View {
       ForEach(counts, id: \.lane) { entry in
         HStack(spacing: 3) {
           StateDot(
-            state: entry.lane.headerState, theme: theme, diameter: UIMetrics.inlineStateDotDiameter)
+            state: entry.lane.headerState,
+            theme: theme,
+            diameter: UIMetrics.inlineStateDotDiameter,
+          )
           Text("\(entry.count)")
             .font(.system(size: metrics.badge, weight: .medium))
             .monospacedDigit()
@@ -42,11 +45,9 @@ struct SidebarAgentsRow: View {
     .accessibilityLabel(AccessibilityText.agentsRow(counts))
     .selectableButtonTraits(isSelected: isSelected)
   }
-}
 
-/// Everything but `select`, which captures only the model; see `WorktreeRow`'s.
-extension SidebarAgentsRow: @MainActor Equatable {
-  static func == (a: SidebarAgentsRow, b: SidebarAgentsRow) -> Bool {
+  /// Everything but `select`, which captures only the model; see `WorktreeRow`'s.
+  static func == (a: Self, b: Self) -> Bool {
     a.counts == b.counts && a.isSelected == b.isSelected && a.theme == b.theme
       && a.metrics == b.metrics
   }

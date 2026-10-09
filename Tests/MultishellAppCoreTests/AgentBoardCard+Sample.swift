@@ -13,7 +13,7 @@ extension AgentBoardCard {
     state: SessionState? = nil,
     since: Date? = nil,
     note: SessionNote? = nil,
-    status: WorktreeStatus? = nil
+    status: WorktreeStatus? = nil,
   ) -> AgentBoardCard {
     AgentBoardCard(
       id: UUID(),
@@ -26,6 +26,7 @@ extension AgentBoardCard {
       state: state,
       since: since,
       note: note,
-      status: status)
+      status: status,
+    )
   }
 }

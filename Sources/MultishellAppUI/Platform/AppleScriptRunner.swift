@@ -24,7 +24,8 @@ enum AppleScriptRunner {
       eventID: subroutineEvent,
       targetDescriptor: .currentProcess(),
       returnID: AEReturnID(kAutoGenerateReturnID),
-      transactionID: AETransactionID(kAnyTransactionID))
+      transactionID: AETransactionID(kAnyTransactionID),
+    )
     event.setParam(NSAppleEventDescriptor(string: handler), forKeyword: handlerName)
     event.setParam(list, forKeyword: AEKeyword(keyDirectObject))
 

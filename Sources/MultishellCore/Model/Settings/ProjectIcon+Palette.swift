@@ -18,7 +18,8 @@ extension ProjectIcon {
         "bookmark.fill", "tag", "tag.fill", "paperclip", "square.and.arrow.down",
         "square.and.arrow.up", "arrow.down.doc", "arrow.up.doc", "square.on.square",
         "rectangle.stack", "square.stack",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.code"),
       symbols: [
@@ -37,7 +38,8 @@ extension ProjectIcon {
         "checkmark.seal", "flowchart", "flowchart.fill", "point.3.connected.trianglepath.dotted",
         "point.3.filled.connected.trianglepath.dotted", "app.dashed",
         "app.connected.to.app.below.fill", "square.split.2x1", "sidebar.left", "square.split.1x2",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.network"),
       symbols: [
@@ -52,7 +54,8 @@ extension ProjectIcon {
         "arrow.up.arrow.down",
         "arrow.left.arrow.right", "arrow.up.arrow.down.circle", "rectangle.connected.to.line.below",
         "esim", "simcard",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.infra"),
       symbols: [
@@ -64,7 +67,8 @@ extension ProjectIcon {
         "square.stack.3d.up", "square.3.layers.3d", "square.2.layers.3d", "rectangle.3.group",
         "circle.hexagongrid", "hexagon", "powerplug", "power", "batteryblock",
         "fanblades", "thermometer", "lock.shield", "checkmark.shield", "key.radiowaves.forward",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.data"),
       symbols: [
@@ -73,7 +77,8 @@ extension ProjectIcon {
         "chart.xyaxis.line", "waveform.path.ecg", "gauge", "gauge.high", "gauge.low", "speedometer",
         "dial.medium", "barometer", "tablecells", "square.grid.2x2", "square.grid.3x3",
         "circle.grid.3x3", "rectangle.3.offgrid", "circle.grid.cross", "waveform", "waveform.path",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.tools"),
       symbols: [
@@ -82,7 +87,8 @@ extension ProjectIcon {
         "paintbrush.pointed", "paintpalette", "eyedropper", "scissors", "pencil",
         "highlighter", "wand.and.stars", "wand.and.rays", "gyroscope", "lifepreserver",
         "bandage",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.devices"),
       symbols: [
@@ -90,7 +96,8 @@ extension ProjectIcon {
         "display.2",
         "applewatch", "airpods", "headphones", "computermouse", "printer", "scanner", "camera",
         "video", "tv", "gamecontroller", "homepod", "appletvremote.gen4", "hifispeaker",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.work"),
       symbols: [
@@ -99,7 +106,8 @@ extension ProjectIcon {
         "bag",
         "giftcard", "creditcard", "banknote", "dollarsign.circle", "eurosign.circle", "signature",
         "envelope", "envelope.open", "bubble.left.and.bubble.right", "calendar",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.nature"),
       symbols: [
@@ -107,32 +115,37 @@ extension ProjectIcon {
         "sunset", "moon", "moon.stars", "sparkles", "cloud.rain", "cloud.bolt", "cloud.snow",
         "snowflake", "wind", "tornado", "hurricane", "water.waves", "mountain.2", "microbe",
         "allergens", "carrot",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.animals"),
       symbols: [
         "ant", "tortoise", "hare", "bird", "fish", "dog", "cat", "lizard", "pawprint", "teddybear",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.media"),
       symbols: [
         "music.note", "music.mic", "music.quarternote.3", "film", "photo", "photo.stack",
         "play.circle", "speaker.wave.2", "mic", "theatermasks", "ticket", "guitars", "radio",
         "waveform.circle",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.travel"),
       symbols: [
         "airplane", "car", "bus", "tram", "bicycle", "scooter", "sailboat", "ferry", "truck.box",
         "fuelpump", "road.lanes", "map", "mappin.and.ellipse", "signpost.right", "location",
         "suitcase", "beach.umbrella", "tent", "binoculars", "figure.hiking",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.time"),
       symbols: [
         "clock", "alarm", "timer", "stopwatch", "hourglass", "calendar.badge.clock", "deskclock",
         "clock.arrow.circlepath", "clock.arrow.2.circlepath", "arrow.triangle.capsulepath",
-      ]),
+      ],
+    ),
     Group(
       name: t("icon-group.symbols"),
       symbols: [
@@ -141,7 +154,8 @@ extension ProjectIcon {
         "rosette", "crown", "trophy", "exclamationmark.triangle", "lock", "lock.fill", "lock.open",
         "key", "shield", "shield.fill", "sparkle", "bolt.fill", "asterisk", "infinity",
         "circle.dashed", "square.dashed",
-      ]),
+      ],
+    ),
   ]
 
   /// Every symbol the picker offers, in the picker's order.

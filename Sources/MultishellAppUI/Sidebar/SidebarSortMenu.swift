@@ -15,7 +15,7 @@ struct SidebarSortMenu: View {
     Menu {
       Picker(
         t("sidebar.sort-worktrees"),
-        selection: model.settingBinding(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
+        selection: model.settingBinding(\.worktreeSortOrder, write: model.setWorktreeSortOrder),
       ) {
         ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
       }
@@ -24,7 +24,10 @@ struct SidebarSortMenu: View {
       Toggle(
         t("worktrees.active-first"),
         isOn: model.settingBinding(
-          \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
+          \.showsActiveWorktreesFirst,
+          write: model.setShowsActiveWorktreesFirst,
+        ),
+      )
     } label: {
       Image(systemName: "arrow.up.arrow.down")
         .font(.system(size: metrics.badge))
@@ -34,6 +37,7 @@ struct SidebarSortMenu: View {
         // alone is a small target. As the strip's + does.
         .background(theme.sidebarColor)
         .contentShape(.rect)
+        .accessibilityHidden(true)
     }
     .glyphMenuStyle()
     .fixedSize()

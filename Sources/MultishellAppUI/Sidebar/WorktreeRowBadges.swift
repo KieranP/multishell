@@ -26,6 +26,7 @@ struct WorktreeRowBadges: View {
           .font(.system(size: metrics.badge))
           .foregroundStyle(theme.failureColor)
           .help(operation.title)
+          .accessibilityLabel(operation.title)
       }
     }
     if isLocked {
@@ -33,6 +34,7 @@ struct WorktreeRowBadges: View {
         .font(.system(size: metrics.small))
         .foregroundStyle(theme.textTertiary)
         .help(t("sidebar.locked"))
+        .accessibilityLabel(t("sidebar.locked"))
     }
     // Never beside the line counts or an unpushed count: work that is only
     // here hides the badge. See `WorktreeMergeState.showsBadge`.
@@ -41,6 +43,7 @@ struct WorktreeRowBadges: View {
         .font(.system(size: metrics.badge))
         .foregroundStyle(theme.mergedColor)
         .help(mergeState.tooltip)
+        .accessibilityLabel(mergeState.tooltip)
     }
     // Git changes sit left of the terminal count, so the count stays at
     // the row's right edge and lines up with rows that have no changes.

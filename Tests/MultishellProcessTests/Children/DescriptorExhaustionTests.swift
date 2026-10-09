@@ -13,7 +13,10 @@ struct DescriptorExhaustionTests {
     try await withFreeDescriptors(0) {
       do {
         let output = try await ProcessRunner().capture(
-          URL(fileURLWithPath: "/bin/sh"), ["-c", "printf real"], in: workingDirectory)
+          URL(fileURLWithPath: "/bin/sh"),
+          ["-c", "printf real"],
+          in: workingDirectory,
+        )
         Issue.record("ran with output \(output.standardOutput.debugDescription) at the limit")
       } catch is DescriptorUnavailable {
       } catch {
@@ -21,7 +24,10 @@ struct DescriptorExhaustionTests {
       }
     }
     let output = try await ProcessRunner().run(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: workingDirectory)
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "printf ok"],
+      in: workingDirectory,
+    )
     #expect(output == "ok", "works again once descriptors are back")
   }
 
@@ -30,8 +36,10 @@ struct DescriptorExhaustionTests {
     try await withFreeDescriptors(4) {
       await #expect(throws: (any Error).self) {
         try await ProcessRunner().capture(
-          URL(fileURLWithPath: "/bin/sh"), ["-c", "printf real"],
-          in: URL(fileURLWithPath: NSTemporaryDirectory()))
+          URL(fileURLWithPath: "/bin/sh"),
+          ["-c", "printf real"],
+          in: URL(fileURLWithPath: NSTemporaryDirectory()),
+        )
       }
     }
   }
@@ -40,7 +48,10 @@ struct DescriptorExhaustionTests {
   func aLaunchWithOneDescriptorLeftReturnsOrThrowsRatherThanTrapping() async throws {
     try await withFreeDescriptors(1) {
       _ = try? await ShellCommand.runUncaptured(
-        "true", in: URL(fileURLWithPath: NSTemporaryDirectory()), shellPath: "/bin/sh")
+        "true",
+        in: URL(fileURLWithPath: NSTemporaryDirectory()),
+        shellPath: "/bin/sh",
+      )
     }
   }
 

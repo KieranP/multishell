@@ -9,8 +9,8 @@ enum GhosttyUserConfig {
     let home = FileManager.default.homeDirectoryForCurrentUser
     let directories = [".config/ghostty", "Library/Application Support/com.mitchellh.ghostty"]
     return directories.flatMap { directory in
-      ["config", "config.ghostty"].map {
-        home.appendingPathComponent("\(directory)/\($0)", isDirectory: false)
+      ["config", "config.ghostty"].map { fileName in
+        home.appendingPathComponent("\(directory)/\(fileName)", isDirectory: false)
       }
     }
   }()
@@ -30,7 +30,10 @@ enum GhosttyUserConfig {
   static func base(reading urls: [URL] = fileURLs) -> String {
     base(
       userContents: GhosttyConfigIncludes.contents(
-        following: urls, home: FileManager.default.homeDirectoryForCurrentUser))
+        following: urls,
+        home: FileManager.default.homeDirectoryForCurrentUser,
+      )
+    )
   }
 
   static func base(userContents: [String]) -> String {

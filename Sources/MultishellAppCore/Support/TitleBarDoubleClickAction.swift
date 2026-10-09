@@ -1,8 +1,8 @@
 /// What a double-click on a title bar does, as the system setting says.
 public enum TitleBarDoubleClickAction: Equatable, Sendable {
-  case zoom
-  case minimize
   case ignore
+  case minimize
+  case zoom
 
   /// `AppleActionOnDoubleClick`'s value, where anything else zooms as macOS
   /// itself does.

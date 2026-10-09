@@ -7,8 +7,11 @@ enum OffscreenWindow {
   /// `rect` defaults to the content's own frame.
   static func holding(_ content: NSView, rect: NSRect? = nil, deferred: Bool = true) -> NSWindow {
     let window = NSWindow(
-      contentRect: rect ?? content.frame, styleMask: [.titled], backing: .buffered,
-      defer: deferred)
+      contentRect: rect ?? content.frame,
+      styleMask: [.titled],
+      backing: .buffered,
+      defer: deferred,
+    )
     window.contentView = content
     content.layoutSubtreeIfNeeded()
     return window

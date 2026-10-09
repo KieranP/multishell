@@ -11,7 +11,10 @@ struct AppModelSessionLaunchTests {
   @Test func eachTabRunsTheShellInForceForItsProject() {
     let harness = Harness()
     let session = TerminalSession(
-      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Shell")
+      worktreeID: harness.main.id,
+      workingDirectory: harness.main.path,
+      title: "Shell",
+    )
     #expect(harness.model.preparedForLaunch(session).shellPath == ShellChoice.loginShellPath())
 
     harness.model.setPreferredShell("/bin/bash")
@@ -20,21 +23,27 @@ struct AppModelSessionLaunchTests {
     harness.model.setSettings(ProjectSettings(preferredShellID: "/bin/sh"), for: harness.project)
     #expect(
       harness.model.preparedForLaunch(session).shellOverride == "/bin/sh",
-      "the project's override wins")
+      "the project's override wins",
+    )
 
     harness.model.setSettings(
-      ProjectSettings(preferredShellID: ShellChoice.loginShellID), for: harness.project)
+      ProjectSettings(preferredShellID: ShellChoice.loginShellID),
+      for: harness.project,
+    )
     #expect(
       harness.model.preparedForLaunch(session).shellOverride == ShellChoice.loginShellPath(),
-      "a project can step back to $SHELL under a global choice")
+      "a project can step back to $SHELL under a global choice",
+    )
 
     harness.model.select(harness.main)
     #expect(
       harness.engine.opened.last?.shellOverride == ShellChoice.loginShellPath(),
-      "reaches the engine")
+      "reaches the engine",
+    )
     #expect(
       harness.model.workspace.sessions.allSatisfy { $0.shellOverride == nil },
-      "never in the workspace")
+      "never in the workspace",
+    )
   }
 
   @Test func anAgentTabsFollowingShellIsTheChosenOne() {
@@ -43,8 +52,11 @@ struct AppModelSessionLaunchTests {
     harness.model.setPreferredAgent(AgentCatalogue.customID)
     harness.model.setCustomAgentCommand("my-agent")
     let session = TerminalSession(
-      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Agent",
-      agentID: AgentCatalogue.customID)
+      worktreeID: harness.main.id,
+      workingDirectory: harness.main.path,
+      title: "Agent",
+      agentID: AgentCatalogue.customID,
+    )
 
     let prepared = harness.model.preparedForLaunch(session)
 
@@ -61,8 +73,11 @@ struct AppModelSessionLaunchTests {
     ])
     harness.model.setAgentFlags("--name={{branch}} --model opus", for: AgentCatalogue.claudeID)
     let session = TerminalSession(
-      worktreeID: harness.feature.id, workingDirectory: harness.feature.path, title: "Claude Code",
-      agentID: AgentCatalogue.claudeID)
+      worktreeID: harness.feature.id,
+      workingDirectory: harness.feature.path,
+      title: "Claude Code",
+      agentID: AgentCatalogue.claudeID,
+    )
 
     #expect(
       harness.model.preparedForLaunch(session).command?.last
@@ -73,12 +88,14 @@ struct AppModelSessionLaunchTests {
     #expect(
       harness.model.preparedForLaunch(session).command?.last
         == "claude --model haiku; exec /bin/sh -l",
-      "the project's line replaces the global one")
+      "the project's line replaces the global one",
+    )
 
     harness.model.setSettings(ProjectSettings(agentFlags: ""), for: harness.project)
     #expect(
       harness.model.preparedForLaunch(session).command?.last == "claude; exec /bin/sh -l",
-      "blank runs it bare under a global that passes flags")
+      "blank runs it bare under a global that passes flags",
+    )
   }
   /// A saved tab that comes back as `claude --continue` is the same tab,
   /// and the flags said how that tab is meant to run.
@@ -89,7 +106,11 @@ struct AppModelSessionLaunchTests {
     before.model.setPreferredAgent(AgentCatalogue.claudeID)
     before.model.setAgentFlags("--name={{branch}}", for: AgentCatalogue.claudeID)
     before.model.select(before.main)
-    before.store.openTab(in: before.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
+    before.store.openTab(
+      in: before.main.id,
+      title: "Claude Code",
+      agentID: AgentCatalogue.claudeID,
+    )
 
     let (after, engine, store, _) = before.relaunched()
     after.select(before.main)
@@ -106,17 +127,22 @@ struct AppModelSessionLaunchTests {
     ])
     harness.model.setAgentFlags("--model opus", for: AgentCatalogue.claudeID)
     let session = TerminalSession(
-      worktreeID: harness.feature.id, workingDirectory: harness.feature.path, title: "Claude Code",
-      agentID: AgentCatalogue.claudeID)
+      worktreeID: harness.feature.id,
+      workingDirectory: harness.feature.path,
+      title: "Claude Code",
+      agentID: AgentCatalogue.claudeID,
+    )
     harness.model.pendingAgentTasks[session.id] = "Fix the redirect"
 
     #expect(
       harness.model.preparedForLaunch(session).command?.last
-        == "claude --model opus -- 'Fix the redirect'; exec /bin/sh -l")
+        == "claude --model opus -- 'Fix the redirect'; exec /bin/sh -l"
+    )
     #expect(
       harness.model.preparedForLaunch(session).command?.last
         == "claude --model opus; exec /bin/sh -l",
-      "a relaunch in the same run does not ask again")
+      "a relaunch in the same run does not ask again",
+    )
   }
 
   @Test func aCustomCommandReadsItsTaskAndAnEmptyOneWithout() {
@@ -124,8 +150,11 @@ struct AppModelSessionLaunchTests {
     harness.model.setPreferredShell("/bin/sh")
     harness.model.setCustomAgentCommand("my-agent {{task}}")
     let session = TerminalSession(
-      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Agent",
-      agentID: AgentCatalogue.customID)
+      worktreeID: harness.main.id,
+      workingDirectory: harness.main.path,
+      title: "Agent",
+      agentID: AgentCatalogue.customID,
+    )
     harness.model.pendingAgentTasks[session.id] = "Fix the redirect"
 
     let command = harness.model.preparedForLaunch(session).command
@@ -133,7 +162,8 @@ struct AppModelSessionLaunchTests {
     #expect(
       harness.model.preparedForLaunch(session).command?.prefix(2)
         == ["/usr/bin/env", "MULTISHELL_TASK="],
-      "never left as the literal token for the shell to read")
+      "never left as the literal token for the shell to read",
+    )
   }
 
   @Test func aRenamedWorktreeAndACustomCommandTakePlaceholdersToo() {
@@ -143,24 +173,32 @@ struct AppModelSessionLaunchTests {
     harness.model.setCustomAgentCommand("my-agent --name={{worktree}}")
     harness.model.renameWorktree(harness.feature.id, to: "The fix")
     let session = TerminalSession(
-      worktreeID: harness.feature.id, workingDirectory: harness.feature.path, title: "Agent",
-      agentID: AgentCatalogue.customID)
+      worktreeID: harness.feature.id,
+      workingDirectory: harness.feature.path,
+      title: "Agent",
+      agentID: AgentCatalogue.customID,
+    )
 
     let command = harness.model.preparedForLaunch(session).command
     #expect(command?.last == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#)
     #expect(
       command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_WORKTREE_NAME=The fix"],
-      "the value is handed over around the shell, never written into its line")
+      "the value is handed over around the shell, never written into its line",
+    )
   }
 
   @Test func theCustomShellPathReachesTabsUnlessTheProjectOverridesIt() {
     let harness = Harness()
     let session = TerminalSession(
-      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Shell")
+      worktreeID: harness.main.id,
+      workingDirectory: harness.main.path,
+      title: "Shell",
+    )
     harness.model.setPreferredShell(ShellChoice.customID)
     #expect(
       harness.model.preparedForLaunch(session).shellOverride == ShellChoice.loginShellPath(),
-      "blank path")
+      "blank path",
+    )
 
     harness.model.setCustomShellPath("/no/such/shell")
     #expect(harness.model.preparedForLaunch(session).shellOverride == "/no/such/shell")
@@ -170,7 +208,8 @@ struct AppModelSessionLaunchTests {
     harness.model.setSettings(ProjectSettings(preferredShellID: "/bin/bash"), for: harness.project)
     #expect(
       harness.model.preparedForLaunch(session).shellOverride == "/bin/bash",
-      "a project override still wins")
+      "a project override still wins",
+    )
   }
 
   @Test func aSavedAgentTabResumesWhereItCanAndIsAShellWhereItCannot() throws {
@@ -185,16 +224,22 @@ struct AppModelSessionLaunchTests {
     after.select(before.main)
 
     let byTitle = Dictionary(
-      uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) })
+      uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) }
+    )
     #expect(byTitle["Claude Code"]?.command?.last?.hasPrefix("claude --continue; ") == true)
-    #expect(byTitle["Flagless"]?.command == nil, "no resume flag, so a plain shell keeps the title")
+    #expect(
+      byTitle["Flagless"]?.command == nil,
+      "no resume flag, so a plain shell keeps the title",
+    )
     #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Flagless")
   }
 
   @Test func anAgentThatIsNotInstalledOpensAShellAndSaysSoOnce() {
     let harness = Harness()
     harness.model.loginEnvironment = LoginShellEnvironment(
-      variables: ["PATH": "/usr/bin"], source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+      variables: ["PATH": "/usr/bin"],
+      source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
+    )
     harness.model.agentDetection = AgentDetection(searchPath: "/usr/bin")
     harness.model.setPreferredAgent("claude")
     harness.model.select(harness.main)
@@ -219,6 +264,7 @@ struct AppModelSessionLaunchTests {
     #expect(harness.engine.opened.last?.command?.last?.hasPrefix("my-agent --fast; ") == true)
     #expect(
       harness.model.title(of: harness.model.workspace.activeTab(in: harness.main.id)!)
-        == "Custom command")
+        == "Custom command"
+    )
   }
 }

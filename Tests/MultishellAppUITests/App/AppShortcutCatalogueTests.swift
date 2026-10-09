@@ -13,7 +13,9 @@ struct AppShortcutCatalogueTests {
     #expect(AppShortcutCatalogue.newShellTab.ghosttyCombo == "super+shift+t")
 
     #expect(
-      AppShortcutCatalogue.newAgentTab.ghosttyCombo == "super+alt+t", "option is alt to Ghostty")
+      AppShortcutCatalogue.newAgentTab.ghosttyCombo == "super+alt+t",
+      "option is alt to Ghostty",
+    )
 
     // Control-only, and a key Ghostty names rather than taking its
     // character: `\t` would be an unparsable keybind.
@@ -40,7 +42,8 @@ struct AppShortcutCatalogueTests {
     for combo in combos {
       #expect(
         !GhosttyUnbinds.systemOwned.contains(combo),
-        "\(combo) is claimed by both a menu item of ours and the system")
+        "\(combo) is claimed by both a menu item of ours and the system",
+      )
     }
   }
 }

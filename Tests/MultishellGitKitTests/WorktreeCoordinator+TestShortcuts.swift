@@ -7,7 +7,9 @@ import MultishellProcess
 extension WorktreeCoordinator {
   /// The verdicts alone, which is all a merge test asks about.
   func mergeStates(
-    of branches: [String], in project: Project, inputs: MergeInputs
+    of branches: [String],
+    in project: Project,
+    inputs: MergeInputs,
   ) async -> [String: WorktreeMergeState] {
     await readMerges(of: branches, in: project, inputs: inputs).compactMapValues(\.state)
   }
@@ -17,33 +19,57 @@ extension WorktreeCoordinator {
   @discardableResult
   func createThenRunPostCreateHook(
     branch rawBranch: String,
-    basedOn startPoint: String? = nil,
-    createsBranch: Bool = true,
     in project: Project,
     settings: WorktreeSettings,
+    basedOn startPoint: String? = nil,
+    createsBranch: Bool = true,
     shellPath: String? = nil,
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
-    onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
+    onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil,
   ) async throws -> URL {
     let path = try await create(
-      branch: rawBranch, basedOn: startPoint, createsBranch: createsBranch, in: project,
-      settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
+      branch: rawBranch,
+      in: project,
+      settings: settings,
+      basedOn: startPoint,
+      createsBranch: createsBranch,
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper,
+      onStep: onStep,
+    )
     try await runPostCreateHook(
-      for: project, worktreePath: path,
-      branch: Self.qualifiedBranchName(rawBranch, createsBranch: createsBranch, settings: settings),
-      shellPath: shellPath, timeout: timeout, stopper: stopper)
+      for: project,
+      worktreePath: path,
+      branch: Self.qualifiedBranchName(
+        rawBranch,
+        createsBranch: createsBranch,
+        settings: settings,
+      ),
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper,
+    )
     return path
   }
 
   /// The removal with the directory unlinked in place of a Trash, for tests
   /// about the git side of it.
   func removeUnlinking(
-    _ worktree: Worktree, deletesBranch: Bool = false, in project: Project,
-    shellPath: String? = nil, onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil
+    _ worktree: Worktree,
+    in project: Project,
+    deletesBranch: Bool = false,
+    shellPath: String? = nil,
+    onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil,
   ) async throws {
     try await remove(
-      worktree, deletesBranch: deletesBranch, in: project, shellPath: shellPath,
-      trash: { try FileManager.default.removeItem(at: $0) }, onStep: onStep)
+      worktree,
+      in: project,
+      trash: { try FileManager.default.removeItem(at: $0) },
+      deletesBranch: deletesBranch,
+      shellPath: shellPath,
+      onStep: onStep,
+    )
   }
 }

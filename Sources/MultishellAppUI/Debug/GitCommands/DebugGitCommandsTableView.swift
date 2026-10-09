@@ -21,7 +21,11 @@ struct DebugGitCommandsTableView: View {
         if layout == .columns { header }
         ForEach(gitCommands) { gitCommand in
           DebugGitCommandRowView(
-            gitCommand: gitCommand, layout: layout, theme: theme, metrics: metrics)
+            gitCommand: gitCommand,
+            layout: layout,
+            theme: theme,
+            metrics: metrics,
+          )
         }
       }
     }

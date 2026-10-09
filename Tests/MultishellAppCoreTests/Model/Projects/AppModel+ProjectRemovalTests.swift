@@ -7,6 +7,14 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelProjectRemovalTests {
+  /// Pruned by the next `refreshStatuses` against the workspace, which is
+  /// cheaper than walking every worktree on a removal.
+  private static let prunedByTheNextStatusRead = "_statuses"
+  /// A coalesced refresh that finds its worktree gone and does nothing.
+  private static let ignoredWhenItFires = "pendingStatusRefreshes"
+  /// Fields meant to still name a departed project.
+  private static let exempt: Set = [prunedByTheNextStatusRead, ignoredWhenItFires]
+
   /// Removing the project covers the hooks in it. The `sleep 30` is what
   /// proves the signal, the setup task not being awaitable.
   @Test func removingAProjectEndsAHookStillRunningInItsWorktrees() async throws {
@@ -17,7 +25,11 @@ struct AppModelProjectRemovalTests {
     // `harness.project` re-read each time: the create takes its hooks off the
     // value it is handed, so a copy from before the settings write has none.
     await harness.model.createWorktree(
-      branch: "setup", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "setup",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "setup"))
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
 
@@ -30,18 +42,14 @@ struct AppModelProjectRemovalTests {
     #expect(harness.model.worktreeOperations[created.id] == nil)
     #expect(harness.model.stageHandles.setupTask(of: created.id) == nil)
     #expect(
-      harness.model.presentedError == nil, "the user asked for this, so there is nothing to report")
+      harness.model.presentedError == nil,
+      "the user asked for this, so there is nothing to report",
+    )
     #expect(
       harness.model.workspace.tabs(in: created.id).isEmpty,
-      "and no first tab opens in a worktree whose project has gone")
+      "and no first tab opens in a worktree whose project has gone",
+    )
   }
-  /// Pruned by the next `refreshStatuses` against the workspace, which is
-  /// cheaper than walking every worktree on a removal.
-  private static let prunedByTheNextStatusRead = "_statuses"
-  /// A coalesced refresh that finds its worktree gone and does nothing.
-  private static let ignoredWhenItFires = "pendingStatusRefreshes"
-  /// Fields meant to still name a departed project.
-  private static let exempt: Set = [prunedByTheNextStatusRead, ignoredWhenItFires]
 
   /// Walked by reflection rather than field by field, so a path-keyed cache added later is
   /// caught without anyone remembering to extend this test.
@@ -54,7 +62,11 @@ struct AppModelProjectRemovalTests {
     // and the record check something to hold before the project goes.
     try harness.writeSharedSettings(#"{"branchPrefix": "team/"}"#)
     await harness.model.createWorktree(
-      branch: "second", basedOn: nil, createsBranch: true, in: project)
+      branch: "second",
+      basedOn: nil,
+      createsBranch: true,
+      in: project,
+    )
     await harness.model.refreshAll()
     let worktrees = harness.model.workspace.worktrees(of: project.id)
     _ = harness.model.select(worktrees[0])
@@ -67,11 +79,13 @@ struct AppModelProjectRemovalTests {
     await harness.model.requestWorktreeRemoval(of: worktrees[1])?.value
 
     let paths = Set(
-      [project.id] + harness.model.workspace.worktrees(of: project.id).map(\.id))
+      [project.id] + harness.model.workspace.worktrees(of: project.id).map(\.id)
+    )
     #expect(paths.count >= 2, "the project and at least one worktree of its own")
     #expect(
       harness.model.workspace.project(project.id)?.sharedSettingsSnapshot.hasBeenRead == true,
-      "the file was read, so the project holds something")
+      "the file was read, so the project holds something",
+    )
 
     harness.model.removeProject(project)
 
@@ -93,7 +107,9 @@ struct AppModelProjectRemovalTests {
     #expect(harness.model.workspace.projects.count == 1, "nothing removed until confirmed")
     #expect(
       harness.model.projectRemovalMessage(for: harness.project).contains(
-        "1 open terminal will be closed"))
+        "1 open terminal will be closed"
+      )
+    )
 
     harness.model.answerProjectRemoval(pending, confirmed: true)
     #expect(harness.model.pendingProjectRemoval == nil)

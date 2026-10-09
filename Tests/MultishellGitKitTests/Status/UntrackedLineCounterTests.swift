@@ -10,7 +10,10 @@ struct UntrackedLineCounterTests {
     let root = try Scratch.directory("untracked")
     defer { Scratch.remove(root) }
     try "a\nb\nc\n".write(
-      to: root.appendingPathComponent("one.txt"), atomically: true, encoding: .utf8)
+      to: root.appendingPathComponent("one.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try "d\ne".write(to: root.appendingPathComponent("two.txt"), atomically: true, encoding: .utf8)
 
     let counted = UntrackedLineCounter.count(paths: ["one.txt", "two.txt"], in: root)
@@ -22,7 +25,9 @@ struct UntrackedLineCounterTests {
     let root = try Scratch.directory("untracked")
     defer {
       try? FileManager.default.setAttributes(
-        [.posixPermissions: 0o644], ofItemAtPath: root.appendingPathComponent("one.txt").path)
+        [.posixPermissions: 0o644],
+        ofItemAtPath: root.appendingPathComponent("one.txt").path,
+      )
       Scratch.remove(root)
     }
     let file = root.appendingPathComponent("one.txt")
@@ -65,7 +70,10 @@ struct UntrackedLineCounterTests {
     let root = try Scratch.directory("untracked")
     defer { Scratch.remove(root) }
     try "a\nb\n".write(
-      to: root.appendingPathComponent("one.txt"), atomically: true, encoding: .utf8)
+      to: root.appendingPathComponent("one.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
     let unmarked = URL(fileURLWithPath: root.path, isDirectory: false)
 
     #expect(UntrackedLineCounter.count(paths: ["one.txt"], in: unmarked).insertions == 2)
@@ -88,7 +96,9 @@ struct UntrackedLineCounterTests {
     let target = root.appendingPathComponent("target.txt")
     try "a\nb\nc\n".write(to: target, atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(
-      at: root.appendingPathComponent("link.txt"), withDestinationURL: target)
+      at: root.appendingPathComponent("link.txt"),
+      withDestinationURL: target,
+    )
 
     let counted = UntrackedLineCounter.count(paths: ["link.txt"], in: root)
     #expect(counted.insertions == 0, "git stores the link, not the lines it points at")
@@ -100,7 +110,10 @@ struct UntrackedLineCounterTests {
     defer { Scratch.remove(root) }
     func write(_ name: String, bytes: Int) throws {
       try String(repeating: "x\n", count: bytes / 2).write(
-        to: root.appendingPathComponent(name), atomically: true, encoding: .utf8)
+        to: root.appendingPathComponent(name),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
     let full = UntrackedLineCounter.totalByteLimit / UntrackedLineCounter.perFileByteLimit - 1
     for index in 0..<full {
@@ -114,12 +127,15 @@ struct UntrackedLineCounterTests {
 
     let counted = UntrackedLineCounter.count(
       paths: (0..<full).map { "\($0).txt" } + ["nearly-full.txt", "crosses.txt", "after.txt"],
-      in: root)
+      in: root,
+    )
 
     let counting = full * UntrackedLineCounter.perFileByteLimit + headroom - 2048 + 4
     #expect(counted.insertions == counting / 2)
     #expect(
-      counted.unscoredFiles == 1, "the file that would not fit, and not the small one after it")
+      counted.unscoredFiles == 1,
+      "the file that would not fit, and not the small one after it",
+    )
   }
 
   @Test func aFileThatCouldNotBeReadLeavesTheBudgetToTheRest() throws {
@@ -134,14 +150,22 @@ struct UntrackedLineCounterTests {
     }
     for file in unreadable {
       try String(repeating: "x\n", count: UntrackedLineCounter.perFileByteLimit / 2).write(
-        to: file, atomically: true, encoding: .utf8)
+        to: file,
+        atomically: true,
+        encoding: .utf8,
+      )
       try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
     }
     try "a\nb\n".write(
-      to: root.appendingPathComponent("after.txt"), atomically: true, encoding: .utf8)
+      to: root.appendingPathComponent("after.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let counted = UntrackedLineCounter.count(
-      paths: unreadable.map(\.lastPathComponent) + ["after.txt"], in: root)
+      paths: unreadable.map(\.lastPathComponent) + ["after.txt"],
+      in: root,
+    )
 
     #expect(counted.insertions == 2)
     #expect(counted.unscoredFiles == full)
@@ -154,11 +178,16 @@ struct UntrackedLineCounterTests {
     defer { Scratch.remove(root) }
     for index in 0..<(UntrackedLineCounter.fileLimit + 20) {
       try "a\n".write(
-        to: root.appendingPathComponent("\(index).txt"), atomically: true, encoding: .utf8)
+        to: root.appendingPathComponent("\(index).txt"),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
 
     let counted = UntrackedLineCounter.count(
-      paths: (0..<(UntrackedLineCounter.fileLimit + 20)).map { "\($0).txt" }, in: root)
+      paths: (0..<(UntrackedLineCounter.fileLimit + 20)).map { "\($0).txt" },
+      in: root,
+    )
 
     #expect(counted.insertions == UntrackedLineCounter.fileLimit)
     #expect(counted.unscoredFiles == 0)

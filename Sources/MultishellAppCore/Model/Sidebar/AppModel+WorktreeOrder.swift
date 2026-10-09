@@ -6,14 +6,17 @@ extension AppModel {
   /// Orders a project's rows as its settings ask. Takes the worktrees rather
   /// than reading them, so a filtered list orders like a whole one.
   public func orderedWorktrees(
-    _ worktrees: [Worktree], in project: Project, sessions: SessionIDsByWorktree
+    _ worktrees: [Worktree],
+    in project: Project,
+    sessions: SessionIDsByWorktree,
   ) -> [Worktree] {
     let rule = worktreeSortRule(for: project)
     let keys = rule.keys(
       worktrees,
       displayName: { self.workspace.displayName(of: $0) },
       isActive: { self.isActiveWorktree($0.id, sessions: sessions) },
-      lastCommit: { self.lastCommitDates[$0.id] })
+      lastCommit: { self.lastCommitDates[$0.id] },
+    )
     return worktreeSortCache.rows(of: project.id, keys: keys, rule: rule)
   }
 
@@ -24,7 +27,8 @@ extension AppModel {
     return WorktreeSortRule(
       sortOrder: workspace.effectiveWorktreeSortOrder(for: effective),
       showsActiveFirst: workspace.showsActiveWorktreesFirst(for: effective),
-      trunkBranch: defaultBranch(of: project)?.nameWithoutRemote)
+      trunkBranch: defaultBranch(of: project)?.nameWithoutRemote,
+    )
   }
 
   /// Whether anything is going on in a worktree: a terminal open in it, or

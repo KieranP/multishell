@@ -19,6 +19,8 @@ struct GitHarness {
   let watcher = FakeWatcher()
   let platform = FakePlatform()
 
+  var project: Project { model.workspace.projects[0] }
+
   init() async throws {
     git = try TestGit.runner()
     root = Scratch.path("appgit")
@@ -26,12 +28,15 @@ struct GitHarness {
     try await TestRepository.initialise(at: repository, withFirstCommit: true, using: git)
 
     store = WorkspaceStore(
-      file: StateFile(fileURL: root.appendingPathComponent("state.json")))
+      file: StateFile(fileURL: root.appendingPathComponent("state.json"))
+    )
     model = AppModel(
       store: store,
       host: self.engine,
       coordinator: TestGit.coordinator(runner: git),
-      watcher: watcher, platform: platform)
+      watcher: watcher,
+      platform: platform,
+    )
     model.statusReadLog.pace = .unpaced
     await model.addProject(at: repository)
   }
@@ -42,8 +47,6 @@ struct GitHarness {
     try? await waitUntil({ model.worktreeOperations[id]?.isRunning != true }, seconds: 10)
   }
 
-  var project: Project { model.workspace.projects[0] }
-
   /// `link/key` in the repository, where `link` leads out of it: a list that
   /// passes the spelling check and is refused against the disk.
   func divertARepositoryPathWithASymlink() throws {
@@ -51,9 +54,14 @@ struct GitHarness {
     let outside = root.appendingPathComponent("outside", isDirectory: true)
     try manager.createDirectory(at: outside, withIntermediateDirectories: true)
     try "TOP SECRET".write(
-      to: outside.appendingPathComponent("key"), atomically: true, encoding: .utf8)
+      to: outside.appendingPathComponent("key"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try manager.createSymbolicLink(
-      at: project.path.appendingPathComponent("link"), withDestinationURL: outside)
+      at: project.path.appendingPathComponent("link"),
+      withDestinationURL: outside,
+    )
   }
 
   @discardableResult
@@ -70,7 +78,9 @@ struct GitHarness {
     let model = AppModel(
       store: store,
       host: self.engine,
-      coordinator: fake.coordinator, watcher: watcher)
+      coordinator: fake.coordinator,
+      watcher: watcher,
+    )
     model.statusReadLog.pace = .unpaced
     model.presentedError = nil
     return model
@@ -81,13 +91,18 @@ struct GitHarness {
   func answerTrust(_ isTrusted: Bool) throws {
     model.select(model.workspace.worktrees(of: project.id)[0])
     model.answerSharedSettingsTrust(
-      try #require(model.pendingSharedSettingsTrust), isTrusted: isTrusted)
+      try #require(model.pendingSharedSettingsTrust),
+      isTrusted: isTrusted,
+    )
   }
 
   /// An untracked file, which is what the status badge counts.
   func dirty(_ worktree: Worktree) throws {
     try "x".write(
-      to: worktree.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+      to: worktree.path.appendingPathComponent("dirty.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
   }
 
   /// Every queued status refresh is cancelled and every badge cleared, so a
@@ -117,13 +132,15 @@ struct GitHarness {
           fi
           printf '## main\\n' ;;
       esac
-      """)
+      """
+    )
   }
 
   /// A model on fake git whose every `git status` waits for `gate`, or for the
   /// harness to be torn down, then answers on `branch`.
   func modelWithStatusHeld(
-    until gate: URL, answering branch: String
+    until gate: URL,
+    answering branch: String,
   ) throws
     -> AppModel<FakeSurface>
   {
@@ -133,13 +150,18 @@ struct GitHarness {
         *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(root.path)" ]; do sleep 0.02; done
           printf '## \(branch)\\n' ;;
       esac
-      """)
+      """
+    )
   }
 
   /// `git worktree add -b` run by hand, as the user would outside the app.
   func addOutsideTheApp(_ branch: String, at directory: URL) async throws {
     try await TestRepository.addWorktree(
-      onNewBranch: branch, at: directory, in: project.path, using: git)
+      onNewBranch: branch,
+      at: directory,
+      in: project.path,
+      using: git,
+    )
   }
 
   /// `git worktree remove --force` run by hand, as the user would outside the app.

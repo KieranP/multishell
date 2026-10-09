@@ -40,6 +40,10 @@ struct SplitStack: View {
 
   private func divider(after index: Int) -> some View {
     SplitDivider(
-      axis: axis, theme: theme, onDrag: { onDrag(index, $0) }, onDragEnded: onDragEnded)
+      axis: axis,
+      theme: theme,
+      onDrag: { onDrag(index, $0) },
+      onDragEnded: onDragEnded,
+    )
   }
 }

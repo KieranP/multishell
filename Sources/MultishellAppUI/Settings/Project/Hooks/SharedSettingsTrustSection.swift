@@ -22,7 +22,8 @@ struct SharedSettingsTrustSection: View {
     } header: {
       InfoLabel(
         sectionHeader: t("hooks.shared-header", SharedProjectSettings.fileName),
-        info: t("hooks.shared-info", SharedProjectSettings.fileName))
+        info: t("hooks.shared-info", SharedProjectSettings.fileName),
+      )
     }
   }
 }

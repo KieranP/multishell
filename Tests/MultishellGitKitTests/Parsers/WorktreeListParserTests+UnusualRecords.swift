@@ -100,12 +100,14 @@ extension WorktreeListParserTests {
     }
     #expect(
       WorktreeListParser.parse(zeroTerminated("worktree \n"), projectID: "/p").isEmpty,
-      "an empty path would resolve to the current directory")
+      "an empty path would resolve to the current directory",
+    )
   }
 
   @Test func aLastRecordWithoutATrailingSeparatorIsStillParsed() {
     let output = "worktree /a\nHEAD 5555555\nbranch refs/heads/x"
     #expect(
-      WorktreeListParser.parse(zeroTerminated(output), projectID: "/p").map(\.branch) == ["x"])
+      WorktreeListParser.parse(zeroTerminated(output), projectID: "/p").map(\.branch) == ["x"]
+    )
   }
 }

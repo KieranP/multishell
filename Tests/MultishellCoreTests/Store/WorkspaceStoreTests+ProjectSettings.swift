@@ -22,8 +22,10 @@ extension WorkspaceStoreTests {
     let project = store.addProject(at: URL(fileURLWithPath: "/repos/a"))
     let read = SharedSettingsSnapshot(
       asWritten: SharedProjectSettings(branchPrefix: "team/"),
-      confined: SharedProjectSettings(branchPrefix: "team/"), modificationDate: Date(),
-      hasBeenRead: true)
+      confined: SharedProjectSettings(branchPrefix: "team/"),
+      modificationDate: Date(),
+      hasBeenRead: true,
+    )
     store.setSharedSettingsSnapshot(read, forProject: project.id)
 
     let counter = ChangeCounter(store)

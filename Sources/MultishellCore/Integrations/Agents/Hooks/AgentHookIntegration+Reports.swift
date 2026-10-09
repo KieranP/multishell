@@ -29,9 +29,11 @@ extension AgentHookIntegration {
   /// What the helper sends for a payload, or nothing where it says nothing.
   /// `findBackgroundShells` walks the processes, so it is asked only at a Stop.
   public func report(
-    for payload: AgentHookPayload, sessionID: TerminalSession.ID?, workingDirectory: String?,
+    for payload: AgentHookPayload,
+    sessionID: TerminalSession.ID?,
+    workingDirectory: String?,
     pid: Int32?,
-    findBackgroundShells: (_ marker: String) -> [Int32]? = { _ in nil }
+    findBackgroundShells: (_ marker: String) -> [Int32]? = { _ in nil },
   ) -> SessionStateReport? {
     guard let event = event(for: payload) else { return nil }
     let isStop = event.state == .done
@@ -56,7 +58,8 @@ extension AgentHookIntegration {
       workersOut: isStop || event.subagentPhase == .ended
         ? payload.backgroundTasks.map(workers(from:)) : nil,
       turnFollows: (isStop && turnFollows(at: payload)).trueOrNil,
-      asksQuestion: asksQuestion(payload).trueOrNil)
+      asksQuestion: asksQuestion(payload).trueOrNil,
+    )
   }
 
   /// Claude asks its questions through the permission prompt, whose
@@ -71,40 +74,54 @@ extension AgentHookIntegration {
   /// Claude stops a worker at every turn end, pauses included, and lists it
   /// until its run returns, so one its stop leaves out failed; see agents.md.
   private func pausedOrFailedAtItsOwnStop(
-    _ worker: WorkerReport, at payload: AgentHookPayload
+    _ worker: WorkerReport,
+    at payload: AgentHookPayload,
   ) -> WorkerReport {
     guard worker.phase == .ended, let tasks = payload.backgroundTasks else { return worker }
     if tasks.contains(where: { $0.id == worker.id && wakingTaskTypes.contains($0.taskType) }) {
-      return WorkerReport(id: worker.id, type: worker.type, phase: .working, isPaused: true)
+      return WorkerReport(id: worker.id, phase: .working, type: worker.type, isPaused: true)
     }
     guard keepsWorkerMetadataBesideTranscript, let path = payload.transcriptPath,
       ClaudeWorkerMetadata.read(ofWorker: worker.id, transcriptPath: path)?.isBackground == true
     else { return worker }
-    return WorkerReport(id: worker.id, type: worker.type, phase: .ended, hasFailed: true)
+    return WorkerReport(id: worker.id, phase: .ended, type: worker.type, hasFailed: true)
   }
 
   /// Claude writes the file after a worker's first start, so a start that finds
   /// it is a resume, and the parent arrives with the first tool call.
   private func withMetadata(
-    _ worker: WorkerReport, from payload: AgentHookPayload
+    _ worker: WorkerReport,
+    from payload: AgentHookPayload,
   ) -> WorkerReport {
     guard keepsWorkerMetadataBesideTranscript, worker.phase != .ended,
       let path = payload.transcriptPath,
       let metadata = ClaudeWorkerMetadata.read(ofWorker: worker.id, transcriptPath: path)
     else { return worker }
     return WorkerReport(
-      id: worker.id, type: worker.type, phase: .working, wakesAgent: worker.wakesAgent,
-      isBackgroundShell: worker.isBackgroundShell, parentID: metadata.parentID,
-      name: metadata.name, description: metadata.description, isPaused: worker.isPaused)
+      id: worker.id,
+      phase: .working,
+      type: worker.type,
+      wakesAgent: worker.wakesAgent,
+      isBackgroundShell: worker.isBackgroundShell,
+      parentID: metadata.parentID,
+      name: metadata.name,
+      description: metadata.description,
+      isPaused: worker.isPaused,
+    )
   }
 
   /// Under the worker whose tool call it was, or the agent's own.
   private func launchedTask(in payload: AgentHookPayload) -> WorkerReport? {
     guard toolResultsNameBackgroundTasks, let task = payload.launchedTask else { return nil }
     return WorkerReport(
-      id: task.id, type: task.subagentType, phase: .started,
-      isBackgroundShell: task.isShell.trueOrNil, parentID: payload.subagentID,
-      name: task.name, description: task.description)
+      id: task.id,
+      phase: .started,
+      type: task.subagentType,
+      isBackgroundShell: task.isShell.trueOrNil,
+      parentID: payload.subagentID,
+      name: task.name,
+      description: task.description,
+    )
   }
 
   private func turnFollows(at payload: AgentHookPayload) -> Bool {
@@ -116,9 +133,12 @@ extension AgentHookIntegration {
     switch resumption {
     case .never: false
     case .always: true
+
     case .whenGeminiSettingsSay:
       GeminiSettings.wakesForBackgroundShells(
-        environment: ProcessInfo.processInfo.environment, directory: payload.workingDirectory)
+        environment: ProcessInfo.processInfo.environment,
+        directory: payload.workingDirectory,
+      )
     }
   }
 
@@ -128,7 +148,7 @@ extension AgentHookIntegration {
     tasks.filter { wakingTaskTypes.contains($0.taskType) }.map { task in
       task.taskType == "shell"
         ? WorkerReport(id: task.id, phase: .working, isBackgroundShell: true)
-        : WorkerReport(id: task.id, type: task.subagentType ?? task.taskType, phase: .working)
+        : WorkerReport(id: task.id, phase: .working, type: task.subagentType ?? task.taskType)
     }
   }
 }

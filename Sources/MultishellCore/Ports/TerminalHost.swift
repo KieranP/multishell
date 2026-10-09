@@ -2,6 +2,12 @@
 /// the child and a replacement need not, so nothing here exposes a descriptor.
 @MainActor
 public protocol TerminalHost: AnyObject {
+  /// Sessions the host currently has open. `SessionReconciler` reconciles
+  /// against this rather than keeping its own copy.
+  var liveSessionIDs: Set<TerminalSession.ID> { get }
+
+  var delegate: (any TerminalHostDelegate)? { get set }
+
   func open(_ session: TerminalSession) throws
   func close(_ id: TerminalSession.ID)
   func focus(_ id: TerminalSession.ID)
@@ -18,12 +24,6 @@ public protocol TerminalHost: AnyObject {
   /// `false` where the engine has no such session, or no search at all.
   @discardableResult
   func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool
-
-  /// Sessions the host currently has open. `SessionReconciler` reconciles
-  /// against this rather than keeping its own copy.
-  var liveSessionIDs: Set<TerminalSession.ID> { get }
-
-  var delegate: (any TerminalHostDelegate)? { get set }
 }
 
 extension TerminalHost {

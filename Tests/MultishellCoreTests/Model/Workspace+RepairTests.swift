@@ -13,16 +13,16 @@ struct WorkspaceRepairTests {
     Worktree(path: project.path, projectID: project.id, head: "a", branch: "main", isPrimary: true)
   }
 
+  /// Every tab of a state file written before groups existed names no group.
+  static func ungroupEveryTab(_ workspace: inout Workspace) {
+    for index in workspace.tabs.indices { workspace.tabs[index].groupID = TabGroup.unassigned }
+  }
+
   func session() -> TerminalSession {
     TerminalSession(worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
   }
 
   private func onlyGroup(_ workspace: Workspace) -> TabGroup { workspace.tabGroups[0] }
-
-  /// Every tab of a state file written before groups existed names no group.
-  static func ungroupEveryTab(_ workspace: inout Workspace) {
-    for index in workspace.tabs.indices { workspace.tabs[index].groupID = TabGroup.unassigned }
-  }
 
   @Test func aConsistentWorkspaceIsLeftAlone() {
     let (workspace, _) = consistentWorkspace()
@@ -34,15 +34,22 @@ struct WorkspaceRepairTests {
   @Test func worktreesOfAMissingProjectGoWithTheirTabs() {
     var (workspace, _) = consistentWorkspace()
     let stray = Worktree(
-      path: URL(fileURLWithPath: "/repos/x"), projectID: "/repos/gone", head: "b")
+      path: URL(fileURLWithPath: "/repos/x"),
+      projectID: "/repos/gone",
+      head: "b",
+    )
     let straySession = TerminalSession(
-      worktreeID: stray.id, workingDirectory: stray.path, title: "sh")
+      worktreeID: stray.id,
+      workingDirectory: stray.path,
+      title: "sh",
+    )
     let strayGroup = TabGroup(worktreeID: stray.id)
     workspace.worktrees.append(stray)
     workspace.sessions.append(straySession)
     workspace.tabGroups.append(strayGroup)
     workspace.tabs.append(
-      TerminalTab(worktreeID: stray.id, groupID: strayGroup.id, session: straySession.id))
+      TerminalTab(worktreeID: stray.id, groupID: strayGroup.id, session: straySession.id)
+    )
 
     workspace.repair()
 
@@ -65,7 +72,9 @@ struct WorkspaceRepairTests {
     let ghost = UUID()
     var split = tab
     split.root = .split(
-      axis: .horizontal, children: [.terminal(tab.focusedSessionID), .terminal(ghost)])
+      axis: .horizontal,
+      children: [.terminal(tab.focusedSessionID), .terminal(ghost)],
+    )
     split.focusedSessionID = ghost
     workspace.tabs = [split]
 
@@ -74,13 +83,17 @@ struct WorkspaceRepairTests {
     #expect(workspace.tabs[0].root == .terminal(tab.focusedSessionID))
     #expect(
       workspace.tabs[0].focusedSessionID == tab.focusedSessionID,
-      "focus cannot point outside the tree")
+      "focus cannot point outside the tree",
+    )
   }
 
   @Test func aTabWithNoLiveSessionsIsRemovedAndTheActiveEntryMovesOn() {
     var (workspace, tab) = consistentWorkspace()
     let empty = TerminalTab(
-      worktreeID: worktree.id, groupID: onlyGroup(workspace).id, session: UUID())
+      worktreeID: worktree.id,
+      groupID: onlyGroup(workspace).id,
+      session: UUID(),
+    )
     workspace.tabs.append(empty)
     workspace.tabGroups[0].shownTabID = empty.id
 
@@ -88,13 +101,18 @@ struct WorkspaceRepairTests {
 
     #expect(workspace.tabs.map(\.id) == [tab.id])
     #expect(
-      workspace.tabGroups[0].shownTabID == tab.id, "otherwise the group shows nothing")
+      workspace.tabGroups[0].shownTabID == tab.id,
+      "otherwise the group shows nothing",
+    )
   }
 
   @Test func aFocusedGroupEntryNamingAnotherWorktreesGroupIsCorrected() {
     var (workspace, tab) = consistentWorkspace()
     let other = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
+      path: URL(fileURLWithPath: "/repos/demo-b"),
+      projectID: project.id,
+      head: "b",
+    )
     workspace.worktrees.append(other)
     workspace.focusedGroupByWorktree[other.id] = onlyGroup(workspace).id
 
@@ -108,7 +126,10 @@ struct WorkspaceRepairTests {
   @Test func aNameForAMissingWorktreeGoesAndABlankOneWithIt() {
     var (workspace, _) = consistentWorkspace()
     let other = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
+      path: URL(fileURLWithPath: "/repos/demo-b"),
+      projectID: project.id,
+      head: "b",
+    )
     workspace.worktrees.append(other)
     workspace.customWorktreeNames = [
       worktree.id: "Checkout", other.id: "  ", "/repos/nowhere": "Ghost",
@@ -131,7 +152,8 @@ struct WorkspaceRepairTests {
     #expect(workspace.sessions[0].worktreeID == workspace.tab(tab.id)?.worktreeID)
     #expect(
       workspace.sessions[0].workingDirectory == worktree.path,
-      "the directory it starts in comes back with it")
+      "the directory it starts in comes back with it",
+    )
   }
 
   @Test func tabsThatNameNoGroupAreGatheredIntoOne() {
@@ -139,7 +161,8 @@ struct WorkspaceRepairTests {
     let second = session()
     workspace.sessions.append(second)
     workspace.tabs.append(
-      TerminalTab(worktreeID: worktree.id, groupID: TabGroup.unassigned, session: second.id))
+      TerminalTab(worktreeID: worktree.id, groupID: TabGroup.unassigned, session: second.id)
+    )
     Self.ungroupEveryTab(&workspace)
     workspace.tabGroups = []
     workspace.focusedGroupByWorktree = [:]
@@ -215,14 +238,19 @@ struct WorkspaceRepairTests {
     var (workspace, _) = consistentWorkspace()
     let ghost = UUID()
     let damage: [(inout Workspace) -> Void] = [
-      {
-        $0.sessions.append(
+      { damaged in
+        damaged.sessions.append(
           TerminalSession(
-            worktreeID: "/nowhere", workingDirectory: URL(fileURLWithPath: "/n"), title: "x"))
+            worktreeID: "/nowhere",
+            workingDirectory: URL(fileURLWithPath: "/n"),
+            title: "x",
+          )
+        )
       },
-      {
-        $0.tabs.append(
-          TerminalTab(worktreeID: "/nowhere", groupID: TabGroup.unassigned, session: ghost))
+      { damaged in
+        damaged.tabs.append(
+          TerminalTab(worktreeID: "/nowhere", groupID: TabGroup.unassigned, session: ghost)
+        )
       },
       { $0.tabGroups[0].shownTabID = UUID() },
       { $0.tabGroups.append(TabGroup(worktreeID: "/nowhere")) },
@@ -234,22 +262,30 @@ struct WorkspaceRepairTests {
       { $0.selectedWorktreeID = "/nowhere" },
       { $0.customWorktreeNames["/nowhere"] = "Ghost" },
       { $0.customWorktreeNames[$0.worktrees[0].id] = "  " },
-      {
-        $0.worktrees.append(
-          Worktree(path: URL(fileURLWithPath: "/x"), projectID: "/gone", head: "h"))
+      { damaged in
+        damaged.worktrees.append(
+          Worktree(path: URL(fileURLWithPath: "/x"), projectID: "/gone", head: "h")
+        )
       },
       { workspace in
         var split = workspace.tabs[0]
         split.root = .split(
-          axis: .vertical, children: [.terminal(ghost), split.root], weights: [1])
+          axis: .vertical,
+          children: [.terminal(ghost), split.root],
+          weights: [1],
+        )
         split.focusedSessionID = ghost
         workspace.tabs[0] = split
       },
-      {
-        $0.tabs.append(
+      { damaged in
+        damaged.tabs.append(
           TerminalTab(
-            worktreeID: $0.worktrees[0].id, groupID: $0.tabGroups[0].id,
-            root: .split(axis: .horizontal, children: []), focusedSessionID: ghost))
+            worktreeID: damaged.worktrees[0].id,
+            groupID: damaged.tabGroups[0].id,
+            root: .split(axis: .horizontal, children: []),
+            focusedSessionID: ghost,
+          )
+        )
       },
       { $0.projects.append($0.projects[0]) },
       { $0.worktrees.append($0.worktrees[0]) },

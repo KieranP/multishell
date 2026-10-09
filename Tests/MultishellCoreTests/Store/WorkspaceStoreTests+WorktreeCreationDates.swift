@@ -10,8 +10,13 @@ extension WorkspaceStoreTests {
 
   private func worktree(dated: Date?) -> Worktree {
     Worktree(
-      path: URL(fileURLWithPath: "/repos/demo"), projectID: "/repos/demo", head: "abc1234",
-      branch: "main", isPrimary: true, createdAt: dated)
+      path: URL(fileURLWithPath: "/repos/demo"),
+      projectID: "/repos/demo",
+      head: "abc1234",
+      branch: "main",
+      isPrimary: true,
+      createdAt: dated,
+    )
   }
 
   @Test func aDateOnceReadSurvivesAListingThatLostIt() {
@@ -21,7 +26,9 @@ extension WorkspaceStoreTests {
 
     store.replaceWorktrees([worktree(dated: nil)], forProject: project.id)
     #expect(
-      store.workspace.worktrees.first?.createdAt == listedDate, "the stat failed, the date stands")
+      store.workspace.worktrees.first?.createdAt == listedDate,
+      "the stat failed, the date stands",
+    )
   }
 
   /// It costs no save and no re-render.

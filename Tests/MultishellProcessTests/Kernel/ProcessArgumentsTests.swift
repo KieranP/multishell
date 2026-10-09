@@ -13,7 +13,8 @@ struct ProcessArgumentsTests {
 
   @Test func theArgumentsStopAtTheirCountAndKeepAnEmptyOne() throws {
     let parsed = try #require(
-      ProcessArguments(sysctlBuffer: buffer(argc: 3, ["sh", "", "-l", "HOME=/u"])))
+      ProcessArguments(sysctlBuffer: buffer(argc: 3, ["sh", "", "-l", "HOME=/u"]))
+    )
     #expect(parsed.arguments == ["sh", "", "-l"])
   }
 

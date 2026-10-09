@@ -9,7 +9,7 @@ extension [Worker] {
       subagents > 0 ? t("count.subagents", subagents) : nil,
       shells > 0 ? t("count.background-shells", shells) : nil,
       failedCount > 0 ? t("count.failed-workers", failedCount) : nil,
-    ].compactMap { $0 }.joined(separator: ", ")
+    ].compactMap(\.self).joined(separator: ", ")
   }
 
   /// What is out, or with nothing out the failed rows still drawn.

@@ -15,7 +15,9 @@ struct ClaudeTranscriptPendingQuestionTests {
 
   private func asksQuestion(_ lines: [String], startsAtFileStart: Bool = true) -> Bool {
     ClaudeTranscript.asksQuestion(
-      in: Data(lines.joined(separator: "\n").utf8), startsAtFileStart: startsAtFileStart)
+      in: Data(lines.joined(separator: "\n").utf8),
+      startsAtFileStart: startsAtFileStart,
+    )
   }
 
   @Test func anUnansweredQuestionAfterAnsweredCallsIsStillAsked() {

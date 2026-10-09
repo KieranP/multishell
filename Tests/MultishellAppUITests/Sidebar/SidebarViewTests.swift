@@ -11,7 +11,9 @@ struct SidebarViewTests {
   private func drawnSidebar(_ harness: ModelHarness) throws -> Data? {
     try #require(
       OffscreenWindow.pixels(
-        ofHosted: SidebarView(model: harness.model), size: CGSize(width: 260, height: 300))
+        ofHosted: SidebarView(model: harness.model),
+        size: CGSize(width: 260, height: 300),
+      )
     ).tiffRepresentation
   }
 

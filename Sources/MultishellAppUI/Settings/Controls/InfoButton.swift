@@ -7,8 +7,6 @@ struct InfoButton: View {
 
   @State private var showsInfo = false
 
-  init(_ text: String) { self.text = text }
-
   var body: some View {
     Button {
       showsInfo.toggle()
@@ -16,7 +14,8 @@ struct InfoButton: View {
       Image(systemName: "info.circle")
         .foregroundStyle(.secondary)
         .frame(
-          width: UIMetrics.settingsGlyphButtonSide, height: UIMetrics.settingsGlyphButtonSide
+          width: UIMetrics.settingsGlyphButtonSide,
+          height: UIMetrics.settingsGlyphButtonSide,
         )
         .contentShape(.rect)
     }
@@ -32,4 +31,6 @@ struct InfoButton: View {
         .padding()
     }
   }
+
+  init(_ text: String) { self.text = text }
 }

@@ -5,9 +5,9 @@ import Testing
 @Suite
 struct GhosttyConfigTextTests {
   @Test func linesRenderInTheOrderSetSoALaterOneWins() {
-    let text = GhosttyConfigText {
-      $0.set("font-size", "12")
-      $0.set("font-size", "13")
+    let text = GhosttyConfigText { config in
+      config.set("font-size", "12")
+      config.set("font-size", "13")
     }
     #expect(text.rendered == "font-size = 12\nfont-size = 13")
   }
@@ -19,10 +19,10 @@ struct GhosttyConfigTextTests {
   }
 
   @Test func aValueThatWouldStartAnotherLineIsLeftOut() {
-    let text = GhosttyConfigText {
-      $0.set("background", "#000000\ncommand = /bin/false")
-      $0.set("foreground", "#ffffff\rcommand = /bin/false")
-      $0.set("cursor-color", "#808080")
+    let text = GhosttyConfigText { config in
+      config.set("background", "#000000\ncommand = /bin/false")
+      config.set("foreground", "#ffffff\rcommand = /bin/false")
+      config.set("cursor-color", "#808080")
     }
     #expect(text.rendered == "cursor-color = #808080")
   }

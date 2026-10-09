@@ -16,24 +16,6 @@ struct BranchRef: Hashable, Sendable {
   /// last-commit orders. Read here for the same reason as `symref`.
   let committedAt: Date?
 
-  init(
-    fullName: String, tip: String, upstreamIsGone: Bool = false, symref: String? = nil,
-    committedAt: Date? = nil
-  ) {
-    self.fullName = fullName
-    self.tip = tip
-    self.upstreamIsGone = upstreamIsGone
-    self.symref = symref
-    self.committedAt = committedAt
-  }
-
-  /// Local branches by short name, the first of any repeat kept.
-  static func localBranchesByName(_ refs: [BranchRef]) -> [String: BranchRef] {
-    Dictionary(
-      keepingFirst:
-        refs.filter(\.isLocal).map { ($0.shortName, $0) })
-  }
-
   var isLocal: Bool { fullName.hasPrefix(RefName.localPrefix) }
   var isRemote: Bool { fullName.hasPrefix(RefName.remotePrefix) }
 
@@ -51,5 +33,27 @@ struct BranchRef: Hashable, Sendable {
     let short = shortName
     guard let slash = short.firstIndex(of: "/") else { return short }
     return String(short[short.index(after: slash)...])
+  }
+
+  init(
+    fullName: String,
+    tip: String,
+    upstreamIsGone: Bool = false,
+    symref: String? = nil,
+    committedAt: Date? = nil,
+  ) {
+    self.fullName = fullName
+    self.tip = tip
+    self.upstreamIsGone = upstreamIsGone
+    self.symref = symref
+    self.committedAt = committedAt
+  }
+
+  /// Local branches by short name, the first of any repeat kept.
+  static func localBranchesByName(_ refs: [Self]) -> [String: Self] {
+    Dictionary(
+      keepingFirst:
+        refs.filter(\.isLocal).map { ($0.shortName, $0) }
+    )
   }
 }

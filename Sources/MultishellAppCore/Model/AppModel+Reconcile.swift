@@ -26,7 +26,9 @@ extension AppModel {
     // shells to report to; state-and-store.md.
     let warm = isYieldingToRunningInstance ? [] : warmWorktrees
     let failures = reconciler.reconcile(
-      shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { preparedForLaunch($0) })
+      shouldBeLive: { warm.contains($0.worktreeID) },
+      prepare: { preparedForLaunch($0) },
+    )
     for (index, failure) in failures.enumerated() {
       // One alert slot: four sessions failing at once would otherwise leave
       // one message about the last of them and nothing about the rest.

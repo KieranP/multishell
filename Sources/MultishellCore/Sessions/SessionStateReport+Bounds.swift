@@ -10,30 +10,8 @@ extension SessionStateReport {
   /// of what `Int(_:)` cannot hold.
   private static let maximumDuration: Double = 7 * 24 * 60 * 60
 
-  /// The first word without its path. The reader's rule, not the hook's: any
-  /// process of the user's can write a line.
-  static func commandWord(_ command: String?) -> String? {
-    guard let word = command?.split(whereSeparator: \.isWhitespace).first,
-      let name = word.split(separator: "/").last
-    else { return nil }
-    return boundedIdentifier(String(name))
-  }
-
   /// macOS's PATH_MAX; a longer one is no directory a worktree could be.
   private static let maximumPathLength = 1024
-
-  static func boundedPath(_ path: String?) -> String? {
-    guard let path, path.utf8.count <= maximumPathLength else { return nil }
-    return path
-  }
-
-  /// A duration outside what a command could have taken is a writer's
-  /// number rather than a clock's, and is dropped as the message is capped.
-  static func boundedDuration(_ duration: Double?) -> Double? {
-    guard let duration, duration.isFinite, duration >= 0, duration <= maximumDuration
-    else { return nil }
-    return duration
-  }
 
   /// Longer than any agent's id, and dropped rather than cut: a cut one
   /// would name a different worker.
@@ -52,6 +30,28 @@ extension SessionStateReport {
     workersOut.flatMap { $0.count < Self.maximumWorkersOut ? $0 : nil }
   }
 
+  /// The first word without its path. The reader's rule, not the hook's: any
+  /// process of the user's can write a line.
+  static func commandWord(_ command: String?) -> String? {
+    guard let word = command?.split(whereSeparator: \.isWhitespace).first,
+      let name = word.split(separator: "/").last
+    else { return nil }
+    return boundedIdentifier(String(name))
+  }
+
+  static func boundedPath(_ path: String?) -> String? {
+    guard let path, path.utf8.count <= maximumPathLength else { return nil }
+    return path
+  }
+
+  /// A duration outside what a command could have taken is a writer's
+  /// number rather than a clock's, and is dropped as the message is capped.
+  static func boundedDuration(_ duration: Double?) -> Double? {
+    guard let duration, duration.isFinite, duration >= 0, duration <= maximumDuration
+    else { return nil }
+    return duration
+  }
+
   static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
     return id
@@ -60,8 +60,8 @@ extension SessionStateReport {
   /// Named ones only: an id past the limit decodes as unnamed, which is no
   /// worker a list can name.
   static func boundedWorkers(_ workers: [WorkerReport]?) -> [WorkerReport]? {
-    workers.map {
-      Array($0.filter { $0.id != WorkerReport.anonymousID }.prefix(maximumWorkersOut))
+    workers.map { list in
+      Array(list.filter { $0.id != WorkerReport.anonymousID }.prefix(maximumWorkersOut))
     }
   }
 

@@ -9,18 +9,21 @@ struct CopyButton: View {
 
   @State private var showsCopiedTick = false
 
-  init(_ text: String, model: AppModel) {
-    self.text = text
-    self.model = model
-  }
-
   var body: some View {
     PlainGlyphButton(help: t("action.copy-value", text), action: copy) {
       Image(systemName: showsCopiedTick ? "checkmark" : "doc.on.doc")
         .foregroundStyle(.secondary)
         .frame(
-          width: UIMetrics.settingsGlyphButtonSide, height: UIMetrics.settingsGlyphButtonSide)
+          width: UIMetrics.settingsGlyphButtonSide,
+          height: UIMetrics.settingsGlyphButtonSide,
+        )
+        .accessibilityHidden(true)
     }
+  }
+
+  init(_ text: String, model: AppModel) {
+    self.text = text
+    self.model = model
   }
 
   private func copy() {

@@ -7,8 +7,12 @@ import Testing
 @Suite
 struct SidebarWorktreeTests {
   private let worktree = Worktree(
-    path: URL(fileURLWithPath: "/repo"), projectID: "/repo", head: "a",
-    branch: "main", isPrimary: true)
+    path: URL(fileURLWithPath: "/repo"),
+    projectID: "/repo",
+    head: "a",
+    branch: "main",
+    isPrimary: true,
+  )
 
   private func row(panes: [SidebarPane]) -> SidebarWorktree {
     SidebarWorktree(worktree: worktree, customName: nil, isRenaming: false, panes: panes)
@@ -20,8 +24,15 @@ struct SidebarWorktreeTests {
 
   @Test func aRowListingItsPanesShowsNoCount() {
     let pane = SidebarPane(
-      id: UUID(), title: "zsh", position: nil, isFocused: true, state: nil, workers: [],
-      agentID: nil, agentName: nil)
+      id: UUID(),
+      title: "zsh",
+      position: nil,
+      isFocused: true,
+      state: nil,
+      workers: [],
+      agentID: nil,
+      agentName: nil,
+    )
     #expect(row(panes: [pane]).shownTerminalCount(of: 1) == 0)
   }
 }

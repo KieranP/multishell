@@ -4,11 +4,13 @@ import SwiftUI
 /// `Z` alone, anything else refused. See Docs/design/agents.md.
 enum SVGPathParser {
   static func path(fromSVG text: String) -> Path? {
-    guard let d = attribute("d", in: text) else { return nil }
-    return path(fromData: d)
+    guard let pathData = attribute("d", in: text) else { return nil }
+    return path(fromData: pathData)
   }
 
-  static func path(fromData d: String) -> Path? {
+  // One pass over the path data, kept whole by choice; Docs/develop/build.md.
+  // swiftlint:disable:next function_body_length
+  static func path(fromData pathData: String) -> Path? {
     var path = Path()
     var numbers: [Double] = []
     var command: Character?
@@ -36,13 +38,19 @@ enum SVGPathParser {
         // Pairs after a move are lines, which is how a polygon is written.
         case "M" where start == 0: path.move(to: CGPoint(x: values[0], y: values[1]))
         case "M", "L": path.addLine(to: CGPoint(x: values[0], y: values[1]))
+
         case "Q":
           path.addQuadCurve(
-            to: CGPoint(x: values[2], y: values[3]), control: CGPoint(x: values[0], y: values[1]))
+            to: CGPoint(x: values[2], y: values[3]),
+            control: CGPoint(x: values[0], y: values[1]),
+          )
+
         default:
           path.addCurve(
-            to: CGPoint(x: values[4], y: values[5]), control1: CGPoint(x: values[0], y: values[1]),
-            control2: CGPoint(x: values[2], y: values[3]))
+            to: CGPoint(x: values[4], y: values[5]),
+            control1: CGPoint(x: values[0], y: values[1]),
+            control2: CGPoint(x: values[2], y: values[3]),
+          )
         }
         hasDrawn = true
       }
@@ -59,7 +67,7 @@ enum SVGPathParser {
       return true
     }
 
-    for character in d {
+    for character in pathData {
       if character.isNumber || character == "." {
         number.append(character)
       } else if character == "-" {

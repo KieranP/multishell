@@ -15,27 +15,42 @@ struct DebugInfoView: View {
     let timeline = model.debugTimeline(for: range)
     VStack(spacing: 0) {
       DebugInfoHeader(
-        model: model, timeline: timeline, range: $range, theme: theme,
-        metrics: metrics)
+        model: model,
+        timeline: timeline,
+        range: $range,
+        theme: theme,
+        metrics: metrics,
+      )
       ScrollView(.vertical) {
         VStack(spacing: 14) {
           DebugTimelineView(timeline: timeline, theme: theme, metrics: metrics)
           DebugTableBlock(
-            title: t("debug.memory-by-tab"), caption: t("debug.memory-by-tab-caption"),
-            columnsWidthInEms: DebugTableLayout.memoryTableColumnsWidthInEms, theme: theme,
-            metrics: metrics
+            title: t("debug.memory-by-tab"),
+            caption: t("debug.memory-by-tab-caption"),
+            columnsWidthInEms: DebugTableLayout.memoryTableColumnsWidthInEms,
+            theme: theme,
+            metrics: metrics,
           ) { layout in
             DebugMemoryTableView(
-              table: model.debugMemoryTable, layout: layout, theme: theme, metrics: metrics)
+              table: model.debugMemoryTable,
+              layout: layout,
+              theme: theme,
+              metrics: metrics,
+            )
           }
           DebugTableBlock(
-            title: t("debug.git-commands"), caption: t("debug.git-commands-caption", range.title),
-            columnsWidthInEms: DebugTableLayout.gitTableColumnsWidthInEms, theme: theme,
-            metrics: metrics
+            title: t("debug.git-commands"),
+            caption: t("debug.git-commands-caption", range.title),
+            columnsWidthInEms: DebugTableLayout.gitTableColumnsWidthInEms,
+            theme: theme,
+            metrics: metrics,
           ) { layout in
             DebugGitCommandsTableView(
-              gitCommands: model.debugGitCommands(for: range), layout: layout, theme: theme,
-              metrics: metrics)
+              gitCommands: model.debugGitCommands(for: range),
+              layout: layout,
+              theme: theme,
+              metrics: metrics,
+            )
           }
         }
         .padding(14)

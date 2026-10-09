@@ -27,13 +27,22 @@ struct AppModelSidebarRowsTests {
     let index = try #require(workspace.tabs.firstIndex { $0.worktreeID == harness.main.id })
     let session = workspace.tabs[index].focusedSessionID
     workspace.tabs[index].root = .split(
-      axis: .horizontal, children: [.terminal(session), .terminal(UUID())], weights: [1, 1])
+      axis: .horizontal,
+      children: [.terminal(session), .terminal(UUID())],
+      weights: [1, 1],
+    )
     let root = Scratch.path("sidebar-panes")
     defer { Scratch.remove(root) }
     let store = WorkspaceStore(
       workspace: workspace,
-      file: StateFile(fileURL: root.appendingPathComponent("state.json")))
-    let model = AppModel(store: store, host: FakeEngine(), coordinator: nil, watcher: FakeWatcher())
+      file: StateFile(fileURL: root.appendingPathComponent("state.json")),
+    )
+    let model = AppModel(
+      store: store,
+      host: FakeEngine(),
+      coordinator: nil,
+      watcher: FakeWatcher(),
+    )
     model.select(harness.main, openingFirstTab: .never)
 
     #expect(model.sidebarWorktree(harness.main).panes.map(\.id) == [session])
@@ -43,12 +52,15 @@ struct AppModelSidebarRowsTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(SessionStateReport(state: .attention, sessionID: tab.focusedSessionID))
+    harness.stateSource.send(
+      SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
+    )
     let sessions = harness.model.sessionIDsByWorktree
 
     #expect(
       harness.model.projectRowState(harness.project.id, isExpanded: false, sessions: sessions)
-        == .attention)
+        == .attention
+    )
     #expect(
       harness.model.projectRowState(harness.project.id, isExpanded: true, sessions: sessions) == nil
     )

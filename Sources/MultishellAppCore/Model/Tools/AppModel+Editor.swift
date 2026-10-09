@@ -2,17 +2,17 @@ import MultishellCore
 import MultishellProcess
 
 extension AppModel {
+  /// Whether the editor picker is on the custom command, whose field shows.
+  public var usesCustomEditor: Bool {
+    workspace.preferredEditorID == EditorCatalogue.customID
+  }
+
   public func setPreferredEditor(_ id: String?) {
     store.setPreferredEditor(id == EditorCatalogue.noneID ? nil : id)
   }
 
   public func setCustomEditorCommand(_ command: String) {
     store.setCustomEditorCommand(command)
-  }
-
-  /// Whether the editor picker is on the custom command, whose field shows.
-  public var usesCustomEditor: Bool {
-    workspace.preferredEditorID == EditorCatalogue.customID
   }
 
   /// Open in Editor (Cmd+Shift+O) on the worktree on screen, which over the
@@ -38,12 +38,16 @@ extension AppModel {
       customTemplate: workspace.customEditorCommand,
       directory: worktree.path,
       shell: shell,
-      handOver: handOver)
+      handOver: handOver,
+    )
     runEditorAction(action, editorID: editorID, in: worktree, shellPath: shellPath)
   }
 
   private func runEditorAction(
-    _ action: EditorLaunch.Action?, editorID: String, in worktree: Worktree, shellPath: String
+    _ action: EditorLaunch.Action?,
+    editorID: String,
+    in worktree: Worktree,
+    shellPath: String,
   ) {
     switch action {
     case .openApplication(let application):
@@ -54,6 +58,7 @@ extension AppModel {
           self?.present(error)
         }
       }
+
     case .runInBackground(let line):
       Task { [weak self] in
         do {
@@ -62,9 +67,11 @@ extension AppModel {
           self?.present(error)
         }
       }
+
     case .openTab(let title, let command):
       store.openTab(in: worktree.id, title: title, command: command)
       select(worktree, openingFirstTab: .never)
+
     case nil:
       presentedError =
         editorID == EditorCatalogue.customID

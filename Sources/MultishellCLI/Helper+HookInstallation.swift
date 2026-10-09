@@ -8,7 +8,8 @@ extension Helper {
     guard let id = options["agent"] else { throw UsageError("--agent is required") }
     guard let integration = AgentHookCatalogue.integration(id) else {
       throw UsageError(
-        "no hooks for \(id); known agents: \(knownAgentList)")
+        "no hooks for \(id); known agents: \(knownAgentList)"
+      )
     }
     return integration
   }

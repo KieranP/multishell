@@ -20,12 +20,19 @@ struct ShellIntegrationThroughHelperTests {
     let integration = try ShellTab.zshIntegrationDirectory(in: root)
     let userZdotdir = try ShellTab.userZdotdir(in: root)
     try "export MULTISHELL_USER_RC_LOADED=yes\n".write(
-      to: userZdotdir.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+      to: userZdotdir.appendingPathComponent(".zshrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let session = UUID()
     let environment = ShellTab.zshEnvironment(
-      socket: listener.path, session: session, worktree: "/w/repo", integration: integration,
-      userZdotdir: userZdotdir)
+      socket: listener.path,
+      integration: integration,
+      userZdotdir: userZdotdir,
+      session: session,
+      worktree: "/w/repo",
+    )
     let script = """
       printf 'loaded=%s zdotdir=%s\\n' "$MULTISHELL_USER_RC_LOADED" "$ZDOTDIR"
       _multishell_preexec; true; _multishell_precmd
@@ -36,10 +43,12 @@ struct ShellIntegrationThroughHelperTests {
 
     #expect(
       output.standardOutput.contains("loaded=yes"),
-      "the user's .zshrc did not run: \(output.standardOutput)")
+      "the user's .zshrc did not run: \(output.standardOutput)",
+    )
     #expect(
       output.standardOutput.contains("zdotdir=\(userZdotdir.path)"),
-      "ZDOTDIR was not handed back to the user for nested shells: \(output.standardOutput)")
+      "ZDOTDIR was not handed back to the user for nested shells: \(output.standardOutput)",
+    )
 
     try await waitUntil { recorder.received.count >= 4 }
     let states = recorder.received.compactMap { SessionStateReport.parse($0)?.state }
@@ -53,8 +62,11 @@ struct ShellIntegrationThroughHelperTests {
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func aCommaDecimalLocaleStillSendsAReportThatParses() async throws {
     let comma = try await ProcessRunner().capture(
-      URL(fileURLWithPath: "/bin/zsh"), ["-c", "printf '%.3f' 1.5"],
-      in: URL(fileURLWithPath: "/tmp"), environment: ["LC_ALL": "de_DE.UTF-8"])
+      URL(fileURLWithPath: "/bin/zsh"),
+      ["-c", "printf '%.3f' 1.5"],
+      in: URL(fileURLWithPath: "/tmp"),
+      environment: ["LC_ALL": "de_DE.UTF-8"],
+    )
     try #require(comma.standardOutput.contains(","), "de_DE writes a decimal comma")
 
     let listener = try ReportListener()
@@ -66,15 +78,21 @@ struct ShellIntegrationThroughHelperTests {
     let integration = try ShellTab.zshIntegrationDirectory(in: root)
     // The developer's own .zshrc sets a locale of its own and would decide this test.
     var environment = ShellTab.zshEnvironment(
-      socket: listener.path, worktree: "/w/repo", integration: integration,
-      userZdotdir: try ShellTab.userZdotdir(in: root))
+      socket: listener.path,
+      integration: integration,
+      userZdotdir: try ShellTab.userZdotdir(in: root),
+      worktree: "/w/repo",
+    )
     environment["LC_ALL"] = "de_DE.UTF-8"
     _ = try await ShellTab.runZsh(
-      "_multishell_preexec; true; _multishell_precmd; wait", in: root, environment: environment)
+      "_multishell_preexec; true; _multishell_precmd; wait",
+      in: root,
+      environment: environment,
+    )
 
     try await waitUntil { recorder.received.count >= 2 }
-    let finished = recorder.received.compactMap(SessionStateReport.parse).filter {
-      $0.state == .done
+    let finished = recorder.received.compactMap(SessionStateReport.parse).filter { report in
+      report.state == .done
     }
     #expect(finished.count == 1, "unparsed: \(recorder.received)")
     #expect(finished.first?.duration != nil, "the duration is what the separator broke")
@@ -93,23 +111,34 @@ struct ShellIntegrationThroughHelperTests {
     let relocated = home.appendingPathComponent(".config/zsh", isDirectory: true)
     try FileManager.default.createDirectory(at: relocated, withIntermediateDirectories: true)
     try "export ZDOTDIR=\"$HOME/.config/zsh\"\n".write(
-      to: home.appendingPathComponent(".zshenv"), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(".zshenv"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
-      to: relocated.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+      to: relocated.appendingPathComponent(".zshrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     var environment = ShellTab.environment(socket: listener.path, home: home)
     environment["ZDOTDIR"] = integration.path
     environment.removeValue(forKey: "MULTISHELL_USER_ZDOTDIR")
     let output = try await ShellTab.runZsh(
       "printf '%s|%s' \"$MULTISHELL_USER_RC_LOADED\" \"$ZDOTDIR\"; _multishell_preexec",
-      in: root, environment: environment)
+      in: root,
+      environment: environment,
+    )
 
     let fields = output.standardOutput.split(separator: "|", omittingEmptySubsequences: false)
     #expect(
-      fields.first == "relocated", "the relocated .zshrc did not run: \(output.standardOutput)")
+      fields.first == "relocated",
+      "the relocated .zshrc did not run: \(output.standardOutput)",
+    )
     #expect(
       fields.count == 2 && fields[1] == relocated.path,
-      "ZDOTDIR handed back to the relocated dir: \(output.standardOutput)")
+      "ZDOTDIR handed back to the relocated dir: \(output.standardOutput)",
+    )
     try await waitUntil { !recorder.received.isEmpty }
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.state == .running)
   }
@@ -127,17 +156,28 @@ struct ShellIntegrationThroughHelperTests {
     let integration = try ShellTab.zshIntegrationDirectory(in: root)
     let worktree = "/w/re\tpo\nsit\"or\\y"
     let environment = ShellTab.zshEnvironment(
-      socket: listener.path, worktree: worktree, integration: integration,
-      userZdotdir: try ShellTab.userZdotdir(in: root))
+      socket: listener.path,
+      integration: integration,
+      userZdotdir: try ShellTab.userZdotdir(in: root),
+      worktree: worktree,
+    )
     _ = try await ShellTab.runZsh(
-      "_multishell_preexec; true; _multishell_precmd; wait", in: root, environment: environment)
+      "_multishell_preexec; true; _multishell_precmd; wait",
+      in: root,
+      environment: environment,
+    )
 
     try await waitUntil { recorder.received.count >= 2 }
     let received = recorder.received
     let reports = received.compactMap(SessionStateReport.parse)
     #expect(reports.count == received.count, "unparsed: \(received)")
-    #expect(Set(reports.map(\.state)).isSuperset(of: [.running, .done]), "\(reports.map(\.state))")
     #expect(
-      reports.allSatisfy { $0.workingDirectory == worktree }, "\(reports.map(\.workingDirectory))")
+      Set(reports.map(\.state)).isSuperset(of: [.running, .done]),
+      "\(reports.map(\.state))",
+    )
+    #expect(
+      reports.allSatisfy { $0.workingDirectory == worktree },
+      "\(reports.map(\.workingDirectory))",
+    )
   }
 }

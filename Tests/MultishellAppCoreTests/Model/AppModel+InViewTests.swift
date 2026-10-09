@@ -25,9 +25,10 @@ struct AppModelInViewTests {
     try #require(groups.count == 2)
     let focused = try #require(harness.model.workspace.activeTab(in: harness.main.id))
     let other = try #require(
-      groups.compactMap { harness.model.workspace.shownTab(ofGroup: $0) }.first {
-        $0.id != focused.id
-      })
+      groups.compactMap { harness.model.workspace.shownTab(ofGroup: $0) }.first { tab in
+        tab.id != focused.id
+      }
+    )
 
     #expect(harness.model.isFocusedPane(focused.focusedSessionID))
     #expect(!harness.model.isFocusedPane(other.focusedSessionID))

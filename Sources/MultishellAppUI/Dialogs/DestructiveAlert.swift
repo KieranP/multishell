@@ -7,7 +7,10 @@ enum DestructiveAlert {
   /// The choices in the order shown, each drawn red, the first taking
   /// Return, and a Cancel after them taking Escape.
   static func make(
-    title: String, message: String, choices: [String], cancel: String = t("action.cancel")
+    title: String,
+    message: String,
+    choices: [String],
+    cancel: String = t("action.cancel"),
   ) -> NSAlert {
     let alert = WarningAlert.make(title: title, message: message)
     for choice in choices {
@@ -31,7 +34,8 @@ enum DestructiveAlert {
   }
 
   static func present(
-    _ alert: NSAlert, in window: NSWindow
+    _ alert: NSAlert,
+    in window: NSWindow,
   ) async
     -> NSApplication.ModalResponse
   {

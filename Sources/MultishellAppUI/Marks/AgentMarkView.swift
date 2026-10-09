@@ -21,6 +21,7 @@ struct AgentMarkView: View {
         Image(systemName: unmarkedSymbol)
           .font(.system(size: size))
           .foregroundStyle(plainTint)
+          .accessibilityHidden(true)
       }
     }
     .frame(width: size, height: size)

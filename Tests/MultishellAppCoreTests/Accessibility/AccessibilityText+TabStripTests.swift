@@ -8,18 +8,36 @@ struct AccessibilityTextTabStripTests {
   @Test func aTabSaysWhetherItIsShownAndSplitAndWhichAgentItRuns() {
     #expect(
       AccessibilityText.tab(
-        title: "zsh", isShown: true, isSplit: true, state: .done, agentName: nil)
-        == "zsh, tab, selected, split, Done")
+        title: "zsh",
+        isShown: true,
+        isSplit: true,
+        state: .done,
+        agentName: nil,
+      )
+        == "zsh, tab, selected, split, Done"
+    )
     #expect(
       AccessibilityText.tab(
-        title: "claude", isShown: false, isSplit: false, state: nil, agentName: "Claude Code")
+        title: "claude",
+        isShown: false,
+        isSplit: false,
+        state: nil,
+        agentName: "Claude Code",
+      )
         == "claude, tab, Claude Code, agent",
-      "the mark is drawn, so it is said")
+      "the mark is drawn, so it is said",
+    )
     #expect(
       AccessibilityText.tab(
-        title: "Claude Code", isShown: false, isSplit: false, state: nil, agentName: "Claude Code")
+        title: "Claude Code",
+        isShown: false,
+        isSplit: false,
+        state: nil,
+        agentName: "Claude Code",
+      )
         == "Claude Code, tab",
-      "and not twice where the title is already the agent's name")
+      "and not twice where the title is already the agent's name",
+    )
   }
 
   /// A worktree with one group has nothing to tell apart, so its strip
@@ -28,7 +46,8 @@ struct AccessibilityTextTabStripTests {
     #expect(AccessibilityText.tabGroup(position: 1, of: 1, isFocused: true).isEmpty)
     #expect(
       AccessibilityText.tabGroup(position: 2, of: 3, isFocused: true)
-        == "Tab group 2 of 3, focused")
+        == "Tab group 2 of 3, focused"
+    )
     #expect(AccessibilityText.tabGroup(position: 1, of: 2, isFocused: false) == "Tab group 1 of 2")
   }
 

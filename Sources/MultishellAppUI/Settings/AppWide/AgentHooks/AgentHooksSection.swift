@@ -42,6 +42,7 @@ struct AgentHooksSection: View {
   private func snippetPresented(for row: AgentHooksRow) -> Binding<Bool> {
     Binding(
       get: { shownSnippetRowID == row.id },
-      set: { if !$0, shownSnippetRowID == row.id { shownSnippetRowID = nil } })
+      set: { if !$0, shownSnippetRowID == row.id { shownSnippetRowID = nil } },
+    )
   }
 }

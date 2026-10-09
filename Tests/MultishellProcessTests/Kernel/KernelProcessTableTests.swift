@@ -7,9 +7,9 @@ import Testing
 @Suite
 struct KernelProcessTableTests {
   @Test func theParentAndNameOfThisProcessAreKnown() {
-    let me = ProcessInfo.processInfo.processIdentifier
-    #expect(KernelProcessTable.parent(of: me) == getppid())
-    #expect(KernelProcessTable.name(of: me)?.isEmpty == false)
+    let ownPID = ProcessInfo.processInfo.processIdentifier
+    #expect(KernelProcessTable.parent(of: ownPID) == getppid())
+    #expect(KernelProcessTable.name(of: ownPID)?.isEmpty == false)
   }
 
   @Test func launchdIsKnownAndAPidNothingHoldsIsNot() {
@@ -27,9 +27,9 @@ struct KernelProcessTableTests {
       marked.terminate()
       plain.terminate()
     }
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
     func found() -> [Int32] {
-      KernelProcessTable.children(of: me, whoseArgumentsContain: "/shell-snapshots/")
+      KernelProcessTable.children(of: ownPID, whoseArgumentsContain: "/shell-snapshots/")
     }
 
     try await waitUntil { found().contains(marked.pid) }

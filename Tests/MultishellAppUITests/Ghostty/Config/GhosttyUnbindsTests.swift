@@ -20,7 +20,8 @@ struct GhosttyUnbindsTests {
         "super+f", "super+g", "super+shift+g", "super+shift+f",
         "super+ctrl+f", "super+enter",
         "escape",
-      ])
+      ]
+    )
   }
 
   /// Ghostty binds Cmd+F to its own search, whose bar this embedding cannot
@@ -46,7 +47,8 @@ struct GhosttyUnbindsTests {
     let unbinds = GhosttyUnbinds.all.map { "keybind = \($0)=unbind" }
       .joined(separator: "\n")
     let diagnostics = try libghosttyDiagnostics(
-      GhosttyUserConfig.defaults.rendered + "\n" + unbinds)
+      GhosttyUserConfig.defaults.rendered + "\n" + unbinds
+    )
     #expect(diagnostics.isEmpty, "\(diagnostics)")
   }
 

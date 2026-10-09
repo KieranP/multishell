@@ -26,6 +26,7 @@ struct IconPicker: View {
   private var field: some View {
     HStack(spacing: 6) {
       Image(systemName: kind.symbolName).foregroundStyle(tint)
+        .accessibilityHidden(true)
       switch kind {
       case .folder: Text(t("icon-picker.folder"))
       case .symbol(let name): Text(name).lineLimit(1).truncationMode(.middle)
@@ -34,6 +35,7 @@ struct IconPicker: View {
       Image(systemName: "chevron.up.chevron.down")
         .font(.system(size: 9, weight: .semibold))
         .foregroundStyle(.secondary)
+        .accessibilityHidden(true)
     }
     .frame(width: 190)
   }

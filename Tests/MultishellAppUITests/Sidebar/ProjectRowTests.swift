@@ -10,15 +10,24 @@ struct ProjectRowTests {
   private let metrics = UIMetrics(fontSize: 13)
 
   private func projectRow(
-    isFetching: Bool = false, toggleExpansion: @escaping () -> Void = {}
+    isFetching: Bool = false,
+    toggleExpansion: @escaping () -> Void = {},
   )
     -> ProjectRow
   {
     ProjectRow(
-      project: project, isExpanded: true, settings: ProjectSettings(), isMissing: false,
+      project: project,
+      isExpanded: true,
+      settings: ProjectSettings(),
+      isMissing: false,
       state: nil,
-      worktreeCount: 2, isFetching: isFetching, theme: .multishellDark, metrics: metrics,
-      toggleExpansion: toggleExpansion, requestNewWorktree: {})
+      worktreeCount: 2,
+      isFetching: isFetching,
+      theme: .multishellDark,
+      metrics: metrics,
+      toggleExpansion: toggleExpansion,
+      requestNewWorktree: {},
+    )
   }
 
   @Test func aProjectRowRebuiltWithFreshClosuresIsTheSameRowUntilItsStateMoves() {

@@ -14,9 +14,12 @@ struct DebugGitCommandRowView: View {
     Group {
       switch layout {
       case .columns: columns
+
       case .stacked:
         DebugStackedRowView(
-          captions: gitCommand.stackedCaptions, theme: theme, metrics: metrics
+          captions: gitCommand.stackedCaptions,
+          theme: theme,
+          metrics: metrics,
         ) {
           command
         } headline: {
@@ -55,6 +58,9 @@ struct DebugGitCommandRowView: View {
 
   private func number(_ text: String, width: Double? = nil) -> some View {
     DebugNumberCell(
-      text: text, width: width ?? metrics.debugDurationColumnWidth, color: theme.textPrimary)
+      text: text,
+      width: width ?? metrics.debugDurationColumnWidth,
+      color: theme.textPrimary,
+    )
   }
 }

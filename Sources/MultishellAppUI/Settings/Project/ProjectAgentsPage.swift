@@ -12,20 +12,25 @@ struct ProjectAgentsPage: View {
     let globalFlags = model.workspace.globalAgentFlags(for: project)
     Form {
       DetectionOverrideSection(
-        model: model, project: project, setting: \.preferredAgentID,
+        model: model,
+        project: project,
+        setting: \.preferredAgentID,
         label: t("project.preferred-agent"),
         info: t("project.preferred-agent-info"),
         pickerLabel: t("project.agent-label"),
         pickerInfo: t("project.agent-picker-info"),
         options: model.agentDetection.options(selected:),
         globalID: globalAgentID,
-        globalName: model.agentDisplayName(globalAgentID))
+        globalName: model.agentDisplayName(globalAgentID),
+      )
 
       OverrideSection(
-        model: model, project: project, setting: \.agentFlags,
+        model: model,
+        project: project,
+        setting: \.agentFlags,
         label: t("project.flags"),
         info: t("project.flags-info"),
-        fallback: globalFlags
+        fallback: globalFlags,
       ) { flags, isOverridden in
         TextField(t("agents.flags"), text: flags)
           .disabled(!isOverridden)
@@ -34,15 +39,22 @@ struct ProjectAgentsPage: View {
       }
 
       OverrideSection(
-        model: model, project: project, setting: .autoStartsAgent, global: \.autoStartsAgent,
+        model: model,
+        project: project,
+        setting: .autoStartsAgent,
+        global: \.autoStartsAgent,
         label: t("agents.auto-start-tab"),
-        info: t("project.auto-start-tab-info"))
+        info: t("project.auto-start-tab-info"),
+      )
 
       OverrideSection(
-        model: model, project: project, setting: .autoStartsAgentOnCreate,
+        model: model,
+        project: project,
+        setting: .autoStartsAgentOnCreate,
         global: \.autoStartsAgentOnCreate,
         label: t("agents.auto-start-create"),
-        info: t("project.auto-start-create-info"))
+        info: t("project.auto-start-create-info"),
+      )
     }
     .formStyle(.grouped)
   }

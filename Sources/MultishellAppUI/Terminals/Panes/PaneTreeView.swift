@@ -22,7 +22,7 @@ struct PaneTreeView: View {
         model: model,
         sessionID: id,
         isFocused: isFocusedPane,
-        isLive: model.liveSessionIDs.contains(id)
+        isLive: model.liveSessionIDs.contains(id),
       )
       .overlay { fade(isFocusedPane: isFocusedPane) }
       .overlay { ring(isFocusedPane: isFocusedPane) }
@@ -40,16 +40,16 @@ struct PaneTreeView: View {
         onWeightsChange: { model.setSplitWeights($0, at: path, ofTab: tabID) },
         content: {
           ForEach(children.indices, id: \.self) { index in
-            PaneTreeView(
+            Self(
               model: model,
               tabID: tabID,
               node: children[index],
               path: path + [index],
               showsFocusRing: showsFocusRing,
-              theme: theme
+              theme: theme,
             )
           }
-        }
+        },
       )
     }
   }

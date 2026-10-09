@@ -16,7 +16,7 @@ final class DirectoryProbe: Sendable {
 
   init(
     bound: DispatchTimeInterval = .seconds(1),
-    exists: @escaping @Sendable (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+    exists: @escaping @Sendable (String) -> Bool = { FileManager.default.fileExists(atPath: $0) },
   ) {
     self.bound = bound
     self.exists = exists

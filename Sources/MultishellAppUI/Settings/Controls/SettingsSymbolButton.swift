@@ -16,15 +16,19 @@ struct SettingsSymbolButton: View {
   }
 
   static func refresh(
-    help: String = t("action.refresh"), action: @escaping () -> Void
+    help: String = t("action.refresh"),
+    action: @escaping () -> Void,
   )
-    -> SettingsSymbolButton
+    -> Self
   {
-    SettingsSymbolButton(symbol: "arrow.clockwise", help: help, action: action)
+    Self(symbol: "arrow.clockwise", help: help, action: action)
   }
 
-  static func reveal(action: @escaping () -> Void) -> SettingsSymbolButton {
-    SettingsSymbolButton(
-      symbol: "folder", help: t("action.reveal-in-finder"), action: action)
+  static func reveal(action: @escaping () -> Void) -> Self {
+    Self(
+      symbol: "folder",
+      help: t("action.reveal-in-finder"),
+      action: action,
+    )
   }
 }

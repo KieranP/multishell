@@ -4,6 +4,8 @@ import Foundation
 struct AppleScriptFailed: Error, CustomStringConvertible {
   let message: String
 
+  var description: String { message }
+
   init(message: String) {
     self.message = message
   }
@@ -11,6 +13,4 @@ struct AppleScriptFailed: Error, CustomStringConvertible {
   init(_ problem: NSDictionary?) {
     message = problem?[NSAppleScript.errorMessage] as? String ?? "\(problem ?? [:])"
   }
-
-  var description: String { message }
 }

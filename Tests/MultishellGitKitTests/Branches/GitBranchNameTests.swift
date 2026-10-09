@@ -16,6 +16,20 @@ struct GitBranchNameTests {
     "HEAD", "head", "Head", "x@", "@x", "refs/heads/x", "a.locket", "x/y.lock",
   ]
 
+  /// `check-ref-format --branch` takes `HEAD` and `@` as shorthands for the current branch,
+  /// so the oracle is `git branch` itself, in the fixture's own repository.
+  private static func gitAccepts(
+    _ name: String,
+    in repository: URL,
+    using git: GitRunner,
+  ) async -> Bool {
+    let trimmed = name.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty else { return false }
+    guard await git.succeeds(["branch", "--", trimmed], in: repository) else { return false }
+    _ = try? await git.run(["branch", "-D", "--", trimmed], in: repository)
+    return true
+  }
+
   @Test func everyNameAgreesWithWhatGitWillCreate() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
@@ -23,17 +37,5 @@ struct GitBranchNameTests {
       let accepted = await Self.gitAccepts(name, in: fixture.project.path, using: fixture.runner)
       #expect(GitBranchName.isValid(name) == accepted, "\(name)")
     }
-  }
-
-  /// `check-ref-format --branch` takes `HEAD` and `@` as shorthands for the current branch,
-  /// so the oracle is `git branch` itself, in the fixture's own repository.
-  private static func gitAccepts(
-    _ name: String, in repository: URL, using git: GitRunner
-  ) async -> Bool {
-    let trimmed = name.trimmingCharacters(in: .whitespaces)
-    guard !trimmed.isEmpty else { return false }
-    guard await git.succeeds(["branch", "--", trimmed], in: repository) else { return false }
-    _ = try? await git.run(["branch", "-D", "--", trimmed], in: repository)
-    return true
   }
 }

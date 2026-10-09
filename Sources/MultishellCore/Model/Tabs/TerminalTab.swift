@@ -3,6 +3,13 @@ import Foundation
 /// One tab in a worktree's terminal area, owning a pane tree and naming its
 /// group. The worktree sits beside it, deciding where its shells start.
 public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
+  /// Where a dragged tab lands beside the tab or group it was dropped on.
+  /// Nested because SwiftUI has a `TabPlacement` a view would disambiguate.
+  public enum Placement: Equatable, Sendable {
+    case before
+    case after
+  }
+
   public let id: UUID
   public internal(set) var worktreeID: Worktree.ID
   /// The group this tab's strip is part of; see `TabGroup`.
@@ -13,12 +20,15 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
   /// through OSC; clearing it hands the title back to the shell.
   public internal(set) var customTitle: String?
 
+  public var sessionIDs: [TerminalSession.ID] { root.sessionIDs }
+  public var isSplit: Bool { !root.isLeaf }
+
   init(
-    id: UUID = UUID(),
     worktreeID: Worktree.ID,
     groupID: TabGroup.ID,
     root: PaneNode,
-    focusedSessionID: TerminalSession.ID
+    focusedSessionID: TerminalSession.ID,
+    id: UUID = UUID(),
   ) {
     self.id = id
     self.worktreeID = worktreeID
@@ -28,11 +38,18 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
   }
 
   init(
-    id: UUID = UUID(), worktreeID: Worktree.ID, groupID: TabGroup.ID, session: TerminalSession.ID
+    worktreeID: Worktree.ID,
+    groupID: TabGroup.ID,
+    session: TerminalSession.ID,
+    id: UUID = UUID(),
   ) {
     self.init(
-      id: id, worktreeID: worktreeID, groupID: groupID, root: .terminal(session),
-      focusedSessionID: session)
+      worktreeID: worktreeID,
+      groupID: groupID,
+      root: .terminal(session),
+      focusedSessionID: session,
+      id: id,
+    )
   }
 
   /// Everything but the group is required, a tab with no tree being no tab.
@@ -42,20 +59,15 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
     self.id = try container.decode(UUID.self, forKey: .id)
     self.worktreeID = try container.decode(Worktree.ID.self, forKey: .worktreeID)
     self.groupID = container.decodeTolerantly(
-      TabGroup.ID.self, forKey: .groupID, or: TabGroup.unassigned)
+      TabGroup.ID.self,
+      forKey: .groupID,
+      or: TabGroup.unassigned,
+    )
     self.root = try container.decode(PaneNode.self, forKey: .root)
     self.focusedSessionID = try container.decode(
-      TerminalSession.ID.self, forKey: .focusedSessionID)
+      TerminalSession.ID.self,
+      forKey: .focusedSessionID,
+    )
     self.customTitle = try container.decodeIfPresent(String.self, forKey: .customTitle)
-  }
-
-  public var sessionIDs: [TerminalSession.ID] { root.sessionIDs }
-  public var isSplit: Bool { !root.isLeaf }
-
-  /// Where a dragged tab lands beside the tab or group it was dropped on.
-  /// Nested because SwiftUI has a `TabPlacement` a view would disambiguate.
-  public enum Placement: Equatable, Sendable {
-    case before
-    case after
   }
 }

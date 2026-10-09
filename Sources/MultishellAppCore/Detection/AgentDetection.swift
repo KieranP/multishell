@@ -4,10 +4,10 @@ import MultishellProcess
 
 /// Which catalogue agents are on a PATH, and how the dropdown lists them.
 public struct AgentDetection: Equatable, Sendable {
+  static let empty = Self(found: [:])
+
   /// Agent id to the executable found for it.
   let found: [String: URL]
-
-  static let empty = AgentDetection(found: [:])
 
   init(found: [String: URL]) {
     self.found = found
@@ -33,6 +33,7 @@ public struct AgentDetection: Equatable, Sendable {
       isInstalled: isInstalled,
       selected: selected,
       noneID: AgentCatalogue.noneID,
-      customID: AgentCatalogue.customID)
+      customID: AgentCatalogue.customID,
+    )
   }
 }

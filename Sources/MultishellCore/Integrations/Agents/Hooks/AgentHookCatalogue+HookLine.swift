@@ -22,8 +22,8 @@ extension AgentHookCatalogue {
       command
       .split(whereSeparator: { $0.isWhitespace || $0 == "\"" || $0 == "'" })
       .map { $0.trimmingCharacters(in: shellPunctuation) }
-    let runsTheHelper = words.contains {
-      $0 == Paths.helperName || $0.hasSuffix("/" + Paths.helperName)
+    let runsTheHelper = words.contains { word in
+      word == Paths.helperName || word.hasSuffix("/" + Paths.helperName)
     }
     let namesASubcommand = words.contains { $0 == subcommand || $0 == legacySubcommand }
     return runsTheHelper && namesASubcommand

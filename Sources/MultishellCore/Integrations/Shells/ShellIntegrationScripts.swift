@@ -9,6 +9,22 @@ enum ShellIntegrationScripts {
   private static let agentsPlaceholder = "__MULTISHELL_AGENTS__"
   private static let includeDirective = "# include "
 
+  private static let userZdotdirRestore = """
+    if [ -n "${MULTISHELL_USER_ZDOTDIR-}" ]; then
+      export ZDOTDIR="$MULTISHELL_USER_ZDOTDIR"
+    else
+      unset ZDOTDIR
+    fi
+    """
+
+  /// macOS's `/etc/zshrc` names the history file after ZDOTDIR while it is
+  /// still ours, so a tab's history left the user's file; see terminals.md.
+  private static let historyFromUsersDirectory = """
+    case "${HISTFILE-}" in
+      "$_multishell_self_zdotdir"/*) HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history" ;;
+    esac
+    """
+
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
   static func forZsh(
@@ -18,20 +34,34 @@ enum ShellIntegrationScripts {
   {
     [
       ".zshenv": zshChain(
-        userFile: ".zshenv", restoresToSelf: true, capturesUserZdotdir: true, appending: nil),
+        userFile: ".zshenv",
+        restoresToSelf: true,
+        appending: nil,
+        capturesUserZdotdir: true,
+      ),
       ".zprofile": zshChain(
-        userFile: ".zprofile", restoresToSelf: true, capturesUserZdotdir: true, appending: nil),
+        userFile: ".zprofile",
+        restoresToSelf: true,
+        appending: nil,
+        capturesUserZdotdir: true,
+      ),
       ".zshrc": zshChain(
-        userFile: ".zshrc", restoresToSelf: false, restoresHistory: true,
-        appending: script("init.zsh", in: "zsh", helper: helper)),
+        userFile: ".zshrc",
+        restoresToSelf: false,
+        appending: script("init.zsh", in: "zsh", helper: helper),
+        restoresHistory: true,
+      ),
     ]
   }
 
   /// Sources the user's `file` under their own `ZDOTDIR`. The last file hands
   /// it back so nested shells skip the chain; the first two may relocate it.
   private static func zshChain(
-    userFile: String, restoresToSelf: Bool, capturesUserZdotdir: Bool = false,
-    restoresHistory: Bool = false, appending extra: String?
+    userFile: String,
+    restoresToSelf: Bool,
+    appending extra: String?,
+    capturesUserZdotdir: Bool = false,
+    restoresHistory: Bool = false,
   ) -> String {
     let header = """
       # Multishell zsh integration, for this app's terminals only. It chains
@@ -53,24 +83,8 @@ enum ShellIntegrationScripts {
       # Hand ZDOTDIR back to the user so nested shells do not re-enter this.
       \(userZdotdirRestore)
       """
-    return [header, extra, footer].compactMap { $0 }.joined(separator: "\n") + "\n"
+    return [header, extra, footer].compactMap(\.self).joined(separator: "\n") + "\n"
   }
-
-  private static let userZdotdirRestore = """
-    if [ -n "${MULTISHELL_USER_ZDOTDIR-}" ]; then
-      export ZDOTDIR="$MULTISHELL_USER_ZDOTDIR"
-    else
-      unset ZDOTDIR
-    fi
-    """
-
-  /// macOS's `/etc/zshrc` names the history file after ZDOTDIR while it is
-  /// still ours, so a tab's history left the user's file; see terminals.md.
-  private static let historyFromUsersDirectory = """
-    case "${HISTFILE-}" in
-      "$_multishell_self_zdotdir"/*) HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history" ;;
-    esac
-    """
 
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.
@@ -85,7 +99,8 @@ enum ShellIntegrationScripts {
       .replacingOccurrences(of: helperPlaceholder, with: helper)
       .replacingOccurrences(
         of: agentsPlaceholder,
-        with: AgentCatalogue.agents.map(\.executable).sorted().joined(separator: " "))
+        with: AgentCatalogue.agents.map(\.executable).sorted().joined(separator: " "),
+      )
   }
 
   /// Each `# include <file>` line replaced by that file from the same folder,
@@ -95,7 +110,9 @@ enum ShellIntegrationScripts {
       let indent = line.prefix { $0 == " " }
       guard line.dropFirst(indent.count).hasPrefix(includeDirective) else { return String(line) }
       let included = resource(
-        String(line.dropFirst(indent.count + includeDirective.count)), in: folder)
+        String(line.dropFirst(indent.count + includeDirective.count)),
+        in: folder,
+      )
       return included.split(separator: "\n", omittingEmptySubsequences: false)
         .map { $0.isEmpty ? "" : indent + $0 }
         .joined(separator: "\n")
@@ -105,7 +122,10 @@ enum ShellIntegrationScripts {
   private static func resource(_ fileName: String, in folder: String) -> String {
     guard
       let url = Bundle.coreResources.url(
-        forResource: fileName, withExtension: nil, subdirectory: folder),
+        forResource: fileName,
+        withExtension: nil,
+        subdirectory: folder,
+      ),
       var text = try? String(contentsOf: url, encoding: .utf8)
     else {
       preconditionFailure("\(folder)/\(fileName) is missing from the MultishellCore resources")

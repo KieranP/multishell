@@ -54,7 +54,8 @@ struct AgentHookIntegrationInstallAndRemoveTests: AgentHookFixtures {
     #expect(
       AgentHookCatalogue.claude.eventsOfUnexpectedShape(in: try AgentHookFile.read(file)) == [
         "Stop"
-      ])
+      ]
+    )
   }
 
   /// Every existing install predates the two counting events, so Add has to
@@ -64,13 +65,17 @@ struct AgentHookIntegrationInstallAndRemoveTests: AgentHookFixtures {
     defer { Scratch.remove(directory) }
 
     let beforeCountingEvents = AgentHookIntegration(
-      id: AgentCatalogue.claudeID, file: file,
+      id: AgentCatalogue.claudeID,
+      file: file,
       events: AgentHookCatalogue.claude.events.filter { $0.subagentPhase == nil },
-      format: .userSettingsFile(timeoutIsInMilliseconds: false))
+      format: .userSettingsFile(timeoutIsInMilliseconds: false),
+    )
     try beforeCountingEvents.install(into: file, helper: helper)
     #expect(beforeCountingEvents.hasOurHookUnderEveryEvent(in: file))
     #expect(
-      !AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: file), "so the row offers Add again")
+      !AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: file),
+      "so the row offers Add again",
+    )
 
     try AgentHookCatalogue.claude.install(into: file, helper: helper)
 
@@ -122,8 +127,10 @@ struct AgentHookIntegrationInstallAndRemoveTests: AgentHookFixtures {
     #expect(claude.hasOurHookUnderEveryEvent(in: file))
     #expect(
       !FileManager.default.fileExists(
-        atPath: file.appendingPathExtension("before-multishell").path),
-      "nothing to back up when the file did not exist")
+        atPath: file.appendingPathExtension("before-multishell").path
+      ),
+      "nothing to back up when the file did not exist",
+    )
 
     try #"{ "model": "opus", "hooks": {} }"#.write(to: file, atomically: true, encoding: .utf8)
     try claude.install(into: file, helper: helper)
@@ -136,7 +143,8 @@ struct AgentHookIntegrationInstallAndRemoveTests: AgentHookFixtures {
     try claude.install(into: file, helper: helper)
     #expect(
       try String(contentsOf: backup, encoding: .utf8).contains("\"hooks\": {}"),
-      "the backup is the pre-Multishell file, not overwritten by a later install")
+      "the backup is the pre-Multishell file, not overwritten by a later install",
+    )
 
     try claude.remove(from: file)
     #expect(!claude.hasOurHookUnderEveryEvent(in: file))

@@ -7,7 +7,9 @@ public enum FilePathText {
   /// Quoted absolute paths for a shell, relative mentions for an agent, with
   /// a trailing space.
   static func droppedText(
-    for urls: [URL], relativeTo directory: URL, mentionPrefix: String? = nil
+    for urls: [URL],
+    relativeTo directory: URL,
+    mentionPrefix: String? = nil,
   ) -> String {
     let words =
       mentionPrefix.map { prefix in

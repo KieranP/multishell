@@ -27,7 +27,8 @@ extension AppModel {
   /// The dragged project's row was recycled off screen, so its session's end
   /// reaches no one and the button's release ends the drag instead.
   public func projectDragSourceLeft(
-    _ id: Project.ID, isPressed: @escaping @MainActor () -> Bool
+    _ id: Project.ID,
+    isPressed: @escaping @MainActor () -> Bool,
   ) {
     guard draggedProjectID == id else { return }
     projectDragReleaseWatch?.cancel()

@@ -5,7 +5,9 @@ extension WorktreeCoordinator {
   /// Whether each of `branches` has landed and what each read cost, in
   /// merged-branch.md's order of reads. A nil verdict or none keeps what it had.
   public func readMerges(
-    of branches: [String], in project: Project, inputs: MergeInputs
+    of branches: [String],
+    in project: Project,
+    inputs: MergeInputs,
   ) async -> [String: MergeReading] {
     guard !branches.isEmpty else { return [:] }
     // A read that failed is not an answer. Taken as one, every branch would
@@ -30,7 +32,10 @@ extension WorktreeCoordinator {
   /// `nil` where a read failed, so no verdict is reached rather than a wrong
   /// one recorded.
   private func verdict(
-    for branch: String, merged: Set<String>, inputs: MergeInputs, in project: Project
+    for branch: String,
+    merged: Set<String>,
+    inputs: MergeInputs,
+    in project: Project,
   ) async -> WorktreeMergeState? {
     let baseRef = inputs.defaultBranch.fullName
     let baseShortName = inputs.defaultBranch.shortName

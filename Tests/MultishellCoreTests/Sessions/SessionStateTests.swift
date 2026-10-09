@@ -10,7 +10,8 @@ struct SessionStateTests {
     #expect(SessionState.mostUrgent([.running, .failed]) == .failed, "a failure outranks work")
     #expect(
       SessionState.mostUrgent([.attention, .failed]) == .failed,
-      "and a question: a row with a failed tab is red whatever the others ask")
+      "and a question: a row with a failed tab is red whatever the others ask",
+    )
     #expect(SessionState.mostUrgent([.idle, .done]) == .done, "one finished tab is enough")
     #expect(SessionState.mostUrgent([.idle, .idle]) == nil, "idle only when every tab is")
     #expect(SessionState.mostUrgent([.idle]) == nil)

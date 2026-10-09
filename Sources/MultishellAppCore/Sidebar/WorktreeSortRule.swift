@@ -4,6 +4,25 @@ import MultishellCore
 /// The order a project's worktree rows are drawn in. The main worktree and
 /// the trunk keep the top whatever the sort says; see worktrees.md.
 struct WorktreeSortRule: Equatable, Sendable {
+  /// Which tier a worktree is listed in, before the sort orders each tier.
+  fileprivate enum Tier: Int {
+    /// git's own main worktree, which is the repository in a bare layout.
+    case primary
+    /// A linked worktree checked out on the trunk, which is where the trunk
+    /// lives when the repository itself is bare.
+    case trunk
+    case active
+    case other
+  }
+
+  struct Key: Equatable, Sendable {
+    fileprivate let tier: Tier
+    let name: String
+    let createdAt: Date?
+    let lastCommit: Date?
+    let worktree: Worktree
+  }
+
   /// Taken for the trunk while no default branch is resolved: these two are
   /// the guess git itself makes.
   private static let fallbackTrunkNames = ["main", "master"]
@@ -20,15 +39,12 @@ struct WorktreeSortRule: Equatable, Sendable {
     self.trunkBranch = trunkBranch
   }
 
-  /// Which tier a worktree is listed in, before the sort orders each tier.
-  fileprivate enum Tier: Int {
-    /// git's own main worktree, which is the repository in a bare layout.
-    case primary
-    /// A linked worktree checked out on the trunk, which is where the trunk
-    /// lives when the repository itself is bare.
-    case trunk
-    case active
-    case other
+  /// `nil` where the dates cannot separate the two, so the name decides. A
+  /// date nobody knows sorts last in both directions.
+  private static func compare(_ a: Date?, _ b: Date?, newestFirst: Bool) -> Bool? {
+    if (a == nil) != (b == nil) { return b == nil }
+    guard let a, let b, a != b else { return nil }
+    return newestFirst ? a > b : a < b
   }
 
   /// Everything the sort reads, so two equal lists sort the same. The closures
@@ -37,7 +53,7 @@ struct WorktreeSortRule: Equatable, Sendable {
     _ worktrees: [Worktree],
     displayName: (Worktree) -> String,
     isActive: (Worktree) -> Bool,
-    lastCommit: (Worktree) -> Date?
+    lastCommit: (Worktree) -> Date?,
   ) -> [Key] {
     worktrees.map { worktree in
       Key(
@@ -45,20 +61,13 @@ struct WorktreeSortRule: Equatable, Sendable {
         name: displayName(worktree),
         createdAt: worktree.createdAt,
         lastCommit: lastCommit(worktree),
-        worktree: worktree)
+        worktree: worktree,
+      )
     }
   }
 
   func sorted(_ keys: [Key]) -> [Worktree] {
     keys.sorted(by: precedes).map(\.worktree)
-  }
-
-  struct Key: Equatable, Sendable {
-    fileprivate let tier: Tier
-    let name: String
-    let createdAt: Date?
-    let lastCommit: Date?
-    let worktree: Worktree
   }
 
   private func tier(of worktree: Worktree, isActive: Bool) -> Tier {
@@ -79,29 +88,27 @@ struct WorktreeSortRule: Equatable, Sendable {
     switch sortOrder {
     case .alphabetical:
       break
+
     case .createdNewestFirst, .createdOldestFirst:
       if let byDate = Self.compare(
-        a.createdAt, b.createdAt, newestFirst: sortOrder == .createdNewestFirst)
-      {
+        a.createdAt,
+        b.createdAt,
+        newestFirst: sortOrder == .createdNewestFirst,
+      ) {
         return byDate
       }
+
     case .committedNewestFirst, .committedOldestFirst:
       if let byDate = Self.compare(
-        a.lastCommit, b.lastCommit, newestFirst: sortOrder == .committedNewestFirst)
-      {
+        a.lastCommit,
+        b.lastCommit,
+        newestFirst: sortOrder == .committedNewestFirst,
+      ) {
         return byDate
       }
     }
     let byName = a.name.localizedStandardCompare(b.name)
     if byName != .orderedSame { return byName == .orderedAscending }
     return a.worktree.id < b.worktree.id
-  }
-
-  /// `nil` where the dates cannot separate the two, so the name decides. A
-  /// date nobody knows sorts last in both directions.
-  private static func compare(_ a: Date?, _ b: Date?, newestFirst: Bool) -> Bool? {
-    if (a == nil) != (b == nil) { return b == nil }
-    guard let a, let b, a != b else { return nil }
-    return newestFirst ? a > b : a < b
   }
 }

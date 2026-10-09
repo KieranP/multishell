@@ -11,14 +11,14 @@ enum PromisedDrop {
     NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) }
   }
 
+  /// How long a source is given before the drop is answered without it: room
+  /// for a large file, and a bound on one that never answers.
+  static let defaultPatience: TimeInterval = 120
+
   static func receivers(from sender: any NSDraggingInfo) -> [NSFilePromiseReceiver] {
     sender.draggingPasteboard.readObjects(forClasses: [NSFilePromiseReceiver.self])
       as? [NSFilePromiseReceiver] ?? []
   }
-
-  /// How long a source is given before the drop is answered without it: room
-  /// for a large file, and a bound on one that never answers.
-  static let defaultPatience: TimeInterval = 120
 
   /// Takes the copies, then hands over what arrived. What the source failed
   /// to write is left out, so the rest of a drag still delivers.
@@ -26,26 +26,34 @@ enum PromisedDrop {
     _ receivers: [NSFilePromiseReceiver],
     into destination: URL? = try? PromisedDropCopies.makeDirectory(),
     givingUpAfter patience: TimeInterval = defaultPatience,
-    then deliver: @escaping ([URL]) -> Void
+    then deliver: @escaping ([URL]) -> Void,
   ) {
-    guard let directory = destination else { return deliver([]) }
+    guard let directory = destination else {
+      deliver([])
+      return
+    }
     // `fileNames` is empty until a promise is called in, so it is read per report.
     let promised = { (index: Int) in max(1, receivers[index].fileNames.count) }
     // The directory is made before the sources are asked, so one nothing
     // arrives in would linger until the sweep. It is this drag's own.
     let collector = PromisedDropCollector(
-      expecting: receivers.map { _ in 1 }, recounting: promised,
+      expecting: receivers.map { _ in 1 },
+      recounting: promised,
       fileNamesOfItem: { receivers[$0].fileNames },
       onDelivery: { urls in
         if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
         deliver(urls)
-      })
+      },
+    )
     let queue = OperationQueue()
     collector.readerQueue = queue
     for (index, receiver) in receivers.enumerated() {
       receiver.receivePromisedFiles(
-        atDestination: directory, options: [:], operationQueue: queue,
-        reader: PromisedDropCollector.reader(reporting: index, to: collector))
+        atDestination: directory,
+        options: [:],
+        operationQueue: queue,
+        reader: PromisedDropCollector.reader(reporting: index, to: collector),
+      )
     }
     // Nothing obliges a source to answer, and one that does not would hold
     // the drop for as long as the app runs. What arrived is delivered.

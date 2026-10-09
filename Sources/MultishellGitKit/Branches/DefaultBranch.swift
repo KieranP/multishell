@@ -39,14 +39,17 @@ public struct DefaultBranch: Hashable, Sendable {
 
   /// The first candidate `refs` holds, or `nil`. No default branch means no
   /// badge, rather than one measured against a guess.
-  static func resolve(from refs: [BranchRef], override: String?) -> DefaultBranch? {
+  static func resolve(from refs: [BranchRef], override: String?) -> Self? {
     let byName = Dictionary(keepingFirst: refs.map { ($0.fullName, $0) })
     let originHeadTarget = byName[RefName.originHead]?.symref
     for candidate in candidateRefs(override: override, originHeadTarget: originHeadTarget) {
       guard let ref = byName[candidate] else { continue }
-      return DefaultBranch(
-        shortName: ref.shortName, nameWithoutRemote: ref.nameWithoutRemote, tip: ref.tip,
-        fullName: ref.fullName)
+      return Self(
+        shortName: ref.shortName,
+        nameWithoutRemote: ref.nameWithoutRemote,
+        tip: ref.tip,
+        fullName: ref.fullName,
+      )
     }
     return nil
   }

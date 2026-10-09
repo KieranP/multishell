@@ -25,7 +25,8 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.activeTab(in: other.id)?.id == b.id)
     #expect(
       store.workspace.selectedWorktreeID == main.id,
-      "focus is per worktree; selection is the user's")
+      "focus is per worktree; selection is the user's",
+    )
   }
 
   @Test func aTabMovedToAnotherWorktreeTakesItsPanesAndLandsLast() {

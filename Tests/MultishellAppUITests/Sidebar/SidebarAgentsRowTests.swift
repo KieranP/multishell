@@ -10,8 +10,12 @@ struct SidebarAgentsRowTests {
 
   private func row(waiting: Int, select: @escaping () -> Void = {}) -> SidebarAgentsRow {
     SidebarAgentsRow(
-      counts: [AgentBoardLaneCount(.waiting, waiting)], isSelected: false, theme: .multishellDark,
-      metrics: metrics, select: select)
+      counts: [AgentBoardLaneCount(.waiting, waiting)],
+      isSelected: false,
+      theme: .multishellDark,
+      metrics: metrics,
+      select: select,
+    )
   }
 
   @Test func aRowWithAFreshClosureIsTheSameRowUntilItsCountsMove() {

@@ -6,7 +6,9 @@ extension Helper {
   /// Nothing this prints or returns may disturb the agent: exit 0, no
   /// stdout, and an event that stands for nothing costs one silent process.
   static func reportAgentHook(
-    _ id: String, environment: [String: String], input: FileHandle
+    _ id: String,
+    environment: [String: String],
+    input: FileHandle,
   ) {
     let payloadJSON = input.readDataToEndOfFile()
     guard let integration = AgentHookCatalogue.integration(id),
@@ -16,9 +18,11 @@ extension Helper {
     guard
       let report = integration.report(
         for: payload,
-        sessionID: sessionID(in: environment), workingDirectory: worktreePath(in: environment),
+        sessionID: sessionID(in: environment),
+        workingDirectory: worktreePath(in: environment),
         pid: pid,
-        findBackgroundShells: { backgroundShells(of: pid, marker: $0) })
+        findBackgroundShells: { backgroundShells(of: pid, marker: $0) },
+      )
     else { return }
     try? send(report, environment: environment)
   }

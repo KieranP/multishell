@@ -5,8 +5,14 @@ import Testing
 
 @Suite @MainActor
 struct NSViewScrollToTopTests {
+  private final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
+  }
+
   private func scrolledAway(
-    flipped: Bool, topInset: CGFloat = 0, documentHeight: CGFloat = 400
+    flipped: Bool,
+    topInset: CGFloat = 0,
+    documentHeight: CGFloat = 400,
   )
     -> NSScrollView
   {
@@ -81,9 +87,5 @@ struct NSViewScrollToTopTests {
     let before = scrollView.contentView.bounds.origin
     scrollView.scrollDescendantsToTop()
     #expect(scrollView.contentView.bounds.origin == before)
-  }
-
-  private final class FlippedView: NSView {
-    override var isFlipped: Bool { true }
   }
 }

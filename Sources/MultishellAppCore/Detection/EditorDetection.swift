@@ -10,9 +10,9 @@ public struct EditorDetection: Equatable, Sendable {
     let executable: URL?
   }
 
-  let found: [String: Found]
+  static let empty = Self(found: [:])
 
-  static let empty = EditorDetection(found: [:])
+  let found: [String: Found]
 
   init(found: [String: Found]) {
     self.found = found
@@ -22,8 +22,8 @@ public struct EditorDetection: Equatable, Sendable {
     var found: [String: Found] = [:]
     for editor in EditorCatalogue.editors {
       let application = editor.bundleIdentifier.flatMap(applicationLookup)
-      let executable = editor.executable.flatMap {
-        ExecutableLookup.find($0, searchPath: searchPath)
+      let executable = editor.executable.flatMap { executable in
+        ExecutableLookup.find(executable, searchPath: searchPath)
       }
       if application != nil || executable != nil {
         found[editor.id] = Found(application: application, executable: executable)
@@ -38,6 +38,7 @@ public struct EditorDetection: Equatable, Sendable {
       isInstalled: { found[$0] != nil },
       selected: selected,
       noneID: EditorCatalogue.noneID,
-      customID: EditorCatalogue.customID)
+      customID: EditorCatalogue.customID,
+    )
   }
 }

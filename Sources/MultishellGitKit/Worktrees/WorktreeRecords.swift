@@ -5,7 +5,7 @@ import Foundation
 public struct WorktreeRecords: Hashable, Sendable {
   let files: [String: String]
 
-  public static func read(in common: URL) -> WorktreeRecords {
+  public static func read(in common: URL) -> Self {
     var files: [String: String] = [:]
     func readFile(_ relative: String) {
       let url = common.appendingPathComponent(relative)
@@ -23,7 +23,7 @@ public struct WorktreeRecords: Hashable, Sendable {
         readFile("worktrees/\(entry)/\(name)")
       }
     }
-    return WorktreeRecords(files: files)
+    return Self(files: files)
   }
 
   /// Directories that change when worktrees do. Never the common `.git` once

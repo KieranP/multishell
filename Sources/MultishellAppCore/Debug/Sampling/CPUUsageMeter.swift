@@ -10,12 +10,14 @@ struct CPUUsageMeter {
   /// Percent by pid, and what children that exited since spent. A process
   /// first seen reads 0, as does every one on the first reading.
   mutating func takeReading(
-    of processes: [ProcessUsage], exited: [(pid: Int32, cpuTime: Duration)] = [],
-    at instant: ContinuousClock.Instant
+    of processes: [ProcessUsage],
+    at instant: ContinuousClock.Instant,
+    exited: [(pid: Int32, cpuTime: Duration)] = [],
   ) -> (byPID: [Int32: Double], exitedPercent: Double) {
     let current = Dictionary(
       keepingFirst:
-        processes.map { ($0.pid, $0.cpuTime) })
+        processes.map { ($0.pid, $0.cpuTime) }
+    )
     defer {
       lastCPUTimes = current
       lastReadingAt = instant

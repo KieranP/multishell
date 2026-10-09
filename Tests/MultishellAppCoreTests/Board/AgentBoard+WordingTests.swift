@@ -7,8 +7,13 @@ import Testing
 struct AgentBoardWordingTests {
   @Test func theBoardSaysWhatItHoldsAndWhatItIsEmptyOf() {
     let claude = AgentBoardCard.sample(
-      occupant: .agent(id: "claude", name: "Claude Code"), state: .attention)
-    let codex = AgentBoardCard.sample(occupant: .agent(id: "codex", name: "Codex"), state: .running)
+      occupant: .agent(id: "claude", name: "Claude Code"),
+      state: .attention,
+    )
+    let codex = AgentBoardCard.sample(
+      occupant: .agent(id: "codex", name: "Codex"),
+      state: .running,
+    )
 
     let busy = AgentBoard(cards: [claude, codex], showsAllTerminals: false)
     #expect(busy.summary == "2 terminals · 1 waiting on you")

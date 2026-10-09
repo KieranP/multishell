@@ -9,7 +9,8 @@ extension ShellIntegrationScriptsTests {
     let blinking = try await zshOutput(features: "cursor:blink", input: "true\nexit\n")
     #expect(blinking.contains(TerminalReports.cursorShape(5)), "a blinking bar to edit in")
     #expect(
-      blinking.contains(TerminalReports.cursorShape(0)), "the configured shape back for the program"
+      blinking.contains(TerminalReports.cursorShape(0)),
+      "the configured shape back for the program",
     )
 
     let steady = try await zshOutput(features: "cursor:steady", input: "true\nexit\n")
@@ -34,7 +35,8 @@ extension ShellIntegrationScriptsTests {
 
     let steady = try await zshOutput(features: "cursor:steady", input: input)
     #expect(
-      steady.contains(TerminalReports.cursorShape(2) + "|" + TerminalReports.cursorShape(6) + "|"))
+      steady.contains(TerminalReports.cursorShape(2) + "|" + TerminalReports.cursorShape(6) + "|")
+    )
 
     let none = try await zshOutput(features: "title", input: input)
     #expect(none.contains("||"), "no shape at all where the user turned the cursor off")
@@ -42,7 +44,9 @@ extension ShellIntegrationScriptsTests {
 
   @Test func theCursorFollowsEveryKeymapChangeNotOnlyEachPrompt() async throws {
     let output = try await zleOutput(
-      features: "cursor", after: "zstyle -L zle-keymap-select; zstyle -L zle-line-init")
+      features: "cursor",
+      after: "zstyle -L zle-keymap-select; zstyle -L zle-line-init",
+    )
     #expect(output.contains("zle-keymap-select widgets 1:_multishell_keymap_cursor"))
     #expect(output.contains("zle-line-init widgets 1:_multishell_keymap_cursor"))
   }
@@ -54,10 +58,11 @@ extension ShellIntegrationScriptsTests {
     let alone = try await zleOutput(features: "cursor:blink", after: call)
     #expect(
       alone.hasSuffix(TerminalReports.cursorShape(1) + "|"),
-      "ours draws where no widget of theirs is set")
+      "ours draws where no widget of theirs is set",
+    )
 
     let theirs = "theirs() { print -n theirs }; zle -N zle-keymap-select theirs"
-    let beside = try await zleOutput(features: "cursor:blink", before: theirs, after: call)
+    let beside = try await zleOutput(features: "cursor:blink", after: call, before: theirs)
     #expect(beside.hasSuffix("|"))
     #expect(beside.contains(TerminalReports.cursorShape(1)) == false)
   }
@@ -65,16 +70,20 @@ extension ShellIntegrationScriptsTests {
   @Test func aUsersKshArraysStillLeavesACursorWidgetAddedAfterOursAlone() async throws {
     let theirs = "theirs() { print -n theirs }; add-zle-hook-widget keymap-select theirs"
     let output = try await zleOutput(
-      features: "cursor:blink", before: "setopt ksh_arrays",
-      after: "\(theirs); KEYMAP=vicmd _multishell_keymap_cursor; print -n '|'")
+      features: "cursor:blink",
+      after: "\(theirs); KEYMAP=vicmd _multishell_keymap_cursor; print -n '|'",
+      before: "setopt ksh_arrays",
+    )
     #expect(output.hasSuffix("|"))
     #expect(output.contains(TerminalReports.cursorShape(1)) == false)
   }
 
   @Test func aUsersErrReturnStillGetsTheKeymapCursor() async throws {
     let output = try await zleOutput(
-      features: "cursor:blink", before: "setopt err_return",
-      after: "zstyle -L zle-keymap-select")
+      features: "cursor:blink",
+      after: "zstyle -L zle-keymap-select",
+      before: "setopt err_return",
+    )
     #expect(output.contains("_multishell_keymap_cursor"))
   }
 }

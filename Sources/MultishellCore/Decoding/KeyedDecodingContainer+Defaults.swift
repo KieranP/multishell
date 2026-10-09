@@ -4,7 +4,9 @@ extension KeyedDecodingContainer {
   /// Absent reads as `fallback`; a wrong type throws. The default for what
   /// the app wrote: failing is what moves the file aside as `.broken.json`.
   func decode<T: Decodable>(
-    _ type: T.Type, forKey key: Key, or fallback: @autoclosure () -> T
+    _ type: T.Type,
+    forKey key: Key,
+    or fallback: @autoclosure () -> T,
   ) throws -> T {
     try decodeIfPresent(type, forKey: key) ?? fallback()
   }
@@ -12,7 +14,9 @@ extension KeyedDecodingContainer {
   /// Absent or unreadable reads as `fallback`, nothing throws. For a value
   /// this build may legitimately not understand, such as a newer enum case.
   func decodeTolerantly<T: Decodable>(
-    _ type: T.Type, forKey key: Key, or fallback: @autoclosure () -> T
+    _ type: T.Type,
+    forKey key: Key,
+    or fallback: @autoclosure () -> T,
   ) -> T {
     (try? decodeIfPresent(type, forKey: key)) ?? fallback()
   }

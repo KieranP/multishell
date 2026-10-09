@@ -16,13 +16,17 @@ struct AgentHooksSnippetTextTests {
     let bitmap = try #require(
       OffscreenWindow.pixels(
         ofHosted: view.frame(width: width, height: 60, alignment: .top),
-        size: CGSize(width: width, height: 60)))
+        size: CGSize(width: width, height: 60),
+      )
+    )
     let scale = Double(bitmap.pixelsWide) / width
     let firstLineLeft = try #require(
-      InkedPixels(bitmap).firstLineLeftmostColumn(lineHeight: Int(8 * scale)))
+      InkedPixels(bitmap).firstLineLeftmostColumn(lineHeight: Int(8 * scale))
+    )
 
     #expect(
       Double(firstLineLeft) / scale < 10,
-      "the first line's ink starts \(Double(firstLineLeft) / scale)pt in")
+      "the first line's ink starts \(Double(firstLineLeft) / scale)pt in",
+    )
   }
 }

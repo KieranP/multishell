@@ -15,7 +15,11 @@ struct AppModelBranchScansTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "feat", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let feat = try #require(harness.worktree(onBranch: "feat"))
     let main = try #require(harness.worktree(onBranch: "main"))
 
@@ -29,10 +33,13 @@ struct AppModelBranchScansTests {
     #expect(harness.model.mergeState(of: feat) == .unmerged)
     #expect(
       harness.model.defaultBranch(of: harness.project)?.shortName == "main",
-      "no remote, so the local branch")
+      "no remote, so the local branch",
+    )
 
     _ = try await harness.git.run(
-      ["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: harness.project.path)
+      ["merge", "-q", "--no-ff", "-m", "merge", "feat"],
+      in: harness.project.path,
+    )
     await harness.model.refreshBranchScans()
 
     #expect(harness.model.mergeState(of: feat) == .merged(.ancestor, into: "main"))
@@ -59,11 +66,18 @@ struct AppModelBranchScansTests {
     defer { harness.tearDown() }
     for branch in ["one", "two", "three"] {
       await harness.model.createWorktree(
-        branch: branch, basedOn: nil, createsBranch: true, in: harness.project)
+        branch: branch,
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     let trees = try ["one", "two", "three"].map { try #require(harness.worktree(onBranch: $0)) }
     for tree in trees {
-      _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: tree.path)
+      _ = try await harness.git.run(
+        ["commit", "-q", "--allow-empty", "-m", "work"],
+        in: tree.path,
+      )
     }
     await harness.model.refreshBranchScans()
     #expect(trees.allSatisfy { harness.model.mergeState(of: $0) == .unmerged })
@@ -71,7 +85,9 @@ struct AppModelBranchScansTests {
 
     for tree in trees {
       _ = try await harness.git.run(
-        ["merge", "-q", "--no-ff", "-m", "merge", tree.name], in: harness.project.path)
+        ["merge", "-q", "--no-ff", "-m", "merge", tree.name],
+        in: harness.project.path,
+      )
     }
     let mergedCount = { trees.filter { harness.model.mergeState(of: $0) != .unmerged }.count }
     await harness.model.refreshBranchScans()
@@ -88,11 +104,17 @@ struct AppModelBranchScansTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "feat", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let feat = try #require(harness.worktree(onBranch: "feat"))
     _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: feat.path)
     _ = try await harness.git.run(
-      ["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: harness.project.path)
+      ["merge", "-q", "--no-ff", "-m", "merge", "feat"],
+      in: harness.project.path,
+    )
     await harness.model.refreshBranchScans()
     #expect(harness.model.mergeState(of: feat) == .merged(.ancestor, into: "main"))
 
@@ -108,13 +130,16 @@ struct AppModelBranchScansTests {
     harness.model.worktreeOperations.finish(.postCreateHook, on: feat.id)
     await harness.model.refreshBranchScans()
     #expect(
-      harness.model.mergeState(of: feat) == .merged(.ancestor, into: "main"), "and back after")
+      harness.model.mergeState(of: feat) == .merged(.ancestor, into: "main"),
+      "and back after",
+    )
 
     harness.model.worktreeOperations.begin(.preDeleteHook, on: feat.id)
     await harness.model.refreshBranchScans()
     #expect(
       harness.model.mergeState(of: feat) == .merged(.ancestor, into: "main"),
-      "a removal keeps the badge it is asking about")
+      "a removal keeps the badge it is asking about",
+    )
   }
 
   /// Writing a dictionary entry back unchanged still redraws every view watching it, and the
@@ -123,7 +148,11 @@ struct AppModelBranchScansTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "feat", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     await harness.model.refreshBranchScans()
 
     let model = harness.model
@@ -145,7 +174,11 @@ struct AppModelBranchScansTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "feat", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let feat = try #require(harness.worktree(onBranch: "feat"))
 
     // Tip AAA, then BBB, and `branch --merged` fails on every pass after
@@ -164,7 +197,8 @@ struct AppModelBranchScansTests {
         cherry*) echo '+ AAA' ;;
         *) exit 0 ;;
       esac
-      """)
+      """
+    )
 
     await model.refreshBranchScans()
     #expect(model.mergeState(of: feat) == .unmerged, "a first answer, from a working git")
@@ -182,7 +216,11 @@ struct AppModelBranchScansTests {
     defer { harness.tearDown() }
     for branch in ["bad", "good"] {
       await harness.model.createWorktree(
-        branch: branch, basedOn: nil, createsBranch: true, in: harness.project)
+        branch: branch,
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     let good = try #require(harness.worktree(onBranch: "good"))
     let model = try harness.modelOnFakeGit(
@@ -195,7 +233,8 @@ struct AppModelBranchScansTests {
         cherry*) echo '+ AAA' ;;
         *) exit 0 ;;
       esac
-      """)
+      """
+    )
     model.mergeReadLog.budget = .zero
 
     await model.refreshBranchScans()
@@ -219,7 +258,8 @@ struct AppModelBranchScansTests {
         branch\\ --merged*) echo main ;;
         *) exit 0 ;;
       esac
-      """)
+      """
+    )
 
     await model.refreshBranchScans()
     #expect(model.defaultBranch(of: harness.project)?.shortName == "main")
@@ -227,7 +267,8 @@ struct AppModelBranchScansTests {
     await model.refreshBranchScans()
 
     #expect(
-      model.defaultBranch(of: harness.project)?.shortName == "main", "a failed read settles nothing"
+      model.defaultBranch(of: harness.project)?.shortName == "main",
+      "a failed read settles nothing",
     )
   }
 
@@ -246,24 +287,31 @@ struct AppModelBranchScansTests {
           touch "$SCRATCH/scan-$$"; sleep 0.5
           ls "$SCRATCH" | grep -c '^scan-' >> "$SCRATCH/overlap"; rm -f "$SCRATCH/scan-$$" ;;
       esac
-      """)
+      """
+    )
 
     await model.refreshBranchScans()
 
     let overlap = try String(
-      contentsOf: harness.root.appendingPathComponent("overlap"), encoding: .utf8)
+      contentsOf: harness.root.appendingPathComponent("overlap"),
+      encoding: .utf8,
+    )
     #expect(
-      overlap.split(separator: "\n").contains {
-        Int($0.trimmingCharacters(in: .whitespaces)) ?? 0 >= 2
+      overlap.split(separator: "\n").contains { line in
+        Int(line.trimmingCharacters(in: .whitespaces)) ?? 0 >= 2
       },
-      "\(overlap)")
+      "\(overlap)",
+    )
   }
 
   @Test func aSlowProjectHoldsOnlyItsOwnSlotWhileTheOthersAreScanned() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     try "".write(
-      to: harness.project.path.appendingPathComponent(".slow"), atomically: true, encoding: .utf8)
+      to: harness.project.path.appendingPathComponent(".slow"),
+      atomically: true,
+      encoding: .utf8,
+    )
     for name in ["p1", "p2", "p3", "p4"] {
       let other = harness.root.appendingPathComponent(name, isDirectory: true)
       try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
@@ -281,11 +329,14 @@ struct AppModelBranchScansTests {
             echo "$PWD" >> "$SCRATCH/scanned"
           fi ;;
       esac
-      """)
+      """
+    )
     let scanned = {
       ((try? String(
-        contentsOf: harness.root.appendingPathComponent("scanned"), encoding: .utf8)) ?? "")
-        .split(separator: "\n").count
+        contentsOf: harness.root.appendingPathComponent("scanned"),
+        encoding: .utf8,
+      )) ?? "")
+      .split(separator: "\n").count
     }
 
     let round = Task { await model.refreshBranchScans() }
@@ -301,7 +352,11 @@ struct AppModelBranchScansTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "feat", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     let model = try harness.modelOnFakeGit(
       """
@@ -310,7 +365,8 @@ struct AppModelBranchScansTests {
         branch\\ --merged*) echo main ;;
         cherry*) echo '+ BBB' ;;
       esac
-      """)
+      """
+    )
 
     await model.refreshBranchScans()
     let first = harness.gitCalls()
@@ -336,19 +392,35 @@ struct AppModelBranchScansTests {
     try await TestRepository.addOrigin(to: path, in: harness.root, using: harness.git)
 
     await harness.model.createWorktree(
-      branch: "feat", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let feat = try #require(harness.worktree(onBranch: "feat"))
     // Two real commits: the squash shares a patch id with neither, so only the gone
     // upstream answers for the branch.
     try await TestRepository.commit(
-      "work", files: ["feat.txt": "a\n"], in: feat.path, using: harness.git)
+      "work",
+      files: ["feat.txt": "a\n"],
+      in: feat.path,
+      using: harness.git,
+    )
     try await TestRepository.commit(
-      "more work", files: ["feat-too.txt": "b\n"], in: feat.path, using: harness.git)
+      "more work",
+      files: ["feat-too.txt": "b\n"],
+      in: feat.path,
+      using: harness.git,
+    )
     _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
     // One commit of the branch's whole tree; two mirroring its own would be a
     // cherry-pick, which `git cherry` answers for first.
     try await TestRepository.squashMergeOnTheRemote(
-      "feat", files: ["feat.txt": "a\n", "feat-too.txt": "b\n"], in: path, using: harness.git)
+      "feat",
+      files: ["feat.txt": "a\n", "feat-too.txt": "b\n"],
+      in: path,
+      using: harness.git,
+    )
 
     await harness.model.refreshBranchScans()
     #expect(harness.model.mergeState(of: feat) == .merged(.upstreamGone, into: "origin/main"))

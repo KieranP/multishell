@@ -34,10 +34,20 @@ struct SessionStatesTests {
   /// `/clear`, and Esc having interrupted the turn fired no hook.
   @Test func aClearAfterAnInterruptedTurnLeavesThePaneIdle() {
     var states = SessionStates()
-    states.apply(.init(state: .running, startsTurn: true), pid: 10, for: .session(a), isSeen: true)
+    states.apply(
+      .init(state: .running, startsTurn: true),
+      pid: 10,
+      for: .session(a),
+      isSeen: true,
+    )
 
     states.apply(.init(state: .idle), pid: 10, for: .session(a), isSeen: true)
-    states.apply(.init(state: .idle, startsSession: true), pid: 10, for: .session(a), isSeen: true)
+    states.apply(
+      .init(state: .idle, startsSession: true),
+      pid: 10,
+      for: .session(a),
+      isSeen: true,
+    )
 
     #expect(states[.session(a)] == nil)
   }
@@ -113,7 +123,8 @@ struct SessionStatesTests {
     states.markSeen(sessions: [a], worktree: "/w")
     #expect(
       states[.session(a)] == .failed && states[.worktree("/w")] == .failed,
-      "a look is not dealing with a failure")
+      "a look is not dealing with a failure",
+    )
     states.clear(sessions: [a], worktree: "/w")
     #expect(states[.session(a)] == nil && states[.worktree("/w")] == nil, "clearing by hand is")
   }
@@ -184,7 +195,11 @@ struct SessionStatesTests {
     let start = Date(timeIntervalSince1970: 1_000_000)
     var states = SessionStates()
     states.apply(
-      .init(state: .attention, message: "Needs Bash"), pid: 1, for: .session(a), isSeen: false)
+      .init(state: .attention, message: "Needs Bash"),
+      pid: 1,
+      for: .session(a),
+      isSeen: false,
+    )
     #expect(states.notes[.session(a)]?.message == "Needs Bash")
 
     var cleared = states
@@ -216,9 +231,17 @@ struct SessionStatesTests {
   @Test func retainDropsTheStampsAndNotesWithTheirKeys() {
     var states = SessionStates()
     states.apply(
-      .init(state: .running, message: "building"), pid: 1, for: .session(a), isSeen: false)
+      .init(state: .running, message: "building"),
+      pid: 1,
+      for: .session(a),
+      isSeen: false,
+    )
     states.apply(
-      .init(state: .running, message: "testing"), pid: 2, for: .session(b), isSeen: false)
+      .init(state: .running, message: "testing"),
+      pid: 2,
+      for: .session(b),
+      isSeen: false,
+    )
     states.stampChanges(against: SessionStates(), at: Date(timeIntervalSince1970: 1))
     states.retain(sessions: [a], worktrees: [])
     #expect(Array(states.sinceDates.keys) == [.session(a)])
@@ -240,17 +263,19 @@ struct SessionStatesTests {
   }
 
   func report(
-    _ states: inout SessionStates, _ state: SessionState, _ worker: WorkerReport? = nil
+    _ states: inout SessionStates,
+    _ state: SessionState,
+    _ worker: WorkerReport? = nil,
   ) -> SessionState? {
     report(&states, .init(state: state, worker: worker))
   }
 
   func started(_ id: String, type: String? = "Explore") -> WorkerReport {
-    WorkerReport(id: id, type: type, phase: .started)
+    WorkerReport(id: id, phase: .started, type: type)
   }
 
   func working(_ id: String) -> WorkerReport {
-    WorkerReport(id: id, type: "Explore", phase: .working)
+    WorkerReport(id: id, phase: .working, type: "Explore")
   }
 
   func ended(_ id: String) -> WorkerReport {

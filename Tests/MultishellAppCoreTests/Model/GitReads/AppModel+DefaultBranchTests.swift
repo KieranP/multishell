@@ -10,15 +10,20 @@ struct AppModelDefaultBranchTests {
     let harness = Harness()
     #expect(
       harness.model.defaultBranchCaption(for: harness.project)
-        == "No branch to measure merges against, so no worktree is badged as merged.")
+        == "No branch to measure merges against, so no worktree is badged as merged."
+    )
 
     harness.model.defaultBranches[harness.project.id] = DefaultBranch(
-      shortName: "origin/trunk", nameWithoutRemote: "trunk", tip: "abc",
-      fullName: "refs/remotes/origin/trunk")
+      shortName: "origin/trunk",
+      nameWithoutRemote: "trunk",
+      tip: "abc",
+      fullName: "refs/remotes/origin/trunk",
+    )
 
     #expect(
       harness.model.defaultBranchCaption(for: harness.project)
-        == "Merges are measured against origin/trunk.")
+        == "Merges are measured against origin/trunk."
+    )
   }
 
   @Test func theDefaultBranchFieldShowsTheDetectedBranchWithoutItsRemote() {
@@ -26,8 +31,11 @@ struct AppModelDefaultBranchTests {
     #expect(harness.model.defaultBranchName(of: harness.project) == "main", "nothing detected yet")
 
     harness.model.defaultBranches[harness.project.id] = DefaultBranch(
-      shortName: "origin/trunk", nameWithoutRemote: "trunk", tip: "abc",
-      fullName: "refs/remotes/origin/trunk")
+      shortName: "origin/trunk",
+      nameWithoutRemote: "trunk",
+      tip: "abc",
+      fullName: "refs/remotes/origin/trunk",
+    )
 
     #expect(harness.model.defaultBranchName(of: harness.project) == "trunk")
   }

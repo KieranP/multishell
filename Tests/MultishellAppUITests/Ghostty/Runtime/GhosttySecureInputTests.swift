@@ -25,7 +25,8 @@ struct GhosttySecureInputTests {
         system.calls += 1
         system.enabled = false
         return noErr
-      })
+      },
+    )
   }
 
   @Test func aPasswordPromptInThePaneWithTheKeyboardTurnsItOn() {
@@ -110,7 +111,8 @@ struct GhosttySecureInputTests {
         guard !refuses else { return OSStatus(paramErr) }
         system.enabled = false
         return noErr
-      })
+      },
+    )
     let pane = ObjectIdentifier(system)
     input.update(pane, wantsSecureInput: true, hasKeyboard: true)
     input.update(pane, wantsSecureInput: false, hasKeyboard: true)

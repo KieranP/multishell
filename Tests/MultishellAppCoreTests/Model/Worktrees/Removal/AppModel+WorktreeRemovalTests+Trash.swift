@@ -11,7 +11,11 @@ extension AppModelWorktreeRemovalTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "stuck", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "stuck",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let worktree = try #require(harness.worktree(onBranch: "stuck"))
     harness.platform.trash = nil
 
@@ -29,14 +33,20 @@ extension AppModelWorktreeRemovalTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "heavy", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "heavy",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let worktree = try #require(harness.worktree(onBranch: "heavy"))
     harness.platform.trash = nil
 
     await harness.model.removeWorktree(worktree, deletesBranch: false)
 
     #expect(
-      harness.platform.trashCallsOnMainThread == [false], "the Trash was asked off the main thread")
+      harness.platform.trashCallsOnMainThread == [false],
+      "the Trash was asked off the main thread",
+    )
     #expect(!FileManager.default.fileExists(atPath: worktree.path.path))
   }
 
@@ -44,7 +54,11 @@ extension AppModelWorktreeRemovalTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "pinned", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "pinned",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let worktree = try #require(harness.worktree(onBranch: "pinned"))
     harness.platform.trash = nil
     // A read-only parent refuses the unlink of its entries.
@@ -52,7 +66,9 @@ extension AppModelWorktreeRemovalTests {
     try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: container.path)
     defer {
       try? FileManager.default.setAttributes(
-        [.posixPermissions: 0o755], ofItemAtPath: container.path)
+        [.posixPermissions: 0o755],
+        ofItemAtPath: container.path,
+      )
     }
 
     await harness.model.removeWorktree(worktree, deletesBranch: false)

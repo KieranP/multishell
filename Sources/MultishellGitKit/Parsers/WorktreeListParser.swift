@@ -7,7 +7,9 @@ enum WorktreeListParser {
   /// Records of `worktree <path>`, `HEAD <sha>` and `branch <ref>` or `detached`,
   /// split on NUL for `-z` or a newline for an older git's form; see worktrees.md.
   static func parse(
-    _ porcelain: String, projectID: Project.ID, separator: Character = "\0"
+    _ porcelain: String,
+    projectID: Project.ID,
+    separator: Character = "\0",
   ) -> [Worktree] {
     var worktrees: [Worktree] = []
     var fields: [String: String] = [:]
@@ -25,7 +27,7 @@ enum WorktreeListParser {
           isPrimary: worktrees.isEmpty,
           isLocked: fields["locked"] != nil,
           isInitializing: fields["locked"] == "initializing",
-          isBare: fields["bare"] != nil
+          isBare: fields["bare"] != nil,
         )
       )
     }

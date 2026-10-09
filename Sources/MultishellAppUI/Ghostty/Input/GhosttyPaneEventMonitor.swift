@@ -15,10 +15,6 @@ final class GhosttyPaneEventMonitor {
     }
   }
 
-  isolated deinit {
-    if let monitor { NSEvent.removeMonitor(monitor) }
-  }
-
   /// `true` where a pane took the event, which AppKit then never sees.
   static func deliver(_ event: NSEvent) -> Bool {
     guard let window = event.window else { return false }
@@ -37,5 +33,9 @@ final class GhosttyPaneEventMonitor {
     guard let content = window.contentView else { return nil }
     let point = content.superview?.convert(locationInWindow, from: nil) ?? locationInWindow
     return content.hitTest(point)
+  }
+
+  isolated deinit {
+    if let monitor { NSEvent.removeMonitor(monitor) }
   }
 }

@@ -6,6 +6,8 @@ import os
 /// base with the app's layer after it, so the app's colours, font and unbinds win.
 @MainActor
 final class GhosttyRuntime {
+  private static let logger = Logger(subsystem: MacPlatform.bundleIdentifier, category: "ghostty")
+
   let app: ghostty_app_t
   private let readBase: @MainActor () -> String
   private var base: String
@@ -18,14 +20,13 @@ final class GhosttyRuntime {
   private let paneEvents = GhosttyPaneEventMonitor()
   private let configDirectory: URL
   private var observers: [any NSObjectProtocol] = []
-  private static let logger = Logger(subsystem: MacPlatform.bundleIdentifier, category: "ghostty")
 
   /// Started from both layers in one load, or from libghostty's defaults where
   /// that load fails.
   init(
     readBase: @escaping @MainActor () -> String = { "" },
     appLayer: GhosttyConfigText = GhosttyConfigText(),
-    configDirectory: URL = FileManager.default.temporaryDirectory
+    configDirectory: URL = FileManager.default.temporaryDirectory,
   ) {
     self.readBase = readBase
     let base = readBase()
@@ -49,9 +50,22 @@ final class GhosttyRuntime {
     observeApplication()
   }
 
-  isolated deinit {
-    observers.forEach(NotificationCenter.default.removeObserver)
-    ghostty_app_free(app)
+  private static func mergedText(base: String, appLayer: GhosttyConfigText) -> String {
+    [base, appLayer.rendered].filter { !$0.isEmpty }.joined(separator: "\n")
+  }
+
+  private static func load(_ text: String, in directory: URL) -> GhosttyLoadedConfig? {
+    guard let loaded = GhosttyLoadedConfig.load(text, in: directory) else {
+      logger.error(
+        "libghostty made no config from text under \(directory.path, privacy: .public)"
+      )
+      return nil
+    }
+    // Line numbers count in the merged text, not in the user's own file.
+    for refused in loaded.diagnostics {
+      logger.notice("libghostty refused a config line: \(refused, privacy: .public)")
+    }
+    return loaded
   }
 
   /// Applied as it is: libghostty skips a line it refuses and keeps the rest,
@@ -88,23 +102,6 @@ final class GhosttyRuntime {
     secureInput.followsPasswordPrompts = config.flag("macos-auto-secure-input") ?? true
   }
 
-  private static func mergedText(base: String, appLayer: GhosttyConfigText) -> String {
-    [base, appLayer.rendered].filter { !$0.isEmpty }.joined(separator: "\n")
-  }
-
-  private static func load(_ text: String, in directory: URL) -> GhosttyLoadedConfig? {
-    guard let loaded = GhosttyLoadedConfig.load(text, in: directory) else {
-      logger.error(
-        "libghostty made no config from text under \(directory.path, privacy: .public)")
-      return nil
-    }
-    // Line numbers count in the merged text, not in the user's own file.
-    for refused in loaded.diagnostics {
-      logger.notice("libghostty refused a config line: \(refused, privacy: .public)")
-    }
-    return loaded
-  }
-
   /// An edit to the user's file is made in another app, so switching back is
   /// when the base can have changed.
   private func applicationDidBecomeActive() {
@@ -126,5 +123,10 @@ final class GhosttyRuntime {
       (keyboard, { ghostty_app_keyboard_changed($0.app) }),
     ]
     observers = NotificationCenter.default.observe(changes, for: self)
+  }
+
+  isolated deinit {
+    observers.forEach(NotificationCenter.default.removeObserver)
+    ghostty_app_free(app)
   }
 }

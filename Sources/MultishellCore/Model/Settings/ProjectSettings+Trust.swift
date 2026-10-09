@@ -9,7 +9,8 @@ extension ProjectSettings {
     trustDecisions.insert(TrustDecision(digest: digest, isTrusted: isTrusted), at: 0)
     if trustDecisions.count > Self.rememberedDecisionLimit {
       trustDecisions.removeLast(
-        trustDecisions.count - Self.rememberedDecisionLimit)
+        trustDecisions.count - Self.rememberedDecisionLimit
+      )
     }
   }
 

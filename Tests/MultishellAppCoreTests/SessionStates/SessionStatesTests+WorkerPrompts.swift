@@ -231,9 +231,14 @@ extension SessionStatesTests {
     _ = report(&byEnd, .running, started("code-review"))
     byEnd.apply(
       .init(
-        state: .attention, message: "Needs Bash",
-        worker: WorkerReport(id: "code-review", phase: .working)), pid: 99, for: .session(a),
-      isSeen: false)
+        state: .attention,
+        message: "Needs Bash",
+        worker: WorkerReport(id: "code-review", phase: .working),
+      ),
+      pid: 99,
+      for: .session(a),
+      isSeen: false,
+    )
     #expect(byEnd[.session(a)] == .attention)
 
     #expect(report(&byEnd, .running, ended("code-review")) == nil, "one of the two is still out")
@@ -259,8 +264,11 @@ extension SessionStatesTests {
     report(
       &states,
       .init(
-        state: .attention, message: "Needs Bash",
-        worker: WorkerReport(id: "w1", phase: .working)))
+        state: .attention,
+        message: "Needs Bash",
+        worker: WorkerReport(id: "w1", phase: .working),
+      ),
+    )
     _ = report(&states, .running, working("w1"))
 
     #expect(report(&states, .running, ended("w1")) == nil, "put back without a banner")
@@ -279,16 +287,25 @@ extension SessionStatesTests {
     }
 
     step { _ = report(&$0, .running, started("w1")) }
-    step {
-      $0.apply(
-        .init(state: .failed, message: "build failed"), pid: 99, for: .session(a), isSeen: false)
+    step { states in
+      states.apply(
+        .init(state: .failed, message: "build failed"),
+        pid: 99,
+        for: .session(a),
+        isSeen: false,
+      )
     }
-    step {
-      $0.apply(
+    step { states in
+      states.apply(
         .init(
-          state: .attention, message: "Needs Bash",
-          worker: WorkerReport(id: "w1", phase: .working)), pid: 99, for: .session(a),
-        isSeen: false)
+          state: .attention,
+          message: "Needs Bash",
+          worker: WorkerReport(id: "w1", phase: .working),
+        ),
+        pid: 99,
+        for: .session(a),
+        isSeen: false,
+      )
     }
     step { _ = report(&$0, .running, working("w1")) }
     step { _ = report(&$0, .running, ended("w1")) }

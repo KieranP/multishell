@@ -12,10 +12,14 @@ struct AppModelStateClearingTests {
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: deadPID()))
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: deadPID())
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .attention, workingDirectory: harness.feature.path.path, pid: deadPID())
+        state: .attention,
+        workingDirectory: harness.feature.path.path,
+        pid: deadPID(),
+      )
     )
 
     harness.model.clearState(of: tab)

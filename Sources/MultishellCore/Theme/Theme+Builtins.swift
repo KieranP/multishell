@@ -18,7 +18,7 @@ extension Theme {
       "#7fbdff", "#d191f5", "#8fe0ff", "#f2f2f5",
     ],
     focusRing: "#5aa9f8",
-    inactivePaneOpacity: 0.8
+    inactivePaneOpacity: 0.8,
   )
 
   static let multishellLight = Theme(
@@ -36,6 +36,6 @@ extension Theme {
       "#4a8ae8", "#a55dd4", "#3399b0", "#f7f7f8",
     ],
     focusRing: "#2f6fd0",
-    inactivePaneOpacity: 0.8
+    inactivePaneOpacity: 0.8,
   )
 }

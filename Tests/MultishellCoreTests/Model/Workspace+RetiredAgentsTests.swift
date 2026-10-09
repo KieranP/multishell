@@ -10,12 +10,23 @@ struct WorkspaceRetiredAgentsTests {
     var project = Project(path: URL(fileURLWithPath: "/repos/demo"))
     project.settings.preferredAgentID = "cursor-agent"
     let worktree = Worktree(
-      path: project.path, projectID: project.id, head: "a", branch: "main", isPrimary: true)
+      path: project.path,
+      projectID: project.id,
+      head: "a",
+      branch: "main",
+      isPrimary: true,
+    )
     var retired = TerminalSession(
-      worktreeID: worktree.id, workingDirectory: worktree.path, title: "aider")
+      worktreeID: worktree.id,
+      workingDirectory: worktree.path,
+      title: "aider",
+    )
     retired.agentID = "aider"
     var kept = TerminalSession(
-      worktreeID: worktree.id, workingDirectory: worktree.path, title: "claude")
+      worktreeID: worktree.id,
+      workingDirectory: worktree.path,
+      title: "claude",
+    )
     kept.agentID = AgentCatalogue.claudeID
     var workspace = Workspace()
     workspace.projects = [project]
@@ -33,12 +44,23 @@ struct WorkspaceRetiredAgentsTests {
   @Test func aRetiredAgentsTabIsTitledAsAPlainShell() {
     let path = URL(fileURLWithPath: "/repos/demo")
     let worktree = Worktree(
-      path: path, projectID: path.path, head: "a", branch: "main", isPrimary: true)
+      path: path,
+      projectID: path.path,
+      head: "a",
+      branch: "main",
+      isPrimary: true,
+    )
     var retired = TerminalSession(
-      worktreeID: worktree.id, workingDirectory: worktree.path, title: "Aider")
+      worktreeID: worktree.id,
+      workingDirectory: worktree.path,
+      title: "Aider",
+    )
     retired.agentID = "aider"
     var kept = TerminalSession(
-      worktreeID: worktree.id, workingDirectory: worktree.path, title: "Claude Code")
+      worktreeID: worktree.id,
+      workingDirectory: worktree.path,
+      title: "Claude Code",
+    )
     kept.agentID = AgentCatalogue.claudeID
     var workspace = Workspace()
     workspace.sessions = [retired, kept]

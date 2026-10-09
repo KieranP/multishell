@@ -15,7 +15,8 @@ struct AppModelPIDWatchTests {
     let gone = deadPID()
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: gone))
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: gone)
+    )
     #expect(harness.model.state(of: tab) == .running)
     #expect(harness.model.pidWatch != nil)
 
@@ -33,7 +34,11 @@ struct AppModelPIDWatchTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: tab.focusedSessionID, pid: agent.pid))
+        state: .running,
+        sessionID: tab.focusedSessionID,
+        pid: agent.pid,
+      )
+    )
     harness.model.sweepGonePIDs()
 
     #expect(harness.model.watchedPIDs.contains(agent.pid))
@@ -53,7 +58,12 @@ struct AppModelPIDWatchTests {
       harness.stateSource.send(SessionStateReport(state: .running, sessionID: session, pid: agent))
       harness.stateSource.send(
         SessionStateReport(
-          state: .done, sessionID: session, pid: agent, backgroundShells: [shell]))
+          state: .done,
+          sessionID: session,
+          pid: agent,
+          backgroundShells: [shell],
+        )
+      )
       harness.model.sweepGonePIDs()
       #expect(harness.model.state(ofPane: session) == nil, "agent \(agent), shell \(shell)")
     }

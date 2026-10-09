@@ -21,7 +21,9 @@ struct AppModelReconcileTests {
 
     #expect(harness.model.presentedError != nil, "the user is told once")
     #expect(
-      harness.platform.logged.count == 3, "and the rest are in the log: \(harness.platform.logged)")
+      harness.platform.logged.count == 3,
+      "and the rest are in the log: \(harness.platform.logged)",
+    )
   }
 
   @Test func focusingTheActivePaneHandsTheKeyboardToTheActiveTabsFocusedSession() throws {

@@ -10,17 +10,19 @@ final class LazyGhosttyRuntime {
   /// Held until there is a runtime, so a theme at launch does not build one.
   private var latestAppLayer: (layer: GhosttyConfigText, isDark: Bool)?
 
-  init(readBase: @escaping @MainActor () -> String = { GhosttyUserConfig.base() }) {
-    self.readBase = readBase
-  }
-
   var runtime: GhosttyRuntime {
     if let builtRuntime { return builtRuntime }
     let made = GhosttyRuntime(
-      readBase: readBase, appLayer: latestAppLayer?.layer ?? GhosttyConfigText())
+      readBase: readBase,
+      appLayer: latestAppLayer?.layer ?? GhosttyConfigText(),
+    )
     if let latestAppLayer { made.setColorScheme(isDark: latestAppLayer.isDark) }
     builtRuntime = made
     return made
+  }
+
+  init(readBase: @escaping @MainActor () -> String = { GhosttyUserConfig.base() }) {
+    self.readBase = readBase
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {

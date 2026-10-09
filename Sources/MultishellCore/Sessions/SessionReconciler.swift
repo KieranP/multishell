@@ -1,7 +1,7 @@
 /// Drives a `TerminalHost` from the store, so no view ever opens a terminal
 /// directly. Call `reconcile()` after any change to the session list.
 @MainActor
-public final class SessionReconciler {
+public final class SessionReconciler: TerminalHostDelegate {
   public struct Failure: Sendable {
     public let sessionID: TerminalSession.ID
     public let error: any Error
@@ -34,20 +34,20 @@ public final class SessionReconciler {
   /// the GUI, whose close asks first where an agent is working.
   public var onCloseRequest: (@MainActor (TerminalSession.ID) -> Void)?
 
+  public var liveSessionIDs: Set<TerminalSession.ID> { host.liveSessionIDs }
+
   public init(store: WorkspaceStore, host: any TerminalHost) {
     self.store = store
     self.host = host
     host.delegate = self
   }
 
-  public var liveSessionIDs: Set<TerminalSession.ID> { host.liveSessionIDs }
-
   /// Opens sessions the host is missing and closes ones it should not have.
   /// `shouldBeLive` keeps restored tabs cold; failures stay in the store.
   @discardableResult
   public func reconcile(
     shouldBeLive: (TerminalSession) -> Bool = { _ in true },
-    prepare: (TerminalSession) -> TerminalSession = { $0 }
+    prepare: (TerminalSession) -> TerminalSession = \.self,
   ) -> [Failure] {
     let wanted = store.workspace.sessions.filter(shouldBeLive)
     let wantedIDs = Set(wanted.map(\.id))
@@ -76,11 +76,11 @@ public final class SessionReconciler {
     else { return }
     host.focus(tab.focusedSessionID)
   }
-}
 
-extension SessionReconciler: TerminalHostDelegate {
   public func terminalHost(
-    _ host: any TerminalHost, didRetitle id: TerminalSession.ID, to title: String
+    _ host: any TerminalHost,
+    didRetitle id: TerminalSession.ID,
+    to title: String,
   ) {
     onRetitle?(id, title)
   }
@@ -90,7 +90,9 @@ extension SessionReconciler: TerminalHostDelegate {
   }
 
   public func terminalHost(
-    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+    _ host: any TerminalHost,
+    didFinishCommandIn id: TerminalSession.ID,
+    exitCode: Int32?,
   ) {
     onCommandFinished?(id, exitCode)
   }

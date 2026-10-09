@@ -41,7 +41,9 @@ struct TabFace: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(isShown ? theme.backgroundColor : .clear)
     .overlay(alignment: .trailing) {
-      if !isShown { theme.hairline.frame(width: UIMetrics.hairlineThickness).padding(.vertical, 8) }
+      if !isShown {
+        theme.hairline.frame(width: UIMetrics.hairlineThickness).padding(.vertical, 8)
+      }
     }
     .contentShape(.rect)
     // Simultaneous, not sequential: a plain double-tap makes SwiftUI hold
@@ -55,8 +57,12 @@ struct TabFace: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel(
       AccessibilityText.tab(
-        title: title, isShown: isShown, isSplit: tab.isSplit, state: state,
-        agentName: agentID.map(model.agentDisplayName))
+        title: title,
+        isShown: isShown,
+        isSplit: tab.isSplit,
+        state: state,
+        agentName: agentID.map(model.agentDisplayName),
+      )
     )
     .selectableButtonTraits(isSelected: isShown)
     .accessibilityAction(named: t("action.rename-spoken")) { beginRenaming() }
@@ -65,11 +71,27 @@ struct TabFace: View {
     }
   }
 
+  /// Names its own tab, like the middle click. `closeActiveTab` is for the
+  /// keystroke, which has to ask which window is key first.
+  private var closeButton: some View {
+    PlainGlyphButton(help: t("tab.close")) {
+      model.closeTab(tab.id)
+    } glyph: {
+      Image(systemName: "xmark")
+        .font(.system(size: model.metrics.small, weight: .semibold))
+        .frame(width: model.metrics.tabCloseButtonSide, height: model.metrics.tabCloseButtonSide)
+        .accessibilityHidden(true)
+    }
+    .foregroundStyle(theme.textSecondary)
+  }
+
   /// What the tab is running. A button while there is a state, so a click
   /// clears a stale Working one without activating the tab.
   @ViewBuilder
   private func leadingGlyph(
-    _ state: SessionState?, agentID: String?, textColor: Color
+    _ state: SessionState?,
+    agentID: String?,
+    textColor: Color,
   ) -> some View {
     let glyph = PaneGlyph(
       agentID: agentID,
@@ -78,7 +100,8 @@ struct TabFace: View {
       ringFill: isShown ? theme.backgroundColor : theme.chromeColor,
       plainTint: textColor,
       theme: theme,
-      size: model.metrics.paneGlyphSize)
+      size: model.metrics.paneGlyphSize,
+    )
     if let state {
       Button {
         model.clearState(of: tab)
@@ -95,19 +118,6 @@ struct TabFace: View {
     }
   }
 
-  /// Names its own tab, like the middle click. `closeActiveTab` is for the
-  /// keystroke, which has to ask which window is key first.
-  private var closeButton: some View {
-    PlainGlyphButton(help: t("tab.close")) {
-      model.closeTab(tab.id)
-    } glyph: {
-      Image(systemName: "xmark")
-        .font(.system(size: model.metrics.small, weight: .semibold))
-        .frame(width: model.metrics.tabCloseButtonSide, height: model.metrics.tabCloseButtonSide)
-    }
-    .foregroundStyle(theme.textSecondary)
-  }
-
   /// An empty name clears the custom title rather than storing a blank one;
   /// `InlineNameField` has the keyboard contract.
   private func titleField(initial: String) -> some View {
@@ -117,7 +127,8 @@ struct TabFace: View {
       font: .system(size: model.metrics.secondary, weight: .medium),
       color: theme.textPrimary,
       commit: { model.commitTabRename(of: tab.id, to: $0) },
-      cancel: { model.cancelRenamingTab() })
+      cancel: { model.cancelRenamingTab() },
+    )
   }
 
   private func beginRenaming() {

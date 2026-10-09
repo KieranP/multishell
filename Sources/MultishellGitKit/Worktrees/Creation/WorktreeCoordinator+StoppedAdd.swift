@@ -4,7 +4,10 @@ import MultishellCore
 extension WorktreeCoordinator {
   /// What a stopped add would leave behind, read before the add starts.
   func stoppedAddUndo(
-    at path: URL, branch: String, createsBranch: Bool, in project: Project
+    at path: URL,
+    branch: String,
+    createsBranch: Bool,
+    in project: Project,
   ) async -> StoppedAddUndo {
     // No container directory made here: `git worktree add` makes the leading
     // directories itself, and a refused add then leaves none behind.
@@ -16,8 +19,11 @@ extension WorktreeCoordinator {
     // away. Asked even where the path exists: git fills an empty directory.
     let worktreeIsNew = await !git.isListed(path, in: project)
     return StoppedAddUndo(
-      path: path, worktreeIsNew: worktreeIsNew, newBranch: branchIsNew ? branch : nil,
-      highestMissingAncestor: highestMissingAncestor)
+      path: path,
+      worktreeIsNew: worktreeIsNew,
+      newBranch: branchIsNew ? branch : nil,
+      highestMissingAncestor: highestMissingAncestor,
+    )
   }
 
   /// A stopped add leaves its new branch and its directories, and the worktree

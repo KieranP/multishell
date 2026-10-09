@@ -3,7 +3,8 @@ extension AppModel {
   /// view reading it, and most of these land on a timer. `true` where it wrote.
   @discardableResult
   func setIfChanged<T: Equatable>(
-    _ path: ReferenceWritableKeyPath<AppModel, T>, _ value: T
+    _ path: ReferenceWritableKeyPath<AppModel, T>,
+    _ value: T,
   )
     -> Bool
   {

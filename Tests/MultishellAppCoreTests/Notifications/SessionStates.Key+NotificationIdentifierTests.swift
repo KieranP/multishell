@@ -11,13 +11,16 @@ struct SessionStatesKeyNotificationIdentifierTests {
     let second = UUID()
     #expect(
       SessionStates.Key.session(first).notificationIdentifier
-        == SessionStates.Key.session(first).notificationIdentifier)
+        == SessionStates.Key.session(first).notificationIdentifier
+    )
     #expect(
       SessionStates.Key.session(first).notificationIdentifier
-        != SessionStates.Key.session(second).notificationIdentifier)
+        != SessionStates.Key.session(second).notificationIdentifier
+    )
     #expect(
       SessionStates.Key.worktree("/w/repo").notificationIdentifier
-        != SessionStates.Key.worktree("/w/other").notificationIdentifier)
+        != SessionStates.Key.worktree("/w/other").notificationIdentifier
+    )
   }
 
   /// The prefix, not path-versus-UUID, keeps these apart: a worktree at a path spelled
@@ -26,7 +29,8 @@ struct SessionStatesKeyNotificationIdentifierTests {
     let id = UUID()
     #expect(
       SessionStates.Key.session(id).notificationIdentifier
-        != SessionStates.Key.worktree(id.uuidString).notificationIdentifier)
+        != SessionStates.Key.worktree(id.uuidString).notificationIdentifier
+    )
   }
 
   @Test func aBannersKeyIsReadBackOffItsIdentifier() {

@@ -16,7 +16,7 @@ extension AppModel {
       platform: platform,
       stateSource: SocketStateSource(),
       notifier: UserNotificationNotifier(),
-      loadError: loadError
+      loadError: loadError,
     )
   }
 }

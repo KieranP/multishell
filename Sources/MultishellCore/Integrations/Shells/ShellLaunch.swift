@@ -8,7 +8,7 @@ public enum ShellLaunch {
   public static func execArguments(
     forShell shellPath: String,
     zshDirectory: URL = Paths.zshIntegrationDirectory,
-    bashInit: URL = Paths.bashInitFile
+    bashInit: URL = Paths.bashInitFile,
   ) -> [String] {
     if usesZshIntegration(shellPath, zshDirectory: zshDirectory) {
       // Through env: fish and csh take no `VAR=value` before a command.
@@ -17,6 +17,7 @@ public enum ShellLaunch {
     switch shellPath.executableName {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
       return ["exec"] + bashInitArguments(forShell: shellPath, bashInit: bashInit)
+
     default:
       return ["exec", shellPath, "-l"]
     }
@@ -33,7 +34,7 @@ public enum ShellLaunch {
   static func zshEnvironment(
     forShell shellPath: String,
     environment: [String: String] = ProcessInfo.processInfo.environment,
-    zshDirectory: URL = Paths.zshIntegrationDirectory
+    zshDirectory: URL = Paths.zshIntegrationDirectory,
   ) -> [String: String] {
     guard usesZshIntegration(shellPath, zshDirectory: zshDirectory) else { return [:] }
     var variables = ["ZDOTDIR": zshDirectory.path]

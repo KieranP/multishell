@@ -9,7 +9,7 @@ enum TabShuffle {
     _ moving: TerminalTab.ID,
     _ placement: TerminalTab.Placement,
     of anchor: TerminalTab.ID,
-    in order: [TerminalTab.ID]
+    in order: [TerminalTab.ID],
   ) -> Bool {
     guard moving != anchor else { return false }
     guard let from = order.firstIndex(of: moving), let to = order.firstIndex(of: anchor) else {

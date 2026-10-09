@@ -24,7 +24,8 @@ struct GitCommandTallyTests {
 
   private func tally(milliseconds: Int, in directory: String) -> GitCommandTally {
     GitCommandTally.byCommand([GitRun.sample("status", milliseconds: milliseconds, in: directory)])[
-      "status"]!
+      "status"
+    ]!
   }
 
   @Test func mergingKeepsTheSlowerOfTheTwoSlowestRuns() {

@@ -11,7 +11,9 @@ struct URLEntryOnDiskTests {
     defer { Scratch.remove(root) }
     let link = root.appendingPathComponent("link")
     try FileManager.default.createSymbolicLink(
-      at: link, withDestinationURL: root.appendingPathComponent("nowhere"))
+      at: link,
+      withDestinationURL: root.appendingPathComponent("nowhere"),
+    )
 
     #expect(link.hasEntryOnDisk)
     #expect(root.hasEntryOnDisk)

@@ -13,7 +13,7 @@ enum PipeDescriptors {
     for descriptor in descriptors { _ = fcntl(descriptor, F_SETFD, FD_CLOEXEC) }
     return (
       FileHandle(fileDescriptor: descriptors[0], closeOnDealloc: true),
-      FileDescriptor(rawValue: descriptors[1])
+      FileDescriptor(rawValue: descriptors[1]),
     )
   }
 }

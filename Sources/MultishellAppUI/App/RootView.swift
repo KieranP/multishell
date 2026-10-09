@@ -5,6 +5,8 @@ import SwiftUI
 /// The workspace window: sidebar, draggable divider, detail. Every dialog it
 /// can raise is attached here, each as its own modifier.
 struct RootView: View {
+  private static let resizeGrabWidth: Double = 8
+
   let model: AppModel
   let platform: MacPlatform
 
@@ -36,8 +38,6 @@ struct RootView: View {
     .presentedErrorAlert(model: model)
   }
 
-  private static let resizeGrabWidth: Double = 8
-
   /// The hairline between sidebar and detail, with a wider grab area over it.
   private func resizeHandle(_ theme: Theme, range: ClosedRange<Double>) -> some View {
     theme.hairline
@@ -54,7 +54,10 @@ struct RootView: View {
               }
               .onChanged { value in
                 sidebarWidth = SidebarWidth.dragged(
-                  from: dragStartWidth ?? sidebarWidth, by: value.translation.width, in: range)
+                  from: dragStartWidth ?? sidebarWidth,
+                  by: value.translation.width,
+                  in: range,
+                )
               }
           )
       }

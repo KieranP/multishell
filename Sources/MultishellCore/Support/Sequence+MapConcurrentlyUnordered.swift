@@ -3,8 +3,9 @@ extension Sequence where Element: Sendable {
   /// the results in the order they finished.
   @discardableResult
   public func mapConcurrentlyUnordered<Result: Sendable>(
-    width: Int, isolation: isolated (any Actor)? = #isolation,
-    _ transform: @escaping @Sendable (Element) async -> Result
+    width: Int,
+    isolation: isolated (any Actor)? = #isolation,
+    _ transform: @escaping @Sendable (Element) async -> Result,
   ) async -> [Result] {
     await withTaskGroup(of: Result.self, isolation: isolation) { group in
       var pending = makeIterator()

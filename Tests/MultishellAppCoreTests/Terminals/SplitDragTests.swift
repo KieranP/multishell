@@ -6,7 +6,12 @@ import Testing
 struct SplitDragTests {
   private func move(_ drag: inout SplitDrag, by translation: Double, over weights: [Double]) {
     drag.move(
-      dividerAfter: 0, by: translation, over: weights, available: 600, minimumPane: 80)
+      dividerAfter: 0,
+      by: translation,
+      over: weights,
+      available: 600,
+      minimumPane: 80,
+    )
   }
 
   @Test func anUntouchedDragShowsTheModelsWeightsAndHandsNothingBack() {

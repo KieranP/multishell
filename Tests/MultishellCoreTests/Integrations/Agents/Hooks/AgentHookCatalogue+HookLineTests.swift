@@ -6,10 +6,13 @@ import Testing
 
 @Suite
 struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
+  private var claudeEvents: [String] { AgentHookCatalogue.claude.events.map(\.name) }
+
   @Test func theCommandGuardsOnTheHelperNamesTheAgentAndEndsInExitZero() {
     let command = AgentHookCatalogue.command(agent: "codex", helper: helper)
     #expect(
-      command == "[ -x \"\(helper)\" ] && \"\(helper)\" agent-hook --agent codex; exit 0")
+      command == "[ -x \"\(helper)\" ] && \"\(helper)\" agent-hook --agent codex; exit 0"
+    )
     #expect(!command.contains("="), "fish does not parse VAR=value")
     #expect(AgentHookCatalogue.isOurHook(command))
     #expect(!AgentHookCatalogue.isOurHook("curl -sf http://127.0.0.1:9/hook"))
@@ -26,13 +29,15 @@ struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
       try Scratch.script(ending, at: fake)
       #expect(
         try status(of: AgentHookCatalogue.command(agent: "copilot", helper: fake.path)) == 0,
-        "\(ending)")
+        "\(ending)",
+      )
     }
 
     try FileManager.default.removeItem(at: fake)
     #expect(
       try status(of: AgentHookCatalogue.command(agent: "copilot", helper: fake.path)) == 0,
-      "missing")
+      "missing",
+    )
   }
 
   private func status(of line: String) throws -> Int32 {
@@ -53,7 +58,8 @@ struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
     #expect(
       AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: [
         "hooks": groups(claudeEvents, command: legacyClaudeHookLine)
-      ]))
+      ])
+    )
   }
 
   /// A substring test ate a hook whose script merely spelled both names, and
@@ -76,8 +82,6 @@ struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
     #expect(reference.hasPrefix("$HOME/"), "\(reference)")
     #expect(reference.hasSuffix("/bin/multishell"))
   }
-
-  private var claudeEvents: [String] { AgentHookCatalogue.claude.events.map(\.name) }
 
   private func groups(_ events: [String], command: String) -> [String: Any] {
     var hooks: [String: Any] = [:]

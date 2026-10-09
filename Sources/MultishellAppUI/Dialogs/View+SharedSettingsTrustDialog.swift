@@ -9,9 +9,10 @@ extension View {
       model.pendingSharedSettingsTrust?.title ?? "",
       isPresented: Binding(
         get: { model.pendingSharedSettingsTrust != nil },
-        set: { if !$0 { model.decideSharedSettingsTrustLater() } }),
+        set: { if !$0 { model.decideSharedSettingsTrustLater() } },
+      ),
       titleVisibility: .visible,
-      presenting: model.pendingSharedSettingsTrust
+      presenting: model.pendingSharedSettingsTrust,
     ) { pending in
       Button(pending.trustLabel) { model.answerSharedSettingsTrust(pending, isTrusted: true) }
       Button(pending.declineLabel) { model.answerSharedSettingsTrust(pending, isTrusted: false) }

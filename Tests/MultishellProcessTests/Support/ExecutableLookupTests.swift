@@ -20,7 +20,10 @@ struct ExecutableLookupTests {
     defer { Scratch.remove(directory) }
     let fake = try Scratch.script("exit 0", at: directory.appendingPathComponent("claude"))
     try "not executable".write(
-      to: directory.appendingPathComponent("codex"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("codex"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let path = "/nowhere:\(directory.path):/bin"
     #expect(ExecutableLookup.find("claude", searchPath: path)?.path == fake.path)

@@ -43,7 +43,8 @@ struct NumstatParserTests {
       let stat = NumstatParser.parse(line + "\n")
       #expect(
         stat.insertions == 0 && stat.deletions == 0 && stat.unscoredFiles == 0,
-        "\(line) counted \(stat)")
+        "\(line) counted \(stat)",
+      )
     }
   }
 }

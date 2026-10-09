@@ -3,6 +3,32 @@ import Foundation
 /// One message over the inbound channel, JSON one object per line. Fields
 /// are only ever added; see Docs/design/agents.md.
 public struct SessionStateReport: Codable, Hashable, Sendable {
+  enum CodingKeys: String, CodingKey {
+    case version = "v"
+    case state
+    case sessionID = "session"
+    case workingDirectory = "cwd"
+    case pid
+    case message
+    case duration
+    case agentID = "agent"
+    case command
+    case isFromShellIntegration = "shell"
+    case isSilent = "silent"
+    case legacyWorkerCount = "subagents"
+    case worker = "subagent"
+    case launched
+    case killedTaskID = "killed"
+    case startsTurn = "turn"
+    case startsSession = "start"
+    case backgroundShells = "shells"
+    case resumesAfterWorkers = "resumes"
+    case conversationID = "conversation"
+    case workersOut = "out"
+    case turnFollows = "follows"
+    case asksQuestion = "question"
+  }
+
   public static let protocolVersion = 1
 
   var version: Int
@@ -68,32 +94,6 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// permission; the app words it, the helper having no catalogue.
   public internal(set) var asksQuestion: Bool?
 
-  enum CodingKeys: String, CodingKey {
-    case version = "v"
-    case state
-    case sessionID = "session"
-    case workingDirectory = "cwd"
-    case pid
-    case message
-    case duration
-    case agentID = "agent"
-    case command
-    case isFromShellIntegration = "shell"
-    case isSilent = "silent"
-    case legacyWorkerCount = "subagents"
-    case worker = "subagent"
-    case launched
-    case killedTaskID = "killed"
-    case startsTurn = "turn"
-    case startsSession = "start"
-    case backgroundShells = "shells"
-    case resumesAfterWorkers = "resumes"
-    case conversationID = "conversation"
-    case workersOut = "out"
-    case turnFollows = "follows"
-    case asksQuestion = "question"
-  }
-
   public init(
     state: SessionState,
     sessionID: TerminalSession.ID? = nil,
@@ -115,7 +115,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     conversationID: String? = nil,
     workersOut: [WorkerReport]? = nil,
     turnFollows: Bool? = nil,
-    asksQuestion: Bool? = nil
+    asksQuestion: Bool? = nil,
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -156,7 +156,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
       agentID: try container.decodeIfPresent(String.self, forKey: .agentID),
       command: try container.decodeIfPresent(String.self, forKey: .command),
       isFromShellIntegration: try container.decodeIfPresent(
-        Bool.self, forKey: .isFromShellIntegration),
+        Bool.self,
+        forKey: .isFromShellIntegration,
+      ),
       isSilent: try container.decodeIfPresent(Bool.self, forKey: .isSilent),
       worker: try container.decodeIfPresent(WorkerReport.self, forKey: .worker),
       launched: try container.decodeIfPresent(WorkerReport.self, forKey: .launched),
@@ -168,17 +170,18 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
       conversationID: try container.decodeIfPresent(String.self, forKey: .conversationID),
       workersOut: try container.decodeIfPresent([WorkerReport].self, forKey: .workersOut),
       turnFollows: try container.decodeIfPresent(Bool.self, forKey: .turnFollows),
-      asksQuestion: try container.decodeIfPresent(Bool.self, forKey: .asksQuestion))
+      asksQuestion: try container.decodeIfPresent(Bool.self, forKey: .asksQuestion),
+    )
     version = try container.decode(Int.self, forKey: .version, or: 1)
     legacyWorkerCount = try container.decodeIfPresent(Int.self, forKey: .legacyWorkerCount)
   }
 
   /// `nil` for anything that is not one well-formed report: any process may
   /// write to the channel, so a bad line costs that line only.
-  public static func parse(_ line: String) -> SessionStateReport? {
+  public static func parse(_ line: String) -> Self? {
     let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return nil }
-    return try? JSONDecoder().decode(SessionStateReport.self, from: Data(trimmed.utf8))
+    return try? JSONDecoder().decode(Self.self, from: Data(trimmed.utf8))
   }
 
   /// One line, newline-terminated, ready for the socket.

@@ -21,7 +21,11 @@ struct GitStatusBadgeTests {
 
   private func width(of status: WorktreeStatus, offered: CGFloat) -> CGFloat {
     let badge = GitStatusBadge(
-      status: status, theme: .multishellDark, size: 13, tint: .secondary)
+      status: status,
+      theme: .multishellDark,
+      size: 13,
+      tint: .secondary,
+    )
     return NSHostingController(rootView: badge)
       .sizeThatFits(in: CGSize(width: offered, height: 40)).width
   }

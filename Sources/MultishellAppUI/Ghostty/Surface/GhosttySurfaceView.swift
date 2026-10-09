@@ -34,11 +34,15 @@ final class GhosttySurfaceView: NSView {
   /// prompt, or the `toggle_secure_input` keybind asked for it.
   var wantsSecureInput = false
 
+  override var acceptsFirstResponder: Bool { true }
+
   init(runtime: GhosttyRuntime, launch: GhosttySurfaceLaunch) {
     self.runtime = runtime
     super.init(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
     let scale = NSScreen.mainBackingScale
-    surface = launch.withCConfig(view: self, scale: scale) { ghostty_surface_new(runtime.app, &$0) }
+    surface = launch.withCConfig(view: self, scale: scale) { config in
+      ghostty_surface_new(runtime.app, &config)
+    }
     // libghostty starts a surface focused and drawing; a pane opened out of
     // sight is neither until it is shown.
     updateFocus()
@@ -49,12 +53,6 @@ final class GhosttySurfaceView: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) { nil }
 
-  /// libghostty holds this view unretained as the surface's userdata, so a
-  /// view let go unfreed would leave it a dangling pointer and the shell running.
-  isolated deinit {
-    freeSurface()
-  }
-
   /// Ends the shell. Not from the surface's own close callback, which runs
   /// inside libghostty and would free the surface mid-call.
   func freeSurface() {
@@ -64,8 +62,6 @@ final class GhosttySurfaceView: NSView {
     ghostty_surface_free(surface)
     self.surface = nil
   }
-
-  override var acceptsFirstResponder: Bool { true }
 
   override func setFrameSize(_ newSize: NSSize) {
     super.setFrameSize(newSize)
@@ -100,7 +96,9 @@ final class GhosttySurfaceView: NSView {
       NSTrackingArea(
         rect: bounds,
         options: [.mouseEnteredAndExited, .mouseMoved, .inVisibleRect, .activeAlways],
-        owner: self))
+        owner: self,
+      )
+    )
     super.updateTrackingAreas()
   }
 
@@ -119,7 +117,10 @@ final class GhosttySurfaceView: NSView {
     guard let surface, window != nil, bounds.width > 0, bounds.height > 0 else { return }
     let backing = convertToBacking(bounds)
     ghostty_surface_set_content_scale(
-      surface, backing.width / bounds.width, backing.height / bounds.height)
+      surface,
+      backing.width / bounds.width,
+      backing.height / bounds.height,
+    )
     ghostty_surface_set_size(surface, UInt32(backing.width), UInt32(backing.height))
   }
 
@@ -162,6 +163,12 @@ final class GhosttySurfaceView: NSView {
       (NSWindow.didBecomeKeyNotification, { $0.windowKeyDidChange() }),
       (NSWindow.didResignKeyNotification, { $0.windowKeyDidChange() }),
     ]
-    windowObservers = NotificationCenter.default.observe(changes, from: window, for: self)
+    windowObservers = NotificationCenter.default.observe(changes, for: self, from: window)
+  }
+
+  /// libghostty holds this view unretained as the surface's userdata, so a
+  /// view let go unfreed would leave it a dangling pointer and the shell running.
+  isolated deinit {
+    freeSurface()
   }
 }

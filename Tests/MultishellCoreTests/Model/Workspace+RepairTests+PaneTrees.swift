@@ -20,11 +20,16 @@ extension WorkspaceRepairTests {
     let shared = session()
     let own = session()
     let first = TerminalTab(
-      worktreeID: worktree.id, groupID: TabGroup.unassigned, session: shared.id)
+      worktreeID: worktree.id,
+      groupID: TabGroup.unassigned,
+      session: shared.id,
+    )
     let second = TerminalTab(
-      worktreeID: worktree.id, groupID: TabGroup.unassigned,
+      worktreeID: worktree.id,
+      groupID: TabGroup.unassigned,
       root: .split(axis: .horizontal, children: [.terminal(own.id), .terminal(shared.id)]),
-      focusedSessionID: shared.id)
+      focusedSessionID: shared.id,
+    )
     var workspace = self.workspace(tabs: [first, second], sessions: [shared, own])
 
     workspace.repair()
@@ -38,11 +43,14 @@ extension WorkspaceRepairTests {
     let twice = session()
     let other = session()
     let tab = TerminalTab(
-      worktreeID: worktree.id, groupID: TabGroup.unassigned,
+      worktreeID: worktree.id,
+      groupID: TabGroup.unassigned,
       root: .split(
         axis: .vertical,
-        children: [.terminal(twice.id), .terminal(other.id), .terminal(twice.id)]),
-      focusedSessionID: twice.id)
+        children: [.terminal(twice.id), .terminal(other.id), .terminal(twice.id)],
+      ),
+      focusedSessionID: twice.id,
+    )
     var workspace = self.workspace(tabs: [tab], sessions: [twice, other])
 
     workspace.repair()
@@ -55,11 +63,14 @@ extension WorkspaceRepairTests {
   @Test func aNestedSplitWithNoChildrenIsRemovedAndTheTabKept() {
     let survivor = session()
     let tab = TerminalTab(
-      worktreeID: worktree.id, groupID: TabGroup.unassigned,
+      worktreeID: worktree.id,
+      groupID: TabGroup.unassigned,
       root: .split(
         axis: .horizontal,
-        children: [.terminal(survivor.id), .split(axis: .vertical, children: [])]),
-      focusedSessionID: survivor.id)
+        children: [.terminal(survivor.id), .split(axis: .vertical, children: [])],
+      ),
+      focusedSessionID: survivor.id,
+    )
     var workspace = self.workspace(tabs: [tab], sessions: [survivor])
 
     workspace.repair()
@@ -72,12 +83,15 @@ extension WorkspaceRepairTests {
     let a = session()
     let b = session()
     let tab = TerminalTab(
-      worktreeID: worktree.id, groupID: TabGroup.unassigned,
+      worktreeID: worktree.id,
+      groupID: TabGroup.unassigned,
       root: .split(
         axis: .horizontal,
         children: [.terminal(a.id), .split(axis: .vertical, children: [.terminal(b.id)])],
-        weights: [3, 1]),
-      focusedSessionID: b.id)
+        weights: [3, 1],
+      ),
+      focusedSessionID: b.id,
+    )
     var workspace = self.workspace(tabs: [tab], sessions: [a, b])
 
     workspace.repair()
@@ -86,7 +100,11 @@ extension WorkspaceRepairTests {
     #expect(
       workspace.tabs[0].root
         == .split(
-          axis: .horizontal, children: [.terminal(a.id), .terminal(b.id)], weights: [3, 1]))
+          axis: .horizontal,
+          children: [.terminal(a.id), .terminal(b.id)],
+          weights: [3, 1],
+        )
+    )
   }
 
   @Test(arguments: [41, 43, 47, 53, 59, 61, 67, 71] as [UInt64])
@@ -105,8 +123,10 @@ extension WorkspaceRepairTests {
         Bool.random(using: &rng)
         ? Array(repeating: 1.0, count: count) : [Double](repeating: 2, count: max(count - 1, 0))
       return .split(
-        axis: Bool.random(using: &rng) ? .horizontal : .vertical, children: children,
-        weights: weights)
+        axis: Bool.random(using: &rng) ? .horizontal : .vertical,
+        children: children,
+        weights: weights,
+      )
     }
 
     var tabs: [TerminalTab] = []
@@ -114,8 +134,12 @@ extension WorkspaceRepairTests {
       let root = tree(depth: 3)
       tabs.append(
         TerminalTab(
-          worktreeID: worktree.id, groupID: TabGroup.unassigned, root: root,
-          focusedSessionID: root.sessionIDs.randomElement(using: &rng) ?? ghost))
+          worktreeID: worktree.id,
+          groupID: TabGroup.unassigned,
+          root: root,
+          focusedSessionID: root.sessionIDs.randomElement(using: &rng) ?? ghost,
+        )
+      )
     }
     var workspace = self.workspace(tabs: tabs, sessions: pool)
 

@@ -15,12 +15,18 @@ struct SidebarListingTests {
     sample.worktrees = [
       Worktree(path: web.path, projectID: web.id, head: "a", branch: "main", isPrimary: true),
       Worktree(
-        path: URL(fileURLWithPath: "/w/t/checkout"), projectID: web.id, head: "b",
-        branch: "feat/checkout"),
+        path: URL(fileURLWithPath: "/w/t/checkout"),
+        projectID: web.id,
+        head: "b",
+        branch: "feat/checkout",
+      ),
       Worktree(path: api.path, projectID: api.id, head: "c", branch: "main", isPrimary: true),
       Worktree(
-        path: URL(fileURLWithPath: "/w/t/limits"), projectID: api.id, head: "d",
-        branch: "kieran/rate-limits"),
+        path: URL(fileURLWithPath: "/w/t/limits"),
+        projectID: api.id,
+        head: "d",
+        branch: "kieran/rate-limits",
+      ),
     ]
     return sample
   }
@@ -29,7 +35,9 @@ struct SidebarListingTests {
     var sample = workspace
     sample.projects[1].isExpanded = false
     let entries = SidebarListing(filterText: "  ").entries(
-      in: sample, collapsing: [sample.projects[0].id])
+      in: sample,
+      collapsing: [sample.projects[0].id],
+    )
     #expect(entries.map(\.project.name) == ["acme-web", "acme-api"])
     #expect(entries.map(\.isExpanded) == [true, false])
     #expect(entries.allSatisfy { $0.worktrees.count == 2 })
@@ -44,7 +52,9 @@ struct SidebarListingTests {
       return collapsed
     }
     let entries = SidebarListing(filterText: "main").entries(
-      in: sample, collapsing: [sample.projects[1].id])
+      in: sample,
+      collapsing: [sample.projects[1].id],
+    )
     #expect(entries.map(\.isExpanded) == [true, false])
   }
 
@@ -72,10 +82,12 @@ struct SidebarListingTests {
   /// suite running beside it, so the guard is on the source instead.
   @Test func theFilterNeverReachesForTheLocaleSensitiveForm() throws {
     let file = SourceRoot.url.appendingPathComponent(
-      "Sources/MultishellAppCore/Sidebar/SidebarListing.swift")
+      "Sources/MultishellAppCore/Sidebar/SidebarListing.swift"
+    )
     let text = try String(contentsOf: file, encoding: .utf8)
-    let matching = text.split(whereSeparator: \.isNewline).filter {
-      $0.contains("localizedStandardContains") || $0.contains("localizedCaseInsensitiveContains")
+    let matching = text.split(whereSeparator: \.isNewline).filter { line in
+      line.contains("localizedStandardContains")
+        || line.contains("localizedCaseInsensitiveContains")
     }
     #expect(matching.isEmpty, "folds by the reader's locale: \(matching)")
     #expect(text.contains("foldedContains"), "does not match at all")

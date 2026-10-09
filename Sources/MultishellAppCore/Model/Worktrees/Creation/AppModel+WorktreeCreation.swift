@@ -5,13 +5,18 @@ import MultishellProcess
 
 extension AppModel {
   func plannedPath(
-    forBranch branch: String, createsBranch: Bool, in project: Project
+    forBranch branch: String,
+    createsBranch: Bool,
+    in project: Project,
   )
     -> URL?
   {
     coordinator?.plannedPath(
-      forBranch: branch, createsBranch: createsBranch, in: project,
-      settings: effectiveWorktreeSettings(for: project))
+      forBranch: branch,
+      in: project,
+      settings: effectiveWorktreeSettings(for: project),
+      createsBranch: createsBranch,
+    )
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
@@ -34,7 +39,7 @@ extension AppModel {
     basedOn startPoint: String?,
     createsBranch: Bool,
     in project: Project,
-    firstTab: NewWorktreeFirstTab? = nil
+    firstTab: NewWorktreeFirstTab? = nil,
   ) async {
     // The workspace, not the value handed in: a sheet held open across a
     // removal would add a worktree nothing in the app lists.
@@ -61,16 +66,16 @@ extension AppModel {
     do {
       path = try await coordinator.create(
         branch: branch,
-        basedOn: startPoint,
-        createsBranch: createsBranch,
         in: effective,
         settings: settings,
+        basedOn: startPoint,
+        createsBranch: createsBranch,
         shellPath: shell,
         timeout: workspace.projectHookTimeout,
         stopper: stopper,
         onStep: { [weak self] step in
           Task { @MainActor in self?.noteCreationStep(step, of: stopper) }
-        }
+        },
       )
     } catch {
       reportUnlessStopped(error)
@@ -79,12 +84,19 @@ extension AppModel {
     await refreshWorktrees(of: project)
     await rearmWatcher()
     let name = WorktreeCoordinator.qualifiedBranchName(
-      branch, createsBranch: createsBranch, settings: settings)
+      branch,
+      createsBranch: createsBranch,
+      settings: settings,
+    )
     guard let created = createdWorktree(at: path, branchName: name, in: project) else { return }
     if let firstTab { newWorktreeFirstTabs[created.id] = firstTab }
     beginWorktreeSetup(
-      of: created, branch: name, in: effective, shellPath: shell,
-      lists: fileLists(of: project, inEffect: effective))
+      of: created,
+      branch: name,
+      in: effective,
+      shellPath: shell,
+      lists: fileLists(of: project, inEffect: effective),
+    )
     select(created, openingFirstTab: .onCreate)
     // A setup still running holds the tab back, and `openHeldBackTab` takes it.
     if !isBusy(created.id) { newWorktreeFirstTabs[created.id] = nil }

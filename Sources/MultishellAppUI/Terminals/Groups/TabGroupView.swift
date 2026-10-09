@@ -24,9 +24,12 @@ struct TabGroupView: View {
         tabs: model.workspace.tabs(inGroup: group.id),
         isFocusedGroup: isFocusedGroup,
         groupLabel: AccessibilityText.tabGroup(
-          position: position, of: groupCount, isFocused: isFocusedGroup),
+          position: position,
+          of: groupCount,
+          isFocused: isFocusedGroup,
+        ),
         theme: theme,
-        drag: $drag
+        drag: $drag,
       )
       if let tab = model.workspace.shownTab(ofGroup: group) {
         panes(of: tab)
@@ -44,7 +47,7 @@ struct TabGroupView: View {
       tabID: tab.id,
       node: tab.root,
       showsFocusRing: model.showsFocusRing(in: tab),
-      theme: theme
+      theme: theme,
     )
     .id(tab.id)
     .overlay {

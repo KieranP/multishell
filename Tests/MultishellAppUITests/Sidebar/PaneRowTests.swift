@@ -10,14 +10,24 @@ struct PaneRowTests {
   private let paneID = UUID()
 
   private func row(
-    state: SessionState? = nil, select: @escaping () -> Void = {}
+    state: SessionState? = nil,
+    select: @escaping () -> Void = {},
   ) -> PaneRow {
     PaneRow(
       pane: SidebarPane(
-        id: paneID, title: "zsh",
-        position: nil, isFocused: false, state: state, workers: [], agentID: nil,
-        agentName: nil),
-      theme: .multishellDark, metrics: UIMetrics(fontSize: 13), select: select)
+        id: paneID,
+        title: "zsh",
+        position: nil,
+        isFocused: false,
+        state: state,
+        workers: [],
+        agentID: nil,
+        agentName: nil,
+      ),
+      theme: .multishellDark,
+      metrics: UIMetrics(fontSize: 13),
+      select: select,
+    )
   }
 
   @Test func aPaneRowRebuiltWithAFreshClosureIsTheSameRow() {

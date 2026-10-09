@@ -7,7 +7,7 @@ struct TerminalSessionTests {
   @Test func aSessionWithoutAnAgentIDIsAPlainShell() throws {
     let session = try decodeJSON(
       TerminalSession.self,
-      #"{ "id": "\#(UUID().uuidString)", "worktreeID": "/w", "workingDirectory": "file:///w/", "title": "Shell" }"#
+      #"{ "id": "\#(UUID().uuidString)", "worktreeID": "/w", "workingDirectory": "file:///w/", "title": "Shell" }"#,
     )
     #expect(session.agentID == nil)
     #expect(session.command == nil)
@@ -15,8 +15,11 @@ struct TerminalSessionTests {
 
   @Test func aSessionsShellIsRuntimeOnlyAndNeverSaved() throws {
     let session = TerminalSession(
-      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w"), title: "Shell",
-      shellOverride: "/bin/bash")
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "Shell",
+      shellOverride: "/bin/bash",
+    )
     let json = String(decoding: try JSONEncoder().encode(session), as: UTF8.self)
     #expect(!json.contains("/bin/bash"))
     let restored = try decodeJSON(TerminalSession.self, json)
@@ -26,7 +29,10 @@ struct TerminalSessionTests {
 
   @Test func aProgramsTabKeepsTheProgramsName() throws {
     let session = TerminalSession(
-      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w"), title: "nvim")
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "nvim",
+    )
 
     #expect(session.displayTitle == "nvim")
   }

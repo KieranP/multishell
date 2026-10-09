@@ -23,7 +23,8 @@ struct WorkspaceTests {
   @Test func aKeyNoFieldAnswersToDoesNotFailTheFile() throws {
     let workspace = try decodeJSON(
       Workspace.self,
-      #"{ "retiredSetting": "holodeck", "projects": [ { "path": "file:///repos/demo/" } ] }"#)
+      #"{ "retiredSetting": "holodeck", "projects": [ { "path": "file:///repos/demo/" } ] }"#,
+    )
     #expect(workspace.projects.map(\.name) == ["demo"])
   }
 
@@ -41,7 +42,9 @@ struct WorkspaceTests {
     let on = try decodeJSON(Workspace.self, #"{ "autoStartAgent": true }"#)
     #expect(on.autoStartsAgentOnCreate, "what the one setting used to mean")
     let split = try decodeJSON(
-      Workspace.self, #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#)
+      Workspace.self,
+      #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#,
+    )
     #expect(split.autoStartsAgent && !split.autoStartsAgentOnCreate)
   }
 
@@ -56,7 +59,7 @@ struct WorkspaceTests {
 
     let chosen = try decodeJSON(
       Workspace.self,
-      #"{ "defaultShell": "/opt/homebrew/bin/fish", "preferredEditorID": "future-editor", "opensTerminalOnSelect": false, "opensTerminalOnCreate": false }"#
+      #"{ "defaultShell": "/opt/homebrew/bin/fish", "preferredEditorID": "future-editor", "opensTerminalOnSelect": false, "opensTerminalOnCreate": false }"#,
     )
     #expect(chosen.preferredShellID == "/opt/homebrew/bin/fish")
     #expect(chosen.preferredEditorID == "future-editor", "an unknown editor id is kept as text")
@@ -70,7 +73,9 @@ struct WorkspaceTests {
     let looksFirst = try decodeJSON(Workspace.self, #"{ "opensTerminalOnSelect": false }"#)
     #expect(!looksFirst.opensTerminalOnCreate, "no terminal on create either, as before")
     let split = try decodeJSON(
-      Workspace.self, #"{ "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#)
+      Workspace.self,
+      #"{ "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#,
+    )
     #expect(split.opensTerminalOnCreate, "once said separately, it is its own setting")
   }
 
@@ -78,11 +83,14 @@ struct WorkspaceTests {
     #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).gitStatusIndicator == .default)
     #expect(
       try decodeJSON(Workspace.self, #"{ "gitStatusIndicator": "stagedOnly" }"#).gitStatusIndicator
-        == .stagedOnly)
+        == .stagedOnly
+    )
     #expect(
       try decodeJSON(Workspace.self, #"{ "gitStatusIndicator": "whateverIsNext" }"#)
         .gitStatusIndicator
-        == .default, "a kind a newer build named costs that value alone")
+        == .default,
+      "a kind a newer build named costs that value alone",
+    )
   }
 
   @Test func theRemovalFieldsDefaultToAskingAndKeepingAndEveryWrittenChoiceStands() throws {
@@ -93,12 +101,13 @@ struct WorkspaceTests {
 
     let chosen = try decodeJSON(
       Workspace.self,
-      #"{ "confirmsWorktreeRemoval": false, "deletesBranchWithWorktree": true, "trashesRemovedWorktrees": false, "defaultShell": "custom", "customShellPath": "/opt/nu" }"#
+      #"{ "confirmsWorktreeRemoval": false, "deletesBranchWithWorktree": true, "trashesRemovedWorktrees": false, "defaultShell": "custom", "customShellPath": "/opt/nu" }"#,
     )
     #expect(!chosen.confirmsWorktreeRemoval && chosen.deletesBranchWithWorktree)
     #expect(!chosen.trashesRemovedWorktrees)
     #expect(
-      chosen.preferredShellID == ShellChoice.customID && chosen.customShellPath == "/opt/nu")
+      chosen.preferredShellID == ShellChoice.customID && chosen.customShellPath == "/opt/nu"
+    )
   }
 
   @Test func aWorkspaceWithoutTheListingFieldsSortsByNameWithNothingLifted() throws {
@@ -108,7 +117,8 @@ struct WorkspaceTests {
 
     let chosen = try decodeJSON(
       Workspace.self,
-      #"{ "worktreeSortOrder": "createdNewestFirst", "showsActiveWorktreesFirst": true }"#)
+      #"{ "worktreeSortOrder": "createdNewestFirst", "showsActiveWorktreesFirst": true }"#,
+    )
     #expect(chosen.worktreeSortOrder == .createdNewestFirst && chosen.showsActiveWorktreesFirst)
   }
 
@@ -116,14 +126,18 @@ struct WorkspaceTests {
   /// the default rather than failing the file.
   @Test func anUnknownSortOrderFallsBackRatherThanLosingTheWorkspace() throws {
     let workspace = try decodeJSON(
-      Workspace.self, #"{ "projects": [], "worktreeSortOrder": "byMergeState" }"#)
+      Workspace.self,
+      #"{ "projects": [], "worktreeSortOrder": "byMergeState" }"#,
+    )
     #expect(workspace.worktreeSortOrder == .alphabetical)
   }
 
   @Test func aWorkspaceFromTheFirstBuildAndOneFromTodayBothLoad() throws {
     let today = Workspace()
     let roundTripped = try decodeJSON(
-      Workspace.self, String(decoding: JSONEncoder().encode(today), as: UTF8.self))
+      Workspace.self,
+      String(decoding: JSONEncoder().encode(today), as: UTF8.self),
+    )
     #expect(roundTripped == today)
 
     let ancient = try decodeJSON(Workspace.self, "{}")
@@ -141,7 +155,9 @@ struct WorkspaceTests {
   @Test func aWorkspaceWithoutCustomWorktreeNamesHasNone() throws {
     #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).customWorktreeNames.isEmpty)
     let named = try decodeJSON(
-      Workspace.self, #"{ "worktreeNames": { "/repos/demo": "Checkout flow" } }"#)
+      Workspace.self,
+      #"{ "worktreeNames": { "/repos/demo": "Checkout flow" } }"#,
+    )
     #expect(named.customWorktreeNames == ["/repos/demo": "Checkout flow"])
   }
 

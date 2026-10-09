@@ -17,7 +17,8 @@ struct ThemeCatalogueTests {
     override.name = "Light, but mine"
     for theme in [custom, override] {
       try JSONEncoder().encode(theme).write(
-        to: directory.appendingPathComponent("\(theme.id).json"))
+        to: directory.appendingPathComponent("\(theme.id).json")
+      )
     }
     try Data("{".utf8).write(to: directory.appendingPathComponent("broken.json"))
 
@@ -48,14 +49,17 @@ struct ThemeCatalogueTests {
     let directory = try Scratch.directory("themes")
     defer { Scratch.remove(directory) }
     try JSONEncoder().encode(Theme.multishellDark).write(
-      to: directory.appendingPathComponent("example.multishell.dark.json"))
+      to: directory.appendingPathComponent("example.multishell.dark.json")
+    )
 
     let catalogue = ThemeCatalogue.loadMovingStrayExamples(from: directory)
 
     #expect(catalogue.themes.count == Theme.builtins.count)
     #expect(
       FileManager.default.fileExists(
-        atPath: directory.appendingPathComponent("examples/example.multishell.dark.json").path))
+        atPath: directory.appendingPathComponent("examples/example.multishell.dark.json").path
+      )
+    )
   }
 
   @Test func examplesAreWrittenBesideTheThemesNotAmongThem() throws {
@@ -63,17 +67,20 @@ struct ThemeCatalogueTests {
     defer { Scratch.remove(directory) }
     // A leftover from the earlier layout, which loaded as a duplicate.
     try JSONEncoder().encode(Theme.multishellDark).write(
-      to: directory.appendingPathComponent("example.multishell.dark.json"))
+      to: directory.appendingPathComponent("example.multishell.dark.json")
+    )
 
     try ThemeCatalogue.seedExamples(in: directory)
 
     #expect(
       ThemeCatalogue.loadMovingStrayExamples(from: directory).themes.map(\.id)
-        == Theme.builtins.map(\.id))
+        == Theme.builtins.map(\.id)
+    )
     let examples = try FileManager.default.contentsOfDirectory(
       atPath: directory.appendingPathComponent("examples").path
     ).sorted()
     #expect(
-      examples == ["example.multishell.dark.json", "multishell.dark.json", "multishell.light.json"])
+      examples == ["example.multishell.dark.json", "multishell.dark.json", "multishell.light.json"]
+    )
   }
 }

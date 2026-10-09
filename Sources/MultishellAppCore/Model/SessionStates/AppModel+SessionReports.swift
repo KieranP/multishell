@@ -7,7 +7,8 @@ extension AppModel {
   private func noteCommandAgent(_ report: SessionStateReport, of id: TerminalSession.ID) {
     guard report.isFromShellIntegration == true, report.agentID == nil else { return }
     setIfChanged(
-      \.commandAgentIDs[id], report.command.flatMap { AgentCatalogue.agent(runningCommand: $0)?.id }
+      \.commandAgentIDs[id],
+      report.command.flatMap { AgentCatalogue.agent(runningCommand: $0)?.id },
     )
   }
 
@@ -44,8 +45,11 @@ extension AppModel {
     case .session(let id):
       guard let session = workspace.session(id) else { return nil }
       return SessionVisibility(
-        worktreeID: session.worktreeID, isSeen: isSeen(id),
-        isOnScreen: isPaneInView(id) && platform.isActive)
+        worktreeID: session.worktreeID,
+        isSeen: isSeen(id),
+        isOnScreen: isPaneInView(id) && platform.isActive,
+      )
+
     case .worktree(let id):
       // Gated on the board as `isPaneInView` is, the worktree being selected
       // with nothing of it on screen; and on frontmost as `isSeen`.
@@ -57,13 +61,17 @@ extension AppModel {
   func apply(_ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key) {
     guard let visibility = visibility(of: key) else { return }
     var meant: SessionState?
-    mutateStates {
-      meant = $0.apply(report, pid: pid, for: key, isSeen: visibility.isSeen)
+    mutateStates { states in
+      meant = states.apply(report, pid: pid, for: key, isSeen: visibility.isSeen)
     }
     if let meant {
       notifyIfNeeded(
-        report, as: meant, key: key, worktreeID: visibility.worktreeID,
-        isOnScreen: visibility.isOnScreen)
+        report,
+        as: meant,
+        key: key,
+        worktreeID: visibility.worktreeID,
+        isOnScreen: visibility.isOnScreen,
+      )
     }
   }
 }

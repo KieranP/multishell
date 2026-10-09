@@ -8,6 +8,15 @@ final class RunningChild: Sendable {
 
   var isRunning: Bool { withLivePID { _ in } != nil }
 
+  /// A zombie, reaped, or on its way out: a signal would change nothing, and
+  /// the stop would be reported beside the child's own status.
+  private static func hasExited(_ pid: pid_t) -> Bool {
+    var info = siginfo_t()
+    guard waitid(P_PID, id_t(pid), &info, WEXITED | WNOHANG | WNOWAIT) == 0 else { return true }
+    guard info.si_pid != pid else { return true }
+    return KernelProcessTable.record(of: pid).map { $0.kp_proc.p_flag & P_WEXIT != 0 } ?? true
+  }
+
   func markStarted(_ pid: pid_t) {
     state.withLock { $0 = (pid, true) }
   }
@@ -30,21 +39,15 @@ final class RunningChild: Sendable {
     let pid = state.withLock { $0.pid }
     await withCheckedContinuation { continuation in
       let source = DispatchSource.makeProcessSource(
-        identifier: pid, eventMask: .exit, queue: .global())
+        identifier: pid,
+        eventMask: .exit,
+        queue: .global(),
+      )
       source.setEventHandler { source.cancel() }
       source.setCancelHandler { continuation.resume() }
       source.resume()
       // A child gone before the source was registered sends it nothing.
       if Self.hasExited(pid) { source.cancel() }
     }
-  }
-
-  /// A zombie, reaped, or on its way out: a signal would change nothing, and
-  /// the stop would be reported beside the child's own status.
-  private static func hasExited(_ pid: pid_t) -> Bool {
-    var info = siginfo_t()
-    guard waitid(P_PID, id_t(pid), &info, WEXITED | WNOHANG | WNOWAIT) == 0 else { return true }
-    guard info.si_pid != pid else { return true }
-    return KernelProcessTable.record(of: pid).map { $0.kp_proc.p_flag & P_WEXIT != 0 } ?? true
   }
 }

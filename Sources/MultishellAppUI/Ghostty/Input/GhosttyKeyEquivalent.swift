@@ -10,17 +10,21 @@ struct GhosttyKeyEquivalent {
   /// Records the offer, and answers the text to type for a key AppKit would
   /// keep, `nil` to let the menus have it.
   mutating func offer(
-    _ charactersIgnoringModifiers: String?, characters: String?,
-    flags: NSEvent.ModifierFlags, timestamp: TimeInterval
+    _ charactersIgnoringModifiers: String?,
+    characters: String?,
+    flags: NSEvent.ModifierFlags,
+    timestamp: TimeInterval,
   ) -> String? {
     switch charactersIgnoringModifiers {
     case "\r":
       // Passed through, or AppKit opens the context menu.
       return flags.contains(.control) ? "\r" : nil
+
     case "/":
       // Control-/ beeps in AppKit; it is Control-_ to a terminal.
       return flags.contains(.control) && flags.isDisjoint(with: [.shift, .command, .option])
         ? "_" : nil
+
     default:
       // Synthetic, such as the Escape AppKit makes of Command-period.
       guard timestamp != 0 else { return nil }

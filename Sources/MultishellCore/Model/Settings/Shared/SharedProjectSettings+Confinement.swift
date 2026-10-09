@@ -9,14 +9,19 @@ extension SharedProjectSettings {
       !RepositoryContainment.holds(
         directory: WorktreeSettings(worktreeDirectory: directory)
           .worktreeContainer(for: project),
-        under: project.path)
+        under: project.path,
+      )
     {
       confined.worktreeDirectory = nil
     }
     confined.linkedPaths = RepositoryContainment.keepingContained(
-      listedPaths: linkedPaths, under: project.path)
+      listedPaths: linkedPaths,
+      under: project.path,
+    )
     confined.copiedPaths = RepositoryContainment.keepingContained(
-      listedPaths: copiedPaths, under: project.path)
+      listedPaths: copiedPaths,
+      under: project.path,
+    )
     return confined
   }
 }

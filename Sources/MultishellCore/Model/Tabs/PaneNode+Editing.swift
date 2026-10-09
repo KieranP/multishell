@@ -34,7 +34,7 @@ extension PaneNode {
   func splitting(
     _ id: TerminalSession.ID,
     with newSession: TerminalSession.ID,
-    axis: SplitAxis
+    axis: SplitAxis,
   ) -> PaneNode {
     switch self {
     case .terminal(let existing):

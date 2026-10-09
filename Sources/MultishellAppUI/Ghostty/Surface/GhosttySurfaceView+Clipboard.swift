@@ -6,7 +6,8 @@ extension GhosttySurfaceView {
   /// Answered before libghostty's callback returns, as Ghostty's own app does,
   /// so no read is left open.
   func answerClipboardRequest(
-    _ request: GhosttyClipboardRequest, at location: ghostty_clipboard_e
+    _ request: GhosttyClipboardRequest,
+    at location: ghostty_clipboard_e,
   ) -> ghostty_clipboard_read_result_e {
     guard let surface else { return GHOSTTY_CLIPBOARD_READ_UNAVAILABLE }
     let answer = GhosttyClipboardAnswer(request, at: location, text: PanePasteboard.pasteText())
@@ -50,8 +51,11 @@ extension GhosttySurfaceView {
   }
 
   private func sendReply(
-    to request: GhosttyClipboardRequest, text: String?, available: [String], confirmed: Bool,
-    on surface: ghostty_surface_t
+    to request: GhosttyClipboardRequest,
+    text: String?,
+    available: [String],
+    confirmed: Bool,
+    on surface: ghostty_surface_t,
   ) {
     let strings = [GhosttyClipboardContents.textMime, text ?? ""] + available
     CStrings.with(strings) { strings in
@@ -65,9 +69,13 @@ extension GhosttySurfaceView {
       contents.withUnsafeBufferPointer { contents in
         available.withUnsafeBufferPointer { available in
           var reply = ghostty_clipboard_complete_s(
-            contents: contents.baseAddress, contents_len: contents.count,
-            available: available.baseAddress, available_len: available.count,
-            confirmed: confirmed, remember: false)
+            contents: contents.baseAddress,
+            contents_len: contents.count,
+            available: available.baseAddress,
+            available_len: available.count,
+            confirmed: confirmed,
+            remember: false,
+          )
           ghostty_surface_complete_clipboard_request(surface, &reply, request.handle)
         }
       }

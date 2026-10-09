@@ -9,16 +9,23 @@ extension AppModel {
     prepared.shellOverride = shellPath(forWorktree: session.worktreeID)
     guard let agentID = session.agentID else { return prepared }
     prepared.command = agentCommand(
-      agentID, resume: restoredSessionIDs.contains(session.id), shell: prepared.shellPath,
-      in: session.worktreeID, task: pendingAgentTasks.removeValue(forKey: session.id))
+      agentID,
+      resume: restoredSessionIDs.contains(session.id),
+      shell: prepared.shellPath,
+      in: session.worktreeID,
+      task: pendingAgentTasks.removeValue(forKey: session.id),
+    )
     return prepared
   }
 
   /// `shell` takes over when the agent quits; the agent runs through the
   /// login shell. The worktree resolves the flag line's placeholders.
   private func agentCommand(
-    _ id: String, resume: Bool, shell tabShell: String, in worktreeID: Worktree.ID,
-    task: String?
+    _ id: String,
+    resume: Bool,
+    shell tabShell: String,
+    in worktreeID: Worktree.ID,
+    task: String?,
   ) -> [String]? {
     let (shell, handOver) = TabCommand.loginShell(handingOverTo: tabShell)
     let place = worktreeAndProject(worktreeID)
@@ -26,8 +33,13 @@ extension AppModel {
     if id == AgentCatalogue.customID {
       return TabCommand.running(
         customLine: AgentCatalogue.customCommandLine(
-          workspace.customAgentCommand, values: values, task: task ?? ""),
-        shell: shell, handOver: handOver)
+          workspace.customAgentCommand,
+          values: values,
+          task: task ?? "",
+        ),
+        shell: shell,
+        handOver: handOver,
+      )
     }
     guard let agent = AgentCatalogue.agent(id) else {
       alertMissingAgentOnce(id, name: id)
@@ -61,8 +73,10 @@ extension AppModel {
     _ place: (worktree: Worktree, project: Project)
   ) -> [WorktreePlaceholder: String] {
     WorktreePlaceholder.values(
-      project: place.project, worktree: place.worktree,
-      worktreeName: workspace.displayName(of: place.worktree))
+      project: place.project,
+      worktree: place.worktree,
+      worktreeName: workspace.displayName(of: place.worktree),
+    )
   }
 
   /// Once per agent per run, like an unreachable project: every relaunch of

@@ -15,7 +15,7 @@ struct InAppDragSourceModifier: ViewModifier {
       }
       // The session's end reaches only a source still on screen.
       .onDisappear {
-        onSourceLeft({ [primaryMouseButton] in primaryMouseButton.isPressed })
+        onSourceLeft { [primaryMouseButton] in primaryMouseButton.isPressed }
       }
   }
 }

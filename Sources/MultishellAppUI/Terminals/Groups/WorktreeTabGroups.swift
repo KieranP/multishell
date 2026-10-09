@@ -23,15 +23,22 @@ struct WorktreeTabGroups: View {
         content: {
           ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
             groupView(
-              group, at: index + 1, of: groups.count, isFocusedGroup: group.id == focusedID)
+              group,
+              at: index + 1,
+              of: groups.count,
+              isFocusedGroup: group.id == focusedID,
+            )
           }
-        }
+        },
       )
     }
   }
 
   private func groupView(
-    _ group: TabGroup, at position: Int, of count: Int, isFocusedGroup: Bool
+    _ group: TabGroup,
+    at position: Int,
+    of count: Int,
+    isFocusedGroup: Bool,
   ) -> some View {
     TabGroupView(
       model: model,
@@ -40,7 +47,7 @@ struct WorktreeTabGroups: View {
       position: position,
       groupCount: count,
       theme: theme,
-      drag: $model.tabDrag
+      drag: $model.tabDrag,
     )
   }
 }

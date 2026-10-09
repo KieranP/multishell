@@ -14,17 +14,30 @@ struct SidebarQuickStatsTests {
     let harness = ModelHarness()
     harness.model.debugHistory.append(
       DebugSample(
-        sequence: 0, takenAt: Date(), elapsed: .seconds(1),
+        sequence: 0,
+        takenAt: Date(),
+        elapsed: .seconds(1),
         frameRate: FrameRateReading(framesPerSecond: 120, longestFrame: .milliseconds(9)),
-        gitRunsStartedCount: 0, gitRunningCount: 0, gitCommands: [:], appCPUPercent: 234,
-        childrenCPUPercent: 1_000, appMemory: 1_023_400_000, terminalMemory: 0,
+        gitRunsStartedCount: 0,
+        gitRunningCount: 0,
+        gitCommands: [:],
+        appCPUPercent: 234,
+        childrenCPUPercent: 1_000,
+        appMemory: 1_023_400_000,
+        terminalMemory: 0,
         childrenMemory: 15_920_000_000,
-        stateReportCount: 0))
+        stateReportCount: 0,
+      )
+    )
 
     let width = OffscreenWindow.naturalWidth(
       of: SidebarQuickStats(
-        model: harness.model, theme: Theme.builtins[0], metrics: UIMetrics(fontSize: 13)),
-      windowSize: CGSize(width: 400, height: 100))
+        model: harness.model,
+        theme: Theme.builtins[0],
+        metrics: UIMetrics(fontSize: 13),
+      ),
+      windowSize: CGSize(width: 400, height: 100),
+    )
 
     #expect(width <= SidebarWidth.minimum, "needs \(width)")
   }

@@ -9,16 +9,21 @@ extension GhosttySurfaceView {
     switch event {
     case .retitled(let title):
       onRetitle?(title)
+
     case .bell:
       onBell?()
+
     case .commandFinished(let exitCode):
       onCommandFinish?(exitCode)
+
     case .pointerShape(let shape):
       guard let cursor = GhosttyPointerShape.cursor(for: shape) else { return }
       pointer = cursor
       window?.invalidateCursorRects(for: self)
+
     case .pointerVisible(let visible):
       NSCursor.setHiddenUntilMouseMoves(!visible)
+
     case .secureInput(let mode):
       wantsSecureInput = GhosttySecureInput.wantsSecureInput(after: mode, was: wantsSecureInput)
       syncSecureInput(hasKeyboard: hasKeyboard)

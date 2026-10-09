@@ -21,7 +21,8 @@ struct AgentTaskArgumentTests {
   @Test func anOptionTakesTheTaskAfterAnEqualsSignSoTheValueIsNeverReadAsAFlag() {
     #expect(
       AgentTaskArgument.option("--prompt").arguments(for: "--help is wrong")
-        == ["--prompt=--help is wrong"])
+        == ["--prompt=--help is wrong"]
+    )
   }
 
   /// tcsh refuses a line break inside quotes and inside a quoted variable
@@ -29,6 +30,7 @@ struct AgentTaskArgumentTests {
   @Test func aTasksLineBreaksBecomeSpacesAndBlankLinesGo() {
     #expect(
       AgentTaskArgument.operand.arguments(for: "Fix the redirect.\n\nThen\r\nthe tests.")
-        == ["--", "Fix the redirect. Then the tests."])
+        == ["--", "Fix the redirect. Then the tests."]
+    )
   }
 }

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// One tab in a group's strip: its `TabFace` and both ends of dragging it.
 /// `TabStrip` places and sizes them.
-struct DraggableTab: View {
+struct DraggableTab: View, @MainActor Equatable {
   let model: AppModel
   /// The group this tab sits in, which its own moves are measured against.
   let group: TabGroup
@@ -23,7 +23,11 @@ struct DraggableTab: View {
 
   var body: some View {
     TabFace(
-      model: model, group: group, tab: tab, isFocusedGroup: isFocusedGroup, theme: theme
+      model: model,
+      group: group,
+      tab: tab,
+      isFocusedGroup: isFocusedGroup,
+      theme: theme,
     )
     .opacity(Self.opacity(drag.look(of: tab.id, isShuffling: isShuffling)))
     .frame(width: width)
@@ -42,7 +46,7 @@ struct DraggableTab: View {
         Color.clear.frame(width: 1, height: 1)
       },
       onEnded: { model.endAbandonedTabDrag(tab.id) },
-      onSourceLeft: { model.tabDragSourceLeft(tab.id, isPressed: $0) }
+      onSourceLeft: { model.tabDragSourceLeft(tab.id, isPressed: $0) },
     )
     .onDrop(
       of: [TabTransfer.contentType],
@@ -55,8 +59,9 @@ struct DraggableTab: View {
           withAnimation(.easeOut(duration: 0.14)) {
             model.shuffleTab(moving, placement, past: tab.id)
           }
-        }
-      ))
+        },
+      ),
+    )
   }
 
   /// Where the dragged tab will land, on the tab the pointer is over. The
@@ -79,12 +84,10 @@ struct DraggableTab: View {
     case .lifted: 0.3
     }
   }
-}
 
-/// Every field, the model by identity and the binding by its value; the
-/// body's reads of the model are observed on their own.
-extension DraggableTab: @MainActor Equatable {
-  static func == (a: DraggableTab, b: DraggableTab) -> Bool {
+  /// Every field, the model by identity and the binding by its value; the
+  /// body's reads of the model are observed on their own.
+  static func == (a: Self, b: Self) -> Bool {
     a.model === b.model && a.group == b.group && a.tab == b.tab
       && a.isFocusedGroup == b.isFocusedGroup && a.isShuffling == b.isShuffling
       && a.width == b.width && a.theme == b.theme && a.drag == b.drag

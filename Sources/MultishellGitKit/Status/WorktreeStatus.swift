@@ -26,8 +26,6 @@ public struct WorktreeStatus: Hashable, Sendable {
   /// sidebar so a checkout made in a terminal shows up without a watcher.
   public internal(set) var branch: String?
 
-  init() {}
-
   public var isDirty: Bool { changedFiles > 0 }
   public var isCleanAndInSync: Bool { changedFiles == 0 && ahead == 0 && behind == 0 }
 
@@ -44,4 +42,6 @@ public struct WorktreeStatus: Hashable, Sendable {
     if behind > 0 { parts.append(t("status.behind", behind)) }
     return parts.isEmpty ? t("status.clean") : parts.joined(separator: " · ")
   }
+
+  init() {}
 }

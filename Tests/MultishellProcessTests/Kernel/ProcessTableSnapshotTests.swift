@@ -9,16 +9,17 @@ struct ProcessTableSnapshotTests {
   @Test func oneReadAnswersAsTheReadsPerPidDo() async throws {
     let shell = try WaitingShell()
     defer { shell.terminate() }
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
     try await waitUntil { KernelProcessTable.name(of: shell.pid) != nil }
     let table = ProcessTableSnapshot.take()
 
-    #expect(table.children(of: me).contains(shell.pid))
+    #expect(table.children(of: ownPID).contains(shell.pid))
     // Not the shell's name: macOS's /bin/sh re-execs as bash between two reads.
-    #expect(table.name(of: me) == KernelProcessTable.name(of: me))
+    #expect(table.name(of: ownPID) == KernelProcessTable.name(of: ownPID))
     #expect(
-      table.terminalDevice(of: me)
-        == KernelProcessTable.record(of: me).flatMap(KernelProcessTable.terminalDevice(in:)))
+      table.terminalDevice(of: ownPID)
+        == KernelProcessTable.record(of: ownPID).flatMap(KernelProcessTable.terminalDevice(in:))
+    )
   }
 
   @Test func aPidNothingHoldsHasNoChildrenNameOrTerminal() {

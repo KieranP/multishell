@@ -3,11 +3,12 @@ import MultishellCore
 /// When and at what cost each worktree's merge verdict was last read, and how
 /// much re-asking one round may start across its projects; see merged-branch.md.
 struct MergeReadLog: Sendable {
+  /// What a branch never read is taken to cost against the round.
+  private static let unmeasuredCost: Duration = .milliseconds(250)
+
   /// A round starts re-asks until their last costs add up to this, and always
   /// one a project, so a fetch that moved every branch's base does not start them all.
   var budget: Duration = .seconds(2)
-  /// What a branch never read is taken to cost against the round.
-  private static let unmeasuredCost: Duration = .milliseconds(250)
 
   private var reads = LastReads()
   private var spent = Duration.zero

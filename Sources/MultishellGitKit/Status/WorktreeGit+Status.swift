@@ -6,16 +6,22 @@ extension WorktreeGit {
   /// `--no-optional-locks`: a plain `git status` takes `index.lock`, and this
   /// polls, so a `git commit` typed at the wrong moment would fail.
   func status(
-    of worktree: Worktree, counting indicator: GitStatusIndicator = .default
+    of worktree: Worktree,
+    counting indicator: GitStatusIndicator = .default,
   )
     async throws -> WorktreeStatus
   {
     let output = try await runner.run(
-      ["--no-optional-locks", "status", "--porcelain=v1", "--branch"], in: worktree.path)
+      ["--no-optional-locks", "status", "--porcelain=v1", "--branch"],
+      in: worktree.path,
+    )
     var status = WorktreeStatusParser.parse(output)
     guard status.isDirty else { return status }
     let counts = await lineCounts(
-      in: worktree.path, counting: indicator, untrackedCount: status.untracked)
+      in: worktree.path,
+      counting: indicator,
+      untrackedCount: status.untracked,
+    )
     status.insertions = counts.insertions
     status.deletions = counts.deletions
     status.unscoredFiles = counts.unscoredFiles
@@ -25,7 +31,9 @@ extension WorktreeGit {
   /// `--cached` is the index alone, and the fallback wherever the diff
   /// against HEAD fails, which an unborn HEAD does; see worktrees.md.
   private func lineCounts(
-    in path: URL, counting indicator: GitStatusIndicator, untrackedCount: Int
+    in path: URL,
+    counting indicator: GitStatusIndicator,
+    untrackedCount: Int,
   ) async -> LineCounts {
     // `--diff-filter=u` drops unmerged paths, which print `0 0` from
     // `--cached` and read as a file with nothing to count.
@@ -50,7 +58,9 @@ extension WorktreeGit {
   private func untrackedCounts(in path: URL) async -> LineCounts {
     guard
       let output = await runner.output(
-        ["--no-optional-locks", "ls-files", "--others", "--exclude-standard", "-z"], in: path)
+        ["--no-optional-locks", "ls-files", "--others", "--exclude-standard", "-z"],
+        in: path,
+      )
     else { return LineCounts() }
     let paths = NulPathListParser.parse(output, limit: UntrackedLineCounter.fileLimit)
     guard !paths.isEmpty else { return LineCounts() }

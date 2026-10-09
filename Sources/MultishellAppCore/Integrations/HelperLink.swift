@@ -6,13 +6,19 @@ import MultishellCore
 public enum HelperLink {
   public static let commandLineToolLink = URL(fileURLWithPath: "/usr/local/bin/multishell")
 
+  static var isCommandLineToolInstalled: Bool {
+    FileManager.default.fileExists(atPath: commandLineToolLink.path)
+  }
+
   /// Points `link` at `helper`, replacing whatever was there. Nothing to do
   /// when there is no bundled helper.
   static func refresh(to helper: URL?, link: URL = Paths.helperLink) throws {
     guard let helper else { return }
     let manager = FileManager.default
     try manager.createDirectory(
-      at: link.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: link.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     if let existing = try? manager.destinationOfSymbolicLink(atPath: link.path),
       existing == helper.path
     {
@@ -20,9 +26,5 @@ public enum HelperLink {
     }
     try? manager.removeItem(at: link)
     try manager.createSymbolicLink(at: link, withDestinationURL: helper)
-  }
-
-  static var isCommandLineToolInstalled: Bool {
-    FileManager.default.fileExists(atPath: commandLineToolLink.path)
   }
 }

@@ -3,12 +3,12 @@ import MultishellCore
 /// What a group's New Tab menu and split buttons say. The keystrokes act on
 /// the focused group, so only that group's buttons name them.
 public enum TabStripButtonText {
+  public static var newTabLabel: String { t("tab.new") }
+
   /// Every item opens in this group; the focused one need not say so.
   public static func newTabHelp(isFocusedGroup: Bool) -> String {
     isFocusedGroup ? t("tab.new") : t("tab.new-in-group")
   }
-
-  public static var newTabLabel: String { t("tab.new") }
 
   public static func splitHelp(_ axis: SplitAxis, isFocusedGroup: Bool) -> String {
     switch (axis, isFocusedGroup) {

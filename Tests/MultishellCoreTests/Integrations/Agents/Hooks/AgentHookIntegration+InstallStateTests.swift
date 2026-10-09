@@ -13,7 +13,9 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     let ours = directory.appendingPathComponent("hooks/multishell.json")
     let shared = directory.appendingPathComponent(".codex/hooks.json")
     try FileManager.default.createDirectory(
-      at: shared.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: shared.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     let copilot = AgentHookCatalogue.copilot
     let codex = AgentHookCatalogue.codex
 
@@ -37,7 +39,9 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     let file = directory.appendingPathComponent("hooks/multishell.json")
     let copilot = AgentHookCatalogue.copilot
     try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: file.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     try #"{"version":1,"hooks":{"Stop":[{"command":"multishell agent-hook","timeoutSec":9}]}}"#
       .write(to: file, atomically: true, encoding: .utf8)
 
@@ -51,7 +55,9 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent(".claude/settings.json")
     try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: file.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     let claude = AgentHookCatalogue.claude
     var settings = claude.adding(to: [:], helper: helper)
     var hooks = try #require(settings["hooks"] as? [String: Any])
@@ -78,7 +84,9 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent(".codex/hooks.json")
     try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: file.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     var stale = try staleCodexSettings()
     var hooks = try #require(stale["hooks"] as? [String: Any])
     var stop = try #require(hooks["Stop"] as? [[String: Any]])
@@ -95,7 +103,8 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     #expect(groups.count == 2)
     #expect(
       (groups.first?["hooks"] as? [[String: Any]])?.first?["command"] as? String
-        == "~/bin/theirs.sh")
+        == "~/bin/theirs.sh"
+    )
   }
 
   @Test(arguments: AgentHookCatalogue.integrations.filter { !$0.isOursAlone })

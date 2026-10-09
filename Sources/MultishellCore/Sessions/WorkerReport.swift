@@ -9,6 +9,15 @@ public struct WorkerReport: Codable, Hashable, Sendable {
     case ended
   }
 
+  enum CodingKeys: String, CodingKey {
+    case id, type, phase, name, description
+    case wakesAgent = "wakes"
+    case isBackgroundShell = "shell"
+    case parentID = "parent"
+    case hasFailed = "failed"
+    case isPaused = "paused"
+  }
+
   /// The id of a worker whose hook named none, whose id was too long, or that an
   /// older helper only counted.
   public static let anonymousID = ""
@@ -42,21 +51,19 @@ public struct WorkerReport: Codable, Hashable, Sendable {
   /// worker sends before it leaves and a killed one never; see agents.md.
   public internal(set) var isPaused: Bool?
 
-  enum CodingKeys: String, CodingKey {
-    case id, type, phase, name, description
-    case wakesAgent = "wakes"
-    case isBackgroundShell = "shell"
-    case parentID = "parent"
-    case hasFailed = "failed"
-    case isPaused = "paused"
-  }
-
   /// Bounds every string both ways, since any process may write a line. An id
   /// past the report's limit is no worker's and counts as an unnamed one.
   public init(
-    id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil,
-    isBackgroundShell: Bool? = nil, parentID: String? = nil, name: String? = nil,
-    description: String? = nil, hasFailed: Bool? = nil, isPaused: Bool? = nil
+    id: String,
+    phase: Phase,
+    type: String? = nil,
+    wakesAgent: Bool? = nil,
+    isBackgroundShell: Bool? = nil,
+    parentID: String? = nil,
+    name: String? = nil,
+    description: String? = nil,
+    hasFailed: Bool? = nil,
+    isPaused: Bool? = nil,
   ) {
     self.id = id.count <= SessionStateReport.maximumIdentifierLength ? id : Self.anonymousID
     self.type = type?.truncated(to: Self.maximumTypeLength)
@@ -74,14 +81,15 @@ public struct WorkerReport: Codable, Hashable, Sendable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.init(
       id: try container.decode(String.self, forKey: .id),
-      type: try container.decodeIfPresent(String.self, forKey: .type),
       phase: try container.decode(Phase.self, forKey: .phase),
+      type: try container.decodeIfPresent(String.self, forKey: .type),
       wakesAgent: try container.decodeIfPresent(Bool.self, forKey: .wakesAgent),
       isBackgroundShell: try container.decodeIfPresent(Bool.self, forKey: .isBackgroundShell),
       parentID: try container.decodeIfPresent(String.self, forKey: .parentID),
       name: try container.decodeIfPresent(String.self, forKey: .name),
       description: try container.decodeIfPresent(String.self, forKey: .description),
       hasFailed: try container.decodeIfPresent(Bool.self, forKey: .hasFailed),
-      isPaused: try container.decodeIfPresent(Bool.self, forKey: .isPaused))
+      isPaused: try container.decodeIfPresent(Bool.self, forKey: .isPaused),
+    )
   }
 }

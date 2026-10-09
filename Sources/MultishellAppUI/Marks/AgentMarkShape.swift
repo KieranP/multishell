@@ -4,16 +4,21 @@ import SwiftUI
 /// One agent's mark, read from its `.svg` in `Resources/Marks` and scaled
 /// from its 16-point square; see Docs/design/agents.md.
 struct AgentMarkShape: Shape {
-  let mark: AgentMark
+  /// Parsed once, on the first mark drawn: every row reads a path each render, and a `let`
+  /// needs no lock. A bad or missing file draws nothing; `AgentMarkShapeTests` catches it.
+  private static let paths: [String: Path] = {
+    var parsed: [String: Path] = [:]
+    for name in AgentMark.drawn.compactMap(resourceName(of:)) {
+      guard let url = Bundle.module.url(forResource: name, withExtension: "svg"),
+        let text = try? String(contentsOf: url, encoding: .utf8),
+        let path = SVGPathParser.path(fromSVG: text)
+      else { continue }
+      parsed[name] = path
+    }
+    return parsed
+  }()
 
-  func path(in rect: CGRect) -> Path {
-    guard let unit = Self.unitPath(of: mark) else { return Path() }
-    let side = min(rect.width, rect.height)
-    let scale = side / 16
-    let transform = CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2)
-      .scaledBy(x: scale, y: scale)
-    return unit.applying(transform)
-  }
+  let mark: AgentMark
 
   /// The file name in `Resources/Marks`. A mark with no file draws nothing.
   static func resourceName(of mark: AgentMark) -> String? {
@@ -31,17 +36,12 @@ struct AgentMarkShape: Shape {
     resourceName(of: mark).flatMap { paths[$0] }
   }
 
-  /// Parsed once, on the first mark drawn: every row reads a path each render, and a `let`
-  /// needs no lock. A bad or missing file draws nothing; `AgentMarkShapeTests` catches it.
-  private static let paths: [String: Path] = {
-    var parsed: [String: Path] = [:]
-    for name in AgentMark.drawn.compactMap(resourceName(of:)) {
-      guard let url = Bundle.module.url(forResource: name, withExtension: "svg"),
-        let text = try? String(contentsOf: url, encoding: .utf8),
-        let path = SVGPathParser.path(fromSVG: text)
-      else { continue }
-      parsed[name] = path
-    }
-    return parsed
-  }()
+  func path(in rect: CGRect) -> Path {
+    guard let unit = Self.unitPath(of: mark) else { return Path() }
+    let side = min(rect.width, rect.height)
+    let scale = side / 16
+    let transform = CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2)
+      .scaledBy(x: scale, y: scale)
+    return unit.applying(transform)
+  }
 }

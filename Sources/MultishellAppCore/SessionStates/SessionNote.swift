@@ -16,7 +16,7 @@ struct SessionNote: Equatable, Sendable {
 
   /// The note as it applies to `state`, or `nil` where it describes
   /// something the pane has since stopped doing.
-  func matching(_ state: SessionState?) -> SessionNote? {
+  func matching(_ state: SessionState?) -> Self? {
     self.state == state ? self : nil
   }
 }

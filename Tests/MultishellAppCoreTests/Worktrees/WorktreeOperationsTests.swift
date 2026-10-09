@@ -34,7 +34,8 @@ struct WorktreeOperationsTests {
     let failed = operations.fail(.postCreateHook, on: firstTree, message: "npm ERR!")
     #expect(!finished && !failed)
     #expect(
-      operations[firstTree] == WorktreeOperation(.preDeleteHook), "the removal's entry is untouched"
+      operations[firstTree] == WorktreeOperation(.preDeleteHook),
+      "the removal's entry is untouched",
     )
   }
 

@@ -11,14 +11,20 @@ struct WorktreeSortCacheTests {
 
   private func worktree(_ branch: String) -> Worktree {
     Worktree(
-      path: URL(fileURLWithPath: "/w/t/\(branch)"), projectID: project.id, head: "0",
-      branch: branch)
+      path: URL(fileURLWithPath: "/w/t/\(branch)"),
+      projectID: project.id,
+      head: "0",
+      branch: branch,
+    )
   }
 
   private func keys(_ names: [String], in rule: WorktreeSortRule? = nil) -> [WorktreeSortRule.Key] {
     (rule ?? self.rule).keys(
-      names.map(worktree), displayName: { $0.name }, isActive: { _ in false },
-      lastCommit: { _ in nil })
+      names.map(worktree),
+      displayName: { $0.name },
+      isActive: { _ in false },
+      lastCommit: { _ in nil },
+    )
   }
 
   @Test func aRebuildWithTheSameRowsSortsNothing() {

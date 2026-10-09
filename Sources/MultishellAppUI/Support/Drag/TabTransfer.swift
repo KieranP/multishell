@@ -13,7 +13,8 @@ enum TabTransfer {
   static func itemProvider() -> NSItemProvider {
     let provider = NSItemProvider()
     provider.registerDataRepresentation(
-      forTypeIdentifier: contentType.identifier, visibility: .ownProcess
+      forTypeIdentifier: contentType.identifier,
+      visibility: .ownProcess,
     ) { completion in
       completion(Data(), nil)
       return nil

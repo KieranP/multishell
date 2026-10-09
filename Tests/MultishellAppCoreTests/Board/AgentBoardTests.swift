@@ -13,11 +13,14 @@ struct AgentBoardTests {
     isAgent: Bool = true,
     state: SessionState? = nil,
     secondsAgo: Double? = nil,
-    title: String = "claude"
+    title: String = "claude",
   ) -> AgentBoardCard {
     .sample(
-      occupant: isAgent ? .agent(id: "claude", name: name) : .shell(name), title: title,
-      state: state, since: secondsAgo.map { drawnAt.addingTimeInterval(-$0) })
+      occupant: isAgent ? .agent(id: "claude", name: name) : .shell(name),
+      title: title,
+      state: state,
+      since: secondsAgo.map { drawnAt.addingTimeInterval(-$0) },
+    )
   }
 
   @Test func everyOpenPaneHasExactlyOneCard() {

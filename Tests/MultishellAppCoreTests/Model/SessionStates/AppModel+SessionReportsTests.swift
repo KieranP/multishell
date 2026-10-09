@@ -14,13 +14,16 @@ struct AppModelSessionReportsTests {
     let harness = Harness()
     let first = harness.openBackgroundTab()
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
+    harness.stateSource.send(
+      SessionStateReport(state: .running, sessionID: first.focusedSessionID)
+    )
     #expect(harness.model.state(of: first) == .running)
     #expect(harness.model.state(ofWorktree: harness.main.id) == .running)
     #expect(harness.model.workingAgentCount == 1)
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
+      SessionStateReport(state: .attention, sessionID: first.focusedSessionID)
+    )
     harness.model.activate(first)
     #expect(harness.model.state(of: first) == .attention, "looking is not answering")
 
@@ -35,7 +38,12 @@ struct AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: id, command: "make", isFromShellIntegration: true))
+        state: .running,
+        sessionID: id,
+        command: "make",
+        isFromShellIntegration: true,
+      )
+    )
     #expect(harness.model.state(ofPane: id) == .running)
     #expect(harness.model.workingAgentCount == 0)
 
@@ -50,7 +58,12 @@ struct AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: id, command: "codex", isFromShellIntegration: true))
+        state: .running,
+        sessionID: id,
+        command: "codex",
+        isFromShellIntegration: true,
+      )
+    )
     #expect(harness.model.workingAgentCount == 1)
   }
 
@@ -62,13 +75,23 @@ struct AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: UUID(), workingDirectory: harness.main.path.path))
+        state: .running,
+        sessionID: UUID(),
+        workingDirectory: harness.main.path.path,
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: cold.id, workingDirectory: harness.main.path.path))
+        state: .running,
+        sessionID: cold.id,
+        workingDirectory: harness.main.path.path,
+      )
+    )
 
     #expect(
-      harness.model.sessionStates.showsNothing, "an id the app cannot place is not matched by cwd")
+      harness.model.sessionStates.showsNothing,
+      "an id the app cannot place is not matched by cwd",
+    )
   }
 
   @Test func aReportWithOnlyADirectoryMarksTheWorktree() {
@@ -76,20 +99,24 @@ struct AppModelSessionReportsTests {
     harness.model.select(harness.main)
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path))
+      SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path)
+    )
     #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
     #expect(harness.model.state(ofWorktree: harness.main.id) == nil)
     harness.stateSource.send(
-      SessionStateReport(state: .done, workingDirectory: harness.feature.path.path + "/"))
+      SessionStateReport(state: .done, workingDirectory: harness.feature.path.path + "/")
+    )
     #expect(harness.model.state(ofWorktree: harness.feature.id) == .done)
 
     harness.model.select(harness.feature)
     #expect(
       harness.model.state(ofWorktree: harness.feature.id) == nil,
-      "selecting the worktree is seeing it")
+      "selecting the worktree is seeing it",
+    )
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, workingDirectory: "/nowhere/at/all"))
+      SessionStateReport(state: .running, workingDirectory: "/nowhere/at/all")
+    )
     #expect(harness.model.sessionStates.showsNothing)
   }
 
@@ -102,19 +129,24 @@ struct AppModelSessionReportsTests {
     harness.stateSource.send(
       SessionStateReport(
         state: .attention,
-        workingDirectory: harness.feature.path.appendingPathComponent("packages/api").path))
+        workingDirectory: harness.feature.path.appendingPathComponent("packages/api").path,
+      )
+    )
     #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
     #expect(
-      harness.model.state(ofWorktree: harness.main.id) == nil, "the deepest worktree, not the first"
+      harness.model.state(ofWorktree: harness.main.id) == nil,
+      "the deepest worktree, not the first",
     )
 
     harness.stateSource.send(
       SessionStateReport(
         state: .failed,
-        workingDirectory: harness.main.path.appendingPathComponent("featurette").path)
+        workingDirectory: harness.main.path.appendingPathComponent("featurette").path,
+      )
     )
     #expect(
-      harness.model.state(ofWorktree: harness.main.id) == .failed, "a sibling by name is not inside"
+      harness.model.state(ofWorktree: harness.main.id) == .failed,
+      "a sibling by name is not inside",
     )
     #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
   }
@@ -125,11 +157,15 @@ struct AppModelSessionReportsTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: tab.focusedSessionID, pid: me, agentID: AgentCatalogue.claudeID)
+        state: .running,
+        sessionID: tab.focusedSessionID,
+        pid: ownPID,
+        agentID: AgentCatalogue.claudeID,
+      )
     )
 
     #expect(harness.model.state(of: tab) == .running)
@@ -146,7 +182,8 @@ struct AppModelSessionReportsTests {
     harness.model.renameWorktree(harness.feature.id, to: "Checkout flow")
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path))
+      SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path)
+    )
 
     #expect(harness.notifier.posted.count == 1)
     #expect(harness.notifier.posted.first?.title.contains("Checkout flow") == true)
@@ -162,15 +199,23 @@ struct AppModelSessionReportsTests {
     let session = tab.focusedSessionID
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session,
-        worker: WorkerReport(id: "w1", type: "Explore", phase: .started)))
+        state: .running,
+        sessionID: session,
+        worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
+      )
+    )
     harness.stateSource.send(
-      SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash"))
+      SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash")
+    )
     #expect(harness.notifier.posted.count == 1)
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, worker: WorkerReport(id: "w1", phase: .ended)))
+        state: .running,
+        sessionID: session,
+        worker: WorkerReport(id: "w1", phase: .ended),
+      )
+    )
 
     #expect(harness.notifier.posted.count == 1, "the prompt's banner is the only one")
     #expect(harness.notifier.posted.first?.body == "Needs Bash")
@@ -185,20 +230,30 @@ struct AppModelSessionReportsTests {
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session, agentID: "claude")
+    )
     harness.stateSource.send(
-      SessionStateReport(state: .done, sessionID: session, agentID: "claude"))
+      SessionStateReport(state: .done, sessionID: session, agentID: "claude")
+    )
     #expect(harness.model.state(ofWorktree: harness.main.id) == .done)
     #expect(harness.notifier.posted.count == 1)
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", type: "Explore", phase: .started)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, workingDirectory: harness.main.path.path, agentID: "claude",
-        worker: WorkerReport(id: "w2", type: "Plan", phase: .working)))
+        state: .running,
+        workingDirectory: harness.main.path.path,
+        agentID: "claude",
+        worker: WorkerReport(id: "w2", phase: .working, type: "Plan"),
+      )
+    )
 
     #expect(harness.model.state(ofWorktree: harness.main.id) == .running, "a worker out is work")
     #expect(harness.model.workers(ofPane: session).map(\.id) == ["w1"], "the pane's own only")
@@ -206,7 +261,8 @@ struct AppModelSessionReportsTests {
       harness.model.workers(
         ofPane: harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
       )
-      .isEmpty)
+      .isEmpty
+    )
     #expect(harness.model.state(ofPane: session) == .running)
     let card = harness.model.agentBoardCards.first { $0.id == session }
     #expect(card?.workers.map(\.type) == ["Explore"], "a card has its own pane's only")
@@ -214,15 +270,25 @@ struct AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", phase: .ended)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .ended),
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, workingDirectory: harness.main.path.path, agentID: "claude",
-        worker: WorkerReport(id: "w2", phase: .ended)))
+        state: .running,
+        workingDirectory: harness.main.path.path,
+        agentID: "claude",
+        worker: WorkerReport(id: "w2", phase: .ended),
+      )
+    )
     #expect(harness.model.workers(ofPane: session).isEmpty)
     #expect(
-      harness.model.state(ofWorktree: harness.main.id) == .done, "the displaced Done comes back")
+      harness.model.state(ofWorktree: harness.main.id) == .done,
+      "the displaced Done comes back",
+    )
     #expect(harness.notifier.posted.count == 2, "and is announced once")
   }
 
@@ -241,7 +307,8 @@ struct AppModelSessionReportsTests {
     #expect(harness.model.state(of: tab) == .running, "UserPromptSubmit or PreToolUse")
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash"))
+      SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash")
+    )
     #expect(harness.model.state(of: tab) == .attention)
 
     harness.stateSource.send(SessionStateReport(state: .done, sessionID: id))
@@ -255,7 +322,13 @@ struct AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: id, pid: 4242, command: "claude", isFromShellIntegration: true))
+        state: .running,
+        sessionID: id,
+        pid: 4242,
+        command: "claude",
+        isFromShellIntegration: true,
+      )
+    )
     harness.stateSource.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
 
     #expect(harness.model.state(of: tab) == nil)

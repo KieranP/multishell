@@ -13,7 +13,8 @@ struct WorktreeHooksTests {
   /// directory, where Foundation says `/var`.
   private func physicalPath(printed text: String) -> String? {
     Scratch.physicalPath(
-      of: URL(fileURLWithPath: text.trimmingCharacters(in: .whitespacesAndNewlines)))
+      of: URL(fileURLWithPath: text.trimmingCharacters(in: .whitespacesAndNewlines))
+    )
   }
 
   @Test func hooksReceiveTheDocumentedEnvironment() async throws {
@@ -26,7 +27,10 @@ struct WorktreeHooksTests {
     )
     let coordinator = fixture.coordinator
     let path = try await coordinator.createThenRunPostCreateHook(
-      branch: "hooked", in: project, settings: fixture.worktreeSettings)
+      branch: "hooked",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
 
     let recorded = try String(contentsOf: path.appendingPathComponent("env.txt"), encoding: .utf8)
       .split(separator: "|").map(String.init)
@@ -41,15 +45,20 @@ struct WorktreeHooksTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(
-      postDeleteHook: "printf \"%s|%s\" \"$PWD\" \"$MULTISHELL_WORKTREE_PATH\" > deleted.txt")
+      postDeleteHook: "printf \"%s|%s\" \"$PWD\" \"$MULTISHELL_WORKTREE_PATH\" > deleted.txt"
+    )
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "bye", in: project, settings: fixture.worktreeSettings)
+      branch: "bye",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "bye", in: project)
 
     try await fixture.coordinator.removeUnlinking(worktree, in: project)
 
     let recorded = try String(
-      contentsOf: project.path.appendingPathComponent("deleted.txt"), encoding: .utf8
+      contentsOf: project.path.appendingPathComponent("deleted.txt"),
+      encoding: .utf8,
     )
     .split(separator: "|").map(String.init)
     #expect(URL(fileURLWithPath: recorded[0]).standardizedFileURL.lastPathComponent == "demo")
@@ -68,7 +77,11 @@ struct WorktreeHooksTests {
     let timeout = Duration.seconds(3)
     do {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: "slow", in: project, settings: fixture.worktreeSettings, timeout: timeout)
+        branch: "slow",
+        in: project,
+        settings: fixture.worktreeSettings,
+        timeout: timeout,
+      )
       Issue.record("the hook was not stopped")
     } catch let failure as HookFailure {
       #expect(failure.stage == .preCreate)
@@ -92,7 +105,11 @@ struct WorktreeHooksTests {
 
     do {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: "stopped", in: project, settings: fixture.worktreeSettings, stopper: stopper)
+        branch: "stopped",
+        in: project,
+        settings: fixture.worktreeSettings,
+        stopper: stopper,
+      )
       Issue.record("the hook was not stopped")
     } catch let failure as HookFailure {
       #expect(failure.stage == .postCreate && failure.stopReason == .byUser)
@@ -111,7 +128,10 @@ struct WorktreeHooksTests {
     let coordinator = fixture.coordinator
     await #expect(throws: HookFailure.self) {
       try await coordinator.createThenRunPostCreateHook(
-        branch: "doomed", in: project, settings: settings)
+        branch: "doomed",
+        in: project,
+        settings: settings,
+      )
     }
     #expect(try await coordinator.git.list(project).contains { $0.branch == "doomed" })
   }
@@ -124,14 +144,19 @@ struct WorktreeHooksTests {
 
     await #expect(throws: HookFailure.self) {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: "refused", in: project, settings: fixture.worktreeSettings)
+        branch: "refused",
+        in: project,
+        settings: fixture.worktreeSettings,
+      )
     }
 
     #expect(try await fixture.coordinator.git.list(project).count == 1)
     #expect(try await fixture.branches() == ["main"], "git was never asked")
     #expect(
       !FileManager.default.fileExists(
-        atPath: fixture.worktreeSettings.worktreePath(forBranch: "refused", in: project).path))
+        atPath: fixture.worktreeSettings.worktreePath(forBranch: "refused", in: project).path
+      )
+    )
   }
 
   @Test func aPreCreateHookRunsInTheRepositoryWithThePlannedPath() async throws {
@@ -139,18 +164,27 @@ struct WorktreeHooksTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(
-      preCreateHook: "pwd > pre.txt\nprintf '%s' \"$MULTISHELL_WORKTREE_PATH\" > planned.txt")
+      preCreateHook: "pwd > pre.txt\nprintf '%s' \"$MULTISHELL_WORKTREE_PATH\" > planned.txt"
+    )
 
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "planned", in: project, settings: fixture.worktreeSettings)
+      branch: "planned",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
 
     let ran = try String(
-      contentsOf: project.path.appendingPathComponent("pre.txt"), encoding: .utf8)
+      contentsOf: project.path.appendingPathComponent("pre.txt"),
+      encoding: .utf8,
+    )
     #expect(
       ran.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix("/demo"),
-      "ran in the repository, not the planned worktree: \(ran)")
+      "ran in the repository, not the planned worktree: \(ran)",
+    )
     let planned = try String(
-      contentsOf: project.path.appendingPathComponent("planned.txt"), encoding: .utf8)
+      contentsOf: project.path.appendingPathComponent("planned.txt"),
+      encoding: .utf8,
+    )
     #expect(planned == path.path, "the path the worktree is about to get")
   }
 
@@ -160,7 +194,10 @@ struct WorktreeHooksTests {
     var project = fixture.project
     project.settings = ProjectSettings(preDeleteHook: "exit 1")
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "kept", in: project, settings: fixture.worktreeSettings)
+      branch: "kept",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "kept", in: project)
 
     await #expect(throws: HookFailure.self) {
@@ -176,15 +213,21 @@ struct WorktreeHooksTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(
-      preDeleteHook: "pwd > \"$MULTISHELL_PROJECT_PATH/where.txt\"")
+      preDeleteHook: "pwd > \"$MULTISHELL_PROJECT_PATH/where.txt\""
+    )
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "leaving", in: project, settings: fixture.worktreeSettings)
+      branch: "leaving",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "leaving", in: project)
 
     try await fixture.coordinator.removeUnlinking(worktree, in: project)
 
     let ran = try String(
-      contentsOf: project.path.appendingPathComponent("where.txt"), encoding: .utf8)
+      contentsOf: project.path.appendingPathComponent("where.txt"),
+      encoding: .utf8,
+    )
     #expect(physicalPath(printed: ran) == Scratch.physicalPath(of: path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
   }
@@ -195,14 +238,19 @@ struct WorktreeHooksTests {
     var project = fixture.project
     project.settings = ProjectSettings(preDeleteHook: "pwd > where.txt")
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "vanished", in: project, settings: fixture.worktreeSettings)
+      branch: "vanished",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "vanished", in: project)
     try FileManager.default.removeItem(at: path)
 
     try await fixture.coordinator.removeUnlinking(worktree, in: project)
 
     let ran = try String(
-      contentsOf: project.path.appendingPathComponent("where.txt"), encoding: .utf8)
+      contentsOf: project.path.appendingPathComponent("where.txt"),
+      encoding: .utf8,
+    )
     #expect(physicalPath(printed: ran) == Scratch.physicalPath(of: project.path))
     #expect(try await fixture.coordinator.git.list(project).count == 1)
   }
@@ -217,7 +265,10 @@ struct WorktreeHooksTests {
 
     await #expect(throws: HookFailure.self) {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: "lines", in: project, settings: fixture.worktreeSettings)
+        branch: "lines",
+        in: project,
+        settings: fixture.worktreeSettings,
+      )
     }
 
     let path = fixture.worktreeSettings.worktreePath(forBranch: "lines", in: project)
@@ -235,12 +286,19 @@ struct WorktreeHooksTests {
 
     for name in ["zsh", "bash"] {
       let shell = try Scratch.script(
-        "printf %s \(name) > shell.txt", at: shells.appendingPathComponent(name))
+        "printf %s \(name) > shell.txt",
+        at: shells.appendingPathComponent(name),
+      )
       let created = try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: name, in: project, settings: fixture.worktreeSettings, shellPath: shell.path)
+        branch: name,
+        in: project,
+        settings: fixture.worktreeSettings,
+        shellPath: shell.path,
+      )
       #expect(
         try String(contentsOf: created.appendingPathComponent("shell.txt"), encoding: .utf8)
-          == name)
+          == name
+      )
     }
   }
 }

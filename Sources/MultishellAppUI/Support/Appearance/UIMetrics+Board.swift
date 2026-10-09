@@ -15,7 +15,13 @@ extension UIMetrics {
   func boardLayout(forWidth width: Double, count: Int) -> AgentBoardLayout {
     AgentBoardLayout(
       available: AgentBoardLayout.available(
-        width: width, count: count, gap: boardGap, padding: boardPadding),
-      count: count, minimum: boardColumnMinWidth)
+        width: width,
+        count: count,
+        gap: boardGap,
+        padding: boardPadding,
+      ),
+      count: count,
+      minimum: boardColumnMinWidth,
+    )
   }
 }

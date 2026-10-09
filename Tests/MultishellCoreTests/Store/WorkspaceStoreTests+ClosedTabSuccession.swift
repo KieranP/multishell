@@ -18,7 +18,8 @@ extension WorkspaceStoreTests {
 
     #expect(
       group(of: worktree.id, in: store).shownTabID == tabs[2].id,
-      "the tab that slid into the closed one's place, not the rightmost")
+      "the tab that slid into the closed one's place, not the rightmost",
+    )
     WorkspaceInvariants.check(store.workspace, "closed middle tab")
   }
 

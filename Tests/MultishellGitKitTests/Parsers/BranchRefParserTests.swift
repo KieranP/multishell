@@ -28,7 +28,8 @@ struct BranchRefParserTests {
     // The date is the sixth field, so every row written before it existed
     // simply has none; the badges never read it.
     #expect(
-      byName["refs/heads/feat"]?.committedAt == Date(timeIntervalSince1970: 1_700_000_000))
+      byName["refs/heads/feat"]?.committedAt == Date(timeIntervalSince1970: 1_700_000_000)
+    )
     #expect(byName["refs/heads/main"]?.committedAt == nil)
   }
 
@@ -43,7 +44,8 @@ struct BranchRefParserTests {
 
   @Test func aRowWithoutANameOrATipIsDroppedAndTheRestSurvive() {
     let refs = BranchRefParser.parse(
-      "refs/heads/main\tab1\t\t\r\nnonsense\n\t\tx\t\nrefs/heads/feat\tcd2\t\t\r\n")
+      "refs/heads/main\tab1\t\t\r\nnonsense\n\t\tx\t\nrefs/heads/feat\tcd2\t\t\r\n"
+    )
     #expect(refs.map(\.fullName) == ["refs/heads/main", "refs/heads/feat"])
     // The \r a Windows-configured checkout appends is not part of the tip.
     #expect(refs[0].tip == "ab1")

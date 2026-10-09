@@ -15,19 +15,19 @@ public struct WorktreeFileFailure: Error, CustomStringConvertible {
   /// `failures`: the title says this list failed to place those.
   public let skipped: [String]
 
+  public var description: String {
+    failures.map { "\($0.path): \($0.underlying.localizedDescription)" }.joined(separator: "\n")
+  }
+
   public init(placement: WorktreeFilePlacement, failures: [PathFailure], skipped: [String] = []) {
     self.placement = placement
     self.failures = failures
     self.skipped = skipped
   }
 
-  public var description: String {
-    failures.map { "\($0.path): \($0.underlying.localizedDescription)" }.joined(separator: "\n")
-  }
-
   /// With another list's entries that named somewhere else, so one message
   /// says both: a second would take the one alert or pane from the first.
-  public func including(skipped entries: [String]) -> WorktreeFileFailure {
-    WorktreeFileFailure(placement: placement, failures: failures, skipped: skipped + entries)
+  public func including(skipped entries: [String]) -> Self {
+    Self(placement: placement, failures: failures, skipped: skipped + entries)
   }
 }

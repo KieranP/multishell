@@ -14,7 +14,8 @@ struct AppModelLifecycleTests {
     #expect(harness.model.liveTerminalCount == 0)
     #expect(
       harness.model.presentedError?.title == "git not found",
-      "no git was injected, and that is reported")
+      "no git was injected, and that is reported",
+    )
   }
 
   @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
@@ -32,7 +33,8 @@ struct AppModelLifecycleTests {
     #expect(calls.received == ["refresh", "sweep"])
     #expect(
       harness.model.presentedError?.message
-        == PresentedError(CocoaError(.fileWriteNoPermission)).message)
+        == PresentedError(CocoaError(.fileWriteNoPermission)).message
+    )
   }
 
   @Test func launchReturnsBeforeTheDroppedFileSweepFinishes() async throws {

@@ -5,7 +5,7 @@ extension String {
   /// double quotes. Only a whole component counts: `/Users/meg` is not `~g`.
   public func abbreviatingHomeDirectory(
     home: String = FileManager.default.homeDirectoryForCurrentUser.path,
-    as replacement: String = "~"
+    as replacement: String = "~",
   ) -> String {
     if self == home { return replacement }
     guard hasPrefix(home + "/") else { return self }

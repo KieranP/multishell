@@ -8,6 +8,49 @@ public struct ProcessRunner: Sendable {
 
   public init() {}
 
+  /// Both pipes or neither: the first is closed where the second fails.
+  private static func makePipePair() throws -> (
+    output: PipeDescriptors.Ends, error: PipeDescriptors.Ends
+  ) {
+    let output = try PipeDescriptors.make()
+    do {
+      return (output, try PipeDescriptors.make())
+    } catch {
+      try? output.reading.close()
+      try? output.writing.close()
+      throw error
+    }
+  }
+
+  /// A descendant that inherited the pipes holds them open after the child
+  /// is gone, so EOF may never come; the buffer is already drained.
+  static func awaitDrained(
+    _ standardOutput: PipeBuffer,
+    _ standardError: PipeBuffer,
+    group: DispatchGroup,
+  ) async {
+    // Weak, or each run's read ends stay open until the timer fires. An
+    // unfinished buffer keeps itself alive through its readability handler.
+    DispatchQueue.global().asyncAfter(deadline: .now() + Self.eofGraceAfterExit) {
+      [weak standardOutput, weak standardError] in
+      standardOutput?.finish()
+      standardError?.finish()
+    }
+    await withCheckedContinuation { continuation in
+      group.notify(queue: .global()) { continuation.resume() }
+    }
+  }
+
+  private static func armTimeout(
+    _ timeout: Duration,
+    for child: RunningChild,
+    stopper: ProcessStopper,
+  ) {
+    DispatchQueue.global().asyncAfter(deadline: .now() + timeout.inSeconds) {
+      if child.isRunning { stopper.stop(.timedOut(after: timeout)) }
+    }
+  }
+
   /// Throws `ProcessFailure` on a non-zero exit.
   public func run(
     _ executable: URL,
@@ -16,18 +59,24 @@ public struct ProcessRunner: Sendable {
     environment: [String: String] = [:],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
-    exitUsageProbe: ExitUsageProbe? = nil
+    exitUsageProbe: ExitUsageProbe? = nil,
   ) async throws -> String {
     let output = try await capture(
-      executable, arguments, in: directory, environment: environment, timeout: timeout,
-      stopper: stopper, exitUsageProbe: exitUsageProbe)
+      executable,
+      arguments,
+      in: directory,
+      environment: environment,
+      timeout: timeout,
+      stopper: stopper,
+      exitUsageProbe: exitUsageProbe,
+    )
     guard output.succeeded else {
       throw ProcessFailure(
         executable: executable.lastPathComponent,
         arguments: arguments,
         status: output.status,
         message: output.standardError.trimmingCharacters(in: .whitespacesAndNewlines),
-        stopReason: output.stopReason
+        stopReason: output.stopReason,
       )
     }
     return output.standardOutput
@@ -42,7 +91,7 @@ public struct ProcessRunner: Sendable {
     environment: [String: String] = [:],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
-    exitUsageProbe: ExitUsageProbe? = nil
+    exitUsageProbe: ExitUsageProbe? = nil,
   ) async throws -> ProcessOutput {
     let stopper = stopper ?? ProcessStopper()
     let nullInput = try NullDevice()
@@ -60,9 +109,14 @@ public struct ProcessRunner: Sendable {
     do {
       // The write ends are Subprocess's to close, failure or not.
       status = try await DetachedLaunch.run(
-        executable, arguments, in: directory, environment: environment,
-        input: nullInput.descriptor, output: outputPipe.writing, error: errorPipe.writing,
-        closingOutputsAfterSpawn: true
+        executable,
+        arguments,
+        in: directory,
+        environment: environment,
+        input: nullInput.descriptor,
+        output: outputPipe.writing,
+        error: errorPipe.writing,
+        closingOutputsAfterSpawn: true,
       ) { pid in
         nullInput.close()
         child.markStarted(pid)
@@ -89,46 +143,7 @@ public struct ProcessRunner: Sendable {
       standardOutput: String(decoding: standardOutput.collected, as: UTF8.self),
       standardError: String(decoding: standardError.collected, as: UTF8.self),
       status: status,
-      stopReason: stopper.appliedStop
+      stopReason: stopper.appliedStop,
     )
-  }
-
-  /// Both pipes or neither: the first is closed where the second fails.
-  private static func makePipePair() throws -> (
-    output: PipeDescriptors.Ends, error: PipeDescriptors.Ends
-  ) {
-    let output = try PipeDescriptors.make()
-    do {
-      return (output, try PipeDescriptors.make())
-    } catch {
-      try? output.reading.close()
-      try? output.writing.close()
-      throw error
-    }
-  }
-
-  /// A descendant that inherited the pipes holds them open after the child
-  /// is gone, so EOF may never come; the buffer is already drained.
-  static func awaitDrained(
-    _ standardOutput: PipeBuffer, _ standardError: PipeBuffer, group: DispatchGroup
-  ) async {
-    // Weak, or each run's read ends stay open until the timer fires. An
-    // unfinished buffer keeps itself alive through its readability handler.
-    DispatchQueue.global().asyncAfter(deadline: .now() + Self.eofGraceAfterExit) {
-      [weak standardOutput, weak standardError] in
-      standardOutput?.finish()
-      standardError?.finish()
-    }
-    await withCheckedContinuation { continuation in
-      group.notify(queue: .global()) { continuation.resume() }
-    }
-  }
-
-  private static func armTimeout(
-    _ timeout: Duration, for child: RunningChild, stopper: ProcessStopper
-  ) {
-    DispatchQueue.global().asyncAfter(deadline: .now() + timeout.inSeconds) {
-      if child.isRunning { stopper.stop(.timedOut(after: timeout)) }
-    }
   }
 }

@@ -14,12 +14,14 @@ struct ProjectSettingsEffectiveWorktreeSettingsTests {
 
   @Test func eachFieldOverridesIndependently() {
     let effective = ProjectSettings(branchPrefix: "kieran/").effectiveWorktreeSettings(
-      defaults: defaults)
+      defaults: defaults
+    )
     #expect(effective.worktreeDirectory == "/global/trees")
     #expect(effective.branchPrefix == "kieran/")
 
     let moved = ProjectSettings(worktreeDirectory: "../mine").effectiveWorktreeSettings(
-      defaults: defaults)
+      defaults: defaults
+    )
     #expect(moved.worktreeDirectory == "../mine")
     #expect(moved.branchPrefix == defaults.branchPrefix)
   }

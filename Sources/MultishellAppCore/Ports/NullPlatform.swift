@@ -4,9 +4,13 @@ import Foundation
 @MainActor
 public final class NullPlatform: Platform {
   public var onDidBecomeActive: (@MainActor () -> Void)?
-  public init() {}
   public var isActive: Bool { true }
   public var workspaceWindowIsKey: Bool { true }
+  public var bundledHelper: URL? { nil }
+  public var notificationSettingsLocation: String? { nil }
+
+  public init() {}
+
   public func closeKeyWindow() {}
   public func chooseDirectory(prompt: String) async -> URL? { nil }
   public func revealInFileBrowser(_ url: URL) {}
@@ -17,10 +21,8 @@ public final class NullPlatform: Platform {
   }
   public func applicationURL(forIdentifier identifier: String) -> URL? { nil }
   public func open(_ directory: URL, withApplication application: URL) async throws {}
-  public var bundledHelper: URL? { nil }
   public func installCommandLineTool() throws {}
   public func setBadgeCount(_ count: Int?) {}
-  public var notificationSettingsLocation: String? { nil }
   public func log(_ message: String) {}
   public func handOverToRunningInstance() {}
   public func startDisplayFrameCallbacks(

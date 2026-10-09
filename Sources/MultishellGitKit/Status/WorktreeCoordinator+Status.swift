@@ -6,7 +6,8 @@ extension WorktreeCoordinator {
   /// Statuses for many worktrees at once, each with how long git took, one
   /// that could not be read simply absent. At most `maxConcurrentReads` run together.
   public func readStatuses(
-    of worktrees: [Worktree], counting indicator: GitStatusIndicator = .default
+    of worktrees: [Worktree],
+    counting indicator: GitStatusIndicator = .default,
   ) async -> [Worktree.ID: StatusReading] {
     let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
       width: SharedReadState.maxConcurrentReads
@@ -14,18 +15,21 @@ extension WorktreeCoordinator {
       let started = ContinuousClock.now
       let status = try? await git.status(of: worktree, counting: indicator)
       return (
-        worktree.id, status.map { StatusReading(status: $0, duration: started.duration(to: .now)) }
+        worktree.id,
+        status.map { StatusReading(status: $0, duration: started.duration(to: .now)) },
       )
     }
     return Dictionary(
       readings.compactMap { id, reading in reading.map { (id, $0) } },
-      uniquingKeysWith: { _, last in last })
+      uniquingKeysWith: { _, last in last },
+    )
   }
 
   /// Drops what the status reads remember about worktrees that have gone,
   /// by path, which is what a worktree's id is.
   public func forgetStatusReads(of ids: [Worktree.ID]) {
     git.readState.untrackedMemo.forget(
-      directories: ids.map { URL(fileURLWithPath: $0, isDirectory: true) })
+      directories: ids.map { URL(fileURLWithPath: $0, isDirectory: true) }
+    )
   }
 }

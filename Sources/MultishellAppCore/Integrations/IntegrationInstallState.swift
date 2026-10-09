@@ -7,13 +7,14 @@ struct IntegrationInstallState: Sendable {
   let staleHooks: Set<String>
   let isCommandLineToolInstalled: Bool
 
-  static func read() -> IntegrationInstallState {
-    let states = AgentHookCatalogue.integrations.map {
-      (id: $0.id, state: $0.installState())
+  static func read() -> Self {
+    let states = AgentHookCatalogue.integrations.map { integration in
+      (id: integration.id, state: integration.installState())
     }
-    return IntegrationInstallState(
+    return Self(
       installedHooks: Set(states.filter { $0.state != .absent }.map(\.id)),
       staleHooks: Set(states.filter { $0.state == .stale }.map(\.id)),
-      isCommandLineToolInstalled: HelperLink.isCommandLineToolInstalled)
+      isCommandLineToolInstalled: HelperLink.isCommandLineToolInstalled,
+    )
   }
 }

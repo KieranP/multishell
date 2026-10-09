@@ -15,7 +15,9 @@ struct URLRemoveFromDiskTests {
     let worktree = try Scratch.directory("linked-worktree")
     defer { Scratch.remove(worktree) }
     try FileManager.default.createSymbolicLink(
-      at: worktree.appendingPathComponent("node_modules"), withDestinationURL: modules)
+      at: worktree.appendingPathComponent("node_modules"),
+      withDestinationURL: modules,
+    )
 
     try await worktree.removeFromDisk()
 

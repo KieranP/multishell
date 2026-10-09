@@ -3,10 +3,16 @@
 public struct AgentBoard: Equatable, Sendable {
   public let columns: [AgentBoardColumn]
 
+  var cardCount: Int {
+    columns.reduce(0) { $0 + $1.count }
+  }
+
+  public var isEmpty: Bool { cardCount == 0 }
+
   /// `showsAllTerminals` is the board's one filter and decides membership
   /// alone: a shell it lets in lands where its state says, as an agent does.
   init(cards: [AgentBoardCard], showsAllTerminals: Bool) {
-    let shown = (showsAllTerminals ? cards : cards.filter { $0.occupant.isAgent })
+    let shown = (showsAllTerminals ? cards : cards.filter(\.occupant.isAgent))
       .sorted(by: AgentBoardOrder.precedes)
     var byLane: [AgentBoardLane: [AgentBoardCard]] = [:]
     for card in shown { byLane[card.lane, default: []].append(card) }
@@ -20,10 +26,4 @@ public struct AgentBoard: Equatable, Sendable {
   func count(of lane: AgentBoardLane) -> Int {
     column(lane).count
   }
-
-  var cardCount: Int {
-    columns.reduce(0) { $0 + $1.count }
-  }
-
-  public var isEmpty: Bool { cardCount == 0 }
 }

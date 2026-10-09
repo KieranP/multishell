@@ -6,12 +6,15 @@ extension WorktreeOperation {
       switch stage {
       case .linkingFiles: return t("step.files-not-linked")
       case .copyingFiles: return t("step.files-not-copied")
+
       case .postCreateHook:
         return didTimeOut
           ? t("step.post-create-hook-timed-out") : t("step.post-create-hook-failed")
+
       case .preDeleteHook:
         return didTimeOut
           ? t("step.pre-delete-hook-timed-out") : t("step.pre-delete-hook-refused")
+
       case .removingWorktree, .deletingWorktree: return t("step.worktree-not-removed")
       case .postDeleteHook: return t("step.post-delete-hook-failed")
       case .deletingBranch: return t("step.branch-not-deleted")
@@ -38,8 +41,10 @@ extension WorktreeOperation {
         // Not "the hook did not run": a project may list files and have no
         // hook, and this is the pane for that one too.
         return t("step.files-failed-detail")
+
       case .postCreateHook: return t("step.post-create-failed-detail")
       case .preDeleteHook: return t("step.pre-delete-failed-detail")
+
       case .removingWorktree, .deletingWorktree, .postDeleteHook, .deletingBranch:
         return t("step.removal-failed-detail")
       }

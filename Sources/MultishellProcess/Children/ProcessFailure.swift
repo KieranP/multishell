@@ -8,18 +8,21 @@ public struct ProcessFailure: Error, CustomStringConvertible {
   /// Why the child did not finish on its own, when it did not.
   public let stopReason: ProcessStopReason?
 
+  public var description: String {
+    "\(executable) \(arguments.joined(separator: " ")) failed (\(status)): \(message)"
+  }
+
   public init(
-    executable: String, arguments: [String], status: Int32, message: String,
-    stopReason: ProcessStopReason? = nil
+    executable: String,
+    arguments: [String],
+    status: Int32,
+    message: String,
+    stopReason: ProcessStopReason? = nil,
   ) {
     self.executable = executable
     self.arguments = arguments
     self.status = status
     self.message = message
     self.stopReason = stopReason
-  }
-
-  public var description: String {
-    "\(executable) \(arguments.joined(separator: " ")) failed (\(status)): \(message)"
   }
 }

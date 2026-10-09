@@ -21,7 +21,9 @@ struct SidebarHeader: View {
   }
 
   private func button(
-    _ symbol: String, help: String, action: @escaping () -> Void
+    _ symbol: String,
+    help: String,
+    action: @escaping () -> Void,
   ) -> some View {
     PlainGlyphButton(help: help, action: action) { HeaderGlyph(symbol: symbol) }
   }

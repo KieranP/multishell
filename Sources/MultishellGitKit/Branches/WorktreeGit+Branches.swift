@@ -2,6 +2,16 @@ import Foundation
 import MultishellCore
 
 extension WorktreeGit {
+  private static func refQuery(withDates: Bool) -> [String] {
+    var format = [
+      "%(refname)", "%(objectname)", "%(upstream)", "%(upstream:track)", "%(symref)",
+    ]
+    if withDates { format.append("%(committerdate:unix)") }
+    return [
+      "for-each-ref", "--format=" + format.joined(separator: "%09"), "refs/heads", "refs/remotes",
+    ]
+  }
+
   /// Every branch with its tip, upstream and date, in one process, the date
   /// atom retried separately. `nil` is a failed read, not no branches.
   func branchRefs(_ project: Project) async -> [BranchRef]? {
@@ -12,16 +22,6 @@ extension WorktreeGit {
       return nil
     }
     return BranchRefParser.parse(output)
-  }
-
-  private static func refQuery(withDates: Bool) -> [String] {
-    var format = [
-      "%(refname)", "%(objectname)", "%(upstream)", "%(upstream:track)", "%(symref)",
-    ]
-    if withDates { format.append("%(committerdate:unix)") }
-    return [
-      "for-each-ref", "--format=" + format.joined(separator: "%09"), "refs/heads", "refs/remotes",
-    ]
   }
 
   /// The names a new worktree can start from, symbolic refs such as
@@ -40,7 +40,9 @@ extension WorktreeGit {
   /// way says nothing, and the caller would `branch -D` on the answer.
   func lacksBranch(_ branch: String, in project: Project) async -> Bool {
     await runner.exitStatus(
-      ["rev-parse", "--verify", "--quiet", RefName.local(branch)], in: project.path) == 1
+      ["rev-parse", "--verify", "--quiet", RefName.local(branch)],
+      in: project.path,
+    ) == 1
   }
 
   /// `-D`, a branch cut from another start point being unmerged into HEAD.

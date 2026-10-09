@@ -26,6 +26,7 @@ extension AppModel {
       else { return }
       switch removalDecision(for: current, isStatusUnread: isStatusUnread) {
       case .ask(let pending): pendingWorktreeRemoval = pending
+
       case .remove(let deletesBranch):
         await removeWorktree(current, deletesBranch: deletesBranch)
       }
@@ -56,21 +57,26 @@ extension AppModel {
   }
 
   private func removalDecision(
-    for worktree: Worktree, isStatusUnread: Bool = false
+    for worktree: Worktree,
+    isStatusUnread: Bool = false,
   ) -> PendingWorktreeRemoval.Decision {
     PendingWorktreeRemoval.decide(
-      worktree, customName: customName(of: worktree),
+      worktree,
       confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
-      trashes: workspace.trashesRemovedWorktrees, mergeState: mergeState(of: worktree),
-      isStatusUnread: isStatusUnread)
+      customName: customName(of: worktree),
+      trashes: workspace.trashesRemovedWorktrees,
+      mergeState: mergeState(of: worktree),
+      isStatusUnread: isStatusUnread,
+    )
   }
 
   /// The dialog's answer: the index of the button chosen, `nil` for Cancel.
   /// The task is the removal, when one was chosen.
   @discardableResult
   public func answerWorktreeRemoval(
-    _ pending: PendingWorktreeRemoval, choice: Int?
+    _ pending: PendingWorktreeRemoval,
+    choice: Int?,
   ) -> Task<Void, Never>? {
     pendingWorktreeRemoval = nil
     guard let choice, pending.choices.indices.contains(choice) else { return nil }
@@ -81,7 +87,8 @@ extension AppModel {
   /// Trashing or deleting as the dialog's message said, even if the setting
   /// changed while it was up.
   func removeAsConfirmed(
-    _ pending: PendingWorktreeRemoval, deletesBranch: Bool
+    _ pending: PendingWorktreeRemoval,
+    deletesBranch: Bool,
   ) async {
     await removeWorktree(pending.worktree, deletesBranch: deletesBranch, trashes: pending.trashes)
   }
@@ -90,8 +97,9 @@ extension AppModel {
   public func worktreeRemovalWarning(for pending: PendingWorktreeRemoval) -> String? {
     PendingWorktreeRemoval.warning(
       changedFiles: statuses[pending.worktree.id]?.changedFiles ?? 0,
-      isStatusUnread: pending.isStatusUnread,
       liveTerminals: liveTerminalCount(in: pending.worktree.id),
-      trashes: pending.trashes)
+      isStatusUnread: pending.isStatusUnread,
+      trashes: pending.trashes,
+    )
   }
 }

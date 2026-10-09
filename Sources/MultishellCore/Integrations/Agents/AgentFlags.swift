@@ -6,7 +6,8 @@ public enum AgentFlags {
   /// The line as an argument list, placeholders resolved. An unknown one is
   /// left as typed, so the mistake shows in the tab.
   public static func arguments(
-    _ line: String, values: [WorktreePlaceholder: String]
+    _ line: String,
+    values: [WorktreePlaceholder: String],
   ) -> [String] {
     split(line).map { expanded($0, values: values) }
   }

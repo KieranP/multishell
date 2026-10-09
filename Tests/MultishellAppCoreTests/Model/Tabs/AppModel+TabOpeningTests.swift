@@ -33,7 +33,8 @@ struct AppModelTabOpeningTests {
     let first = harness.model.workspace.activeTab(in: harness.main.id)!
     #expect(
       harness.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
-      "the first tab after select, which is what follows a create")
+      "the first tab after select, which is what follows a create",
+    )
     #expect(harness.model.title(of: first) == "Claude Code")
 
     harness.model.newTab()
@@ -49,7 +50,8 @@ struct AppModelTabOpeningTests {
     let shell = harness.model.workspace.activeTab(in: harness.main.id)!
     #expect(
       harness.model.workspace.session(shell.focusedSessionID)?.agentID == nil,
-      "a shell stays reachable")
+      "a shell stays reachable",
+    )
   }
 
   @Test func autoStartOffOrNoAgentOpensShellsAndTheProjectOverrideWins() {
@@ -58,30 +60,42 @@ struct AppModelTabOpeningTests {
     harness.model.select(harness.main)
     #expect(
       harness.model.workspace.session(
-        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
-        .agentID == nil, "off by default")
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+      )?
+      .agentID == nil,
+      "off by default",
+    )
 
     harness.model.setSettings(ProjectSettings(autoStartsAgent: true), for: harness.project)
     harness.model.newTab()
     #expect(
       harness.model.workspace.session(
-        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
-        .agentID == "claude", "the project override turns it on")
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+      )?
+      .agentID == "claude",
+      "the project override turns it on",
+    )
 
     harness.model.setAutoStartsAgent(true)
     harness.model.setSettings(ProjectSettings(autoStartsAgent: false), for: harness.project)
     harness.model.newTab()
     #expect(
       harness.model.workspace.session(
-        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
-        .agentID == nil, "the project override turns it off")
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+      )?
+      .agentID == nil,
+      "the project override turns it off",
+    )
 
     harness.model.setSettings(ProjectSettings(preferredAgentID: "none"), for: harness.project)
     harness.model.newTab()
     #expect(
       harness.model.workspace.session(
-        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
-        .agentID == nil, "auto-start with no agent in force is a shell")
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+      )?
+      .agentID == nil,
+      "auto-start with no agent in force is a shell",
+    )
   }
 
   @Test func aNamedAgentTabNeedsNoPreferredAgentAndOpensInTheGroupGiven() {
@@ -100,7 +114,9 @@ struct AppModelTabOpeningTests {
     #expect(harness.model.workspace.session(tab.focusedSessionID)?.agentID == "opencode")
     #expect(harness.model.title(of: tab) == "OpenCode")
     #expect(
-      harness.model.presentedError == nil, "the strip named the agent, so none was chosen for it")
+      harness.model.presentedError == nil,
+      "the strip named the agent, so none was chosen for it",
+    )
   }
 
   @Test func theNewTabMenusShellTabOpensInTheGroupGiven() {
@@ -159,6 +175,8 @@ struct AppModelTabOpeningTests {
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
     #expect(harness.model.workspace.tabs(in: harness.feature.id).isEmpty)
     #expect(
-      harness.model.workspace.tabs(in: harness.main.id).count == 1, "nothing landed where it was")
+      harness.model.workspace.tabs(in: harness.main.id).count == 1,
+      "nothing landed where it was",
+    )
   }
 }

@@ -5,10 +5,15 @@ import Testing
 @Suite
 struct DebugQuickStatsTests {
   @Test func theCellsReadTheLastSecondAndTheLastMinute() {
-    let samples = (0..<90).map {
+    let samples = (0..<90).map { sequence in
       DebugSample.sample(
-        sequence: $0, framesPerSecond: $0 == 89 ? 59.6 : 120, longestFrame: .milliseconds(60),
-        appCPUPercent: 10, childrenCPUPercent: Double($0 % 3), childrenMemory: UInt64(1_000 + $0))
+        sequence: sequence,
+        framesPerSecond: sequence == 89 ? 59.6 : 120,
+        longestFrame: .milliseconds(60),
+        appCPUPercent: 10,
+        childrenCPUPercent: Double(sequence % 3),
+        childrenMemory: UInt64(1_000 + sequence),
+      )
     }
     let stats = DebugQuickStats(history: .of(samples))
 
@@ -22,8 +27,8 @@ struct DebugQuickStatsTests {
   }
 
   @Test func aSecondWithNoFrameIsLeftOutOfTheFrameRateTrendRatherThanDrawnAsZero() {
-    let samples = (0..<3).map {
-      DebugSample.sample(sequence: $0, framesPerSecond: $0 == 1 ? nil : 120)
+    let samples = (0..<3).map { sequence in
+      DebugSample.sample(sequence: sequence, framesPerSecond: sequence == 1 ? nil : 120)
     }
     let stats = DebugQuickStats(history: .of(samples))
     #expect(stats.frameRateTrend.count == 2)

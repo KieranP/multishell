@@ -14,12 +14,17 @@ extension GhosttySurfaceView {
     }
     guard
       let equivalent = keyEquivalent.offer(
-        event.charactersIgnoringModifiers, characters: event.characters,
-        flags: event.modifierFlags, timestamp: event.timestamp)
+        event.charactersIgnoringModifiers,
+        characters: event.characters,
+        flags: event.modifierFlags,
+        timestamp: event.timestamp,
+      )
     else { return false }
     guard
       let replacement = event.keyCopy(
-        characters: equivalent, charactersIgnoringModifiers: equivalent)
+        characters: equivalent,
+        charactersIgnoringModifiers: equivalent,
+      )
     else { return false }
     keyDown(with: replacement)
     return true

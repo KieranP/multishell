@@ -7,7 +7,7 @@ public struct PanePosition: Equatable, Sendable {
   let count: Int
 
   /// The pane at `offset` in `tab`, or `nil` where the tab has only the one.
-  static func of(paneAt offset: Int, in tab: TerminalTab) -> PanePosition? {
-    tab.sessionIDs.count > 1 ? PanePosition(number: offset + 1, count: tab.sessionIDs.count) : nil
+  static func of(paneAt offset: Int, in tab: TerminalTab) -> Self? {
+    tab.sessionIDs.count > 1 ? Self(number: offset + 1, count: tab.sessionIDs.count) : nil
   }
 }

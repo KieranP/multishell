@@ -5,6 +5,10 @@ import SwiftUI
 /// A nested row under an expanded Memory by tab row, a tab's Terminal or a process,
 /// indented by its level, its Self and Total under the columns.
 struct DebugNestedRowView: View {
+  /// Under its tab's title, so the rows read as that tab's.
+  private static let indent = 14.0
+  private static let indentPerLevel = 14.0
+
   let name: String
   let namesAProcess: Bool
   let indentLevel: Int
@@ -14,10 +18,6 @@ struct DebugNestedRowView: View {
   let theme: Theme
   let metrics: UIMetrics
 
-  /// Under its tab's title, so the rows read as that tab's.
-  private static let indent = 14.0
-  private static let indentPerLevel = 14.0
-
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
       nameCell
@@ -25,11 +25,16 @@ struct DebugNestedRowView: View {
       case .columns:
         Color.clear.frame(width: metrics.debugCountColumnWidth, height: 1)
         DebugNumberCell(
-          text: memory.selfMemoryText, width: metrics.debugMemoryValueColumnWidth,
-          color: theme.textSecondary)
+          text: memory.selfMemoryText,
+          width: metrics.debugMemoryValueColumnWidth,
+          color: theme.textSecondary,
+        )
         DebugNumberCell(
-          text: memory.totalMemoryText, width: metrics.debugMemoryBarColumnWidth,
-          color: theme.textSecondary)
+          text: memory.totalMemoryText,
+          width: metrics.debugMemoryBarColumnWidth,
+          color: theme.textSecondary,
+        )
+
       case .stacked:
         Text(memory.memorySummary).monospacedDigit()
       }
@@ -51,6 +56,7 @@ struct DebugNestedRowView: View {
         Image(systemName: "arrow.turn.down.right")
           .font(.system(size: metrics.debugTableGlyphSize))
           .foregroundStyle(theme.textTertiary)
+          .accessibilityHidden(true)
       }
       Text(name)
         .font(.system(size: metrics.caption, design: namesAProcess ? .monospaced : .default))

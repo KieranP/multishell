@@ -25,7 +25,8 @@ struct AppModelSettingsWindowTests {
     let harness = Harness()
     #expect(
       harness.model.settingsWindowFallbackProject?.id == harness.project.id,
-      "one project, nothing selected")
+      "one project, nothing selected",
+    )
     harness.store.addProject(at: URL(fileURLWithPath: "/other"))
     #expect(harness.model.settingsWindowFallbackProject == nil, "two projects, nothing selected")
     harness.model.select(harness.feature)

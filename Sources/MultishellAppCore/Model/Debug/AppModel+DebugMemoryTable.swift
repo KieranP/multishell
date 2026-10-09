@@ -13,15 +13,19 @@ extension AppModel {
       guard !liveSessions.isEmpty, let worktree = worktreesByID[tab.worktreeID] else { return nil }
       let terminalReadings = liveSessions.compactMap { terminalMemoryBySession[$0] }
       return DebugTabMemory(
-        id: tab.id, title: title(of: tab), location: debugLocation(of: worktree),
+        id: tab.id,
+        title: title(of: tab),
+        location: debugLocation(of: worktree),
         terminalMemory: terminalReadings.isEmpty ? nil : terminalReadings.reduce(0, +),
-        processes: liveSessions.flatMap { processesBySession[$0] ?? [] }.heaviestFirst())
+        processes: liveSessions.flatMap { processesBySession[$0] ?? [] }.heaviestFirst(),
+      )
     }
     return DebugMemoryTable(
       appMemory: snapshot.history.latest?.appMemory ?? 0,
-      tabs: tabs.sorted {
-        ($0.totalMemory ?? 0, $1.title) > ($1.totalMemory ?? 0, $0.title)
+      tabs: tabs.sorted { lhs, rhs in
+        (lhs.totalMemory ?? 0, rhs.title) > (rhs.totalMemory ?? 0, lhs.title)
       },
-      unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst())
+      unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst(),
+    )
   }
 }

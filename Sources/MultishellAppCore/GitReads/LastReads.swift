@@ -8,8 +8,6 @@ struct LastReads: Sendable {
   /// Whether nothing is held, for the tests.
   var isEmpty: Bool { reads.isEmpty }
 
-  subscript(id: Worktree.ID) -> LastRead? { reads[id] }
-
   mutating func remember(_ costs: [Worktree.ID: Duration]) {
     let finished = ContinuousClock.now
     for (id, duration) in costs { reads[id] = LastRead(at: finished, duration: duration) }
@@ -22,4 +20,6 @@ struct LastReads: Sendable {
   mutating func removeAll() {
     reads.removeAll()
   }
+
+  subscript(id: Worktree.ID) -> LastRead? { reads[id] }
 }

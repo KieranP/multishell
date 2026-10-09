@@ -12,17 +12,23 @@ extension WorkspaceStoreTests {
     let directory = file.deletingLastPathComponent()
     defer {
       try? FileManager.default.setAttributes(
-        [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+        [.posixPermissions: 0o755],
+        ofItemAtPath: directory.path,
+      )
       Scratch.remove(directory)
     }
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
     try FileManager.default.setAttributes(
-      [.posixPermissions: 0o500], ofItemAtPath: directory.path)
+      [.posixPermissions: 0o500],
+      ofItemAtPath: directory.path,
+    )
     let (store, _) = WorkspaceStore.restored(from: StateFile(fileURL: file))
     #expect(store.refusesToSave)
 
     try FileManager.default.setAttributes(
-      [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+      [.posixPermissions: 0o755],
+      ofItemAtPath: directory.path,
+    )
     try FileManager.default.moveItem(at: file, to: directory.appendingPathComponent("kept.json"))
     store.addProject(at: URL(fileURLWithPath: "/repos/other"))
     try store.save()
@@ -38,14 +44,18 @@ extension WorkspaceStoreTests {
     let directory = file.deletingLastPathComponent()
     defer {
       try? FileManager.default.setAttributes(
-        [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+        [.posixPermissions: 0o755],
+        ofItemAtPath: directory.path,
+      )
       Scratch.remove(directory)
     }
     // Unreadable, and in a directory that takes no rename, so neither the
     // read nor the move aside can happen.
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
     try FileManager.default.setAttributes(
-      [.posixPermissions: 0o500], ofItemAtPath: directory.path)
+      [.posixPermissions: 0o500],
+      ofItemAtPath: directory.path,
+    )
 
     let (store, loadError) = WorkspaceStore.restored(from: StateFile(fileURL: file))
 
@@ -58,7 +68,8 @@ extension WorkspaceStoreTests {
     try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
     #expect(
       try String(contentsOf: file, encoding: .utf8) == original,
-      "the user's own state is still on disk, untouched")
+      "the user's own state is still on disk, untouched",
+    )
   }
 
   @Test func restoringRepairsDanglingReferencesBeforeTheStoreSeesThem() throws {
@@ -74,7 +85,10 @@ extension WorkspaceStoreTests {
       Worktree(path: URL(fileURLWithPath: "/repos/orphan"), projectID: "/repos/gone", head: "b"),
     ]
     let orphan = TerminalSession(
-      worktreeID: worktree.id, workingDirectory: worktree.path, title: "x")
+      worktreeID: worktree.id,
+      workingDirectory: worktree.path,
+      title: "x",
+    )
     workspace.sessions = [orphan]
     try StateFile(fileURL: file).save(workspace)
 
@@ -84,7 +98,8 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.worktrees.map(\.id) == [worktree.id])
     #expect(
       store.workspace.sessions.isEmpty,
-      "a session no tab shows would get a shell nobody can close")
+      "a session no tab shows would get a shell nobody can close",
+    )
   }
 
   /// The dropped tab has a pane kind this build does not know; the session it owned goes
@@ -107,7 +122,8 @@ extension WorkspaceStoreTests {
             { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(orphaned)",
               "root": { "stack": { "pages": [ { "terminal": { "_0": "\#(orphaned)" } } ] } } } ],
           "activeTabByWorktree": { "/repos/demo": "\#(keptTab)" } }
-        """#)
+        """#
+    )
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     let (store, error) = WorkspaceStore.restored(from: StateFile(fileURL: file))

@@ -10,9 +10,11 @@ struct TabStripButtonTextTests {
     #expect(TabStripButtonText.splitHelp(.vertical, isFocusedGroup: true) == "Split Down (⇧⌘D)")
     #expect(
       TabStripButtonText.splitHelp(.horizontal, isFocusedGroup: false)
-        == "Split Right in This Group")
+        == "Split Right in This Group"
+    )
     #expect(
-      TabStripButtonText.splitHelp(.vertical, isFocusedGroup: false) == "Split Down in This Group")
+      TabStripButtonText.splitHelp(.vertical, isFocusedGroup: false) == "Split Down in This Group"
+    )
   }
 
   @Test func anotherGroupsNewTabMenuSaysItOpensThere() {

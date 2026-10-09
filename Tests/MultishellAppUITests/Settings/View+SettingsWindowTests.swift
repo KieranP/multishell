@@ -8,19 +8,6 @@ import Testing
 /// exemptions and what this cannot see are in Docs/develop/tests.md and build.md.
 @Suite @MainActor
 struct ViewSettingsWindowTests {
-  @Test func noSettingsPageIsTallerThanTheWindowItOpensIn() {
-    for page in Self.pages(of: ModelHarness()) {
-      let needed = OffscreenHost.read(
-        page.view, atWidth: UIMetrics.settingsWindowSize.width,
-        windowSize: CGSize(width: 10, height: 10),
-        sizingOptions: [.minSize, .intrinsicContentSize]
-      ) { $0.intrinsicContentSize.height }
-      #expect(
-        needed <= UIMetrics.settingsWindowSize.height,
-        "\(page.name) needs \(needed)pt, the window is \(UIMetrics.settingsWindowSize.height)pt")
-    }
-  }
-
   private struct Page {
     let name: String
     let view: AnyView
@@ -39,28 +26,54 @@ struct ViewSettingsWindowTests {
       Page(name: "Notifications", view: AnyView(AppNotificationsPage(model: model))),
       Page(name: "Appearance", view: AnyView(AppAppearancePage(model: model))),
       Page(
-        name: "Project General", view: AnyView(ProjectGeneralPage(model: model, project: project))),
+        name: "Project General",
+        view: AnyView(ProjectGeneralPage(model: model, project: project)),
+      ),
       Page(
         name: "Project Worktrees",
-        view: AnyView(ProjectWorktreesPage(model: model, project: project))),
+        view: AnyView(ProjectWorktreesPage(model: model, project: project)),
+      ),
       Page(
         name: "Project Hooks, Create",
-        view: AnyView(ProjectHooksPage(model: model, project: project, part: .create))),
+        view: AnyView(ProjectHooksPage(model: model, project: project, part: .create)),
+      ),
       Page(
         name: "Project Hooks, Create, a repository file asking for trust",
         view: AnyView(
-          ProjectHooksPage(model: model, project: project.askingForTrust(), part: .create))),
+          ProjectHooksPage(model: model, project: project.askingForTrust(), part: .create)
+        ),
+      ),
       Page(
         name: "Project Hooks, Delete",
-        view: AnyView(ProjectHooksPage(model: model, project: project, part: .delete))),
+        view: AnyView(ProjectHooksPage(model: model, project: project, part: .delete)),
+      ),
       Page(
         name: "Project Hooks, Environment",
-        view: AnyView(ProjectHooksPage(model: model, project: project, part: .environment))),
+        view: AnyView(ProjectHooksPage(model: model, project: project, part: .environment)),
+      ),
       Page(
         name: "Project Terminal",
-        view: AnyView(ProjectTerminalPage(model: model, project: project))),
+        view: AnyView(ProjectTerminalPage(model: model, project: project)),
+      ),
       Page(
-        name: "Project Agents", view: AnyView(ProjectAgentsPage(model: model, project: project))),
+        name: "Project Agents",
+        view: AnyView(ProjectAgentsPage(model: model, project: project)),
+      ),
     ]
+  }
+
+  @Test func noSettingsPageIsTallerThanTheWindowItOpensIn() {
+    for page in Self.pages(of: ModelHarness()) {
+      let needed = OffscreenHost.read(
+        page.view,
+        atWidth: UIMetrics.settingsWindowSize.width,
+        windowSize: CGSize(width: 10, height: 10),
+        sizingOptions: [.minSize, .intrinsicContentSize],
+      ) { $0.intrinsicContentSize.height }
+      #expect(
+        needed <= UIMetrics.settingsWindowSize.height,
+        "\(page.name) needs \(needed)pt, the window is \(UIMetrics.settingsWindowSize.height)pt",
+      )
+    }
   }
 }

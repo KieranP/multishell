@@ -21,7 +21,9 @@ extension SessionStatesTests {
     for index in 0..<capacity + 6 { _ = report(&states, .running, started("w\(index)")) }
     #expect(report(&states, .done) == .running)
 
-    for index in (1..<capacity + 6).reversed() { _ = report(&states, .running, ended("w\(index)")) }
+    for index in (1..<capacity + 6).reversed() {
+      _ = report(&states, .running, ended("w\(index)"))
+    }
     #expect(states[.session(a)] == .running, "the oldest is still out")
 
     #expect(report(&states, .running, ended("w0")) == .done)
@@ -66,7 +68,8 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = report(
       &states,
-      .init(state: .done, backgroundShells: Array(1...Int32(capacity))))
+      .init(state: .done, backgroundShells: Array(1...Int32(capacity))),
+    )
 
     #expect(workersOut(states).count == capacity)
   }

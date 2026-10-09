@@ -15,16 +15,19 @@ struct AppModelTabMovesTests {
     harness.model.moveActiveTabToNewGroup()
     harness.model.activate(try #require(harness.model.workspace.tab(a.id)))
     #expect(
-      harness.model.workspace.tab(a.id)?.groupID != harness.model.workspace.tab(b.id)?.groupID)
+      harness.model.workspace.tab(a.id)?.groupID != harness.model.workspace.tab(b.id)?.groupID
+    )
     harness.engine.focused.removeAll()
 
     harness.model.moveTab(b.id, .before, anchor: a.id)
 
     #expect(
-      harness.model.workspace.tab(b.id)?.groupID == harness.model.workspace.tab(a.id)?.groupID)
+      harness.model.workspace.tab(b.id)?.groupID == harness.model.workspace.tab(a.id)?.groupID
+    )
     #expect(
       harness.engine.focused.last == harness.model.workspace.tab(b.id)?.focusedSessionID,
-      "b is what the group shows now; a is behind it")
+      "b is what the group shows now; a is behind it",
+    )
   }
 
   @Test func aTabDraggedOntoAnotherWorktreeGoesThereWithItsShells() {
@@ -42,23 +45,31 @@ struct AppModelTabMovesTests {
     #expect(panes.isSubset(of: harness.engine.liveSessionIDs), "the shells kept running")
     #expect(harness.engine.closed.isEmpty)
     #expect(
-      harness.model.workspace.tabs(in: harness.feature.id).count == 1, "no second tab was opened")
+      harness.model.workspace.tabs(in: harness.feature.id).count == 1,
+      "no second tab was opened",
+    )
   }
 
   @Test func aTabIsNotDraggedIntoAWorktreeThatCannotTakeIt() {
     let harness = Harness()
     let gone = Worktree(
-      path: URL(fileURLWithPath: "/repos/gone"), projectID: harness.project.id, head: "c",
-      branch: "gone")
+      path: URL(fileURLWithPath: "/repos/gone"),
+      projectID: harness.project.id,
+      head: "c",
+      branch: "gone",
+    )
     harness.store.replaceWorktrees(
-      [harness.main, harness.feature, gone], forProject: harness.project.id)
+      [harness.main, harness.feature, gone],
+      forProject: harness.project.id,
+    )
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
 
     harness.model.worktreeOperations.begin(.removingWorktree, on: harness.feature.id)
     #expect(
       harness.model.moveTab(tab.id, toWorktree: harness.feature.id) == false,
-      "a worktree on its way out")
+      "a worktree on its way out",
+    )
     harness.model.worktreeOperations.clear(harness.feature.id)
 
     // The other end of the same rule: a tab dragged clear of a removal
@@ -66,7 +77,8 @@ struct AppModelTabMovesTests {
     harness.model.worktreeOperations.begin(.removingWorktree, on: harness.main.id)
     #expect(
       harness.model.moveTab(tab.id, toWorktree: harness.feature.id) == false,
-      "dragged out of a removal")
+      "dragged out of a removal",
+    )
     harness.model.worktreeOperations.clear(harness.main.id)
 
     harness.model.presentedError = nil

@@ -45,7 +45,11 @@ struct AppModelProjectAddingTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (bare, checkout) = try await TestRepository.bareClone(
-      of: harness.project.path, in: harness.root, worktree: "checkout", using: harness.git)
+      of: harness.project.path,
+      in: harness.root,
+      worktree: "checkout",
+      using: harness.git,
+    )
 
     await harness.model.addProject(at: checkout)
 

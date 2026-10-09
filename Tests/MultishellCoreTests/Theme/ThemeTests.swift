@@ -19,7 +19,9 @@ struct ThemeTests {
     let bare = try theme()
     #expect(bare.focusRing == nil)
     #expect(
-      bare.focusRingRGB == bare.selectionBackgroundRGB, "the key left out is the selection colour")
+      bare.focusRingRGB == bare.selectionBackgroundRGB,
+      "the key left out is the selection colour",
+    )
     #expect(bare.inactivePaneOpacity == 1, "nothing fades until a theme asks for it")
 
     let wrongTypes = try theme(adding: #""focusRing": 12, "inactivePaneOpacity": "half","#)
@@ -48,6 +50,7 @@ struct ThemeTests {
       { "id": "x", "name": "X", "isDark": true, "background": "#000000",
         "foreground": "#ffffff", "cursor": "#ffffff", "selectionBackground": "#2f4f7a", \#(keys)
         "ansi": ["#000"\#(String(repeating: ",\"#000\"", count: 15))] }
-      """#)
+      """#,
+    )
   }
 }

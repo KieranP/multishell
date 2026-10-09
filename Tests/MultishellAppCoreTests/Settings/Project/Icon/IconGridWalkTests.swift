@@ -23,15 +23,22 @@ struct IconGridWalkTests {
     #expect(IconGridWalk.destination(from: "d", step: .right, in: rows) == "e")
     #expect(IconGridWalk.destination(from: "e", step: .right, in: rows) == "f")
     #expect(IconGridWalk.destination(from: "f", step: .left, in: rows) == "e")
-    #expect(IconGridWalk.destination(from: "a", step: .left, in: rows) == "a", "nowhere before it")
-    #expect(IconGridWalk.destination(from: "h", step: .right, in: rows) == "h", "nowhere after it")
+    #expect(
+      IconGridWalk.destination(from: "a", step: .left, in: rows) == "a",
+      "nowhere before it",
+    )
+    #expect(
+      IconGridWalk.destination(from: "h", step: .right, in: rows) == "h",
+      "nowhere after it",
+    )
   }
 
   @Test func upAndDownHoldTheColumnAndTakeTheLastOfAShorterRow() {
     #expect(IconGridWalk.destination(from: "a", step: .down, in: rows) == "e")
     #expect(
       IconGridWalk.destination(from: "c", step: .down, in: rows) == "e",
-      "the row below has one cell, so the column clamps rather than skipping the row")
+      "the row below has one cell, so the column clamps rather than skipping the row",
+    )
     #expect(IconGridWalk.destination(from: "e", step: .down, in: rows) == "f")
     #expect(IconGridWalk.destination(from: "h", step: .up, in: rows) == "e")
     #expect(IconGridWalk.destination(from: "a", step: .up, in: rows) == "a")
@@ -42,7 +49,8 @@ struct IconGridWalkTests {
     #expect(IconGridWalk.destination(from: nil, step: .down, in: rows) == "a")
     #expect(
       IconGridWalk.destination(from: "gone", step: .right, in: rows) == "a",
-      "a search dropped what was highlighted")
+      "a search dropped what was highlighted",
+    )
     #expect(IconGridWalk.destination(from: "a", step: .up, in: []) == nil)
   }
 
@@ -66,10 +74,11 @@ struct IconGridWalkTests {
         symbols: (0..<Int.random(in: 1...14, using: &rng)).map { _ in
           defer { next += 1 }
           return "s\(next)"
-        })
+        },
+      )
     }
     let rows = IconGridWalk.rows(of: groups, columns: columns)
-    let all = Set(rows.flatMap { $0 })
+    let all = Set(rows.flatMap(\.self))
     #expect(all.count == next, "every symbol laid out exactly once")
     #expect(rows.allSatisfy { $0.count <= columns && !$0.isEmpty })
 
@@ -83,7 +92,8 @@ struct IconGridWalkTests {
       if key == .right, landed != at {
         #expect(
           IconGridWalk.destination(from: landed, step: .left, in: rows) == at,
-          "seed \(seed) step \(step): right then left is not where it started")
+          "seed \(seed) step \(step): right then left is not where it started",
+        )
       }
       at = landed
     }

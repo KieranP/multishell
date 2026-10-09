@@ -33,7 +33,8 @@ struct AppModelStatusReadsTests {
 
     #expect(
       harness.statusRunCount() == 1,
-      "a read that took 0.6 s is not due again for 6 s")
+      "a read that took 0.6 s is not due again for 6 s",
+    )
   }
 
   @Test func openingAProjectRereadsNoRowThePollIsStillReading() async throws {
@@ -77,7 +78,8 @@ struct AppModelStatusReadsTests {
         status) if [ -e "$SCRATCH/fail" ]; then exit 128; fi
                 printf '## main\\n M a.txt\\n' ;;
       esac
-      """)
+      """
+    )
     let main = try #require(harness.worktree(onBranch: "main"))
 
     await flaky.refreshStatuses()
@@ -95,7 +97,8 @@ struct AppModelStatusReadsTests {
       """
       while [ "${1#--}" != "$1" ]; do shift; done
       case "$1" in status) printf '## main\\n M a.txt\\n' ;; esac
-      """)
+      """
+    )
     let main = try #require(harness.worktree(onBranch: "main"))
     await model.refreshStatuses()
     #expect(model.statuses[main.id] != nil)
@@ -113,11 +116,15 @@ struct AppModelStatusReadsTests {
 
     await harness.model.refreshStatuses()
     #expect(
-      !harness.model.statusReadLog.hasNoReadings, "a read the pace would hold the next one back for"
+      !harness.model.statusReadLog.hasNoReadings,
+      "a read the pace would hold the next one back for",
     )
 
     harness.model.setGitStatusIndicator(.stagedOnly)
-    #expect(harness.model.statusReadLog.hasNoReadings, "nothing left to pace the next read against")
+    #expect(
+      harness.model.statusReadLog.hasNoReadings,
+      "nothing left to pace the next read against",
+    )
 
     try await waitUntil { !harness.model.statusReadLog.hasNoReadings }
     #expect(!harness.model.statusReadLog.hasNoReadings, "and the read it asked for has landed")
@@ -141,7 +148,8 @@ struct AppModelStatusReadsTests {
       case "$1" in
         status) sleep 1; printf '## main\\n M a.txt\\n' ;;
       esac
-      """)
+      """
+    )
 
     let round = Task { await slow.refreshStatuses() }
     try await waitUntil { harness.statusRunCount() > 0 }

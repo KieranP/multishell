@@ -7,7 +7,9 @@ extension AppModel {
   /// The pane shows each stage while this runs. What a failed stage does is
   /// `PresentedRemovalFailure`'s decision; this attaches the retry it names.
   func removeWorktree(
-    _ worktree: Worktree, deletesBranch: Bool, trashes: Bool? = nil
+    _ worktree: Worktree,
+    deletesBranch: Bool,
+    trashes: Bool? = nil,
   ) async {
     // Here, before the stage begins, as each request reaches this in a Task of its own.
     guard let coordinator, let project = workspace.project(worktree.projectID),
@@ -17,14 +19,16 @@ extension AppModel {
     let effective = effectiveProject(project)
     let trashes = trashes ?? workspace.trashesRemovedWorktrees
     worktreeOperations.begin(
-      .init(WorktreeRemovalStep.first(for: effective), trashes: trashes), on: worktree.id)
+      .init(WorktreeRemovalStep.first(for: effective), trashes: trashes),
+      on: worktree.id,
+    )
     let stopper = ProcessStopper()
     stageHandles.holdStopper(stopper, on: worktree.id)
     defer { stageHandles.releaseStopper(stopper, on: worktree.id) }
     do {
       try await coordinator.remove(
-        worktree, deletesBranch: deletesBranch, in: effective,
-        shellPath: workspace.effectiveShellPath(for: effective),
+        worktree,
+        in: effective,
         trash: { [weak self] url in
           if trashes {
             try await self?.trashOrDelete(url)
@@ -32,15 +36,23 @@ extension AppModel {
             try await url.removeFromDisk()
           }
         },
-        timeout: workspace.projectHookTimeout, stopper: stopper,
+        deletesBranch: deletesBranch,
+        shellPath: workspace.effectiveShellPath(for: effective),
+        timeout: workspace.projectHookTimeout,
+        stopper: stopper,
         onStep: { [weak self] step in
           Task { @MainActor in
             self?.worktreeOperations.advance(to: .init(step, trashes: trashes), on: worktree.id)
           }
-        })
+        },
+      )
     } catch {
       let worktreeIsGone = reportRemovalFailure(
-        error, of: worktree, deletesBranch: deletesBranch, in: project)
+        error,
+        of: worktree,
+        deletesBranch: deletesBranch,
+        in: project,
+      )
       guard worktreeIsGone else { return }
     }
     worktreeOperations.clear(worktree.id)
@@ -52,21 +64,31 @@ extension AppModel {
   /// Says what went wrong where `PresentedRemovalFailure` puts it. `true` where the
   /// worktree went regardless, so the refresh after a removal still runs.
   private func reportRemovalFailure(
-    _ error: any Error, of worktree: Worktree, deletesBranch: Bool, in project: Project
+    _ error: any Error,
+    of worktree: Worktree,
+    deletesBranch: Bool,
+    in project: Project,
   ) -> Bool {
     let failure = PresentedRemovalFailure(
-      error, deletingBranch: deletesBranch ? worktree.branch : nil)
+      error,
+      deletingBranch: deletesBranch ? worktree.branch : nil,
+    )
     switch failure {
     case .stopped:
       worktreeOperations.clear(worktree.id)
       return false
+
     case .vetoed(let message, let didTimeOut):
       if !worktreeOperations.fail(
-        .preDeleteHook, on: worktree.id, message: message, didTimeOut: didTimeOut)
-      {
+        .preDeleteHook,
+        on: worktree.id,
+        message: message,
+        didTimeOut: didTimeOut,
+      ) {
         present(error)
       }
       return false
+
     case .alert(let title, let message, let retry, let wasWorktreeRemoved):
       var presented = PresentedError(title: title, message: message)
       if let retry, case .deleteBranchAnyway(let branch) = retry {
@@ -94,7 +116,7 @@ extension AppModel {
   private func forceDeleteBranch(_ branch: String, of project: Project) async {
     guard let coordinator else { return }
     do {
-      try await coordinator.deleteBranch(branch, force: true, in: project)
+      try await coordinator.deleteBranch(branch, in: project, force: true)
     } catch {
       present(error)
     }

@@ -6,7 +6,7 @@ extension View {
   func destructiveAlert<Item: Identifiable>(
     _ item: Item?,
     alert: @escaping (Item) -> NSAlert,
-    answer: @escaping (Item, Int?) -> Void
+    answer: @escaping (Item, Int?) -> Void,
   ) -> some View {
     modifier(DestructiveAlertModifier(item: item, alert: alert, answer: answer))
   }

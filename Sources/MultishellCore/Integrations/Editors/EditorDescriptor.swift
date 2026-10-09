@@ -18,8 +18,11 @@ public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   public let executable: String?
 
   init(
-    id: String, name: String, kind: Kind, bundleIdentifier: String? = nil,
-    executable: String? = nil
+    id: String,
+    name: String,
+    kind: Kind,
+    bundleIdentifier: String? = nil,
+    executable: String? = nil,
   ) {
     self.id = id
     self.name = name

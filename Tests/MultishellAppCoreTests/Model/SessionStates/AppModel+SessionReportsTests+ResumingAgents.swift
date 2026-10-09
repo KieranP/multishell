@@ -12,17 +12,23 @@ extension AppModelSessionReportsTests {
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
 
     let shell = try WaitingShell()
     defer { shell.terminate() }
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session, pid: me, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session, pid: ownPID, agentID: "claude")
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, pid: me, agentID: "claude",
-        backgroundShells: [shell.pid]))
+        state: .done,
+        sessionID: session,
+        pid: ownPID,
+        agentID: "claude",
+        backgroundShells: [shell.pid],
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .running, "the shell is still working")
     #expect(harness.model.workers(ofPane: session).count == 1)
     #expect(harness.notifier.posted.isEmpty)
@@ -39,22 +45,37 @@ extension AppModelSessionReportsTests {
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
     let shell = deadPID()
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, pid: me, agentID: "claude", backgroundShells: [shell],
-        resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        pid: ownPID,
+        agentID: "claude",
+        backgroundShells: [shell],
+        resumesAfterWorkers: true,
+      )
+    )
     harness.model.sweepGonePIDs()
-    #expect(harness.model.state(ofPane: session) == .running, "waiting on the turn the exit starts")
+    #expect(
+      harness.model.state(ofPane: session) == .running,
+      "waiting on the turn the exit starts",
+    )
     #expect(harness.notifier.posted.isEmpty)
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session, agentID: "claude")
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, agentID: "claude", resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        agentID: "claude",
+        resumesAfterWorkers: true,
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .done)
     #expect(harness.notifier.posted.count == 1)
   }
@@ -64,17 +85,29 @@ extension AppModelSessionReportsTests {
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
     let shell = deadPID()
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, pid: me, agentID: "claude", backgroundShells: [shell],
-        resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        pid: ownPID,
+        agentID: "claude",
+        backgroundShells: [shell],
+        resumesAfterWorkers: true,
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, pid: me, agentID: "claude", backgroundShells: [],
-        resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        pid: ownPID,
+        agentID: "claude",
+        backgroundShells: [],
+        resumesAfterWorkers: true,
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .done)
     #expect(harness.model.workers(ofPane: session).isEmpty)
     #expect(harness.notifier.posted.count == 1)
@@ -88,22 +121,40 @@ extension AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, agentID: "claude", resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        agentID: "claude",
+        resumesAfterWorkers: true,
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", type: "Explore", phase: .started)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
+      )
+    )
     #expect(harness.notifier.withdrawn.count == 1, "the Done was not true")
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", phase: .ended)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .ended),
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .running)
     #expect(harness.notifier.posted.count == 1)
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, agentID: "claude", resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        agentID: "claude",
+        resumesAfterWorkers: true,
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .done)
     #expect(harness.notifier.posted.count == 2)
     #expect(harness.notifier.withdrawn.count == 1)
@@ -117,17 +168,29 @@ extension AppModelSessionReportsTests {
     func stop(_ out: [String]) {
       harness.stateSource.send(
         SessionStateReport(
-          state: .done, sessionID: session, agentID: "claude", resumesAfterWorkers: true,
-          workersOut: out.map { WorkerReport(id: $0, type: "Explore", phase: .working) }))
+          state: .done,
+          sessionID: session,
+          agentID: "claude",
+          resumesAfterWorkers: true,
+          workersOut: out.map { WorkerReport(id: $0, phase: .working, type: "Explore") },
+        )
+      )
     }
 
     stop(["w1"])
     #expect(harness.model.state(ofPane: session) == .running)
-    #expect(harness.model.workers(ofPane: session).map(\.id) == ["w1"], "its start not heard yet")
+    #expect(
+      harness.model.workers(ofPane: session).map(\.id) == ["w1"],
+      "its start not heard yet",
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", phase: .ended)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .ended),
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .running)
     #expect(harness.notifier.posted.isEmpty)
 
@@ -144,21 +207,39 @@ extension AppModelSessionReportsTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", type: "Explore", phase: .started)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, agentID: "claude", resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        agentID: "claude",
+        resumesAfterWorkers: true,
+      )
+    )
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agentID: "claude",
-        worker: WorkerReport(id: "w1", phase: .ended)))
+        state: .running,
+        sessionID: session,
+        agentID: "claude",
+        worker: WorkerReport(id: "w1", phase: .ended),
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .running, "the woken turn is still writing")
     #expect(harness.notifier.posted.isEmpty)
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session, agentID: "claude", resumesAfterWorkers: true))
+        state: .done,
+        sessionID: session,
+        agentID: "claude",
+        resumesAfterWorkers: true,
+      )
+    )
     #expect(harness.model.state(ofPane: session) == .done)
     #expect(harness.notifier.posted.count == 1)
   }

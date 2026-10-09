@@ -6,7 +6,7 @@ extension View {
   func inAppDragSource(
     begin: @escaping () -> NSItemProvider,
     onEnded: @escaping () -> Void,
-    onSourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
+    onSourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void,
   ) -> some View {
     onDrag(begin).modifier(InAppDragSourceModifier(onEnded: onEnded, onSourceLeft: onSourceLeft))
   }
@@ -15,7 +15,7 @@ extension View {
     begin: @escaping () -> NSItemProvider,
     @ViewBuilder preview: () -> Preview,
     onEnded: @escaping () -> Void,
-    onSourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
+    onSourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void,
   ) -> some View {
     onDrag(begin, preview: preview)
       .modifier(InAppDragSourceModifier(onEnded: onEnded, onSourceLeft: onSourceLeft))

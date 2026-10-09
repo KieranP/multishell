@@ -5,25 +5,26 @@ import MultishellCore
 /// A `TerminalHost` backed by libghostty, which owns the pty, renderer and
 /// config. Three config layers; see Docs/design/terminals.md.
 @MainActor
-final class GhosttyTerminalHost: NSObject, TerminalHost {
+final class GhosttyTerminalHost: NSObject, TerminalHost, TerminalSurfaceHost {
   weak var delegate: (any TerminalHostDelegate)?
 
   private let lazyRuntime: LazyGhosttyRuntime
   private var views: [TerminalSession.ID: GhosttySurfaceView] = [:]
+
+  var liveSessionIDs: Set<TerminalSession.ID> { Set(views.keys) }
 
   init(lazyRuntime: LazyGhosttyRuntime = LazyGhosttyRuntime()) {
     self.lazyRuntime = lazyRuntime
     super.init()
   }
 
-  var liveSessionIDs: Set<TerminalSession.ID> { Set(views.keys) }
-
   func open(_ session: TerminalSession) throws {
     guard views[session.id] == nil else { return }
     let launch = GhosttySurfaceLaunch(
       workingDirectory: session.workingDirectory.path,
       environment: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
-      command: EngineCommandLine.of(session))
+      command: EngineCommandLine.of(session),
+    )
     let view = GhosttySurfaceView(runtime: lazyRuntime.runtime, launch: launch)
     guard view.surface != nil else { throw TerminalUnavailable() }
     connect(view, to: session.id)
@@ -38,9 +39,12 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       self.map { $0.delegate?.terminalHost($0, didSeeActivityIn: id) }
     }
     view.onCommandFinish = { [weak self] exitCode in
-      self.map {
-        $0.delegate?.terminalHost(
-          $0, didFinishCommandIn: id, exitCode: exitCode.flatMap { Int32(exactly: $0) })
+      self.map { host in
+        host.delegate?.terminalHost(
+          host,
+          didFinishCommandIn: id,
+          exitCode: exitCode.flatMap { Int32(exactly: $0) },
+        )
       }
     }
     view.onExit = { [weak self] in self.map { $0.delegate?.terminalHost($0, didExit: id) } }
@@ -111,5 +115,3 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     }
   }
 }
-
-extension GhosttyTerminalHost: TerminalSurfaceHost {}

@@ -21,7 +21,8 @@ struct AppModelWorktreeStatusRefreshTests {
 
     #expect(
       harness.statusRunCount() == 1,
-      "a read that took 0.6 s is not due again for 6 s, whoever asks")
+      "a read that took 0.6 s is not due again for 6 s, whoever asks",
+    )
   }
 
   /// Landing last, the read in flight would put the old setting's counts
@@ -37,7 +38,8 @@ struct AppModelWorktreeStatusRefreshTests {
         *numstat*) sleep 0.5; printf '3\\t0\\tREADME.md\\n';;
       esac
       exit 0
-      """)
+      """
+    )
     let main = try #require(fake.workspace.worktrees.first)
 
     let stale = Task { await fake.refreshStatus(of: main.id) }
@@ -48,7 +50,8 @@ struct AppModelWorktreeStatusRefreshTests {
     try await waitUntil { fake.statuses[main.id] != nil }
     #expect(
       fake.statuses[main.id]?.insertions == 0,
-      "the staged-only read, not the staged-and-unstaged one that was already running")
+      "the staged-only read, not the staged-and-unstaged one that was already running",
+    )
   }
 
   /// A removal or a stage starting mid-read threw the answer away and left
@@ -68,7 +71,8 @@ struct AppModelWorktreeStatusRefreshTests {
 
     #expect(
       harness.statusRunCount() == 2,
-      "the second read is due, the first having badged nothing")
+      "the second read is due, the first having badged nothing",
+    )
   }
 
   @Test func aPromptsRefreshWhileThePollReadsItsRowIsReadOnceThePollLands() async throws {

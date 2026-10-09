@@ -5,7 +5,9 @@ extension AppModel {
   /// has gone or they sit in different worktrees. A no-op move writes nothing.
   @discardableResult
   func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor: TerminalTab.ID
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    anchor: TerminalTab.ID,
   ) -> Bool {
     guard changesTheStrip(id, placement, anchor) else { return true }
     guard store.moveTab(id, placement, anchor: anchor) else { return false }
@@ -18,11 +20,17 @@ extension AppModel {
   /// A tab landing in another group always changes something, if only
   /// which group it is in. Inside one group it is a question of order.
   private func changesTheStrip(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ anchor: TerminalTab.ID
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    _ anchor: TerminalTab.ID,
   ) -> Bool {
     guard let group = workspace.sharedGroup(of: id, and: anchor) else { return true }
     return TabShuffle.reorders(
-      id, placement, of: anchor, in: workspace.tabs(inGroup: group).map(\.id))
+      id,
+      placement,
+      of: anchor,
+      in: workspace.tabs(inGroup: group).map(\.id),
+    )
   }
 
   /// A tab dragged onto a worktree's row, shells and all, the destination
@@ -58,7 +66,9 @@ extension AppModel {
   /// `false` when nothing moved, so the drag springs back.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, toNewGroupOf group: TabGroup.ID
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    toNewGroupOf group: TabGroup.ID,
   ) -> Bool {
     guard store.moveTab(id, placement, toNewGroupOf: group) != nil else { return false }
     reconcileSessions(takingFocus: true)

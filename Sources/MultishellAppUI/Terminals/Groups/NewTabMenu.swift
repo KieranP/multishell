@@ -39,13 +39,17 @@ struct NewTabMenu: View {
     HStack(spacing: UIMetrics.menuChevronGap) {
       Image(systemName: "plus")
         .font(.system(size: model.metrics.glyph, weight: .medium))
+        .accessibilityHidden(true)
       Image(systemName: "chevron.down")
         .font(.system(size: model.metrics.menuChevronSize, weight: .bold))
+        .accessibilityHidden(true)
     }
     .foregroundStyle(theme.textSecondary)
     .padding(.leading, model.metrics.stripGlyphInset)
     .frame(
-      width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight, alignment: .leading
+      width: model.metrics.newTabMenuWidth,
+      height: model.metrics.tabHeight,
+      alignment: .leading,
     )
     .background(theme.chromeColor)
     .contentShape(.rect)

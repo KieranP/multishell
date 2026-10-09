@@ -26,7 +26,9 @@ extension AppModel {
         included(worktree) && mayReadStatus(of: worktree)
           && isStatusWanted(worktree, onSidebar: onSidebar)
           && statusReadLog.isDue(worktree.id, at: now) && !statusReadLog.isReading(worktree.id)
-      }, with: coordinator)
+      },
+      with: coordinator,
+    )
     // After the await: a removed row keeps no badge, and one a stage began on
     // meanwhile keeps its old one and takes no new one; see worktrees.md.
     let known = Set(workspace.worktrees.map(\.id).filter { !pathClaims.isClaimed($0) })
@@ -57,11 +59,14 @@ extension AppModel {
   }
 
   func readStatuses(
-    of worktrees: [Worktree], with coordinator: WorktreeCoordinator
+    of worktrees: [Worktree],
+    with coordinator: WorktreeCoordinator,
   ) async -> [Worktree.ID: StatusReading] {
     let ticket = statusReadLog.begin(worktrees.map(\.id))
     let readings = await coordinator.readStatuses(
-      of: worktrees, counting: workspace.gitStatusIndicator)
+      of: worktrees,
+      counting: workspace.gitStatusIndicator,
+    )
     let stillCounts = statusReadLog.finish(ticket)
     let again = statusReadLog.takeAskedAgain(of: ticket)
     if !again.isEmpty {

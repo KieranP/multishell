@@ -3,6 +3,8 @@ import Foundation
 /// Settings a repository ships for everyone who adds it, read as defaults
 /// under the user's own and trusted before running; see settings.md.
 public struct SharedProjectSettings: Codable, Equatable, Sendable {
+  public static let fileName = ".multishell.json"
+
   /// Absent leaves the user's value standing; blank is an opinion, the only
   /// spelling these three have for "none". Every reader trims.
   public internal(set) var worktreeDirectory: String?
@@ -36,8 +38,6 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
   /// field for, and values it could not read. Export keeps them; see settings.md.
   var unrecognisedKeys: [String: JSONValue] = [:]
 
-  public static let fileName = ".multishell.json"
-
   init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
@@ -56,7 +56,7 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
     showsActiveWorktreesFirst: Bool? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
-    digest: String? = nil
+    digest: String? = nil,
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -98,7 +98,8 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
       worktreeSortOrder: settings.worktreeSortOrder,
       showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
       iconGlyph: ProjectIcon.normalizedGlyph(settings.iconGlyph),
-      iconTint: settings.iconTint)
+      iconTint: settings.iconTint,
+    )
   }
 
   /// Blank is absent where "none" and "no opinion" come to the same thing.

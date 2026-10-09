@@ -28,7 +28,10 @@ struct NewWorktreeBranchFields: View {
     }
     if draft.branchNameIsRefused {
       NewWorktreeFormNote(
-        text: t("sheet.branch-refused"), symbol: "exclamationmark.triangle.fill", tint: .yellow)
+        text: t("sheet.branch-refused"),
+        symbol: "exclamationmark.triangle.fill",
+        tint: .yellow,
+      )
     }
     Picker(t("sheet.based-on"), selection: $draft.baseBranch) {
       ForEach(draft.localBranches, id: \.self, content: Text.init)
@@ -45,8 +48,11 @@ struct NewWorktreeBranchFields: View {
     // and a fresh clone with nothing local to pick is told so instead.
     if draft.showsAllCheckedOutNote(checkedOut: checkedOut) {
       NewWorktreeFormNote(
-        text: t("sheet.all-branches-checked-out"), symbol: "info.circle", tint: .secondary,
-        dimsText: true)
+        text: t("sheet.all-branches-checked-out"),
+        symbol: "info.circle",
+        tint: .secondary,
+        dimsText: true,
+      )
     } else {
       Picker(t("sheet.branch"), selection: $draft.branch) {
         ForEach(draft.availableBranches(checkedOut: checkedOut), id: \.self, content: Text.init)

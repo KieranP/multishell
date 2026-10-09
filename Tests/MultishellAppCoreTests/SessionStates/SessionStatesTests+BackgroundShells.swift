@@ -9,7 +9,8 @@ extension SessionStatesTests {
     var states = SessionStates()
     #expect(
       report(&states, .init(state: .done, backgroundShells: [500])) == .running,
-      "the task is still working")
+      "the task is still working",
+    )
     #expect(states[.session(a)] == .running)
     #expect(states.workers(.session(a)).map(\.pid) == [500])
     #expect(states.trackedPIDs.contains(500), "polled like the agent's own pid")

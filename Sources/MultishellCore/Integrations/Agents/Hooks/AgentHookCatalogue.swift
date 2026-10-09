@@ -14,20 +14,12 @@ public enum AgentHookCatalogue {
   /// start where one asks for more.
   private static let codexExitTimeoutSeconds = 3
 
-  public static func integration(_ id: String) -> AgentHookIntegration? {
-    integrations.first { $0.id == id }
-  }
-
   /// `$HOME` first, as the agents themselves read it: the account's home
   /// ignores it, and a test's helper then wrote the developer's own files.
   static let home: URL =
     ProcessInfo.processInfo.environment["HOME"]?.nonEmpty
     .map { URL(fileURLWithPath: $0, isDirectory: true) }
     ?? FileManager.default.homeDirectoryForCurrentUser
-
-  private static func underHome(_ path: String) -> URL {
-    home.appendingPathComponent(path)
-  }
 
   public static let integrations: [AgentHookIntegration] = [
     claude, codex, gemini, copilot, openCode,
@@ -53,7 +45,11 @@ public enum AgentHookCatalogue {
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PostToolUseFailure", .running),
       AgentHookEvent(
-        "PermissionRequest", .attention, meansWaitingOnlyWhenPrompting: true, isSilent: true),
+        "PermissionRequest",
+        .attention,
+        meansWaitingOnlyWhenPrompting: true,
+        isSilent: true,
+      ),
       AgentHookEvent("Elicitation", .attention, isSilent: true),
       AgentHookEvent("ElicitationResult", .running),
       AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
@@ -64,9 +60,13 @@ public enum AgentHookCatalogue {
       AgentHookEvent("SessionEnd", .idle),
     ],
     format: .userSettingsFile(timeoutIsInMilliseconds: false),
-    resumption: .always, wakingTaskTypes: claudeWakingTaskTypes,
-    transcriptQueuesNotices: true, transcriptShowsPendingQuestion: true,
-    keepsWorkerMetadataBesideTranscript: true, toolResultsNameBackgroundTasks: true)
+    resumption: .always,
+    wakingTaskTypes: claudeWakingTaskTypes,
+    transcriptQueuesNotices: true,
+    transcriptShowsPendingQuestion: true,
+    keepsWorkerMetadataBesideTranscript: true,
+    toolResultsNameBackgroundTasks: true,
+  )
 
   /// Claude's own labels for work whose end is announced to the model, read
   /// from its binary; the rest never end or end unannounced. See agents.md.
@@ -85,7 +85,11 @@ public enum AgentHookCatalogue {
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent(
-        "PermissionRequest", .attention, meansWaitingOnlyWhenPrompting: true, isSilent: true),
+        "PermissionRequest",
+        .attention,
+        meansWaitingOnlyWhenPrompting: true,
+        isSilent: true,
+      ),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
@@ -94,7 +98,7 @@ public enum AgentHookCatalogue {
     ],
     format: .userSettingsFile(timeoutIsInMilliseconds: false),
     trustNote:
-      t("agent-hooks.codex-trust")
+      t("agent-hooks.codex-trust"),
   )
 
   /// Gemini CLI: `~/.gemini/settings.json`, whose events are named for what
@@ -112,7 +116,9 @@ public enum AgentHookCatalogue {
       AgentHookEvent("SessionEnd", .idle),
     ],
     format: .userSettingsFile(timeoutIsInMilliseconds: true),
-    backgroundShellMarker: geminiShellMarker, resumption: .whenGeminiSettingsSay)
+    backgroundShellMarker: geminiShellMarker,
+    resumption: .whenGeminiSettingsSay,
+  )
 
   /// In the wrapper every shell-tool command runs in and nothing else does, so
   /// no MCP server matches. Not a documented contract; see agents.md.
@@ -130,13 +136,19 @@ public enum AgentHookCatalogue {
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PostToolUseFailure", .running),
       AgentHookEvent(
-        "notification", .attention, reportedName: "Notification",
-        matcher: "permission_prompt|elicitation_dialog"),
+        "notification",
+        .attention,
+        reportedName: "Notification",
+        matcher: "permission_prompt|elicitation_dialog",
+      ),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .ownHookFile, resumption: .always, subagentsAreConversations: true)
+    format: .ownHookFile,
+    resumption: .always,
+    subagentsAreConversations: true,
+  )
 
   /// OpenCode has no hooks in its settings: what a session is doing shows only
   /// to a plugin, so it is given one.
@@ -144,5 +156,14 @@ public enum AgentHookCatalogue {
     id: AgentCatalogue.openCodeID,
     file: underHome(".config/opencode/plugin/multishell.js"),
     events: [],
-    format: .plugin)
+    format: .plugin,
+  )
+
+  public static func integration(_ id: String) -> AgentHookIntegration? {
+    integrations.first { $0.id == id }
+  }
+
+  private static func underHome(_ path: String) -> URL {
+    home.appendingPathComponent(path)
+  }
 }

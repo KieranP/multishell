@@ -11,7 +11,8 @@ struct GhosttyRuntimeCallbacksTests {
 
   @Test func aClipboardReadOffTheMainThreadIsAnsweredUnavailableRatherThanStarted() async throws {
     let read = try #require(
-      GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).read_clipboard_cb)
+      GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).read_clipboard_cb
+    )
     // Never dereferenced: the thread is checked first.
     let view = UnsafeMutableRawPointer(bitPattern: 1)
     let result = await Task.detached {
@@ -22,15 +23,18 @@ struct GhosttyRuntimeCallbacksTests {
 
   @Test func aClipboardReadWithNoSurfaceIsAnsweredUnavailable() throws {
     let read = try #require(
-      GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).read_clipboard_cb)
+      GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).read_clipboard_cb
+    )
     #expect(
       read(nil, GHOSTTY_CLIPBOARD_STANDARD, nil, nil, 0, false)
-        == GHOSTTY_CLIPBOARD_READ_UNAVAILABLE)
+        == GHOSTTY_CLIPBOARD_READ_UNAVAILABLE
+    )
   }
 
   @Test func anActionForTheAppIsLeftToLibghostty() throws {
     let perform = try #require(
-      GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).action_cb)
+      GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).action_cb
+    )
     var target = ghostty_target_s()
     target.tag = GHOSTTY_TARGET_APP
     var action = ghostty_action_s()
@@ -40,6 +44,7 @@ struct GhosttyRuntimeCallbacksTests {
 
   @Test func theRuntimeClaimsNoSelectionClipboard() {
     #expect(
-      !GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).supports_selection_clipboard)
+      !GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).supports_selection_clipboard
+    )
   }
 }

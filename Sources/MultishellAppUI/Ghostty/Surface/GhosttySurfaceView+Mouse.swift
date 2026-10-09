@@ -30,12 +30,19 @@ extension GhosttySurfaceView {
 
   override func otherMouseDown(with event: NSEvent) {
     takeFirstResponder()
-    sendButton(GHOSTTY_MOUSE_PRESS, GhosttyMouseButton.button(forNumber: event.buttonNumber), event)
+    sendButton(
+      GHOSTTY_MOUSE_PRESS,
+      GhosttyMouseButton.button(forNumber: event.buttonNumber),
+      event,
+    )
   }
 
   override func otherMouseUp(with event: NSEvent) {
     sendButton(
-      GHOSTTY_MOUSE_RELEASE, GhosttyMouseButton.button(forNumber: event.buttonNumber), event)
+      GHOSTTY_MOUSE_RELEASE,
+      GhosttyMouseButton.button(forNumber: event.buttonNumber),
+      event,
+    )
   }
 
   override func mouseMoved(with event: NSEvent) { sendPointerPosition(of: event) }
@@ -57,23 +64,37 @@ extension GhosttySurfaceView {
     guard let surface else { return }
     let flags = GhosttyScrollFlags(event)
     ghostty_surface_mouse_scroll(
-      surface, event.scrollingDeltaX, event.scrollingDeltaY, flags.rawValue)
+      surface,
+      event.scrollingDeltaX,
+      event.scrollingDeltaY,
+      flags.rawValue,
+    )
   }
 
   @discardableResult
   private func sendButton(
-    _ state: ghostty_input_mouse_state_e, _ button: ghostty_input_mouse_button_e, _ event: NSEvent
+    _ state: ghostty_input_mouse_state_e,
+    _ button: ghostty_input_mouse_button_e,
+    _ event: NSEvent,
   ) -> Bool {
     guard let surface else { return false }
     sendPointerPosition(of: event)
     return ghostty_surface_mouse_button(
-      surface, state, button, GhosttyModifiers.mods(event.modifierFlags))
+      surface,
+      state,
+      button,
+      GhosttyModifiers.mods(event.modifierFlags),
+    )
   }
 
   private func sendPointerPosition(of event: NSEvent) {
     guard let surface else { return }
     let point = convert(event.locationInWindow, from: nil)
     ghostty_surface_mouse_pos(
-      surface, point.x, bounds.height - point.y, GhosttyModifiers.mods(event.modifierFlags))
+      surface,
+      point.x,
+      bounds.height - point.y,
+      GhosttyModifiers.mods(event.modifierFlags),
+    )
   }
 }

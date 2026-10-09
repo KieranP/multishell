@@ -6,12 +6,16 @@ import MultishellAppCore
 @MainActor
 enum QuitAlert {
   static func make(
-    terminals: Int, working: Int, quit: String = t("action.quit"),
-    cancel: String = t("action.cancel")
+    terminals: Int,
+    working: Int,
+    quit: String = t("action.quit"),
+    cancel: String = t("action.cancel"),
   ) -> NSAlert {
     WarningAlert.make(
       title: t("quit.title"),
-      message: QuitConfirmation.message(terminals: terminals, working: working), action: quit,
-      cancel: cancel)
+      message: QuitConfirmation.message(terminals: terminals, working: working),
+      action: quit,
+      cancel: cancel,
+    )
   }
 }

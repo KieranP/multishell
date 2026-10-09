@@ -3,6 +3,10 @@ import Foundation
 /// Parses `git status --porcelain=v1 --branch`: a `## <branch>...` line,
 /// then `XY <path>` for the index state and the working tree state.
 enum WorktreeStatusParser {
+  /// How git says a branch has no commits yet; the second is its wording
+  /// before 2.19. English in `--porcelain` whatever the locale, checked on 2.55.
+  private static let unbornPrefixes = ["No commits yet on ", "Initial commit on "]
+
   static func parse(_ output: String) -> WorktreeStatus {
     var status = WorktreeStatus()
 
@@ -18,10 +22,13 @@ enum WorktreeStatusParser {
       switch (indexState, workTreeState) {
       case ("!", "!"):
         continue
+
       case ("?", "?"):
         status.untracked += 1
+
       case ("U", _), (_, "U"), ("A", "A"), ("D", "D"):
         status.conflicted += 1
+
       default:
         if indexState != " " { status.staged += 1 }
         if workTreeState != " " { status.unstaged += 1 }
@@ -61,8 +68,4 @@ enum WorktreeStatusParser {
       }
     }
   }
-
-  /// How git says a branch has no commits yet; the second is its wording
-  /// before 2.19. English in `--porcelain` whatever the locale, checked on 2.55.
-  private static let unbornPrefixes = ["No commits yet on ", "Initial commit on "]
 }

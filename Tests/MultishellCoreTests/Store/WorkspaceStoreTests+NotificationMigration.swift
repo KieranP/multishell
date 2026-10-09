@@ -20,16 +20,22 @@ extension WorkspaceStoreTests {
     #expect(
       store.workspace.notificationPreference
         == NotificationPreference(
-          notifiesOnAttention: true, notifiesOnFailure: true, notifiesOnDone: true))
+          notifiesOnAttention: true,
+          notifiesOnFailure: true,
+          notifiesOnDone: true,
+        )
+    )
 
     try store.save()
     let written = try #require(
-      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
     #expect(
       written["notifications"] as? [String: Bool] == [
         "attention": true, "error": true, "done": true,
       ],
-      "written as toggles, not as the name it was read from")
+      "written as toggles, not as the name it was read from",
+    )
 
     let (again, reloadError) = WorkspaceStore.restored(from: stateFile)
     #expect(reloadError == nil, "\(String(describing: reloadError))")

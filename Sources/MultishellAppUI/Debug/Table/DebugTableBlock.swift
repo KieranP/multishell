@@ -29,15 +29,19 @@ struct DebugTableBlock<Content: View>: View {
       .padding(.bottom, 6)
       content(
         DebugTableLayout.of(
-          width: width, columnsWidthInEms: columnsWidthInEms, fontSize: metrics.bodySize))
+          width: width,
+          columnsWidthInEms: columnsWidthInEms,
+          fontSize: metrics.bodySize,
+        )
+      )
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.bottom, 4)
     .columnBackground(theme)
-    .onGeometryChange(for: Double.self) {
-      $0.size.width
-    } action: {
-      width = $0
+    .onGeometryChange(for: Double.self) { geometry in
+      geometry.size.width
+    } action: { newWidth in
+      width = newWidth
     }
   }
 }

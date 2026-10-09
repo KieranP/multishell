@@ -35,11 +35,13 @@ extension AppModel {
   func takeDebugSample() async {
     guard areDebugToolsEnabled else { return }
     let hints = liveSessionIDs.reduce(into: [TerminalSession.ID: TerminalProcessHint]()) {
-      hints, id in hints[id] = host.processHint(of: id)
+      hints,
+      id in hints[id] = host.processHint(of: id)
     }
     let terminalPaths = hints.compactMapValues(\.terminalPath)
     let terminalMemoryBySession = liveSessionIDs.reduce(into: [TerminalSession.ID: UInt64]()) {
-      memory, id in memory[id] = host.terminalMemory(of: id)
+      memory,
+      id in memory[id] = host.terminalMemory(of: id)
     }
     let appPID = ProcessInfo.processInfo.processIdentifier
     let scanProcesses = debugSampler.scanProcesses
@@ -54,27 +56,35 @@ extension AppModel {
     let gitActivity = coordinator?.git.runLog.drain() ?? .empty
     let cpu = debugSampler.cpuUsageMeter.takeReading(
       of: (scan.app.map { [$0] } ?? []) + children,
+      at: now,
       exited: gitActivity.finishedRuns.compactMap(\.exitUsage).map { ($0.pid, $0.cpuTime) },
-      at: now)
+    )
     let cpuPercentByPID = cpu.byPID
     debugHistory.append(
       DebugSample(
-        sequence: debugHistory.nextSequence, takenAt: Date(), elapsed: elapsed,
+        sequence: debugHistory.nextSequence,
+        takenAt: Date(),
+        elapsed: elapsed,
         frameRate: debugSampler.frameRateMeter.takeReading(at: now),
-        gitRunsStartedCount: gitActivity.startedCount, gitRunningCount: gitActivity.runningCount,
+        gitRunsStartedCount: gitActivity.startedCount,
+        gitRunningCount: gitActivity.runningCount,
         gitCommands: GitCommandTally.byCommand(gitActivity.finishedRuns),
         appCPUPercent: scan.app.flatMap { cpuPercentByPID[$0.pid] } ?? 0,
-        childrenCPUPercent: children.reduce(cpu.exitedPercent) {
-          $0 + (cpuPercentByPID[$1.pid] ?? 0)
+        childrenCPUPercent: children.reduce(cpu.exitedPercent) { total, child in
+          total + (cpuPercentByPID[child.pid] ?? 0)
         },
         appMemory: scan.app?.footprint ?? 0,
         terminalMemory: terminalMemoryBySession.values.reduce(0, +),
         childrenMemory: children.totalMemory,
-        stateReportCount: debugSampler.stateReportCount))
+        stateReportCount: debugSampler.stateReportCount,
+      )
+    )
     debugSampler.stateReportCount = 0
     debugProcessAttribution = PaneProcessAttribution(
-      trees: scan.trees, terminalDevices: scan.terminalDevices,
-      foregroundPIDs: hints.compactMapValues(\.foregroundPID))
+      trees: scan.trees,
+      terminalDevices: scan.terminalDevices,
+      foregroundPIDs: hints.compactMapValues(\.foregroundPID),
+    )
     debugTerminalMemoryBySession = terminalMemoryBySession
   }
 }

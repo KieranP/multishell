@@ -5,8 +5,9 @@ import Synchronization
 final class AtomicFlag: Sendable {
   private let value = Atomic(false)
 
+  var raised: Bool { value.load(ordering: .acquiring) }
+
   init() {}
 
-  var raised: Bool { value.load(ordering: .acquiring) }
   func raise() { value.store(true, ordering: .releasing) }
 }

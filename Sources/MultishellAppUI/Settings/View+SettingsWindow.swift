@@ -7,6 +7,9 @@ extension View {
     frame(width: UIMetrics.settingsWindowSize.width, height: UIMetrics.settingsWindowSize.height)
       .background(
         SettingsWindowReset(
-          workspaceScreen: { platform.workspaceWindow?.screen }, showFirstPage: showFirstPage))
+          workspaceScreen: { platform.workspaceWindow?.screen },
+          showFirstPage: showFirstPage,
+        )
+      )
   }
 }

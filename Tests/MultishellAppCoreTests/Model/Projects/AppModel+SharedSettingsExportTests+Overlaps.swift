@@ -60,7 +60,8 @@ extension AppModelSharedSettingsExportTests {
     let read = harness.project.sharedSettingsSnapshot
     #expect(read.asWritten == onDisk)
     let stamp = SharedSettingsReading.modificationDate(
-      of: SharedProjectSettings.file(in: harness.project.path))
+      of: SharedProjectSettings.file(in: harness.project.path)
+    )
     #expect(!read.needsRead(at: stamp), "a stamp from the other write would hide the file")
     #expect(harness.model.trustsSharedSettings(of: harness.project))
   }

@@ -17,13 +17,19 @@ struct GitRunnerTests {
     let git = try TestGit.runner(configuration: ["user.name": "From the runner"])
 
     try await TestRepository.commit(
-      "second", files: ["README.md": "second\n"], in: repository, using: git)
+      "second",
+      files: ["README.md": "second\n"],
+      in: repository,
+      using: git,
+    )
 
     let author = try await git.run(["log", "-1", "--format=%an"], in: repository)
     #expect(author.trimmingCharacters(in: .whitespacesAndNewlines) == "From the runner")
     // The fixture's own runner passes no name, so the repository's answers.
     let first = try await fixture.runner.run(
-      ["log", "-1", "--format=%an", "HEAD~1"], in: repository)
+      ["log", "-1", "--format=%an", "HEAD~1"],
+      in: repository,
+    )
     #expect(first.trimmingCharacters(in: .whitespacesAndNewlines) == TestRepository.committerName)
   }
 
@@ -43,10 +49,13 @@ struct GitRunnerTests {
 
     let asked = try GitRunner(configuration: ["log.showSignature": "true"])
     let overridden = try await asked.run(
-      ["config", "--get", "log.showSignature"], in: fixture.project.path)
+      ["config", "--get", "log.showSignature"],
+      in: fixture.project.path,
+    )
     #expect(
       overridden.trimmingCharacters(in: .whitespacesAndNewlines) == "true",
-      "a caller asking for it still wins")
+      "a caller asking for it still wins",
+    )
   }
 
   /// LFS, a credential helper or a diff driver has git exec a program off PATH, and from the
@@ -57,13 +66,16 @@ struct GitRunnerTests {
     let bin = try Scratch.directory("gitpath")
     defer { Scratch.remove(bin) }
     try Scratch.script(
-      "printf 'found the helper\\n'", at: bin.appendingPathComponent("ms-test-helper"))
+      "printf 'found the helper\\n'",
+      at: bin.appendingPathComponent("ms-test-helper"),
+    )
 
     // An alias git runs through a shell, which is how a filter or credential
     // helper is reached: it is found only on the PATH the runner carries.
     let git = try TestGit.runner(
       searchPath: bin.path + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? ""),
-      configuration: ["alias.helped": "!ms-test-helper"])
+      configuration: ["alias.helped": "!ms-test-helper"],
+    )
     let output = try await git.run(["helped"], in: fixture.project.path)
     #expect(output.contains("found the helper"))
 
@@ -79,17 +91,30 @@ struct GitRunnerTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let repository = fixture.project.path
-    _ = try await fixture.runner.run(["config", "status.showUntrackedFiles", "no"], in: repository)
+    _ = try await fixture.runner.run(
+      ["config", "status.showUntrackedFiles", "no"],
+      in: repository,
+    )
     try "wip\n".write(
-      to: repository.appendingPathComponent("scratch.txt"), atomically: true, encoding: .utf8)
+      to: repository.appendingPathComponent("scratch.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let worktree = Worktree(
-      path: repository, projectID: fixture.project.id, head: "a", branch: "main")
+      path: repository,
+      projectID: fixture.project.id,
+      head: "a",
+      branch: "main",
+    )
     let status = try await WorktreeGit(runner: try GitRunner()).status(of: worktree)
 
     #expect(status.untracked == 1)
     #expect(status.isDirty, "the repository's own config said not to look")
-    #expect(status.insertions == 1, "and its line is counted, the badge reading from the same list")
+    #expect(
+      status.insertions == 1,
+      "and its line is counted, the badge reading from the same list",
+    )
   }
 
   /// From the Finder the process PATH is the system directories alone, so a
@@ -99,9 +124,14 @@ struct GitRunnerTests {
     defer { Scratch.remove(directory) }
     try Scratch.script("echo the searched git", at: directory.appendingPathComponent("git"))
     let other = try Scratch.script(
-      "echo the named git", at: directory.appendingPathComponent("other-git"))
+      "echo the named git",
+      at: directory.appendingPathComponent("other-git"),
+    )
 
-    let searched = try await GitRunner(searchPath: directory.path).run(["--version"], in: directory)
+    let searched = try await GitRunner(searchPath: directory.path).run(
+      ["--version"],
+      in: directory,
+    )
     let named = try await GitRunner(executable: other, searchPath: directory.path)
       .run(["--version"], in: directory)
 

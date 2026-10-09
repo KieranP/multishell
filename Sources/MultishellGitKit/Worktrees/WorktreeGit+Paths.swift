@@ -22,12 +22,17 @@ extension WorktreeGit {
   /// Where a linked checkout's `.git` file says its record is, relative or absolute.
   static func recordDirectoryFromGitFile(in checkout: URL) -> URL? {
     directoryNamed(
-      inFile: checkout.appendingPathComponent(".git"), after: "gitdir: ", relativeTo: checkout)
+      inFile: checkout.appendingPathComponent(".git"),
+      relativeTo: checkout,
+      after: "gitdir: ",
+    )
   }
 
   /// The directory a git-written file names on its first line, after `prefix`.
   static func directoryNamed(
-    inFile file: URL, after prefix: String = "", relativeTo base: URL
+    inFile file: URL,
+    relativeTo base: URL,
+    after prefix: String = "",
   )
     -> URL?
   {

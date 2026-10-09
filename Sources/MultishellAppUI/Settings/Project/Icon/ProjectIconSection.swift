@@ -13,7 +13,8 @@ struct ProjectIconSection: View {
     let settings = model.effectiveSettings(for: project)
     let kind = settings.iconKind
     let takesIconFromSharedFile = own.takesIconFromSharedFile(
-      project.sharedSettingsSnapshot.confined)
+      project.sharedSettingsSnapshot.confined
+    )
     Section(t("project.icon")) {
       InfoLabeledContent(t("project.icon-label"), info: t("project.icon-info")) {
         IconPicker(kind: kind, tint: tint(settings)) { model.setIconGlyph($0, for: project) }

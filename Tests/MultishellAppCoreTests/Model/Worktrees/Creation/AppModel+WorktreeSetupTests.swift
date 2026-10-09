@@ -15,7 +15,11 @@ struct AppModelWorktreeSetupTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "exit 3"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "hooked", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "hooked",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "hooked"))
     #expect(harness.model.workspace.selectedWorktreeID == created.id, "shown before the hook ends")
     harness.model.presentedError = nil
@@ -41,17 +45,23 @@ struct AppModelWorktreeSetupTests {
     defer { harness.tearDown() }
     harness.model.setSettings(
       ProjectSettings(postCreateHook: "echo installing\necho npm said no >&2\nexit 1"),
-      for: harness.project)
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "loud", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "loud",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "loud"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
       harness.model.worktreeOperations[created.id]?.failure
         == "installing\nnpm said no\n\nExited with status 1.",
-      "what the hook printed on either stream, then its status, and no rc noise")
+      "what the hook printed on either stream, then its status, and no rc noise",
+    )
   }
   /// `npm install` in a post-create hook used to hold the sheet, and the whole app, for as
   /// long as it took.
@@ -61,7 +71,11 @@ struct AppModelWorktreeSetupTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 3"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "slow", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "slow",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     let created = try #require(harness.worktree(onBranch: "slow"))
     // No clock needed: a create that waited out the hook would leave the operation
@@ -69,14 +83,19 @@ struct AppModelWorktreeSetupTests {
     #expect(harness.model.workspace.selectedWorktreeID == created.id)
     #expect(harness.model.worktreeOperations[created.id]?.stage == .postCreateHook)
     #expect(harness.model.isBusy(created.id))
-    #expect(harness.model.workspace.tabs(in: created.id).isEmpty, "no shell until the hook is done")
+    #expect(
+      harness.model.workspace.tabs(in: created.id).isEmpty,
+      "no shell until the hook is done",
+    )
     #expect(harness.model.liveTerminalCount == 0)
 
     harness.model.newTab()
     harness.model.newShellTab()
     harness.model.select(created)
     #expect(
-      harness.model.workspace.tabs(in: created.id).isEmpty, "nothing starts a shell meanwhile")
+      harness.model.workspace.tabs(in: created.id).isEmpty,
+      "nothing starts a shell meanwhile",
+    )
     harness.model.requestWorktreeRemoval(of: created)
     #expect(harness.model.pendingWorktreeRemoval == nil, "and nothing removes it meanwhile")
 
@@ -98,15 +117,23 @@ struct AppModelWorktreeSetupTests {
     try Scratch.script("printf bash > shell.txt", at: bash)
     harness.model.setPreferredShell(zsh.path)
     harness.model.setSettings(
-      ProjectSettings(postCreateHook: "true", preferredShellID: bash.path), for: harness.project)
+      ProjectSettings(postCreateHook: "true", preferredShellID: bash.path),
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "bashed", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "bashed",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     let created = try #require(harness.worktree(onBranch: "bashed"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     let shell = try String(
-      contentsOf: created.path.appendingPathComponent("shell.txt"), encoding: .utf8)
+      contentsOf: created.path.appendingPathComponent("shell.txt"),
+      encoding: .utf8,
+    )
     #expect(shell == "bash", "the project's shell, not the global one")
   }
 
@@ -114,14 +141,22 @@ struct AppModelWorktreeSetupTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setSettings(
-      ProjectSettings(postCreateHook: "sleep 30 & echo $! > sleep.pid"), for: harness.project)
+      ProjectSettings(postCreateHook: "sleep 30 & echo $! > sleep.pid"),
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "served", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "served",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "served"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     let written = try String(
-      contentsOf: created.path.appendingPathComponent("sleep.pid"), encoding: .utf8)
+      contentsOf: created.path.appendingPathComponent("sleep.pid"),
+      encoding: .utf8,
+    )
     let hookChild = try #require(pid_t(written.trimmingCharacters(in: .whitespacesAndNewlines)))
     defer { kill(hookChild, SIGKILL) }
 
@@ -135,11 +170,17 @@ struct AppModelWorktreeSetupTests {
     defer { harness.tearDown() }
     harness.model.setProjectHookTimeoutSeconds(1)
     harness.model.setSettings(
-      ProjectSettings(postCreateHook: "echo installing\nsleep 30"), for: harness.project)
+      ProjectSettings(postCreateHook: "echo installing\nsleep 30"),
+      for: harness.project,
+    )
     let started = ContinuousClock.now
 
     await harness.model.createWorktree(
-      branch: "slow", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "slow",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "slow"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
@@ -156,7 +197,11 @@ struct AppModelWorktreeSetupTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 30"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "stopped", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "stopped",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "stopped"))
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
     harness.model.cancelStage(of: created)
@@ -166,7 +211,8 @@ struct AppModelWorktreeSetupTests {
     #expect(harness.model.presentedError == nil)
     #expect(
       harness.model.workspace.tabs(in: created.id).count == 1,
-      "the first tab opens as after a finish")
+      "the first tab opens as after a finish",
+    )
   }
   /// A stage ending is not the user turning back to the pane.
   @Test func aStageEndingUnderTheAgentsBoardLeavesTheBoardUpAndStartsTheTabBehindIt()
@@ -179,7 +225,11 @@ struct AppModelWorktreeSetupTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 30"), for: harness.project)
 
     await harness.model.createWorktree(
-      branch: "roster", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "roster",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "roster"))
     harness.model.showAgentBoard()
     harness.model.cancelStage(of: created)
@@ -188,7 +238,10 @@ struct AppModelWorktreeSetupTests {
     #expect(harness.model.showsAgentBoard, "nothing the user did")
     let tabs = harness.model.workspace.tabs(in: created.id)
     #expect(tabs.count == 1, "owed by the create, not the select")
-    #expect(harness.engine.liveSessionIDs.contains(tabs[0].focusedSessionID), "and running already")
+    #expect(
+      harness.engine.liveSessionIDs.contains(tabs[0].focusedSessionID),
+      "and running already",
+    )
     #expect(harness.engine.focused.isEmpty, "the keyboard is left where it was")
   }
   /// The first tab is the create's, so it opens under the create settings,
@@ -204,7 +257,11 @@ struct AppModelWorktreeSetupTests {
     let main = harness.model.workspace.worktrees(of: harness.project.id)[0]
 
     await harness.model.createWorktree(
-      branch: "owed", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "owed",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "owed"))
     harness.model.select(main)
     let focusedBefore = harness.engine.focused.count
@@ -215,9 +272,12 @@ struct AppModelWorktreeSetupTests {
     #expect(tabs.count == 1)
     #expect(
       harness.model.workspace.session(tabs[0].focusedSessionID)?.agentID == "claude",
-      "the create pair of settings, not the select pair")
+      "the create pair of settings, not the select pair",
+    )
     #expect(
-      harness.engine.liveSessionIDs.contains(tabs[0].focusedSessionID), "started in the background")
+      harness.engine.liveSessionIDs.contains(tabs[0].focusedSessionID),
+      "started in the background",
+    )
     #expect(harness.model.workspace.selectedWorktreeID == main.id, "the user was not moved")
     #expect(harness.engine.focused.count == focusedBefore, "nor was the keyboard")
     harness.model.select(created)

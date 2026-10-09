@@ -4,6 +4,13 @@ import MultishellProcess
 /// Runs git and hands back its standard output. Shelling out rather than
 /// linking libgit2; see Docs/design/architecture.md.
 struct GitRunner: Sendable {
+  /// Set on every runner: signature lines read as reflog work, and untracked
+  /// files hidden read as a clean tree. Both badge wrongly and offer a delete.
+  private static let forcedConfiguration = [
+    "log.showSignature": "false",
+    "status.showUntrackedFiles": "normal",
+  ]
+
   private let executable: URL
   private let processRunner = ProcessRunner()
   /// `GIT_CONFIG_*`, which git reads as config of the highest precedence,
@@ -13,28 +20,27 @@ struct GitRunner: Sendable {
   /// carry across it.
   let runLog: GitRunLog
 
-  /// Set on every runner: signature lines read as reflog work, and untracked
-  /// files hidden read as a clean tree. Both badge wrongly and offer a delete.
-  private static let forcedConfiguration = [
-    "log.showSignature": "false",
-    "status.showUntrackedFiles": "normal",
-  ]
-
   /// The git on `searchPath`, or on the process's own PATH where there is none.
   init(
-    searchPath: String? = nil, configuration: [String: String] = [:],
-    runLog: GitRunLog = GitRunLog()
+    searchPath: String? = nil,
+    configuration: [String: String] = [:],
+    runLog: GitRunLog = GitRunLog(),
   ) throws {
     try self.init(
-      executable: ExecutableLookup.find("git", searchPath: searchPath), searchPath: searchPath,
-      configuration: configuration, runLog: runLog)
+      executable: ExecutableLookup.find("git", searchPath: searchPath),
+      searchPath: searchPath,
+      configuration: configuration,
+      runLog: runLog,
+    )
   }
 
   /// `configuration` beats `forcedConfiguration` and git's own. Through the environment,
   /// not `-c`, which a failure would report in its arguments; see merged-branch.md.
   init(
-    executable: URL?, searchPath: String? = nil, configuration: [String: String] = [:],
-    runLog: GitRunLog = GitRunLog()
+    executable: URL?,
+    searchPath: String? = nil,
+    configuration: [String: String] = [:],
+    runLog: GitRunLog = GitRunLog(),
   ) throws {
     guard let executable else { throw GitUnavailable() }
     self.executable = executable
@@ -52,14 +58,22 @@ struct GitRunner: Sendable {
   /// `environment` and `timeout` are for the one call that talks to a network,
   /// `WorktreeGit.fetch`; `stopper` for the checkout a user may end, `add`.
   func run(
-    _ arguments: [String], in directory: URL, environment: [String: String] = [:],
-    timeout: Duration? = nil, stopper: ProcessStopper? = nil
+    _ arguments: [String],
+    in directory: URL,
+    environment: [String: String] = [:],
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil,
   ) async throws -> String {
     try await logged(arguments, in: directory) { exitUsageProbe in
       try await processRunner.run(
-        executable, arguments, in: directory,
+        executable,
+        arguments,
+        in: directory,
         environment: baseEnvironment.merging(environment) { _, callers in callers },
-        timeout: timeout, stopper: stopper, exitUsageProbe: exitUsageProbe)
+        timeout: timeout,
+        stopper: stopper,
+        exitUsageProbe: exitUsageProbe,
+      )
     }
   }
 
@@ -85,8 +99,12 @@ struct GitRunner: Sendable {
   private func capture(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
     await logged(arguments, in: directory) { exitUsageProbe in
       try? await processRunner.capture(
-        executable, arguments, in: directory, environment: baseEnvironment,
-        exitUsageProbe: exitUsageProbe)
+        executable,
+        arguments,
+        in: directory,
+        environment: baseEnvironment,
+        exitUsageProbe: exitUsageProbe,
+      )
     }
   }
 }

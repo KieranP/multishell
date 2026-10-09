@@ -2,6 +2,14 @@ import Foundation
 import Synchronization
 
 extension UnixSocketServer {
+  /// Unchecked: `buffer` is touched only by its read source's handler, which
+  /// runs on the server's serial queue.
+  final class Connection: @unchecked Sendable {
+    let source: any DispatchSourceRead
+    var buffer = LineBuffer()
+    init(source: any DispatchSourceRead) { self.source = source }
+  }
+
   /// How long the listener stays suspended when there is no descriptor to
   /// accept with. Long enough that the queue is not the thing holding one.
   private static let resourceBackoff: DispatchTimeInterval = .milliseconds(250)
@@ -13,6 +21,7 @@ extension UnixSocketServer {
         switch AcceptOutcome(errno: errno) {
         case .waitForNextEvent: return
         case .retryNow: continue
+
         case .outOfResources:
           // The pending connection stays in the backlog and the source is
           // level-triggered, so returning here burns a core until one frees.
@@ -79,13 +88,5 @@ extension UnixSocketServer {
   private func drop(_ descriptor: Int32, _ connection: Connection) {
     state.withLock { $0.connections[descriptor] = nil }
     connection.source.cancel()
-  }
-
-  /// Unchecked: `buffer` is touched only by its read source's handler, which
-  /// runs on the server's serial queue.
-  final class Connection: @unchecked Sendable {
-    let source: any DispatchSourceRead
-    var buffer = LineBuffer()
-    init(source: any DispatchSourceRead) { self.source = source }
   }
 }

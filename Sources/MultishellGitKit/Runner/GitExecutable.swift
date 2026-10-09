@@ -8,9 +8,10 @@ enum GitExecutable {
   /// The PATH's git, or where the shim leads when that is the shim. The shim
   /// stays where xcrun cannot say, as a git that runs beats none.
   static func resolve(
-    searchPath: String?, shim: URL = URL(fileURLWithPath: "/usr/bin/git"),
+    searchPath: String?,
+    developerDirectory: URL?,
+    shim: URL = URL(fileURLWithPath: "/usr/bin/git"),
     xcrun: URL = URL(fileURLWithPath: "/usr/bin/xcrun"),
-    developerDirectory: URL?
   ) async -> URL? {
     // Each PATH directory is a stat, which a dead mount holds.
     let found = await runOnDispatch { ExecutableLookup.find("git", searchPath: searchPath) }
@@ -22,7 +23,11 @@ enum GitExecutable {
     else { return found }
     guard
       let output = try? await ProcessRunner().capture(
-        xcrun, ["--find", "git"], in: URL(fileURLWithPath: "/"), timeout: .seconds(5)),
+        xcrun,
+        ["--find", "git"],
+        in: URL(fileURLWithPath: "/"),
+        timeout: .seconds(5),
+      ),
       output.succeeded
     else { return found }
     let resolved = output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -24,8 +24,9 @@ final class Harness {
 
   /// `socketSource` stands in for `stateSource`, for a test of the real socket.
   init(
-    savedSelection: Bool = false, stateFile: URL? = nil,
-    socketSource: (any SessionStateSource)? = nil
+    savedSelection: Bool = false,
+    stateFile: URL? = nil,
+    socketSource: (any SessionStateSource)? = nil,
   ) {
     root = Scratch.path("appmodel")
     try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -34,15 +35,24 @@ final class Harness {
     let added = store.addProject(at: root)  // exists on disk, so `select` accepts it
     main = Worktree(path: root, projectID: added.id, head: "a", branch: "main", isPrimary: true)
     feature = Worktree(
-      path: root.appendingPathComponent("feature"), projectID: added.id, head: "b",
-      branch: "feature")
+      path: root.appendingPathComponent("feature"),
+      projectID: added.id,
+      head: "b",
+      branch: "feature",
+    )
     try? FileManager.default.createDirectory(at: feature.path, withIntermediateDirectories: true)
     store.replaceWorktrees([main, feature], forProject: added.id)
     if savedSelection { store.selectWorktree(main.id) }
 
     model = AppModel(
-      store: store, host: engine, coordinator: nil, watcher: watcher, platform: platform,
-      stateSource: socketSource ?? stateSource, notifier: notifier)
+      store: store,
+      host: engine,
+      coordinator: nil,
+      watcher: watcher,
+      platform: platform,
+      stateSource: socketSource ?? stateSource,
+      notifier: notifier,
+    )
     model.statusReadLog.pace = .unpaced
     model.refreshAppLaunchFiles = { _ in }
     model.sweepPromisedDropCopies = {}
@@ -50,7 +60,8 @@ final class Harness {
     model.captureLoginEnvironment = { [root] in
       LoginShellEnvironment(
         variables: ["PATH": path, "HOME": root.path],
-        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
+      )
     }
   }
 
@@ -59,8 +70,6 @@ final class Harness {
   func installFakeAgent(_ name: String) throws {
     try fakeBin([name], in: root.appendingPathComponent("bin", isDirectory: true))
   }
-
-  deinit { Scratch.remove(root) }
 
   /// The model's tasks are `@MainActor`, so yielding hands them the actor this test holds; a
   /// handful of turns covers one that awaits a port on the way.
@@ -87,4 +96,6 @@ final class Harness {
     let model = AppModel(store: store, host: engine, coordinator: nil, watcher: FakeWatcher())
     return (model, engine, store, loadError)
   }
+
+  deinit { Scratch.remove(root) }
 }

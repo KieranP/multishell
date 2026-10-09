@@ -33,10 +33,16 @@ struct GhosttyKeyInputTests {
 
   @Test func aControlCharacterOrDeleteGoesAsNoTextForLibghosttyToEncode() throws {
     let control = GhosttyKeyInput(
-      try keyDown("\u{3}", keyCode: 0x08), GHOSTTY_ACTION_PRESS, text: "\u{3}")
+      try keyDown("\u{3}", keyCode: 0x08),
+      GHOSTTY_ACTION_PRESS,
+      text: "\u{3}",
+    )
     #expect(control.text == nil)
     let delete = GhosttyKeyInput(
-      try keyDown("\u{7F}", keyCode: 0x33), GHOSTTY_ACTION_PRESS, text: "\u{7F}")
+      try keyDown("\u{7F}", keyCode: 0x33),
+      GHOSTTY_ACTION_PRESS,
+      text: "\u{7F}",
+    )
     #expect(delete.text == nil)
   }
 
@@ -48,7 +54,11 @@ struct GhosttyKeyInputTests {
   }
 
   @Test func theTextReachesLibghosttyAsACString() throws {
-    let input = GhosttyKeyInput(try keyDown("x", keyCode: 0x07), GHOSTTY_ACTION_RELEASE, text: "x")
+    let input = GhosttyKeyInput(
+      try keyDown("x", keyCode: 0x07),
+      GHOSTTY_ACTION_RELEASE,
+      text: "x",
+    )
     let sent = input.withCValue { key in (key.action, key.text.map { String(cString: $0) }) }
     #expect(sent.0 == GHOSTTY_ACTION_RELEASE)
     #expect(sent.1 == "x")

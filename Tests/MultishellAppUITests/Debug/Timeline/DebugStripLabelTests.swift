@@ -12,19 +12,32 @@ import Testing
 struct DebugStripLabelTests {
   private let widestSlot = DebugTimelineSlot(samples: [
     DebugSample(
-      sequence: 0, takenAt: Date(), elapsed: .seconds(1),
+      sequence: 0,
+      takenAt: Date(),
+      elapsed: .seconds(1),
       frameRate: FrameRateReading(framesPerSecond: 120, longestFrame: .milliseconds(9)),
-      gitRunsStartedCount: 88, gitRunningCount: 12, gitCommands: [:], appCPUPercent: 188,
-      childrenCPUPercent: 788, appMemory: 2_146_000_000, terminalMemory: 1_073_000_000,
+      gitRunsStartedCount: 88,
+      gitRunningCount: 12,
+      gitCommands: [:],
+      appCPUPercent: 188,
+      childrenCPUPercent: 788,
+      appMemory: 2_146_000_000,
+      terminalMemory: 1_073_000_000,
       childrenMemory: 99_900_000_000,
-      stateReportCount: 88)
+      stateReportCount: 88,
+    )
   ])
 
   private func naturalWidth(of metric: DebugMetric, metrics: UIMetrics) -> Double {
     OffscreenWindow.naturalWidth(
       of: DebugStripLabel(
-        metric: metric, slot: widestSlot, theme: Theme.builtins[0], metrics: metrics),
-      windowSize: CGSize(width: 800, height: 200))
+        metric: metric,
+        slot: widestSlot,
+        theme: Theme.builtins[0],
+        metrics: metrics,
+      ),
+      windowSize: CGSize(width: 800, height: 200),
+    )
   }
 
   @Test(arguments: [Appearance.uiFontSizes.lowerBound, 13, Appearance.uiFontSizes.upperBound])
@@ -34,7 +47,8 @@ struct DebugStripLabelTests {
       let width = naturalWidth(of: metric, metrics: metrics)
       #expect(
         width <= metrics.debugStripLabelWidth,
-        "\(metric) needs \(width) of \(metrics.debugStripLabelWidth) at \(fontSize) pt")
+        "\(metric) needs \(width) of \(metrics.debugStripLabelWidth) at \(fontSize) pt",
+      )
     }
   }
 }

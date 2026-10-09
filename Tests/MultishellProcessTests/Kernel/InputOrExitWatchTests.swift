@@ -9,7 +9,8 @@ struct InputOrExitWatchTests {
   @Test func aWriterAlreadyGoneIsReportedAsExitedAtOnce() throws {
     let pipe = Pipe()
     let watch = try #require(
-      InputOrExitWatch(descriptor: pipe.fileHandleForReading.fileDescriptor, pid: deadPID()))
+      InputOrExitWatch(descriptor: pipe.fileHandleForReading.fileDescriptor, pid: deadPID())
+    )
     #expect(watch.next() == .exited)
   }
 
@@ -18,7 +19,9 @@ struct InputOrExitWatchTests {
     let watch = try #require(
       InputOrExitWatch(
         descriptor: pipe.fileHandleForReading.fileDescriptor,
-        pid: ProcessInfo.processInfo.processIdentifier))
+        pid: ProcessInfo.processInfo.processIdentifier,
+      )
+    )
     pipe.fileHandleForWriting.write(Data("command-started 1 ls\n".utf8))
 
     #expect(watch.next() == .input)
@@ -33,7 +36,10 @@ struct InputOrExitWatchTests {
     try writer.run()
     let watch = try #require(
       InputOrExitWatch(
-        descriptor: pipe.fileHandleForReading.fileDescriptor, pid: writer.processIdentifier))
+        descriptor: pipe.fileHandleForReading.fileDescriptor,
+        pid: writer.processIdentifier,
+      )
+    )
 
     #expect(watch.next() == .exited)
     writer.waitUntilExit()

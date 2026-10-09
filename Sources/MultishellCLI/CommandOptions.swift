@@ -24,8 +24,6 @@ struct CommandOptions {
     self.presentFlags = presentFlags
   }
 
-  subscript(name: String) -> String? { values[name] }
-
   func has(_ flag: String) -> Bool { presentFlags.contains(flag) }
 
   func int32(_ name: String) -> Int32? { values[name].flatMap { Int32($0) } }
@@ -37,4 +35,6 @@ struct CommandOptions {
   func onlyIfTrue(_ name: String) -> Bool? { values[name] == "true" ? true : nil }
 
   func onlyIfFalse(_ name: String) -> Bool? { values[name] == "false" ? false : nil }
+
+  subscript(name: String) -> String? { values[name] }
 }

@@ -8,24 +8,36 @@ public enum WorktreeHooks {
   /// Returns at once when the stage's field is blank; `onWillRun` is called
   /// only when there is a script, before it starts.
   static func run(
-    _ stage: HookStage, for project: Project, worktreePath: URL, branch: String,
-    shellPath: String? = nil, timeout: Duration? = nil, stopper: ProcessStopper? = nil,
-    onWillRun: () -> Void = {}
+    _ stage: HookStage,
+    for project: Project,
+    worktreePath: URL,
+    branch: String,
+    shellPath: String? = nil,
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil,
+    onWillRun: () -> Void = {},
   ) async throws {
     let script = trimmedScript(stage, in: project.settings)
     guard !script.isEmpty else { return }
     onWillRun()
 
     let environment = HookVariable.environment(
-      project: project, worktreePath: worktreePath, branch: branch)
+      project: project,
+      worktreePath: worktreePath,
+      branch: branch,
+    )
     let directory = await runOnDispatch {
       Self.workingDirectory(for: stage, project: project, worktreePath: worktreePath)
     }
     do {
       _ = try await ShellCommand.runScript(
-        script, in: directory,
-        environment: environment, shellPath: shellPath ?? ShellChoice.loginShellPath(),
-        timeout: timeout, stopper: stopper)
+        script,
+        in: directory,
+        shellPath: shellPath ?? ShellChoice.loginShellPath(),
+        environment: environment,
+        timeout: timeout,
+        stopper: stopper,
+      )
     } catch {
       throw HookFailure(stage: stage, underlying: error)
     }
@@ -43,11 +55,14 @@ public enum WorktreeHooks {
   /// In the worktree where it exists at that stage, in the repository where
   /// it does not; see Docs/design/hooks.md.
   private static func workingDirectory(
-    for stage: HookStage, project: Project, worktreePath: URL
+    for stage: HookStage,
+    project: Project,
+    worktreePath: URL,
   ) -> URL {
     switch stage {
     case .preCreate, .postDelete: project.path
     case .postCreate: worktreePath
+
     case .preDelete:
       FileManager.default.fileExists(atPath: worktreePath.path) ? worktreePath : project.path
     }

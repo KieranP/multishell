@@ -5,14 +5,14 @@ import SwiftUI
 /// The curated symbols as a grid read by shape, which carries hundreds where a
 /// popup menu held sixty. Keyboard-driven throughout; `IconPicker` pops it up.
 struct IconPalette: View {
+  private static let columns = 10
+  private static let cellSize: Double = 26
+
   let kind: ProjectIcon.Kind
   let pick: (String) -> Void
 
   @State private var highlighted: String?
   @FocusState private var isGridFocused: Bool
-
-  private static let columns = 10
-  private static let cellSize: Double = 26
 
   var body: some View {
     let groups = ProjectIcon.symbolGroups
@@ -34,21 +34,30 @@ struct IconPalette: View {
     .frame(width: Double(Self.columns) * (Self.cellSize + 2) + 22, height: 360)
   }
 
+  private var selectedSymbol: String { kind.symbolName }
+
+  private static func headerID(_ group: String) -> String { "header." + group }
+
   private func grid(_ groups: [ProjectIcon.Group], proxy: ScrollViewProxy) -> some View {
     ScrollView {
       LazyVGrid(
         columns: Array(
-          repeating: GridItem(.fixed(Self.cellSize), spacing: 2), count: Self.columns),
+          repeating: GridItem(.fixed(Self.cellSize), spacing: 2),
+          count: Self.columns,
+        ),
         spacing: 2,
-        pinnedViews: [.sectionHeaders]
+        pinnedViews: [.sectionHeaders],
       ) {
         ForEach(groups, id: \.name) { group in
           Section {
             ForEach(group.symbols, id: \.self) { symbol in
               IconPaletteCell(
-                symbol: symbol, isSelected: symbol == selectedSymbol,
-                isHighlighted: highlighted == symbol && isGridFocused, size: Self.cellSize,
-                pick: { pick(symbol) })
+                symbol: symbol,
+                isSelected: symbol == selectedSymbol,
+                isHighlighted: highlighted == symbol && isGridFocused,
+                size: Self.cellSize,
+                pick: { pick(symbol) },
+              )
             }
           } header: {
             header(group.name).id(Self.headerID(group.name))
@@ -70,8 +79,6 @@ struct IconPalette: View {
     .onKeyPress(.return) { pickHighlighted() }
   }
 
-  private static func headerID(_ group: String) -> String { "header." + group }
-
   private func header(_ name: String) -> some View {
     Text(name)
       .font(.system(size: 10, weight: .semibold))
@@ -90,7 +97,9 @@ struct IconPalette: View {
   }
 
   private func walk(
-    _ step: IconGridWalk.Step, through groups: [ProjectIcon.Group], proxy: ScrollViewProxy
+    _ step: IconGridWalk.Step,
+    through groups: [ProjectIcon.Group],
+    proxy: ScrollViewProxy,
   ) -> KeyPress.Result {
     let rows = IconGridWalk.rows(of: groups, columns: Self.columns)
     guard let destination = IconGridWalk.destination(from: highlighted, step: step, in: rows) else {
@@ -104,6 +113,4 @@ struct IconPalette: View {
     proxy.scrollTo(symbol, anchor: .center)
     return .handled
   }
-
-  private var selectedSymbol: String { kind.symbolName }
 }

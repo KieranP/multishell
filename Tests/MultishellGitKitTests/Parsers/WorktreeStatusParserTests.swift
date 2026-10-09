@@ -86,8 +86,10 @@ struct WorktreeStatusParserTests {
   @Test func anUnbornBranchWithAnUpstreamIsNamedWithoutIt() {
     #expect(
       WorktreeStatusParser.parse("## No commits yet on main...origin/main [gone]\n").branch
-        == "main")
+        == "main"
+    )
     #expect(
-      WorktreeStatusParser.parse("## Initial commit on main...origin/main\n").branch == "main")
+      WorktreeStatusParser.parse("## Initial commit on main...origin/main\n").branch == "main"
+    )
   }
 }

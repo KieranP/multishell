@@ -4,6 +4,10 @@ import MultishellCore
 import SwiftUI
 
 struct MultishellCommands: Commands {
+  private static var focusedUndoManager: UndoManager? {
+    NSApp.keyWindow?.firstResponder?.undoManager
+  }
+
   let model: AppModel
 
   // Only the find items carry `.disabled`: Commands are not re-evaluated
@@ -141,9 +145,5 @@ struct MultishellCommands: Commands {
       Divider()
       ThemePicker(title: t("menu.theme"), model: model)
     }
-  }
-
-  private static var focusedUndoManager: UndoManager? {
-    NSApp.keyWindow?.firstResponder?.undoManager
   }
 }

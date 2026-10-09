@@ -19,8 +19,13 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       id,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["main", "release", "spike"],
-        remoteBranches: ["origin/main"], currentBranch: "main"), checkedOut: ["main"])
+        hasCommits: true,
+        localBranches: ["main", "release", "spike"],
+        remoteBranches: ["origin/main"],
+        currentBranch: "main",
+      ),
+      checkedOut: ["main"],
+    )
     return draft
   }
 
@@ -35,8 +40,13 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       firstProject,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
-      checkedOut: ["main"])
+        hasCommits: true,
+        localBranches: ["main"],
+        remoteBranches: [],
+        currentBranch: "main",
+      ),
+      checkedOut: ["main"],
+    )
     #expect(draft.canCreate(checkedOut: ["main"]))
     #expect(draft.startPoint == "main")
   }
@@ -53,19 +63,31 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       firstProject,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["old"], remoteBranches: [], currentBranch: "old"),
-      checkedOut: [])
+        hasCommits: true,
+        localBranches: ["old"],
+        remoteBranches: [],
+        currentBranch: "old",
+      ),
+      checkedOut: [],
+    )
 
     #expect(!draft.canCreate(checkedOut: []))
     #expect(
-      draft.localBranches.isEmpty && draft.baseBranch.isEmpty, "nothing of firstProject's arrived")
+      draft.localBranches.isEmpty && draft.baseBranch.isEmpty,
+      "nothing of firstProject's arrived",
+    )
     #expect(draft.startPoint == nil, "git gets HEAD, never the other project's branch")
 
     draft.finishLoading(
       secondProject,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["dev"], remoteBranches: [], currentBranch: "dev"),
-      checkedOut: [])
+        hasCommits: true,
+        localBranches: ["dev"],
+        remoteBranches: [],
+        currentBranch: "dev",
+      ),
+      checkedOut: [],
+    )
     #expect(draft.canCreate(checkedOut: []))
     #expect(draft.startPoint == "dev")
   }
@@ -140,8 +162,13 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       firstProject,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["main", "release"], remoteBranches: [],
-        currentBranch: "main"), checkedOut: ["main"])
+        hasCommits: true,
+        localBranches: ["main", "release"],
+        remoteBranches: [],
+        currentBranch: "main",
+      ),
+      checkedOut: ["main"],
+    )
     #expect(draft.branch == "release")
   }
 
@@ -152,8 +179,13 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       firstProject,
       with: NewWorktreeBranches(
-        hasCommits: false, localBranches: [], remoteBranches: [], currentBranch: "HEAD"),
-      checkedOut: [])
+        hasCommits: false,
+        localBranches: [],
+        remoteBranches: [],
+        currentBranch: "HEAD",
+      ),
+      checkedOut: [],
+    )
     #expect(!draft.canCreate(checkedOut: []))
   }
 
@@ -173,12 +205,18 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       firstProject,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["main"],
-        remoteBranches: ["origin/main", "origin/feature"], currentBranch: "main"),
-      checkedOut: ["main"])
+        hasCommits: true,
+        localBranches: ["main"],
+        remoteBranches: ["origin/main", "origin/feature"],
+        currentBranch: "main",
+      ),
+      checkedOut: ["main"],
+    )
 
     #expect(
-      draft.availableBranches(checkedOut: ["main"]).isEmpty, "remote branches are not offered")
+      draft.availableBranches(checkedOut: ["main"]).isEmpty,
+      "remote branches are not offered",
+    )
     #expect(draft.branch == "")
     #expect(!draft.canCreate(checkedOut: ["main"]))
     draft.createsBranch = true
@@ -201,8 +239,13 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       project,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
-      checkedOut: [])
+        hasCommits: true,
+        localBranches: ["main"],
+        remoteBranches: [],
+        currentBranch: "main",
+      ),
+      checkedOut: [],
+    )
 
     for refused in ["my branch", "foo..bar", "feat.lock", "-leading", "a~b"] {
       draft.branch = refused
@@ -225,8 +268,13 @@ struct NewWorktreeDraftTests {
     draft.finishLoading(
       firstProject,
       with: NewWorktreeBranches(
-        hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
-      checkedOut: ["main"])
+        hasCommits: true,
+        localBranches: ["main"],
+        remoteBranches: [],
+        currentBranch: "main",
+      ),
+      checkedOut: ["main"],
+    )
 
     #expect(draft.showsAllCheckedOutNote(checkedOut: ["main"]))
     #expect(!draft.showsAllCheckedOutNote(checkedOut: []))

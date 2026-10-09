@@ -12,10 +12,6 @@ final class FakeTrash: Sendable {
 
   private let state = Mutex(State())
 
-  deinit {
-    if let destination { Scratch.remove(destination) }
-  }
-
   var destination: URL? {
     get { state.withLock { $0.destination } }
     set { state.withLock { $0.destination = newValue } }
@@ -27,5 +23,9 @@ final class FakeTrash: Sendable {
   var onMainThread: [Bool] {
     get { state.withLock { $0.onMainThread } }
     set { state.withLock { $0.onMainThread = newValue } }
+  }
+
+  deinit {
+    if let destination { Scratch.remove(destination) }
   }
 }

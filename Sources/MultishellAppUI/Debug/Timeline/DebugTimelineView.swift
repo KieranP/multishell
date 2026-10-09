@@ -18,8 +18,11 @@ struct DebugTimelineView: View {
     VStack(spacing: 0) {
       ForEach(DebugMetric.allCases, id: \.self) { metric in
         DebugStripView(
-          metric: metric, timeline: timeline, hoveredSlotIndex: hoveredSlotIndex, theme: theme,
-          metrics: metrics
+          metric: metric,
+          timeline: timeline,
+          hoveredSlotIndex: hoveredSlotIndex,
+          theme: theme,
+          metrics: metrics,
         )
         .hairline(.bottom, theme)
       }
@@ -46,10 +49,10 @@ struct DebugTimelineView: View {
         }
         Text(t("debug.axis-now"))
       }
-      .onGeometryChange(for: Double.self) {
-        $0.size.width
-      } action: {
-        chartWidth = $0
+      .onGeometryChange(for: Double.self) { geometry in
+        geometry.size.width
+      } action: { newWidth in
+        chartWidth = newWidth
       }
       .padding(.trailing, UIMetrics.debugChartTrailingInset)
     }
@@ -63,6 +66,9 @@ struct DebugTimelineView: View {
   private func slotIndex(under phase: HoverPhase) -> Int? {
     guard case .active(let location) = phase else { return nil }
     return timeline.slotIndex(
-      atX: location.x, labelWidth: metrics.debugStripLabelWidth, chartWidth: chartWidth)
+      atX: location.x,
+      labelWidth: metrics.debugStripLabelWidth,
+      chartWidth: chartWidth,
+    )
   }
 }

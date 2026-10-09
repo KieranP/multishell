@@ -11,7 +11,8 @@ struct ProjectIconViewTests {
     for name in ProjectIcon.symbols {
       #expect(
         NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil,
-        "no SF Symbol called \(name)")
+        "no SF Symbol called \(name)",
+      )
     }
   }
 

@@ -1,6 +1,16 @@
 import Foundation
 
 extension NewWorktreeDraft {
+  public var offersAgents: Bool { !offeredAgentIDs.isEmpty }
+
+  /// `nil` while nothing is offered, as before the PATH scan answers, so the
+  /// create settings decide as they did without the sheet.
+  public var firstTab: NewWorktreeFirstTab? {
+    guard offersAgents else { return nil }
+    guard startsAgent, offeredAgentIDs.contains(agentID) else { return .shell }
+    return .agent(agentID, task: task.trimmingCharacters(in: .whitespacesAndNewlines))
+  }
+
   /// The agent rows as a newly picked project has them: the switch where it
   /// auto-starts on creation, the picker on its agent. The task stays.
   mutating func fitAgent(startsByDefault: Bool, preferred: String?, offered: [String]) {
@@ -22,15 +32,5 @@ extension NewWorktreeDraft {
   public mutating func pickAgent(_ id: String) {
     agentID = id
     isAgentPicked = true
-  }
-
-  public var offersAgents: Bool { !offeredAgentIDs.isEmpty }
-
-  /// `nil` while nothing is offered, as before the PATH scan answers, so the
-  /// create settings decide as they did without the sheet.
-  public var firstTab: NewWorktreeFirstTab? {
-    guard offersAgents else { return nil }
-    guard startsAgent, offeredAgentIDs.contains(agentID) else { return .shell }
-    return .agent(agentID, task: task.trimmingCharacters(in: .whitespacesAndNewlines))
   }
 }

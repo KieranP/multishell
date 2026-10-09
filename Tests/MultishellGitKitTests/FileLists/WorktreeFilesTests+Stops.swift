@@ -8,15 +8,23 @@ extension WorktreeFilesTests {
   /// paths, and what is in the worktree by then stays there.
   @Test func aStopEndsTheListAtTheNextPathAndKeepsWhatIsPlaced() throws {
     let (repository, worktree) = try repositoryAndWorktree()
-    try "one".write(to: repository.appending(path: ".env.local"), atomically: true, encoding: .utf8)
+    try "one".write(
+      to: repository.appending(path: ".env.local"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try "two".write(to: repository.appending(path: ".env.test"), atomically: true, encoding: .utf8)
     // Sorted, so `.env.local` is placed first and its arrival is the stop.
     let placed = worktree.appending(path: ".env.local")
 
     #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
-        ".env.*", as: .copy, from: repository, to: worktree,
-        isStopRequested: { FileManager.default.fileExists(atPath: placed.path) })
+        ".env.*",
+        as: .copy,
+        from: repository,
+        to: worktree,
+        isStopRequested: { FileManager.default.fileExists(atPath: placed.path) },
+      )
     }
     #expect(try String(contentsOf: placed, encoding: .utf8) == "one")
     #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: ".env.test").path))
@@ -27,8 +35,14 @@ extension WorktreeFilesTests {
   @Test func aStopCarriesTheFailuresItAlreadyHad() throws {
     let (repository, worktree) = try repositoryAndWorktree()
     try FileManager.default.createDirectory(
-      at: repository.appending(path: "vendor"), withIntermediateDirectories: true)
-    try "dep".write(to: repository.appending(path: "vendor/dep"), atomically: true, encoding: .utf8)
+      at: repository.appending(path: "vendor"),
+      withIntermediateDirectories: true,
+    )
+    try "dep".write(
+      to: repository.appending(path: "vendor/dep"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try "two".write(to: repository.appending(path: "after.txt"), atomically: true, encoding: .utf8)
     try WorktreeFiles.place("vendor", as: .link, from: repository, to: worktree)
 
@@ -36,8 +50,12 @@ extension WorktreeFilesTests {
     let seen = CallCounter()
     let stopped = #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
-        "vendor/dep\nafter.txt", as: .copy, from: repository, to: worktree,
-        isStopRequested: { seen.next() > 0 })
+        "vendor/dep\nafter.txt",
+        as: .copy,
+        from: repository,
+        to: worktree,
+        isStopRequested: { seen.next() > 0 },
+      )
     }
 
     #expect(stopped?.failures.map(\.path) == ["vendor/dep"])
@@ -57,8 +75,12 @@ extension WorktreeFilesTests {
 
     #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
-        "cache", as: .copy, from: repository, to: worktree,
-        isStopRequested: { asked.next() > 20 })
+        "cache",
+        as: .copy,
+        from: repository,
+        to: worktree,
+        isStopRequested: { asked.next() > 20 },
+      )
     }
 
     #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "cache").path))
@@ -70,8 +92,13 @@ extension WorktreeFilesTests {
 
     let stopped = #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
-        "~/.aws.json\n.env", as: .copy, from: repository, to: worktree,
-        isRepositoryList: false, isStopRequested: { true })
+        "~/.aws.json\n.env",
+        as: .copy,
+        from: repository,
+        to: worktree,
+        isRepositoryList: false,
+        isStopRequested: { true },
+      )
     }
 
     #expect(stopped?.skipped == ["~/.aws.json"])

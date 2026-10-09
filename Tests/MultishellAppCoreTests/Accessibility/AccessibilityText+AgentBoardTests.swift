@@ -10,13 +10,22 @@ struct AccessibilityTextAgentBoardTests {
   private let now = Date(timeIntervalSince1970: 1_000_000)
 
   private func card(
-    occupant: AgentBoardCard.Occupant, state: SessionState?, secondsAgo: Double? = nil,
-    note: SessionNote? = nil, status: WorktreeStatus? = nil
+    occupant: AgentBoardCard.Occupant,
+    state: SessionState?,
+    secondsAgo: Double? = nil,
+    note: SessionNote? = nil,
+    status: WorktreeStatus? = nil,
   ) -> AgentBoardCard {
     .sample(
-      occupant: occupant, title: "claude — repairReferences", worktreeID: "/r",
-      worktreeName: "agents-view", state: state,
-      since: secondsAgo.map { now.addingTimeInterval(-$0) }, note: note, status: status)
+      occupant: occupant,
+      title: "claude — repairReferences",
+      worktreeID: "/r",
+      worktreeName: "agents-view",
+      state: state,
+      since: secondsAgo.map { now.addingTimeInterval(-$0) },
+      note: note,
+      status: status,
+    )
   }
 
   @Test func aBoardCardReadsInTheOrderItIsDrawn() {
@@ -26,20 +35,26 @@ struct AccessibilityTextAgentBoardTests {
     #expect(
       AccessibilityText.card(
         card(
-          occupant: .agent(id: "claude", name: "Claude Code"), state: .attention, secondsAgo: 360,
+          occupant: .agent(id: "claude", name: "Claude Code"),
+          state: .attention,
+          secondsAgo: 360,
           note: SessionNote(state: .attention, message: "Permission to run rm -rf .build"),
-          status: status),
-        at: now)
-          == """
-          Waiting for input, multishell, agents-view, +0 −0 · 3 modified, \
-          claude — repairReferences, Claude Code, agent, for 6m, \
-          Permission to run rm -rf .build
-          """)
+          status: status,
+        ),
+        at: now,
+      )
+        == """
+        Waiting for input, multishell, agents-view, +0 −0 · 3 modified, \
+        claude — repairReferences, Claude Code, agent, for 6m, \
+        Permission to run rm -rf .build
+        """
+    )
 
     #expect(
       AccessibilityText.card(card(occupant: .shell("zsh"), state: nil), at: now)
         == "Nothing running, multishell, agents-view, claude — repairReferences, zsh, shell",
-      "no time to give, and nothing said")
+      "no time to give, and nothing said",
+    )
   }
 
   @Test func theSidebarAgentsRowReadsItsCounts() {
@@ -47,7 +62,8 @@ struct AccessibilityTextAgentBoardTests {
       AccessibilityText.agentsRow([
         AgentBoardLaneCount(.waiting, 2), AgentBoardLaneCount(.working, 3),
       ])
-        == "Agents, 2 waiting for you, 3 working")
+        == "Agents, 2 waiting for you, 3 working"
+    )
     #expect(AccessibilityText.agentsRow([]) == "Agents, nothing running")
   }
 
@@ -57,27 +73,48 @@ struct AccessibilityTextAgentBoardTests {
       Worker(id: "b", type: nil, startedAt: now.addingTimeInterval(-34)),
     ]
     var withWorkers = card(
-      occupant: .agent(id: "claude", name: "Claude Code"), state: .running, secondsAgo: 60)
+      occupant: .agent(id: "claude", name: "Claude Code"),
+      state: .running,
+      secondsAgo: 60,
+    )
     withWorkers.workers = out
     #expect(
       AccessibilityText.card(withWorkers, at: now)
         == "Working, multishell, agents-view, claude — repairReferences, Claude Code, agent, "
-        + "2 subagents, for 1m")
+        + "2 subagents, for 1m"
+    )
 
     #expect(AccessibilityText.workers(out) == "2 subagents, Explore, subagent")
     #expect(
       AccessibilityText.pane(
         SidebarPane(
-          id: UUID(), title: "claude", position: nil, isFocused: false, state: .running,
-          workers: out, agentID: nil, agentName: "Claude Code"))
-        == "claude, tab, Claude Code, agent, Working, 2 subagents")
+          id: UUID(),
+          title: "claude",
+          position: nil,
+          isFocused: false,
+          state: .running,
+          workers: out,
+          agentID: nil,
+          agentName: "Claude Code",
+        )
+      )
+        == "claude, tab, Claude Code, agent, Working, 2 subagents"
+    )
     #expect(
       AccessibilityText.pane(
         SidebarPane(
-          id: UUID(), title: "fix tests", position: PanePosition(number: 2, count: 2),
-          isFocused: true, state: nil,
-          workers: [], agentID: nil, agentName: nil))
+          id: UUID(),
+          title: "fix tests",
+          position: PanePosition(number: 2, count: 2),
+          isFocused: true,
+          state: nil,
+          workers: [],
+          agentID: nil,
+          agentName: nil,
+        )
+      )
         == "fix tests, pane 2 of 2, selected",
-      "a renamed tab names every pane alike, so the position tells them apart")
+      "a renamed tab names every pane alike, so the position tells them apart",
+    )
   }
 }

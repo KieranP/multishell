@@ -1,6 +1,8 @@
 import MultishellCore
 import MultishellGitKit
 
+// Declared widest first, the order the badge tries them in.
+// swiftlint:disable sorted_enum_cases
 /// How much of a worktree's git badge a row has room for, widest first. The
 /// file count goes first, then the arrows; the tooltip names them all.
 public enum GitStatusBadgeFit: CaseIterable, Sendable {
@@ -17,3 +19,4 @@ public enum GitStatusBadgeFit: CaseIterable, Sendable {
     self != .essentials || !status.isDirty
   }
 }
+// swiftlint:enable sorted_enum_cases

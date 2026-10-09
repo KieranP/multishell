@@ -32,7 +32,8 @@ extension AppModel {
         note: sessionStates.note(key),
         status: statuses[worktree.id],
         workers: sessionStates.workers(key),
-        position: position)
+        position: position,
+      )
     }
   }
 
@@ -50,11 +51,6 @@ extension AppModel {
     agentBoardBuilds += 1
     cachedAgentBoard = board
     return board
-  }
-
-  private func invalidateCachedAgentBoard() {
-    cachedAgentBoard = nil
-    agentBoardGeneration &+= 1
   }
 
   /// How many cards each column holds, without building one: a card carries
@@ -75,6 +71,11 @@ extension AppModel {
     return AgentBoardLane.sidebarLanes.compactMap { lane in
       counts[lane].map { AgentBoardLaneCount(lane, $0) }
     }
+  }
+
+  private func invalidateCachedAgentBoard() {
+    cachedAgentBoard = nil
+    agentBoardGeneration &+= 1
   }
 
   /// Who is at the prompt, by name.

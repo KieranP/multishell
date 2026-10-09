@@ -28,27 +28,36 @@ struct AppAppearancePage: View {
           selection: model.terminalFontBinding,
           options: fonts.options(selected:),
           refresh: { fonts = InstalledFonts.reload() },
-          info: t("appearance.font-info")
+          info: t("appearance.font-info"),
         )
         sizeRow(
           t("appearance.terminal-size"),
           value: model.settingBinding(
-            \.appearance.terminalFontSize, write: model.setTerminalFontSize),
-          range: Appearance.terminalFontSizes, info: t("appearance.terminal-size-info"))
+            \.appearance.terminalFontSize,
+            write: model.setTerminalFontSize,
+          ),
+          range: Appearance.terminalFontSizes,
+          info: t("appearance.terminal-size-info"),
+        )
       }
 
       Section {
         sizeRow(
           t("appearance.ui-size"),
           value: model.settingBinding(\.appearance.uiFontSize, write: model.setUIFontSize),
-          range: Appearance.uiFontSizes, info: t("appearance.ui-size-info"))
+          range: Appearance.uiFontSizes,
+          info: t("appearance.ui-size-info"),
+        )
       }
     }
     .formStyle(.grouped)
   }
 
   private func sizeRow(
-    _ label: String, value: Binding<Double>, range: ClosedRange<Double>, info: String
+    _ label: String,
+    value: Binding<Double>,
+    range: ClosedRange<Double>,
+    info: String,
   ) -> some View {
     InfoLabeledContent(label, info: info) {
       Slider(value: value, in: range, step: 1)

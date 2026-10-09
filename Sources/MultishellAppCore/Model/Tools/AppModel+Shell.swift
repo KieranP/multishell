@@ -2,14 +2,6 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  public func setPreferredShell(_ id: String?) {
-    store.setPreferredShell(id == ShellChoice.loginShellID ? nil : id)
-  }
-
-  public func setCustomShellPath(_ path: String) {
-    store.setCustomShellPath(path)
-  }
-
   /// Whether the shell picker is on the custom path, whose field shows.
   public var usesCustomShell: Bool {
     workspace.preferredShellID == ShellChoice.customID
@@ -25,6 +17,20 @@ extension AppModel {
       return t("shell.path-not-executable")
     }
     return nil
+  }
+
+  /// The shell picker's row for the global choice, the login shell where
+  /// nothing is stored. What a project inherits and shows while not overriding it.
+  public var globalShellID: String {
+    workspace.preferredShellID ?? ShellChoice.loginShellID
+  }
+
+  public func setPreferredShell(_ id: String?) {
+    store.setPreferredShell(id == ShellChoice.loginShellID ? nil : id)
+  }
+
+  public func setCustomShellPath(_ path: String) {
+    store.setCustomShellPath(path)
   }
 
   /// The shell a tab in this worktree runs: the project's override, else
@@ -43,12 +49,9 @@ extension AppModel {
   /// What the dropdown and captions call a stored shell.
   public func shellDisplayName(_ id: String?) -> String {
     ShellChoice.displayName(
-      id, customPath: workspace.customShellPath, loginShell: shellDetection.loginShell)
-  }
-
-  /// The shell picker's row for the global choice, the login shell where
-  /// nothing is stored. What a project inherits and shows while not overriding it.
-  public var globalShellID: String {
-    workspace.preferredShellID ?? ShellChoice.loginShellID
+      id,
+      customPath: workspace.customShellPath,
+      loginShell: shellDetection.loginShell,
+    )
   }
 }

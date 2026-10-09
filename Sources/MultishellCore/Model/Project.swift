@@ -3,6 +3,12 @@ import Foundation
 /// A git repository the user has added to the sidebar. Identity is the path;
 /// see Docs/design/architecture.md.
 public struct Project: Identifiable, Codable, Hashable, Sendable {
+  /// `sharedSettingsSnapshot` is this run's read of a file, so it is neither written
+  /// nor compared: a restored one would trust a file nobody looked at.
+  enum CodingKeys: String, CodingKey {
+    case path, isExpanded, settings
+  }
+
   /// Always the normalised form from `URL.normalizedDirectory`, so `id` can
   /// read it directly rather than standardise again on every comparison.
   public private(set) var path: URL
@@ -32,22 +38,6 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     self.settings = settings
   }
 
-  /// `sharedSettingsSnapshot` is this run's read of a file, so it is neither written
-  /// nor compared: a restored one would trust a file nobody looked at.
-  enum CodingKeys: String, CodingKey {
-    case path, isExpanded, settings
-  }
-
-  public static func == (a: Project, b: Project) -> Bool {
-    a.path == b.path && a.isExpanded == b.isExpanded && a.settings == b.settings
-  }
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(path)
-    hasher.combine(isExpanded)
-    hasher.combine(settings)
-  }
-
   /// Decoded with defaults so state written by an older build still loads
   /// when a setting is added.
   public init(from decoder: any Decoder) throws {
@@ -55,6 +45,19 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     self.path = try container.decode(URL.self, forKey: .path).normalizedDirectory
     self.isExpanded = try container.decode(Bool.self, forKey: .isExpanded, or: true)
     self.settings = try container.decode(
-      ProjectSettings.self, forKey: .settings, or: ProjectSettings())
+      ProjectSettings.self,
+      forKey: .settings,
+      or: ProjectSettings(),
+    )
+  }
+
+  public static func == (a: Self, b: Self) -> Bool {
+    a.path == b.path && a.isExpanded == b.isExpanded && a.settings == b.settings
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(path)
+    hasher.combine(isExpanded)
+    hasher.combine(settings)
   }
 }

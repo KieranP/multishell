@@ -10,6 +10,7 @@ extension DebugProcessScan {
     DebugProcessScan(
       app: ProcessUsage.sample(pid: 1, footprint: appMemory),
       trees: trees.map { ProcessTree.sample(root: $0.root, pids: $0.pids) },
-      terminalDevices: [:])
+      terminalDevices: [:],
+    )
   }
 }

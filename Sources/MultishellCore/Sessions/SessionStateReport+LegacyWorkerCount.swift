@@ -6,8 +6,10 @@ extension SessionStateReport {
     switch legacyWorkerCount {
     case .some(let count) where count > 0:
       return WorkerReport(id: WorkerReport.anonymousID, phase: .started)
+
     case .some(let count) where count < 0:
       return WorkerReport(id: WorkerReport.anonymousID, phase: .ended)
+
     default:
       return nil
     }

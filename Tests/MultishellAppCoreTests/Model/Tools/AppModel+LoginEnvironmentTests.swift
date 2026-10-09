@@ -14,11 +14,15 @@ struct AppModelLoginEnvironmentTests {
     #expect(harness.model.agentPathNote == t("agents.path-asking"))
 
     harness.model.loginEnvironment = LoginShellEnvironment(
-      variables: [:], source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+      variables: [:],
+      source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
+    )
     #expect(harness.model.agentPathNote == t("agents.path-from-login-shell", "/bin/zsh"))
 
     harness.model.loginEnvironment = LoginShellEnvironment(
-      variables: [:], source: .processFallback(reason: "timed out after 5s"))
+      variables: [:],
+      source: .processFallback(reason: "timed out after 5s"),
+    )
     #expect(harness.model.agentPathNote == t("agents.path-fallback", "timed out after 5s"))
   }
 
@@ -32,7 +36,8 @@ struct AppModelLoginEnvironmentTests {
     #expect(harness.model.shellDetection != .empty, "/etc/shells alone fills this")
     #expect(
       harness.model.agentDetection
-        == AgentDetection(searchPath: harness.model.loginEnvironment?.path))
+        == AgentDetection(searchPath: harness.model.loginEnvironment?.path)
+    )
     await refresh.value
   }
 
@@ -43,10 +48,13 @@ struct AppModelLoginEnvironmentTests {
     await harness.model.refreshLoginEnvironment()
     #expect(harness.model.loginEnvironment?.path != nil)
     #expect(
-      harness.model.agentDetection.found[AgentCatalogue.claudeID] != nil, "found on that PATH")
+      harness.model.agentDetection.found[AgentCatalogue.claudeID] != nil,
+      "found on that PATH",
+    )
     #expect(
       harness.model.agentDetection
-        == AgentDetection(searchPath: harness.model.loginEnvironment?.path))
+        == AgentDetection(searchPath: harness.model.loginEnvironment?.path)
+    )
   }
 
   @Test func aLoginShellThatAnswersIsRecordedAndNotLogged() async {
@@ -74,7 +82,8 @@ struct AppModelLoginEnvironmentTests {
     harness.model.captureLoginEnvironment = {
       LoginShellEnvironment(
         variables: ["PATH": path, "HOME": harness.root.path],
-        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
+      )
     }
     let launched = try #require(harness.model.coordinator).git
 

@@ -19,7 +19,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
     #expect(lines.count == 8)
     #expect(
       lines.enumerated().allSatisfy { index, line in (index % 2 == 1) == line.contains("exited") },
-      "\(lines)")
+      "\(lines)",
+    )
   }
 
   /// A helper that hangs holds each report two seconds, so a burst of tool
@@ -83,13 +84,15 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       out.map(chipSummary(of:)) == [
         "running true", "running started Explore", "running working Explore",
         "running ended Explore", "done",
-      ])
+      ]
+    )
   }
 
   @Test func aTurnsEndInBothSpellingsIsReportedOnce() throws {
     let idleStatus = OpenCodePluginStep.event(
       "session.status",
-      ["sessionID": AnyEncodable("parent"), "status": AnyEncodable(["type": "idle"])])
+      ["sessionID": AnyEncodable("parent"), "status": AnyEncodable(["type": "idle"])],
+    )
     let out = try reports(of: [
       .message(session: "parent"), idleStatus, .idle("parent"),
       .message(session: "parent"), .idle("parent"), idleStatus,
@@ -119,7 +122,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
         "running true", "running started Explore", "running working Explore", "done",
         "running ended Explore",
       ],
-      "the child's message is its work, not a turn of the parent's")
+      "the child's message is its work, not a turn of the parent's",
+    )
   }
 
   /// A hook that names no session at all: before the roster it cost nothing,
@@ -134,7 +138,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
     #expect(
       out.map(chipSummary(of:)) == [
         "running true", "running started Explore", "running", "running ended Explore",
-      ])
+      ]
+    )
   }
 
   @Test func aPermissionAskedInsideAChildIsThatWorkersPrompt() throws {
@@ -143,7 +148,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .asked("parent/a", permission: "bash", pattern: "echo hi"),
     ])
     #expect(
-      out.map(chipSummary(of:)) == ["running started Plan", "attention working Plan bash echo hi"])
+      out.map(chipSummary(of:)) == ["running started Plan", "attention working Plan bash echo hi"]
+    )
   }
 
   @Test func aPermissionIsReportedOnceAndItsReplyPutsTheAgentBackToWork() throws {
@@ -204,11 +210,13 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
   @Test func aResumedChildsFirstMessageStartsNoTurnOfTheParents() throws {
     let out = try reports(
       of: [.message(session: "parent"), .message(session: "parent/a"), .idle("parent/a")],
-      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]])
+      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]],
+    )
     #expect(
       out.map(chipSummary(of:)) == [
         "running true", "running started", "running working", "running ended",
-      ])
+      ]
+    )
   }
 
   @Test func aChildOfAChildNamesItsParentAndAChildOfTheSessionNamesNone() throws {
@@ -220,7 +228,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
     ])
     let workerReports = out.filter { flagValue($0, "--subagent") != nil }
     #expect(
-      workerReports.map { flagValue($0, "--subagent-parent") } == [nil, "parent/a", "parent/a"])
+      workerReports.map { flagValue($0, "--subagent-parent") } == [nil, "parent/a", "parent/a"]
+    )
   }
 
   @Test func aResumedChildOfAChildNamesItsParentOnceLookedUp() throws {
@@ -230,16 +239,19 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
         .created(child: "a", of: "parent", agent: "general"),
         .message(session: "parent/a/b"),
       ],
-      sessions: ["parent/a/b": ["id": "parent/a/b", "parentID": "parent/a"]])
+      sessions: ["parent/a/b": ["id": "parent/a/b", "parentID": "parent/a"]],
+    )
     let grandchildReports = out.filter { flagValue($0, "--subagent") == "parent/a/b" }
     #expect(
-      grandchildReports.map { flagValue($0, "--subagent-parent") } == ["parent/a", "parent/a"])
+      grandchildReports.map { flagValue($0, "--subagent-parent") } == ["parent/a", "parent/a"]
+    )
   }
 
   @Test func aLookupThatFailsLeavesTheSessionTheParents() throws {
     let out = try reports(
       of: [.message(session: "parent"), .idle("parent")],
-      sessions: ["parent": ["throws": "true"]])
+      sessions: ["parent": ["throws": "true"]],
+    )
     #expect(out.map(chipSummary(of:)) == ["running true", "done"])
   }
 
@@ -250,17 +262,20 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
         .message(session: "parent"), .tool(session: "parent"), .tool(session: "parent"),
         .idle("parent"),
       ],
-      sessions: sessions)
+      sessions: sessions,
+    )
     #expect(
       out.reports.map(chipSummary(of:)) == ["running true", "running", "done"],
-      "the second collapses")
+      "the second collapses",
+    )
     #expect(out.waits == 1)
   }
 
   @Test func aChildWhoseLookupAnswersAfterTheBoundIsPutBackWhenItLands() throws {
     let out = try reports(
       of: [.message(session: "parent/a"), .pause, .idle("parent/a")],
-      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent", "late": "true"]])
+      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent", "late": "true"]],
+    )
     #expect(out.map(chipSummary(of:)) == ["running true", "running started", "running ended"])
   }
 
@@ -270,7 +285,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
         .message(session: "parent/a"), .created(child: "a", of: "parent", agent: "Explore"),
         .idle("parent/a"),
       ],
-      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]])
+      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]],
+    )
     #expect(out.map(chipSummary(of:)) == ["running started", "running working", "running ended"])
   }
 }

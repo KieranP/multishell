@@ -25,16 +25,26 @@ struct GitCommandTally: Sendable, Equatable {
 
   var peakMemory: UInt64? { measuredRunCount > 0 ? highestPeakMemory : nil }
 
+  static func byCommand(_ runs: [GitRun]) -> [String: Self] {
+    runs.reduce(into: [:]) { tallies, run in tallies[run.command, default: .init()].add(run) }
+  }
+
   mutating func add(_ run: GitRun) {
     let peak = run.exitUsage?.peakFootprint
     merge(
-      GitCommandTally(
-        runCount: 1, totalDuration: run.duration, slowestDuration: run.duration,
-        slowestDirectory: run.directory, measuredRunCount: peak == nil ? 0 : 1,
-        totalPeakMemory: peak ?? 0, highestPeakMemory: peak ?? 0))
+      Self(
+        runCount: 1,
+        totalDuration: run.duration,
+        slowestDuration: run.duration,
+        slowestDirectory: run.directory,
+        measuredRunCount: peak == nil ? 0 : 1,
+        totalPeakMemory: peak ?? 0,
+        highestPeakMemory: peak ?? 0,
+      )
+    )
   }
 
-  mutating func merge(_ other: GitCommandTally) {
+  mutating func merge(_ other: Self) {
     runCount += other.runCount
     totalDuration += other.totalDuration
     if other.slowestDuration > slowestDuration || slowestDirectory == nil {
@@ -44,9 +54,5 @@ struct GitCommandTally: Sendable, Equatable {
     measuredRunCount += other.measuredRunCount
     totalPeakMemory += other.totalPeakMemory
     highestPeakMemory = max(highestPeakMemory, other.highestPeakMemory)
-  }
-
-  static func byCommand(_ runs: [GitRun]) -> [String: GitCommandTally] {
-    runs.reduce(into: [:]) { tallies, run in tallies[run.command, default: .init()].add(run) }
   }
 }

@@ -9,45 +9,56 @@ public struct LoginShellEnvironment: Sendable, Equatable {
     case processFallback(reason: String)
   }
 
+  /// How long the shell gets. Slow rc files exist, but past this the app
+  /// would rather run with a poorer PATH than keep the dropdowns empty.
+  public static let timeout: Duration = .seconds(8)
+
   let variables: [String: String]
   public let source: Source
 
   public var path: String? { variables["PATH"] }
 
-  /// How long the shell gets. Slow rc files exist, but past this the app
-  /// would rather run with a poorer PATH than keep the dropdowns empty.
-  public static let timeout: Duration = .seconds(8)
-
   /// `home` and `extraEnvironment` are a test's, so it runs a real shell of its
   /// own; the extra variables are laid over the app's, adding or replacing only.
   public static func capture(
-    timeout: Duration = timeout, shellPath: String, home: URL? = nil,
-    extraEnvironment: [String: String] = [:]
-  ) async -> LoginShellEnvironment {
+    shellPath: String,
+    timeout: Duration = timeout,
+    home: URL? = nil,
+    extraEnvironment: [String: String] = [:],
+  ) async -> Self {
     let fallback = ProcessInfo.processInfo.environment
     let shell = ShellInvocation.forCommandLine(inShellAt: shellPath)
     let directory = home ?? FileManager.default.homeDirectoryForCurrentUser
     let environment = ShellInvocation.historyless(
-      extraEnvironment.merging(home.map { ["HOME": $0.path, "ZDOTDIR": $0.path] } ?? [:]) { $1 })
+      extraEnvironment.merging(home.map { ["HOME": $0.path, "ZDOTDIR": $0.path] } ?? [:]) { $1 }
+    )
     do {
       let output = try await ProcessRunner().capture(
         shell.executable,
         shell.arguments + ["printf '\\n%s\\n' \(EnvironmentDumpParser.startMarker); env -0"],
-        in: directory, environment: environment,
-        timeout: timeout)
+        in: directory,
+        environment: environment,
+        timeout: timeout,
+      )
       guard output.succeeded else {
-        return LoginShellEnvironment(
-          variables: fallback, source: .processFallback(reason: failureReason(output)))
+        return Self(
+          variables: fallback,
+          source: .processFallback(reason: failureReason(output)),
+        )
       }
       let parsed = EnvironmentDumpParser.parse(nulSeparated: output.standardOutput)
       guard parsed["PATH"] != nil else {
-        return LoginShellEnvironment(
-          variables: fallback, source: .processFallback(reason: "the shell printed no PATH"))
+        return Self(
+          variables: fallback,
+          source: .processFallback(reason: "the shell printed no PATH"),
+        )
       }
-      return LoginShellEnvironment(variables: parsed, source: .loginShell(shell.executable))
+      return Self(variables: parsed, source: .loginShell(shell.executable))
     } catch {
-      return LoginShellEnvironment(
-        variables: fallback, source: .processFallback(reason: String(describing: error)))
+      return Self(
+        variables: fallback,
+        source: .processFallback(reason: String(describing: error)),
+      )
     }
   }
 

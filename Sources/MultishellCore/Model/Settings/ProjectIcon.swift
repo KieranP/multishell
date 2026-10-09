@@ -17,6 +17,17 @@ public enum ProjectIcon {
     }
   }
 
+  /// A named row of the picker. SwiftUI has no public symbol picker, so the
+  /// choice is a curated list in groups small enough to scan by shape.
+  public struct Group: Hashable, Sendable {
+    public let name: String
+    public let symbols: [String]
+  }
+
+  /// What a project with no glyph is drawn as, and the palette's first cell.
+  /// Picking it stores nothing, so the two share a picture, not a state.
+  public static let folderSymbol = "folder"
+
   /// A glyph is a symbol name from the palette; anything else is the folder,
   /// a repository's file being free to name one this build cannot draw.
   public static func kind(of glyph: String?) -> Kind {
@@ -32,21 +43,9 @@ public enum ProjectIcon {
     guard !trimmed.isEmpty, trimmed.unicodeScalars.allSatisfy(\.isASCII) else { return nil }
     return trimmed
   }
-
-  /// What a project with no glyph is drawn as, and the palette's first cell.
-  /// Picking it stores nothing, so the two share a picture, not a state.
-  public static let folderSymbol = "folder"
-
   /// A slot the theme lacks is no tint.
   static func usableTint(_ slot: Int?) -> Int? {
     guard let slot, (0..<Theme.ansiSlotCount).contains(slot) else { return nil }
     return slot
-  }
-
-  /// A named row of the picker. SwiftUI has no public symbol picker, so the
-  /// choice is a curated list in groups small enough to scan by shape.
-  public struct Group: Hashable, Sendable {
-    public let name: String
-    public let symbols: [String]
   }
 }

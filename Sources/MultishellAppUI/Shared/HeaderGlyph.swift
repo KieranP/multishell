@@ -8,5 +8,6 @@ struct HeaderGlyph: View {
     Image(systemName: symbol)
       .font(.system(size: UIMetrics.headerGlyphSize, weight: .medium))
       .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
+      .accessibilityHidden(true)
   }
 }

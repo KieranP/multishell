@@ -5,9 +5,9 @@ import AppKit
 struct PrimaryMouseButton: Equatable, Sendable {
   let isPressedOverride: Bool?
 
+  @MainActor var isPressed: Bool { isPressedOverride ?? (NSEvent.pressedMouseButtons & 1 != 0) }
+
   init(isPressedOverride: Bool? = nil) {
     self.isPressedOverride = isPressedOverride
   }
-
-  @MainActor var isPressed: Bool { isPressedOverride ?? (NSEvent.pressedMouseButtons & 1 != 0) }
 }

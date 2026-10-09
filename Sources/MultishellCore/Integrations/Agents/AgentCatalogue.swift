@@ -16,21 +16,49 @@ public enum AgentCatalogue {
 
   public static let agents: [AgentDescriptor] = [
     AgentDescriptor(
-      id: claudeID, name: "Claude Code", executable: "claude", resumeArguments: ["--continue"],
-      taskArgument: .operand, fileMentionPrefix: "@", mark: .claude, markTint: "#d97757"),
+      id: claudeID,
+      name: "Claude Code",
+      executable: "claude",
+      taskArgument: .operand,
+      mark: .claude,
+      resumeArguments: ["--continue"],
+      fileMentionPrefix: "@",
+      markTint: "#d97757",
+    ),
     AgentDescriptor(
-      id: codexID, name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"],
-      taskArgument: .operand, mark: .codex),
+      id: codexID,
+      name: "Codex",
+      executable: "codex",
+      taskArgument: .operand,
+      mark: .codex,
+      resumeArguments: ["resume", "--last"],
+    ),
     AgentDescriptor(
-      id: geminiID, name: "Gemini CLI", executable: "gemini",
-      resumeArguments: ["--resume", "latest"], taskArgument: .option("--prompt-interactive"),
-      mark: .gemini, markTint: "#8ab4f8"),
+      id: geminiID,
+      name: "Gemini CLI",
+      executable: "gemini",
+      taskArgument: .option("--prompt-interactive"),
+      mark: .gemini,
+      resumeArguments: ["--resume", "latest"],
+      markTint: "#8ab4f8",
+    ),
     AgentDescriptor(
-      id: copilotID, name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"],
-      taskArgument: .option("--interactive"), mark: .copilot),
+      id: copilotID,
+      name: "Copilot CLI",
+      executable: "copilot",
+      taskArgument: .option("--interactive"),
+      mark: .copilot,
+      resumeArguments: ["--continue"],
+    ),
     AgentDescriptor(
-      id: openCodeID, name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"],
-      taskArgument: .option("--prompt"), mark: .openCode, markTint: "#fab283"),
+      id: openCodeID,
+      name: "OpenCode",
+      executable: "opencode",
+      taskArgument: .option("--prompt"),
+      mark: .openCode,
+      resumeArguments: ["--continue"],
+      markTint: "#fab283",
+    ),
   ]
 
   public static func agent(_ id: String) -> AgentDescriptor? {
@@ -59,6 +87,6 @@ public enum AgentCatalogue {
   /// The id in force for a project: its override when it has one, else the
   /// global. `nil` means no agent, whichever side said so.
   static func effectiveID(global: String?, override: String?) -> String? {
-    ChosenID.effective(global: global, override: override, noneID: noneID)
+    ChosenID.effective(global: global, noneID: noneID, override: override)
   }
 }

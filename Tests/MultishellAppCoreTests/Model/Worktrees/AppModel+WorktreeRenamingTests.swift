@@ -14,7 +14,8 @@ struct AppModelWorktreeRenamingTests {
     #expect(harness.model.renamingWorktreeID == harness.feature.id)
     #expect(
       harness.project.isExpanded == true,
-      "a collapsed project has no row to type into")
+      "a collapsed project has no row to type into",
+    )
 
     harness.model.commitWorktreeRename(of: harness.feature.id, to: " Checkout flow ")
     #expect(harness.model.renamingWorktreeID == nil)

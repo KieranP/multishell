@@ -12,14 +12,18 @@ extension ShellIntegrationScriptsTests {
       ShellIntegrationScripts.forZsh(helper: "/x/multishell")[".zshrc"] ?? ""
     #expect(zshrc.contains("]133;A;cl=line"))
     #expect(
-      zshrc.contains("]133;B"), "and the input mark, so the claim never stands over unmarked text")
+      zshrc.contains("]133;B"),
+      "and the input mark, so the claim never stands over unmarked text",
+    )
     #expect(zshrc.contains("add-zsh-hook precmd _multishell_prompt_click"), "on every prompt")
     #expect(
       zshrc.contains("add-zsh-hook preexec _multishell_terminal_preexec"),
-      "and output start, so the claim does not stand while a program runs")
+      "and output start, so the claim does not stand while a program runs",
+    )
     #expect(
       zshrc.contains("[ \"${TERM_PROGRAM-}\" = ghostty ]"),
-      "elsewhere there are no other marks, so a lone one would open a prompt it never ends")
+      "elsewhere there are no other marks, so a lone one would open a prompt it never ends",
+    )
   }
 
   @Test func theBashPromptCarriesEveryMarkItself() {
@@ -28,16 +32,19 @@ extension ShellIntegrationScriptsTests {
     #expect(text.contains("]133;B"), "input start, or no cell is one a click can reach")
     #expect(
       text.contains("]133;C"),
-      "output start, or a click would answer with arrows while a program runs")
+      "output start, or a click would answer with arrows while a program runs",
+    )
     #expect(text.contains("133;D") == false, "the exit code is the socket's to report, not both")
     // Separated by a newline, not `; `: a user's own PROMPT_COMMAND ending
     // in a separator composed to `;;` and bash refused the whole string.
     #expect(
       text.contains("_multishell_prompt_marks\n_multishell_arm"),
-      "put back last, after a framework has rebuilt PS1 from a PROMPT_COMMAND of its own")
+      "put back last, after a framework has rebuilt PS1 from a PROMPT_COMMAND of its own",
+    )
     #expect(
       !text.contains("_multishell_prompt_marks; _multishell_arm"),
-      "a separator of its own is what a trailing one in theirs doubles")
+      "a separator of its own is what a trailing one in theirs doubles",
+    )
   }
 
   /// The generated files are a chain, and a hook dropped from it would leave every
@@ -59,7 +66,8 @@ extension ShellIntegrationScriptsTests {
     #expect(marked.contains(PromptMarks.input), "input start, or no cell is one a click can reach")
     #expect(
       marked.contains(PromptMarks.output),
-      "output start too, or the claim would stand while a program ran")
+      "output start too, or the claim would stand while a program ran",
+    )
 
     let plain = try await output(termProgram: nil)
     for mark in [PromptMarks.claim, PromptMarks.input, PromptMarks.output] {
@@ -81,7 +89,10 @@ extension ShellIntegrationScriptsTests {
       // The marks ride with the hooks, which do nothing outside a tab.
       environment[SessionEnvironment.sessionVariable] = "prompt-marks"
       return try await interactiveShellOutput(
-        bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment)
+        bash,
+        arguments: ["--init-file", files.bashInit.path, "-i"],
+        environment: environment,
+      )
     }
 
     let marked = try await output(termProgram: "ghostty")
@@ -123,8 +134,11 @@ extension ShellIntegrationScriptsTests {
     environment["GHOSTTY_SHELL_FEATURES"] = "cursor:blink,title"
 
     let output = try await interactiveShellOutput(
-      zsh, arguments: ["-l", "-i", "-c", "cd /tmp; echo starting"], environment: environment,
-      input: "")
+      zsh,
+      arguments: ["-l", "-i", "-c", "cd /tmp; echo starting"],
+      environment: environment,
+      input: "",
+    )
     #expect(output.contains("starting"))
     #expect(output.contains("\u{1B}") == false, "no mark, title, cursor or directory report")
   }
@@ -141,8 +155,11 @@ extension ShellIntegrationScriptsTests {
     environment[SessionEnvironment.sessionVariable] = "prompt-command"
 
     let output = try await interactiveShellOutput(
-      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
-      input: "declare -p PROMPT_COMMAND\nexit\n")
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "declare -p PROMPT_COMMAND\nexit\n",
+    )
     let declared = try #require(output.range(of: "declare -a PROMPT_COMMAND=")).upperBound
     let listing = output[declared...]
     let order = [
@@ -164,8 +181,11 @@ extension ShellIntegrationScriptsTests {
     environment[SessionEnvironment.sessionVariable] = "array-prompt-command"
 
     let output = try await interactiveShellOutput(
-      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
-      input: "true\nexit\n")
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "true\nexit\n",
+    )
     #expect(output.contains(PromptMarks.claim))
     #expect(output.contains("> " + PromptMarks.input))
   }
@@ -173,7 +193,10 @@ extension ShellIntegrationScriptsTests {
   /// `zsh -i script` runs preexec for each line, and no prompt is ever shown.
   @Test func aScriptRunInAnInteractiveShellCarriesNoEscapes() async throws {
     let output = try await zshOutput(
-      features: "cursor,title", input: "true\nprint -r done\n", runsInputAsScript: true)
+      features: "cursor,title",
+      input: "true\nprint -r done\n",
+      runsInputAsScript: true,
+    )
     #expect(output.contains("done"))
     #expect(output.contains("\u{1B}") == false)
   }

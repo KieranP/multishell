@@ -4,13 +4,21 @@ extension NSEvent {
   /// This key event with other text or modifiers. The timestamp is kept, as
   /// `GhosttyKeyEquivalent` knows a key's second offer by it.
   func keyCopy(
-    modifierFlags: NSEvent.ModifierFlags? = nil, characters: String,
-    charactersIgnoringModifiers: String
+    characters: String,
+    charactersIgnoringModifiers: String,
+    modifierFlags: NSEvent.ModifierFlags? = nil,
   ) -> NSEvent? {
-    NSEvent.keyEvent(
-      with: type, location: locationInWindow, modifierFlags: modifierFlags ?? self.modifierFlags,
-      timestamp: timestamp, windowNumber: windowNumber, context: nil, characters: characters,
-      charactersIgnoringModifiers: charactersIgnoringModifiers, isARepeat: isARepeat,
-      keyCode: keyCode)
+    Self.keyEvent(
+      with: type,
+      location: locationInWindow,
+      modifierFlags: modifierFlags ?? self.modifierFlags,
+      timestamp: timestamp,
+      windowNumber: windowNumber,
+      context: nil,
+      characters: characters,
+      charactersIgnoringModifiers: charactersIgnoringModifiers,
+      isARepeat: isARepeat,
+      keyCode: keyCode,
+    )
   }
 }

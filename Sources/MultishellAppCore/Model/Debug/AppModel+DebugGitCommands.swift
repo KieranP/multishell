@@ -14,10 +14,12 @@ extension AppModel {
       tallies
       .map { command, tally in
         DebugGitCommand(
-          command: command, tally: tally,
-          slowestLocation: tally.slowestDirectory.map {
-            debugLocation(ofDirectory: $0, in: worktreesByPath)
-          })
+          command: command,
+          tally: tally,
+          slowestLocation: tally.slowestDirectory.map { directory in
+            debugLocation(ofDirectory: directory, in: worktreesByPath)
+          },
+        )
       }
       .sorted { ($0.tally.totalDuration, $1.command) > ($1.tally.totalDuration, $0.command) }
   }

@@ -8,8 +8,10 @@ enum UnsafePasteAlert {
 
   static func make(text: String) -> NSAlert {
     let alert = WarningAlert.make(
-      title: t("paste.unsafe-title"), message: t("paste.unsafe-message"),
-      action: t("paste.unsafe-paste"))
+      title: t("paste.unsafe-title"),
+      message: t("paste.unsafe-message"),
+      action: t("paste.unsafe-paste"),
+    )
     alert.accessoryView = preview(of: text)
     return alert
   }

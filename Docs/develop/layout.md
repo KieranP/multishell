@@ -102,6 +102,9 @@
   beside the type it serves, or at the suite's root for a test's, so a file
   never holds two. A type nested inside another stays with it. A dialog is a
   `View` extension in `View+<Dialog>.swift`, attached by the scene that asked.
+- **A call or declaration that wraps puts each argument on its own line, with a
+  trailing comma**, so adding or removing one changes one line. Chained calls
+  are not split one to a line: that moved `.flatMap {` off its receiver.
 - **No `MARK` banners**: a file is the grouping. Tests are swift-testing, named
   as sentences about behaviour, one suite to a file named for it.
 

@@ -19,7 +19,12 @@ struct AgentBoardColumnView: View {
         LazyVStack(spacing: 8) {
           ForEach(column.cards) { card in
             AgentBoardCardView(
-              model: model, card: card, now: now, theme: theme, metrics: metrics)
+              model: model,
+              card: card,
+              now: now,
+              theme: theme,
+              metrics: metrics,
+            )
           }
         }
       }

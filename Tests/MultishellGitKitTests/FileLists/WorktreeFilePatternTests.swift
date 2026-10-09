@@ -8,8 +8,6 @@ import Testing
 final class WorktreeFilePatternTests {
   private let root = Scratch.path("patterns")
 
-  deinit { Scratch.remove(root) }
-
   @Test func patternsMatchWithinOneNameOnly() {
     #expect(WorktreeFilePattern.matches(".env.local", pattern: ".env.*"))
     #expect(WorktreeFilePattern.matches(".env.", pattern: ".env.*"), "`*` may take nothing")
@@ -43,18 +41,27 @@ final class WorktreeFilePatternTests {
     #expect(WorktreeFilePattern.expand("nothing.*", in: repository).isEmpty)
     #expect(
       WorktreeFilePattern.expand("missing/file", in: repository) == ["missing/file"],
-      "a plain path is itself, whether it is there or not")
+      "a plain path is itself, whether it is there or not",
+    )
   }
 
   @Test func aPatternInAFolderNameExpandsToEachFolderThatMatches() throws {
     let repository = root.appendingPathComponent("repo")
     for pack in ["pack-a", "pack-b"] {
       try FileManager.default.createDirectory(
-        at: repository.appendingPathComponent(pack), withIntermediateDirectories: true)
+        at: repository.appendingPathComponent(pack),
+        withIntermediateDirectories: true,
+      )
       try "x".write(
-        to: repository.appendingPathComponent("\(pack)/.env"), atomically: true, encoding: .utf8)
+        to: repository.appendingPathComponent("\(pack)/.env"),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
     #expect(
-      WorktreeFilePattern.expand("pack-?/.env", in: repository) == ["pack-a/.env", "pack-b/.env"])
+      WorktreeFilePattern.expand("pack-?/.env", in: repository) == ["pack-a/.env", "pack-b/.env"]
+    )
   }
+
+  deinit { Scratch.remove(root) }
 }

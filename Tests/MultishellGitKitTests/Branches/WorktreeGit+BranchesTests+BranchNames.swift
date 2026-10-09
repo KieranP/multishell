@@ -22,10 +22,13 @@ extension WorktreeGitBranchesTests {
     _ = try await fixture.runner.run(["branch", "feature"], in: upstream.path)
     let clone = fixture.root.appendingPathComponent("clone", isDirectory: true)
     _ = try await fixture.runner.run(
-      ["clone", "-q", upstream.path.path, clone.path], in: fixture.root)
+      ["clone", "-q", upstream.path.path, clone.path],
+      in: fixture.root,
+    )
 
     let names = try #require(
-      await WorktreeGit(runner: fixture.runner).branchNames(Project(path: clone)))
+      await WorktreeGit(runner: fixture.runner).branchNames(Project(path: clone))
+    )
     #expect(names.remote.sorted() == ["origin/feature", "origin/main"])
   }
 
@@ -36,13 +39,16 @@ extension WorktreeGitBranchesTests {
     _ = try await fixture.runner.run(["branch", "dup"], in: upstream.path)
     let clone = fixture.root.appendingPathComponent("clone", isDirectory: true)
     _ = try await fixture.runner.run(
-      ["clone", "-q", upstream.path.path, clone.path], in: fixture.root)
+      ["clone", "-q", upstream.path.path, clone.path],
+      in: fixture.root,
+    )
     _ = try await fixture.runner.run(["branch", "dup"], in: clone)
     _ = try await fixture.runner.run(["tag", "dup"], in: clone)
     _ = try await fixture.runner.run(["tag", "origin/dup"], in: clone)
 
     let names = try #require(
-      await WorktreeGit(runner: fixture.runner).branchNames(Project(path: clone)))
+      await WorktreeGit(runner: fixture.runner).branchNames(Project(path: clone))
+    )
     #expect(names.local.sorted() == ["dup", "main"])
     #expect(names.remote.sorted() == ["origin/dup", "origin/main"])
   }

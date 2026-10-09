@@ -23,7 +23,8 @@ struct WorktreeGitListingTests {
   @Test func aListOfTheMainWorktreeAloneIsAResult() async throws {
     // `-z`, as the real one is asked: NUL where the newline was.
     let fake = try FakeGit.make(
-      "printf 'worktree /repos/demo\\0HEAD 1111111\\0branch refs/heads/main\\0'")
+      "printf 'worktree /repos/demo\\0HEAD 1111111\\0branch refs/heads/main\\0'"
+    )
     defer { fake.tearDown() }
 
     let listed = try await WorktreeGit(runner: fake.runner).list(Project(path: fake.directory))
@@ -36,7 +37,8 @@ struct WorktreeGitListingTests {
       """
       case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
       printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n'
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let worktreeGit = WorktreeGit(runner: fake.runner)
 
@@ -55,9 +57,15 @@ struct WorktreeGitListingTests {
     let project = fixture.project
     let coordinator = fixture.coordinator
     try await coordinator.createThenRunPostCreateHook(
-      branch: "first", in: project, settings: fixture.worktreeSettings)
+      branch: "first",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     try await coordinator.createThenRunPostCreateHook(
-      branch: "second", in: project, settings: fixture.worktreeSettings)
+      branch: "second",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(project)
     let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
@@ -74,7 +82,11 @@ struct WorktreeGitListingTests {
     defer { fixture.tearDown() }
     let odd = fixture.root.appendingPathComponent("my\nrepo", isDirectory: true)
     try await TestRepository.addWorktree(
-      onNewBranch: "odd", at: odd, in: fixture.project.path, using: fixture.runner)
+      onNewBranch: "odd",
+      at: odd,
+      in: fixture.project.path,
+      using: fixture.runner,
+    )
 
     let worktrees = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
@@ -88,7 +100,10 @@ struct WorktreeGitListingTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let linked = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "side", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "side",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let subdirectory = fixture.project.path.appendingPathComponent("Sources", isDirectory: true)
     try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
 
@@ -116,9 +131,15 @@ struct WorktreeGitListingTests {
     defer { fixture.tearDown() }
 
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "a", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "a",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "b", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "b",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     var listed = try await fixture.coordinator.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "a", "b"])
     #expect(listed[0].isPrimary && !listed[1].isPrimary)

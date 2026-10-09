@@ -15,7 +15,8 @@ extension SessionStatesTests {
       let onRoster = Dictionary(workers.map { ($0.id, $0) }) { first, _ in first }
       #expect(
         replay.lastListedIDs.isSubset(of: onRoster.keys),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster.keys))")
+        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster.keys))",
+      )
       for (child, launcher) in replay.launcherByWorkerID {
         guard let worker = onRoster[child], onRoster[launcher] != nil else { continue }
         #expect(worker.parentID == launcher, "event \(index): \(child) not under \(launcher)")
@@ -33,14 +34,16 @@ extension SessionStatesTests {
     let killed: Set<String> = ["paused-victim", "busy-victim", "b3udsevyd"]
     var failedSeen: Set<String> = []
     let lastStop = try #require(
-      ClaudeHookCapture.killsAndChains.lastIndex { $0.contains(#""hook_event_name":"Stop""#) })
+      ClaudeHookCapture.killsAndChains.lastIndex { $0.contains(#""hook_event_name":"Stop""#) }
+    )
     for (index, line) in ClaudeHookCapture.killsAndChains[...lastStop].enumerated() {
       try replay.feed(line, for: .session(a))
       let workers = replay.states.workers(.session(a))
       let onRoster = Set(workers.map(\.id))
       #expect(
         replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))")
+        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
+      )
       for worker in workers where worker.hasFailed {
         let name = worker.description ?? worker.id
         #expect(killed.contains(name), "event \(index): \(name) drawn failed")
@@ -56,14 +59,16 @@ extension SessionStatesTests {
     var replay = try ClaudeHookReplay()
     defer { Scratch.remove(replay.directory) }
     let chainThreeLaunched = try #require(
-      ClaudeHookCapture.killsAndChains.firstIndex { $0.contains("abb8e1ca3cb19e05f") })
+      ClaudeHookCapture.killsAndChains.firstIndex { $0.contains("abb8e1ca3cb19e05f") }
+    )
     for line in ClaudeHookCapture.killsAndChains[...(chainThreeLaunched + 1)] {
       try replay.feed(line, for: .session(a))
     }
     let drawn = replay.states.workers(.session(a)).nested
       .map { "\(String(repeating: "  ", count: $0.depth))\($0.worker.description ?? $0.id)" }
     #expect(
-      drawn.contains("chain-1") && drawn.contains("  chain-2") && drawn.contains("    chain-3"))
+      drawn.contains("chain-1") && drawn.contains("  chain-2") && drawn.contains("    chain-3")
+    )
     #expect(drawn.contains("shell-leaver") && drawn.contains("  b09wzp9ad"))
   }
 
@@ -71,7 +76,8 @@ extension SessionStatesTests {
     var replay = try ClaudeHookReplay()
     defer { Scratch.remove(replay.directory) }
     let firstPhantomStop = try #require(
-      ClaudeHookCapture.fanOut.firstIndex { $0.contains("a54f52491c72bb5d4") })
+      ClaudeHookCapture.fanOut.firstIndex { $0.contains("a54f52491c72bb5d4") }
+    )
     for line in ClaudeHookCapture.fanOut[...firstPhantomStop] {
       try replay.feed(line, for: .session(a))
     }
@@ -81,18 +87,21 @@ extension SessionStatesTests {
       drawn == [
         "short-parent", "  long-child", "outer", "  inner-2", "    b0fcq54hb", "  inner-1",
         "    bcdy37379", "victim", "b25al8j9c",
-      ], "short-parent has ended but holds long-child; siblings in the order heard")
+      ],
+      "short-parent has ended but holds long-child; siblings in the order heard",
+    )
   }
 
   @Test func claudesCapturedTaskStopTurnsTheParentAndWhatItHeldFailed() throws {
     var replay = try ClaudeHookReplay()
     defer { Scratch.remove(replay.directory) }
     let twoWaitsHandedBack = try #require(
-      ClaudeHookCapture.killedParent.firstIndex {
-        $0.contains(#""hook_event_name":"PostToolUse""#)
-          && $0.contains(#""agent_id":"aac8aafe04779d061""#)
-          && $0.contains(#""tool_name":"SubagentHandback""#)
-      })
+      ClaudeHookCapture.killedParent.firstIndex { payload in
+        payload.contains(#""hook_event_name":"PostToolUse""#)
+          && payload.contains(#""agent_id":"aac8aafe04779d061""#)
+          && payload.contains(#""tool_name":"SubagentHandback""#)
+      }
+    )
     var failedSeen: Set<String> = []
     for (index, line) in ClaudeHookCapture.killedParent.enumerated() {
       try replay.feed(line, for: .session(a))
@@ -100,7 +109,8 @@ extension SessionStatesTests {
       let onRoster = Set(workers.map(\.id))
       #expect(
         replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))")
+        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
+      )
       if (10...twoWaitsHandedBack).contains(index) {
         #expect(onRoster.contains("aac8aafe04779d061"), "event \(index): two-waits missing")
       }
@@ -116,10 +126,12 @@ extension SessionStatesTests {
     defer { Scratch.remove(replay.directory) }
     let top = "aadf87884f3bd3b86"
     let topHandedBack = try #require(
-      ClaudeHookCapture.killedMiddle.firstIndex {
-        $0.contains(#""hook_event_name":"PostToolUse""#) && $0.contains(#""agent_id":"\#(top)""#)
-          && $0.contains(#""tool_name":"SubagentHandback""#)
-      })
+      ClaudeHookCapture.killedMiddle.firstIndex { payload in
+        payload.contains(#""hook_event_name":"PostToolUse""#)
+          && payload.contains(#""agent_id":"\#(top)""#)
+          && payload.contains(#""tool_name":"SubagentHandback""#)
+      }
+    )
     let killed: Set<String> = ["middle", "leaf", "waiter", "list-victim"]
     var failedSeen: Set<String> = []
     var middleSeenUnderTop = false
@@ -129,7 +141,8 @@ extension SessionStatesTests {
       let onRoster = Set(workers.map(\.id))
       #expect(
         replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))")
+        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
+      )
       if (8...topHandedBack).contains(index) {
         #expect(onRoster.contains(top), "event \(index): top missing")
       }
@@ -158,10 +171,12 @@ extension SessionStatesTests {
     ]
     let handBacks = try workers.map { id in
       try #require(
-        payloads.firstIndex {
-          $0.contains(#""hook_event_name":"PostToolUse""#) && $0.contains(#""agent_id":"\#(id)""#)
-            && $0.contains(#""tool_name":"SubagentHandback""#)
-        })
+        payloads.firstIndex { payload in
+          payload.contains(#""hook_event_name":"PostToolUse""#)
+            && payload.contains(#""agent_id":"\#(id)""#)
+            && payload.contains(#""tool_name":"SubagentHandback""#)
+        }
+      )
     }
     let launches = try workers.map { id in
       try #require(payloads.firstIndex { $0.contains(#""agentId":"\#(id)""#) })
@@ -172,7 +187,8 @@ extension SessionStatesTests {
       let onRoster = Set(current.map(\.id))
       #expect(
         replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))")
+        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
+      )
       for (offset, id) in workers.enumerated()
       where (launches[offset]...handBacks[offset]).contains(index) {
         #expect(onRoster.contains(id), "event \(index): \(id) missing")

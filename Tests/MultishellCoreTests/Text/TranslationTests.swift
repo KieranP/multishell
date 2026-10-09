@@ -7,6 +7,24 @@ import Testing
 /// A missing key reaches a screen as itself and an unused entry costs a translator. Keys
 /// are literals, so both are read off the source, found from `#filePath`.
 struct TranslationTests {
+  private static let countedForms: Set<String> = {
+    guard
+      let file = Bundle.coreResources.url(
+        forResource: "Localizable",
+        withExtension: "stringsdict",
+      ),
+      let entries = NSDictionary(contentsOf: file) as? [String: Any]
+    else { return [] }
+    return Set(entries.keys)
+  }()
+
+  private static func catalogue() throws -> [String: String] {
+    let file = try #require(
+      Bundle.coreResources.url(forResource: "Localizable", withExtension: "strings")
+    )
+    return try #require(NSDictionary(contentsOf: file) as? [String: String])
+  }
+
   @Test func everyKeyTheCodeAsksForIsInTheCatalogue() throws {
     let catalogue = try Self.catalogue()
     for site in try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles) {
@@ -17,7 +35,8 @@ struct TranslationTests {
 
   @Test func theCatalogueHasNoEntryNothingAsksFor() throws {
     let asked = Set(
-      try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles).map(\.key))
+      try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles).map(\.key)
+    )
     for key in try Self.catalogue().keys.sorted() + Self.countedForms.sorted() {
       // Not `asked.contains(key)` in the expectation itself: a failure
       // prints what it expanded, and that would be every key in the app.
@@ -35,12 +54,15 @@ struct TranslationTests {
       let takes = english.formatPlaceholders.count
       #expect(
         site.argumentCount == takes,
-        "\(site.fileName) passes \(site.argumentCount) to \(site.key), which takes \(takes)")
+        "\(site.fileName) passes \(site.argumentCount) to \(site.key), which takes \(takes)",
+      )
     }
     for site in try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles)
     where Self.countedForms.contains(site.key) {
       #expect(
-        site.argumentCount == 1, "\(site.fileName) counts with \(site.argumentCount) arguments")
+        site.argumentCount == 1,
+        "\(site.fileName) counts with \(site.argumentCount) arguments",
+      )
     }
   }
 
@@ -52,11 +74,13 @@ struct TranslationTests {
       let numbered = all.filter { $0.contains("$") }
       #expect(
         numbered.isEmpty || numbered.count == all.count,
-        "\(key) numbers \(numbered.count) of its \(all.count) placeholders; number all or none")
+        "\(key) numbers \(numbered.count) of its \(all.count) placeholders; number all or none",
+      )
       guard all.count > 1 else { continue }
       #expect(
         numbered.count == all.count,
-        "\(key) takes \(all.count) arguments, so each needs its position: %1$@, %2$@")
+        "\(key) takes \(all.count) arguments, so each needs its position: %1$@, %2$@",
+      )
     }
   }
 
@@ -83,7 +107,8 @@ struct TranslationTests {
       #expect(isSaid, "\(key) has an entry with nothing in it")
     }
     let file = try #require(
-      Bundle.coreResources.url(forResource: "Localizable", withExtension: "strings"))
+      Bundle.coreResources.url(forResource: "Localizable", withExtension: "strings")
+    )
     let written = try String(contentsOf: file, encoding: .utf8)
       .matches(of: /^"([^"]+)" =/.anchorsMatchLineEndings())
       .map { String($0.output.1) }
@@ -125,25 +150,12 @@ struct TranslationTests {
         .appendingPathComponent("Sources/MultishellCore/Resources/en.lproj/\(name)")
       #expect(
         try Data(contentsOf: built) == (try Data(contentsOf: source)),
-        "the built \(name) is not the one on disk; build before running the tests")
+        "the built \(name) is not the one on disk; build before running the tests",
+      )
     }
   }
 
   @Test func aKeyWithNoEntryAnswersWithItself() {
     #expect(t("no.such.key") == "no.such.key")
   }
-
-  private static func catalogue() throws -> [String: String] {
-    let file = try #require(
-      Bundle.coreResources.url(forResource: "Localizable", withExtension: "strings"))
-    return try #require(NSDictionary(contentsOf: file) as? [String: String])
-  }
-
-  private static let countedForms: Set<String> = {
-    guard
-      let file = Bundle.coreResources.url(forResource: "Localizable", withExtension: "stringsdict"),
-      let entries = NSDictionary(contentsOf: file) as? [String: Any]
-    else { return [] }
-    return Set(entries.keys)
-  }()
 }

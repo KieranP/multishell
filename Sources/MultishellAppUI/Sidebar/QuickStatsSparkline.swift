@@ -11,7 +11,9 @@ struct QuickStatsSparkline: Shape {
     let step = rect.width / Double(values.count - 1)
     for (index, value) in values.enumerated() {
       let point = CGPoint(
-        x: rect.minX + Double(index) * step, y: rect.maxY - value * rect.height)
+        x: rect.minX + Double(index) * step,
+        y: rect.maxY - value * rect.height,
+      )
       if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
     }
     return path

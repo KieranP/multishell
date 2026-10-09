@@ -6,17 +6,18 @@ final class TwoFilePromise: NSFilePromiseReceiver {
   private var calledIn = false
   private var landing: [String] = ["one.png", "two.png"]
 
+  override var fileNames: [String] { calledIn ? ["one.png", "two.png"] : [] }
+
   convenience init(landing: [String]) {
     self.init()
     self.landing = landing
   }
 
-  override var fileNames: [String] { calledIn ? ["one.png", "two.png"] : [] }
-
   override func receivePromisedFiles(
-    atDestination destination: URL, options: [AnyHashable: Any] = [:],
+    atDestination destination: URL,
+    options: [AnyHashable: Any] = [:],
     operationQueue: OperationQueue,
-    reader: @escaping (URL, (any Error)?) -> Void
+    reader: @escaping (URL, (any Error)?) -> Void,
   ) {
     calledIn = true
     // AppKit's own signature is not `@Sendable`, though it calls the reader off the main actor.

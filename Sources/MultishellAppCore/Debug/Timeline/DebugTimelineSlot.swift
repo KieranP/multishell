@@ -16,6 +16,12 @@ public struct DebugTimelineSlot: Sendable, Equatable {
   let childrenMemory: UInt64
   let stateReportsPerSecond: Double
 
+  public var smoothness: Smoothness { .of(longestFrame: longestFrame) }
+  var totalCPUPercent: Double { appCPUPercent + childrenCPUPercent }
+  var totalMemory: UInt64 { appMemory + childrenMemory }
+  /// Never below zero: Ghostty's figure for a terminal is an estimate.
+  var appMemoryOutsideTerminals: UInt64 { appMemory.subtractingFlooredAtZero(terminalMemory) }
+
   /// `samples` is never empty: a slot no sample landed in is not made.
   init(samples: [DebugSample]) {
     // Over the time covered, not per sample: one a stall held four seconds
@@ -37,10 +43,4 @@ public struct DebugTimelineSlot: Sendable, Equatable {
     childrenMemory = samples.last?.childrenMemory ?? 0
     stateReportsPerSecond = Double(samples.map(\.stateReportCount).reduce(0, +)) / seconds
   }
-
-  public var smoothness: Smoothness { .of(longestFrame: longestFrame) }
-  var totalCPUPercent: Double { appCPUPercent + childrenCPUPercent }
-  var totalMemory: UInt64 { appMemory + childrenMemory }
-  /// Never below zero: Ghostty's figure for a terminal is an estimate.
-  var appMemoryOutsideTerminals: UInt64 { appMemory.subtractingFlooredAtZero(terminalMemory) }
 }

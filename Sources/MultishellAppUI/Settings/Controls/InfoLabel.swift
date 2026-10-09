@@ -8,6 +8,13 @@ struct InfoLabel: View {
   let info: String
   private let spacing: CGFloat
 
+  var body: some View {
+    HStack(spacing: spacing) {
+      Text(text)
+      InfoButton(info)
+    }
+  }
+
   init(_ text: String, info: String) {
     self.init(text, info: info, spacing: Self.inlineSpacing)
   }
@@ -20,12 +27,5 @@ struct InfoLabel: View {
     self.text = text
     self.info = info
     self.spacing = spacing
-  }
-
-  var body: some View {
-    HStack(spacing: spacing) {
-      Text(text)
-      InfoButton(info)
-    }
   }
 }

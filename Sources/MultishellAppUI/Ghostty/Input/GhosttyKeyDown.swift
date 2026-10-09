@@ -13,13 +13,18 @@ enum GhosttyKeyDown {
   /// `keyText` is what the key types with no input method in the way; the
   /// key's own `characters` say whether that is a control the IME owns.
   static func deliveries(
-    wasComposing: Bool, isComposing: Bool, committed: [String], characters: String?,
-    keyText: String?, keyCode: UInt16, flags: NSEvent.ModifierFlags
+    wasComposing: Bool,
+    isComposing: Bool,
+    committed: [String],
+    characters: String?,
+    keyText: String?,
+    keyCode: UInt16,
+    flags: NSEvent.ModifierFlags,
   ) -> [Delivery] {
     let isOrWasComposing = isComposing || wasComposing
     // A lone surrogate half commits as empty text while it waits for its pair.
-    let typed = committed.filter {
-      !$0.isEmpty && !isComposingControl($0, whileComposing: isOrWasComposing)
+    let typed = committed.filter { text in
+      !text.isEmpty && !isComposingControl(text, whileComposing: isOrWasComposing)
     }
     if wasComposing, !committed.isEmpty {
       let replays = replaysAfterCommit(keyCode: keyCode, flags: flags)
@@ -34,10 +39,10 @@ enum GhosttyKeyDown {
 
   /// A lone control character while composing is the input method's.
   private static func isComposingControl(_ text: String?, whileComposing: Bool) -> Bool {
-    guard whileComposing, let scalars = text?.unicodeScalars, scalars.count == 1 else {
-      return false
-    }
-    return scalars.first!.isC0Control
+    guard whileComposing, let scalars = text?.unicodeScalars, scalars.count == 1,
+      let scalar = scalars.first
+    else { return false }
+    return scalar.isC0Control
   }
 
   /// Arrows still move after the input method commits on them; plain Left

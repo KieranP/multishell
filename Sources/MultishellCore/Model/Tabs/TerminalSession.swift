@@ -3,6 +3,11 @@ import Foundation
 /// What a terminal should be, not a running process, which lives behind
 /// `TerminalHost`. No natural key, so it carries a generated id.
 public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
+  /// `shellOverride` is left out on purpose; see its doc comment.
+  enum CodingKeys: String, CodingKey {
+    case id, worktreeID, workingDirectory, title, command, agentID
+  }
+
   public let id: UUID
   public internal(set) var worktreeID: Worktree.ID
   public internal(set) var workingDirectory: URL
@@ -20,14 +25,19 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// saved under one language kept that language's word under the next.
   public var displayTitle: String { title.isEmpty ? t("tab.shell") : title }
 
+  /// What the session runs as: the chosen shell, else `$SHELL`.
+  public var shellPath: String {
+    shellOverride ?? ShellChoice.loginShellPath()
+  }
+
   init(
-    id: UUID = UUID(),
     worktreeID: Worktree.ID,
     workingDirectory: URL,
     title: String,
+    id: UUID = UUID(),
     command: [String]? = nil,
     agentID: String? = nil,
-    shellOverride: String? = nil
+    shellOverride: String? = nil,
   ) {
     self.id = id
     self.worktreeID = worktreeID
@@ -36,15 +46,5 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     self.command = command
     self.agentID = agentID
     self.shellOverride = shellOverride
-  }
-
-  /// `shellOverride` is left out on purpose; see its doc comment.
-  enum CodingKeys: String, CodingKey {
-    case id, worktreeID, workingDirectory, title, command, agentID
-  }
-
-  /// What the session runs as: the chosen shell, else `$SHELL`.
-  public var shellPath: String {
-    shellOverride ?? ShellChoice.loginShellPath()
   }
 }

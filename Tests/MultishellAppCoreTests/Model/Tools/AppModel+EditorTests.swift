@@ -18,7 +18,10 @@ struct AppModelEditorTests {
 
     harness.model.openInEditor(harness.main)
 
-    #expect(!harness.model.showsAgentBoard, "a tab opened behind the board nobody can see or close")
+    #expect(
+      !harness.model.showsAgentBoard,
+      "a tab opened behind the board nobody can see or close",
+    )
     #expect(harness.model.workspace.activeTab(in: harness.main.id) != nil)
 
     let busy = Harness()
@@ -39,7 +42,8 @@ struct AppModelEditorTests {
     let ran = harness.root.appendingPathComponent("shell-ran")
     let shell = try Scratch.script(
       "printf '%s' \"$MULTISHELL_SCRIPT\" > '\(ran.path)'",
-      at: shells.appendingPathComponent("bash"))
+      at: shells.appendingPathComponent("bash"),
+    )
     let code = try Scratch.script("exit 0", at: shells.appendingPathComponent("code"))
     harness.model.editorDetection = EditorDetection(
       found: ["vscode": .init(application: nil, executable: code)])
@@ -100,13 +104,17 @@ struct AppModelEditorTests {
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
     #expect(harness.model.workspace.title(of: tab) == "my-editor")
     #expect(
-      harness.model.workspace.selectedWorktreeID == harness.main.id, "the tab is brought on screen")
+      harness.model.workspace.selectedWorktreeID == harness.main.id,
+      "the tab is brought on screen",
+    )
     #expect(harness.model.liveTerminalCount == 1)
     #expect(harness.engine.opened.last?.command?.last?.hasPrefix("my-editor ") == true)
     #expect(
       harness.engine.opened.last?.command?.contains(
-        "MULTISHELL_WORKTREE_PATH=\(harness.main.path.path)")
-        == true)
+        "MULTISHELL_WORKTREE_PATH=\(harness.main.path.path)"
+      )
+        == true
+    )
 
     harness.model.setPreferredEditor("vscode")
     harness.model.openInEditor(harness.main)

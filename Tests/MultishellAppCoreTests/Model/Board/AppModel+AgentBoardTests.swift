@@ -21,12 +21,14 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.count(of: .idle) == 1)
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
+    )
     model.setShowsAllTerminals(false)
     #expect(model.agentBoard.count(of: .working) == 1)
     #expect(
       model.agentBoard.column(.working).cards[0].occupant
-        == .agent(id: "claude", name: "Claude Code"))
+        == .agent(id: "claude", name: "Claude Code")
+    )
   }
 
   /// A split holds two panes under one strip, and an agent could be sitting
@@ -65,8 +67,12 @@ struct AppModelAgentBoardTests {
     let (harness, session) = Harness.withOnePane()
     harness.stateSource.send(
       SessionStateReport(
-        state: .attention, sessionID: session.id, message: "Permission to run rm -rf .build",
-        agentID: "claude"))
+        state: .attention,
+        sessionID: session.id,
+        message: "Permission to run rm -rf .build",
+        agentID: "claude",
+      )
+    )
 
     let card = harness.model.agentBoard.column(.waiting).cards[0]
     #expect(card.projectName == harness.store.workspace.projects[0].name)
@@ -106,12 +112,14 @@ struct AppModelAgentBoardTests {
       for shells in [false, true] {
         model.setShowsAllTerminals(shells)
         harness.stateSource.send(
-          SessionStateReport(state: state, sessionID: session.id, agentID: "claude"))
+          SessionStateReport(state: state, sessionID: session.id, agentID: "claude")
+        )
         let board = model.agentBoard
         for lane in AgentBoardLane.allCases {
           #expect(
             model.boardLaneCounts[lane] ?? 0 == board.count(of: lane),
-            "\(lane) after \(state), shells \(shells)")
+            "\(lane) after \(state), shells \(shells)",
+          )
         }
       }
     }
@@ -123,7 +131,8 @@ struct AppModelAgentBoardTests {
     #expect(model.sidebarLaneCounts.isEmpty)
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
+    )
     #expect(model.sidebarLaneCounts == [AgentBoardLaneCount(.working, 1)])
   }
 
@@ -140,7 +149,8 @@ struct AppModelAgentBoardTests {
     try agent.run()
     let pid = agent.processIdentifier
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, pid: pid, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, pid: pid, agentID: "claude")
+    )
     #expect(model.agentBoard.count(of: .working) == 1)
     #expect(model.watchedPIDs.contains(pid))
 
@@ -163,7 +173,11 @@ struct AppModelAgentBoardTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .attention, workingDirectory: harness.feature.path.path, agentID: "claude"))
+        state: .attention,
+        workingDirectory: harness.feature.path.path,
+        agentID: "claude",
+      )
+    )
 
     #expect(model.state(ofWorktree: harness.feature.id) == .attention, "the sidebar dot moves")
     #expect(model.agentBoard.cardCount == cards, "and nothing else does")
@@ -214,7 +228,8 @@ struct AppModelAgentBoardTests {
     #expect(
       cards.map(\.position) == [
         PanePosition(number: 1, count: 2), PanePosition(number: 2, count: 2),
-      ])
+      ]
+    )
     #expect(AccessibilityText.card(cards[1], at: .now).contains(t("spoken.pane-position", 2, 2)))
   }
 
@@ -225,9 +240,11 @@ struct AppModelAgentBoardTests {
     let gone = deadPID()
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, pid: gone, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, pid: gone, agentID: "claude")
+    )
     harness.stateSource.send(
-      SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude"))
+      SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude")
+    )
     #expect(model.reportedAgents[session.id] != nil)
 
     #expect(model.agentIDAtThePrompt(of: tab) == nil)

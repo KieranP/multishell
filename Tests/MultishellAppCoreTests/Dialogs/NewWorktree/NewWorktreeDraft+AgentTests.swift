@@ -8,11 +8,16 @@ struct NewWorktreeDraftAgentTests {
   private let installed = ["claude", "codex"]
 
   private func fitted(
-    startsByDefault: Bool = true, preferred: String? = "codex", offered: [String]? = nil
+    startsByDefault: Bool = true,
+    preferred: String? = "codex",
+    offered: [String]? = nil,
   ) -> NewWorktreeDraft {
     var draft = NewWorktreeDraft(projectID: "/repos/a")
     draft.fitAgent(
-      startsByDefault: startsByDefault, preferred: preferred, offered: offered ?? installed)
+      startsByDefault: startsByDefault,
+      preferred: preferred,
+      offered: offered ?? installed,
+    )
     return draft
   }
 

@@ -3,6 +3,12 @@ import MultishellCore
 /// One agent's line in Settings > Agents. Listed once it is on the PATH, and
 /// while its hooks are installed, so leftovers can still be taken out.
 public struct AgentHooksRow: Identifiable, Equatable, Sendable {
+  public enum Action: Equatable, Sendable {
+    case update
+    case remove
+    case add
+  }
+
   public let id: String
   public let name: String
   /// The file the hooks go in, as the row names it.
@@ -16,12 +22,6 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   public let contentsLabel: String
   public let info: String
 
-  public enum Action: Equatable, Sendable {
-    case update
-    case remove
-    case add
-  }
-
   public var statusLabel: String {
     isInstalled ? t("agent-hooks.installed-in", displayPath) : t("agent-hooks.not-installed")
   }
@@ -33,12 +33,14 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   }
 
   static func rows(
-    detection: AgentDetection, installed: Set<String>, stale: Set<String> = []
-  ) -> [AgentHooksRow] {
+    detection: AgentDetection,
+    installed: Set<String>,
+    stale: Set<String> = [],
+  ) -> [Self] {
     AgentHookCatalogue.integrations.compactMap { integration in
       let isInstalled = installed.contains(integration.id)
       guard isInstalled || detection.isInstalled(integration.id) else { return nil }
-      return AgentHooksRow(
+      return Self(
         id: integration.id,
         name: integration.name,
         displayPath: integration.displayPath,
@@ -46,7 +48,8 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
         isStale: isInstalled && stale.contains(integration.id),
         contentsLabel: integration.isPlugin
           ? t("agent-hooks.plugin") : t("agent-hooks.json"),
-        info: info(for: integration))
+        info: info(for: integration),
+      )
     }
   }
 

@@ -21,6 +21,7 @@ struct IconPaletteCell: View {
             RoundedRectangle(cornerRadius: 5).strokeBorder(Color.accentColor, lineWidth: 2)
           }
         }
+        .accessibilityHidden(true)
     }
   }
 }

@@ -13,7 +13,8 @@ struct PaneNodeDecodingTests {
       { "split": { "axis": "horizontal", "children": [
         { "terminal": { "_0": "\#(a.uuidString)" } },
         { "terminal": { "_0": "\#(b.uuidString)" } } ] } }
-      """#)
+      """#,
+    )
     #expect(node == .split(axis: .horizontal, children: [.terminal(a), .terminal(b)]))
   }
 
@@ -28,9 +29,12 @@ struct PaneNodeDecodingTests {
         { "split": { "axis": "vertical", "weights": \#(weights), "children": [
           { "terminal": { "_0": "\#(a.uuidString)" } },
           { "terminal": { "_0": "\#(b.uuidString)" } } ] } }
-        """#)
+        """#,
+      )
       #expect(
-        node == .split(axis: .vertical, children: [.terminal(a), .terminal(b)]), "\(weights)")
+        node == .split(axis: .vertical, children: [.terminal(a), .terminal(b)]),
+        "\(weights)",
+      )
     }
   }
 
@@ -40,9 +44,13 @@ struct PaneNodeDecodingTests {
       children: [
         .terminal(UUID()),
         .split(
-          axis: .horizontal, children: [.terminal(UUID()), .terminal(UUID())], weights: [3, 1]),
+          axis: .horizontal,
+          children: [.terminal(UUID()), .terminal(UUID())],
+          weights: [3, 1],
+        ),
       ],
-      weights: [0.25, 0.75])
+      weights: [0.25, 0.75],
+    )
     let json = try JSONEncoder().encode(tree)
     #expect(try JSONDecoder().decode(PaneNode.self, from: json) == tree)
   }
@@ -56,7 +64,8 @@ struct PaneNodeDecodingTests {
       { "split": { "axis": "diagonal", "children": [
         { "terminal": { "_0": "\#(a.uuidString)" } },
         { "terminal": { "_0": "\#(b.uuidString)" } } ] } }
-      """#)
+      """#,
+    )
     #expect(node == .split(axis: .horizontal, children: [.terminal(a), .terminal(b)]))
   }
 }

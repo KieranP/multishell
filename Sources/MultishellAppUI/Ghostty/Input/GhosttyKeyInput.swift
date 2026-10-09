@@ -15,14 +15,17 @@ struct GhosttyKeyInput {
   /// `translationFlags` are the modifiers that made the text, where libghostty
   /// changed them (option as alt). Control and command never make text.
   init(
-    _ event: NSEvent, _ action: ghostty_input_action_e,
-    translationFlags: NSEvent.ModifierFlags? = nil, text: String? = nil
+    _ event: NSEvent,
+    _ action: ghostty_input_action_e,
+    translationFlags: NSEvent.ModifierFlags? = nil,
+    text: String? = nil,
   ) {
     self.action = action
     keyCode = UInt32(event.keyCode)
     mods = GhosttyModifiers.mods(event.modifierFlags)
     consumedMods = GhosttyModifiers.mods(
-      (translationFlags ?? event.modifierFlags).subtracting([.control, .command]))
+      (translationFlags ?? event.modifierFlags).subtracting([.control, .command])
+    )
     let isKey = event.type == .keyDown || event.type == .keyUp
     unshiftedCodepoint =
       isKey ? event.characters(byApplyingModifiers: [])?.unicodeScalars.first?.value ?? 0 : 0
@@ -40,21 +43,27 @@ struct GhosttyKeyInput {
     self.text = text
   }
 
-  func withCValue<Result>(_ body: (ghostty_input_key_s) -> Result) -> Result {
-    var key = ghostty_input_key_s(
-      action: action, mods: mods, consumed_mods: consumedMods, keycode: keyCode, text: nil,
-      unshifted_codepoint: unshiftedCodepoint, composing: isComposing)
-    guard let text else { return body(key) }
-    return text.withCString { pointer in
-      key.text = pointer
-      return body(key)
-    }
-  }
-
   /// libghostty encodes control characters, DEL among them, itself from the key
   /// and its modifiers, which the Kitty keyboard protocol needs, so they go as no text.
   private static func textUnlessControl(_ text: String?) -> String? {
     guard let text, let first = text.unicodeScalars.first else { return nil }
     return first.isC0Control || first == "\u{7F}" ? nil : text
+  }
+
+  func withCValue<Result>(_ body: (ghostty_input_key_s) -> Result) -> Result {
+    var key = ghostty_input_key_s(
+      action: action,
+      mods: mods,
+      consumed_mods: consumedMods,
+      keycode: keyCode,
+      text: nil,
+      unshifted_codepoint: unshiftedCodepoint,
+      composing: isComposing,
+    )
+    guard let text else { return body(key) }
+    return text.withCString { pointer in
+      key.text = pointer
+      return body(key)
+    }
   }
 }

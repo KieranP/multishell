@@ -20,7 +20,8 @@ extension WorktreeFilesTests {
     #expect(failure?.failures.map(\.path) == ["../outside/key"])
     #expect(
       try FileManager.default.contentsOfDirectory(atPath: worktree.path).isEmpty,
-      "and nothing was placed in the worktree")
+      "and nothing was placed in the worktree",
+    )
   }
 
   /// The rule holds a repository to the checkout, not the user: a path they
@@ -32,8 +33,12 @@ extension WorktreeFilesTests {
     try "SECRET=1".write(to: repository.appending(path: ".env"), atomically: true, encoding: .utf8)
 
     let skipped = try WorktreeFiles.place(
-      "~/.aws.json\n$HOME/.zshrc\n/etc/passwd\n.env", as: placement, from: repository,
-      to: worktree, isRepositoryList: false)
+      "~/.aws.json\n$HOME/.zshrc\n/etc/passwd\n.env",
+      as: placement,
+      from: repository,
+      to: worktree,
+      isRepositoryList: false,
+    )
 
     #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path) == [".env"])
     #expect(skipped == ["~/.aws.json", "$HOME/.zshrc", "/etc/passwd"])
@@ -52,13 +57,19 @@ extension WorktreeFilesTests {
     try "TOP SECRET".write(to: outside.appending(path: "key"), atomically: true, encoding: .utf8)
 
     let skipped = try WorktreeFiles.place(
-      "../outside/key", as: .copy, from: repository, to: worktree, isRepositoryList: false)
+      "../outside/key",
+      as: .copy,
+      from: repository,
+      to: worktree,
+      isRepositoryList: false,
+    )
 
     #expect(skipped == ["../outside/key"])
     #expect(try manager.contentsOfDirectory(atPath: worktree.path).isEmpty)
     #expect(
       !manager.fileExists(atPath: root.appending(path: "trees/outside/key").path),
-      "and nothing was written beside it either")
+      "and nothing was written beside it either",
+    )
   }
 
   /// Refused, not silently skipped: these used to fail only because
@@ -88,10 +99,16 @@ extension WorktreeFilesTests {
 
     let failure = #expect(throws: WorktreeFileFailure.self) {
       try WorktreeFiles.place(
-        ".env\n~/.aws.json", as: .copy, from: repository, to: worktree)
+        ".env\n~/.aws.json",
+        as: .copy,
+        from: repository,
+        to: worktree,
+      )
     }
     #expect(failure?.failures.map(\.path) == ["~/.aws.json"])
-    #expect(try String(contentsOf: worktree.appending(path: ".env"), encoding: .utf8) == "SECRET=1")
+    #expect(
+      try String(contentsOf: worktree.appending(path: ".env"), encoding: .utf8) == "SECRET=1"
+    )
   }
 
   /// A copy under a linked folder would land in the repository through the link; the containment
@@ -99,8 +116,14 @@ extension WorktreeFilesTests {
   @Test func aCopyUnderALinkedFolderIsRefusedRatherThanWrittenThroughTheLink() throws {
     let (repository, worktree) = try repositoryAndWorktree()
     try FileManager.default.createDirectory(
-      at: repository.appending(path: "vendor"), withIntermediateDirectories: true)
-    try "dep".write(to: repository.appending(path: "vendor/dep"), atomically: true, encoding: .utf8)
+      at: repository.appending(path: "vendor"),
+      withIntermediateDirectories: true,
+    )
+    try "dep".write(
+      to: repository.appending(path: "vendor/dep"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     try WorktreeFiles.place("vendor", as: .link, from: repository, to: worktree)
     let failure = #expect(throws: WorktreeFileFailure.self) {
@@ -115,7 +138,11 @@ extension WorktreeFilesTests {
     let (repository, worktree) = try repositoryAndWorktree()
     let failure = #expect(throws: WorktreeFileFailure.self) {
       try WorktreeFiles.place(
-        "/etc/passwd\n~/.ssh/id_rsa", as: .copy, from: repository, to: worktree)
+        "/etc/passwd\n~/.ssh/id_rsa",
+        as: .copy,
+        from: repository,
+        to: worktree,
+      )
     }
     #expect(failure?.failures.map(\.path) == ["/etc/passwd", "~/.ssh/id_rsa"])
     #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path).isEmpty)
@@ -133,9 +160,13 @@ extension WorktreeFilesTests {
     }
     try "TOP SECRET".write(to: read.appending(path: "key"), atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(
-      at: repository.appending(path: "link"), withDestinationURL: read)
+      at: repository.appending(path: "link"),
+      withDestinationURL: read,
+    )
     try FileManager.default.createSymbolicLink(
-      at: worktree.appending(path: "link"), withDestinationURL: write)
+      at: worktree.appending(path: "link"),
+      withDestinationURL: write,
+    )
 
     let failure = #expect(throws: WorktreeFileFailure.self) {
       try WorktreeFiles.place("link/key", as: .copy, from: repository, to: worktree)
@@ -143,7 +174,8 @@ extension WorktreeFilesTests {
     #expect(failure?.failures.map(\.path) == ["link/key"])
     #expect(
       !FileManager.default.fileExists(atPath: write.appending(path: "key").path),
-      "nothing was written outside the worktree")
+      "nothing was written outside the worktree",
+    )
   }
 
   /// `copyItem` copies a link rather than following it, so the worktree would
@@ -157,7 +189,9 @@ extension WorktreeFilesTests {
     try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
     try "TOP SECRET".write(to: outside.appending(path: "real"), atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(
-      at: repository.appending(path: ".env"), withDestinationURL: outside.appending(path: "real"))
+      at: repository.appending(path: ".env"),
+      withDestinationURL: outside.appending(path: "real"),
+    )
 
     let failure = #expect(throws: WorktreeFileFailure.self) {
       try WorktreeFiles.place(".env", as: placement, from: repository, to: worktree)
@@ -169,13 +203,19 @@ extension WorktreeFilesTests {
   @Test func aSymlinkThatStaysInsideTheRepositoryIsPlaced() throws {
     let (repository, worktree) = try repositoryAndWorktree()
     try "SECRET=1".write(
-      to: repository.appending(path: ".env.real"), atomically: true, encoding: .utf8)
+      to: repository.appending(path: ".env.real"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try FileManager.default.createSymbolicLink(
       at: repository.appending(path: ".env"),
-      withDestinationURL: repository.appending(path: ".env.real"))
+      withDestinationURL: repository.appending(path: ".env.real"),
+    )
 
     try WorktreeFiles.place(".env", as: .copy, from: repository, to: worktree)
 
-    #expect(try String(contentsOf: worktree.appending(path: ".env"), encoding: .utf8) == "SECRET=1")
+    #expect(
+      try String(contentsOf: worktree.appending(path: ".env"), encoding: .utf8) == "SECRET=1"
+    )
   }
 }

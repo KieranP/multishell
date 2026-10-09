@@ -6,6 +6,17 @@ import Testing
 @Suite
 @MainActor
 struct NotificationCenterMainActorObserversTests {
+  private final class Owner: Sendable {}
+
+  @MainActor
+  private final class RunCount {
+    private(set) var count = 0
+
+    var counting: @MainActor @Sendable (Owner) -> Void {
+      { [self] _ in count += 1 }
+    }
+  }
+
   private let name = Notification.Name("NotificationCenterMainActorObserversTests")
 
   @Test func anObserverRunsForItsOwnerWithoutKeepingItAlive() {
@@ -29,23 +40,12 @@ struct NotificationCenterMainActorObserversTests {
     let runs = RunCount()
     let owner = Owner()
     let watched = NSObject()
-    let tokens = center.observe([(name, runs.counting)], from: watched, for: owner)
+    let tokens = center.observe([(name, runs.counting)], for: owner, from: watched)
     defer { tokens.forEach(center.removeObserver) }
 
     center.post(name: name, object: NSObject())
     center.post(name: name, object: watched)
 
     #expect(runs.count == 1)
-  }
-
-  private final class Owner: Sendable {}
-
-  @MainActor
-  private final class RunCount {
-    private(set) var count = 0
-
-    var counting: @MainActor @Sendable (Owner) -> Void {
-      { [self] _ in count += 1 }
-    }
   }
 }

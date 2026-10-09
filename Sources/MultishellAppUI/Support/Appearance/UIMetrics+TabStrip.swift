@@ -3,13 +3,15 @@ import MultishellAppCore
 
 /// The sizes of a group's tab strip: its tabs, buttons and arrows.
 extension UIMetrics {
+  static let tabSideInset: Double = 10
+  static let tabItemGap: Double = 7
+  static let menuChevronGap: Double = 2
+
   var tabHeight: Double { (bodySize * 2.6).rounded() }
   /// What a tab is drawn at when the strip has room for it.
   var tabMaxWidth: Double { (bodySize * 14.6).rounded() }
   /// The square a tab's close button takes around its glyph.
   var tabCloseButtonSide: Double { (bodySize * 1.55).rounded() }
-  static let tabSideInset: Double = 10
-  static let tabItemGap: Double = 7
   /// What the active tab draws besides its title: side insets, the mark, the
   /// close button and a gap either side of the title and its spacer.
   private var tabFixedPartsWidth: Double {
@@ -23,7 +25,6 @@ extension UIMetrics {
   /// The chevron after the New Tab menu's plus, small enough to read as a
   /// mark on the plus rather than a second glyph.
   var menuChevronSize: Double { (glyph * 0.6).rounded() }
-  static let menuChevronGap: Double = 2
   /// A split's width plus the chevron, less one gap; the ink either side
   /// differs from its box. See Docs/design/tabs-and-groups.md.
   var newTabMenuWidth: Double { splitButtonWidth + menuChevronSize - Self.menuChevronGap }
@@ -38,7 +39,10 @@ extension UIMetrics {
   /// What the strip's fit rules are worked from.
   var tabStripWidths: TabStripWidths {
     TabStripWidths(
-      buttons: stripButtonsWidth, newTabMenu: newTabMenuWidth, arrow: tabArrowWidth,
-      minimumTab: tabMinWidth)
+      buttons: stripButtonsWidth,
+      newTabMenu: newTabMenuWidth,
+      arrow: tabArrowWidth,
+      minimumTab: tabMinWidth,
+    )
   }
 }

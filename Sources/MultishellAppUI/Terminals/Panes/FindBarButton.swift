@@ -18,6 +18,7 @@ struct FindBarButton: View {
         .foregroundStyle(isHovered ? theme.textPrimary : theme.textSecondary)
         .frame(width: metrics.findControlSize, height: metrics.findControlSize)
         .background(isHovered ? theme.faintFill : .clear, in: RoundedRectangle(cornerRadius: 6))
+        .accessibilityHidden(true)
     }
     .onHover { isHovered = $0 }
   }

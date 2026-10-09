@@ -26,7 +26,9 @@ struct ShellDetectionTests {
       detection.found == [
         bin.appendingPathComponent("bash").path, bin.appendingPathComponent("fish").path,
         bin.appendingPathComponent("nu").path, "/bin/sh", bin.appendingPathComponent("zsh").path,
-      ], "sorted by name then path, listed once, the missing one dropped")
+      ],
+      "sorted by name then path, listed once, the missing one dropped",
+    )
     #expect(detection.isInstalled("/bin/sh"))
     #expect(detection.isInstalled(ShellChoice.loginShellID))
     #expect(!detection.isInstalled("/opt/gone/fish"))
@@ -43,9 +45,13 @@ struct ShellDetectionTests {
 
     let stale = detection.options(selected: "/opt/homebrew/bin/fish")
     #expect(
-      stale.map(\.id) == ["login", "/bin/bash", "/bin/zsh", "/opt/homebrew/bin/fish", "custom"])
+      stale.map(\.id) == ["login", "/bin/bash", "/bin/zsh", "/opt/homebrew/bin/fish", "custom"]
+    )
     #expect(stale[3].label == "fish  /opt/homebrew/bin/fish (not installed)")
-    #expect(detection.options(selected: "/bin/bash").count == 4, "an installed choice adds nothing")
+    #expect(
+      detection.options(selected: "/bin/bash").count == 4,
+      "an installed choice adds nothing",
+    )
     #expect(detection.options(selected: "custom").count == 4, "and neither does the custom path")
     #expect(detection.isInstalled(ShellChoice.customID))
   }
@@ -62,8 +68,10 @@ struct ShellDetectionTests {
 
   @Test func aMissingSystemListIsNotAnError() {
     let detection = ShellDetection(
-      searchPath: "/nowhere", systemList: URL(fileURLWithPath: "/no/such/shells"),
-      loginShell: "/bin/sh")
+      searchPath: "/nowhere",
+      systemList: URL(fileURLWithPath: "/no/such/shells"),
+      loginShell: "/bin/sh",
+    )
     #expect(detection.found.isEmpty)
     #expect(detection.options(selected: nil).map(\.id) == ["login", "custom"])
   }

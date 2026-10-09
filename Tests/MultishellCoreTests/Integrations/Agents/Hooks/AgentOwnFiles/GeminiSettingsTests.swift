@@ -15,9 +15,15 @@ struct GeminiSettingsTests {
       ["GEMINI_CLI_HOME": home.path, "GEMINI_CLI_SYSTEM_SETTINGS_PATH": system.path]
     }
 
+    var wakes: Bool {
+      GeminiSettings.wakesForBackgroundShells(environment: environment, directory: workspace.path)
+    }
+
     func write(_ text: String, to file: URL) throws {
       try FileManager.default.createDirectory(
-        at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        at: file.deletingLastPathComponent(),
+        withIntermediateDirectories: true,
+      )
       try text.write(to: file, atomically: true, encoding: .utf8)
     }
 
@@ -34,11 +40,9 @@ struct GeminiSettingsTests {
       try write(
         String(decoding: json, as: UTF8.self),
         to: home.appendingPathComponent(
-          ".gemini/trustedFolders.json"))
-    }
-
-    var wakes: Bool {
-      GeminiSettings.wakesForBackgroundShells(environment: environment, directory: workspace.path)
+          ".gemini/trustedFolders.json"
+        ),
+      )
     }
   }
 
@@ -53,7 +57,8 @@ struct GeminiSettingsTests {
     try files.write(
       #"{"experimental":{"modelSteering":true},"#
         + #""tools":{"shell":{"backgroundCompletionBehavior":"inject"}}}"#,
-      to: temporary.appendingPathComponent(".gemini/settings.json"))
+      to: temporary.appendingPathComponent(".gemini/settings.json"),
+    )
     let environment = [
       "HOME": "", variable: temporary.path + "/",
       "GEMINI_CLI_SYSTEM_SETTINGS_PATH": files.system.path,
@@ -61,7 +66,10 @@ struct GeminiSettingsTests {
 
     #expect(
       GeminiSettings.wakesForBackgroundShells(
-        environment: environment, directory: files.workspace.path))
+        environment: environment,
+        directory: files.workspace.path,
+      )
+    )
   }
 
   @Test func withNoSettingsAShellsEndWakesNothing() {
@@ -77,7 +85,8 @@ struct GeminiSettingsTests {
     for behavior in ["notify", "inject"] {
       try files.user(
         #"{"experimental":{"modelSteering":true},"#
-          + #""tools":{"shell":{"backgroundCompletionBehavior":"\#(behavior)"}}}"#)
+          + #""tools":{"shell":{"backgroundCompletionBehavior":"\#(behavior)"}}}"#
+      )
       #expect(files.wakes, "\(behavior)")
       try files.user(#"{"tools":{"shell":{"backgroundCompletionBehavior":"\#(behavior)"}}}"#)
       #expect(!files.wakes, "\(behavior) without steering")
@@ -130,7 +139,8 @@ struct GeminiSettingsTests {
     let files = Files()
     defer { Scratch.remove(files.root) }
     try files.user(
-      #"{"experimental":{"modelSteering":true},"security":{"folderTrust":{"enabled":false}}}"#)
+      #"{"experimental":{"modelSteering":true},"security":{"folderTrust":{"enabled":false}}}"#
+    )
     try files.project(injecting)
     #expect(files.wakes)
   }
@@ -143,7 +153,8 @@ struct GeminiSettingsTests {
     #expect(files.wakes)
     try files.user(
       #"{"experimental":{"modelSteering":false},"#
-        + #""tools":{"shell":{"backgroundCompletionBehavior":"inject"}}}"#)
+        + #""tools":{"shell":{"backgroundCompletionBehavior":"inject"}}}"#
+    )
     #expect(!files.wakes, "the user's own file outranks the defaults")
   }
 
@@ -158,7 +169,8 @@ struct GeminiSettingsTests {
         "context": { "fileName": "http://example.com//x" },
         "tools": { "shell": { "backgroundCompletionBehavior": "inject" } }
       }
-      """)
+      """
+    )
     #expect(files.wakes)
   }
 }

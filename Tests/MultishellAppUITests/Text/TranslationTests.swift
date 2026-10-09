@@ -9,6 +9,32 @@ import Testing
 /// the other; see Docs/develop/tests.md.
 @Suite
 struct TranslationTests {
+  private static let countedForms: Set<String> = {
+    guard
+      let file = Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "stringsdict"),
+      let entries = NSDictionary(contentsOf: file) as? [String: Any]
+    else { return [] }
+    return Set(entries.keys)
+  }()
+
+  /// Built per call: a `Regex` is not `Sendable`, so a `static let` of one does not compile.
+  private static func literalLabel() -> Regex<(Substring, Substring)> {
+    /\b(Text|Label|Button|Toggle|Picker|TextField|SecureField|Stepper|Link|Section|GroupBox|DisclosureGroup|Window|WindowGroup|help|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)\(\s*"[^"\\(]+"/
+  }
+
+  private static func libraryCatalogue(_ kind: String) -> URL {
+    SourceRoot.url.appendingPathComponent(
+      "Sources/MultishellCore/Resources/en.lproj/Localizable.\(kind)"
+    )
+  }
+
+  private static func catalogue() throws -> [String: String] {
+    let file = try #require(
+      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "strings")
+    )
+    return try #require(NSDictionary(contentsOf: file) as? [String: String])
+  }
+
   @Test func everyKeyTheAppAsksForIsInItsOwnCatalogue() throws {
     let catalogue = try Self.catalogue()
     for site in try TranslationCallSites.all(in: TranslationCallSites.appSwiftFiles) {
@@ -18,7 +44,8 @@ struct TranslationTests {
         """
         \(site.fileName) asks for \(site.key), which the app's catalogue has not got. A word the \
         libraries also say is written in both; the app never reads theirs.
-        """)
+        """,
+      )
     }
   }
 
@@ -37,10 +64,13 @@ struct TranslationTests {
         let takes = english.formatPlaceholders.count
         #expect(
           site.argumentCount == takes,
-          "\(site.fileName) passes \(site.argumentCount) to \(site.key), which takes \(takes)")
+          "\(site.fileName) passes \(site.argumentCount) to \(site.key), which takes \(takes)",
+        )
       } else if Self.countedForms.contains(site.key) {
         #expect(
-          site.argumentCount == 1, "\(site.fileName) counts with \(site.argumentCount) arguments")
+          site.argumentCount == 1,
+          "\(site.fileName) counts with \(site.argumentCount) arguments",
+        )
       }
     }
   }
@@ -51,11 +81,13 @@ struct TranslationTests {
       let numbered = all.filter { $0.contains("$") }
       #expect(
         numbered.isEmpty || numbered.count == all.count,
-        "\(key) numbers \(numbered.count) of its \(all.count) placeholders; number all or none")
+        "\(key) numbers \(numbered.count) of its \(all.count) placeholders; number all or none",
+      )
       guard all.count > 1 else { continue }
       #expect(
         numbered.count == all.count,
-        "\(key) takes \(all.count) arguments, so each needs its position: %1$@, %2$@")
+        "\(key) takes \(all.count) arguments, so each needs its position: %1$@, %2$@",
+      )
     }
   }
 
@@ -65,13 +97,16 @@ struct TranslationTests {
     #expect(MultishellAppUI.t("menu.new-tab") == "New Tab")
     #expect(
       MultishellAppUI.t("count.terminals", 3) == "3 terminals",
-      "the app has its own copy of this one")
+      "the app has its own copy of this one",
+    )
     #expect(
       MultishellAppUI.t("worktree-removal.remove") == "worktree-removal.remove",
-      "that word is the libraries', so the app's catalogue answers with the key")
+      "that word is the libraries', so the app's catalogue answers with the key",
+    )
     #expect(
       MultishellCore.t("worktree-removal.remove") == "Remove Worktree",
-      "and the libraries' own lookup still finds it")
+      "and the libraries' own lookup still finds it",
+    )
   }
 
   @Test func aCountedPhraseReadsAsSingularAndPlural() {
@@ -88,7 +123,8 @@ struct TranslationTests {
   @Test func aWordInBothCataloguesReadsTheSameInBoth() throws {
     let mine = try Self.catalogue()
     let libraries = try #require(
-      NSDictionary(contentsOf: Self.libraryCatalogue("strings")) as? [String: String])
+      NSDictionary(contentsOf: Self.libraryCatalogue("strings")) as? [String: String]
+    )
     let shared = Set(mine.keys).intersection(libraries.keys)
     #expect(!shared.isEmpty, "no key is in both, so this is checking nothing")
     for key in shared.sorted() {
@@ -97,7 +133,8 @@ struct TranslationTests {
         """
         \(key) is in both catalogues and they have parted: the app says \(mine[key] ?? "") \
         and the libraries say \(libraries[key] ?? "")
-        """)
+        """,
+      )
     }
   }
 
@@ -105,9 +142,11 @@ struct TranslationTests {
   /// `~%d` here and a counted form in the libraries went through it unseen.
   @Test func noKeyIsAPhraseInOneHalfAndACountedFormInTheOther() throws {
     let libraryPhrases = try #require(
-      NSDictionary(contentsOf: Self.libraryCatalogue("strings")) as? [String: String])
+      NSDictionary(contentsOf: Self.libraryCatalogue("strings")) as? [String: String]
+    )
     let libraryCounted = try #require(
-      NSDictionary(contentsOf: Self.libraryCatalogue("stringsdict")) as? [String: Any])
+      NSDictionary(contentsOf: Self.libraryCatalogue("stringsdict")) as? [String: Any]
+    )
 
     for key in Set(try Self.catalogue().keys).intersection(libraryCounted.keys).sorted() {
       Issue.record("\(key) is a phrase here and a counted form in the libraries")
@@ -116,12 +155,14 @@ struct TranslationTests {
       Issue.record("\(key) is a counted form here and a phrase in the libraries")
     }
     let file = try #require(
-      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "stringsdict"))
+      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "stringsdict")
+    )
     let ours = try #require(NSDictionary(contentsOf: file) as? [String: Any])
     for key in Self.countedForms.intersection(libraryCounted.keys).sorted() {
       #expect(
         (ours[key] as? NSDictionary) == (libraryCounted[key] as? NSDictionary),
-        "\(key) is counted in both catalogues and the two rules have parted")
+        "\(key) is counted in both catalogues and the two rules have parted",
+      )
     }
   }
 
@@ -141,7 +182,8 @@ struct TranslationTests {
       #expect(isSaid, "\(key) has an entry with nothing in it")
     }
     let file = try #require(
-      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "strings"))
+      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "strings")
+    )
     let written = try String(contentsOf: file, encoding: .utf8)
       .matches(of: /^"([^"]+)" =/.anchorsMatchLineEndings())
       .map { String($0.output.1) }
@@ -178,10 +220,12 @@ struct TranslationTests {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
       let built = try #require(Bundle.appCatalogue.url(forResource: name, withExtension: nil))
       let source = SourceRoot.url.appendingPathComponent(
-        "Sources/MultishellAppUI/Resources/en.lproj/\(name)")
+        "Sources/MultishellAppUI/Resources/en.lproj/\(name)"
+      )
       #expect(
         try Data(contentsOf: built) == (try Data(contentsOf: source)),
-        "the built \(name) is not the one on disk; build before running the tests")
+        "the built \(name) is not the one on disk; build before running the tests",
+      )
     }
   }
 
@@ -195,32 +239,9 @@ struct TranslationTests {
           """
           \(file.lastPathComponent) says \(String(match.output.0)), a word \
           Bundle.main would be asked for; write it as t("a.key")
-          """)
+          """
+        )
       }
     }
   }
-
-  /// Built per call: a `Regex` is not `Sendable`, so a `static let` of one does not compile.
-  private static func literalLabel() -> Regex<(Substring, Substring)> {
-    /\b(Text|Label|Button|Toggle|Picker|TextField|SecureField|Stepper|Link|Section|GroupBox|DisclosureGroup|Window|WindowGroup|help|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)\(\s*"[^"\\(]+"/
-  }
-
-  private static func libraryCatalogue(_ kind: String) -> URL {
-    SourceRoot.url.appendingPathComponent(
-      "Sources/MultishellCore/Resources/en.lproj/Localizable.\(kind)")
-  }
-
-  private static func catalogue() throws -> [String: String] {
-    let file = try #require(
-      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "strings"))
-    return try #require(NSDictionary(contentsOf: file) as? [String: String])
-  }
-
-  private static let countedForms: Set<String> = {
-    guard
-      let file = Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "stringsdict"),
-      let entries = NSDictionary(contentsOf: file) as? [String: Any]
-    else { return [] }
-    return Set(entries.keys)
-  }()
 }

@@ -56,9 +56,11 @@ struct AppModelAgentBoardCoverTests {
     let gone = deadPID()
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, pid: gone, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, pid: gone, agentID: "claude")
+    )
     harness.stateSource.send(
-      SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude"))
+      SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude")
+    )
     #expect(model.reportedAgents[session.id] != nil)
     #expect(!model.watchedPIDs.contains(gone), "nothing is being said about it")
 

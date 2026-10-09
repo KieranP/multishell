@@ -44,7 +44,8 @@ struct AppModelWorktreeSelectionTests {
     #expect(harness.model.workspace.selectedWorktreeID == harness.feature.id)
     #expect(
       harness.model.workspace.tabs(in: harness.feature.id).count == 1,
-      "not a first tab and then another")
+      "not a first tab and then another",
+    )
     #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1)
   }
 
@@ -63,13 +64,20 @@ struct AppModelWorktreeSelectionTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let ghost = Worktree(
-      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"), projectID: harness.project.id,
-      head: "c", branch: "ghost")
+      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"),
+      projectID: harness.project.id,
+      head: "c",
+      branch: "ghost",
+    )
     harness.store.replaceWorktrees(
-      [harness.main, harness.feature, ghost], forProject: harness.project.id)
+      [harness.main, harness.feature, ghost],
+      forProject: harness.project.id,
+    )
 
     #expect(
-      !harness.model.select(ghost, openingFirstTab: .never), "the menu must not open a tab in main")
+      !harness.model.select(ghost, openingFirstTab: .never),
+      "the menu must not open a tab in main",
+    )
     #expect(harness.model.presentedError?.message.contains(ghost.path.path) == true)
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
     #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1)
@@ -86,16 +94,23 @@ struct AppModelWorktreeSelectionTests {
 
     harness.model.select(harness.feature)
     #expect(
-      harness.model.liveTerminalCount == 3, "visiting warms the saved tabs, and main stays warm")
+      harness.model.liveTerminalCount == 3,
+      "visiting warms the saved tabs, and main stays warm",
+    )
   }
 
   @Test func selectingAWorktreeWhoseDirectoryIsGoneIsRefused() {
     let harness = Harness()
     let ghost = Worktree(
-      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"), projectID: harness.project.id,
-      head: "c", branch: "ghost")
+      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"),
+      projectID: harness.project.id,
+      head: "c",
+      branch: "ghost",
+    )
     harness.store.replaceWorktrees(
-      [harness.main, harness.feature, ghost], forProject: harness.project.id)
+      [harness.main, harness.feature, ghost],
+      forProject: harness.project.id,
+    )
     harness.model.presentedError = nil
 
     harness.model.select(ghost)
@@ -119,7 +134,8 @@ struct AppModelWorktreeSelectionTests {
     #expect(stat.calls == 1, "a second stat would pile another thread onto the mount")
     #expect(harness.model.workspace.selectedWorktreeID == nil)
     #expect(
-      harness.model.presentedError?.title == PresentedError.worktreeDirectoryUnanswered("").title)
+      harness.model.presentedError?.title == PresentedError.worktreeDirectoryUnanswered("").title
+    )
     #expect(harness.model.liveTerminalCount == 0)
   }
 }

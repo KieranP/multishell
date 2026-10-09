@@ -51,8 +51,8 @@ struct SurfaceFrameTests {
   /// those types is offered no drop at all.
   @Test func aPaneAcceptsFilesAndFilePromisesDraggedOntoIt() {
     let registered = Set(SurfaceFrame().registeredDraggedTypes)
-    let promised = NSFilePromiseReceiver.readableDraggedTypes.map {
-      NSPasteboard.PasteboardType($0)
+    let promised = NSFilePromiseReceiver.readableDraggedTypes.map { type in
+      NSPasteboard.PasteboardType(type)
     }
     #expect(!promised.isEmpty)
     #expect(promised.allSatisfy(registered.contains))

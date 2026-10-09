@@ -6,13 +6,15 @@ extension AppModel {
   /// the focus. `false` when nothing was pasted, so the drag says so.
   @discardableResult
   public func dropFiles(
-    _ urls: [URL], into id: TerminalSession.ID, takingFocus: Bool
+    _ urls: [URL],
+    into id: TerminalSession.ID,
+    takingFocus: Bool,
   ) -> Bool {
     guard acceptsFileDrop(into: id), let session = workspace.session(id) else { return false }
     let text = FilePathText.droppedText(
       for: urls,
       relativeTo: session.workingDirectory,
-      mentionPrefix: fileMentionPrefix(for: session)
+      mentionPrefix: fileMentionPrefix(for: session),
     )
     guard !text.isEmpty, host.paste(text, into: id) else { return false }
     // Recorded as well as focused, only a reporting engine moving the tab's

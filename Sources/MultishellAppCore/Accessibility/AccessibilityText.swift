@@ -16,7 +16,7 @@ public enum AccessibilityText {
     let displayNames = Dictionary(keepingFirst: workers.map { ($0.id, $0.displayName) })
     let spokenWorkers = workers.nested.map { nested in
       let worker = nested.worker
-      var spoken = [worker.displayName, worker.occurrenceText].compactMap { $0 }
+      var spoken = [worker.displayName, worker.occurrenceText].compactMap(\.self)
         .joined(separator: " ")
       if let description = worker.description {
         spoken = t("spoken.worker-described", spoken, description)

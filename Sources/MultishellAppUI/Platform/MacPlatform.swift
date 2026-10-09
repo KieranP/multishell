@@ -5,19 +5,31 @@ import os
 /// `Platform` on AppKit: the one place the model's needs meet the Mac.
 @MainActor
 final class MacPlatform: Platform {
-  /// The workspace window, so window-scoped commands can tell whether they
-  /// were issued there or in a settings window. Set by `WindowAccessor`.
-  weak var workspaceWindow: NSWindow?
-  var onDidBecomeActive: (@MainActor () -> Void)?
-
   /// The bundle identifier `make-app.sh` writes, which `log show` matches on.
   /// Named rather than left a literal so a test can hold the two together.
   nonisolated static let bundleIdentifier = "io.multishell.app"
 
+  /// The workspace window, so window-scoped commands can tell whether they
+  /// were issued there or in a settings window. Set by `WindowAccessor`.
+  weak var workspaceWindow: NSWindow?
+  var onDidBecomeActive: (@MainActor () -> Void)?
   private let logger = Logger(subsystem: bundleIdentifier, category: "platform")
   private var displayFrameLink: DisplayFrameLink?
 
   private var observers: [any NSObjectProtocol] = []
+
+  var isActive: Bool { NSApp?.isActive ?? true }
+
+  /// `NSApp` is nil until an application object exists, which it never does
+  /// under `swift test`; no app means no other window can be key.
+  var workspaceWindowIsKey: Bool {
+    guard let key = NSApp?.keyWindow else { return true }
+    return key === workspaceWindow
+  }
+
+  /// Where macOS keeps the permission, spelled as the Settings app's own
+  /// path to it.
+  var notificationSettingsLocation: String? { t("platform.notification-settings") }
 
   init() {
     // A turn later, the timing `onDidBecomeActive`'s handler was written against.
@@ -28,15 +40,6 @@ final class MacPlatform: Platform {
       (NSApplication.didBecomeActiveNotification, becameActive)
     ]
     observers = NotificationCenter.default.observe(changes, for: self)
-  }
-
-  var isActive: Bool { NSApp?.isActive ?? true }
-
-  /// `NSApp` is nil until an application object exists, which it never does
-  /// under `swift test`; no app means no other window can be key.
-  var workspaceWindowIsKey: Bool {
-    guard let key = NSApp?.keyWindow else { return true }
-    return key === workspaceWindow
   }
 
   func closeKeyWindow() {
@@ -71,7 +74,10 @@ final class MacPlatform: Platform {
 
   func open(_ directory: URL, withApplication application: URL) async throws {
     _ = try await NSWorkspace.shared.open(
-      [directory], withApplicationAt: application, configuration: .init())
+      [directory],
+      withApplicationAt: application,
+      configuration: .init(),
+    )
   }
 
   /// The Dock tile's badge. An empty label is not the same as none, so a
@@ -79,10 +85,6 @@ final class MacPlatform: Platform {
   func setBadgeCount(_ count: Int?) {
     NSApp.dockTile.badgeLabel = count.map(String.init)
   }
-
-  /// Where macOS keeps the permission, spelled as the Settings app's own
-  /// path to it.
-  var notificationSettingsLocation: String? { t("platform.notification-settings") }
 
   func log(_ message: String) {
     logger.notice("\(message, privacy: .public)")

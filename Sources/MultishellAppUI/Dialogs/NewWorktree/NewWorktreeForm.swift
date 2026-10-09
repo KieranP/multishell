@@ -8,13 +8,6 @@ struct NewWorktreeForm: View {
   @Environment(\.dismiss) private var dismiss
   @State private var draft: NewWorktreeDraft
 
-  /// `nil` leaves the project picker blank: the menu item with several
-  /// projects and nothing selected has no project to assume.
-  init(model: AppModel, initialProjectID: Project.ID?) {
-    self.model = model
-    _draft = State(initialValue: NewWorktreeDraft(projectID: initialProjectID))
-  }
-
   /// The project named, then where the rest comes from, one entry so a
   /// translation may order the two as its language does.
   private var subtitle: String {
@@ -37,7 +30,10 @@ struct NewWorktreeForm: View {
       Form {
         if model.workspace.projects.isEmpty {
           NewWorktreeFormNote(
-            text: t("sheet.no-projects"), symbol: "folder.badge.plus", tint: .secondary)
+            text: t("sheet.no-projects"),
+            symbol: "folder.badge.plus",
+            tint: .secondary,
+          )
         } else {
           NewWorktreeProjectPicker(model: model, projectID: $draft.projectID)
           fields
@@ -74,7 +70,10 @@ struct NewWorktreeForm: View {
   private var fields: some View {
     if project != nil, !draft.hasCommits {
       NewWorktreeFormNote(
-        text: t("sheet.no-commits"), symbol: "exclamationmark.triangle.fill", tint: .yellow)
+        text: t("sheet.no-commits"),
+        symbol: "exclamationmark.triangle.fill",
+        tint: .yellow,
+      )
     }
 
     Picker("", selection: $draft.createsBranch) {
@@ -84,8 +83,10 @@ struct NewWorktreeForm: View {
     .segmentedAcrossRow()
 
     NewWorktreeBranchFields(
-      draft: $draft, prefix: model.branchPrefix(for: draft),
-      checkedOut: model.checkedOutBranches(for: draft))
+      draft: $draft,
+      prefix: model.branchPrefix(for: draft),
+      checkedOut: model.checkedOutBranches(for: draft),
+    )
 
     LabeledContent(t("sheet.location")) {
       PathText(model.plannedLocation(for: draft))
@@ -114,6 +115,13 @@ struct NewWorktreeForm: View {
     .padding(.top, 8)
   }
 
+  /// `nil` leaves the project picker blank: the menu item with several
+  /// projects and nothing selected has no project to assume.
+  init(model: AppModel, initialProjectID: Project.ID?) {
+    self.model = model
+    _draft = State(initialValue: NewWorktreeDraft(projectID: initialProjectID))
+  }
+
   /// Re-read per project, a late answer for another dropped by the draft.
   private func loadBranches() async {
     draft.beginLoading()
@@ -130,7 +138,7 @@ struct NewWorktreeForm: View {
         basedOn: draft.startPoint,
         createsBranch: draft.createsBranch,
         in: project,
-        firstTab: draft.firstTab
+        firstTab: draft.firstTab,
       )
       dismiss()
     }

@@ -6,7 +6,8 @@ import Testing
 @Suite
 struct GhosttySurfaceEventTests {
   private func action(
-    _ tag: ghostty_action_tag_e, _ payload: ghostty_action_u = .init()
+    _ tag: ghostty_action_tag_e,
+    _ payload: ghostty_action_u = .init(),
   )
     -> ghostty_action_s
   {
@@ -27,11 +28,13 @@ struct GhosttySurfaceEventTests {
     payload.command_finished = ghostty_action_command_finished_s(exit_code: 2, duration: 0)
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_COMMAND_FINISHED, payload))
-        == .commandFinished(exitCode: 2))
+        == .commandFinished(exitCode: 2)
+    )
     payload.command_finished.exit_code = -1
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_COMMAND_FINISHED, payload))
-        == .commandFinished(exitCode: nil))
+        == .commandFinished(exitCode: nil)
+    )
   }
 
   @Test func aPointerShapeAProgramAsksForIsKept() {
@@ -39,7 +42,8 @@ struct GhosttySurfaceEventTests {
     payload.mouse_shape = GHOSTTY_MOUSE_SHAPE_TEXT
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_MOUSE_SHAPE, payload))
-        == .pointerShape(GHOSTTY_MOUSE_SHAPE_TEXT))
+        == .pointerShape(GHOSTTY_MOUSE_SHAPE_TEXT)
+    )
   }
 
   @Test func hidingAndShowingThePointerAreEvents() {
@@ -47,11 +51,13 @@ struct GhosttySurfaceEventTests {
     payload.mouse_visibility = GHOSTTY_MOUSE_HIDDEN
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_MOUSE_VISIBILITY, payload))
-        == .pointerVisible(false))
+        == .pointerVisible(false)
+    )
     payload.mouse_visibility = GHOSTTY_MOUSE_VISIBLE
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_MOUSE_VISIBILITY, payload))
-        == .pointerVisible(true))
+        == .pointerVisible(true)
+    )
   }
 
   @Test func aTitleWithNoTextIsNoEvent() {
@@ -65,7 +71,8 @@ struct GhosttySurfaceEventTests {
     payload.secure_input = GHOSTTY_SECURE_INPUT_ON
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_SECURE_INPUT, payload))
-        == .secureInput(GHOSTTY_SECURE_INPUT_ON))
+        == .secureInput(GHOSTTY_SECURE_INPUT_ON)
+    )
   }
 
   @Test func aRungBellIsTheBellEvent() {

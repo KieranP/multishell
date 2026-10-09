@@ -12,13 +12,16 @@ struct IconPaletteGroupBar: View {
       Divider()
       HStack(spacing: 0) {
         ForEach(groups, id: \.name) { group in
-          PlainGlyphButton(help: group.name, action: { jump(group.name) }) {
+          PlainGlyphButton(help: group.name) {
+            jump(group.name)
+          } glyph: {
             Image(systemName: group.symbols.first ?? "square")
               .font(.system(size: 11))
               .foregroundStyle(.secondary)
               // Shared width, not a fixed one: a fifteenth group would
               // otherwise run off the edge of the popover unnoticed.
               .frame(maxWidth: .infinity, minHeight: 20)
+              .accessibilityHidden(true)
           }
         }
       }

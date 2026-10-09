@@ -21,11 +21,13 @@ extension AppModelNotificationsTests {
     harness.model.revealNotificationSubject(.session(first.focusedSessionID))
 
     #expect(
-      harness.model.presentedError?.title == PresentedError.worktreeDirectoryMissing("").title)
+      harness.model.presentedError?.title == PresentedError.worktreeDirectoryMissing("").title
+    )
     #expect(harness.model.workspace.selectedWorktreeID == selected, "the selection stands")
     #expect(
       harness.model.workspace.activeTab(in: harness.feature.id)?.id == second.id,
-      "and the refused worktree's own strip is left as it was")
+      "and the refused worktree's own strip is left as it was",
+    )
   }
 
   @Test func aClickOnAWorktreeThatIsStillThereBringsItsTabUp() throws {

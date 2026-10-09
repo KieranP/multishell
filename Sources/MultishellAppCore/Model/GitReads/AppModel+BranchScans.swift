@@ -3,6 +3,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
+  private static var concurrentBranchScans: Int { 4 }
+
   /// What the sidebar draws for one worktree.
   public func mergeState(of worktree: Worktree) -> WorktreeMergeState {
     mergeStates[worktree.id] ?? .unknown
@@ -19,8 +21,6 @@ extension AppModel {
       await self.refreshBranchScan(of: project, sharingRound: true)
     }
   }
-
-  private static var concurrentBranchScans: Int { 4 }
 
   /// `sharingRound` inside the poll's round, whose projects share one budget.
   func refreshBranchScan(of project: Project, sharingRound: Bool = false) async {
@@ -67,7 +67,9 @@ extension AppModel {
       if worktreeOperations.isRunning(worktree.id) { continue }
       guard !pathClaims.isClaimed(worktree.id), !worktree.isInitializing,
         WorktreeMergeState.applies(
-          to: worktree, defaultBranchName: inputs.defaultBranch.nameWithoutRemote),
+          to: worktree,
+          defaultBranchName: inputs.defaultBranch.nameWithoutRemote,
+        ),
         let branch = worktree.branch, let tip = inputs.tip(of: branch)
       else {
         plan.unbadgeable.append(worktree.id)
@@ -75,8 +77,11 @@ extension AppModel {
       }
       let basis = MergeVerdictBasis(
         defaultBranchName: inputs.defaultBranch.shortName,
-        defaultBranchTip: inputs.defaultBranch.tip, branch: branch, branchTip: tip,
-        upstreamIsGone: inputs.upstreamIsGone(branch))
+        defaultBranchTip: inputs.defaultBranch.tip,
+        branch: branch,
+        branchTip: tip,
+        upstreamIsGone: inputs.upstreamIsGone(branch),
+      )
       plan.verdictBases[worktree.id] = basis
       // Nothing has moved since the answer we have, so nothing to ask.
       guard mergeVerdictBases[worktree.id] != basis || mergeStates[worktree.id] == nil else {
@@ -90,8 +95,9 @@ extension AppModel {
   /// The worktrees may have changed under the git calls; only what is still
   /// there and still on the branch it was checked on is kept.
   private func recordMergeReadings(
-    _ fresh: [String: MergeReading], verdictBases: [Worktree.ID: MergeVerdictBasis],
-    of id: Project.ID
+    _ fresh: [String: MergeReading],
+    verdictBases: [Worktree.ID: MergeVerdictBasis],
+    of id: Project.ID,
   ) {
     for worktree in workspace.worktrees(of: id) {
       guard let basis = verdictBases[worktree.id], basis.branch == worktree.branch,

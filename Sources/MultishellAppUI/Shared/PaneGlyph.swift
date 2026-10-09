@@ -21,7 +21,10 @@ struct PaneGlyph: View {
 
   var body: some View {
     AgentMarkView(
-      agentID: agentID, unmarkedSymbol: unmarkedSymbol, plainTint: plainTint, size: size
+      agentID: agentID,
+      unmarkedSymbol: unmarkedSymbol,
+      plainTint: plainTint,
+      size: size,
     )
     .overlay(alignment: .bottomTrailing) {
       if let state {

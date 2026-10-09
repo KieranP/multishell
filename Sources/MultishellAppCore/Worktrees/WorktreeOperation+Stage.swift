@@ -12,22 +12,6 @@ extension WorktreeOperation {
     case postDeleteHook
     case deletingBranch
 
-    init(_ placement: WorktreeFilePlacement) {
-      switch placement {
-      case .link: self = .linkingFiles
-      case .copy: self = .copyingFiles
-      }
-    }
-
-    init(_ removal: WorktreeRemovalStep, trashes: Bool = true) {
-      switch removal {
-      case .preDeleteHook: self = .preDeleteHook
-      case .removingWorktree: self = trashes ? .removingWorktree : .deletingWorktree
-      case .postDeleteHook: self = .postDeleteHook
-      case .deletingBranch: self = .deletingBranch
-      }
-    }
-
     /// A setup stage of a create: the worktree is there, and its first terminal
     /// is held back until this ends or its failure is dismissed.
     var isSetup: Bool {
@@ -41,6 +25,22 @@ extension WorktreeOperation {
       case .linkingFiles, .copyingFiles: return t("step.cancel-files-help")
       case .postCreateHook, .preDeleteHook, .postDeleteHook: return t("step.cancel-hook-help")
       case .removingWorktree, .deletingWorktree, .deletingBranch: return nil
+      }
+    }
+
+    init(_ placement: WorktreeFilePlacement) {
+      switch placement {
+      case .link: self = .linkingFiles
+      case .copy: self = .copyingFiles
+      }
+    }
+
+    init(_ removal: WorktreeRemovalStep, trashes: Bool = true) {
+      switch removal {
+      case .preDeleteHook: self = .preDeleteHook
+      case .removingWorktree: self = trashes ? .removingWorktree : .deletingWorktree
+      case .postDeleteHook: self = .postDeleteHook
+      case .deletingBranch: self = .deletingBranch
       }
     }
   }

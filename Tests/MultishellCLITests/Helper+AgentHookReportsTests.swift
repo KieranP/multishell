@@ -23,7 +23,8 @@ struct HelperAgentHookReportsTests {
       environment: [
         "MULTISHELL_SOCKET": listener.path.path, "MULTISHELL_SESSION": session.uuidString,
       ],
-      stdin: payload)
+      stdin: payload,
+    )
 
     #expect(output.succeeded)
     #expect(output.standardOutput.isEmpty, "Claude reads a hook's stdout")
@@ -40,12 +41,16 @@ struct HelperAgentHookReportsTests {
     let listener = try ReportListener()
     defer { listener.stop() }
     let ignored = try await HelperBinary.run(
-      ["claude-hook"], environment: ["MULTISHELL_SOCKET": listener.path.path],
-      stdin: #"{"hook_event_name":"PreCompact","cwd":"/w"}"#)
+      ["claude-hook"],
+      environment: ["MULTISHELL_SOCKET": listener.path.path],
+      stdin: #"{"hook_event_name":"PreCompact","cwd":"/w"}"#,
+    )
     #expect(ignored.succeeded && ignored.standardOutput.isEmpty && ignored.standardError.isEmpty)
     let orphan = try await HelperBinary.run(
-      ["claude-hook"], environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"],
-      stdin: #"{"hook_event_name":"Stop","cwd":"/w"}"#)
+      ["claude-hook"],
+      environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"],
+      stdin: #"{"hook_event_name":"Stop","cwd":"/w"}"#,
+    )
     #expect(orphan.succeeded && orphan.standardError.isEmpty)
     try await expectOnlyTheBarrier(on: listener)
   }
@@ -54,8 +59,10 @@ struct HelperAgentHookReportsTests {
     let listener = try ReportListener()
     defer { listener.stop() }
     let gemini = try await HelperBinary.run(
-      ["agent-hook", "--agent", "gemini"], environment: ["MULTISHELL_SOCKET": listener.path.path],
-      stdin: #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#)
+      ["agent-hook", "--agent", "gemini"],
+      environment: ["MULTISHELL_SOCKET": listener.path.path],
+      stdin: #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#,
+    )
     #expect(gemini.succeeded && gemini.standardOutput.isEmpty)
     try await waitUntil { listener.recorder.received.count == 1 }
     let report = SessionStateReport.parse(listener.recorder.received.last ?? "")
@@ -77,7 +84,8 @@ struct HelperAgentHookReportsTests {
       stdin: #"""
         {"hook_event_name":"PermissionRequest","cwd":"/w/repo",
          "permission_mode":"default","tool_name":"Bash"}
-        """#)
+        """#,
+    )
     #expect(request.succeeded && request.standardOutput.isEmpty)
     try await waitUntil { listener.recorder.received.count == 1 }
     let report = SessionStateReport.parse(listener.recorder.received.last ?? "")
@@ -90,10 +98,12 @@ struct HelperAgentHookReportsTests {
     let listener = try ReportListener()
     defer { listener.stop() }
     let classifier = try await HelperBinary.run(
-      ["agent-hook", "--agent", "claude"], environment: ["MULTISHELL_SOCKET": listener.path.path],
+      ["agent-hook", "--agent", "claude"],
+      environment: ["MULTISHELL_SOCKET": listener.path.path],
       stdin: #"""
         {"hook_event_name":"PermissionRequest","cwd":"/w/repo","permission_mode":"auto"}
-        """#)
+        """#,
+    )
     #expect(classifier.succeeded && classifier.standardError.isEmpty)
     try await expectOnlyTheBarrier(on: listener)
   }
@@ -112,7 +122,9 @@ struct HelperAgentHookReportsTests {
     defer { Scratch.remove(home) }
     let settings = home.appendingPathComponent(".gemini/settings.json")
     try FileManager.default.createDirectory(
-      at: settings.deletingLastPathComponent(), withIntermediateDirectories: true)
+      at: settings.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
     let environment = [
       "MULTISHELL_SOCKET": listener.path.path, "GEMINI_CLI_HOME": home.path,
       "GEMINI_CLI_SYSTEM_SETTINGS_PATH": home.appendingPathComponent("system.json").path,
@@ -121,7 +133,10 @@ struct HelperAgentHookReportsTests {
     defer { shell.terminate() }
     func hook(_ agent: String, _ payload: String) async throws {
       let output = try await HelperBinary.run(
-        ["agent-hook", "--agent", agent], environment: environment, stdin: payload)
+        ["agent-hook", "--agent", agent],
+        environment: environment,
+        stdin: payload,
+      )
       #expect(output.succeeded && output.standardOutput.isEmpty)
     }
 

@@ -10,9 +10,16 @@ struct SessionStateReportTests {
   @Test func aFullReportRoundTrips() throws {
     let id = UUID()
     let report = SessionStateReport(
-      state: .attention, sessionID: id, workingDirectory: "/w/repo", pid: 4242,
+      state: .attention,
+      sessionID: id,
+      workingDirectory: "/w/repo",
+      pid: 4242,
       message: "Needs permission",
-      duration: 12.5, agentID: "claude", isSilent: true, asksQuestion: true)
+      duration: 12.5,
+      agentID: "claude",
+      isSilent: true,
+      asksQuestion: true,
+    )
     let line = try report.encodedLine()
     #expect(line.hasSuffix("\n"))
     #expect(!line.dropLast().contains("\n"), "one line per message")
@@ -40,7 +47,8 @@ struct SessionStateReportTests {
 
   @Test func aNewerHelperWithFieldsThisBuildDoesNotKnowStillParses() {
     let report = SessionStateReport.parse(
-      #"{"v":7,"state":"done","session":"\#(UUID().uuidString)","colour":"amber"}"#)
+      #"{"v":7,"state":"done","session":"\#(UUID().uuidString)","colour":"amber"}"#
+    )
     #expect(report?.state == .done)
     #expect(report?.version == 7)
   }
@@ -59,10 +67,14 @@ struct SessionStateReportTests {
   @Test func aShellSaysSoOnItsOwnReportsAndNobodyElseDoes() throws {
     let sent = try #require(
       SessionStateReport.parse(
-        SessionStateReport(state: .done, isFromShellIntegration: true).encodedLine()))
+        SessionStateReport(state: .done, isFromShellIntegration: true).encodedLine()
+      )
+    )
     #expect(sent.isFromShellIntegration == true)
     let scripted = try #require(SessionStateReport.parse(#"{"v":1,"state":"done"}"#))
     #expect(
-      scripted.isFromShellIntegration == nil, "a line that does not claim it is not a shell's")
+      scripted.isFromShellIntegration == nil,
+      "a line that does not claim it is not a shell's",
+    )
   }
 }

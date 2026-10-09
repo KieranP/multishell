@@ -6,15 +6,22 @@ import Testing
 @Suite
 struct GhosttyPasteConfirmationTests {
   private func confirmation(
-    _ kind: ghostty_clipboard_request_e, text: String?
+    _ kind: ghostty_clipboard_request_e,
+    text: String?,
   ) -> GhosttyPasteConfirmation? {
     CStrings.with([GhosttyClipboardContents.textMime, text ?? ""]) { strings in
       let contents =
         text == nil
         ? []
-        : [ghostty_clipboard_content_s(mime: strings[0], data: strings[1], len: strlen(strings[1]))]
-      return contents.withUnsafeBufferPointer {
-        GhosttyPasteConfirmation(GhosttyClipboardRequest(handle: nil), kind: kind, contents: $0)
+        : [
+          ghostty_clipboard_content_s(mime: strings[0], data: strings[1], len: strlen(strings[1]))
+        ]
+      return contents.withUnsafeBufferPointer { buffer in
+        GhosttyPasteConfirmation(
+          GhosttyClipboardRequest(handle: nil),
+          kind: kind,
+          contents: buffer,
+        )
       }
     }
   }

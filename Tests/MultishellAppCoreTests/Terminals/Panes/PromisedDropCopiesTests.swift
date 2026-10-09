@@ -11,7 +11,9 @@ struct PromisedDropCopiesTests {
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try Data().write(to: directory.appendingPathComponent("shot.png"))
     try FileManager.default.setAttributes(
-      [.modificationDate: modified], ofItemAtPath: directory.path)
+      [.modificationDate: modified],
+      ofItemAtPath: directory.path,
+    )
     return directory
   }
 

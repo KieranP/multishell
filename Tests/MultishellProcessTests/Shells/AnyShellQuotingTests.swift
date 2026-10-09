@@ -7,13 +7,16 @@ import Testing
 @Suite
 struct AnyShellQuotingTests {
   @Test(
-    arguments: InstalledShells.only(["/bin/sh", "/bin/zsh", "/bin/bash", "/bin/dash", "/bin/tcsh"]))
+    arguments: InstalledShells.only(["/bin/sh", "/bin/zsh", "/bin/bash", "/bin/dash", "/bin/tcsh"])
+  )
   func aWordQuotedForAnyShellReadsTheSameInEach(shell: String) async throws {
     let words = [#"a\"#, "it's", #"\'"#, #"back\slash"#, "My Projects", "$HOME", "plain"]
     let output = try await Detached.output(
       of: shell,
       ["-c", "/usr/bin/printf '%s\\n' " + words.map(AnyShellQuoting.quote).joined(separator: " ")],
-      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": ""], standardError: .discarded)
+      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": ""],
+      standardError: .discarded,
+    )
 
     #expect(output == words.map { $0 + "\n" }.joined())
   }
@@ -21,16 +24,21 @@ struct AnyShellQuotingTests {
   @Test(
     arguments: InstalledShells.only([
       ("/bin/tcsh", ["-f", "-i"]), ("/bin/bash", ["--norc", "-i"]), ("/bin/zsh", ["-f", "-i"]),
-    ]))
+    ])
+  )
   func aWordForAnyShellSurvivesATypedLinesHistoryExpansion(
-    shell: String, flags: [String]
+    shell: String,
+    flags: [String],
   ) async throws {
     let home = try Scratch.directory("quoting")
     defer { Scratch.remove(home) }
     let word = "a!b.txt"
     let text = try await Detached.output(
-      of: shell, flags, environment: Scratch.bareShellEnvironment(home: home),
-      input: "/usr/bin/printf '[%s]\\n' \(AnyShellQuoting.quote(word))\nexit\n")
+      of: shell,
+      flags,
+      environment: Scratch.bareShellEnvironment(home: home),
+      input: "/usr/bin/printf '[%s]\\n' \(AnyShellQuoting.quote(word))\nexit\n",
+    )
 
     #expect(text.contains("[\(word)]"), "\(text)")
   }

@@ -1,19 +1,19 @@
 import SwiftUI
 
 struct DestructiveAlertModifier<Item: Identifiable>: ViewModifier {
-  let item: Item?
-  let alert: (Item) -> NSAlert
-  let answer: (Item, Int?) -> Void
-
-  @State private var window: NSWindow?
-  @State private var shownAlert: NSAlert?
-
   /// The accessor reports the window as the view lands in it, which can be
   /// after the first update, so a waiting item presents once it arrives.
   private struct Trigger: Equatable {
     let item: Item.ID?
     let hasWindow: Bool
   }
+
+  let item: Item?
+  let alert: (Item) -> NSAlert
+  let answer: (Item, Int?) -> Void
+
+  @State private var window: NSWindow?
+  @State private var shownAlert: NSAlert?
 
   func body(content: Content) -> some View {
     content

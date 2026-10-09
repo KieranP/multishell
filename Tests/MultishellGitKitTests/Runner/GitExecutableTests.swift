@@ -12,10 +12,16 @@ struct GitExecutableTests {
     let shim = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let real = try Scratch.script("exit 0", at: root.appendingPathComponent("real-git"))
     let xcrun = try Scratch.script(
-      "echo '\(real.path)'", at: root.appendingPathComponent("xcrun"))
+      "echo '\(real.path)'",
+      at: root.appendingPathComponent("xcrun"),
+    )
 
     let found = await GitExecutable.resolve(
-      searchPath: root.path, shim: shim, xcrun: xcrun, developerDirectory: root)
+      searchPath: root.path,
+      developerDirectory: root,
+      shim: shim,
+      xcrun: xcrun,
+    )
 
     #expect(found?.path == real.path)
   }
@@ -27,7 +33,11 @@ struct GitExecutableTests {
     let xcrun = try Scratch.script("exit 1", at: root.appendingPathComponent("xcrun"))
 
     let found = await GitExecutable.resolve(
-      searchPath: root.path, shim: shim, xcrun: xcrun, developerDirectory: root)
+      searchPath: root.path,
+      developerDirectory: root,
+      shim: shim,
+      xcrun: xcrun,
+    )
 
     #expect(found?.path == shim.path)
   }
@@ -38,11 +48,16 @@ struct GitExecutableTests {
     let git = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let marker = root.appendingPathComponent("ran")
     let xcrun = try Scratch.script(
-      "touch '\(marker.path)'", at: root.appendingPathComponent("xcrun"))
+      "touch '\(marker.path)'",
+      at: root.appendingPathComponent("xcrun"),
+    )
 
     let found = await GitExecutable.resolve(
-      searchPath: root.path, shim: URL(fileURLWithPath: "/usr/bin/git"), xcrun: xcrun,
-      developerDirectory: root)
+      searchPath: root.path,
+      developerDirectory: root,
+      shim: URL(fileURLWithPath: "/usr/bin/git"),
+      xcrun: xcrun,
+    )
 
     #expect(found?.path == git.path)
     #expect(!FileManager.default.fileExists(atPath: marker.path))
@@ -54,11 +69,16 @@ struct GitExecutableTests {
     let shim = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let marker = root.appendingPathComponent("ran")
     let xcrun = try Scratch.script(
-      "touch '\(marker.path)'", at: root.appendingPathComponent("xcrun"))
+      "touch '\(marker.path)'",
+      at: root.appendingPathComponent("xcrun"),
+    )
 
     let found = await GitExecutable.resolve(
-      searchPath: root.path, shim: shim, xcrun: xcrun,
-      developerDirectory: root.appendingPathComponent("CommandLineTools"))
+      searchPath: root.path,
+      developerDirectory: root.appendingPathComponent("CommandLineTools"),
+      shim: shim,
+      xcrun: xcrun,
+    )
 
     #expect(found?.path == shim.path)
     #expect(!FileManager.default.fileExists(atPath: marker.path))

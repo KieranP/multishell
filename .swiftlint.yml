@@ -1,124 +1,90 @@
-# Correctness rules only; swift-format owns layout and style. Which rules are off,
-# and why, is in Docs/develop/build.md.
-only_rules:
-  - array_init
-  - balanced_xctest_lifecycle
-  - blanket_disable_command
-  - block_based_kvo
-  - class_delegate_protocol
-  - comment_spacing
-  - compiler_protocol_init
-  - contains_over_filter_count
-  - contains_over_filter_is_empty
-  - contains_over_first_not_nil
-  - convenience_type
-  - deployment_target
-  - discarded_notification_center_observer
-  - discouraged_assert
-  - discouraged_direct_init
-  - discouraged_none_name
-  - discouraged_object_literal
-  - duplicate_conditions
-  - duplicate_enum_cases
-  - duplicate_imports
-  - duplicated_key_in_dictionary_literal
-  - dynamic_inline
-  - empty_xctest_method
-  - expiring_todo
-  - explicit_init
-  - fallthrough
-  - fatal_error_message
-  - file_name_no_space
-  - final_test_case
-  - first_where
-  - flatmap_over_map_reduce
-  - for_where
-  - generic_type_name
-  - ibinspectable_in_extension
-  - implicitly_unwrapped_optional
-  - invalid_swiftlint_command
-  - invisible_character
-  - is_disjoint
-  - joined_default_parameter
-  - last_where
-  - legacy_cggeometry_functions
-  - legacy_constant
-  - legacy_constructor
-  - legacy_hashing
-  - legacy_multiple
-  - legacy_nsgeometry_functions
-  - legacy_random
-  - legacy_swiftui_aspect_ratio
-  - legacy_uigraphics_function
-  - local_doc_comment
-  - lower_acl_than_parent
-  - nimble_operator
-  - no_extension_access_modifier
-  - no_fallthrough_only
-  - non_optional_string_data_conversion
-  - notification_center_detachment
-  - ns_number_init_as_function_reference
-  - nslocalizedstring_require_bundle
-  - nsobject_prefer_isequal
-  - object_literal
-  - one_declaration_per_file
-  - orphaned_doc_comment
-  - overridden_super_call
-  - prefer_asset_symbols
-  - prefer_condition_list
-  - prefer_nimble
-  - prefer_type_checking
-  - prefer_zero_over_explicit_init
-  - private_outlet
-  - private_over_fileprivate
-  - private_subject
-  - private_swiftui_state
-  - private_unit_test
-  - prohibited_super_call
-  - quick_discouraged_call
-  - quick_discouraged_focused_test
-  - quick_discouraged_pending_test
-  - reduce_into
-  - redundant_final
-  - redundant_objc_attribute
-  - redundant_sendable
-  - redundant_set_access_control
-  - redundant_string_enum_value
-  - redundant_type_annotation
-  - redundant_void_return
-  - required_enum_case
-  - self_in_property_initialization
-  - shorthand_optional_binding
-  - sorted_first_last
-  - static_operator
-  - static_over_final_class
-  - strong_iboutlet
-  - superfluous_disable_command
-  - syntactic_sugar
-  - test_case_accessibility
-  - todo
-  - toggle_bool
-  - trailing_semicolon
-  - unavailable_condition
-  - unavailable_function
-  - unhandled_throwing_task
-  - unneeded_break_in_switch
-  - unneeded_override
-  - unneeded_synthesized_initializer
-  - unowned_variable_capture
-  - unused_closure_parameter
-  - unused_control_flow_label
-  - unused_enumerated
-  - unused_setter_value
-  - valid_ibinspectable
-  - weak_delegate
-  - xct_specific_matcher
-  - xctfail_message
-  - yoda_condition
-
+# Every rule runs but those disabled below, each with its reason. Limits sit
+# just above the largest that exists; Docs/develop/build.md says more.
+cyclomatic_complexity: 15
+disabled_rules:
+  # Incompatible with swift-format
+  - closure_parameter_position
+  - contrasted_opening_brace
+  - extension_access_modifier
+  - multiline_arguments_brackets
+  - opening_brace
+  - pattern_matching_keywords
+  - sorted_imports
+  - trailing_comma
+  # Incompatible with codebase
+  - accessibility_trait_for_button  # every hit uses selectableButtonTraits
+  - async_without_await  # null and fake ports meeting a protocol
+  - closure_body_length  # a SwiftUI Form is one closure
+  - collection_alignment  # 2, misreads a multi-line string literal argument
+  - contains_over_range_nil_comparison  # on Data it swaps Foundation's search for a naive one
+  - discouraged_optional_boolean  # 61, settings where nil means inherit
+  - discouraged_optional_collection  # 47, settings where nil means inherit
+  - file_name  # Sequence+X files extend Sequence<Row>
+  - legacy_objc_type  # NSItemProvider and AppleScript want them
+  - mark  # a doc line starting "mark:"
+  - no_empty_block  # null objects
+  - nslocalizedstring_key  # the t() wrapper
+  - optional_data_string_conversion  # 25, lossy decoding of a child's output is wanted
+  - override_in_extension  # 26, AppKit overrides split by concern into +Concern files
+  - private_action  # @IBAction is how the responder chain finds copy:
+  - prohibited_interface_builder  # the same @IBAction
+  - reduce_boolean  # a last-wins fold is not allSatisfy
+  - redundant_nil_coalescing  # ?? nil flattens a String??
+  - redundant_self  # self is the weak capture in self.map
+  - strict_fileprivate  # a nested type's members shared with a sibling
+  - unneeded_escaping  # a protocol witness
+  - unneeded_throws_rethrows  # null and fake ports meeting a protocol
+  - untyped_error_in_catch  # would drop a named catch
+  - unused_parameter  # 104, protocol witnesses that would read `info _:`
+  - variable_shadowing  # 86, a local named for the property it reads
+  - void_function_in_ternary  # t() returns a string
+  # Personal Choice / Taste
+  - attributes  # 212, an attribute sits where it reads best: @Test beside, @ViewBuilder above
+  - conditional_returns_on_newline  # 81, the code's one-line early returns
+  - discouraged_default_parameter  # defaults keep call sites short
+  - explicit_acl  # internal is the default and needs no keyword
+  - explicit_enum_raw_value  # a String case's name is its raw value
+  - explicit_top_level_acl  # the same, for top-level declarations
+  - explicit_type_interface  # an inferred type reads better than a repeated one
+  - let_var_whitespace  # 33, one-line helpers kept together
+  - missing_docs  # a doc comment says why, where there is a why
+  - multiline_function_chains  # 32, splitting a chain moved .flatMap { off its receiver
+  - no_magic_numbers  # a number used once reads best in place; shared ones live in UIMetrics
+  - prefixed_toplevel_constant  # Objective-C's k prefix
+  - required_deinit  # an empty deinit says nothing
+  - switch_case_on_newline  # 375, the code's one-line cases
+  # Other
+  - capture_variable  # analyzer rule, not run; Docs/develop/build.md
+  - explicit_self  # analyzer rule, not run; Docs/develop/build.md
+  - incompatible_concurrency_annotation  # only for Swift 5 clients
+  - number_separator  # swift-format's GroupNumericLiterals groups long ones
+  - raw_value_for_camel_cased_codable_enum  # contradicts redundant_string_enum_value
+  - typesafe_array_init  # analyzer rule, not run; Docs/develop/build.md
+  - unused_declaration  # analyzer rule, not run; Docs/develop/build.md
+  - unused_import  # analyzer rule, not run; Docs/develop/build.md
+function_body_length: 60
+function_parameter_count: 9
+identifier_name:
+  excluded: [_0, a, at, b, c, fd, i, id, on, to, up, x, y]
+  min_length: 3
 included:
+  - Package.swift
   - Sources
   - Tests
-  - Package.swift
-
+indentation_width:
+  include_comments: false
+  include_multiline_strings: false
+  indentation_width: 2
+large_tuple: 4
+line_length:
+  ignores_urls: true
+  warning: 120
+nesting:
+  type_level: 2
+opt_in_rules:
+  - all
 strict: true
+# Every new rule would run on upgrade, so a bump is a choice; build.md.
+swiftlint_version: 0.65.1
+trailing_closure:
+  only_single_muted_parameter: true

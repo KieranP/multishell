@@ -9,7 +9,13 @@ import Testing
 struct SidewaysWheelViewTests {
   private func wheel(vertical: Double, horizontal: Double = 0) -> NSEvent {
     let event = CGEvent(
-      scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 2, wheel1: 0, wheel2: 0, wheel3: 0)!
+      scrollWheelEvent2Source: nil,
+      units: .pixel,
+      wheelCount: 2,
+      wheel1: 0,
+      wheel2: 0,
+      wheel3: 0,
+    )!
     event.setIntegerValueField(.scrollWheelEventIsContinuous, value: 1)
     event.setDoubleValueField(.scrollWheelEventPointDeltaAxis1, value: vertical)
     event.setDoubleValueField(.scrollWheelEventPointDeltaAxis2, value: horizontal)
@@ -96,8 +102,13 @@ struct SidewaysWheelViewTests {
 
   private func notch(vertical: Int32 = 0, horizontal: Int32 = 0) -> NSEvent {
     let event = CGEvent(
-      scrollWheelEvent2Source: nil, units: .line, wheelCount: 2, wheel1: vertical,
-      wheel2: horizontal, wheel3: 0)!
+      scrollWheelEvent2Source: nil,
+      units: .line,
+      wheelCount: 2,
+      wheel1: vertical,
+      wheel2: horizontal,
+      wheel3: 0,
+    )!
     return NSEvent(cgEvent: event)!
   }
 

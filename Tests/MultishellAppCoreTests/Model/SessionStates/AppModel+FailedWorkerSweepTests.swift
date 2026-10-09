@@ -16,9 +16,14 @@ struct AppModelFailedWorkerSweepTests {
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, launched: WorkerReport(id: "a0", phase: .started)))
+        state: .running,
+        sessionID: session,
+        launched: WorkerReport(id: "a0", phase: .started),
+      )
+    )
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session, killedTaskID: "a0"))
+      SessionStateReport(state: .running, sessionID: session, killedTaskID: "a0")
+    )
     #expect(workers().map(\.shownState) == [.failed])
     #expect(harness.model.failedWorkerSweep != nil)
 

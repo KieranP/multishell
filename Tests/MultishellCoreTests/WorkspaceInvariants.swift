@@ -18,9 +18,12 @@ enum WorkspaceInvariants {
 
     #expect(
       workspace.worktrees.allSatisfy { projectIDs.contains($0.projectID) },
-      "\(context): orphan worktree")
+      "\(context): orphan worktree",
+    )
     #expect(
-      workspace.tabs.allSatisfy { worktreeIDs.contains($0.worktreeID) }, "\(context): orphan tab")
+      workspace.tabs.allSatisfy { worktreeIDs.contains($0.worktreeID) },
+      "\(context): orphan tab",
+    )
     checkGroups(workspace, context, worktreeIDs: worktreeIDs)
 
     var owned: [TerminalSession.ID: Int] = [:]
@@ -33,7 +36,9 @@ enum WorkspaceInvariants {
         // session's own copy of its worktree.
         if let session = workspace.session(id) {
           #expect(
-            session.worktreeID == tab.worktreeID, "\(context): a pane in another worktree")
+            session.worktreeID == tab.worktreeID,
+            "\(context): a pane in another worktree",
+          )
         }
         owned[id, default: 0] += 1
       }
@@ -45,7 +50,9 @@ enum WorkspaceInvariants {
     for (worktreeID, name) in workspace.customWorktreeNames {
       #expect(worktreeIDs.contains(worktreeID), "\(context): a name for a missing worktree")
       #expect(
-        !name.trimmingCharacters(in: .whitespaces).isEmpty, "\(context): a blank custom name")
+        !name.trimmingCharacters(in: .whitespaces).isEmpty,
+        "\(context): a blank custom name",
+      )
     }
     if let selected = workspace.selectedWorktreeID {
       #expect(worktreeIDs.contains(selected), "\(context): selection of a missing worktree")
@@ -53,7 +60,9 @@ enum WorkspaceInvariants {
   }
 
   private static func checkGroups(
-    _ workspace: Workspace, _ context: String, worktreeIDs: Set<Worktree.ID>
+    _ workspace: Workspace,
+    _ context: String,
+    worktreeIDs: Set<Worktree.ID>,
   ) {
     for group in workspace.tabGroups {
       #expect(worktreeIDs.contains(group.worktreeID), "\(context): orphan tab group")
@@ -61,28 +70,34 @@ enum WorkspaceInvariants {
       #expect(!tabsHere.isEmpty, "\(context): a tab group with no tabs")
       #expect(
         group.shownTabID != nil && tabsHere.contains { $0.id == group.shownTabID },
-        "\(context): a tab group showing a tab that is not its own")
+        "\(context): a tab group showing a tab that is not its own",
+      )
       #expect(group.weight.isFinite && group.weight > 0, "\(context): a tab group with no width")
     }
     for tab in workspace.tabs {
       #expect(
         workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
-        "\(context): a tab in another worktree's group, or in none")
+        "\(context): a tab in another worktree's group, or in none",
+      )
     }
     for (worktreeID, groupID) in workspace.focusedGroupByWorktree {
       #expect(
         workspace.group(groupID)?.worktreeID == worktreeID,
-        "\(context): the focused group is not the worktree's")
+        "\(context): the focused group is not the worktree's",
+      )
     }
     for worktreeID in Set(workspace.tabGroups.map(\.worktreeID)) {
       #expect(
-        workspace.focusedGroupByWorktree[worktreeID] != nil, "\(context): groups but none focused")
+        workspace.focusedGroupByWorktree[worktreeID] != nil,
+        "\(context): groups but none focused",
+      )
     }
   }
 
   private static func weightsAligned(_ node: PaneNode) -> Bool {
     switch node {
     case .terminal: return true
+
     case .split(_, let children, let weights):
       return children.count == weights.count && children.count >= 2
         && children.allSatisfy(weightsAligned)

@@ -4,19 +4,19 @@ import Synchronization
 /// Listens on a Unix socket and hands each line to `onLine`. Handler-driven,
 /// so no thread waits; the file is mode 0600 and its lines move a dot.
 public final class UnixSocketServer: Sendable {
-  public var onLine: (@Sendable (String) -> Void)? {
-    get { lineHandler.withLock { $0 } }
-    set { lineHandler.withLock { $0 = newValue } }
+  struct State {
+    var listener: (any DispatchSourceRead)?
+    var connections: [Int32: Connection] = [:]
+    var isListenerSuspended = false
   }
 
   /// A connection that sends more than this without a newline is not
   /// speaking the protocol and is dropped.
   static let maximumLineLength = 64 * 1024
 
-  struct State {
-    var listener: (any DispatchSourceRead)?
-    var connections: [Int32: Connection] = [:]
-    var isListenerSuspended = false
+  public var onLine: (@Sendable (String) -> Void)? {
+    get { lineHandler.withLock { $0 } }
+    set { lineHandler.withLock { $0 = newValue } }
   }
 
   let path: String
@@ -31,8 +31,6 @@ public final class UnixSocketServer: Sendable {
     self.queue = queue
   }
 
-  deinit { stop() }
-
   /// A crashed instance's socket file is unlinked, but only once nothing
   /// holds the claim beside it and a connect is refused.
   public func start() throws {
@@ -41,7 +39,8 @@ public final class UnixSocketServer: Sendable {
     guard state.withLock({ $0.listener == nil }) else { return }
     try FileManager.default.createDirectory(
       at: URL(fileURLWithPath: path).deletingLastPathComponent(),
-      withIntermediateDirectories: true)
+      withIntermediateDirectories: true,
+    )
     try claim.takeUnlessHeldElsewhere()
     // A start that failed is not listening, and a claim says the opposite,
     // so it goes back before the failure is reported.
@@ -136,4 +135,6 @@ public final class UnixSocketServer: Sendable {
       unlink(path)
     }
   }
+
+  deinit { stop() }
 }

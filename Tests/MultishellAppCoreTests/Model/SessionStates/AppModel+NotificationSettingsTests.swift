@@ -17,7 +17,8 @@ struct AppModelNotificationSettingsTests {
     #expect(harness.model.notificationAuthorization == .allowed)
 
     harness.model.setNotificationPreference(
-      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true))
+      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true)
+    )
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 1)
   }
@@ -32,7 +33,8 @@ struct AppModelNotificationSettingsTests {
     #expect(harness.model.notificationAuthorization == .notAsked, "nothing has been asked yet")
 
     harness.model.setNotificationPreference(
-      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true))
+      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true)
+    )
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 1)
 
@@ -53,7 +55,8 @@ struct AppModelNotificationSettingsTests {
     #expect(harness.model.notificationSettingsNote.contains("System Settings"))
 
     harness.model.setNotificationPreference(
-      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true))
+      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true)
+    )
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 2)
   }

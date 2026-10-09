@@ -10,11 +10,14 @@ struct CPUUsageMeterTests {
   @Test func aShareIsTheCPUTimeSpentSinceTheLastReadingOverTheTimeBetween() {
     var meter = CPUUsageMeter()
     #expect(
-      meter.takeReading(of: [.sample(pid: 1, cpuTime: .seconds(5))], at: start).byPID == [1: 0])
+      meter.takeReading(of: [.sample(pid: 1, cpuTime: .seconds(5))], at: start).byPID == [1: 0]
+    )
 
     let shares = meter.takeReading(
-      of: [.sample(pid: 1, cpuTime: .milliseconds(6_500)), .sample(pid: 2, cpuTime: .seconds(9))],
-      at: start + .milliseconds(500)
+      of: [
+        .sample(pid: 1, cpuTime: .milliseconds(6_500)), .sample(pid: 2, cpuTime: .seconds(9)),
+      ],
+      at: start + .milliseconds(500),
     ).byPID
 
     #expect(shares[1] == 300)
@@ -25,7 +28,8 @@ struct CPUUsageMeterTests {
     var meter = CPUUsageMeter()
     _ = meter.takeReading(of: [.sample(pid: 1, cpuTime: .seconds(5))], at: start)
     let shares = meter.takeReading(
-      of: [.sample(pid: 1, cpuTime: .seconds(1))], at: start + .seconds(1)
+      of: [.sample(pid: 1, cpuTime: .seconds(1))],
+      at: start + .seconds(1),
     ).byPID
     #expect(shares[1] == 0)
   }
@@ -34,7 +38,10 @@ struct CPUUsageMeterTests {
     var meter = CPUUsageMeter()
     _ = meter.takeReading(of: [], at: start)
     let reading = meter.takeReading(
-      of: [], exited: [(pid: 7, cpuTime: .milliseconds(500))], at: start + .seconds(1))
+      of: [],
+      at: start + .seconds(1),
+      exited: [(pid: 7, cpuTime: .milliseconds(500))],
+    )
     #expect(reading.exitedPercent == 50)
   }
 
@@ -42,7 +49,10 @@ struct CPUUsageMeterTests {
     var meter = CPUUsageMeter()
     _ = meter.takeReading(of: [.sample(pid: 7, cpuTime: .seconds(1))], at: start)
     let reading = meter.takeReading(
-      of: [], exited: [(pid: 7, cpuTime: .milliseconds(1_250))], at: start + .seconds(1))
+      of: [],
+      at: start + .seconds(1),
+      exited: [(pid: 7, cpuTime: .milliseconds(1_250))],
+    )
     #expect(reading.exitedPercent == 25)
   }
 
@@ -51,7 +61,9 @@ struct CPUUsageMeterTests {
     _ = meter.takeReading(of: [.sample(pid: 7, cpuTime: .seconds(1))], at: start)
     let reading = meter.takeReading(
       of: [.sample(pid: 7, cpuTime: .milliseconds(1_500))],
-      exited: [(pid: 7, cpuTime: .milliseconds(1_750))], at: start + .seconds(1))
+      at: start + .seconds(1),
+      exited: [(pid: 7, cpuTime: .milliseconds(1_750))],
+    )
     #expect(reading.byPID[7] == 50)
     #expect(reading.exitedPercent == 25)
   }

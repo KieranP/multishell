@@ -23,6 +23,7 @@ struct WorktreeBreadcrumb: View {
     Image(systemName: "chevron.right")
       .font(.system(size: chevronSize, weight: .bold))
       .foregroundStyle(theme.textTertiary)
+      .accessibilityHidden(true)
     Text(worktreeName)
       .font(worktreeFont)
       .foregroundStyle(theme.worktreeNameColor)

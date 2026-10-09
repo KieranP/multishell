@@ -4,7 +4,9 @@
 @MainActor
 enum ModelTraces {
   static func find(
-    _ paths: Set<String>, in model: AppModel<FakeSurface>, exempting exempt: Set<String>
+    _ paths: Set<String>,
+    in model: AppModel<FakeSurface>,
+    exempting exempt: Set<String>,
   ) -> [(field: String, value: String)] {
     var found: [(field: String, value: String)] = []
     for child in Mirror(reflecting: model).children {
@@ -30,6 +32,7 @@ enum ModelTraces {
     switch mirror.displayStyle {
     case .struct, .enum, .optional, .tuple, .collection, .set, .dictionary:
       return mirror.children.flatMap { strings(in: $0.value, depth: depth + 1) }
+
     default:
       return []
     }

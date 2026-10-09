@@ -2,6 +2,14 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
+  /// One pass over the sessions, taken at the top of a render.
+  public var sessionIDsByWorktree: SessionIDsByWorktree { SessionIDsByWorktree(workspace.sessions) }
+
+  /// Agents that reported Working, counted separately by the quit guard.
+  public var workingAgentCount: Int {
+    sessionStates.workingSessionIDs.filter(isAgentWorking(in:)).count
+  }
+
   /// Keys stay a subset of the live shells and known worktrees. The banners
   /// need no sweep: dropping a state here drops its banner with it.
   func pruneStates() {
@@ -53,15 +61,8 @@ extension AppModel {
   /// The most urgent of the project's worktrees, for its row while collapsed.
   func state(ofProject id: Project.ID, sessions: SessionIDsByWorktree) -> SessionState? {
     SessionState.mostUrgent(
-      workspace.worktrees(of: id).compactMap { state(ofWorktree: $0.id, sessions: sessions) })
-  }
-
-  /// One pass over the sessions, taken at the top of a render.
-  public var sessionIDsByWorktree: SessionIDsByWorktree { SessionIDsByWorktree(workspace.sessions) }
-
-  /// Agents that reported Working, counted separately by the quit guard.
-  public var workingAgentCount: Int {
-    sessionStates.workingSessionIDs.filter(isAgentWorking(in:)).count
+      workspace.worktrees(of: id).compactMap { state(ofWorktree: $0.id, sessions: sessions) }
+    )
   }
 
   /// What the quit and close guards ask about: a plain command such as `make`

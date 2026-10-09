@@ -14,7 +14,10 @@ public struct AgentBoardLayout: Equatable, Sendable {
   /// The room the columns have, gaps and padding taken off. Asked here so
   /// the view measures nothing.
   public static func available(
-    width: Double, count: Int, gap: Double, padding: Double
+    width: Double,
+    count: Int,
+    gap: Double,
+    padding: Double,
   ) -> Double {
     guard count > 0, width.isFinite else { return 0 }
     return width - 2 * padding - Double(count - 1) * gap

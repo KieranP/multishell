@@ -13,7 +13,11 @@ extension AppModelWorktreeListRefreshTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "gone", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "gone",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "gone"))
 
     harness.model.mergeStates[created.id] = .merged(.ancestor, into: "main")
@@ -52,10 +56,17 @@ extension AppModelWorktreeListRefreshTests {
     defer { harness.tearDown() }
     harness.model.setGitStatusIndicator(.stagedAndUnstaged)
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     try "a\nb\n".write(
-      to: side.path.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
+      to: side.path.appendingPathComponent("new.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
     await harness.model.refreshStatus(of: side.id, forced: true)
     let memo = try #require(harness.model.coordinator).git.readState.untrackedMemo
     #expect(!memo.entries(in: side.path).isEmpty)
@@ -71,7 +82,11 @@ extension AppModelWorktreeListRefreshTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "asked", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "asked",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "asked"))
     await harness.model.requestWorktreeRemoval(of: created)?.value
     #expect(harness.model.pendingWorktreeRemoval?.id == created.id)
@@ -81,7 +96,8 @@ extension AppModelWorktreeListRefreshTests {
 
     #expect(harness.model.workspace.worktree(created.id) == nil)
     #expect(
-      harness.model.pendingWorktreeRemoval == nil, "Confirm would remove a path git no longer lists"
+      harness.model.pendingWorktreeRemoval == nil,
+      "Confirm would remove a path git no longer lists",
     )
   }
 
@@ -91,7 +107,11 @@ extension AppModelWorktreeListRefreshTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "gone", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "gone",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "gone"))
     let sessions = Set(harness.model.workspace.sessions(in: created.id).map(\.id))
     #expect(harness.engine.liveSessionIDs == sessions)
@@ -105,7 +125,8 @@ extension AppModelWorktreeListRefreshTests {
     #expect(Set(harness.engine.closed) == sessions)
     #expect(
       harness.engine.focused.isEmpty,
-      "a poll must not pull the keyboard out of what the user is typing in")
+      "a poll must not pull the keyboard out of what the user is typing in",
+    )
   }
 
   /// The worktree goes in a terminal instead: the tick drops the row, and
@@ -114,10 +135,16 @@ extension AppModelWorktreeListRefreshTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setSettings(
-      ProjectSettings(postCreateHook: "sleep 30; exit 1"), for: harness.project)
+      ProjectSettings(postCreateHook: "sleep 30; exit 1"),
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "setup", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "setup",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "setup"))
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
     let setup = harness.model.stageHandles.setupTask(of: created.id)
@@ -133,6 +160,8 @@ extension AppModelWorktreeListRefreshTests {
     #expect(harness.model.stageHandles.stopper(of: created.id) == nil)
     #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     #expect(
-      harness.model.presentedError == nil, "a worktree that is not there has nothing to report")
+      harness.model.presentedError == nil,
+      "a worktree that is not there has nothing to report",
+    )
   }
 }

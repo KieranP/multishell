@@ -10,7 +10,8 @@ struct WorktreeSettingsPathsTests {
   @Test func theDefaultContainerIsASiblingNamedAfterTheProject() {
     #expect(
       WorktreeSettings().worktreeContainer(for: project).path
-        == "/Users/dev/Work/multishell-worktrees")
+        == "/Users/dev/Work/multishell-worktrees"
+    )
   }
 
   @Test func anAbsoluteContainerIgnoresTheRepositoryPath() {
@@ -21,7 +22,8 @@ struct WorktreeSettingsPathsTests {
   @Test func aRelativeContainerResolvesAgainstTheRepository() {
     let settings = WorktreeSettings(worktreeDirectory: ".worktrees")
     #expect(
-      settings.worktreeContainer(for: project).path == "/Users/dev/Work/multishell/.worktrees")
+      settings.worktreeContainer(for: project).path == "/Users/dev/Work/multishell/.worktrees"
+    )
   }
 
   @Test func resolutionDoesNotDependOnTheDirectoryExisting() {
@@ -31,7 +33,8 @@ struct WorktreeSettingsPathsTests {
     let settings = WorktreeSettings(worktreeDirectory: ".worktrees")
     #expect(settings.worktreeContainer(for: ghost).path == "/nowhere/at/all/repo/.worktrees")
     #expect(
-      WorktreeSettings().worktreeContainer(for: ghost).path == "/nowhere/at/all/repo-worktrees")
+      WorktreeSettings().worktreeContainer(for: ghost).path == "/nowhere/at/all/repo-worktrees"
+    )
   }
 
   @Test func aBlankContainerMeansTheDefaultNotTheRepository() {
@@ -41,12 +44,15 @@ struct WorktreeSettingsPathsTests {
       let settings = WorktreeSettings(worktreeDirectory: text)
       #expect(
         settings.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees",
-        "\(text.debugDescription)")
+        "\(text.debugDescription)",
+      )
     }
     let overridden = ProjectSettings(worktreeDirectory: " ").effectiveWorktreeSettings(
-      defaults: WorktreeSettings(worktreeDirectory: "/global/trees"))
+      defaults: WorktreeSettings(worktreeDirectory: "/global/trees")
+    )
     #expect(
-      overridden.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees")
+      overridden.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees"
+    )
   }
 
   @Test func slashesInBranchNamesBecomeOneDirectory() {

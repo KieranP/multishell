@@ -67,13 +67,29 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// stopped; see agents.md.
   let toolResultsNameBackgroundTasks: Bool
 
+  public var name: String { AgentCatalogue.agent(id)?.name ?? id }
+
+  public var isOursAlone: Bool { format.isOursAlone }
+
+  public var isPlugin: Bool {
+    if case .plugin = format { return true }
+    return false
+  }
+
   init(
-    id: String, file: URL, events: [AgentHookEvent],
-    format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
-    resumption: Resumption = .never, subagentsAreConversations: Bool = false,
-    wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false,
-    transcriptShowsPendingQuestion: Bool = false, keepsWorkerMetadataBesideTranscript: Bool = false,
-    toolResultsNameBackgroundTasks: Bool = false
+    id: String,
+    file: URL,
+    events: [AgentHookEvent],
+    format: Format,
+    trustNote: String? = nil,
+    backgroundShellMarker: String? = nil,
+    resumption: Resumption = .never,
+    subagentsAreConversations: Bool = false,
+    wakingTaskTypes: Set<String> = [],
+    transcriptQueuesNotices: Bool = false,
+    transcriptShowsPendingQuestion: Bool = false,
+    keepsWorkerMetadataBesideTranscript: Bool = false,
+    toolResultsNameBackgroundTasks: Bool = false,
   ) {
     self.id = id
     self.file = file
@@ -88,14 +104,5 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.transcriptShowsPendingQuestion = transcriptShowsPendingQuestion
     self.keepsWorkerMetadataBesideTranscript = keepsWorkerMetadataBesideTranscript
     self.toolResultsNameBackgroundTasks = toolResultsNameBackgroundTasks
-  }
-
-  public var name: String { AgentCatalogue.agent(id)?.name ?? id }
-
-  public var isOursAlone: Bool { format.isOursAlone }
-
-  public var isPlugin: Bool {
-    if case .plugin = format { return true }
-    return false
   }
 }

@@ -13,7 +13,9 @@ struct WorktreeCoordinatorTests {
     let first = try await WorktreeCoordinator.resolved(searchPath: directory.path, replacing: nil)
 
     let second = try await WorktreeCoordinator.resolved(
-      searchPath: directory.path, replacing: first)
+      searchPath: directory.path,
+      replacing: first,
+    )
 
     #expect(second.git.runLog === first.git.runLog)
   }

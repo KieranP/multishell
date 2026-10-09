@@ -8,7 +8,10 @@ extension Project {
     let shared = SharedProjectSettings(preCreateHook: "make setup", postCreateHook: "npm ci")
     var asking = self
     asking.sharedSettingsSnapshot = SharedSettingsSnapshot(
-      asWritten: shared, confined: shared, hasBeenRead: true)
+      asWritten: shared,
+      confined: shared,
+      hasBeenRead: true,
+    )
     return asking
   }
 }

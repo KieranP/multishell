@@ -16,15 +16,20 @@ struct AppModelDebugMemoryTableTests {
 
   private func placeTree(of pid: Int32, in tab: TerminalTab, _ harness: Harness) {
     harness.engine.processHints[tab.focusedSessionID] = TerminalProcessHint(
-      terminalPath: nil, foregroundPID: pid)
+      terminalPath: nil,
+      foregroundPID: pid,
+    )
   }
 
   @Test func eachTabIsGivenTheProcessesItsPaneRunsAndTheRestAreUnattributed() async throws {
     let (harness, session) = Harness.withOnePane()
     harness.engine.processHints[session.id] = TerminalProcessHint(
-      terminalPath: nil, foregroundPID: 11)
+      terminalPath: nil,
+      foregroundPID: 11,
+    )
     harness.model.enableDebugTools(
-      scan: .sample(appMemory: 400, trees: [(10, [10, 11]), (20, [20])]))
+      scan: .sample(appMemory: 400, trees: [(10, [10, 11]), (20, [20])])
+    )
 
     await harness.model.takeDebugSample()
 
@@ -54,7 +59,8 @@ struct AppModelDebugMemoryTableTests {
     placeTree(of: 10, in: lighter, harness)
     placeTree(of: 20, in: heavier, harness)
     harness.model.enableDebugTools(
-      scan: .sample(appMemory: 400, trees: [(10, [10]), (20, [20, 21])]))
+      scan: .sample(appMemory: 400, trees: [(10, [10]), (20, [20, 21])])
+    )
 
     await harness.model.takeDebugSample()
 
@@ -68,7 +74,8 @@ struct AppModelDebugMemoryTableTests {
     placeTree(of: 10, in: first, harness)
     placeTree(of: 20, in: second, harness)
     harness.model.enableDebugTools(
-      scan: .sample(appMemory: 400, trees: [(10, [10]), (20, [20])]))
+      scan: .sample(appMemory: 400, trees: [(10, [10]), (20, [20])])
+    )
 
     await harness.model.takeDebugSample()
 
@@ -98,14 +105,16 @@ struct AppModelDebugMemoryTableTests {
     placeTree(of: 20, in: withHeavyProcesses, harness)
     harness.engine.terminalMemories[withHeavyTerminal.focusedSessionID] = 500
     harness.model.enableDebugTools(
-      scan: .sample(appMemory: 800, trees: [(10, [10]), (20, [20, 21])]))
+      scan: .sample(appMemory: 800, trees: [(10, [10]), (20, [20, 21])])
+    )
 
     await harness.model.takeDebugSample()
 
     #expect(
       harness.model.debugMemoryTable.tabs.map(\.id) == [
         withHeavyTerminal.id, withHeavyProcesses.id,
-      ])
+      ]
+    )
   }
 
   @Test func turningTheToolsOffForgetsWhatTheTerminalsHeld() async throws {

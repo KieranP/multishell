@@ -60,7 +60,8 @@ struct GhosttyUserConfigTests {
         ".config/ghostty/config.ghostty",
         "Library/Application Support/com.mitchellh.ghostty/config",
         "Library/Application Support/com.mitchellh.ghostty/config.ghostty",
-      ])
+      ]
+    )
   }
 
   @Test func aFileWithWindowsLineEndingsIsReadLineByLine() {
@@ -142,7 +143,8 @@ struct GhosttyUserConfigTests {
 
     #expect(
       GhosttyUserConfig.base(reading: [file, absent])
-        == GhosttyUserConfig.base(userContents: ["cursor-style = bar\n"]))
+        == GhosttyUserConfig.base(userContents: ["cursor-style = bar\n"])
+    )
     #expect(GhosttyUserConfig.base(reading: [absent]) == GhosttyUserConfig.defaults.rendered)
   }
 
@@ -153,9 +155,15 @@ struct GhosttyUserConfigTests {
     defer { Scratch.remove(directory) }
     let config = directory.appendingPathComponent("config", isDirectory: false)
     try "config-file = parts/extra\nconfig-file = ?parts/absent\nfont-size = 13\n".write(
-      to: config, atomically: true, encoding: .utf8)
+      to: config,
+      atomically: true,
+      encoding: .utf8,
+    )
     try "font-size = 21\nconfig-file = \"../config\"\n".write(
-      to: parts.appendingPathComponent("extra"), atomically: true, encoding: .utf8)
+      to: parts.appendingPathComponent("extra"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let rendered = GhosttyUserConfig.base(reading: [config])
 
@@ -171,9 +179,15 @@ struct GhosttyUserConfigTests {
     defer { Scratch.remove(directory) }
     let config = directory.appendingPathComponent("config", isDirectory: false)
     try "config-file = theme.conf\r\nfont-size = 13\r\n".write(
-      to: config, atomically: true, encoding: .utf8)
+      to: config,
+      atomically: true,
+      encoding: .utf8,
+    )
     try "cursor-style = bar\r\n".write(
-      to: directory.appendingPathComponent("theme.conf"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("theme.conf"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let rendered = GhosttyUserConfig.base(reading: [config])
 

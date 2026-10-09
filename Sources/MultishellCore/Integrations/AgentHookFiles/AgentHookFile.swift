@@ -3,6 +3,9 @@ import Foundation
 /// A file an agent reads its hooks from: the user's settings JSON, refused unless
 /// plain JSON, or a file of ours written whole. See agents.md.
 enum AgentHookFile {
+  /// The kernel's MAXSYMLINKS: a longer chain is a loop.
+  private static let maximumLinkHops = 32
+
   /// An empty object for a missing or blank file; anything else it cannot read
   /// back is an error. Numbers come back as `NumberLiteral` strings; see agents.md.
   static func read(_ file: URL) throws -> [String: Any] {
@@ -41,9 +44,6 @@ enum AgentHookFile {
     return current
   }
 
-  /// The kernel's MAXSYMLINKS: a longer chain is a loop.
-  private static let maximumLinkHops = 32
-
   /// A file of ours alone: written whole, with no copy kept, because there
   /// was nothing of the user's in it to keep.
   static func writeWhole(_ contents: String, to file: URL) throws {
@@ -53,7 +53,9 @@ enum AgentHookFile {
   static func render(_ object: [String: Any]) -> String {
     let data =
       (try? JSONSerialization.data(
-        withJSONObject: object, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]))
+        withJSONObject: object,
+        options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes],
+      ))
       ?? Data()
     return NumberLiteral.unmarking(String(decoding: data, as: UTF8.self)) + "\n"
   }

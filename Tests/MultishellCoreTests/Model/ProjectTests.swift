@@ -16,21 +16,29 @@ struct ProjectTests {
       """
       A field was added to Project. Put it in CodingKeys, == and hash unless \
       it is per-run state like sharedSettingsSnapshot, then add it here.
-      """)
+      """,
+    )
   }
 
   /// The three that are saved come back; the one that is not resets, or a
   /// restored project would trust a file this run never read.
   @Test func aRoundTripKeepsTheSavedFieldsAndForgetsTheRead() throws {
     var project = Project(
-      path: URL(fileURLWithPath: "/r"), isExpanded: false,
-      settings: ProjectSettings(branchPrefix: "team/"))
+      path: URL(fileURLWithPath: "/r"),
+      isExpanded: false,
+      settings: ProjectSettings(branchPrefix: "team/"),
+    )
     let shared = SharedProjectSettings(branchPrefix: "theirs/")
     project.sharedSettingsSnapshot.recordParsed(
-      shared, confined: shared.confined(to: project), modificationDate: .now)
+      shared,
+      confined: shared.confined(to: project),
+      modificationDate: .now,
+    )
 
     let decoded = try JSONDecoder().decode(
-      Project.self, from: JSONEncoder().encode(project))
+      Project.self,
+      from: JSONEncoder().encode(project),
+    )
 
     #expect(decoded.path == project.path && decoded.isExpanded == false)
     #expect(decoded.settings.branchPrefix == "team/")
@@ -42,8 +50,8 @@ struct ProjectTests {
     let spellings = ["/repos/demo", "/repos/demo/", "/repos/x/../demo", "/repos/./demo//"]
     let projects = spellings.map { Project(path: URL(fileURLWithPath: $0)) }
     #expect(Set(projects.map(\.id)) == ["/repos/demo"])
-    let worktrees = spellings.map {
-      Worktree(path: URL(fileURLWithPath: $0), projectID: "/p", head: "h")
+    let worktrees = spellings.map { spelling in
+      Worktree(path: URL(fileURLWithPath: spelling), projectID: "/p", head: "h")
     }
     #expect(Set(worktrees.map(\.id)) == ["/repos/demo"])
 

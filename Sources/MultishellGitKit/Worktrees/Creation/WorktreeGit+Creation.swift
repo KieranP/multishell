@@ -11,7 +11,7 @@ extension WorktreeGit {
     basedOn startPoint: String?,
     createsBranch: Bool,
     in project: Project,
-    stopper: ProcessStopper?
+    stopper: ProcessStopper?,
   ) async throws {
     var arguments = ["worktree", "add"]
     if createsBranch { arguments += ["-b", branch] }

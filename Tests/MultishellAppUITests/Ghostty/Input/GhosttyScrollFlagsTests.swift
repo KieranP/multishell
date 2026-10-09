@@ -14,14 +14,16 @@ struct GhosttyScrollFlagsTests {
     let flags = GhosttyScrollFlags(isPrecise: true, momentum: .changed)
     #expect(flags.rawValue & 1 == 1)
     #expect(
-      flags.rawValue >> 1 == ghostty_input_scroll_mods_t(GHOSTTY_MOUSE_MOMENTUM_CHANGED.rawValue))
+      flags.rawValue >> 1 == ghostty_input_scroll_mods_t(GHOSTTY_MOUSE_MOMENTUM_CHANGED.rawValue)
+    )
   }
 
   @Test func eachMomentumPhaseIsLibghosttysOwn() {
     let phases: [(NSEvent.Phase, ghostty_input_mouse_momentum_e)] = [
       (.began, GHOSTTY_MOUSE_MOMENTUM_BEGAN), (.stationary, GHOSTTY_MOUSE_MOMENTUM_STATIONARY),
       (.changed, GHOSTTY_MOUSE_MOMENTUM_CHANGED), (.ended, GHOSTTY_MOUSE_MOMENTUM_ENDED),
-      (.cancelled, GHOSTTY_MOUSE_MOMENTUM_CANCELLED), (.mayBegin, GHOSTTY_MOUSE_MOMENTUM_MAY_BEGIN),
+      (.cancelled, GHOSTTY_MOUSE_MOMENTUM_CANCELLED),
+      (.mayBegin, GHOSTTY_MOUSE_MOMENTUM_MAY_BEGIN),
     ]
     for (phase, momentum) in phases {
       let flags = GhosttyScrollFlags(isPrecise: true, momentum: phase)

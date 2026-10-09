@@ -10,7 +10,7 @@ public struct ThemeCatalogue: Sendable {
   /// would load as duplicates.
   public static func loadMovingStrayExamples(
     from directory: URL = Paths.themesDirectory
-  ) -> ThemeCatalogue {
+  ) -> Self {
     moveStrayExamples(in: directory)
     var byID = Theme.builtins.keyedByID()
     var problems: [String] = []
@@ -36,7 +36,7 @@ public struct ThemeCatalogue: Sendable {
       case (nil, nil): return lhs.name < rhs.name
       }
     }
-    return ThemeCatalogue(themes: themes, problems: problems)
+    return Self(themes: themes, problems: problems)
   }
 
   /// Writes the built-ins out as editable examples, into an `examples/`

@@ -5,8 +5,12 @@ extension AccessibilityText {
   /// A project row: the name, whether it is open, and the dot it carries
   /// while collapsed.
   public static func project(
-    name: String, isExpanded: Bool, isMissing: Bool, state: SessionState?, worktreeCount: Int,
-    isFetching: Bool = false
+    name: String,
+    isExpanded: Bool,
+    isMissing: Bool,
+    state: SessionState?,
+    worktreeCount: Int,
+    isFetching: Bool = false,
   ) -> String {
     var parts = [
       t("spoken.project", name),
@@ -22,9 +26,14 @@ extension AccessibilityText {
   /// A worktree row: what its glyphs mean, in drawing order. A renamed row
   /// reads its name first and its branch after, the two lines it shows.
   public static func worktree(
-    _ worktree: Worktree, customName: String? = nil, state: SessionState?,
-    status: WorktreeStatus?, operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool,
-    mergeState: WorktreeMergeState = .unknown
+    _ worktree: Worktree,
+    state: SessionState?,
+    status: WorktreeStatus?,
+    operation: WorktreeOperation?,
+    terminalCount: Int,
+    isSelected: Bool,
+    customName: String? = nil,
+    mergeState: WorktreeMergeState = .unknown,
   ) -> String {
     var parts = [
       t("spoken.named", customName ?? worktree.name, worktree.kindText(inSentence: true))
@@ -34,7 +43,8 @@ extension AccessibilityText {
     parts.append(state.shownState.displayName)
     if let operation {
       parts.append(
-        operation.isRunning ? operation.title : t("spoken.operation-failed", operation.title))
+        operation.isRunning ? operation.title : t("spoken.operation-failed", operation.title)
+      )
     }
     if worktree.isLocked { parts.append(t("spoken.locked")) }
     if mergeState.showsBadge(with: status) { parts.append(mergeState.summary) }

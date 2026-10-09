@@ -20,17 +20,23 @@ struct AppModelWorktreeLookupTests {
     let link = chain.appendingPathComponent("d")
     try files.createSymbolicLink(at: link, withDestinationURL: real)
     let outer = Worktree(
-      path: link.appendingPathComponent("wt"), projectID: harness.project.id, head: "c",
-      branch: "outer")
+      path: link.appendingPathComponent("wt"),
+      projectID: harness.project.id,
+      head: "c",
+      branch: "outer",
+    )
     let nested = Worktree(path: inner, projectID: harness.project.id, head: "d", branch: "nested")
     harness.store.replaceWorktrees([harness.main, outer, nested], forProject: harness.project.id)
 
     let report = inner.appendingPathComponent("src").path
     #expect(
-      harness.model.worktree(atPath: report)?.id == nested.id, "the real path is the deeper one")
+      harness.model.worktree(atPath: report)?.id == nested.id,
+      "the real path is the deeper one",
+    )
     #expect(
       harness.model.worktree(atPath: real.appendingPathComponent("wt/lib").path)?.id == outer.id,
-      "and the outer one is still found through its real path")
+      "and the outer one is still found through its real path",
+    )
   }
 
   @Test func aReportFromAWorktreeWhoseDirectoryCameBackFindsItByItsRealPath()
@@ -42,7 +48,9 @@ struct AppModelWorktreeLookupTests {
     _ = harness.model.worktree(atPath: report)
     try await waitUntil { harness.model.pathResolutions.madeWhileMissing.contains(linked.id) }
     try FileManager.default.createDirectory(
-      at: real.appendingPathComponent("wt"), withIntermediateDirectories: true)
+      at: real.appendingPathComponent("wt"),
+      withIntermediateDirectories: true,
+    )
 
     _ = harness.model.worktree(atPath: report)
     try await waitUntil { harness.model.pathResolutions.madeWhileMissing.isEmpty }
@@ -58,11 +66,15 @@ struct AppModelWorktreeLookupTests {
     let report = real.appendingPathComponent("wt/src").path
     #expect(harness.model.worktree(atPath: report)?.id == harness.main.id)
     #expect(
-      harness.model.pathResolutions.components[linked.id] != nil, "kept, not walked per report")
+      harness.model.pathResolutions.components[linked.id] != nil,
+      "kept, not walked per report",
+    )
     try await waitUntil { harness.model.pathResolutions.madeWhileMissing.contains(linked.id) }
 
     try FileManager.default.createDirectory(
-      at: real.appendingPathComponent("wt"), withIntermediateDirectories: true)
+      at: real.appendingPathComponent("wt"),
+      withIntermediateDirectories: true,
+    )
     harness.model.select(linked)
 
     #expect(harness.model.worktree(atPath: report)?.id == linked.id)
@@ -76,8 +88,11 @@ struct AppModelWorktreeLookupTests {
     let link = harness.main.path.appendingPathComponent("link")
     try FileManager.default.createSymbolicLink(at: link, withDestinationURL: real)
     let linked = Worktree(
-      path: link.appendingPathComponent("wt"), projectID: harness.project.id, head: "c",
-      branch: "linked")
+      path: link.appendingPathComponent("wt"),
+      projectID: harness.project.id,
+      head: "c",
+      branch: "linked",
+    )
     harness.store.replaceWorktrees([harness.main, linked], forProject: harness.project.id)
     return (linked, real)
   }

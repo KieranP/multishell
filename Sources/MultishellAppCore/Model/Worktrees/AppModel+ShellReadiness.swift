@@ -21,6 +21,7 @@ extension AppModel {
     case .present:
       noteDirectoryPresent(of: worktree.id)
       return true
+
     case .missing: presentedError = .worktreeDirectoryMissing(worktree.path.path)
     case .unanswered: presentedError = .worktreeDirectoryUnanswered(worktree.path.path)
     }

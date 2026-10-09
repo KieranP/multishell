@@ -6,7 +6,9 @@ import Testing
 struct AppearanceTests {
   @Test func anAppearanceWithoutAUIFontSizeGetsTheDefault() throws {
     let appearance = try decodeJSON(
-      Appearance.self, #"{ "themeID": "multishell.light", "fontSize": 15 }"#)
+      Appearance.self,
+      #"{ "themeID": "multishell.light", "fontSize": 15 }"#,
+    )
     #expect(appearance.themeID == "multishell.light")
     #expect(appearance.terminalFontSize == 15)
     #expect(appearance.uiFontSize == Appearance.defaultUIFontSize)

@@ -23,6 +23,7 @@ extension PresentedError {
         case .postDelete: t("error.post-delete-hook", ending)
         }
       return (title, describe(failure.underlying))
+
     case let failure as WorktreeFileFailure:
       let title =
         switch failure.placement {
@@ -30,10 +31,12 @@ extension PresentedError {
         case .copy: t("error.files-not-copied")
         }
       return (
-        title, ([failure.description] + describeSkipped(failure.skipped)).joined(separator: "\n\n")
+        title, ([failure.description] + describeSkipped(failure.skipped)).joined(separator: "\n\n"),
       )
+
     case let skipped as WorktreeFileSkipped:
       return (t("error.files-skipped-title"), describeSkipped(skipped.entries).joined())
+
     default:
       return nil
     }

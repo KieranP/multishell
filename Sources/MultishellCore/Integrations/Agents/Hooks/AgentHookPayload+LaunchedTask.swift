@@ -10,6 +10,8 @@ extension AgentHookPayload {
   }
 }
 
+// Beside the memberwise init, which stays synthesized.
+// swiftlint:disable:next no_grouping_extension
 extension AgentHookPayload.LaunchedTask {
   /// `nil` for a result that started nothing still running: a foreground
   /// worker's result comes once it has ended.
@@ -20,10 +22,13 @@ extension AgentHookPayload.LaunchedTask {
       let workerID = toolResponse["agentId"] as? String
     {
       self.init(
-        id: workerID, isShell: false, subagentType: toolInput["subagent_type"] as? String,
+        id: workerID,
+        isShell: false,
+        subagentType: toolInput["subagent_type"] as? String,
         name: (toolInput["name"] as? String)?.nonEmpty,
         description: ((toolResponse["description"] ?? toolInput["description"]) as? String)?
-          .nonEmpty)
+          .nonEmpty,
+      )
     } else {
       return nil
     }

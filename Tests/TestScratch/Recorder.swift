@@ -4,10 +4,10 @@ import Synchronization
 /// test's own.
 public final class Recorder<Value: Sendable>: Sendable {
   private let values = Mutex<[Value]>([])
+  public var received: [Value] { values.withLock { $0 } }
 
   public init() {}
 
   public func record(_ value: Value) { values.withLock { $0.append(value) } }
-  public var received: [Value] { values.withLock { $0 } }
   public func clear() { values.withLock { $0 = [] } }
 }

@@ -26,11 +26,20 @@ struct GhosttyClipboardContentsTests {
       return contents.withUnsafeBufferPointer { contents in
         [
           GhosttyClipboardContents.textToWrite(
-            contents, at: GHOSTTY_CLIPBOARD_STANDARD, needsConfirming: false),
+            contents,
+            at: GHOSTTY_CLIPBOARD_STANDARD,
+            needsConfirming: false,
+          ),
           GhosttyClipboardContents.textToWrite(
-            contents, at: GHOSTTY_CLIPBOARD_SELECTION, needsConfirming: false),
+            contents,
+            at: GHOSTTY_CLIPBOARD_SELECTION,
+            needsConfirming: false,
+          ),
           GhosttyClipboardContents.textToWrite(
-            contents, at: GHOSTTY_CLIPBOARD_STANDARD, needsConfirming: true),
+            contents,
+            at: GHOSTTY_CLIPBOARD_STANDARD,
+            needsConfirming: true,
+          ),
         ]
       }
     }

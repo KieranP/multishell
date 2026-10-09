@@ -26,11 +26,15 @@ extension ShellIntegrationThroughHelperTests {
       wait
       """
     _ = try await ShellTab.runBash(
-      initFile: initFile, script: script, in: home, environment: environment)
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+    )
 
     try await waitUntil { recorder.received.count >= 2 }
-    let finished = recorder.received.compactMap(SessionStateReport.parse).filter {
-      $0.state == .done
+    let finished = recorder.received.compactMap(SessionStateReport.parse).filter { report in
+      report.state == .done
     }
     #expect(finished.count == 1, "got: \(recorder.received)")
     #expect(finished.first?.duration == 4, "the seconds between the two, not the whole string")
@@ -46,11 +50,18 @@ extension ShellIntegrationThroughHelperTests {
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
     try "export MULTISHELL_USER_RC_LOADED=yes\n".write(
-      to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(".bashrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let session = UUID()
     let environment = ShellTab.environment(
-      socket: listener.path, session: session, home: home, worktree: "/w/repo")
+      socket: listener.path,
+      session: session,
+      home: home,
+      worktree: "/w/repo",
+    )
     let script = """
       printf 'loaded=%s\\n' "$MULTISHELL_USER_RC_LOADED"
       _multishell_command_started; true; _multishell_precmd
@@ -58,11 +69,17 @@ extension ShellIntegrationThroughHelperTests {
       wait
       """
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment)
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+    )
 
     #expect(
       output.standardOutput.contains("loaded=yes"),
-      "the user's .bashrc did not load: \(output.standardOutput) \(output.standardError)")
+      "the user's .bashrc did not load: \(output.standardOutput) \(output.standardError)",
+    )
     try await waitUntil { recorder.received.count >= 4 }
     let states = recorder.received.compactMap { SessionStateReport.parse($0)?.state }
     #expect(states.filter { $0 == .running }.count == 2, "\(states)")
@@ -95,7 +112,12 @@ extension ShellIntegrationThroughHelperTests {
     wait
     """.write(to: script, atomically: true, encoding: .utf8)
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, feeding: script, in: home, environment: environment)
+      bash,
+      initFile: initFile,
+      feeding: script,
+      in: home,
+      environment: environment,
+    )
 
     // The line installing their trap is itself reported, ours still standing
     // when it runs; what the claim decides is whether `uname` is reported too.
@@ -121,14 +143,25 @@ extension ShellIntegrationThroughHelperTests {
     // Several words, as every real one is: bash-preexec's is
     // `__bp_preexec_invoke_exec "$_"`.
     try "trap 'printf x >> \(marks.path)' DEBUG\n".write(
-      to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
+      to: home.appendingPathComponent(".bashrc"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home, worktree: "/w/repo")
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+      worktree: "/w/repo",
+    )
     let script = home.appendingPathComponent("drive.sh")
     try "uname\n".write(to: script, atomically: true, encoding: .utf8)
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, feeding: script, in: home, environment: environment)
+      bash,
+      initFile: initFile,
+      feeding: script,
+      in: home,
+      environment: environment,
+    )
 
     let theirs = (try? String(contentsOf: marks, encoding: .utf8)) ?? ""
     #expect(!theirs.isEmpty, "the user's own trap never ran: \(output.standardError)")
@@ -136,7 +169,8 @@ extension ShellIntegrationThroughHelperTests {
     // it once per command for the life of the session.
     #expect(
       !output.standardError.contains(marks.path),
-      "their trap was run as one word: \(output.standardError)")
+      "their trap was run as one word: \(output.standardError)",
+    )
   }
 
   /// bash does not restore `$?` between PROMPT_COMMAND entries, so a prompt
@@ -148,7 +182,10 @@ extension ShellIntegrationThroughHelperTests {
     let initFile = try ShellTab.bashInitFile(in: home)
 
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home, worktree: "/w/repo")
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+      worktree: "/w/repo",
+    )
     let script = """
       _multishell_command_started
       false
@@ -159,7 +196,12 @@ extension ShellIntegrationThroughHelperTests {
       printf 'quiet=%s\\n' "$?"
       """
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment)
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+    )
 
     #expect(output.standardOutput.contains("ran=1"), "\(output.standardOutput)")
     #expect(output.standardOutput.contains("quiet=0"), "\(output.standardOutput)")
@@ -173,12 +215,18 @@ extension ShellIntegrationThroughHelperTests {
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home)
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+    )
 
     let output = try await ShellTab.runBash(
-      newer, initFile: initFile, script: "wait; printf 'waited\\n'", in: home,
+      initFile: initFile,
+      script: "wait; printf 'waited\\n'",
+      in: home,
       environment: environment,
-      timeout: .seconds(10))
+      bash: newer,
+      timeout: .seconds(10),
+    )
 
     #expect(output.standardOutput.contains("waited"), "\(output.standardError)")
   }

@@ -10,7 +10,9 @@ struct GhosttySurfaceLaunch {
   let command: String?
 
   func withCConfig<Result>(
-    view: NSView, scale: Double, _ body: (inout ghostty_surface_config_s) -> Result
+    view: NSView,
+    scale: Double,
+    _ body: (inout ghostty_surface_config_s) -> Result,
   ) -> Result {
     let variables = environment.sorted { $0.key < $1.key }
     let strings =
@@ -25,8 +27,8 @@ struct GhosttySurfaceLaunch {
       config.context = GHOSTTY_SURFACE_CONTEXT_WINDOW
       config.working_directory = pointers[0]
       config.command = command == nil ? nil : pointers.last
-      var pairs = variables.indices.map {
-        ghostty_env_var_s(key: pointers[1 + 2 * $0], value: pointers[2 + 2 * $0])
+      var pairs = variables.indices.map { index in
+        ghostty_env_var_s(key: pointers[1 + 2 * index], value: pointers[2 + 2 * index])
       }
       return pairs.withUnsafeMutableBufferPointer { buffer in
         config.env_vars = buffer.baseAddress

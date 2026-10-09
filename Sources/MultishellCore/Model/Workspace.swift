@@ -1,6 +1,33 @@
 /// The whole sidebar, every open tab, and the current look, as one value.
 /// Collections are flat and joined by id; array order is display order.
 public struct Workspace: Codable, Hashable, Sendable {
+  /// A renamed field keeps the key it was written under, as each `= "…"` case
+  /// below does.
+  private enum CodingKeys: String, CodingKey {
+    case projects, worktrees, sessions, tabs, tabGroups
+    case selectedWorktreeID, focusedGroupByWorktree
+    case customWorktreeNames = "worktreeNames"
+    case appearance, worktreeDefaults
+    case notificationPreference = "notifications"
+    case preferredAgentID, customAgentCommand, agentFlags
+    case autoStartsAgent = "autoStartAgent"
+    case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
+    case preferredShellID = "defaultShell"
+    case customShellPath, preferredEditorID, customEditorCommand
+    case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
+    case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
+    case projectHookTimeoutSeconds = "hookTimeoutSeconds"
+    case gitStatusIndicator
+  }
+
+  /// Keys no property answers to any more, read only to carry what an older
+  /// state file said into the shape that replaced it.
+  private enum LegacyKeys: String, CodingKey {
+    case activeTabByWorktree
+  }
+
+  private static let defaultProjectHookTimeoutSeconds = 60
+
   public internal(set) var projects: [Project] = []
   public internal(set) var worktrees: [Worktree] = []
   public internal(set) var sessions: [TerminalSession] = []
@@ -70,8 +97,6 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// What the git badge on a row and a card counts.
   public internal(set) var gitStatusIndicator = GitStatusIndicator.default
 
-  private static let defaultProjectHookTimeoutSeconds = 60
-
   /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var projectHookTimeout: Duration? {
     projectHookTimeoutSeconds > 0 ? .seconds(projectHookTimeoutSeconds) : nil
@@ -79,6 +104,8 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   init() {}
 
+  // A field per line, each decoded with its default; see state-and-store.md.
+  // swiftlint:disable function_body_length
   /// Every field defaults, and every collection but projects is lossy;
   /// see Docs/design/state-and-store.md.
   public init(from decoder: any Decoder) throws {
@@ -89,82 +116,104 @@ public struct Workspace: Codable, Hashable, Sendable {
     tabs = container.decodeLossy(TerminalTab.self, forKey: .tabs)
     tabGroups = container.decodeLossy(TabGroup.self, forKey: .tabGroups)
     selectedWorktreeID = try container.decodeIfPresent(
-      Worktree.ID.self, forKey: .selectedWorktreeID)
+      Worktree.ID.self,
+      forKey: .selectedWorktreeID,
+    )
     focusedGroupByWorktree = try container.decode(
-      [Worktree.ID: TabGroup.ID].self, forKey: .focusedGroupByWorktree, or: [:])
+      [Worktree.ID: TabGroup.ID].self,
+      forKey: .focusedGroupByWorktree,
+      or: [:],
+    )
     customWorktreeNames = try container.decode(
-      [Worktree.ID: String].self, forKey: .customWorktreeNames, or: [:])
+      [Worktree.ID: String].self,
+      forKey: .customWorktreeNames,
+      or: [:],
+    )
     appearance = try container.decode(Appearance.self, forKey: .appearance, or: Appearance())
     worktreeDefaults = try container.decode(
-      WorktreeSettings.self, forKey: .worktreeDefaults, or: WorktreeSettings())
+      WorktreeSettings.self,
+      forKey: .worktreeDefaults,
+      or: WorktreeSettings(),
+    )
     notificationPreference = container.decodeTolerantly(
-      NotificationPreference.self, forKey: .notificationPreference, or: .off)
+      NotificationPreference.self,
+      forKey: .notificationPreference,
+      or: .off,
+    )
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try container.decode(String.self, forKey: .customAgentCommand, or: "")
     agentFlags = try container.decode([String: String].self, forKey: .agentFlags, or: [:])
     autoStartsAgent = try container.decode(Bool.self, forKey: .autoStartsAgent, or: false)
     // State from before the two were split says one thing about both.
     autoStartsAgentOnCreate = try container.decode(
-      Bool.self, forKey: .autoStartsAgentOnCreate, or: autoStartsAgent)
+      Bool.self,
+      forKey: .autoStartsAgentOnCreate,
+      or: autoStartsAgent,
+    )
     preferredShellID = try container.decodeIfPresent(String.self, forKey: .preferredShellID)
     customShellPath = try container.decode(String.self, forKey: .customShellPath, or: "")
     preferredEditorID = try container.decodeIfPresent(String.self, forKey: .preferredEditorID)
     customEditorCommand = try container.decode(String.self, forKey: .customEditorCommand, or: "")
     opensTerminalOnSelect = try container.decode(
-      Bool.self, forKey: .opensTerminalOnSelect, or: true)
+      Bool.self,
+      forKey: .opensTerminalOnSelect,
+      or: true,
+    )
     // Before the two were split a create opened its terminal through the
     // selection that follows it, so older state keeps what it said.
     opensTerminalOnCreate = try container.decode(
-      Bool.self, forKey: .opensTerminalOnCreate, or: opensTerminalOnSelect)
+      Bool.self,
+      forKey: .opensTerminalOnCreate,
+      or: opensTerminalOnSelect,
+    )
     // Tolerated: a state file from a newer build may name an order this
     // build does not have, and that must not cost the sidebar.
     worktreeSortOrder = container.decodeTolerantly(
-      WorktreeSortOrder.self, forKey: .worktreeSortOrder, or: .default)
+      WorktreeSortOrder.self,
+      forKey: .worktreeSortOrder,
+      or: .default,
+    )
     showsActiveWorktreesFirst = try container.decode(
-      Bool.self, forKey: .showsActiveWorktreesFirst, or: false)
+      Bool.self,
+      forKey: .showsActiveWorktreesFirst,
+      or: false,
+    )
     confirmsWorktreeRemoval = try container.decode(
-      Bool.self, forKey: .confirmsWorktreeRemoval, or: true)
+      Bool.self,
+      forKey: .confirmsWorktreeRemoval,
+      or: true,
+    )
     deletesBranchWithWorktree = try container.decode(
-      Bool.self, forKey: .deletesBranchWithWorktree, or: false)
+      Bool.self,
+      forKey: .deletesBranchWithWorktree,
+      or: false,
+    )
     trashesRemovedWorktrees = try container.decode(
-      Bool.self, forKey: .trashesRemovedWorktrees, or: true)
+      Bool.self,
+      forKey: .trashesRemovedWorktrees,
+      or: true,
+    )
     projectHookTimeoutSeconds = try container.decode(
-      Int.self, forKey: .projectHookTimeoutSeconds, or: Self.defaultProjectHookTimeoutSeconds)
+      Int.self,
+      forKey: .projectHookTimeoutSeconds,
+      or: Self.defaultProjectHookTimeoutSeconds,
+    )
     // Tolerated for the reason `worktreeSortOrder` is: a newer build may
     // name a kind this one has not got.
     gitStatusIndicator = container.decodeTolerantly(
-      GitStatusIndicator.self, forKey: .gitStatusIndicator, or: .default)
+      GitStatusIndicator.self,
+      forKey: .gitStatusIndicator,
+      or: .default,
+    )
 
     // A file written before groups names no group but says which tab was
     // active. Read here, or `repair` falls back to the last tab.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
     let legacyShownTabs = legacy?.decodeTolerantly(
-      [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)
+      [Worktree.ID: TerminalTab.ID].self,
+      forKey: .activeTabByWorktree,
+    )
     adoptUngroupedTabs(shownTabByWorktree: legacyShownTabs ?? [:])
   }
-
-  /// A renamed field keeps the key it was written under, as each `= "…"` case
-  /// below does.
-  private enum CodingKeys: String, CodingKey {
-    case projects, worktrees, sessions, tabs, tabGroups
-    case selectedWorktreeID, focusedGroupByWorktree
-    case customWorktreeNames = "worktreeNames"
-    case appearance, worktreeDefaults
-    case notificationPreference = "notifications"
-    case preferredAgentID, customAgentCommand, agentFlags
-    case autoStartsAgent = "autoStartAgent"
-    case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
-    case preferredShellID = "defaultShell"
-    case customShellPath, preferredEditorID, customEditorCommand
-    case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
-    case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
-    case projectHookTimeoutSeconds = "hookTimeoutSeconds"
-    case gitStatusIndicator
-  }
-
-  /// Keys no property answers to any more, read only to carry what an older
-  /// state file said into the shape that replaced it.
-  private enum LegacyKeys: String, CodingKey {
-    case activeTabByWorktree
-  }
+  // swiftlint:enable function_body_length
 }

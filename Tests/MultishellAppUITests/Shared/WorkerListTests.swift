@@ -10,7 +10,10 @@ struct WorkerListTests {
   private func width(describedAs description: String) -> CGFloat {
     let worker = Worker(id: "a0", type: "general-purpose", description: description)
     let list = WorkerList(
-      workers: [worker], theme: .multishellDark, metrics: UIMetrics(fontSize: 13))
+      workers: [worker],
+      theme: .multishellDark,
+      metrics: UIMetrics(fontSize: 13),
+    )
     return NSHostingView(rootView: list).fittingSize.width
   }
 

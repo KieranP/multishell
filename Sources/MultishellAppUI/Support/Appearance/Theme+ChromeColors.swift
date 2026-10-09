@@ -4,6 +4,9 @@ import SwiftUI
 /// Every chrome colour derives from the theme, so the window follows it
 /// rather than the system appearance; see Docs/design/appearance.md.
 extension Theme {
+  /// How far a sidebar row's name is held back until the row is selected.
+  private static let unselectedRowNameOpacity: Double = 0.85
+
   var backgroundColor: Color { backgroundRGB.color }
   private var foregroundColor: Color { foregroundRGB.color }
 
@@ -25,11 +28,6 @@ extension Theme {
   var textSecondary: Color { foregroundColor.opacity(0.6) }
   var textTertiary: Color { foregroundColor.opacity(0.38) }
   var hairline: Color { foregroundColor.opacity(0.09) }
-  func rowNameColor(isSelected: Bool) -> Color {
-    textPrimary.opacity(isSelected ? 1 : Self.unselectedRowNameOpacity)
-  }
-  /// How far a sidebar row's name is held back until the row is selected.
-  private static let unselectedRowNameOpacity: Double = 0.85
   var faintFill: Color { foregroundColor.opacity(0.06) }
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }
@@ -45,6 +43,10 @@ extension Theme {
   /// A create or remove that failed, and a branch that landed.
   var failureColor: Color { ansiRGB(.red).color }
   var mergedColor: Color { ansiRGB(.green).color }
+
+  func rowNameColor(isSelected: Bool) -> Color {
+    textPrimary.opacity(isSelected ? 1 : Self.unselectedRowNameOpacity)
+  }
 
   func iconTint(_ slot: Int?, untinted: Color) -> Color {
     slot.map { ansiRGB($0).color } ?? untinted

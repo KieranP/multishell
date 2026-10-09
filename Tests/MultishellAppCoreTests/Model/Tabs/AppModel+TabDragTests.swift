@@ -203,7 +203,8 @@ struct AppModelTabDragTests {
     #expect(order(harness).first == last)
     #expect(
       harness.model.workspace.activeTab(in: harness.main.id)?.id == last,
-      "reordering does not change which tab is showing")
+      "reordering does not change which tab is showing",
+    )
   }
 
   /// Repeating the move the pointer is already sitting on must not write the
@@ -237,6 +238,7 @@ struct AppModelTabDragTests {
     #expect(harness.model.workspace.tab(moving.id)?.groupID == groups[1].id)
     #expect(
       !harness.model.workspace.tabs(inGroup: groups[0].id).contains { $0.id == moving.id },
-      "it stays out of the group it was dragged over")
+      "it stays out of the group it was dragged over",
+    )
   }
 }

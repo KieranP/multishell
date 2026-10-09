@@ -3,9 +3,9 @@
 public struct LineBuffer: Sendable {
   private var pending: [UInt8] = []
 
-  public init() {}
-
   var pendingByteCount: Int { pending.count }
+
+  public init() {}
 
   /// The lines `bytes` completes, each without its newline.
   public mutating func append(_ bytes: some Sequence<UInt8>) -> [String] {

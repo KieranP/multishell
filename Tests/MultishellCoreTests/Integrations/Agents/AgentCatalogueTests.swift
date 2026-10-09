@@ -55,7 +55,8 @@ struct AgentCatalogueTests {
       guard agent.markTint != nil else { continue }
       #expect(
         AgentCatalogue.markTintRGB(agent.id) != nil,
-        "\(agent.id) names a tint the hex parser rejects")
+        "\(agent.id) names a tint the hex parser rejects",
+      )
     }
   }
 

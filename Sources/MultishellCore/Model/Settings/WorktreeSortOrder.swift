@@ -1,3 +1,5 @@
+// Declared order is the order allCases gives the UI.
+// swiftlint:disable sorted_enum_cases
 /// The order a project's worktree rows are listed in. A raw value here is
 /// committed to repositories, so add cases but never rename one.
 public enum WorktreeSortOrder: String, Codable, Hashable, Sendable, CaseIterable {
@@ -14,7 +16,7 @@ public enum WorktreeSortOrder: String, Codable, Hashable, Sendable, CaseIterable
 
   /// Alphabetical, the only order reading the same on every machine: a
   /// copied directory has lost its creation date.
-  static let `default` = WorktreeSortOrder.alphabetical
+  static let `default` = Self.alphabetical
 
   /// Each label names its date then its direction, so five read as one set.
   /// `Name` carries none, its order needing no telling.
@@ -28,3 +30,4 @@ public enum WorktreeSortOrder: String, Codable, Hashable, Sendable, CaseIterable
     }
   }
 }
+// swiftlint:enable sorted_enum_cases

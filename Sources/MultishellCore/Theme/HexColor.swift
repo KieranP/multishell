@@ -15,8 +15,10 @@ enum HexColor {
     case 3, 4:
       let expanded = digits.prefix(3).flatMap { [$0, $0] }
       return parseSixDigits(String(expanded), ignoringAlpha: digits.dropFirst(3))
+
     case 6, 8:
       return parseSixDigits(String(digits.prefix(6)), ignoringAlpha: digits.dropFirst(6))
+
     default:
       return nil
     }
@@ -35,7 +37,7 @@ enum HexColor {
     return RGB(
       red: UInt8((value >> 16) & 0xFF),
       green: UInt8((value >> 8) & 0xFF),
-      blue: UInt8(value & 0xFF)
+      blue: UInt8(value & 0xFF),
     )
   }
 }

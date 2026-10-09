@@ -5,16 +5,6 @@ extension WorkerRoster {
   /// How many ids the overflow place tells apart; a worker past that is dropped.
   static let overflowLimit = 1024
 
-  /// The overflowed worker an end takes, in `endingIndex`'s order: an unnamed
-  /// end takes an unnamed one first, and any only where no named place is left.
-  func overflowedID(endedBy report: WorkerReport) -> String? {
-    guard report.id == WorkerReport.anonymousID else {
-      return overflowed[report.id] == nil ? nil : report.id
-    }
-    guard !workers.contains(where: \.isAnonymous) else { return nil }
-    return overflowedAnonymousID ?? (firstNamedIndex == nil ? overflowed.keys.first : nil)
-  }
-
   var overflowedAnonymousID: String? {
     overflowed.keys.first { $0.hasPrefix(Worker.anonymousPrefix) }
   }
@@ -25,6 +15,16 @@ extension WorkerRoster {
 
   var overflowPlace: Place {
     overflowIndex.map(place(at:)) ?? Place(id: Worker.overflowID)
+  }
+
+  /// The overflowed worker an end takes, in `endingIndex`'s order: an unnamed
+  /// end takes an unnamed one first, and any only where no named place is left.
+  func overflowedID(endedBy report: WorkerReport) -> String? {
+    guard report.id == WorkerReport.anonymousID else {
+      return overflowed[report.id] == nil ? nil : report.id
+    }
+    guard !workers.contains(where: \.isAnonymous) else { return nil }
+    return overflowedAnonymousID ?? (firstNamedIndex == nil ? overflowed.keys.first : nil)
   }
 
   /// `false` for a new id once the overflow place holds `overflowLimit` of them.

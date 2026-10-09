@@ -5,10 +5,10 @@ import Synchronization
 public final class ExitUsageProbe: Sendable {
   private let recorded = Mutex<ExitUsage?>(nil)
 
-  public init() {}
-
   /// `nil` until the child exits, or where the kernel would not say.
   public var usage: ExitUsage? { recorded.withLock { $0 } }
+
+  public init() {}
 
   func record(_ usage: ExitUsage?) {
     recorded.withLock { $0 = usage }

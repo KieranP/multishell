@@ -14,19 +14,32 @@ struct ShellLaunchTests {
 
     #expect(
       ShellLaunch.execArguments(
-        forShell: "/bin/zsh", zshDirectory: zshDirectory, bashInit: bashInit)
-        == ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", "/bin/zsh", "-l"])
+        forShell: "/bin/zsh",
+        zshDirectory: zshDirectory,
+        bashInit: bashInit,
+      )
+        == ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", "/bin/zsh", "-l"]
+    )
     #expect(
       ShellLaunch.execArguments(
-        forShell: "/bin/bash", zshDirectory: zshDirectory, bashInit: bashInit)
-        == ["exec", "/bin/bash", "--init-file", bashInit.path, "-i"])
+        forShell: "/bin/bash",
+        zshDirectory: zshDirectory,
+        bashInit: bashInit,
+      )
+        == ["exec", "/bin/bash", "--init-file", bashInit.path, "-i"]
+    )
     let missing = URL(fileURLWithPath: "/no/such")
     #expect(
       ShellLaunch.execArguments(forShell: "/bin/zsh", zshDirectory: missing, bashInit: missing)
-        == ["exec", "/bin/zsh", "-l"])
+        == ["exec", "/bin/zsh", "-l"]
+    )
     #expect(
       ShellLaunch.execArguments(
-        forShell: "/usr/local/bin/fish", zshDirectory: zshDirectory, bashInit: bashInit)
-        == ["exec", "/usr/local/bin/fish", "-l"])
+        forShell: "/usr/local/bin/fish",
+        zshDirectory: zshDirectory,
+        bashInit: bashInit,
+      )
+        == ["exec", "/usr/local/bin/fish", "-l"]
+    )
   }
 }

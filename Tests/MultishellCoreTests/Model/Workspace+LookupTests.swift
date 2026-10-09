@@ -8,11 +8,17 @@ struct WorkspaceLookupTests {
   @Test func theCheckedOutBranchesAreEveryWorktreesButADetachedOnes() {
     let (store, project, main) = demoStore()
     let feature = Worktree(
-      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
-      branch: "feature")
+      path: main.path.appendingPathComponent("feature"),
+      projectID: project.id,
+      head: "b",
+      branch: "feature",
+    )
     let detached = Worktree(
-      path: main.path.appendingPathComponent("detached"), projectID: project.id, head: "c",
-      branch: nil)
+      path: main.path.appendingPathComponent("detached"),
+      projectID: project.id,
+      head: "c",
+      branch: nil,
+    )
     store.replaceWorktrees([main, feature, detached], forProject: project.id)
 
     #expect(store.workspace.checkedOutBranches(of: project.id) == ["main", "feature"])
@@ -27,13 +33,13 @@ struct WorkspaceLookupTests {
 
   @Test func theNextAndPreviousTabWrapAndALoneTabHasNone() {
     let (store, _, worktree) = demoStore()
-    let t1 = store.openTab(in: worktree.id)!
-    let t2 = store.openTab(in: worktree.id)!
+    let firstTab = store.openTab(in: worktree.id)!
+    let secondTab = store.openTab(in: worktree.id)!
 
-    #expect(store.workspace.tab(after: t2.id)?.id == t1.id)
-    #expect(store.workspace.tab(before: t1.id)?.id == t2.id)
-    store.closeTab(t2.id)
-    #expect(store.workspace.tab(after: t1.id) == nil)
+    #expect(store.workspace.tab(after: secondTab.id)?.id == firstTab.id)
+    #expect(store.workspace.tab(before: firstTab.id)?.id == secondTab.id)
+    store.closeTab(secondTab.id)
+    #expect(store.workspace.tab(after: firstTab.id) == nil)
   }
 
   @Test func tabCyclingStaysInsideItsGroup() {

@@ -4,15 +4,15 @@ import MultishellCore
 /// flat list would drift a column at every short last row.
 public enum IconGridWalk {
   public enum Step: Sendable {
-    case left, right, up, down
+    case down, left, right, up
   }
 
   /// The groups laid out as the grid draws them, `columns` wide.
   public static func rows(of groups: [ProjectIcon.Group], columns: Int) -> [[String]] {
     guard columns > 0 else { return [] }
     return groups.flatMap { group in
-      stride(from: 0, to: group.symbols.count, by: columns).map {
-        Array(group.symbols[$0..<min($0 + columns, group.symbols.count)])
+      stride(from: 0, to: group.symbols.count, by: columns).map { rowStart in
+        Array(group.symbols[rowStart..<min(rowStart + columns, group.symbols.count)])
       }
     }
   }
@@ -20,7 +20,9 @@ public enum IconGridWalk {
   /// The symbol `step` lands on, `nil` where there is nowhere to go. Up and
   /// down hold the column; with nothing highlighted the first key lands first.
   public static func destination(
-    from highlighted: String?, step: Step, in rows: [[String]]
+    from highlighted: String?,
+    step: Step,
+    in rows: [[String]],
   ) -> String? {
     // An empty row is no landing place, and taking the last cell of one
     // indexes past its own start.
@@ -35,6 +37,7 @@ public enum IconGridWalk {
         row -= 1
         column = rows[row].count - 1
       }
+
     case .right:
       if column + 1 < rows[row].count {
         column += 1
@@ -42,10 +45,12 @@ public enum IconGridWalk {
         row += 1
         column = 0
       }
+
     case .up:
       guard row > 0 else { return rows[row][column] }
       row -= 1
       column = min(column, rows[row].count - 1)
+
     case .down:
       guard row + 1 < rows.count else { return rows[row][column] }
       row += 1

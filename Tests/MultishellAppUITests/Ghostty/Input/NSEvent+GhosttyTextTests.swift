@@ -7,8 +7,8 @@ import Testing
 @MainActor
 struct NSEventGhosttyTextTests {
   @Test func aFunctionKeyTypesNothing() throws {
-    let f1 = try keyDown(String(UnicodeScalar(0xF704)!), keyCode: 0x7A)
-    #expect(f1.ghosttyText == nil)
+    let f1Key = try keyDown(String(UnicodeScalar(0xF704)!), keyCode: 0x7A)
+    #expect(f1Key.ghosttyText == nil)
   }
 
   @Test func controlWithALetterTypesTheLetterForLibghosttyToControl() throws {

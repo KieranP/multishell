@@ -26,32 +26,44 @@ public enum TranslationCallSites {
           CallSite(
             key: String(match.output.1),
             argumentCount: argumentCount(in: text, from: match.range.upperBound),
-            fileName: file.lastPathComponent))
+            fileName: file.lastPathComponent,
+          )
+        )
       }
     }
     guard sites.count > 100 else { throw TranslationScanFoundNothing(count: sites.count) }
     return sites
   }
 
-  /// Commas at the call's own bracket depth, after the key. Text in a
-  /// string literal is skipped, a comma inside one being no argument.
+  /// Commas at the call's own bracket depth, after the key, less a trailing
+  /// one. Text in a string literal is skipped, a comma inside one being no argument.
   private static func argumentCount(in text: String, from start: String.Index) -> Int {
     var depth = 1
     var count = 0
     var index = start
+    var lastNonBlank: Character?
     while index < text.endIndex, depth > 0 {
-      switch text[index] {
+      let character = text[index]
+      switch character {
       case "(", "[", "{": depth += 1
+
+      case ")" where depth == 1 && lastNonBlank == ",":
+        depth = 0
+        count -= 1
+
       case ")", "]", "}": depth -= 1
       case "," where depth == 1: count += 1
+
       case "\"":
         index = text.index(after: index)
         while index < text.endIndex, text[index] != "\"" {
           if text[index] == "\\" { index = text.index(after: index) }
           index = text.index(after: index)
         }
+
       default: break
       }
+      if !character.isWhitespace { lastNonBlank = character }
       index = text.index(after: index)
     }
     return count

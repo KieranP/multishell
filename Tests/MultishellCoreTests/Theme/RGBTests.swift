@@ -19,6 +19,7 @@ struct RGBTests {
     #expect(rgb.blended(with: .white, amount: -1) == rgb)
     #expect(
       rgb.blended(with: RGB(red: 20, green: 20, blue: 20), amount: 0.5)
-        == RGB(red: 15, green: 20, blue: 25))
+        == RGB(red: 15, green: 20, blue: 25)
+    )
   }
 }

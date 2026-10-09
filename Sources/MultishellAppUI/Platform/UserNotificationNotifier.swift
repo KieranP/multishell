@@ -5,7 +5,7 @@ import UserNotifications
 /// `SessionNotifier` on `UNUserNotificationCenter`, which needs a bundle and
 /// crashes without one, so this does nothing outside an app bundle.
 @MainActor
-final class UserNotificationNotifier: NSObject, SessionNotifier {
+final class UserNotificationNotifier: NSObject, SessionNotifier, UNUserNotificationCenterDelegate {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)?
 
   private let center: UNUserNotificationCenter?
@@ -21,6 +21,15 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     center?.delegate = self
   }
 
+  private static func authorization(from status: UNAuthorizationStatus) -> NotificationAuthorization
+  {
+    switch status {
+    case .notDetermined: .notAsked
+    case .denied: .refused
+    default: .allowed
+    }
+  }
+
   /// One live banner per pane, the request carrying the key as its
   /// identifier, so a second report replaces the first rather than stacking.
   func notify(title: String, body: String, about key: SessionStates.Key) {
@@ -31,7 +40,10 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     content.sound = .default
     let identifier = key.notificationIdentifier
     let request = UNNotificationRequest(
-      identifier: identifier, content: content, trigger: nil)
+      identifier: identifier,
+      content: content,
+      trigger: nil,
+    )
     if knownAuthorization == .allowed {
       center.add(request)
       return
@@ -59,7 +71,8 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
   func authorization() async -> NotificationAuthorization {
     guard let center else { return .unavailable }
     knownAuthorization = Self.authorization(
-      from: await center.notificationSettings().authorizationStatus)
+      from: await center.notificationSettings().authorizationStatus
+    )
     return knownAuthorization
   }
 
@@ -74,31 +87,23 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     return await authorization()
   }
 
-  private static func authorization(from status: UNAuthorizationStatus) -> NotificationAuthorization
-  {
-    switch status {
-    case .notDetermined: .notAsked
-    case .denied: .refused
-    default: .allowed
-    }
-  }
-}
-
-extension UserNotificationNotifier: UNUserNotificationCenterDelegate {
   /// The default hides banners while the app is frontmost; the tab this is
   /// about is not the one on screen, so show it anyway.
   nonisolated func userNotificationCenter(
-    _ center: UNUserNotificationCenter, willPresent notification: UNNotification
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
   ) async -> UNNotificationPresentationOptions {
     [.banner, .sound]
   }
 
   nonisolated func userNotificationCenter(
-    _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
   ) async {
     guard
       let key = SessionStates.Key(
-        notificationIdentifier: response.notification.request.identifier)
+        notificationIdentifier: response.notification.request.identifier
+      )
     else { return }
     await MainActor.run {
       NSApp.activate()

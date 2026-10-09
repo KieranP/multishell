@@ -13,9 +13,15 @@ struct WorktreeGitRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "gone", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "gone",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let away = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "away", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "away",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
     let gone = try await fixture.worktree(onBranch: "gone")
@@ -26,7 +32,9 @@ struct WorktreeGitRemovalTests {
     #expect(listed.map(\.branch) == ["main", "away"], "the away worktree is still on record")
     try FileManager.default.moveItem(at: aside, to: away)
     #expect(
-      try await fixture.head(of: away) == fixture.head(of: fixture.project.path), "and works again")
+      try await fixture.head(of: away) == fixture.head(of: fixture.project.path),
+      "and works again",
+    )
   }
 
   @Test func removingAStaleRecordKeepsAnotherWorktreeWhoseDirectoryIsAway() async throws {
@@ -34,7 +42,10 @@ struct WorktreeGitRemovalTests {
     defer { fixture.tearDown() }
     let (stale, path) = try await fixture.worktreeWithItsDirectoryGone()
     let away = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "away", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "away",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
@@ -81,13 +92,17 @@ struct WorktreeGitRemovalTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "unread", in: project, settings: fixture.worktreeSettings)
+      branch: "unread",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "unread", in: project)
     let fake = try FakeGit.make(
       """
       case "$*" in *--show-toplevel*) exit 128 ;; esac
       exec git "$@"
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let ran = fixture.root.appendingPathComponent("pre-ran")
     project.settings = ProjectSettings(preDeleteHook: "touch \"\(ran.path)\"")
@@ -107,7 +122,10 @@ struct WorktreeGitRemovalTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "older", in: project, settings: fixture.worktreeSettings)
+      branch: "older",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     let worktree = try await fixture.worktree(onBranch: "older", in: project)
     let fake = try FakeGit.make(
       """
@@ -118,7 +136,8 @@ struct WorktreeGitRemovalTests {
         done
       fi
       exec git "$@"
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let ran = fixture.root.appendingPathComponent("pre-ran")
     project.settings = ProjectSettings(preDeleteHook: "touch \"\(ran.path)\"")
@@ -129,7 +148,8 @@ struct WorktreeGitRemovalTests {
 
     #expect(
       common.resolvingSymlinksInPath().path
-        == project.path.appendingPathComponent(".git").resolvingSymlinksInPath().path)
+        == project.path.appendingPathComponent(".git").resolvingSymlinksInPath().path
+    )
     #expect(FileManager.default.fileExists(atPath: ran.path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
     #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
@@ -142,7 +162,11 @@ struct WorktreeGitRemovalTests {
     try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
     let spelled = fixture.root.appendingPathComponent("casedir/wt")
     try await TestRepository.addWorktree(
-      onNewBranch: "cased", at: spelled, in: fixture.project.path, using: fixture.runner)
+      onNewBranch: "cased",
+      at: spelled,
+      in: fixture.project.path,
+      using: fixture.runner,
+    )
     let cased = try await fixture.worktree(onBranch: "cased")
 
     try await fixture.coordinator.removeUnlinking(cased, in: fixture.project)
@@ -156,7 +180,9 @@ struct WorktreeGitRemovalTests {
     defer { fixture.tearDown() }
     let (stale, path) = try await fixture.worktreeWithItsDirectoryGone()
     _ = try await fixture.runner.run(
-      ["clone", "-q", fixture.project.path.path, path.path], in: fixture.root)
+      ["clone", "-q", fixture.project.path.path, path.path],
+      in: fixture.root,
+    )
 
     await #expect(throws: WorktreePathTaken.self) {
       try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
@@ -169,7 +195,10 @@ struct WorktreeGitRemovalTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "locked", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "locked",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     _ = try await fixture.runner.run(["worktree", "lock", path.path], in: fixture.project.path)
     let locked = try await fixture.worktree(onBranch: "locked")
 
@@ -184,7 +213,10 @@ struct WorktreeGitRemovalTests {
     let project = fixture.project
     let coordinator = fixture.coordinator
     let path = try await coordinator.createThenRunPostCreateHook(
-      branch: "ghost", in: project, settings: fixture.worktreeSettings)
+      branch: "ghost",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
     try FileManager.default.removeItem(at: path)
 
     let ghost = try await fixture.worktree(onBranch: "ghost")
@@ -216,7 +248,8 @@ struct WorktreeGitRemovalTests {
         "worktree prune") exit 0 ;;
         "worktree list") printf 'worktree %s/gone\\0HEAD a\\0branch refs/heads/gone\\0\\0' "$SCRATCH" ;;
       esac
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
@@ -234,7 +267,8 @@ struct WorktreeGitRemovalTests {
       case "$1 $2" in
         "worktree remove") exit 128 ;;
       esac
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
@@ -252,7 +286,8 @@ struct WorktreeGitRemovalTests {
         "worktree prune") exit 0 ;;
         "worktree list") printf 'worktree %s\\0HEAD a\\0branch refs/heads/main\\0\\0' "$SCRATCH" ;;
       esac
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
@@ -266,20 +301,29 @@ struct WorktreeGitRemovalTests {
       case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
       case "$1 $2" in "worktree remove") exit 128 ;; esac
       printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n'
-      """)
+      """
+    )
     defer { fake.tearDown() }
     let gone = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-trees/gone"), projectID: fake.directory.path,
-      head: "2222222", branch: "gone")
+      path: URL(fileURLWithPath: "/repos/demo-trees/gone"),
+      projectID: fake.directory.path,
+      head: "2222222",
+      branch: "gone",
+    )
 
     try await WorktreeGit(runner: fake.runner).removeRecord(
-      of: gone, in: Project(path: fake.directory))
+      of: gone,
+      in: Project(path: fake.directory),
+    )
   }
 
   /// A worktree on branch `gone` whose directory was never made.
   private func goneWorktree(of project: Project, in fake: FakeGit) -> Worktree {
     Worktree(
-      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
-      branch: "gone")
+      path: fake.directory.appendingPathComponent("gone"),
+      projectID: project.id,
+      head: "a",
+      branch: "gone",
+    )
   }
 }

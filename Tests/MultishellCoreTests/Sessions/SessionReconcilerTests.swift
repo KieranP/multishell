@@ -92,6 +92,9 @@ struct SessionReconcilerTests {
 
     #expect(host.opened.first?.command == ["/bin/zsh", "-l", "-c", "claude"])
     #expect(host.opened.first?.agentID == "claude")
-    #expect(store.workspace.session(tab.focusedSessionID)?.command == nil, "the store keeps the id")
+    #expect(
+      store.workspace.session(tab.focusedSessionID)?.command == nil,
+      "the store keeps the id",
+    )
   }
 }

@@ -1,3 +1,5 @@
+// Declared order is the order allCases gives the UI.
+// swiftlint:disable sorted_enum_cases
 /// How far back Debug Info looks: the spans a load average is taken over.
 public enum DebugRange: CaseIterable, Sendable {
   case oneMinute
@@ -24,3 +26,4 @@ public enum DebugRange: CaseIterable, Sendable {
 
   var slotCount: Int { sampleCount / secondsPerSlot }
 }
+// swiftlint:enable sorted_enum_cases

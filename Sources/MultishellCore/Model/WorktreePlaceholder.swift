@@ -5,15 +5,15 @@ import Foundation
 public enum WorktreePlaceholder: String, CaseIterable, Sendable {
   /// The branch, or the short SHA when detached.
   case branch
+  /// The repository's folder name.
+  case projectName = "project"
+  /// The repository root.
+  case projectPath = "project_path"
   /// What the sidebar calls the worktree: the user's name for it, else its
   /// branch.
   case worktreeName = "worktree"
   /// The worktree's directory.
   case worktreePath = "worktree_path"
-  /// The repository's folder name.
-  case projectName = "project"
-  /// The repository root.
-  case projectPath = "project_path"
 
   var token: String { "{{\(rawValue)}}" }
 
@@ -32,9 +32,11 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
   /// `worktreeName` is what the sidebar shows, `Workspace.displayName(of:)`,
   /// which the worktree record cannot answer on its own.
   public static func values(
-    project: Project, worktree: Worktree, worktreeName: String
-  ) -> [WorktreePlaceholder: String] {
-    var values: [WorktreePlaceholder: String] = [:]
+    project: Project,
+    worktree: Worktree,
+    worktreeName: String,
+  ) -> [Self: String] {
+    var values: [Self: String] = [:]
     for placeholder in allCases {
       values[placeholder] =
         switch placeholder {

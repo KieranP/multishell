@@ -11,13 +11,10 @@ public final class ProcessStopper: Sendable {
     var appliedTo: RunningChild?
   }
 
+  /// SIGKILL follows for a child that ignores or traps SIGHUP.
+  static let killGrace: TimeInterval = 3
+
   private let state = Mutex(State())
-
-  public init() {}
-
-  public func stop() {
-    stop(.byUser)
-  }
 
   /// The reason this stopper ended the child it was attached to, once it
   /// has; `nil` while the child runs or after it exited on its own.
@@ -29,6 +26,41 @@ public final class ProcessStopper: Sendable {
   /// process to signal reads this to end itself.
   public var isStopRequested: Bool {
     state.withLock { $0.pending != nil || $0.applied != nil }
+  }
+
+  public init() {}
+
+  /// False for a child already gone. Not Subprocess's teardown, which stops once
+  /// the child exits: a grandchild trapping SIGHUP would outlive the shell.
+  private static func hangUp(_ child: RunningChild) -> Bool {
+    let hangupTime = {
+      var now = timeval()
+      gettimeofday(&now, nil)
+      return now
+    }()
+    let signalled = child.withLivePID { pid in
+      // The group where the child leads one, as its own session's leader does;
+      // the child alone where the signal says it does not.
+      let leadsGroup = kill(-pid, SIGHUP) == 0
+      if !leadsGroup { kill(pid, SIGHUP) }
+      return (pid: pid, leadsGroup: leadsGroup)
+    }
+    guard let (pid, leadsGroup) = signalled else { return false }
+    DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
+      guard leadsGroup else {
+        _ = child.withLivePID { kill($0, SIGKILL) }
+        return
+      }
+      // The group, not the shell: a grandchild trapping SIGHUP outlives it.
+      // The pid may have been reused by then, so the group is checked first.
+      guard ProcessGroup.isStillOurs(hungUpAt: hangupTime, group: pid) else { return }
+      kill(-pid, SIGKILL)
+    }
+    return true
+  }
+
+  public func stop() {
+    stop(.byUser)
   }
 
   func stop(_ reason: ProcessStopReason) {
@@ -74,37 +106,5 @@ public final class ProcessStopper: Sendable {
       state.applied = pending
       state.appliedTo = child
     }
-  }
-
-  /// SIGKILL follows for a child that ignores or traps SIGHUP.
-  static let killGrace: TimeInterval = 3
-
-  /// False for a child already gone. Not Subprocess's teardown, which stops once
-  /// the child exits: a grandchild trapping SIGHUP would outlive the shell.
-  private static func hangUp(_ child: RunningChild) -> Bool {
-    let hangupTime = {
-      var now = timeval()
-      gettimeofday(&now, nil)
-      return now
-    }()
-    let signalled = child.withLivePID { pid in
-      // The group where the child leads one, as its own session's leader does;
-      // the child alone where the signal says it does not.
-      let leadsGroup = kill(-pid, SIGHUP) == 0
-      if !leadsGroup { kill(pid, SIGHUP) }
-      return (pid: pid, leadsGroup: leadsGroup)
-    }
-    guard let (pid, leadsGroup) = signalled else { return false }
-    DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
-      guard leadsGroup else {
-        _ = child.withLivePID { kill($0, SIGKILL) }
-        return
-      }
-      // The group, not the shell: a grandchild trapping SIGHUP outlives it.
-      // The pid may have been reused by then, so the group is checked first.
-      guard ProcessGroup.isStillOurs(hungUpAt: hangupTime, group: pid) else { return }
-      kill(-pid, SIGKILL)
-    }
-    return true
   }
 }

@@ -3,6 +3,10 @@ import MultishellProcess
 /// Counts display frames between two readings, and the longest gap between
 /// two frames, which is a stall where the count alone averages it away.
 struct FrameRateMeter {
+  /// A reading no later than this after the one before had the main thread
+  /// free, the sampler running on it too; a stall holds both up.
+  static let longestOnTimeGap = Duration.milliseconds(1_500)
+
   private var framesSinceReading = 0
   private var longestFrameSinceReading = Duration.zero
   private var lastFrameAt: ContinuousClock.Instant?
@@ -15,10 +19,6 @@ struct FrameRateMeter {
     lastFrameAt = instant
     framesSinceReading += 1
   }
-
-  /// A reading no later than this after the one before had the main thread
-  /// free, the sampler running on it too; a stall holds both up.
-  static let longestOnTimeGap = Duration.milliseconds(1_500)
 
   /// `nil` for the first reading, which has nothing to count from, and for
   /// one with no frame: a display asleep, not a main thread stalled.
@@ -38,6 +38,8 @@ struct FrameRateMeter {
     let elapsed = lastReadingAt.duration(to: instant).inSeconds
     guard elapsed > 0 else { return nil }
     return FrameRateReading(
-      framesPerSecond: Double(framesSinceReading) / elapsed, longestFrame: longestFrameSinceReading)
+      framesPerSecond: Double(framesSinceReading) / elapsed,
+      longestFrame: longestFrameSinceReading,
+    )
   }
 }

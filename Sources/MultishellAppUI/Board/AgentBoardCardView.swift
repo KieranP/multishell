@@ -32,7 +32,8 @@ struct AgentBoardCardView: View {
       RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius)
         .strokeBorder(
           isHovered ? theme.color(for: card.state.shownState) : theme.hairline,
-          lineWidth: isHovered ? 1.5 : 1)
+          lineWidth: isHovered ? 1.5 : 1,
+        )
     }
     .contentShape(.rect)
     .onHover { isHovered = $0 }
@@ -77,10 +78,15 @@ struct AgentBoardCardView: View {
         ringFill: theme.cardColor,
         plainTint: theme.textSecondary,
         theme: theme,
-        size: metrics.cardPaneGlyphSize)
+        size: metrics.cardPaneGlyphSize,
+      )
       WorktreeBreadcrumb(
-        projectName: card.projectName, worktreeName: card.worktreeName, style: .card,
-        theme: theme, metrics: metrics)
+        projectName: card.projectName,
+        worktreeName: card.worktreeName,
+        style: .card,
+        theme: theme,
+        metrics: metrics,
+      )
       if let status = WorktreeStatus.badged(card.status) {
         Spacer(minLength: 6)
         GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textTertiary)

@@ -12,17 +12,6 @@ struct DebugTabMemory: Sendable, Equatable, Identifiable {
   let terminalMemory: UInt64?
   let processList: DebugProcessList
 
-  init(
-    id: TerminalTab.ID, title: String, location: DebugLocation, terminalMemory: UInt64?,
-    processes: [ProcessUsage]
-  ) {
-    self.id = id
-    self.title = title
-    self.location = location
-    self.terminalMemory = terminalMemory
-    processList = DebugProcessList(processes: processes)
-  }
-
   /// A tab with a live shell always runs one, so none found means the engine
   /// could not place it, and its processes are unknown rather than none.
   var isPlaced: Bool { !processList.processes.isEmpty }
@@ -44,5 +33,19 @@ struct DebugTabMemory: Sendable, Equatable, Identifiable {
   /// The nested row heading it when open, whose Total takes in the shells under it.
   var terminalRow: DebugTerminalRow? {
     terminalMemory.map { DebugTerminalRow(selfMemory: $0, totalMemory: totalMemory ?? $0) }
+  }
+
+  init(
+    id: TerminalTab.ID,
+    title: String,
+    location: DebugLocation,
+    terminalMemory: UInt64?,
+    processes: [ProcessUsage],
+  ) {
+    self.id = id
+    self.title = title
+    self.location = location
+    self.terminalMemory = terminalMemory
+    processList = DebugProcessList(processes: processes)
   }
 }

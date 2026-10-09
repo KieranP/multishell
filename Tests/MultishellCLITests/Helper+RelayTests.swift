@@ -17,7 +17,8 @@ struct HelperRelayTests {
       "echo \"$PPID\" >> \(AnyShellQuoting.quote(log.path + ".parents"))\n"
         + "echo \"$$ $1\" >> \(AnyShellQuoting.quote(log.path))\n"
         + "exec \(AnyShellQuoting.quote(try HelperBinary.require().path)) \"$@\"",
-      at: home.appendingPathComponent("multishell"))
+      at: home.appendingPathComponent("multishell"),
+    )
     return (helper, log)
   }
 
@@ -30,11 +31,14 @@ struct HelperRelayTests {
       fi
       exec \(AnyShellQuoting.quote(try HelperBinary.require().path)) "$@"
       """,
-      at: home.appendingPathComponent("multishell"))
+      at: home.appendingPathComponent("multishell"),
+    )
   }
 
   private func pid(writtenTo file: URL) throws -> Int32 {
-    try #require(Int32(String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .newlines)))
+    try #require(
+      Int32(String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .newlines))
+    )
   }
 
   private func spawns(_ log: URL) -> [(pid: String, command: String)] {
@@ -61,7 +65,11 @@ struct HelperRelayTests {
       _multishell_command_started "make"; true; _multishell_precmd
       """
     _ = try await ShellTab.runBash(
-      initFile: initFile, script: script, in: home, environment: environment)
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+    )
 
     try await waitUntil { recorder.received.count >= 6 }
     let reports = recorder.received.compactMap(SessionStateReport.parse)
@@ -91,13 +99,18 @@ struct HelperRelayTests {
     let environment = ShellTab.environment(socket: listener.path, home: home)
 
     _ = try await ShellTab.runBash(
-      bash, initFile: initFile,
-      script: #"_multishell_command_started "ls"; true; _multishell_precmd"#, in: home,
-      environment: environment, timeout: .seconds(10))
+      initFile: initFile,
+      script: #"_multishell_command_started "ls"; true; _multishell_precmd"#,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
 
     try await waitUntil { recorder.received.count >= 2 }
     #expect(
-      try String(contentsOf: depths, encoding: .utf8) == "0 command-started\n0 command-finished\n")
+      try String(contentsOf: depths, encoding: .utf8) == "0 command-started\n0 command-finished\n"
+    )
   }
 
   /// The relay's parent is killed too, or it reads the pipe once the relay fails
@@ -123,7 +136,12 @@ struct HelperRelayTests {
       printf 'still-heard\\n' >&2
       """
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment)
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+    )
 
     #expect(output.standardOutput.contains("alive"), "\(output.standardError)")
     #expect(output.standardError.contains("still-heard"), "the shell's own stderr went too")
@@ -148,7 +166,8 @@ struct HelperRelayTests {
       relayingAs: """
         while [ ! -e \(AnyShellQuoting.quote(written.path)) ]; do sleep 0.05; done
         exit 2
-        """)
+        """,
+    )
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let environment = ShellTab.environment(socket: listener.path, home: home)
     let script = """
@@ -157,12 +176,18 @@ struct HelperRelayTests {
       """
 
     _ = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment,
-      timeout: .seconds(10))
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
 
     try await waitUntil { recorder.received.count >= 2 }
     #expect(
-      recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done])
+      recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done]
+    )
   }
 
   @Test(arguments: InstalledBashes.all)
@@ -173,7 +198,9 @@ struct HelperRelayTests {
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let childPID = home.appendingPathComponent("child.pid")
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home)
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+    )
     let script = """
       while [ ! -s \(AnyShellQuoting.quote(log.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
@@ -181,8 +208,13 @@ struct HelperRelayTests {
       """
 
     _ = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment,
-      timeout: .seconds(10))
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
     let child = try pid(writtenTo: childPID)
     defer { kill(child, SIGKILL) }
     let relay = try #require(spawns(log).first.flatMap { Int32($0.pid) })
@@ -198,11 +230,15 @@ struct HelperRelayTests {
     defer { Scratch.remove(home) }
     let parents = home.appendingPathComponent("parents.log")
     let helper = try helper(
-      in: home, relayingAs: "echo \"$PPID\" >> \(AnyShellQuoting.quote(parents.path)); exit 2")
+      in: home,
+      relayingAs: "echo \"$PPID\" >> \(AnyShellQuoting.quote(parents.path)); exit 2",
+    )
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let childPID = home.appendingPathComponent("child.pid")
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home)
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+    )
     let script = """
       while [ ! -s \(AnyShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
@@ -210,8 +246,13 @@ struct HelperRelayTests {
       """
 
     _ = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment,
-      timeout: .seconds(10))
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
     let child = try pid(writtenTo: childPID)
     defer { kill(child, SIGKILL) }
     let loop = try pid(writtenTo: parents)
@@ -227,7 +268,9 @@ struct HelperRelayTests {
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home)
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+    )
     let script = """
       _multishell_command_started "trap"
       trap 'echo mine' PIPE
@@ -237,12 +280,18 @@ struct HelperRelayTests {
       """
 
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment,
-      timeout: .seconds(10))
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
 
     #expect(
       output.standardOutput.contains("trap -- 'echo mine' SIGPIPE"),
-      "\(output.standardOutput) \(output.standardError)")
+      "\(output.standardOutput) \(output.standardError)",
+    )
   }
 
   @Test(arguments: InstalledBashes.all)
@@ -251,18 +300,26 @@ struct HelperRelayTests {
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
     let environment = ShellTab.environment(
-      socket: home.appendingPathComponent("nowhere.sock"), home: home)
+      socket: home.appendingPathComponent("nowhere.sock"),
+      home: home,
+    )
     let script =
       #"echo "version=$(( BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] ))"; "#
       + #"echo "read=$_multishell_read_pipe_trap""#
 
     let output = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment,
-      timeout: .seconds(10))
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
 
     let lines = output.standardOutput.split(whereSeparator: \.isNewline)
     let version = try #require(
-      lines.first { $0.hasPrefix("version=") }.flatMap { Int($0.dropFirst("version=".count)) })
+      lines.first { $0.hasPrefix("version=") }.flatMap { Int($0.dropFirst("version=".count)) }
+    )
     let read = try #require(lines.first { $0.hasPrefix("read=") })
     #expect(read.contains("${ trap -p PIPE; }") == (version >= 503), "\(bash): \(read)")
   }
@@ -284,13 +341,19 @@ struct HelperRelayTests {
       """
 
     _ = try await ShellTab.runBash(
-      bash, initFile: initFile, script: script, in: home, environment: environment,
-      timeout: .seconds(10))
+      initFile: initFile,
+      script: script,
+      in: home,
+      environment: environment,
+      bash: bash,
+      timeout: .seconds(10),
+    )
     let child = try pid(writtenTo: childPID)
     defer { kill(child, SIGKILL) }
 
     try await waitUntil { recorder.received.count >= 2 }
     #expect(
-      recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done])
+      recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done]
+    )
   }
 }

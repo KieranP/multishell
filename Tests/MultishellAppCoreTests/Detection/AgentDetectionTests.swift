@@ -16,7 +16,9 @@ struct AgentDetectionTests {
     #expect(detection.isInstalled("claude"))
     #expect(!detection.isInstalled("gemini"))
     #expect(
-      AgentDetection(searchPath: "/usr/bin").found.isEmpty, "nothing on a path with no agents")
+      AgentDetection(searchPath: "/usr/bin").found.isEmpty,
+      "nothing on a path with no agents",
+    )
   }
 
   @Test func theDropdownListsInstalledAgentsTheStaleChoiceAndCustom() throws {

@@ -17,17 +17,20 @@ public enum EngineCommandLine {
   static func overrideCommand(
     forShell shellPath: String,
     loginShell: String = ShellChoice.loginShellPath(),
-    bashInit: URL = Paths.bashInitFile
+    bashInit: URL = Paths.bashInitFile,
   ) -> [String]? {
     switch shellPath.executableName {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
       return [
         "/bin/sh", "-c",
         AnyShellQuoting.commandLine(
-          ["exec"] + ShellLaunch.bashInitArguments(forShell: shellPath, bashInit: bashInit)),
+          ["exec"] + ShellLaunch.bashInitArguments(forShell: shellPath, bashInit: bashInit)
+        ),
       ]
+
     case _ where shellPath != loginShell:
       return [shellPath, "-l"]
+
     default:
       return nil
     }

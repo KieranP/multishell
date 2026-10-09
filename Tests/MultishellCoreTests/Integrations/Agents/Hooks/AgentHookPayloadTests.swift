@@ -11,7 +11,9 @@ struct AgentHookPayloadTests {
         { "session_id": "abc", "transcript_path": "/t", "cwd": "/w/repo",
           "hook_event_name": "Notification", "message": "Claude needs your permission",
           "notification_type": "permission_prompt" }
-        """#.utf8))
+        """#.utf8
+      )
+    )
     #expect(payload?.eventName == "Notification")
     #expect(payload?.workingDirectory == "/w/repo")
     #expect(payload?.message == "Claude needs your permission")
@@ -27,7 +29,9 @@ struct AgentHookPayloadTests {
         { "cwd": "/w/repo", "hook_event_name": "PermissionRequest", "model": "gpt-5",
           "permission_mode": "default", "session_id": "s", "transcript_path": null,
           "tool_name": "shell", "turn_id": "t" }
-        """#.utf8))
+        """#.utf8
+      )
+    )
     #expect(codex?.eventName == "PermissionRequest")
     #expect(codex?.workingDirectory == "/w/repo")
     #expect(codex?.message == nil)
@@ -38,7 +42,9 @@ struct AgentHookPayloadTests {
         { "sessionId": "s", "timestamp": 1, "cwd": "/w/repo",
           "hook_event_name": "Notification", "message": "Permission needed",
           "notification_type": "permission_prompt" }
-        """#.utf8))
+        """#.utf8
+      )
+    )
     #expect(copilot?.eventName == "Notification")
     #expect(copilot?.workingDirectory == "/w/repo")
     #expect(copilot?.message == "Permission needed")

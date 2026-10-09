@@ -15,13 +15,15 @@ struct InfoPlistTemplateTests {
     // A Bool rather than `contains(…)` in the #expect, since swift-testing prints that
     // expression, the whole template, over the message.
     let isDeclared = try infoPlistTemplate().contains(
-      "<key>UTTypeIdentifier</key><string>\(identifier)</string>")
+      "<key>UTTypeIdentifier</key><string>\(identifier)</string>"
+    )
     #expect(
       isDeclared,
       """
       Info.plist.in does not declare \(identifier) as an exported type. TabTransfer and the \
       Info.plist have to agree, or the drag type the app uses is not the one the bundle exports.
-      """)
+      """,
+    )
   }
 
   /// `log show --predicate 'subsystem == "…"'` with the bundle id finds nothing unless
@@ -29,13 +31,15 @@ struct InfoPlistTemplateTests {
   @Test func theLoggingSubsystemIsTheBundleIdentifier() throws {
     let subsystem = MacPlatform.bundleIdentifier
     let isBundleIdentifier = try infoPlistTemplate().contains(
-      "<key>CFBundleIdentifier</key><string>\(subsystem)</string>")
+      "<key>CFBundleIdentifier</key><string>\(subsystem)</string>"
+    )
     #expect(
       isBundleIdentifier,
       """
       MacPlatform logs under \(subsystem), which is not the bundle identifier Info.plist.in \
       carries, so a `log show` predicate on the bundle id finds none of this app's lines.
-      """)
+      """,
+    )
   }
 
   /// A worktree's debug bundle carries its name in this key. Renamed on the Swift side alone,
@@ -47,18 +51,21 @@ struct InfoPlistTemplateTests {
       """
       Info.plist.in does not carry \(Paths.variantKey), so Paths.variant finds nothing and \
       every worktree's debug build shares one state file and one socket again.
-      """)
+      """,
+    )
   }
 
   @Test func theCommitKeyTheAboutPanelReadsIsWrittenIntoTheBundle() throws {
     let isWritten = try infoPlistTemplate().contains(
-      "<key>\(AboutPanel.commitKey)</key><string>@COMMIT@</string>")
+      "<key>\(AboutPanel.commitKey)</key><string>@COMMIT@</string>"
+    )
     #expect(
       isWritten,
       """
       Info.plist.in does not carry \(AboutPanel.commitKey), so the About panel shows no commit \
       and a bug report cannot say which tree was installed.
-      """)
+      """,
+    )
   }
 
   /// Without this key TCC kills a pane's process that asks for the mic instead of alerting,
@@ -67,14 +74,16 @@ struct InfoPlistTemplateTests {
     let isDeclared =
       try infoPlistTemplate().range(
         of: #"<key>NSMicrophoneUsageDescription</key>\s*<string>[^<]+</string>"#,
-        options: .regularExpression) != nil
+        options: .regularExpression,
+      ) != nil
     #expect(
       isDeclared,
       """
       Info.plist.in carries no NSMicrophoneUsageDescription with words in it, so TCC kills \
       anything that asks for the microphone in a terminal instead of showing the alert, and \
       Multishell never appears under Microphone in Privacy & Security.
-      """)
+      """,
+    )
   }
 
   /// From the checkout, since the package these tests run in has no `Info.plist`

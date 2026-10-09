@@ -14,7 +14,9 @@ struct WorktreeSortCache {
   private(set) var sortCount = 0
 
   mutating func rows(
-    of project: Project.ID, keys: [WorktreeSortRule.Key], rule: WorktreeSortRule
+    of project: Project.ID,
+    keys: [WorktreeSortRule.Key],
+    rule: WorktreeSortRule,
   ) -> [Worktree] {
     if let entry = entries[project], entry.rule == rule, entry.keys == keys {
       return entry.rows

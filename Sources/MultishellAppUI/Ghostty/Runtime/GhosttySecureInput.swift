@@ -17,25 +17,27 @@ final class GhosttySecureInput {
   }
   private var isEnabled = false
 
+  private var isWanted: Bool { followsPasswordPrompts && panes.values.contains(true) }
+
   init(
     isAppActive: @escaping () -> Bool = { NSApp?.isActive ?? false },
     enable: @escaping () -> OSStatus = EnableSecureEventInput,
-    disable: @escaping () -> OSStatus = DisableSecureEventInput
+    disable: @escaping () -> OSStatus = DisableSecureEventInput,
   ) {
     self.isAppActive = isAppActive
     self.enable = enable
     self.disable = disable
   }
 
-  func update(_ pane: ObjectIdentifier, wantsSecureInput: Bool, hasKeyboard: Bool) {
-    panes[pane] = wantsSecureInput ? hasKeyboard : nil
-    apply()
-  }
-
   /// libghostty sets it outright as echo goes off and on; the
   /// `toggle_secure_input` keybind flips it.
   static func wantsSecureInput(after mode: ghostty_action_secure_input_e, was: Bool) -> Bool {
     mode == GHOSTTY_SECURE_INPUT_TOGGLE ? !was : mode == GHOSTTY_SECURE_INPUT_ON
+  }
+
+  func update(_ pane: ObjectIdentifier, wantsSecureInput: Bool, hasKeyboard: Bool) {
+    panes[pane] = wantsSecureInput ? hasKeyboard : nil
+    apply()
   }
 
   func remove(_ pane: ObjectIdentifier) {
@@ -53,8 +55,6 @@ final class GhosttySecureInput {
     guard isEnabled, disable() == noErr else { return }
     isEnabled = false
   }
-
-  private var isWanted: Bool { followsPasswordPrompts && panes.values.contains(true) }
 
   private func apply() {
     guard isAppActive(), isEnabled != isWanted else { return }

@@ -12,7 +12,7 @@ enum TabCommand {
   ) -> (shell: ShellInvocation, handOver: String) {
     (
       ShellInvocation.forCommandLine(inShellAt: ShellChoice.loginShellPath()),
-      AnyShellQuoting.commandLine(ShellLaunch.execArguments(forShell: tabShell))
+      AnyShellQuoting.commandLine(ShellLaunch.execArguments(forShell: tabShell)),
     )
   }
 
@@ -20,7 +20,7 @@ enum TabCommand {
   static func running(
     _ arguments: [String],
     shell: ShellInvocation,
-    handOver: String
+    handOver: String,
   ) -> [String] {
     line(AnyShellQuoting.commandLine(arguments), shell: shell, handOver: handOver)
   }
@@ -30,14 +30,16 @@ enum TabCommand {
   static func running(
     customLine: ShellLine,
     shell: ShellInvocation,
-    handOver: String
+    handOver: String,
   ) -> [String]? {
     guard !customLine.text.isEmpty else { return nil }
     return customLine.prefixing(line(customLine.text, shell: shell, handOver: handOver))
   }
 
   private static func line(
-    _ commandLine: String, shell: ShellInvocation, handOver: String
+    _ commandLine: String,
+    shell: ShellInvocation,
+    handOver: String,
   ) -> [String] {
     [shell.executable.path] + shell.arguments + ["\(commandLine); \(handOver)"]
   }

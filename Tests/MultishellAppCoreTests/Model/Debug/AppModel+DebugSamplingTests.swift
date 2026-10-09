@@ -9,7 +9,8 @@ struct AppModelDebugSamplingTests {
   @Test func aSampleAddsUpTheAppAndEveryChildAndTheReportsSinceTheLast() async throws {
     let harness = Harness()
     harness.model.enableDebugTools(
-      scan: .sample(appMemory: 400, trees: [(10, [10, 11]), (20, [20])]))
+      scan: .sample(appMemory: 400, trees: [(10, [10, 11]), (20, [20])])
+    )
     harness.model.receive(SessionStateReport(state: .running))
     harness.model.receive(SessionStateReport(state: .idle))
 

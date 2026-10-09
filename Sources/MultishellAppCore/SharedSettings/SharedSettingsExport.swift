@@ -20,8 +20,8 @@ struct SharedSettingsExport: Sendable {
         try contents.write(to: file, options: .atomic)
         return SharedSettingsReading.modificationDate(of: file)
       }
-      return stamp.map {
-        SharedSettingsReading(loaded: .success(written), modificationDate: $0, project: project)
+      return stamp.map { stamp in
+        SharedSettingsReading(loaded: .success(written), modificationDate: stamp, project: project)
       }
     }
   }

@@ -3,12 +3,12 @@ import MultishellCore
 /// Whether a worktree's branch has landed, and on what evidence. Runtime
 /// only, so no badge comes off disk; see Docs/design/merged-branch.md.
 public enum WorktreeMergeState: Hashable, Sendable {
+  /// Landed `into` a ref name such as `origin/main`.
+  case merged(Evidence, into: String)
   /// Nothing has been asked yet, or the project has no default branch to
   /// measure against.
   case unknown
   case unmerged
-  /// Landed `into` a ref name such as `origin/main`.
-  case merged(Evidence, into: String)
 
   /// How the branch was found to have landed. The first two are proof; the
   /// third is inference, and `isCertain` is what tells them apart.
@@ -42,6 +42,13 @@ public enum WorktreeMergeState: Hashable, Sendable {
     }
   }
 
+  /// Whether a badge could ever apply: not the trunk, a bare repository, a
+  /// detached HEAD, or the main worktree.
+  public static func applies(to worktree: Worktree, defaultBranchName: String?) -> Bool {
+    guard !worktree.isBare, !worktree.isPrimary, let own = worktree.branch else { return false }
+    return own != defaultBranchName
+  }
+
   /// What the removal dialog adds about the branch it is offering to
   /// delete, or `nil` when it has nothing to add.
   public func removalNote(branch: String) -> String? {
@@ -49,15 +56,9 @@ public enum WorktreeMergeState: Hashable, Sendable {
     switch evidence {
     case .ancestor, .patchEquivalent:
       return t("merged.removal-note", branch, defaultBranch)
+
     case .upstreamGone:
       return t("merged.removal-note-upstream-gone", branch)
     }
-  }
-
-  /// Whether a badge could ever apply: not the trunk, a bare repository, a
-  /// detached HEAD, or the main worktree.
-  public static func applies(to worktree: Worktree, defaultBranchName: String?) -> Bool {
-    guard !worktree.isBare, !worktree.isPrimary, let own = worktree.branch else { return false }
-    return own != defaultBranchName
   }
 }

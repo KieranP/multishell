@@ -17,7 +17,7 @@ struct ProjectIconView: View {
     glyph
       .frame(
         width: UIMetrics.projectIconSlot(forGlyphOf: size),
-        height: UIMetrics.projectIconSlot(forGlyphOf: size)
+        height: UIMetrics.projectIconSlot(forGlyphOf: size),
       )
       .opacity(isMissing ? 0.45 : 1)
       .overlay(alignment: .bottomTrailing) {
@@ -26,6 +26,7 @@ struct ProjectIconView: View {
             .font(.system(size: UIMetrics.cornerBadgeSize(onGlyphOf: size), weight: .bold))
             .foregroundStyle(theme.textSecondary, ringFill)
             .offset(x: 3, y: 2)
+            .accessibilityHidden(true)
         }
       }
   }
@@ -35,6 +36,7 @@ struct ProjectIconView: View {
     Image(systemName: settings.iconKind.symbolName)
       .font(.system(size: size))
       .foregroundStyle(tint)
+      .accessibilityHidden(true)
   }
 
   private var tint: Color {

@@ -57,7 +57,11 @@ struct AppModelRevealedRowsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.sidebarFilterText = "nothing-by-this-name"

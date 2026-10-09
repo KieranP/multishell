@@ -4,10 +4,32 @@ import MultishellCore
 /// The alerts the model raises itself, rather than from an error. In one
 /// place so the wording is tested and shared by every frontend.
 extension PresentedError {
+  static var noAgentChosen: PresentedError {
+    PresentedError(
+      title: t("error.no-agent-title"),
+      message: t("error.no-agent-message"),
+    )
+  }
+
+  static var noEditorChosen: PresentedError {
+    PresentedError(
+      title: t("error.no-editor-title"),
+      message: t("error.no-editor-message"),
+    )
+  }
+
+  static var noEditorCommand: PresentedError {
+    PresentedError(
+      title: t("error.no-editor-command-title"),
+      message: t("error.no-editor-command-message"),
+    )
+  }
+
   static func notARepository(_ url: URL) -> PresentedError {
     PresentedError(
       title: t("error.not-a-repository-title"),
-      message: t("error.not-a-repository-message", url.lastPathComponent))
+      message: t("error.not-a-repository-message", url.lastPathComponent),
+    )
   }
 
   /// A shell spawned in a missing directory silently lands in $HOME, which
@@ -15,42 +37,30 @@ extension PresentedError {
   static func worktreeDirectoryMissing(_ path: String) -> PresentedError {
     PresentedError(
       title: t("error.worktree-missing-title"),
-      message: t("error.worktree-missing-message", path))
+      message: t("error.worktree-missing-message", path),
+    )
   }
 
   static func worktreeDirectoryUnanswered(_ path: String) -> PresentedError {
     PresentedError(
       title: t("error.worktree-unanswered-title"),
-      message: t("error.worktree-unanswered-message", path))
-  }
-
-  static var noAgentChosen: PresentedError {
-    PresentedError(
-      title: t("error.no-agent-title"), message: t("error.no-agent-message"))
+      message: t("error.worktree-unanswered-message", path),
+    )
   }
 
   /// The tab has already opened as a plain shell by the time this shows.
   static func agentNotInstalled(_ name: String) -> PresentedError {
     PresentedError(
       title: t("error.not-installed-title", name),
-      message: t("error.agent-not-installed-message", name))
-  }
-
-  static var noEditorChosen: PresentedError {
-    PresentedError(
-      title: t("error.no-editor-title"), message: t("error.no-editor-message"))
-  }
-
-  static var noEditorCommand: PresentedError {
-    PresentedError(
-      title: t("error.no-editor-command-title"),
-      message: t("error.no-editor-command-message"))
+      message: t("error.agent-not-installed-message", name),
+    )
   }
 
   static func editorNotInstalled(_ name: String) -> PresentedError {
     PresentedError(
       title: t("error.not-installed-title", name),
-      message: t("error.editor-not-installed-message", name))
+      message: t("error.editor-not-installed-message", name),
+    )
   }
 
   static func themeUnreadable(_ problem: String) -> PresentedError {

@@ -1,4 +1,8 @@
 extension Workspace {
+  public var selectedWorktree: Worktree? {
+    selectedWorktreeID.flatMap(worktree)
+  }
+
   public func project(_ id: Project.ID) -> Project? {
     projects.first { $0.id == id }
   }
@@ -41,7 +45,8 @@ extension Workspace {
 
   /// Cycling stays inside the tab's own group.
   private func neighbour(
-    of id: TerminalTab.ID, _ direction: CycleDirection
+    of id: TerminalTab.ID,
+    _ direction: CycleDirection,
   ) -> TerminalTab? {
     guard let current = tab(id) else { return nil }
     return tabs(inGroup: current.groupID).neighbour(of: id, direction)
@@ -96,10 +101,6 @@ extension Workspace {
 
   func tabIndex(owning session: TerminalSession.ID) -> Int? {
     tabs.firstIndex { $0.root.contains(session) }
-  }
-
-  public var selectedWorktree: Worktree? {
-    selectedWorktreeID.flatMap(worktree)
   }
 
   public func shownTab(ofGroup group: TabGroup) -> TerminalTab? {

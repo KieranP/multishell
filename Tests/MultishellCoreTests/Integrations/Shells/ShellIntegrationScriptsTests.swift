@@ -6,6 +6,10 @@ import Testing
 
 @Suite
 struct ShellIntegrationScriptsTests {
+  private var systemRcSetsHistory: Bool {
+    (try? String(contentsOfFile: "/etc/zshrc", encoding: .utf8))?.contains("HISTFILE=") == true
+  }
+
   /// A stray quote in the Swift literal renders as a shell syntax error that
   /// silently defines no hooks; the shells' own parsers are the check.
   @Test func everyGeneratedFileParsesInItsShell() throws {
@@ -28,7 +32,9 @@ struct ShellIntegrationScriptsTests {
       try process.run()
       process.waitUntilExit()
       let message = String(
-        decoding: errors.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        decoding: errors.fileHandleForReading.readDataToEndOfFile(),
+        as: UTF8.self,
+      )
       #expect(process.terminationStatus == 0, "\(shell) -n: \(message)")
     }
   }
@@ -54,7 +60,9 @@ struct ShellIntegrationScriptsTests {
     for script in [files[".zshrc"] ?? "", files["init.bash"] ?? ""] {
       for executable in AgentCatalogue.agents.map(\.executable) {
         #expect(
-          script.contains(executable), "the shell cannot match \(executable) without its name")
+          script.contains(executable),
+          "the shell cannot match \(executable) without its name",
+        )
       }
     }
   }
@@ -67,7 +75,8 @@ struct ShellIntegrationScriptsTests {
     #expect(text.contains("command-started --pid ") && text.contains("command-finished --exit "))
     #expect(
       text.contains("${MULTISHELL_SESSION-}"),
-      "does nothing outside a tab, and reading it does not trip a shell run with nounset")
+      "does nothing outside a tab, and reading it does not trip a shell run with nounset",
+    )
     #expect(text.contains("/x/multishell"))
     #expect(text.range(of: ".bashrc")!.lowerBound < text.range(of: "command-started")!.lowerBound)
   }
@@ -85,7 +94,8 @@ struct ShellIntegrationScriptsTests {
     #expect(zshrc.contains("/x/multishell"), "references the helper by its stable path")
     #expect(
       zshrc.contains("add-zsh-hook zshexit _multishell_zshexit") && zshrc.contains("state idle"),
-      "exit runs preexec but no precmd, so it clears on the way out")
+      "exit runs preexec but no precmd, so it clears on the way out",
+    )
     #expect(files[".zshenv"]?.contains("command-started") == false, "hooks only in .zshrc")
     let capture = "export MULTISHELL_USER_ZDOTDIR=\"$ZDOTDIR\""
     for name in [".zshenv", ".zprofile"] {
@@ -95,7 +105,8 @@ struct ShellIntegrationScriptsTests {
   }
 
   private func historyFile(
-    userZdotdir: URL? = nil, userZshrc: String? = nil
+    userZdotdir: URL? = nil,
+    userZshrc: String? = nil,
   ) async throws -> (file: String, integration: GeneratedIntegration) {
     let integration = try GeneratedIntegration(helper: "/x/multishell")
     if let userZdotdir {
@@ -103,20 +114,22 @@ struct ShellIntegrationScriptsTests {
     }
     if let userZshrc {
       try userZshrc.write(
-        to: (userZdotdir ?? integration.home).appendingPathComponent(".zshrc"), atomically: true,
-        encoding: .utf8)
+        to: (userZdotdir ?? integration.home).appendingPathComponent(".zshrc"),
+        atomically: true,
+        encoding: .utf8,
+      )
     }
     var environment = integration.environment(termProgram: nil)
     environment["ZDOTDIR"] = integration.zshDirectory.path
     environment["MULTISHELL_USER_ZDOTDIR"] = userZdotdir?.path
     let file = try await Detached.output(
-      of: "/bin/zsh", ["-l", "-i", "-c", "print -r -- \"$HISTFILE\""],
-      environment: environment, in: integration.home, standardError: .discarded)
+      of: "/bin/zsh",
+      ["-l", "-i", "-c", "print -r -- \"$HISTFILE\""],
+      environment: environment,
+      in: integration.home,
+      standardError: .discarded,
+    )
     return (file.trimmingCharacters(in: .newlines), integration)
-  }
-
-  private var systemRcSetsHistory: Bool {
-    (try? String(contentsOfFile: "/etc/zshrc", encoding: .utf8))?.contains("HISTFILE=") == true
   }
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))

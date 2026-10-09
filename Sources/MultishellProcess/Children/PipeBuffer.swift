@@ -7,6 +7,10 @@ final class PipeBuffer: Sendable {
   private let handle: FileHandle
   private let group: DispatchGroup
 
+  var collected: Data {
+    state.withLock { $0.buffer }
+  }
+
   init(_ reading: FileHandle, group: DispatchGroup) {
     handle = reading
     self.group = group
@@ -21,13 +25,9 @@ final class PipeBuffer: Sendable {
     }
   }
 
-  var collected: Data {
-    state.withLock { $0.buffer }
-  }
-
   private func append(_ chunk: Data) {
-    state.withLock {
-      if !$0.finished { $0.buffer.append(chunk) }
+    state.withLock { state in
+      if !state.finished { state.buffer.append(chunk) }
     }
   }
 

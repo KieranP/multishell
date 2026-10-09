@@ -14,8 +14,8 @@ extension SessionStates {
 
   mutating func removeFailedWorkers(failedBefore cutoff: Date) {
     for (key, entry) in entries where entry.roster.earliestFailure.map({ $0 < cutoff }) == true {
-      update(key) {
-        $0.forgetPrompts(ofWorkers: $0.roster.removeFailed(before: cutoff))
+      update(key) { entry in
+        entry.forgetPrompts(ofWorkers: entry.roster.removeFailed(before: cutoff))
       }
     }
   }

@@ -20,7 +20,9 @@ struct HelperSessionEnvironmentTests {
     let inner = "\(AnyShellQuoting.quote(try HelperBinary.require().path)) state running"
     let output = try await HelperBinary.run(
       ["-c", "/bin/sh -c \(AnyShellQuoting.quote(inner))"],
-      environment: ["MULTISHELL_SOCKET": path.path], standIn: URL(fileURLWithPath: "/bin/sh"))
+      environment: ["MULTISHELL_SOCKET": path.path],
+      standIn: URL(fileURLWithPath: "/bin/sh"),
+    )
     #expect(output.succeeded, "\(output.standardError)")
 
     try await waitUntil { !recorder.received.isEmpty }
@@ -36,18 +38,19 @@ struct HelperSessionEnvironmentTests {
     let path = listener.path
     let recorder = listener.recorder
 
-    let me = ProcessInfo.processInfo.processIdentifier
+    let ownPID = ProcessInfo.processInfo.processIdentifier
     let inner = "\(AnyShellQuoting.quote(try HelperBinary.require().path)) state running"
     let output = try await HelperBinary.run(
       ["-c", "echo $$; /bin/sh -c \(AnyShellQuoting.quote(inner))"],
-      environment: ["MULTISHELL_SOCKET": path.path, "MULTISHELL_APP_PID": String(me)],
-      standIn: URL(fileURLWithPath: "/bin/sh"))
+      environment: ["MULTISHELL_SOCKET": path.path, "MULTISHELL_APP_PID": String(ownPID)],
+      standIn: URL(fileURLWithPath: "/bin/sh"),
+    )
     #expect(output.succeeded, "\(output.standardError)")
     let outer = Int32(output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines))
 
     try await waitUntil { !recorder.received.isEmpty }
     let report = SessionStateReport.parse(recorder.received.first ?? "")
     #expect(report?.pid == outer, "the shell nearest the app")
-    #expect(report?.pid != me)
+    #expect(report?.pid != ownPID)
   }
 }

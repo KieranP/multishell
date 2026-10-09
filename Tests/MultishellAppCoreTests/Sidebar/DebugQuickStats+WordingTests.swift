@@ -15,7 +15,8 @@ struct DebugQuickStatsWordingTests {
     let stats = DebugQuickStats(
       history: .of([
         .sample(sequence: 0, framesPerSecond: 59.6, appCPUPercent: 30, childrenCPUPercent: 4)
-      ]))
+      ])
+    )
     #expect(stats.framesPerSecondText == "60")
     #expect(stats.totalCPUText == "34%")
     #expect(stats.totalMemoryText == DebugValueText.memory(1_400))

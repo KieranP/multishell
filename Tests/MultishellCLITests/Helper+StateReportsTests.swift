@@ -20,7 +20,8 @@ struct HelperStateReportsTests {
       environment: [
         "MULTISHELL_SOCKET": path.path, "MULTISHELL_SESSION": session.uuidString,
         "MULTISHELL_WORKTREE": "/w/repo",
-      ])
+      ],
+    )
 
     #expect(output.succeeded, "\(output.standardError)")
     try await waitUntil { !recorder.received.isEmpty }
@@ -44,7 +45,8 @@ struct HelperStateReportsTests {
         "--message", "build failed", "--agent", "opencode", "--shell", "true", "--new-turn",
         "true",
       ],
-      environment: ["MULTISHELL_SOCKET": listener.path.path])
+      environment: ["MULTISHELL_SOCKET": listener.path.path],
+    )
 
     #expect(output.succeeded, "\(output.standardError)")
     try await waitUntil { !recorder.received.isEmpty }
@@ -66,16 +68,22 @@ struct HelperStateReportsTests {
     let environment = ["MULTISHELL_SOCKET": listener.path.path]
 
     let stop = try await HelperBinary.run(
-      ["state", "done", "--agent", "opencode", "--resumes", "true"], environment: environment)
+      ["state", "done", "--agent", "opencode", "--resumes", "true"],
+      environment: environment,
+    )
     #expect(stop.succeeded, "\(stop.standardError)")
     let end = try await HelperBinary.run(
       [
         "state", "running", "--agent", "opencode", "--subagent", "ses_1", "--subagent-phase",
         "ended", "--subagent-wakes", "false",
-      ], environment: environment)
+      ],
+      environment: environment,
+    )
     #expect(end.succeeded, "\(end.standardError)")
     let orphan = try await HelperBinary.run(
-      ["state", "running", "--subagent-wakes", "false"], environment: environment)
+      ["state", "running", "--subagent-wakes", "false"],
+      environment: environment,
+    )
     #expect(orphan.status == 2)
     #expect(orphan.standardError.contains("--subagent-wakes"))
 
@@ -93,7 +101,9 @@ struct HelperStateReportsTests {
 
     for out in ["ses_1,ses_2", ""] {
       let stop = try await HelperBinary.run(
-        ["state", "done", "--agent", "opencode", "--out", out], environment: environment)
+        ["state", "done", "--agent", "opencode", "--out", out],
+        environment: environment,
+      )
       #expect(stop.succeeded, "\(stop.standardError)")
     }
 
@@ -115,39 +125,51 @@ struct HelperStateReportsTests {
       [
         "state", "running", "--agent", "opencode", "--subagent", "ses_1", "--subagent-phase",
         "working", "--subagent-type", "explore", "--subagent-parent", "ses_0",
-      ], environment: ["MULTISHELL_SOCKET": path.path])
+      ],
+      environment: ["MULTISHELL_SOCKET": path.path],
+    )
     #expect(output.succeeded, "\(output.standardError)")
     try await waitUntil { !recorder.received.isEmpty }
     let report = SessionStateReport.parse(recorder.received.first ?? "")
     #expect(
       report?.worker
-        == WorkerReport(id: "ses_1", type: "explore", phase: .working, parentID: "ses_0"))
+        == WorkerReport(id: "ses_1", phase: .working, type: "explore", parentID: "ses_0")
+    )
 
     let halfSaid = try await HelperBinary.run(
-      ["state", "running", "--subagent", "ses_1"], environment: ["MULTISHELL_SOCKET": path.path])
+      ["state", "running", "--subagent", "ses_1"],
+      environment: ["MULTISHELL_SOCKET": path.path],
+    )
     #expect(halfSaid.status == 2)
     #expect(halfSaid.standardError.contains("--subagent-phase"))
     let phaseAlone = try await HelperBinary.run(
       ["state", "running", "--subagent-phase", "ended"],
-      environment: ["MULTISHELL_SOCKET": path.path])
+      environment: ["MULTISHELL_SOCKET": path.path],
+    )
     #expect(phaseAlone.status == 2)
     let typeAlone = try await HelperBinary.run(
       ["state", "running", "--subagent-type", "explore"],
-      environment: ["MULTISHELL_SOCKET": path.path])
+      environment: ["MULTISHELL_SOCKET": path.path],
+    )
     #expect(typeAlone.status == 2)
     #expect(typeAlone.standardError.contains("--subagent"))
     let parentAlone = try await HelperBinary.run(
       ["state", "running", "--subagent-parent", "ses_0"],
-      environment: ["MULTISHELL_SOCKET": path.path])
+      environment: ["MULTISHELL_SOCKET": path.path],
+    )
     #expect(parentAlone.standardError.contains("--subagent-parent needs --subagent"))
 
     #expect(
-      try await listener.linesUpToABarrier().count == 2, "no half-said worker reached the app")
+      try await listener.linesUpToABarrier().count == 2,
+      "no half-said worker reached the app",
+    )
   }
 
   @Test func stateWithNobodyListeningFailsLoudly() async throws {
     let output = try await HelperBinary.run(
-      ["state", "done"], environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"])
+      ["state", "done"],
+      environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"],
+    )
     #expect(output.status == 1)
     #expect(output.standardError.contains("could not reach Multishell"))
   }

@@ -19,10 +19,12 @@ struct AgentMarkShapeTests {
       #expect(
         bounds.minX >= -0.01 && bounds.minY >= -0.01 && bounds.maxX <= 16.01
           && bounds.maxY <= 16.01,
-        "\(mark) runs outside its 16-point square: \(bounds)")
+        "\(mark) runs outside its 16-point square: \(bounds)",
+      )
       #expect(
         bounds.width >= 8 && bounds.height >= 8,
-        "\(mark) is too small in its square to read: \(bounds)")
+        "\(mark) is too small in its square to read: \(bounds)",
+      )
     }
   }
 
@@ -31,7 +33,8 @@ struct AgentMarkShapeTests {
     #expect(AgentMarkShape.unitPath(of: .monogram("Ai")) == nil)
     #expect(
       AgentMarkShape(mark: .monogram("Ai")).path(in: CGRect(x: 0, y: 0, width: 16, height: 16))
-        .isEmpty)
+        .isEmpty
+    )
   }
 
   @Test func theShapeScalesAndCentresWhatTheFileHolds() {

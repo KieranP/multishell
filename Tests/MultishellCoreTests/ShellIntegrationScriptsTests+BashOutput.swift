@@ -7,7 +7,10 @@ import Testing
 /// it, with the user's own `.bashrc` read on the way.
 extension ShellIntegrationScriptsTests {
   func bashOutput(
-    _ bash: String, features: String?, input: String, usersRC: String
+    _ bash: String,
+    features: String?,
+    input: String,
+    usersRC: String,
   ) async throws -> String {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
@@ -17,7 +20,10 @@ extension ShellIntegrationScriptsTests {
     environment[SessionEnvironment.sessionVariable] = "bash-output"
     environment[SessionEnvironment.worktreeVariable] = "/w"
     return try await interactiveShellOutput(
-      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
-      input: input)
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: input,
+    )
   }
 }

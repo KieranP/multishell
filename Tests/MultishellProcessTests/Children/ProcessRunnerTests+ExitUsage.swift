@@ -7,8 +7,11 @@ extension ProcessRunnerTests {
   @Test func aRunAskedForItsChildsUsageReadsItAsTheChildExits() async throws {
     let probe = ExitUsageProbe()
     _ = try await runner.run(
-      sh, ["-c", "i=0; while [ $i -lt 20000 ]; do i=$((i+1)); done"], in: workingDirectory,
-      exitUsageProbe: probe)
+      bourneShell,
+      ["-c", "i=0; while [ $i -lt 20000 ]; do i=$((i+1)); done"],
+      in: workingDirectory,
+      exitUsageProbe: probe,
+    )
 
     let usage = try #require(probe.usage)
     #expect(usage.pid > 0)

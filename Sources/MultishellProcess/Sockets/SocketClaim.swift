@@ -23,7 +23,12 @@ final class SocketClaim: Sendable {
     // A filesystem that will not lock leaves the connect probe to decide alone.
     guard opened >= 0 else { return }
     var record = flock(
-      l_start: 0, l_len: 0, l_pid: 0, l_type: Int16(F_WRLCK), l_whence: Int16(SEEK_SET))
+      l_start: 0,
+      l_len: 0,
+      l_pid: 0,
+      l_type: Int16(F_WRLCK),
+      l_whence: Int16(SEEK_SET),
+    )
     guard fcntl(opened, F_SETLK, &record) == 0 else {
       let code = errno
       close(opened)

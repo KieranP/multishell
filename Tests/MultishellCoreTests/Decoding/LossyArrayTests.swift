@@ -15,7 +15,8 @@ struct LossyArrayTests {
       #"""
       { "projects": [ { "path": "file:///repos/demo/" } ],
         "tabs": [ \#(good), \#(newer) ] }
-      """#)
+      """#,
+    )
 
     #expect(workspace.projects.map(\.name) == ["demo"])
     #expect(workspace.tabs.count == 1)
@@ -30,7 +31,8 @@ struct LossyArrayTests {
         "sessions": [ 1, { "id": "\#(UUID().uuidString)", "worktreeID": "/w",
                            "workingDirectory": "file:///w/", "title": "sh" } ],
         "worktrees": [ { "projectID": "/p" }, { "path": "file:///w/", "projectID": "/p" } ] }
-      """#)
+      """#,
+    )
 
     #expect(workspace.tabs.count == 1)
     #expect(workspace.sessions.count == 1)
@@ -40,7 +42,7 @@ struct LossyArrayTests {
   @Test func aCollectionThatIsNotAnArrayReadsAsEmpty() throws {
     let workspace = try decodeJSON(
       Workspace.self,
-      #"{ "projects": [ { "path": "file:///repos/demo/" } ], "tabs": { "oops": 1 }, "sessions": 3 }"#
+      #"{ "projects": [ { "path": "file:///repos/demo/" } ], "tabs": { "oops": 1 }, "sessions": 3 }"#,
     )
     #expect(workspace.projects.count == 1)
     #expect(workspace.tabs.isEmpty && workspace.sessions.isEmpty)

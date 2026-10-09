@@ -6,16 +6,17 @@ import Testing
 
 /// What a real shell reports about the commands typed at it, and the agent it names.
 extension ShellIntegrationScriptsTests {
+  private static func lines(of log: URL) -> [String] {
+    ((try? String(contentsOf: log, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
+  }
+
   /// A helper whose relay writes down each line bash sends it. It can finish
   /// just after bash exits, so a test waits on the log rather than reads it.
   private func relayLogging(to log: URL, in scratch: URL) throws -> URL {
     try Scratch.script(
       "[ \"$1\" = relay ] || exit 0\nwhile IFS= read -r line; do printf '%s\\n' \"$line\" >> '\(log.path)'; done",
-      at: scratch.appendingPathComponent("multishell"))
-  }
-
-  private static func lines(of log: URL) -> [String] {
-    ((try? String(contentsOf: log, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
+      at: scratch.appendingPathComponent("multishell"),
+    )
   }
 
   /// An empty Enter runs nothing, so the arm lived on into the next
@@ -34,13 +35,18 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: nil)
     environment[SessionEnvironment.sessionVariable] = "empty-enter"
     _ = try await interactiveShellOutput(
-      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
-      input: "\n\ntrue\n\nexit\n")
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "\n\ntrue\n\nexit\n",
+    )
 
     try await waitUntil { Self.lines(of: log).count >= 3 }
     let lines = Self.lines(of: log).map { $0.split(separator: " ").first ?? "" }
     #expect(
-      lines.filter { $0 == "command-started" }.count == 2, "one for `true` and one for `exit`")
+      lines.filter { $0 == "command-started" }.count == 2,
+      "one for `true` and one for `exit`",
+    )
     #expect(lines.filter { $0 == "command-finished" }.count == 1)
   }
 
@@ -62,17 +68,22 @@ extension ShellIntegrationScriptsTests {
     environment[SessionEnvironment.sessionVariable] = "typed-agent"
     environment["PATH"] = scratch.path + ":" + (environment["PATH"] ?? "")
     _ = try await interactiveShellOutput(
-      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
-      input: "\(codex.path) --continue\nFOO=1 \(codex.path)\ntrue\nexit\n")
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "\(codex.path) --continue\nFOO=1 \(codex.path)\ntrue\nexit\n",
+    )
 
     try await waitUntil { Self.lines(of: log).count >= 7 }
     let lines = Self.lines(of: log).filter { $0.hasPrefix("command-started ") }
     #expect(
       lines.filter { $0.hasSuffix(" codex") }.count == 2,
-      "the agent it ran, by name without its path or an assignment before it: \(lines)")
+      "the agent it ran, by name without its path or an assignment before it: \(lines)",
+    )
     #expect(
       !lines.contains { $0.hasSuffix(" true") },
-      "and nothing of what else the user runs: \(lines)")
+      "and nothing of what else the user runs: \(lines)",
+    )
   }
 
   /// bash-preexec, which Atuin ships, sets its DEBUG trap from the prompt
@@ -92,13 +103,17 @@ extension ShellIntegrationScriptsTests {
       theirs() { echo "[theirs:$BASH_COMMAND]"; }
       PROMPT_COMMAND='[ -n "$installed" ] || { trap theirs DEBUG; installed=1; }'
 
-      """)
+      """,
+    )
 
     var environment = files.environment(termProgram: nil)
     environment[SessionEnvironment.sessionVariable] = "late-debug"
     let output = try await interactiveShellOutput(
-      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
-      input: "true\nexit\n")
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "true\nexit\n",
+    )
 
     #expect(output.contains("[theirs:true]"), "\(output)")
     #expect(!output.contains("[theirs:trap -p PIPE"), "their trap never sees our reads: \(output)")
@@ -118,11 +133,13 @@ extension ShellIntegrationScriptsTests {
     #expect(lines.count == 3, "one line per command: \(lines)")
     #expect(
       lines.allSatisfy { $0.contains("\"shell\":true") },
-      "the shell says so on its own lines: \(lines)")
+      "the shell says so on its own lines: \(lines)",
+    )
     #expect(lines[0].contains("\"command\":\"codex\"") == true, "\(lines)")
     #expect(
       lines[1].contains("\"command\":\"opencode\"") == true,
-      "by its name, not its path: \(lines)")
+      "by its name, not its path: \(lines)",
+    )
     #expect(lines[2].contains("command") == false, "a plain command names nothing: \(lines)")
   }
 
@@ -177,14 +194,19 @@ extension ShellIntegrationScriptsTests {
 
   @Test func aUsersErrExitDoesNotEndTheShellAtItsFirstPrompt() async throws {
     let output = try await zshOutput(
-      features: nil, input: "true\nprint -r survived\nexit\n", usersRC: "setopt err_exit\n")
+      features: nil,
+      input: "true\nprint -r survived\nexit\n",
+      usersRC: "setopt err_exit\n",
+    )
     #expect(output.contains("survived"))
   }
 
   @Test func aReportTheHelperFailsToSendDoesNotEndAShellUnderErrExit() async throws {
     let output = try await zshOutput(
-      features: nil, input: "setopt err_exit\ndisable zsocket\ntrue\nprint -r survived\nexit\n",
-      helper: "/usr/bin/false")
+      features: nil,
+      input: "setopt err_exit\ndisable zsocket\ntrue\nprint -r survived\nexit\n",
+      helper: "/usr/bin/false",
+    )
     #expect(output.contains("survived"), "\(output)")
   }
 
@@ -199,7 +221,8 @@ extension ShellIntegrationScriptsTests {
     let output = try await zshOutput(
       features: nil,
       input: #"_multishell_send() { print -r -- "line=$1" }; _multishell_zshexit"#,
-      runsInputAsScript: true)
+      runsInputAsScript: true,
+    )
     #expect(output.contains(#"line={"v":1,"state":"idle","session":"zsh-output""#), "\(output)")
   }
 }

@@ -2,14 +2,6 @@ import AppKit
 import MultishellAppCore
 
 extension SurfaceFrame {
-  override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
-    guard acceptsDrop?() == true, holdsFiles(sender) else { return [] }
-    let operation = Self.operation(allowedBy: sender)
-    guard !operation.isEmpty else { return [] }
-    showDropHighlight()
-    return operation
-  }
-
   /// An operation the source offers, or the drop never happens. Any will do,
   /// only the path being read.
   private static func operation(allowedBy sender: any NSDraggingInfo) -> NSDragOperation {
@@ -18,6 +10,20 @@ extension SurfaceFrame {
       return candidate
     }
     return []
+  }
+
+  /// Files only, a drag of text having no path to hand the terminal. The
+  /// promise is asked about first, asking for a URL being what copies.
+  private static func pasteboardHasFiles(_ sender: any NSDraggingInfo) -> Bool {
+    !PromisedDrop.receivers(from: sender).isEmpty || !sender.draggingPasteboard.fileURLs.isEmpty
+  }
+
+  override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
+    guard acceptsDrop?() == true, holdsFiles(sender) else { return [] }
+    let operation = Self.operation(allowedBy: sender)
+    guard !operation.isEmpty else { return [] }
+    showDropHighlight()
+    return operation
   }
 
   /// Asked again as the drag hovers: the shell under the cursor can exit
@@ -70,12 +76,6 @@ extension SurfaceFrame {
     let answer = Self.pasteboardHasFiles(sender)
     lastDragFileCheck = (sender.draggingSequenceNumber, answer)
     return answer
-  }
-
-  /// Files only, a drag of text having no path to hand the terminal. The
-  /// promise is asked about first, asking for a URL being what copies.
-  private static func pasteboardHasFiles(_ sender: any NSDraggingInfo) -> Bool {
-    !PromisedDrop.receivers(from: sender).isEmpty || !sender.draggingPasteboard.fileURLs.isEmpty
   }
 
   /// Which pane a drop will land in, a split having several. A view over the

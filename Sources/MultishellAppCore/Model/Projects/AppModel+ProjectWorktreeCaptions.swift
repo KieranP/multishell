@@ -7,7 +7,9 @@ extension AppModel {
   public func worktreeContainerCaption(for project: Project, isOverridden: Bool) -> String {
     let container = effectiveWorktreeSettings(for: project).worktreeContainer(for: project).path
     return inherited(
-      .worktreeDirectory, global: workspace.worktreeDefaults.worktreeDirectory, for: project
+      .worktreeDirectory,
+      global: workspace.worktreeDefaults.worktreeDirectory,
+      for: project,
     )
     .containerCaption(container, isOverridden: isOverridden)
   }

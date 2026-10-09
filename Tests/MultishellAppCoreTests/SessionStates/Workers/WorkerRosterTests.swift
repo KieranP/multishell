@@ -10,10 +10,10 @@ struct WorkerRosterTests {
     let capacity = SessionStateReport.rosterCapacity
     var roster = WorkerRoster()
     for index in 0..<capacity {
-      _ = roster.record(WorkerReport(id: "w\(index)", type: "Explore", phase: .started))
+      _ = roster.record(WorkerReport(id: "w\(index)", phase: .started, type: "Explore"))
     }
-    _ = roster.record(WorkerReport(id: "conversation", type: "Explore", phase: .started))
-    _ = roster.record(WorkerReport(id: "conversation", type: "Explore", phase: .started))
+    _ = roster.record(WorkerReport(id: "conversation", phase: .started, type: "Explore"))
+    _ = roster.record(WorkerReport(id: "conversation", phase: .started, type: "Explore"))
 
     roster.forget("conversation")
 
@@ -23,13 +23,18 @@ struct WorkerRosterTests {
 
   @Test func aToolCallNamingTheParentAfterTheStartPutsTheWorkerUnderIt() {
     var roster = WorkerRoster()
-    roster.record(WorkerReport(id: "a0", type: "general-purpose", phase: .started))
-    roster.record(WorkerReport(id: "a1", type: "general-purpose", phase: .started))
+    roster.record(WorkerReport(id: "a0", phase: .started, type: "general-purpose"))
+    roster.record(WorkerReport(id: "a1", phase: .started, type: "general-purpose"))
     roster.record(
       WorkerReport(
-        id: "a1", type: "general-purpose", phase: .working, parentID: "a0",
-        name: "Efficiency angle"))
-    roster.record(WorkerReport(id: "a1", type: "general-purpose", phase: .working))
+        id: "a1",
+        phase: .working,
+        type: "general-purpose",
+        parentID: "a0",
+        name: "Efficiency angle",
+      )
+    )
+    roster.record(WorkerReport(id: "a1", phase: .working, type: "general-purpose"))
 
     let worker = roster.workers.last
     #expect(worker?.parentID == "a0", "a report that does not say leaves it")
@@ -81,7 +86,8 @@ struct WorkerRosterTests {
     roster.record(WorkerReport(id: "f1", phase: .started))
     _ = roster.keepOnlyListedOut(
       [WorkerReport(id: "a0", phase: .working), WorkerReport(id: "b1", phase: .working)],
-      stopping: nil)
+      stopping: nil,
+    )
     roster.record(WorkerReport(id: "a0", phase: .working, isPaused: true))
     #expect(roster.workers.map(\.id) == ["a0", "f1", "b1"], "a listed shell is out")
 
@@ -109,7 +115,8 @@ struct WorkerRosterTests {
     _ = roster.keepOnlyListedOut([], stopping: nil)
     #expect(
       roster.workers.map(\.id) == ["a0"],
-      "a1 stopped first, b1 is a shell and nothing launched a2 to say it ran apart")
+      "a1 stopped first, b1 is a shell and nothing launched a2 to say it ran apart",
+    )
     #expect(roster.workers.map(\.shownState) == [.failed])
   }
 
@@ -118,7 +125,8 @@ struct WorkerRosterTests {
     let shell = WorkerReport(id: "b1", phase: .working, isBackgroundShell: true)
     roster.recordLaunch(WorkerReport(id: "a0", phase: .started))
     roster.recordLaunch(
-      WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0"))
+      WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0")
+    )
     roster.record(WorkerReport(id: "a0", phase: .working, isPaused: true))
     _ = roster.keepOnlyListedOut([shell], stopping: nil)
     #expect(roster.workers.map(\.id) == ["a0", "b1"])
@@ -154,7 +162,8 @@ struct WorkerRosterTests {
     roster.recordLaunch(WorkerReport(id: "a0", phase: .started))
     roster.recordLaunch(WorkerReport(id: "a1", phase: .started, parentID: "a0"))
     roster.recordLaunch(
-      WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a1"))
+      WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a1")
+    )
     roster.recordLaunch(WorkerReport(id: "a2", phase: .started))
     #expect(roster.recordKill("a0") == ["a0", "a1", "b1"])
     #expect(roster.workers.map(\.shownState) == [.failed, .failed, .failed, .running])
@@ -181,7 +190,8 @@ struct WorkerRosterTests {
     var roster = WorkerRoster()
     roster.record(WorkerReport(id: "a0", phase: .started))
     roster.recordLaunch(
-      WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0"))
+      WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0")
+    )
     roster.record(WorkerReport(id: "a0", phase: .ended))
     #expect(roster.workers.nested.map(\.id) == ["a0", "b1"])
 
@@ -195,7 +205,8 @@ struct WorkerRosterTests {
     roster.record(WorkerReport(id: "a1", phase: .started))
     _ = roster.keepOnlyListedOut(
       [WorkerReport(id: "a0", phase: .working), WorkerReport(id: "a1", phase: .working)],
-      stopping: nil)
+      stopping: nil,
+    )
     _ = roster.keepOnlyListedOut([WorkerReport(id: "a1", phase: .working)], stopping: "a0")
     roster.record(WorkerReport(id: "a0", phase: .ended, hasFailed: true))
 

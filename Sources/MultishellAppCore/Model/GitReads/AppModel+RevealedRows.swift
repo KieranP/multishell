@@ -2,7 +2,8 @@ import MultishellCore
 
 extension AppModel {
   private func polledRowIDs(
-    filteredBy text: String? = nil, collapsing collapsed: Set<Project.ID>? = nil
+    filteredBy text: String? = nil,
+    collapsing collapsed: Set<Project.ID>? = nil,
   ) -> Set<Worktree.ID> {
     let onSidebar = sidebarRowIDs(filteredBy: text, collapsing: collapsed)
     return Set(workspace.worktrees.filter { isStatusWanted($0, onSidebar: onSidebar) }.map(\.id))

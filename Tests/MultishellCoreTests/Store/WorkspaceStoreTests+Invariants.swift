@@ -17,11 +17,17 @@ extension WorkspaceStoreTests {
       for name in ["main", "feat", "spike"] {
         worktrees.append(
           Worktree(
-            path: project.path.appendingPathComponent(name), projectID: project.id, head: name,
-            branch: name))
+            path: project.path.appendingPathComponent(name),
+            projectID: project.id,
+            head: name,
+            branch: name,
+          )
+        )
       }
       store.replaceWorktrees(
-        worktrees.filter { $0.projectID == project.id }, forProject: project.id)
+        worktrees.filter { $0.projectID == project.id },
+        forProject: project.id,
+      )
     }
 
     for step in 0..<400 {
@@ -31,47 +37,61 @@ extension WorkspaceStoreTests {
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
         }
+
       case 2:
         if let tab = workspace.tabs.randomElement(using: &rng) { store.closeTab(tab.id) }
+
       case 3, 4:
         if let tab = workspace.tabs.randomElement(using: &rng) {
           store.splitFocusedPane(
-            of: tab.id, axis: Bool.random(using: &rng) ? .horizontal : .vertical)
+            of: tab.id,
+            axis: Bool.random(using: &rng) ? .horizontal : .vertical,
+          )
         }
+
       case 5:
         if let session = workspace.sessions.randomElement(using: &rng) {
           store.closeSession(session.id)
         }
+
       case 6:
         if let session = workspace.sessions.randomElement(using: &rng) {
           store.focusSession(session.id)
         }
+
       case 7:
         if let a = workspace.tabs.randomElement(using: &rng),
           let b = workspace.tabs.randomElement(using: &rng)
         {
           store.moveTab(a.id, Bool.random(using: &rng) ? .before : .after, anchor: b.id)
         }
+
       case 8:
         if let tab = workspace.tabs.randomElement(using: &rng) {
           store.setSplitWeights(
             [Double.random(in: 0.1...3, using: &rng), Double.random(in: 0.1...3, using: &rng)],
-            at: [], ofTab: tab.id)
+            at: [],
+            ofTab: tab.id,
+          )
         }
+
       case 9:
         // Naming a worktree, blanking a name, and naming one a refresh may
         // already have dropped.
         if let worktree = worktrees.randomElement(using: &rng) {
           store.setCustomName(
             ["Checkout flow", "  ", "", "Spike"].randomElement(using: &rng),
-            forWorktree: worktree.id)
+            forWorktree: worktree.id,
+          )
         }
+
       case 10:
         if let tab = workspace.tabs.randomElement(using: &rng),
           let worktree = worktrees.randomElement(using: &rng)
         {
           store.moveTab(tab.id, toWorktree: worktree.id)
         }
+
       case 11:
         // The project settings forms, where whitespace opts out of a global. A blank
         // override must come back as an override, which the round-trip check proves.
@@ -84,20 +104,28 @@ extension WorkspaceStoreTests {
         default: settings.defaultBranch = Bool.random(using: &rng) ? value : nil
         }
         store.setSettings(settings, forProject: project.id)
+
       case 12:
         if let tab = workspace.tabs.randomElement(using: &rng),
           let group = workspace.tabGroups.randomElement(using: &rng)
         {
-          store.moveTab(tab.id, Bool.random(using: &rng) ? .before : .after, toNewGroupOf: group.id)
+          store.moveTab(
+            tab.id,
+            Bool.random(using: &rng) ? .before : .after,
+            toNewGroupOf: group.id,
+          )
         }
+
       case 13:
         if let tab = workspace.tabs.randomElement(using: &rng),
           let group = workspace.tabGroups.randomElement(using: &rng)
         {
           store.moveTab(tab.id, toEndOf: group.id)
         }
+
       case 14:
         if let group = workspace.tabGroups.randomElement(using: &rng) { store.focusGroup(group.id) }
+
       case 15:
         // The divider between two groups, dragged; a count that does not
         // line up with the groups is refused.
@@ -105,8 +133,11 @@ extension WorkspaceStoreTests {
           store.setGroupWeights(
             (0..<Int.random(in: 1...3, using: &rng)).map { _ in
               Double.random(in: 0.1...3, using: &rng)
-            }, in: worktree.id)
+            },
+            in: worktree.id,
+          )
         }
+
       default:
         let project = projects.randomElement(using: &rng)!
         let kept = worktrees.filter { $0.projectID == project.id && Bool.random(using: &rng) }

@@ -5,11 +5,17 @@ extension AppModel {
     tabDragReleaseWatch?.cancel()
     tabDragReleaseWatch = nil
     let strip = workspace.tab(id).map { workspace.tabs(inGroup: $0.groupID).map(\.id) } ?? []
-    guard let index = strip.firstIndex(of: id) else { return tabDrag.begin(id) }
+    guard let index = strip.firstIndex(of: id) else {
+      tabDrag.begin(id)
+      return
+    }
     tabDrag.begin(
       id,
       home: TabDragState.Home(
-        earlier: strip[..<index].reversed(), later: Array(strip[(index + 1)...])))
+        earlier: strip[..<index].reversed(),
+        later: Array(strip[(index + 1)...]),
+      ),
+    )
   }
 
   /// A drag no drop took, ended with its session, puts back what its shuffle
@@ -25,7 +31,10 @@ extension AppModel {
   /// rebuilt one's ends with the button up, its session's end reaching no one.
   public func tabDragSourceLeft(_ id: TerminalTab.ID, isPressed: @escaping @MainActor () -> Bool) {
     guard tabDrag.tabID == id else { return }
-    guard workspace.tab(id) != nil else { return endAbandonedTabDrag(id) }
+    guard workspace.tab(id) != nil else {
+      endAbandonedTabDrag(id)
+      return
+    }
     tabDragReleaseWatch?.cancel()
     tabDragReleaseWatch = DragRelease.watch(isPressed: isPressed) { [weak self] in
       self?.endAbandonedTabDrag(id)
@@ -35,7 +44,9 @@ extension AppModel {
   /// A tab dragged along its own strip, moved as the pointer passes each
   /// neighbour. Only inside one group; see tabs-and-groups.md.
   public func shuffleTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, past anchor: TerminalTab.ID
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    past anchor: TerminalTab.ID,
   ) {
     guard workspace.sharedGroup(of: id, and: anchor) != nil else { return }
     // `moveTab` is what drops the moves that would change nothing, which is
@@ -74,12 +85,16 @@ extension AppModel {
     switch drop {
     case .tab(let anchor, let placement):
       return moveTab(id, placement, anchor: anchor)
+
     case .strip(let group):
       return workspace.tab(id)?.groupID == group || moveTab(id, toEndOf: group)
+
     case .area(let group):
       return moveTab(id, toEndOf: group)
+
     case .band(let band):
       return moveTab(id, band.placement, toNewGroupOf: band.groupID)
+
     case .worktree(let worktreeID):
       // A missing directory raises its alert; a busy worktree refuses quietly.
       return moveTab(id, toWorktree: worktreeID)

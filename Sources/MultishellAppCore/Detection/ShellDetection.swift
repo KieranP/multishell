@@ -5,15 +5,17 @@ import MultishellProcess
 /// Which shells this machine has. `/etc/shells` is the system's list, and
 /// the PATH is searched too, Homebrew not always registering there.
 public struct ShellDetection: Equatable, Sendable {
+  static let empty = Self(
+    found: [],
+    loginShell: ShellChoice.loginShellPath(),
+  )
+
   /// Paths of the shells found, sorted by name then path.
   let found: [String]
   let loginShell: String
   /// Whether `$SHELL` points at something, read once here rather than per
   /// row: a stat on a dead mount blocks for its timeout.
   private let loginShellExists: Bool
-
-  static let empty = ShellDetection(
-    found: [], loginShell: ShellChoice.loginShellPath())
 
   init(found: [String], loginShell: String) {
     self.found = found
@@ -24,7 +26,7 @@ public struct ShellDetection: Equatable, Sendable {
   init(
     searchPath: String?,
     systemList: URL = URL(fileURLWithPath: "/etc/shells"),
-    loginShell: String = ShellChoice.loginShellPath()
+    loginShell: String = ShellChoice.loginShellPath(),
   ) {
     var found = Set(Self.listed(in: systemList))
     for name in ShellChoice.extraShellNamesToSearch {
@@ -60,16 +62,22 @@ public struct ShellDetection: Equatable, Sendable {
   public func options(selected: String?) -> [DetectionOption] {
     var options = [
       DetectionOption(
-        id: ShellChoice.loginShellID, label: t("option.login-shell", loginShell))
+        id: ShellChoice.loginShellID,
+        label: t("option.login-shell", loginShell),
+      )
     ]
     for path in found {
       options.append(
-        DetectionOption(id: path, label: t("option.shell-path", path.executableName, path)))
+        DetectionOption(id: path, label: t("option.shell-path", path.executableName, path))
+      )
     }
     if let selected, !isInstalled(selected) {
       options.append(
         DetectionOption(
-          id: selected, label: t("option.shell-not-installed", selected.executableName, selected)))
+          id: selected,
+          label: t("option.shell-not-installed", selected.executableName, selected),
+        )
+      )
     }
     options.append(DetectionOption(id: ShellChoice.customID, label: t("option.custom-path")))
     return options

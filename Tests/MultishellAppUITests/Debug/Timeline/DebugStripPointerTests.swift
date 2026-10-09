@@ -14,7 +14,9 @@ struct DebugStripPointerTests {
     InkedPixels(
       OffscreenWindow.pixels(
         ofHosted: DebugStripPointer(slotIndex: slotIndex, timeline: timeline, color: .black),
-        size: size)!)
+        size: size,
+      )!
+    )
   }
 
   @Test func theLineRunsTheStripsHeightThroughTheMiddleOfItsSlot() throws {

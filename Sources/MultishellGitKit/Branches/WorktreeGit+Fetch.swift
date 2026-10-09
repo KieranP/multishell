@@ -7,7 +7,10 @@ extension WorktreeGit {
   /// that talks to a network. `GIT_TERMINAL_PROMPT=0`, and a timeout.
   public func fetch(_ project: Project) async throws {
     _ = try await runner.run(
-      ["fetch", "--prune", "--quiet"], in: project.path,
-      environment: ["GIT_TERMINAL_PROMPT": "0"], timeout: Self.fetchTimeout)
+      ["fetch", "--prune", "--quiet"],
+      in: project.path,
+      environment: ["GIT_TERMINAL_PROMPT": "0"],
+      timeout: Self.fetchTimeout,
+    )
   }
 }

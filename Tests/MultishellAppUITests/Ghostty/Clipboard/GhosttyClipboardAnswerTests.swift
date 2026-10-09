@@ -7,8 +7,8 @@ import Testing
 struct GhosttyClipboardAnswerTests {
   private func answer(
     _ request: GhosttyClipboardRequest,
+    text: String?,
     at location: ghostty_clipboard_e = GHOSTTY_CLIPBOARD_STANDARD,
-    text: String?
   ) -> GhosttyClipboardAnswer {
     GhosttyClipboardAnswer(request, at: location, text: text)
   }
@@ -42,7 +42,10 @@ struct GhosttyClipboardAnswerTests {
 
   @Test func onlyTheGeneralPasteboardIsServed() {
     let answer = answer(
-      .init(handle: nil, wantsText: true), at: GHOSTTY_CLIPBOARD_SELECTION, text: "hi")
+      .init(handle: nil, wantsText: true),
+      text: "hi",
+      at: GHOSTTY_CLIPBOARD_SELECTION,
+    )
     #expect(answer == .unsupported)
     #expect(answer.result == GHOSTTY_CLIPBOARD_READ_UNSUPPORTED)
   }

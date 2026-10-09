@@ -12,6 +12,7 @@ struct DetectionOptionTests {
     #expect(agents.last?.label == "Custom command…")
     #expect(
       AgentDetection(found: [:]).options(selected: "none").map(\.id) == ["none", "custom"],
-      "and neither does a chosen None")
+      "and neither does a chosen None",
+    )
   }
 }

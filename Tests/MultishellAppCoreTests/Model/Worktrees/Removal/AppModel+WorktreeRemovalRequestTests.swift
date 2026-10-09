@@ -28,7 +28,8 @@ struct AppModelWorktreeRemovalRequestTests {
     await harness.model.requestWorktreeRemoval(of: harness.feature)?.value
     #expect(
       harness.model.pendingWorktreeRemoval?.id == harness.feature.id,
-      "the branch question is still open")
+      "the branch question is still open",
+    )
     #expect(harness.model.pendingWorktreeRemoval?.choices.count == 2)
 
     harness.model.pendingWorktreeRemoval = nil
@@ -36,7 +37,8 @@ struct AppModelWorktreeRemovalRequestTests {
     await harness.model.requestWorktreeRemoval(of: harness.feature)?.value
     #expect(
       harness.model.pendingWorktreeRemoval == nil,
-      "goes straight to removal, which needs git and so no-ops here")
+      "goes straight to removal, which needs git and so no-ops here",
+    )
 
     harness.model.setConfirmsWorktreeRemoval(true)
     await harness.model.requestWorktreeRemoval(of: harness.feature)?.value
@@ -47,14 +49,19 @@ struct AppModelWorktreeRemovalRequestTests {
     harness.model.setTrashesRemovedWorktrees(false)
     await harness.model.requestWorktreeRemoval(of: harness.feature)?.value
     #expect(
-      harness.model.pendingWorktreeRemoval?.message(warning: nil).hasPrefix("Deletes ") == true)
+      harness.model.pendingWorktreeRemoval?.message(warning: nil).hasPrefix("Deletes ") == true
+    )
   }
 
   @Test func answeringTheDialogWithAButtonRemovesAsThatButtonSays() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "answered", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "answered",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let worktree = try #require(harness.worktree(onBranch: "answered"))
     await harness.model.requestWorktreeRemoval(of: worktree)?.value
     let pending = try #require(harness.model.pendingWorktreeRemoval)
@@ -71,7 +78,10 @@ struct AppModelWorktreeRemovalRequestTests {
   @Test func cancellingTheDialogTakesItDownAndRemovesNothing() {
     let harness = Harness()
     let pending = PendingWorktreeRemoval(
-      worktree: harness.feature, branchHandling: .offersBoth, trashes: true)
+      worktree: harness.feature,
+      branchHandling: .offersBoth,
+      trashes: true,
+    )
     harness.model.pendingWorktreeRemoval = pending
 
     #expect(harness.model.answerWorktreeRemoval(pending, choice: nil) == nil)
@@ -84,7 +94,11 @@ struct AppModelWorktreeRemovalRequestTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "kept", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "kept",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let worktree = try #require(harness.worktree(onBranch: "kept"))
     await harness.model.requestWorktreeRemoval(of: worktree)?.value
     let pending = try #require(harness.model.pendingWorktreeRemoval)
@@ -100,10 +114,14 @@ struct AppModelWorktreeRemovalRequestTests {
     let harness = Harness()
     harness.model.setTrashesRemovedWorktrees(false)
     let pending = PendingWorktreeRemoval(
-      worktree: harness.feature, branchHandling: .decided(deletesBranch: false), trashes: true,
-      isStatusUnread: true)
+      worktree: harness.feature,
+      branchHandling: .decided(deletesBranch: false),
+      trashes: true,
+      isStatusUnread: true,
+    )
 
     #expect(
-      harness.model.worktreeRemovalWarning(for: pending)?.contains("kept in the Trash") == true)
+      harness.model.worktreeRemovalWarning(for: pending)?.contains("kept in the Trash") == true
+    )
   }
 }

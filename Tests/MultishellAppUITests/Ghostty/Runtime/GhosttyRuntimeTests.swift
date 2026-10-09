@@ -33,10 +33,12 @@ struct GhosttyRuntimeTests {
   @Test func aRuntimeStartsWithItsBaseAndAppLayerAlreadyRunning() {
     #expect(
       !GhosttyRuntime(readBase: { "macos-auto-secure-input = false" }).secureInput
-        .followsPasswordPrompts)
+        .followsPasswordPrompts
+    )
     let runtime = GhosttyRuntime(
       readBase: { "macos-auto-secure-input = false" },
-      appLayer: GhosttyConfigText { $0.set("macos-auto-secure-input", "true") })
+      appLayer: GhosttyConfigText { $0.set("macos-auto-secure-input", "true") },
+    )
     #expect(runtime.secureInput.followsPasswordPrompts)
   }
 
@@ -46,7 +48,8 @@ struct GhosttyRuntimeTests {
     try #require(FileManager.default.createFile(atPath: directory.path, contents: nil))
     let runtime = GhosttyRuntime(
       appLayer: GhosttyConfigText { $0.set("macos-auto-secure-input", "true") },
-      configDirectory: directory)
+      configDirectory: directory,
+    )
     try FileManager.default.removeItem(at: directory)
 
     runtime.apply(base: "macos-auto-secure-input = false")

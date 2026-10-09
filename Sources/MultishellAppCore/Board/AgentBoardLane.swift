@@ -1,5 +1,7 @@
 import MultishellCore
 
+// Declared order is the order allCases gives the UI.
+// swiftlint:disable sorted_enum_cases
 /// A column of the board, most urgent first. Failed goes with Waiting; see
 /// Docs/design/agents.md.
 public enum AgentBoardLane: String, CaseIterable, Sendable {
@@ -7,17 +9,6 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
   case working
   case done
   case idle
-
-  /// `inSentence` is the same name mid-sentence, for the screen reader; see
-  /// Docs/design/translation.md.
-  public func title(inSentence: Bool = false) -> String {
-    switch self {
-    case .waiting: inSentence ? t("lane.waiting-in-sentence") : t("lane.waiting")
-    case .working: inSentence ? t("lane.working-in-sentence") : t("lane.working")
-    case .done: inSentence ? t("lane.done-in-sentence") : t("lane.done")
-    case .idle: inSentence ? t("lane.idle-in-sentence") : t("lane.idle")
-    }
-  }
 
   /// The state whose colour the column header wears. Waiting wears blue
   /// though it holds failures, being named for what it asks.
@@ -30,7 +21,7 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
     }
   }
 
-  static func of(_ state: SessionState?) -> AgentBoardLane {
+  static func of(_ state: SessionState?) -> Self {
     switch state {
     case .attention, .failed: .waiting
     case .running: .working
@@ -38,4 +29,16 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
     case .idle, nil: .idle
     }
   }
+
+  /// `inSentence` is the same name mid-sentence, for the screen reader; see
+  /// Docs/design/translation.md.
+  public func title(inSentence: Bool = false) -> String {
+    switch self {
+    case .waiting: inSentence ? t("lane.waiting-in-sentence") : t("lane.waiting")
+    case .working: inSentence ? t("lane.working-in-sentence") : t("lane.working")
+    case .done: inSentence ? t("lane.done-in-sentence") : t("lane.done")
+    case .idle: inSentence ? t("lane.idle-in-sentence") : t("lane.idle")
+    }
+  }
 }
+// swiftlint:enable sorted_enum_cases

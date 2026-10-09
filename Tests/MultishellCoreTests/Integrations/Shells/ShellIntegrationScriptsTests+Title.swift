@@ -7,7 +7,9 @@ extension ShellIntegrationScriptsTests {
   @Test func aRealZshTitlesThePaneWithItsDirectoryAndThenTheCommand() async throws {
     let output = try await zshOutput(features: "title", input: "cd\necho hi\nexit\n")
     #expect(
-      output.contains(TerminalReports.title("~")), "the directory at a prompt, home as a tilde")
+      output.contains(TerminalReports.title("~")),
+      "the directory at a prompt, home as a tilde",
+    )
     #expect(output.contains(TerminalReports.title("echo hi")), "the command while it runs")
   }
 

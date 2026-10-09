@@ -81,7 +81,8 @@ extension WorkerRoster {
   func keepingOutAtStop() -> WorkerRoster {
     var kept = WorkerRoster()
     let out = Set(
-      workers.filter { $0.wasOutAtStop || $0.wasListed || $0.hasFailed }.map(\.id))
+      workers.filter { $0.wasOutAtStop || $0.wasListed || $0.hasFailed }.map(\.id)
+    )
     let holding = ancestors(of: out).subtracting(out)
     kept.workers = workers.filter { out.contains($0.id) || holding.contains($0.id) }
     for index in kept.workers.indices where holding.contains(kept.workers[index].id) {

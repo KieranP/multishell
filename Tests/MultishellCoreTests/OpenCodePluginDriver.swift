@@ -12,7 +12,8 @@ extension OpenCodePluginDriver {
   /// What the helper was called with, one list per report, in order.
   /// `sessions` is what the fake client answers a lookup with, by id.
   func reports(
-    of steps: [OpenCodePluginStep], sessions: [String: [String: String]] = [:]
+    of steps: [OpenCodePluginStep],
+    sessions: [String: [String: String]] = [:],
   ) throws -> [[String]] {
     try run(steps, sessions: sessions).reports
   }
@@ -20,7 +21,8 @@ extension OpenCodePluginDriver {
   /// The reports, how many of the plugin's bounded waits on a lookup began,
   /// and every line in order, a helper's exit included.
   func run(
-    _ steps: [OpenCodePluginStep], sessions: [String: [String: String]] = [:]
+    _ steps: [OpenCodePluginStep],
+    sessions: [String: [String: String]] = [:],
   ) throws -> (reports: [[String]], waits: Int, lines: [String]) {
     let node = try #require(openCodeNode)
     let directory = Scratch.path("opencode-plugin")
@@ -28,13 +30,25 @@ extension OpenCodePluginDriver {
     let plugin = directory.appendingPathComponent("multishell.js")
     try AgentHookCatalogue.openCode.install(into: plugin, helper: "$HOME/bin/multishell")
     try OpenCodePluginScripts.driver.write(
-      to: directory.appendingPathComponent("drive.mjs"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("drive.mjs"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try OpenCodePluginScripts.stub.write(
-      to: directory.appendingPathComponent("stub.mjs"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("stub.mjs"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try OpenCodePluginScripts.hooks.write(
-      to: directory.appendingPathComponent("hooks.mjs"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("hooks.mjs"),
+      atomically: true,
+      encoding: .utf8,
+    )
     try OpenCodePluginScripts.register.write(
-      to: directory.appendingPathComponent("register.mjs"), atomically: true, encoding: .utf8)
+      to: directory.appendingPathComponent("register.mjs"),
+      atomically: true,
+      encoding: .utf8,
+    )
 
     let script = String(decoding: try JSONEncoder().encode(steps), as: UTF8.self)
     let known = String(decoding: try JSONEncoder().encode(sessions), as: UTF8.self)
@@ -52,14 +66,15 @@ extension OpenCodePluginDriver {
     process.waitUntilExit()
     #expect(
       process.terminationStatus == 0,
-      "node failed: \(String(decoding: failed, as: UTF8.self))")
+      "node failed: \(String(decoding: failed, as: UTF8.self))",
+    )
     let lines = String(decoding: printed, as: UTF8.self).split(separator: "\n")
-    let waits = lines.compactMap {
-      try? JSONDecoder().decode([String: Int].self, from: Data($0.utf8))["waits"]
+    let waits = lines.compactMap { line in
+      try? JSONDecoder().decode([String: Int].self, from: Data(line.utf8))["waits"]
     }
     return (
       lines.compactMap { try? JSONDecoder().decode([String].self, from: Data($0.utf8)) },
-      waits.last ?? 0, lines.map(String.init)
+      waits.last ?? 0, lines.map(String.init),
     )
   }
 

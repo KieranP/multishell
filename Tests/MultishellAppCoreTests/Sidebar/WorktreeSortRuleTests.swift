@@ -22,20 +22,31 @@ struct WorktreeSortRuleTests {
 
   private func primary(_ branch: String) -> Worktree {
     Worktree(
-      path: project.path, projectID: project.id, head: "0", branch: branch, isPrimary: true,
-      createdAt: epoch)
+      path: project.path,
+      projectID: project.id,
+      head: "0",
+      branch: branch,
+      isPrimary: true,
+      createdAt: epoch,
+    )
   }
 
   private func linked(_ branch: String, daysAfterEpoch days: Double?) -> Worktree {
     Worktree(
-      path: URL(fileURLWithPath: "/w/t/\(branch)"), projectID: project.id, head: "0",
+      path: URL(fileURLWithPath: "/w/t/\(branch)"),
+      projectID: project.id,
+      head: "0",
       branch: branch,
-      createdAt: days.map { epoch.addingTimeInterval($0 * 86_400) })
+      createdAt: days.map { epoch.addingTimeInterval($0 * 86_400) },
+    )
   }
 
   private func names(
-    _ rule: WorktreeSortRule, _ worktrees: [Worktree], named: [Worktree.ID: String] = [:],
-    active: Set<Worktree.ID> = [], commits: [String: Double] = [:]
+    _ rule: WorktreeSortRule,
+    _ worktrees: [Worktree],
+    named: [Worktree.ID: String] = [:],
+    active: Set<Worktree.ID> = [],
+    commits: [String: Double] = [:],
   ) -> [String] {
     let keys = rule.keys(
       worktrees,
@@ -43,7 +54,8 @@ struct WorktreeSortRuleTests {
       isActive: { active.contains($0.id) },
       lastCommit: { worktree in
         worktree.branch.flatMap { commits[$0] }.map { epoch.addingTimeInterval($0 * 86_400) }
-      })
+      },
+    )
     return rule.sorted(keys).map { named[$0.id] ?? $0.name }
   }
 
@@ -100,8 +112,13 @@ struct WorktreeSortRuleTests {
   /// hold the top, the bare one first, as git lists them.
   @Test func aBareRepositoryKeepsItsTrunkWorktreeSecond() {
     let bare = Worktree(
-      path: URL(fileURLWithPath: "/w/acme.git"), projectID: project.id, head: "0", isPrimary: true,
-      isBare: true, createdAt: epoch)
+      path: URL(fileURLWithPath: "/w/acme.git"),
+      projectID: project.id,
+      head: "0",
+      isPrimary: true,
+      isBare: true,
+      createdAt: epoch,
+    )
     let list = [linked("alpha", daysAfterEpoch: 3), linked("main", daysAfterEpoch: 1), bare]
     let rule = WorktreeSortRule(sortOrder: .alphabetical, showsActiveFirst: false)
     #expect(names(rule, list) == ["acme.git", "main", "alpha"])
@@ -115,14 +132,20 @@ struct WorktreeSortRuleTests {
     let guessed = WorktreeSortRule(sortOrder: .alphabetical, showsActiveFirst: false)
     #expect(names(guessed, list) == ["main", "alpha", "develop"])
     let resolved = WorktreeSortRule(
-      sortOrder: .alphabetical, showsActiveFirst: false, trunkBranch: "develop")
+      sortOrder: .alphabetical,
+      showsActiveFirst: false,
+      trunkBranch: "develop",
+    )
     #expect(names(resolved, list) == ["develop", "alpha", "main"])
   }
 
   @Test func aDetachedWorktreeIsNeverTheTrunk() {
     let detached = Worktree(
-      path: URL(fileURLWithPath: "/w/t/detached"), projectID: project.id, head: "beefbeefbeef",
-      createdAt: epoch.addingTimeInterval(86_400))
+      path: URL(fileURLWithPath: "/w/t/detached"),
+      projectID: project.id,
+      head: "beefbeefbeef",
+      createdAt: epoch.addingTimeInterval(86_400),
+    )
     let list = [detached, linked("main", daysAfterEpoch: 2)]
     let rule = WorktreeSortRule(sortOrder: .alphabetical, showsActiveFirst: false)
     #expect(names(rule, list) == ["main", "beefbee"])
@@ -160,9 +183,12 @@ struct WorktreeSortRuleTests {
     // Created order disagrees with both, which is the point of the setting.
     #expect(
       names(
-        WorktreeSortRule(sortOrder: .createdNewestFirst, showsActiveFirst: false), list,
-        commits: commits)
-        == ["main", "alpha", "mango", "zebra"])
+        WorktreeSortRule(sortOrder: .createdNewestFirst, showsActiveFirst: false),
+        list,
+        commits: commits,
+      )
+        == ["main", "alpha", "mango", "zebra"]
+    )
   }
 
   /// A branch with no date, a detached checkout or a project not yet scanned, is not the
@@ -171,7 +197,10 @@ struct WorktreeSortRuleTests {
     let list = [linked("dated", daysAfterEpoch: 1), linked("undated", daysAfterEpoch: 2)]
     for order in [WorktreeSortOrder.committedNewestFirst, .committedOldestFirst] {
       let sorted = names(
-        WorktreeSortRule(sortOrder: order, showsActiveFirst: false), list, commits: ["dated": 3])
+        WorktreeSortRule(sortOrder: order, showsActiveFirst: false),
+        list,
+        commits: ["dated": 3],
+      )
       #expect(sorted == ["dated", "undated"], "\(order)")
     }
   }
@@ -185,7 +214,8 @@ struct WorktreeSortRuleTests {
         names(WorktreeSortRule(sortOrder: order, showsActiveFirst: false), list) == [
           "alpha", "zebra",
         ],
-        "\(order)")
+        "\(order)",
+      )
     }
   }
 
@@ -199,14 +229,19 @@ struct WorktreeSortRuleTests {
     #expect(names(guessed, list) == ["main", "master", "alpha"])
 
     let resolved = WorktreeSortRule(
-      sortOrder: .alphabetical, showsActiveFirst: false, trunkBranch: "master")
+      sortOrder: .alphabetical,
+      showsActiveFirst: false,
+      trunkBranch: "master",
+    )
     #expect(names(resolved, list) == ["master", "alpha", "main"])
   }
 
   @Test func anEmptyProjectSortsToNothing() {
     for order in WorktreeSortOrder.allCases {
       #expect(
-        names(WorktreeSortRule(sortOrder: order, showsActiveFirst: true), []).isEmpty, "\(order)")
+        names(WorktreeSortRule(sortOrder: order, showsActiveFirst: true), []).isEmpty,
+        "\(order)",
+      )
     }
   }
 }

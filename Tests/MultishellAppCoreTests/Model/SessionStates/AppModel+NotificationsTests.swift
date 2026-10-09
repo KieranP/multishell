@@ -9,17 +9,24 @@ struct AppModelNotificationsTests {
   @Test func aBackgroundPanesBannersFollowThePreference() {
     let harness = Harness()
     harness.stateSource.send(
-      SessionStateReport(state: .attention, workingDirectory: harness.main.path.path))
+      SessionStateReport(state: .attention, workingDirectory: harness.main.path.path)
+    )
     #expect(harness.notifier.posted.isEmpty, "off until turned on")
     harness.model.setNotificationPreference(.everyState)
     let first = harness.openBackgroundTab()
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
+    harness.stateSource.send(
+      SessionStateReport(state: .running, sessionID: first.focusedSessionID)
+    )
     #expect(harness.notifier.posted.isEmpty, "working is never a banner")
 
     harness.stateSource.send(
       SessionStateReport(
-        state: .attention, sessionID: first.focusedSessionID, message: "Needs Bash"))
+        state: .attention,
+        sessionID: first.focusedSessionID,
+        message: "Needs Bash",
+      )
+    )
     #expect(harness.notifier.posted.count == 1)
     #expect(harness.notifier.posted.first?.body == "Needs Bash")
     #expect(harness.notifier.posted.first?.title.contains("main") == true)
@@ -31,7 +38,8 @@ struct AppModelNotificationsTests {
 
     harness.model.setNotificationPreference(.off)
     harness.stateSource.send(
-      SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
+      SessionStateReport(state: .attention, sessionID: first.focusedSessionID)
+    )
     #expect(harness.notifier.posted.count == 1)
   }
 
@@ -41,8 +49,12 @@ struct AppModelNotificationsTests {
     let tab = harness.openBackgroundTab()
     harness.stateSource.send(
       SessionStateReport(
-        state: .attention, sessionID: tab.focusedSessionID,
-        message: "Claude needs your permission", asksQuestion: true))
+        state: .attention,
+        sessionID: tab.focusedSessionID,
+        message: "Claude needs your permission",
+        asksQuestion: true,
+      )
+    )
     #expect(harness.notifier.posted.first?.body == "An agent needs your input")
     let card = harness.model.agentBoardCards.first { $0.id == tab.focusedSessionID }
     #expect(card?.message == "An agent needs your input")
@@ -82,7 +94,9 @@ struct AppModelNotificationsTests {
     harness.model.activate(tab)
     #expect(harness.notifier.withdrawn == [.session(session)])
     #expect(
-      harness.model.sessionStates[.session(session)] == .attention, "the question still stands")
+      harness.model.sessionStates[.session(session)] == .attention,
+      "the question still stands",
+    )
   }
 
   /// The dot and the banner must agree an on-screen pane is unseen while the
@@ -102,13 +116,17 @@ struct AppModelNotificationsTests {
     harness.model.reconcileSessions(takingFocus: true)
     #expect(harness.notifier.withdrawn.isEmpty, "still away")
     #expect(
-      harness.model.sessionStates[.session(session)] == .done, "a shell exiting is not a look")
+      harness.model.sessionStates[.session(session)] == .done,
+      "a shell exiting is not a look",
+    )
 
     harness.platform.isActive = true
     harness.platform.onDidBecomeActive?()
     #expect(harness.notifier.withdrawn == [.session(session)], "back, and the pane is on screen")
     #expect(
-      harness.model.sessionStates[.session(session)] == nil, "seen now, so the dot goes as well")
+      harness.model.sessionStates[.session(session)] == nil,
+      "seen now, so the dot goes as well",
+    )
   }
 
   @Test func closingATabTakesItsBannerWithIt() {

@@ -35,9 +35,14 @@ struct TabStripLayoutStepsTests {
   @Test func everyEndThatFadesCanBeSteppedFrom() {
     for offset in stride(from: 0.0, through: 400, by: 7) {
       let overflow = TabStripLayout.Overflow(offset: offset, viewport: 300, content: 700)
-      #expect(overflow.hasTabsPastLeading == (target(.leading, at: offset) != nil), "at \(offset)")
       #expect(
-        overflow.hasTabsPastTrailing == (target(.trailing, at: offset) != nil), "at \(offset)")
+        overflow.hasTabsPastLeading == (target(.leading, at: offset) != nil),
+        "at \(offset)",
+      )
+      #expect(
+        overflow.hasTabsPastTrailing == (target(.trailing, at: offset) != nil),
+        "at \(offset)",
+      )
     }
   }
 
@@ -52,6 +57,7 @@ struct TabStripLayoutStepsTests {
     #expect(layout.stepTarget(towards: .leading, offset: -40, viewport: 300, count: 7) == nil)
     #expect(
       layout.stepTarget(towards: .trailing, offset: 0, viewport: 4000, count: 7) == nil,
-      "every tab already in view")
+      "every tab already in view",
+    )
   }
 }

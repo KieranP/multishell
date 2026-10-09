@@ -6,10 +6,14 @@ extension WorktreeCoordinator {
   /// Pre-delete hook, the directory to `trash`, the record forgotten,
   /// post-delete hook, the branch last. See worktrees.md and hooks.md.
   public func remove(
-    _ worktree: Worktree, deletesBranch: Bool = false, in project: Project,
-    shellPath: String? = nil, trash: @Sendable (URL) async throws -> Void,
-    timeout: Duration? = nil, stopper: ProcessStopper? = nil,
-    onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil
+    _ worktree: Worktree,
+    in project: Project,
+    trash: @Sendable (URL) async throws -> Void,
+    deletesBranch: Bool = false,
+    shellPath: String? = nil,
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil,
+    onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil,
   ) async throws {
     // The main worktree is the repository, `.git` and all, and the trash
     // step would bin it. Nothing below this guard checks.
@@ -25,8 +29,15 @@ extension WorktreeCoordinator {
       try await git.removeStaleRecord(worktree, in: project)
     } else {
       try await removeCheckout(
-        worktree, directoryExists: directoryExists, in: project, shellPath: shellPath,
-        trash: trash, timeout: timeout, stopper: stopper, onStep: onStep)
+        worktree,
+        directoryExists: directoryExists,
+        in: project,
+        shellPath: shellPath,
+        trash: trash,
+        timeout: timeout,
+        stopper: stopper,
+        onStep: onStep,
+      )
     }
     if deletesBranch, let branch = worktree.branch {
       onStep?(.deletingBranch)
@@ -35,15 +46,27 @@ extension WorktreeCoordinator {
   }
 
   private func removeCheckout(
-    _ worktree: Worktree, directoryExists: Bool, in project: Project, shellPath: String?,
-    trash: @Sendable (URL) async throws -> Void, timeout: Duration?, stopper: ProcessStopper?,
-    onStep: (@Sendable (WorktreeRemovalStep) -> Void)?
+    _ worktree: Worktree,
+    directoryExists: Bool,
+    in project: Project,
+    shellPath: String?,
+    trash: @Sendable (URL) async throws -> Void,
+    timeout: Duration?,
+    stopper: ProcessStopper?,
+    onStep: (@Sendable (WorktreeRemovalStep) -> Void)?,
   ) async throws {
     let path = worktree.path
     let branchOrHead = worktree.branch ?? worktree.head
     try await WorktreeHooks.run(
-      .preDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
-      timeout: timeout, stopper: stopper, onWillRun: { onStep?(.preDeleteHook) })
+      .preDelete,
+      for: project,
+      worktreePath: path,
+      branch: branchOrHead,
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper,
+      onWillRun: { onStep?(.preDeleteHook) },
+    )
     onStep?(.removingWorktree)
     if directoryExists {
       do {
@@ -58,7 +81,14 @@ extension WorktreeCoordinator {
     }
     try await git.removeRecord(of: worktree, in: project)
     try await WorktreeHooks.run(
-      .postDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
-      timeout: timeout, stopper: stopper, onWillRun: { onStep?(.postDeleteHook) })
+      .postDelete,
+      for: project,
+      worktreePath: path,
+      branch: branchOrHead,
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper,
+      onWillRun: { onStep?(.postDeleteHook) },
+    )
   }
 }

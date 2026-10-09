@@ -36,7 +36,8 @@ struct ScrollingTabStrip<Tabs: View>: View {
     let overflow = TabStripLayout.Overflow(
       offset: scrollOffset,
       viewport: viewport,
-      content: layout.contentWidth(count: tabIDs.count))
+      content: layout.contentWidth(count: tabIDs.count),
+    )
     ScrollViewReader { proxy in
       HStack(spacing: 0) {
         arrow(.leading, isShown: overflow.hasTabsPastLeading, proxy: proxy)
@@ -71,7 +72,9 @@ struct ScrollingTabStrip<Tabs: View>: View {
   /// gutter, an arrow over the tabs otherwise taking their clicks.
   @ViewBuilder
   private func arrow(
-    _ end: TabStripLayout.End, isShown: Bool, proxy: ScrollViewProxy
+    _ end: TabStripLayout.End,
+    isShown: Bool,
+    proxy: ScrollViewProxy,
   ) -> some View {
     let isLeading = end == .leading
     if isShown, gutter > 0 {
@@ -97,7 +100,11 @@ struct ScrollingTabStrip<Tabs: View>: View {
   private func step(towards end: TabStripLayout.End, proxy: ScrollViewProxy) {
     guard
       let index = layout.stepTarget(
-        towards: end, offset: scrollOffset, viewport: viewport, count: tabIDs.count),
+        towards: end,
+        offset: scrollOffset,
+        viewport: viewport,
+        count: tabIDs.count,
+      ),
       tabIDs.indices.contains(index)
     else { return }
     withAnimation(.easeOut(duration: 0.16)) {

@@ -19,10 +19,11 @@ struct WorktreeCoordinatorStatusTests {
       sleep 1
       rm "$SCRATCH/running/$$"
       printf '## main\\n'
-      """)
+      """
+    )
     defer { fake.tearDown() }
-    let worktrees = (0..<20).map {
-      Worktree(path: fake.directory, projectID: "/p", head: "h\($0)", branch: "b\($0)")
+    let worktrees = (0..<20).map { number in
+      Worktree(path: fake.directory, projectID: "/p", head: "h\(number)", branch: "b\(number)")
     }
     // Same directory, so ids collide; the count comes from the script.
     let coordinator = fake.coordinator
@@ -34,7 +35,8 @@ struct WorktreeCoordinatorStatusTests {
       atPath: fake.directory.appendingPathComponent("peaks").path
     ).compactMap { name in
       try? String(
-        contentsOf: fake.directory.appendingPathComponent("peaks/\(name)"), encoding: .utf8
+        contentsOf: fake.directory.appendingPathComponent("peaks/\(name)"),
+        encoding: .utf8,
       ).trimmingCharacters(in: .whitespacesAndNewlines)
     }.compactMap(Int.init)
     #expect(peaks.count == 20, "every run recorded a peak")
@@ -46,7 +48,10 @@ struct WorktreeCoordinatorStatusTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "ghost", in: fixture.project, settings: fixture.worktreeSettings)
+      branch: "ghost",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
     let worktrees = try await fixture.coordinator.git.list(fixture.project)
     try FileManager.default.removeItem(at: path)
 

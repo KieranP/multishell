@@ -1,6 +1,12 @@
 /// A colour scheme for terminals and app chrome. Hex strings, not a platform
 /// colour type, so the core imports no UI framework; see Docs/design/appearance.md.
 public struct Theme: Identifiable, Codable, Hashable, Sendable {
+  /// Anything less would be a pane nobody can read, which looks broken
+  /// rather than unfocused.
+  static let minimumInactivePaneOpacity = 0.25
+
+  public static let ansiSlotCount = 16
+
   public internal(set) var id: String
   public internal(set) var name: String
   public internal(set) var isDark: Bool
@@ -20,12 +26,6 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
   /// theme's own background. `1` fades nothing.
   public internal(set) var inactivePaneOpacity: Double
 
-  /// Anything less would be a pane nobody can read, which looks broken
-  /// rather than unfocused.
-  static let minimumInactivePaneOpacity = 0.25
-
-  public static let ansiSlotCount = 16
-
   init(
     id: String,
     name: String,
@@ -36,10 +36,12 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     selectionBackground: String,
     ansi: [String],
     focusRing: String?,
-    inactivePaneOpacity: Double
+    inactivePaneOpacity: Double,
   ) {
     precondition(
-      ansi.count == Self.ansiSlotCount, "a theme needs exactly \(Self.ansiSlotCount) ANSI colours")
+      ansi.count == Self.ansiSlotCount,
+      "a theme needs exactly \(Self.ansiSlotCount) ANSI colours",
+    )
     self.id = id
     self.name = name
     self.isDark = isDark
@@ -52,11 +54,6 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     self.inactivePaneOpacity = Self.usableOpacity(inactivePaneOpacity)
   }
 
-  private static func usableOpacity(_ value: Double) -> Double {
-    guard value.isFinite else { return 1 }
-    return value.clamped(to: minimumInactivePaneOpacity...1)
-  }
-
   /// Synthesized decoding skips the precondition, and the GUI indexes `ansi`
   /// directly, so a wrong count is refused here rather than crashing a view.
   public init(from decoder: any Decoder) throws {
@@ -64,9 +61,11 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     let ansi = try container.decode([String].self, forKey: .ansi)
     guard ansi.count == Self.ansiSlotCount else {
       throw DecodingError.dataCorruptedError(
-        forKey: .ansi, in: container,
+        forKey: .ansi,
+        in: container,
         debugDescription:
-          "a theme needs exactly \(Self.ansiSlotCount) ANSI colours, found \(ansi.count)")
+          "a theme needs exactly \(Self.ansiSlotCount) ANSI colours, found \(ansi.count)",
+      )
     }
     let opacity = container.decodeTolerantly(Double.self, forKey: .inactivePaneOpacity)
     self.init(
@@ -79,7 +78,12 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
       selectionBackground: try container.decode(String.self, forKey: .selectionBackground),
       ansi: ansi,
       focusRing: container.decodeTolerantly(String.self, forKey: .focusRing),
-      inactivePaneOpacity: opacity ?? 1
+      inactivePaneOpacity: opacity ?? 1,
     )
+  }
+
+  private static func usableOpacity(_ value: Double) -> Double {
+    guard value.isFinite else { return 1 }
+    return value.clamped(to: minimumInactivePaneOpacity...1)
   }
 }

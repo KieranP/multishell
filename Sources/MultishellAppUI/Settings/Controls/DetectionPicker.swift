@@ -29,16 +29,26 @@ struct DetectionPicker: View {
   }
 }
 
+// Beside the memberwise init, which stays synthesized.
+// swiftlint:disable:next no_grouping_extension
 extension DetectionPicker {
   /// Refreshing reads the login shell again, whose PATH is where agents,
   /// shells and editors are found.
   init(
-    label: String, selection: Binding<String>, options: @escaping (String) -> [DetectionOption],
-    rescanning model: AppModel, info: String, isEnabled: Bool = true
+    label: String,
+    selection: Binding<String>,
+    options: @escaping (String) -> [DetectionOption],
+    rescanning model: AppModel,
+    info: String,
+    isEnabled: Bool = true,
   ) {
     self.init(
-      label: label, selection: selection, options: options,
-      refresh: { Task { await model.refreshLoginEnvironment() } }, info: info,
-      isEnabled: isEnabled)
+      label: label,
+      selection: selection,
+      options: options,
+      refresh: { Task { await model.refreshLoginEnvironment() } },
+      info: info,
+      isEnabled: isEnabled,
+    )
   }
 }

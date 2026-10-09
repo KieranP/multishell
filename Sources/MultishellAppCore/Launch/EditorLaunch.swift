@@ -7,12 +7,12 @@ import MultishellProcess
 enum EditorLaunch {
   enum Action: Equatable {
     case openApplication(URL)
-    /// Run the editor's command line shim through the login shell, in the
-    /// background: the application it starts is what the user sees.
-    case runInBackground(String)
     /// A terminal editor, or the custom command: a new tab in the worktree
     /// running it, with a shell taking over when it exits.
     case openTab(title: String, command: [String])
+    /// Run the editor's command line shim through the login shell, in the
+    /// background: the application it starts is what the user sees.
+    case runInBackground(String)
   }
 
   /// `nil` when the editor is in the catalogue but not installed.
@@ -22,7 +22,7 @@ enum EditorLaunch {
     customTemplate: String,
     directory: URL,
     shell: ShellInvocation,
-    handOver: String
+    handOver: String,
   ) -> Action? {
     if editorID == EditorCatalogue.customID {
       guard let line = EditorCatalogue.customCommandLine(customTemplate, path: directory),
@@ -36,12 +36,15 @@ enum EditorLaunch {
       if let application = found?.application { return .openApplication(application) }
       guard let executable = found?.executable else { return nil }
       return .runInBackground(
-        AnyShellQuoting.commandLine([executable.path, directory.path]))
+        AnyShellQuoting.commandLine([executable.path, directory.path])
+      )
+
     case .terminal:
       guard let executable = found?.executable else { return nil }
       return .openTab(
         title: editor.name,
-        command: TabCommand.running([executable.path, "."], shell: shell, handOver: handOver))
+        command: TabCommand.running([executable.path, "."], shell: shell, handOver: handOver),
+      )
     }
   }
 

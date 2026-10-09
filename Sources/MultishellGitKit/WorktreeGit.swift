@@ -12,16 +12,18 @@ public struct WorktreeGit: Sendable {
   /// Off only in the suites, whose hundreds of creates would each wait a second.
   let settlesNewIndex: Bool
 
+  /// Every git this value runs, timed while debug tools are on.
+  public var runLog: GitRunLog { runner.runLog }
+
   init(
-    runner: GitRunner, settlesNewIndex: Bool = true, readState: SharedReadState = SharedReadState()
+    runner: GitRunner,
+    settlesNewIndex: Bool = true,
+    readState: SharedReadState = SharedReadState(),
   ) {
     self.runner = runner
     self.settlesNewIndex = settlesNewIndex
     self.readState = readState
   }
-
-  /// Every git this value runs, timed while debug tools are on.
-  public var runLog: GitRunLog { runner.runLog }
 
   /// `--git-dir`, not `--is-inside-work-tree`, which prints `false` for a
   /// bare repository: a common layout for people who live in worktrees.
@@ -39,11 +41,14 @@ public struct WorktreeGit: Sendable {
   /// for a project's life, so the watcher and the records check need no spawn.
   public func commonGitDirectory(_ project: Project) async throws -> URL {
     let output = try await runner.run(
-      ["rev-parse", Self.absolutePathsFlag, "--git-common-dir"], in: project.path)
+      ["rev-parse", Self.absolutePathsFlag, "--git-common-dir"],
+      in: project.path,
+    )
     guard let common = Self.absolutePaths(in: output, from: project.path).first else {
       throw ProcessFailure.unreportedByGit(
         ["rev-parse", "--git-common-dir"],
-        message: "git named no common directory for \(project.path.path)")
+        message: "git named no common directory for \(project.path.path)",
+      )
     }
     return common
   }

@@ -11,7 +11,8 @@ struct AgentFlagsTests {
   @Test func aFlagLineBecomesArgumentsWithItsPlaceholdersFilledIn() {
     #expect(
       AgentFlags.arguments("--name={{branch}} --model opus", values: values)
-        == ["--name=kieran/fix", "--model", "opus"])
+        == ["--name=kieran/fix", "--model", "opus"]
+    )
     #expect(AgentFlags.arguments("   ", values: values) == [], "blank passes nothing")
   }
 
@@ -21,7 +22,8 @@ struct AgentFlagsTests {
     #expect(AgentFlags.arguments("--name={{worktree}}", values: values) == ["--name=The fix"])
     #expect(
       AgentFlags.arguments("--prompt 'be brief' --cwd {{worktree_path}}", values: values)
-        == ["--prompt", "be brief", "--cwd", "/Users/dev/Work/multishell-worktrees/fix"])
+        == ["--prompt", "be brief", "--cwd", "/Users/dev/Work/multishell-worktrees/fix"]
+    )
     #expect(AgentFlags.split(#"--a "b c" d\ e"#) == ["--a", "b c", "d e"])
     #expect(AgentFlags.split("--a ''") == ["--a", ""], "an empty quoted word is an argument")
     #expect(AgentFlags.split("--a 'b c") == ["--a", "b c"], "a quote left open takes the rest")
@@ -63,16 +65,24 @@ struct AgentFlagsTests {
   @Test func aValueHoldingAPlaceholderIsNotExpandedAgain() {
     let odd = Worktree(
       path: URL(fileURLWithPath: "/Users/dev/Work/multishell-worktrees/odd"),
-      projectID: project.id, head: "abc1234", branch: "feat/{{project}}")
+      projectID: project.id,
+      head: "abc1234",
+      branch: "feat/{{project}}",
+    )
     let values = WorktreePlaceholder.values(
-      project: project, worktree: odd, worktreeName: "{{project_path}}")
+      project: project,
+      worktree: odd,
+      worktreeName: "{{project_path}}",
+    )
 
     #expect(
-      AgentFlags.arguments("--name={{branch}}", values: values) == ["--name=feat/{{project}}"])
+      AgentFlags.arguments("--name={{branch}}", values: values) == ["--name=feat/{{project}}"]
+    )
     #expect(AgentFlags.arguments("--w={{worktree}}", values: values) == ["--w={{project_path}}"])
     #expect(
       AgentCatalogue.customCommandLine("run --name={{branch}}", values: values).environment
-        == ["MULTISHELL_BRANCH": "feat/{{project}}"])
+        == ["MULTISHELL_BRANCH": "feat/{{project}}"]
+    )
   }
 
   /// A branch name is whatever anyone pushed, and both paths hand it to a shell.

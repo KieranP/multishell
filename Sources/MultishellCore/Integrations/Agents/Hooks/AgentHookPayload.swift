@@ -3,6 +3,13 @@ import Foundation
 /// The JSON an agent writes to a hook command's stdin, reduced to the fields
 /// this reads; see Docs/design/agents.md.
 public struct AgentHookPayload: Hashable, Sendable {
+  struct BackgroundTask: Hashable, Sendable {
+    var id: String
+    /// `subagent`, `shell`, `monitor` and so on, the agent's own label.
+    var taskType: String
+    var subagentType: String?
+  }
+
   var eventName: String
   var workingDirectory: String?
   var message: String?
@@ -30,13 +37,6 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// it launched; see Docs/design/agents.md.
   var killedTaskID: String?
 
-  struct BackgroundTask: Hashable, Sendable {
-    var id: String
-    /// `subagent`, `shell`, `monitor` and so on, the agent's own label.
-    var taskType: String
-    var subagentType: String?
-  }
-
   /// Whether the transcript is another conversation's: Copilot files a
   /// subagent's under its parent's id; see Docs/design/agents.md.
   var isFiledUnderAnotherConversation: Bool {
@@ -56,7 +56,8 @@ public struct AgentHookPayload: Hashable, Sendable {
   }
 }
 
-/// A memberwise init stays synthesized for the tests to build one with.
+// A memberwise init stays synthesized for the tests to build one with.
+// swiftlint:disable:next no_grouping_extension
 extension AgentHookPayload {
   public init?(json data: Data) {
     guard
@@ -78,11 +79,17 @@ extension AgentHookPayload {
           let taskType = task["type"] as? String
         else { return nil }
         return BackgroundTask(
-          id: id, taskType: taskType, subagentType: task["agent_type"] as? String)
+          id: id,
+          taskType: taskType,
+          subagentType: task["agent_type"] as? String,
+        )
       }
     }
-    self.launchedTask = (object["tool_response"] as? [String: Any]).flatMap {
-      LaunchedTask(toolResponse: $0, toolInput: object["tool_input"] as? [String: Any] ?? [:])
+    self.launchedTask = (object["tool_response"] as? [String: Any]).flatMap { response in
+      LaunchedTask(
+        toolResponse: response,
+        toolInput: object["tool_input"] as? [String: Any] ?? [:],
+      )
     }
     if object["tool_name"] as? String == "TaskStop" {
       self.killedTaskID = (object["tool_response"] as? [String: Any])?["task_id"] as? String

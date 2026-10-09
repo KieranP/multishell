@@ -33,7 +33,8 @@ struct GhosttyKeyEquivalentTests {
   @Test func aSyntheticKeyIsLeftAloneAndRemembersNothing() {
     var equivalent = GhosttyKeyEquivalent()
     #expect(
-      equivalent.offer("\u{1B}", characters: "\u{1B}", flags: .command, timestamp: 0) == nil)
+      equivalent.offer("\u{1B}", characters: "\u{1B}", flags: .command, timestamp: 0) == nil
+    )
     #expect(!equivalent.isSecondOffer(at: 0))
   }
 
@@ -47,7 +48,8 @@ struct GhosttyKeyEquivalentTests {
     var equivalent = GhosttyKeyEquivalent()
     #expect(equivalent.offer("/", characters: "/", flags: .control, timestamp: 5) == "_")
     #expect(
-      equivalent.offer("/", characters: "/", flags: [.control, .shift], timestamp: 5) == nil)
+      equivalent.offer("/", characters: "/", flags: [.control, .shift], timestamp: 5) == nil
+    )
   }
 
   @Test func resettingEndsTheOffer() {

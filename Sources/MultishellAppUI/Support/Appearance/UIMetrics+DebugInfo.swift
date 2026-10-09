@@ -2,6 +2,18 @@ import Foundation
 
 /// The sizes only Debug Info's strips and tables use.
 extension UIMetrics {
+  /// A debug table's side inset, which its title, header and rows share.
+  static let debugTableInset: Double = 12
+  /// A row's disclosure chevron, before its first column.
+  static let debugTableChevronWidth: Double = 10
+  static let debugTableColumnSpacing: Double = 8
+  /// Where a debug table's first column starts, past the chevron.
+  static let debugTableTitleInset =
+    debugTableInset + debugTableChevronWidth + debugTableColumnSpacing
+  /// Right of each debug strip's chart, which the axis row must match for its
+  /// ticks to sit under the slots.
+  static let debugChartTrailingInset: Double = 10
+
   /// A debug strip's name and value column, which its axis row keeps clear; the
   /// memory strip's widest label takes 25.8 ems (DebugStripLabelTests).
   var debugStripLabelWidth: Double { (bodySize * 26).rounded() }
@@ -15,21 +27,11 @@ extension UIMetrics {
   var debugMemoryBarColumnWidth: Double { (bodySize * 8.5).rounded() }
   var debugMemoryValueColumnWidth: Double { (bodySize * 5.5).rounded() }
   private var debugMemoryBarWidth: Double { (bodySize * 3.5).rounded() }
+  /// A debug table row's chevron and a process line's nesting arrow.
+  var debugTableGlyphSize: Double { small - 1 }
+
   /// Two points at least, so a row holding any memory shows a bar.
   func debugMemoryBarLength(forFraction fraction: Double) -> Double {
     max(2, fraction * debugMemoryBarWidth)
   }
-  /// A debug table's side inset, which its title, header and rows share.
-  static let debugTableInset: Double = 12
-  /// A row's disclosure chevron, before its first column.
-  static let debugTableChevronWidth: Double = 10
-  /// A debug table row's chevron and a process line's nesting arrow.
-  var debugTableGlyphSize: Double { small - 1 }
-  static let debugTableColumnSpacing: Double = 8
-  /// Where a debug table's first column starts, past the chevron.
-  static let debugTableTitleInset =
-    debugTableInset + debugTableChevronWidth + debugTableColumnSpacing
-  /// Right of each debug strip's chart, which the axis row must match for its
-  /// ticks to sit under the slots.
-  static let debugChartTrailingInset: Double = 10
 }

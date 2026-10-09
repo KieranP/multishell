@@ -29,7 +29,10 @@ extension AppModelNewWorktreeSheetTests {
 
     harness.model.requestNewWorktree()
 
-    #expect(harness.model.newWorktreeRequest?.projectID == nil, "nothing on screen names a project")
+    #expect(
+      harness.model.newWorktreeRequest?.projectID == nil,
+      "nothing on screen names a project",
+    )
   }
 
   @Test func theMenuFollowsTheSelectedWorktreesProject() {

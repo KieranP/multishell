@@ -14,13 +14,18 @@ public protocol TerminalHostDelegate: AnyObject {
   /// The shell's foreground command returned. Needs shell integration, which
   /// only Ghostty has; the one signal outranking an agent's own report.
   func terminalHost(
-    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?)
+    _ host: any TerminalHost,
+    didFinishCommandIn id: TerminalSession.ID,
+    exitCode: Int32?,
+  )
 }
 
 extension TerminalHostDelegate {
   /// A host without the distinction reports a finished command as activity.
   public func terminalHost(
-    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+    _ host: any TerminalHost,
+    didFinishCommandIn id: TerminalSession.ID,
+    exitCode: Int32?,
   ) {
     terminalHost(host, didSeeActivityIn: id)
   }

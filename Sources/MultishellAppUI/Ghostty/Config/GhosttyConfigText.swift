@@ -5,11 +5,11 @@ import Foundation
 struct GhosttyConfigText {
   private var lines: [String] = []
 
-  init(_ build: (inout GhosttyConfigText) -> Void = { _ in }) {
+  var rendered: String { lines.joined(separator: "\n") }
+
+  init(_ build: (inout Self) -> Void = { _ in }) {
     build(&self)
   }
-
-  var rendered: String { lines.joined(separator: "\n") }
 
   /// A theme file's colour reaches here unchecked, and a line break in it
   /// would add a line the allow-list never saw, so such a value is left out.

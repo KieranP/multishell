@@ -20,6 +20,7 @@ struct TintSwatch: View {
           .frame(width: 14, height: 14)
         if slot == nil {
           Image(systemName: "xmark").font(.system(size: 7, weight: .bold)).foregroundStyle(.white)
+            .accessibilityHidden(true)
         }
       }
       .overlay {

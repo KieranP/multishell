@@ -8,11 +8,14 @@ import Testing
 @Suite
 struct WorkspaceEffectiveSettingsTests {
   private func project(
-    order: WorktreeSortOrder? = nil, showsActiveFirst: Bool? = nil
+    order: WorktreeSortOrder? = nil,
+    showsActiveFirst: Bool? = nil,
   ) -> Project {
     var project = Project(path: URL(fileURLWithPath: "/w/demo"))
     project.settings = ProjectSettings(
-      worktreeSortOrder: order, showsActiveWorktreesFirst: showsActiveFirst)
+      worktreeSortOrder: order,
+      showsActiveWorktreesFirst: showsActiveFirst,
+    )
     return project
   }
 
@@ -76,13 +79,17 @@ struct WorkspaceEffectiveSettingsTests {
 
     #expect(workspace.effectiveAgentFlags(for: project, agent: "claude") == "--model opus")
     #expect(workspace.effectiveAgentFlags(for: project, agent: "codex") == "--full-auto")
-    #expect(workspace.effectiveAgentFlags(for: project, agent: "opencode") == "", "nothing stored")
+    #expect(
+      workspace.effectiveAgentFlags(for: project, agent: "opencode") == "",
+      "nothing stored",
+    )
 
     let quiet = Project(path: project.path, settings: ProjectSettings(agentFlags: ""))
     #expect(quiet.settings.agentFlags != nil, "blank is an override, not an absent key")
     #expect(
       workspace.effectiveAgentFlags(for: quiet, agent: "claude") == "",
-      "a project can run the agent bare under a global that passes flags")
+      "a project can run the agent bare under a global that passes flags",
+    )
 
     let own = Project(path: project.path, settings: ProjectSettings(agentFlags: "--model haiku"))
     #expect(workspace.effectiveAgentFlags(for: own, agent: "claude") == "--model haiku")
@@ -93,9 +100,13 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.preferredAgentID = "claude"
     let follows = Project(path: URL(fileURLWithPath: "/a"))
     let optsOut = Project(
-      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(preferredAgentID: "none"))
+      path: URL(fileURLWithPath: "/b"),
+      settings: ProjectSettings(preferredAgentID: "none"),
+    )
     let overrides = Project(
-      path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(preferredAgentID: "codex"))
+      path: URL(fileURLWithPath: "/c"),
+      settings: ProjectSettings(preferredAgentID: "codex"),
+    )
     #expect(workspace.effectiveAgentID(for: follows) == "claude")
     #expect(workspace.effectiveAgentID(for: optsOut) == nil)
     #expect(workspace.effectiveAgentID(for: overrides) == "codex")
@@ -106,12 +117,17 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.preferredAgentID = "claude"
     let follows = Project(path: URL(fileURLWithPath: "/a"))
     let forcedOn = Project(
-      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartsAgent: true))
+      path: URL(fileURLWithPath: "/b"),
+      settings: ProjectSettings(autoStartsAgent: true),
+    )
     let forcedOff = Project(
-      path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(autoStartsAgent: false))
+      path: URL(fileURLWithPath: "/c"),
+      settings: ProjectSettings(autoStartsAgent: false),
+    )
     let noAgent = Project(
       path: URL(fileURLWithPath: "/d"),
-      settings: ProjectSettings(preferredAgentID: "none", autoStartsAgent: true))
+      settings: ProjectSettings(preferredAgentID: "none", autoStartsAgent: true),
+    )
 
     #expect(!workspace.autoStartsAgent(for: follows), "global off")
     #expect(workspace.autoStartsAgent(for: forcedOn))
@@ -128,9 +144,13 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.autoStartsAgentOnCreate = true
     let follows = Project(path: URL(fileURLWithPath: "/a"))
     let forcedOff = Project(
-      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartsAgentOnCreate: false))
+      path: URL(fileURLWithPath: "/b"),
+      settings: ProjectSettings(autoStartsAgentOnCreate: false),
+    )
     let noAgent = Project(
-      path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(preferredAgentID: "none"))
+      path: URL(fileURLWithPath: "/c"),
+      settings: ProjectSettings(preferredAgentID: "none"),
+    )
 
     #expect(workspace.autoStartsAgentOnCreate(for: follows))
     #expect(!workspace.autoStartsAgent(for: follows), "the tab-open setting is still off")
@@ -144,10 +164,12 @@ struct WorkspaceEffectiveSettingsTests {
     let plain = Project(path: URL(fileURLWithPath: "/repos/a"))
     let fish = Project(
       path: URL(fileURLWithPath: "/repos/b"),
-      settings: ProjectSettings(preferredShellID: "/usr/local/bin/fish"))
+      settings: ProjectSettings(preferredShellID: "/usr/local/bin/fish"),
+    )
     let login = Project(
       path: URL(fileURLWithPath: "/repos/c"),
-      settings: ProjectSettings(preferredShellID: ShellChoice.loginShellID))
+      settings: ProjectSettings(preferredShellID: ShellChoice.loginShellID),
+    )
     #expect(workspace.effectiveShellPath(for: plain) == "/bin/bash")
     #expect(workspace.effectiveShellPath(for: fish) == "/usr/local/bin/fish")
     #expect(workspace.effectiveShellPath(for: login) == nil)

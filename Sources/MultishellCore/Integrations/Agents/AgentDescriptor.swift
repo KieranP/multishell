@@ -18,9 +18,14 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   let markTint: String?
 
   init(
-    id: String, name: String, executable: String,
-    resumeArguments: [String]? = nil, taskArgument: AgentTaskArgument,
-    fileMentionPrefix: String? = nil, mark: AgentMark, markTint: String? = nil
+    id: String,
+    name: String,
+    executable: String,
+    taskArgument: AgentTaskArgument,
+    mark: AgentMark,
+    resumeArguments: [String]? = nil,
+    fileMentionPrefix: String? = nil,
+    markTint: String? = nil,
   ) {
     self.id = id
     self.name = name

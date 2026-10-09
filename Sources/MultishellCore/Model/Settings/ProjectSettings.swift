@@ -85,7 +85,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     showsActiveWorktreesFirst: Bool? = nil,
     preferredShellID: String? = nil,
     iconGlyph: String? = nil,
-    iconTint: Int? = nil
+    iconTint: Int? = nil,
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix

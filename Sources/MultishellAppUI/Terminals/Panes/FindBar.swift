@@ -5,16 +5,16 @@ import SwiftUI
 /// The find bar over one pane, in Ghostty's shape: a well for the text and three
 /// glyphs. Its text is the model's, per pane; see Docs/design/terminals.md.
 struct FindBar: View {
-  let model: AppModel
-  let sessionID: TerminalSession.ID
-  let theme: Theme
-  @FocusState private var isFieldFocused: Bool
-
   /// What the bar takes when the pane has it; a narrower pane shrinks the
   /// well rather than drawing the bar over its neighbour.
   private static let width: CGFloat = 340
   private static let cornerRadius: CGFloat = 10
   private static let padding: CGFloat = 7
+
+  let model: AppModel
+  let sessionID: TerminalSession.ID
+  let theme: Theme
+  @FocusState private var isFieldFocused: Bool
 
   var body: some View {
     let metrics = model.metrics
@@ -52,7 +52,9 @@ struct FindBar: View {
       .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3))
       .overlay(
         RoundedRectangle(cornerRadius: Self.cornerRadius - 3).strokeBorder(
-          theme.findWellBorderColor))
+          theme.findWellBorderColor
+        )
+      )
   }
 
   private func claimField() {
@@ -72,6 +74,11 @@ struct FindBar: View {
   private func button(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View
   {
     FindBarButton(
-      symbol: symbol, label: label, theme: theme, metrics: model.metrics, action: action)
+      symbol: symbol,
+      label: label,
+      theme: theme,
+      metrics: model.metrics,
+      action: action,
+    )
   }
 }

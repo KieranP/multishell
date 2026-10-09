@@ -16,7 +16,8 @@ struct DebugInfoHeader: View {
       title: t("debug.title"),
       summary: timeline.stallSummary,
       summaryColor: timeline.hasStalls ? theme.failureColor : theme.textTertiary,
-      theme: theme, metrics: metrics
+      theme: theme,
+      metrics: metrics,
     ) {
       Picker(t("debug.range"), selection: $range) {
         ForEach(DebugRange.allCases, id: \.self) { range in

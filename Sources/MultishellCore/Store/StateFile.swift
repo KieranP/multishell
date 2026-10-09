@@ -6,6 +6,20 @@ struct StateFile: Sendable {
   private let fileURL: URL
   private let order = SaveOrder()
 
+  /// Whether a file stands where `save` would write. Asked after a failed
+  /// load, when what is still there is the user's own state.
+  var existsOnDisk: Bool {
+    FileManager.default.fileExists(atPath: fileURL.path)
+  }
+
+  private var backupURL: URL {
+    let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(
+      of: ":",
+      with: "-",
+    )
+    return fileURL.deletingPathExtension().appendingPathExtension("\(stamp).broken.json")
+  }
+
   init(fileURL: URL = Paths.stateFile) {
     self.fileURL = fileURL
   }
@@ -32,17 +46,6 @@ struct StateFile: Sendable {
       }
       throw UnreadableStateFile(backup: backup, underlying: error)
     }
-  }
-
-  /// Whether a file stands where `save` would write. Asked after a failed
-  /// load, when what is still there is the user's own state.
-  var existsOnDisk: Bool {
-    FileManager.default.fileExists(atPath: fileURL.path)
-  }
-
-  private var backupURL: URL {
-    let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
-    return fileURL.deletingPathExtension().appendingPathExtension("\(stamp).broken.json")
   }
 
   func save(_ workspace: Workspace) throws {

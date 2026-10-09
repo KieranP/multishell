@@ -9,6 +9,7 @@ struct HookVariableTests {
       HookVariable.allCases.map(\.name) == [
         "MULTISHELL_PROJECT_PATH", "MULTISHELL_PROJECT_NAME", "MULTISHELL_WORKTREE_PATH",
         "MULTISHELL_BRANCH",
-      ])
+      ]
+    )
   }
 }

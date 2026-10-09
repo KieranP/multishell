@@ -1,3 +1,5 @@
+// Declared order is the order allCases gives the UI.
+// swiftlint:disable sorted_enum_cases
 /// A strip on Debug Info, in the order the panel draws them.
 public enum DebugMetric: CaseIterable, Sendable {
   case frameRate
@@ -28,10 +30,11 @@ public enum DebugMetric: CaseIterable, Sendable {
     case .cpu: (slot.appCPUPercent, slot.appCPUPercent, slot.totalCPUPercent)
     case .gitRuns: unsplit(slot.gitRunsStartedPerSecond)
     case .stateReports: unsplit(slot.stateReportsPerSecond)
+
     case .memory:
       (
         Double(slot.appMemoryOutsideTerminals), Double(slot.appMemory),
-        Double(slot.totalMemory)
+        Double(slot.totalMemory),
       )
     }
   }
@@ -48,3 +51,4 @@ public enum DebugMetric: CaseIterable, Sendable {
     }
   }
 }
+// swiftlint:enable sorted_enum_cases

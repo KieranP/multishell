@@ -19,15 +19,18 @@ struct AppModelErrorReportingTests {
     let harness = Harness()
     harness.model.presentedError = nil
     #expect(
-      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError == nil)
+      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError == nil
+    )
 
     harness.model.presentedError = retryable(counting: {})
     #expect(
-      harness.model.presentedRetryableError != nil && harness.model.presentedPlainError == nil)
+      harness.model.presentedRetryableError != nil && harness.model.presentedPlainError == nil
+    )
 
     harness.model.presentedError = PresentedError(title: "Failed", message: "")
     #expect(
-      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError != nil)
+      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError != nil
+    )
   }
 
   @Test func answeringWithTheRetryTakesTheAlertDownAndRunsItOnce() async {

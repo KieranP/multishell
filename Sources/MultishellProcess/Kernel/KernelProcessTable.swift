@@ -2,6 +2,9 @@ import Foundation
 
 /// What the kernel says about a process, or about every process in one read.
 public enum KernelProcessTable {
+  /// `NODEV`, a macro Swift does not import.
+  private static let noDevice: Int32 = -1
+
   /// Whether the process has left the table. Only ESRCH means gone; EPERM
   /// is another user's live process.
   public static func isGone(_ pid: Int32) -> Bool {
@@ -13,8 +16,8 @@ public enum KernelProcessTable {
     var capacity = 64
     while true {
       var pids = [Int32](repeating: 0, count: capacity)
-      let count = pids.withUnsafeMutableBytes {
-        proc_listchildpids(pid, $0.baseAddress, Int32($0.count))
+      let count = pids.withUnsafeMutableBytes { buffer in
+        proc_listchildpids(pid, buffer.baseAddress, Int32(buffer.count))
       }
       guard count > 0 else { return [] }
       if count < capacity { return Array(pids.prefix(Int(count))) }
@@ -45,9 +48,6 @@ public enum KernelProcessTable {
     return ProcessArguments(sysctlBuffer: buffer.prefix(size))
   }
 
-  /// `NODEV`, a macro Swift does not import.
-  private static let noDevice: Int32 = -1
-
   /// The controlling terminal's device number, `nil` for a process with none.
   static func terminalDevice(in record: kinfo_proc) -> Int32? {
     record.kp_eproc.e_tdev == noDevice ? nil : record.kp_eproc.e_tdev
@@ -67,8 +67,8 @@ public enum KernelProcessTable {
   static func name(in record: kinfo_proc) -> String {
     var record = record
     return withUnsafePointer(to: &record.kp_proc.p_comm) { pointer in
-      pointer.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN) + 1) {
-        String(cString: $0)
+      pointer.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN) + 1) { characters in
+        String(cString: characters)
       }
     }
   }
@@ -83,8 +83,8 @@ public enum KernelProcessTable {
       guard sysctl(&name, UInt32(name.count), nil, &size, nil, 0) == 0 else { return [] }
       var records = [kinfo_proc](repeating: kinfo_proc(), count: size / stride + 16)
       size = records.count * stride
-      let read = records.withUnsafeMutableBytes {
-        sysctl(&name, UInt32(name.count), $0.baseAddress, &size, nil, 0)
+      let read = records.withUnsafeMutableBytes { buffer in
+        sysctl(&name, UInt32(name.count), buffer.baseAddress, &size, nil, 0)
       }
       if read == 0 { return Array(records.prefix(size / stride)) }
       guard errno == ENOMEM else { return [] }

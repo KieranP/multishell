@@ -9,10 +9,12 @@ struct WorktreeMergeStateBadgeTests {
   @Test func theTooltipOffersRemovalOnlyWhereTheEvidenceIsProof() {
     #expect(
       WorktreeMergeState.merged(.ancestor, into: "origin/main").tooltip
-        == "Merged into origin/main · safe to remove")
+        == "Merged into origin/main · safe to remove"
+    )
     #expect(
       !WorktreeMergeState.merged(.upstreamGone, into: "origin/main").tooltip
-        .contains("safe to remove"))
+        .contains("safe to remove")
+    )
     #expect(WorktreeMergeState.unmerged.tooltip.isEmpty)
     #expect(WorktreeMergeState.unknown.tooltip.isEmpty)
   }

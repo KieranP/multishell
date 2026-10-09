@@ -24,7 +24,9 @@ struct AgentHookFileTests: AgentHookFixtures {
     #expect(installed.contains(#""s" : "1.0""#), "a string that looks like one is still a string")
     #expect(installed.contains("\\u0001") == false, "and no marker leaks into the file")
     #expect(
-      installed.contains(#/"timeout" : 5[,\n]/#), "our own numbers are written as before")
+      installed.contains(#/"timeout" : 5[,\n]/#),
+      "our own numbers are written as before",
+    )
 
     try AgentHookCatalogue.claude.remove(from: file)
     let removed = try String(contentsOf: file, encoding: .utf8)
@@ -87,8 +89,10 @@ struct AgentHookFileTests: AgentHookFixtures {
     #expect(!AgentHookCatalogue.gemini.hasOurHookUnderEveryEvent(in: file))
     #expect(
       !FileManager.default.fileExists(
-        atPath: file.appendingPathExtension("before-multishell").path),
-      "nothing was written, so nothing was backed up")
+        atPath: file.appendingPathExtension("before-multishell").path
+      ),
+      "nothing was written, so nothing was backed up",
+    )
   }
 
   @Test func aLinkIntoADirectoryNotYetMadeIsWrittenThroughRatherThanReplaced() throws {
@@ -99,13 +103,16 @@ struct AgentHookFileTests: AgentHookFixtures {
     let tracked = directory.appendingPathComponent("dotfiles/claude/settings.json")
     let link = home.appendingPathComponent("settings.json")
     try FileManager.default.createSymbolicLink(
-      atPath: link.path, withDestinationPath: "../../dotfiles/claude/settings.json")
+      atPath: link.path,
+      withDestinationPath: "../../dotfiles/claude/settings.json",
+    )
 
     try AgentHookCatalogue.claude.install(into: link, helper: helper)
 
     #expect(
       (try? FileManager.default.destinationOfSymbolicLink(atPath: link.path))
-        == "../../dotfiles/claude/settings.json")
+        == "../../dotfiles/claude/settings.json"
+    )
     #expect(AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: tracked))
   }
 
@@ -127,21 +134,26 @@ struct AgentHookFileTests: AgentHookFixtures {
 
     #expect(
       (try? FileManager.default.destinationOfSymbolicLink(atPath: link.path)) == tracked.path,
-      "still a link, so the dotfiles repository still owns the file")
+      "still a link, so the dotfiles repository still owns the file",
+    )
     #expect(
       AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: tracked),
-      "written through to what it points at")
+      "written through to what it points at",
+    )
     #expect(try AgentHookFile.read(tracked)["model"] as? String == "opus")
 
     // The copy goes beside the link, where the user will look for it, not
     // into the repository the link points into.
     #expect(
       try String(contentsOf: link.appendingPathExtension("before-multishell"), encoding: .utf8)
-        .contains("opus"))
+        .contains("opus")
+    )
     #expect(
       !FileManager.default.fileExists(
-        atPath: tracked.appendingPathExtension("before-multishell").path),
-      "nothing new in the dotfiles repository for git to report")
+        atPath: tracked.appendingPathExtension("before-multishell").path
+      ),
+      "nothing new in the dotfiles repository for git to report",
+    )
 
     try AgentHookCatalogue.claude.remove(from: link)
     #expect((try? FileManager.default.destinationOfSymbolicLink(atPath: link.path)) != nil)

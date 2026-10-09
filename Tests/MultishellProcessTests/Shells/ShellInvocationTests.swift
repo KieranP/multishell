@@ -24,7 +24,11 @@ struct ShellInvocationTests {
     let home = shell.home
 
     let output = try await ShellCommand.runScript(
-      "printf ok", in: home, environment: ["HOME": home.path], shellPath: shell.path)
+      "printf ok",
+      in: home,
+      shellPath: shell.path,
+      environment: ["HOME": home.path],
+    )
 
     #expect(output == "ok")
   }

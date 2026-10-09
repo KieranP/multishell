@@ -19,8 +19,11 @@ extension AppModel {
       project.settings.needsTrustDecision(for: shared)
     else { return }
     pendingSharedSettingsTrust = PendingSharedSettingsTrust(
-      projectID: id, projectName: project.name, trustCoveredText: trustCoveredText,
-      digest: digest)
+      projectID: id,
+      projectName: project.name,
+      trustCoveredText: trustCoveredText,
+      digest: digest,
+    )
   }
 
   /// Stores an answer against the file's sha256. The project is read again,

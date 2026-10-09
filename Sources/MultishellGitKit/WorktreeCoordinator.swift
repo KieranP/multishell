@@ -21,19 +21,26 @@ public struct WorktreeCoordinator: Sendable {
   /// The git on `searchPath`, the login shell's PATH, past Apple's git shim to the git it
   /// would run. Async, as it may ask xcrun; for the login environment's capture, not launch.
   public static func resolved(
-    searchPath: String?, replacing previous: WorktreeCoordinator?
-  ) async throws -> WorktreeCoordinator {
+    searchPath: String?,
+    replacing previous: Self?,
+  ) async throws -> Self {
     let executable = await GitExecutable.resolve(
       searchPath: searchPath,
-      developerDirectory: await runOnDispatch { GitExecutable.selectedDeveloperDirectory() })
+      developerDirectory: await runOnDispatch { GitExecutable.selectedDeveloperDirectory() },
+    )
     let runner = try GitRunner(
-      executable: executable, searchPath: searchPath,
-      runLog: previous?.git.runLog ?? GitRunLog())
+      executable: executable,
+      searchPath: searchPath,
+      runLog: previous?.git.runLog ?? GitRunLog(),
+    )
     // Reads still in flight on the previous git hold slots the new one must count.
-    guard let previous else { return WorktreeCoordinator(git: WorktreeGit(runner: runner)) }
-    return WorktreeCoordinator(
+    guard let previous else { return Self(git: WorktreeGit(runner: runner)) }
+    return Self(
       git: WorktreeGit(
-        runner: runner, settlesNewIndex: previous.git.settlesNewIndex,
-        readState: previous.git.readState))
+        runner: runner,
+        settlesNewIndex: previous.git.settlesNewIndex,
+        readState: previous.git.readState,
+      )
+    )
   }
 }

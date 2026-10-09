@@ -15,7 +15,8 @@ struct AgentMarkImageTests {
       let run = ink.inkedRows(inColumn: column)
       #expect(
         Double(run) > Double(glyph.height) * 0.5,
-        "column \(column) is inked on \(run) of the glyph's \(glyph.height) rows")
+        "column \(column) is inked on \(run) of the glyph's \(glyph.height) rows",
+      )
     }
   }
 }

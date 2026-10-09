@@ -12,6 +12,8 @@ struct QuitConfirmationTests {
     )
     #expect(
       QuitConfirmation.message(terminals: 4, working: 2).hasSuffix(
-        "2 of them have agents that are still working."))
+        "2 of them have agents that are still working."
+      )
+    )
   }
 }

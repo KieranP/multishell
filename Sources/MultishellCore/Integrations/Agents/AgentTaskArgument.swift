@@ -6,14 +6,6 @@ public enum AgentTaskArgument: Hashable, Sendable {
   /// An option taking the task as its value, joined by `=`.
   case option(String)
 
-  public func arguments(for task: String) -> [String] {
-    let line = Self.oneLine(task)
-    return switch self {
-    case .operand: ["--", Self.unlikeAnySubcommand(line)]
-    case .option(let name): ["\(name)=\(line)"]
-    }
-  }
-
   /// Claude's CLI reads a lone word behind `--` as a subcommand, so
   /// `claude -- doctor` runs doctor; no subcommand name ends in a space.
   private static func unlikeAnySubcommand(_ line: String) -> String {
@@ -24,5 +16,13 @@ public enum AgentTaskArgument: Hashable, Sendable {
   /// read alike, so a task reaches every shell as one line.
   static func oneLine(_ task: String) -> String {
     task.split(whereSeparator: \.isNewline).joined(separator: " ")
+  }
+
+  public func arguments(for task: String) -> [String] {
+    let line = Self.oneLine(task)
+    return switch self {
+    case .operand: ["--", Self.unlikeAnySubcommand(line)]
+    case .option(let name): ["\(name)=\(line)"]
+    }
   }
 }

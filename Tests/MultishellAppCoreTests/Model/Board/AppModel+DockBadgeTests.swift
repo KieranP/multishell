@@ -17,16 +17,19 @@ struct AppModelDockBadgeTests {
     harness.platform.badges.removeAll()
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, sessionID: session.id, agentID: "claude"))
+      SessionStateReport(state: .attention, sessionID: session.id, agentID: "claude")
+    )
     #expect(harness.platform.badges.last == 1)
 
     harness.stateSource.send(
-      SessionStateReport(state: .failed, sessionID: session.id, agentID: "claude"))
+      SessionStateReport(state: .failed, sessionID: session.id, agentID: "claude")
+    )
     #expect(model.agentBoard.count(of: .waiting) == 1)
     #expect(harness.platform.badges == [1], "one waiting, still")
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
+    )
     #expect(harness.platform.badges.last == .some(nil), "nothing waiting is no badge at all")
   }
 
@@ -52,15 +55,23 @@ struct AppModelDockBadgeTests {
     harness.platform.badges.removeAll()
 
     harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, pid: 1, agentID: "claude"))
+      SessionStateReport(state: .running, sessionID: session.id, pid: 1, agentID: "claude")
+    )
     harness.stateSource.send(
-      SessionStateReport(state: .idle, sessionID: session.id, agentID: "claude"))
+      SessionStateReport(state: .idle, sessionID: session.id, agentID: "claude")
+    )
     harness.engine.delegate?.terminalHost(
-      harness.engine, didFinishCommandIn: session.id, exitCode: 0)
+      harness.engine,
+      didFinishCommandIn: session.id,
+      exitCode: 0,
+    )
     #expect(model.reportedAgents[session.id] == nil, "the agent was the command that returned")
 
     harness.engine.delegate?.terminalHost(
-      harness.engine, didFinishCommandIn: session.id, exitCode: 1)
+      harness.engine,
+      didFinishCommandIn: session.id,
+      exitCode: 1,
+    )
     #expect(model.sessionStates[.session(session.id)] == .failed)
     #expect(model.boardLaneCounts[.waiting] ?? 0 == 0, "a shell's failure, and shells are hidden")
     #expect(harness.platform.badges.last != 1)

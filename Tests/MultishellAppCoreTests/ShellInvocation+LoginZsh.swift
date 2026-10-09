@@ -4,5 +4,7 @@ import Foundation
 
 extension ShellInvocation {
   static let loginZsh = ShellInvocation(
-    executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
+    executable: URL(fileURLWithPath: "/bin/zsh"),
+    arguments: ["-l", "-i", "-c"],
+  )
 }

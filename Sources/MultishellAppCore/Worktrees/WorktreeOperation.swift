@@ -11,11 +11,11 @@ public struct WorktreeOperation: Equatable, Sendable {
   /// rather than that it refused.
   let didTimeOut: Bool
 
+  public var isRunning: Bool { failure == nil }
+
   init(_ stage: Stage, failure: String? = nil, didTimeOut: Bool = false) {
     self.stage = stage
     self.failure = failure
     self.didTimeOut = didTimeOut
   }
-
-  public var isRunning: Bool { failure == nil }
 }

@@ -7,7 +7,10 @@ import Testing
 struct SharedProjectSettingsTrustTests {
   @Test func theQuestionShowsTheListsAlongsideTheHooks() throws {
     let shared = SharedProjectSettings(
-      postCreateHook: "npm ci", linkedPaths: "node_modules", copiedPaths: ".env")
+      postCreateHook: "npm ci",
+      linkedPaths: "node_modules",
+      copiedPaths: ".env",
+    )
     let text = try #require(shared.trustCoveredText)
 
     #expect(text.contains("post-create:\nnpm ci"))
@@ -17,7 +20,8 @@ struct SharedProjectSettingsTrustTests {
 
   @Test func aFileWithNeitherHooksNorListsIsNeverAskedAbout() throws {
     let shared = try writtenAndReadBack(
-      SharedProjectSettings(branchPrefix: "team/", iconGlyph: "hammer"))
+      SharedProjectSettings(branchPrefix: "team/", iconGlyph: "hammer")
+    )
     #expect(!shared.asksForTrust)
     #expect(shared.trustCoveredText == nil)
     #expect(!ProjectSettings().needsTrustDecision(for: shared))
@@ -34,10 +38,16 @@ struct SharedProjectSettingsTrustTests {
 
   @Test func theQuestionNamesEachFieldInTheCataloguesWords() throws {
     let shared = SharedProjectSettings(
-      worktreeDirectory: ".trees", preCreateHook: "a", postCreateHook: "b", preDeleteHook: "c",
-      postDeleteHook: "d", linkedPaths: "e", copiedPaths: "f")
-    let names = try #require(shared.trustCoveredText).split(separator: "\n\n").map {
-      String($0.prefix { $0 != ":" })
+      worktreeDirectory: ".trees",
+      preCreateHook: "a",
+      postCreateHook: "b",
+      preDeleteHook: "c",
+      postDeleteHook: "d",
+      linkedPaths: "e",
+      copiedPaths: "f",
+    )
+    let names = try #require(shared.trustCoveredText).split(separator: "\n\n").map { line in
+      String(line.prefix { $0 != ":" })
     }
 
     #expect(
@@ -46,7 +56,8 @@ struct SharedProjectSettingsTrustTests {
         t("shared-settings.post-create"), t("shared-settings.pre-delete"),
         t("shared-settings.post-delete"), t("shared-settings.linked"),
         t("shared-settings.copied"),
-      ])
+      ]
+    )
   }
 
   @Test func everyFieldTheYesCoversIsShownInTheQuestion() throws {
@@ -75,7 +86,8 @@ struct SharedProjectSettingsTrustTests {
   /// so a list waits for a hook's yes. The user's own list wins whole.
   @Test func aRepositorysListOfWhatNewWorktreesAreGivenWaitsToBeTrusted() throws {
     let shared = try writtenAndReadBack(
-      SharedProjectSettings(linkedPaths: "node_modules", copiedPaths: ".env\n.env.local"))
+      SharedProjectSettings(linkedPaths: "node_modules", copiedPaths: ".env\n.env.local")
+    )
     #expect(shared.asksForTrust, "a list reads files, so it is asked about")
 
     let untrusted = ProjectSettings().layered(over: shared)

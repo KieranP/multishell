@@ -11,16 +11,31 @@ struct WorktreeRowTests {
   private let metrics = UIMetrics(fontSize: 13)
 
   private func row(
-    status: WorktreeStatus? = nil, beginRename: @escaping () -> Void = {}
+    status: WorktreeStatus? = nil,
+    beginRename: @escaping () -> Void = {},
   ) -> WorktreeRow {
     WorktreeRow(
       worktree: Worktree(
-        path: URL(fileURLWithPath: "/w/t/feat"), projectID: project.id, head: "0",
-        branch: "feat"),
-      customName: nil, isRenaming: false, terminalCount: 1, state: nil, operation: nil,
-      isSelected: false, isDropTarget: false, status: status, mergeState: .unknown,
-      theme: .multishellDark, metrics: metrics, beginRename: beginRename, commitRename: { _ in },
-      cancelRename: {})
+        path: URL(fileURLWithPath: "/w/t/feat"),
+        projectID: project.id,
+        head: "0",
+        branch: "feat",
+      ),
+      customName: nil,
+      isRenaming: false,
+      terminalCount: 1,
+      state: nil,
+      operation: nil,
+      isSelected: false,
+      isDropTarget: false,
+      status: status,
+      mergeState: .unknown,
+      theme: .multishellDark,
+      metrics: metrics,
+      beginRename: beginRename,
+      commitRename: { _ in },
+      cancelRename: {},
+    )
   }
 
   @Test func aWorktreeRowRebuiltWithFreshClosuresIsTheSameRow() {

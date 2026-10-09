@@ -25,7 +25,9 @@ struct SocketStateSourceTests {
       not json at all
       {"v":1,"session":"\(session.uuidString)","state":"attention","pid":41,"message":"Needs Bash"}
 
-      """, to: path)
+      """,
+      to: path,
+    )
 
     try await waitUntil { !received.isEmpty }
     #expect(received.count == 1)

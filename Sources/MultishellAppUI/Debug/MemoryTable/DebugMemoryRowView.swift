@@ -21,9 +21,12 @@ struct DebugMemoryRowView: View {
         .frame(width: UIMetrics.debugTableChevronWidth)
       switch layout {
       case .columns: columns
+
       case .stacked:
         DebugStackedRowView(
-          captions: row.stackedCaptions, theme: theme, metrics: metrics
+          captions: row.stackedCaptions,
+          theme: theme,
+          metrics: metrics,
         ) {
           title
         } headline: {
@@ -54,11 +57,15 @@ struct DebugMemoryRowView: View {
         .foregroundStyle(theme.textSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
       DebugNumberCell(
-        text: row.processCountText, width: metrics.debugCountColumnWidth,
-        color: theme.textPrimary)
+        text: row.processCountText,
+        width: metrics.debugCountColumnWidth,
+        color: theme.textPrimary,
+      )
       DebugNumberCell(
-        text: row.selfMemoryText, width: metrics.debugMemoryValueColumnWidth,
-        color: theme.textPrimary)
+        text: row.selfMemoryText,
+        width: metrics.debugMemoryValueColumnWidth,
+        color: theme.textPrimary,
+      )
       totalCell
         .frame(width: metrics.debugMemoryBarColumnWidth, alignment: .trailing)
     }

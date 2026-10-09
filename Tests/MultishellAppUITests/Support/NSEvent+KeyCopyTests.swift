@@ -18,7 +18,8 @@ struct NSEventKeyCopyTests {
   @Test func aCopyWithOtherModifiersTakesThem() throws {
     let event = try keyDown("a", keyCode: 0x00, flags: .option)
     let copy = try #require(
-      event.keyCopy(modifierFlags: [], characters: "a", charactersIgnoringModifiers: "a"))
+      event.keyCopy(characters: "a", charactersIgnoringModifiers: "a", modifierFlags: [])
+    )
     #expect(copy.modifierFlags.contains(.option) == false)
     #expect(copy.timestamp == event.timestamp)
   }

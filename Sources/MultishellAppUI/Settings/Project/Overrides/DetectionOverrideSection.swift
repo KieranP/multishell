@@ -18,8 +18,12 @@ struct DetectionOverrideSection: View {
 
   var body: some View {
     OverrideSection(
-      model: model, project: project, setting: setting, label: label, info: info,
-      fallback: globalID
+      model: model,
+      project: project,
+      setting: setting,
+      label: label,
+      info: info,
+      fallback: globalID,
     ) { selection, isOverridden in
       DetectionPicker(
         label: pickerLabel,
@@ -27,7 +31,7 @@ struct DetectionOverrideSection: View {
         options: options,
         rescanning: model,
         info: pickerInfo,
-        isEnabled: isOverridden
+        isEnabled: isOverridden,
       )
     } footer: {
       SettingsCaption(t("project.using-global-value", globalName))

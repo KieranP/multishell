@@ -10,17 +10,17 @@ final class ChangeCounter {
   private var firings = 0
   private let store: WorkspaceStore
 
-  init(_ store: WorkspaceStore) {
-    self.store = store
-    arm()
-  }
-
   var changes: Int {
     if firings > 0 {
       counted += 1
       firings = 0
     }
     return counted
+  }
+
+  init(_ store: WorkspaceStore) {
+    self.store = store
+    arm()
   }
 
   /// One registration answers one write, so it is made again from each.

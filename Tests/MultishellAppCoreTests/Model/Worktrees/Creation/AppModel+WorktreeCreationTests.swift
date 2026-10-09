@@ -14,7 +14,11 @@ struct AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
 
     await harness.model.createWorktree(
-      branch: "feat/tabs", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "feat/tabs",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     let created = try #require(harness.worktree(onBranch: "feat/tabs"))
     #expect(harness.model.presentedError == nil)
@@ -25,10 +29,12 @@ struct AppModelWorktreeCreationTests {
     #expect(harness.model.liveTerminalCount == 1)
     #expect(
       harness.engine.liveSessionIDs
-        == Set(harness.model.workspace.sessions(in: created.id).map(\.id)))
+        == Set(harness.model.workspace.sessions(in: created.id).map(\.id))
+    )
     #expect(
       harness.watcher.watched.map(\.lastPathComponent).sorted() == ["feat-tabs", "worktrees"],
-      "the linked worktree's own record directory is watched for branch switches")
+      "the linked worktree's own record directory is watched for branch switches",
+    )
   }
 
   /// A create and a selection each have their own setting for opening a
@@ -39,7 +45,11 @@ struct AppModelWorktreeCreationTests {
     harness.model.setOpensTerminalOnCreate(false)
 
     await harness.model.createWorktree(
-      branch: "quiet", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "quiet",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let quiet = try #require(harness.worktree(onBranch: "quiet"))
     #expect(harness.model.workspace.tabs(in: quiet.id).isEmpty, "created, and shown empty")
 
@@ -47,14 +57,22 @@ struct AppModelWorktreeCreationTests {
     harness.model.select(main)
     harness.model.select(quiet)
     #expect(
-      harness.model.workspace.tabs(in: quiet.id).count == 1, "turning to it is the other setting")
+      harness.model.workspace.tabs(in: quiet.id).count == 1,
+      "turning to it is the other setting",
+    )
 
     harness.model.setSettings(ProjectSettings(opensTerminalOnCreate: true), for: harness.project)
     await harness.model.createWorktree(
-      branch: "loud", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "loud",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let loud = try #require(harness.worktree(onBranch: "loud"))
     #expect(
-      harness.model.workspace.tabs(in: loud.id).count == 1, "the project override turns it on")
+      harness.model.workspace.tabs(in: loud.id).count == 1,
+      "the project override turns it on",
+    )
   }
 
   @Test func aCreatedWorktreeStartsTheAgentOnItsOwnSettingNotTheTabOpenOne() async throws {
@@ -64,27 +82,41 @@ struct AppModelWorktreeCreationTests {
     harness.model.setAutoStartsAgentOnCreate(true)
 
     await harness.model.createWorktree(
-      branch: "working", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "working",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "working"))
     let first = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
-      "created, and an agent is already working in it")
+      "created, and an agent is already working in it",
+    )
 
     harness.model.newTab()
     let second = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(second.focusedSessionID)?.agentID == nil,
-      "auto-start on tab open is still off")
+      "auto-start on tab open is still off",
+    )
 
-    harness.model.setSettings(ProjectSettings(autoStartsAgentOnCreate: false), for: harness.project)
+    harness.model.setSettings(
+      ProjectSettings(autoStartsAgentOnCreate: false),
+      for: harness.project,
+    )
     await harness.model.createWorktree(
-      branch: "plain", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "plain",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let plain = try #require(harness.worktree(onBranch: "plain"))
     let shell = try #require(harness.model.workspace.activeTab(in: plain.id))
     #expect(
       harness.model.workspace.session(shell.focusedSessionID)?.agentID == nil,
-      "the project override turns it off")
+      "the project override turns it off",
+    )
   }
 
   @Test func aCreatedWorktreeIsAShellWhenOnlyTabOpenAutoStartsTheAgent() async throws {
@@ -94,18 +126,24 @@ struct AppModelWorktreeCreationTests {
     harness.model.setAutoStartsAgent(true)
 
     await harness.model.createWorktree(
-      branch: "byhand", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "byhand",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "byhand"))
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(tab.focusedSessionID)?.agentID == nil,
-      "auto-start on worktree creation is off, so a shell")
+      "auto-start on worktree creation is off, so a shell",
+    )
 
     harness.model.newTab()
     let second = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(second.focusedSessionID)?.agentID == "claude",
-      "while a tab asked for here is still an agent")
+      "while a tab asked for here is still an agent",
+    )
   }
 
   @Test func aRepositorySaysWhatItsWorktreesOpenAndTheUsersOwnAnswerStillWins() async throws {
@@ -113,28 +151,36 @@ struct AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
     harness.model.setPreferredAgent("claude")
     try harness.writeSharedSettings(
-      #"{ "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false }"#)
+      #"{ "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false }"#
+    )
     await harness.model.refreshWorktrees(of: harness.project)
 
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
     #expect(
-      harness.model.workspace.tabs(in: main.id).isEmpty, "the file says looking does not start one")
+      harness.model.workspace.tabs(in: main.id).isEmpty,
+      "the file says looking does not start one",
+    )
 
     await harness.model.createWorktree(
-      branch: "shipped", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "shipped",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let created = try #require(harness.worktree(onBranch: "shipped"))
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(tab.focusedSessionID)?.agentID == "claude",
-      "and that a worktree it made comes up with the agent working")
+      "and that a worktree it made comes up with the agent working",
+    )
 
     harness.model.setSettings(ProjectSettings(opensTerminalOnSelect: true), for: harness.project)
     let second = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(second)
     #expect(
       harness.model.workspace.tabs(in: second.id).count == 1,
-      "the user's own answer stands over the file"
+      "the user's own answer stands over the file",
     )
   }
 
@@ -142,17 +188,25 @@ struct AppModelWorktreeCreationTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setSettings(
-      ProjectSettings(preCreateHook: "echo no >&2\nexit 3"), for: harness.project)
+      ProjectSettings(preCreateHook: "echo no >&2\nexit 3"),
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "refused", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "refused",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     #expect(harness.worktree(onBranch: "refused") == nil)
     #expect(
-      harness.model.presentedError?.title == "Worktree not created: its pre-create hook failed")
+      harness.model.presentedError?.title == "Worktree not created: its pre-create hook failed"
+    )
     #expect(
       harness.model.presentedError?.message == "no\n\nExited with status 3.",
-      "the hook's line and its status, and no rc noise")
+      "the hook's line and its status, and no rc noise",
+    )
     #expect(harness.model.workspace.selectedWorktreeID == nil)
     #expect(harness.model.liveTerminalCount == 0)
   }
@@ -161,11 +215,17 @@ struct AppModelWorktreeCreationTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setSettings(
-      ProjectSettings(preCreateHook: "sleep 1", postCreateHook: "true"), for: harness.project)
+      ProjectSettings(preCreateHook: "sleep 1", postCreateHook: "true"),
+      for: harness.project,
+    )
 
     let create = Task {
       await harness.model.createWorktree(
-        branch: "stepped", basedOn: nil, createsBranch: true, in: harness.project)
+        branch: "stepped",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     var seen: Set<WorktreeCreationStep> = []
     try await waitUntil(
@@ -173,7 +233,9 @@ struct AppModelWorktreeCreationTests {
         guard let step = harness.model.worktreeCreationStep else { return !seen.isEmpty }
         seen.insert(step)
         return false
-      }, seconds: 15)
+      },
+      seconds: 15,
+    )
     await create.value
 
     #expect(seen.contains(.preCreateHook), "the sheet could name the hook it waited on: \(seen)")
@@ -192,12 +254,17 @@ struct AppModelWorktreeCreationTests {
       case "$1 $2" in
         "worktree add") sleep 30 ;;
       esac
-      """)
+      """
+    )
     let began = ContinuousClock.now
 
     let create = Task {
       await slow.createWorktree(
-        branch: "held", basedOn: nil, createsBranch: true, in: harness.project)
+        branch: "held",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     try await waitUntil { slow.worktreeCreationStep == .addingWorktree }
     #expect(slow.worktreeCreationStep == .addingWorktree)
@@ -215,7 +282,11 @@ struct AppModelWorktreeCreationTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "done", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "done",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     #expect(harness.model.worktreeCreationStep == nil)
 
     harness.model.noteCreationStep(.addingWorktree, of: ProcessStopper())
@@ -230,20 +301,26 @@ struct AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
     let project = harness.project
     let container = harness.model.effectiveWorktreeSettings(for: project).worktreeContainer(
-      for: project)
+      for: project
+    )
 
     harness.model.requestNewWorktree(in: project)
     harness.model.removeProject(project)
     #expect(harness.model.newWorktreeRequest == nil, "the sheet goes with the project")
 
     await harness.model.createWorktree(
-      branch: "orphan", basedOn: nil, createsBranch: true, in: project)
+      branch: "orphan",
+      basedOn: nil,
+      createsBranch: true,
+      in: project,
+    )
 
     #expect(harness.model.workspace.projects.isEmpty)
     #expect(harness.model.presentedError == nil)
     #expect(
       !FileManager.default.fileExists(atPath: container.appendingPathComponent("orphan").path),
-      "no worktree directory for a project that has left")
+      "no worktree directory for a project that has left",
+    )
   }
 
   @Test func cancellingTheSheetDuringThePreCreateHookCreatesNothingAndSaysNothing() async throws {
@@ -252,7 +329,11 @@ struct AppModelWorktreeCreationTests {
     harness.model.setSettings(ProjectSettings(preCreateHook: "sleep 30"), for: harness.project)
     let create = Task {
       await harness.model.createWorktree(
-        branch: "never", basedOn: nil, createsBranch: true, in: harness.project)
+        branch: "never",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     try await waitUntil { harness.model.worktreeCreationStep == .preCreateHook }
     #expect(harness.model.worktreeCreationStep == .preCreateHook)
@@ -272,12 +353,19 @@ struct AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
     let marker = harness.root.appendingPathComponent("hook-ran")
     let container = harness.model.effectiveWorktreeSettings(for: harness.project).worktreeContainer(
-      for: harness.project)
+      for: harness.project
+    )
     harness.model.setSettings(
-      ProjectSettings(preCreateHook: "touch \(marker.path)"), for: harness.project)
+      ProjectSettings(preCreateHook: "touch \(marker.path)"),
+      for: harness.project,
+    )
 
     await harness.model.createWorktree(
-      branch: "my branch", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "my branch",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
 
     #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
     #expect(!FileManager.default.fileExists(atPath: container.path), "nor the directory made")
@@ -293,7 +381,8 @@ struct AppModelWorktreeCreationTests {
     let gate = harness.root.appendingPathComponent("go")
     harness.model.setSettings(
       ProjectSettings(preCreateHook: "while [ ! -f \"\(gate.path)\" ]; do sleep 0.02; done"),
-      for: harness.project)
+      for: harness.project,
+    )
 
     func planned(_ branch: String) throws -> Worktree.ID {
       try #require(
@@ -305,16 +394,29 @@ struct AppModelWorktreeCreationTests {
     let plannedTwo = try planned("two")
     let first = Task {
       await harness.model.createWorktree(
-        branch: "one", basedOn: nil, createsBranch: true, in: harness.project)
+        branch: "one",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     let second = Task {
       await harness.model.createWorktree(
-        branch: "two", basedOn: nil, createsBranch: true, in: harness.project)
+        branch: "two",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
     }
     let claims = { harness.model.pathClaims }
     try await waitUntil(
-      { claims().isClaimed(plannedOne) && claims().isClaimed(plannedTwo) }, seconds: 5)
-    #expect(claims().isClaimed(plannedOne) && claims().isClaimed(plannedTwo), "both, not the later")
+      { claims().isClaimed(plannedOne) && claims().isClaimed(plannedTwo) },
+      seconds: 5,
+    )
+    #expect(
+      claims().isClaimed(plannedOne) && claims().isClaimed(plannedTwo),
+      "both, not the later",
+    )
 
     try Data().write(to: gate)
     await first.value

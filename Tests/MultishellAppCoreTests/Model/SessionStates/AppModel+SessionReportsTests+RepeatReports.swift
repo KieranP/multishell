@@ -16,7 +16,12 @@ extension AppModelSessionReportsTests {
     func report() {
       harness.model.receive(
         SessionStateReport(
-          state: .running, sessionID: session, pid: 4242, agentID: AgentCatalogue.claudeID))
+          state: .running,
+          sessionID: session,
+          pid: 4242,
+          agentID: AgentCatalogue.claudeID,
+        )
+      )
     }
     report()
 
@@ -37,7 +42,8 @@ extension AppModelSessionReportsTests {
       wrote.raise()
     }
     harness.model.receive(
-      SessionStateReport(state: .running, sessionID: session, pid: 99, agentID: "codex"))
+      SessionStateReport(state: .running, sessionID: session, pid: 99, agentID: "codex")
+    )
     #expect(wrote.raised, "a different agent still lands")
   }
 }

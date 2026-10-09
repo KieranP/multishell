@@ -4,15 +4,15 @@ import SwiftUI
 struct PathText: View {
   let path: String
 
-  init(_ path: String) {
-    self.path = path
-  }
-
   var body: some View {
     Text(path)
       .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
       .foregroundStyle(.secondary)
       .lineLimit(1)
       .truncationMode(.head)
+  }
+
+  init(_ path: String) {
+    self.path = path
   }
 }

@@ -48,7 +48,8 @@ struct AppModelWorktreeListRefreshTests {
       case "$1 $2" in
         "worktree list") while [ ! -e "$SCRATCH/go" ]; do sleep 0.02; done; exit 128 ;;
       esac
-      """)
+      """
+    )
 
     let refresh = Task { await failing.refreshWorktrees(of: project) }
     try await waitUntil { harness.gitCalls().contains { $0.hasPrefix("worktree list") } }
@@ -95,7 +96,9 @@ struct AppModelWorktreeListRefreshTests {
     await harness.model.refreshWorktrees(of: project)
 
     #expect(
-      harness.model.presentedError == nil, "the same failure on every tick is one alert, not many")
+      harness.model.presentedError == nil,
+      "the same failure on every tick is one alert, not many",
+    )
     #expect(harness.model.workspace.projects.count == 1)
   }
 
@@ -130,7 +133,8 @@ struct AppModelWorktreeListRefreshTests {
         "rev-parse --path-format=absolute") printf '%s/.git\\n' "\(repository)" ;;
         "worktree list") printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n' "\(repository)" ;;
       esac
-      """)
+      """
+    )
     func listings() -> Int { harness.gitCallCount(startingWith: "worktree list") }
 
     await counting.refreshProjectsIfChanged()
@@ -140,7 +144,8 @@ struct AppModelWorktreeListRefreshTests {
     await counting.refreshProjectsIfChanged()
     #expect(listings() == 1, "nothing changed, so nothing was spawned")
     #expect(
-      harness.gitCallCount(startingWith: "rev-parse") == 1, "the common dir is cached"
+      harness.gitCallCount(startingWith: "rev-parse") == 1,
+      "the common dir is cached",
     )
 
     _ = try await harness.git.run(["checkout", "-q", "-b", "moved"], in: harness.project.path)
@@ -175,7 +180,9 @@ struct AppModelWorktreeListRefreshTests {
     await harness.model.refreshWorktrees(of: project)
 
     #expect(
-      harness.model.workspace.projects.count == 1, "an unmounted drive must not delete the setup")
+      harness.model.workspace.projects.count == 1,
+      "an unmounted drive must not delete the setup",
+    )
     #expect(harness.model.missingProjects == [project.id])
     #expect(harness.model.workspace.worktrees(of: project.id).count == 1, "kept as last seen")
   }
@@ -187,14 +194,16 @@ struct AppModelWorktreeListRefreshTests {
     let common = try #require(await harness.model.commonGitDirectory(of: harness.project))
     _ = try await harness.git.run(
       ["worktree", "add", "-b", "quiet", harness.root.appendingPathComponent("quiet").path],
-      in: other.path)
+      in: other.path,
+    )
     harness.watcher.watched = []
 
     await harness.model.refreshProjectsIfChanged(
       under: [common.appendingPathComponent("worktrees")])
     #expect(
       harness.model.workspace.worktrees(of: other.id).count == 1,
-      "the other's records were not read")
+      "the other's records were not read",
+    )
     #expect(harness.watcher.watched.isEmpty, "nothing changed, so nothing was re-armed")
 
     await harness.model.refreshProjectsIfChanged()

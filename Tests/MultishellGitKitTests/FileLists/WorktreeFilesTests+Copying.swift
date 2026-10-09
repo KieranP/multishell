@@ -10,7 +10,9 @@ extension WorktreeFilesTests {
     try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
     try "x".write(to: cache.appending(path: "file.txt"), atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(
-      atPath: cache.appending(path: "link").path, withDestinationPath: "file.txt")
+      atPath: cache.appending(path: "link").path,
+      withDestinationPath: "file.txt",
+    )
 
     try WorktreeFiles.place("cache", as: .copy, from: repository, to: worktree)
 
@@ -18,7 +20,8 @@ extension WorktreeFilesTests {
     #expect(try String(contentsOf: copied.appending(path: "file.txt"), encoding: .utf8) == "x")
     #expect(
       try FileManager.default.destinationOfSymbolicLink(atPath: copied.appending(path: "link").path)
-        == "file.txt")
+        == "file.txt"
+    )
   }
 
   @Test func aReadOnlyDirectoryIsCopiedWholeAndKeepsItsMode() throws {
@@ -30,19 +33,24 @@ extension WorktreeFilesTests {
     let readOnly = [inner, repository.appending(path: "modules")]
     for directory in readOnly {
       try FileManager.default.setAttributes(
-        [.posixPermissions: 0o555], ofItemAtPath: directory.path)
+        [.posixPermissions: 0o555],
+        ofItemAtPath: directory.path,
+      )
     }
     defer {
       for directory in readOnly.reversed() + [copied, copied.appending(path: "inner")] {
         try? FileManager.default.setAttributes(
-          [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+          [.posixPermissions: 0o755],
+          ofItemAtPath: directory.path,
+        )
       }
     }
 
     try WorktreeFiles.place("modules", as: .copy, from: repository, to: worktree)
 
     #expect(
-      try String(contentsOf: copied.appending(path: "inner/file.txt"), encoding: .utf8) == "x")
+      try String(contentsOf: copied.appending(path: "inner/file.txt"), encoding: .utf8) == "x"
+    )
     for directory in [copied, copied.appending(path: "inner")] {
       let mode = try FileManager.default.attributesOfItem(atPath: directory.path)[.posixPermissions]
       #expect(mode as? Int == 0o555)

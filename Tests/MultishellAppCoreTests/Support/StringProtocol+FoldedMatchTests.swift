@@ -21,7 +21,8 @@ struct StringProtocolFoldedMatchTests {
   @Test func anAsciiQueryMatchesWhereTurkishCaseFoldingWouldNot() {
     let turkish = Locale(identifier: "tr_TR")
     #expect(
-      "disk volume storage".range(of: "DISK", options: [.caseInsensitive], locale: turkish) == nil)
+      "disk volume storage".range(of: "DISK", options: [.caseInsensitive], locale: turkish) == nil
+    )
     #expect("disk volume storage".foldedContains("DISK"))
   }
 }

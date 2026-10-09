@@ -1,5 +1,7 @@
 import MultishellCore
 
+// Declared order is the order the stages run in.
+// swiftlint:disable sorted_enum_cases
 /// The stages of a remove, in order. A hook stage is reported only when that
 /// hook has a script; the branch stage only when the branch is to go.
 public enum WorktreeRemovalStep: Sendable, Equatable {
@@ -11,7 +13,8 @@ public enum WorktreeRemovalStep: Sendable, Equatable {
 
   /// Where a remove of a worktree in this project starts, so a
   /// caller can show the first stage before the first report arrives.
-  public static func first(for project: Project) -> WorktreeRemovalStep {
+  public static func first(for project: Project) -> Self {
     WorktreeHooks.hasScript(.preDelete, in: project.settings) ? .preDeleteHook : .removingWorktree
   }
 }
+// swiftlint:enable sorted_enum_cases

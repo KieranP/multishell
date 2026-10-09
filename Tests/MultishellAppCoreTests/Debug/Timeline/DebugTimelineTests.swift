@@ -6,7 +6,9 @@ import Testing
 struct DebugTimelineTests {
   @Test func aFreshHistoryFillsFromTheRightWithEmptySlotsBeforeIt() {
     let timeline = DebugTimeline(
-      history: .of((0..<3).map { DebugSample.sample(sequence: $0) }), range: .oneMinute)
+      history: .of((0..<3).map { DebugSample.sample(sequence: $0) }),
+      range: .oneMinute,
+    )
 
     #expect(timeline.slots.count == 60)
     #expect(timeline.slots.prefix(57).allSatisfy { $0 == nil })
@@ -15,8 +17,12 @@ struct DebugTimelineTests {
   }
 
   @Test func aSlotOfSeveralSecondsHoldsTheSameSecondsAsTheHistoryGrows() throws {
-    let samples = (0..<12).map {
-      DebugSample.sample(sequence: $0, framesPerSecond: $0 == 7 ? 30 : 120, gitRunsStartedCount: $0)
+    let samples = (0..<12).map { sequence in
+      DebugSample.sample(
+        sequence: sequence,
+        framesPerSecond: sequence == 7 ? 30 : 120,
+        gitRunsStartedCount: sequence,
+      )
     }
     let early = DebugTimeline(history: .of(Array(samples.prefix(11))), range: .fifteenMinutes)
     let later = DebugTimeline(history: .of(samples), range: .fifteenMinutes)
@@ -27,8 +33,11 @@ struct DebugTimelineTests {
   }
 
   @Test func aStallIsCountedPerSecondOverTheRangeAlone() {
-    let samples = (0..<120).map {
-      DebugSample.sample(sequence: $0, longestFrame: .milliseconds($0 == 10 || $0 > 115 ? 150 : 9))
+    let samples = (0..<120).map { sequence in
+      DebugSample.sample(
+        sequence: sequence,
+        longestFrame: .milliseconds(sequence == 10 || sequence > 115 ? 150 : 9),
+      )
     }
     #expect(DebugTimeline(history: .of(samples), range: .oneMinute).stalledSecondCount == 4)
     #expect(DebugTimeline(history: .of(samples), range: .fiveMinutes).stalledSecondCount == 5)
@@ -89,7 +98,9 @@ struct DebugTimelineTests {
 
   @Test func aSlotAskedForPastTheRangeIsNoneRatherThanOutOfBounds() {
     let timeline = DebugTimeline(
-      history: .of([DebugSample.sample(sequence: 0)]), range: .oneMinute)
+      history: .of([DebugSample.sample(sequence: 0)]),
+      range: .oneMinute,
+    )
     #expect(timeline.slot(at: 59) != nil)
     #expect(timeline.slot(at: 150) == nil, "a pointer left over from the fifteen minute range")
     #expect(timeline.slot(at: nil) == nil)

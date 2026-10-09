@@ -10,8 +10,11 @@ enum NotificationPolicy {
   /// A pane on screen needs no banner: in view and the app frontmost. Wider
   /// than what clears a Done, which is the focused pane alone.
   static func shouldNotify(
-    _ state: SessionState, preference: NotificationPreference, isOnScreen: Bool,
-    duration: Double? = nil, isSilent: Bool = false
+    _ state: SessionState,
+    preference: NotificationPreference,
+    isOnScreen: Bool,
+    duration: Double? = nil,
+    isSilent: Bool = false,
   ) -> Bool {
     // Two reports stand for one permission prompt: the dot moves on the
     // first, the banner comes with the second.

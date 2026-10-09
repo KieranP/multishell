@@ -22,7 +22,7 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
       (NSWindow.willCloseNotification, { $0.windowWillClose() }),
       (NSWindow.didResizeNotification, { $0.windowDidResize() }),
     ]
-    observers = NotificationCenter.default.observe(changes, from: window, for: self)
+    observers = NotificationCenter.default.observe(changes, for: self, from: window)
   }
 
   private func windowDidBecomeKey() {

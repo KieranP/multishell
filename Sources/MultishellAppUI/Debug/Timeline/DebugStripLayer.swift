@@ -34,8 +34,10 @@ struct DebugStripLayer: Shape {
     case .stalls(let flags): stalls(flags, in: rect.size)
     case .midline: Path(CGRect(x: 0, y: rect.height / 2, width: rect.width, height: 0.5))
     case .bars(let points): bars(points, in: rect.size)
+
     case .band(let points, let lower, let upper):
       areas(points, in: rect.size) { band($0, lower: lower, upper: upper) }
+
     case .totalLine(let points):
       areas(points, in: rect.size) { positions in
         var path = Path()
@@ -50,7 +52,8 @@ struct DebugStripLayer: Shape {
     var path = Path()
     for (index, isStalled) in flags.enumerated() where isStalled {
       path.addRect(
-        CGRect(x: Double(index) * slotWidth, y: 0, width: max(slotWidth, 2), height: size.height))
+        CGRect(x: Double(index) * slotWidth, y: 0, width: max(slotWidth, 2), height: size.height)
+      )
     }
     return path
   }
@@ -65,23 +68,36 @@ struct DebugStripLayer: Shape {
       let height = max(point.total * size.height, 1)
       path.addRoundedRect(
         in: CGRect(
-          x: Double(index) * slotWidth, y: size.height - height, width: barWidth, height: height),
-        cornerSize: CGSize(width: corner, height: corner))
+          x: Double(index) * slotWidth,
+          y: size.height - height,
+          width: barWidth,
+          height: height,
+        ),
+        cornerSize: CGSize(width: corner, height: corner),
+      )
     }
     return path
   }
 
   private func areas(
-    _ points: [DebugStripPoint?], in size: CGSize, piece: ([DebugStripPosition]) -> Path
+    _ points: [DebugStripPoint?],
+    in size: CGSize,
+    piece: ([DebugStripPosition]) -> Path,
   ) -> Path {
     let slotWidth = size.width / Double(max(points.count, 1))
     var path = Path()
     for segment in DebugStripSegment.segments(in: points) {
       path.addPath(
         piece(
-          segment.slotPositions.map {
-            DebugStripPosition(x: $0.slot * slotWidth, point: $0.point, height: size.height)
-          }))
+          segment.slotPositions.map { position in
+            DebugStripPosition(
+              x: position.slot * slotWidth,
+              point: position.point,
+              height: size.height,
+            )
+          }
+        )
+      )
     }
     return path
   }
@@ -91,7 +107,8 @@ struct DebugStripLayer: Shape {
     var path = Path()
     path.addLines(
       positions.map { CGPoint(x: $0.x, y: $0.y(upper)) }
-        + positions.reversed().map { CGPoint(x: $0.x, y: $0.y(lower)) })
+        + positions.reversed().map { CGPoint(x: $0.x, y: $0.y(lower)) }
+    )
     path.closeSubpath()
     return path
   }

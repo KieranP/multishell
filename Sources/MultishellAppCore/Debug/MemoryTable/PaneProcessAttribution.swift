@@ -5,16 +5,20 @@ import MultishellProcess
 /// Which of the app's child trees each pane runs: the tree on its terminal,
 /// else the one holding its foreground process. A tree goes to one pane.
 struct PaneProcessAttribution: Sendable, Equatable {
+  static let empty = Self(
+    trees: [],
+    terminalDevices: [:],
+    foregroundPIDs: [:],
+  )
+
   let processesBySession: [TerminalSession.ID: [ProcessUsage]]
   /// A git or hook the app started, or a pane the engine could not place.
   let unattributedProcesses: [ProcessUsage]
 
-  static let empty = PaneProcessAttribution(
-    trees: [], terminalDevices: [:], foregroundPIDs: [:])
-
   init(
-    trees: [ProcessTree], terminalDevices: [TerminalSession.ID: Int32],
-    foregroundPIDs: [TerminalSession.ID: Int32]
+    trees: [ProcessTree],
+    terminalDevices: [TerminalSession.ID: Int32],
+    foregroundPIDs: [TerminalSession.ID: Int32],
   ) {
     var unclaimed = trees
     var bySession: [TerminalSession.ID: [ProcessUsage]] = [:]

@@ -8,17 +8,20 @@ extension Helper {
   ]
 
   static func runState(
-    _ arguments: ArraySlice<String>, environment: [String: String]
+    _ arguments: ArraySlice<String>,
+    environment: [String: String],
   ) throws -> Int32 {
     guard let name = arguments.first, let state = SessionState(rawValue: name) else {
       throw UsageError(
-        "state needs one of: \(SessionState.allCases.map(\.rawValue).joined(separator: ", "))")
+        "state needs one of: \(SessionState.allCases.map(\.rawValue).joined(separator: ", "))"
+      )
     }
     let options = try CommandOptions(arguments.dropFirst(), valued: stateOptionNames)
     let report = SessionStateReport(
       state: state,
       sessionID: sessionID(
-        from: options["session"] ?? environment[SessionEnvironment.sessionVariable]),
+        from: options["session"] ?? environment[SessionEnvironment.sessionVariable]
+      ),
       workingDirectory: options["cwd"] ?? worktreePath(in: environment)
         ?? FileManager.default.currentDirectoryPath,
       pid: options.int32("pid") ?? reportingPID(in: environment),
@@ -30,7 +33,8 @@ extension Helper {
       resumesAfterWorkers: options.onlyIfTrue("resumes"),
       workersOut: options["out"].map { list in
         list.split(separator: ",").map { WorkerReport(id: String($0), phase: .working) }
-      })
+      },
+    )
     do {
       try send(report, environment: environment)
       return 0
@@ -43,7 +47,8 @@ extension Helper {
   private static func workerReport(from options: CommandOptions) throws -> WorkerReport? {
     guard let id = options["subagent"] else {
       let orphan = ["subagent-phase", "subagent-type", "subagent-wakes", "subagent-parent"].first {
-        options[$0] != nil
+        option in
+        options[option] != nil
       }
       if let orphan {
         throw UsageError("--\(orphan) needs --subagent")
@@ -54,10 +59,15 @@ extension Helper {
     else {
       throw UsageError(
         "--subagent needs --subagent-phase, one of: "
-          + WorkerReport.Phase.allCases.map(\.rawValue).joined(separator: ", "))
+          + WorkerReport.Phase.allCases.map(\.rawValue).joined(separator: ", ")
+      )
     }
     return WorkerReport(
-      id: id, type: options["subagent-type"], phase: phase,
-      wakesAgent: options.onlyIfFalse("subagent-wakes"), parentID: options["subagent-parent"])
+      id: id,
+      phase: phase,
+      type: options["subagent-type"],
+      wakesAgent: options.onlyIfFalse("subagent-wakes"),
+      parentID: options["subagent-parent"],
+    )
   }
 }

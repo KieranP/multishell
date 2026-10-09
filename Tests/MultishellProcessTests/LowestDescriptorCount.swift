@@ -3,7 +3,8 @@ import Foundation
 /// The lowest `/dev/fd` count over `window`. Other suites share the process, so a short
 /// window can catch their burst as a leak; the lowest over a long one is their floor.
 func lowestDescriptorCount(
-  over window: Duration, every pause: Duration = .milliseconds(100)
+  over window: Duration,
+  every pause: Duration = .milliseconds(100),
 ) async throws -> Int {
   var lowest = Int.max
   let deadline = ContinuousClock.now + window

@@ -22,10 +22,12 @@ struct AppModelSettingsBindingsTests {
     toggle.wrappedValue = true
     #expect(
       harness.model.ownSettings(of: project).autoStartsAgent == false,
-      "seeded with the inherited false, not with the toggle's own true")
+      "seeded with the inherited false, not with the toggle's own true",
+    )
     #expect(
       harness.model.overrideToggle(\.autoStartsAgent, of: project, fallback: false).wrappedValue,
-      "and the row now reads as overridden")
+      "and the row now reads as overridden",
+    )
   }
 
   @Test func turningAnOverrideOffClearsItRatherThanStoringWhatWasShown() {
@@ -38,7 +40,8 @@ struct AppModelSettingsBindingsTests {
       false
     #expect(
       harness.model.ownSettings(of: project).autoStartsAgent == nil,
-      "off means follow the global, which is a nil override and not a stored false")
+      "off means follow the global, which is a nil override and not a stored false",
+    )
   }
 
   /// Blank would read as "this project has no worktree path", a different claim from
@@ -48,11 +51,15 @@ struct AppModelSettingsBindingsTests {
     let project = harness.project
 
     let field = harness.model.overrideField(
-      \.worktreeDirectory, of: project, fallback: "../inherited-worktrees")
+      \.worktreeDirectory,
+      of: project,
+      fallback: "../inherited-worktrees",
+    )
     #expect(field.wrappedValue == "../inherited-worktrees")
     #expect(
       harness.model.ownSettings(of: project).worktreeDirectory == nil,
-      "reading the row stores nothing, so the project still follows")
+      "reading the row stores nothing, so the project still follows",
+    )
 
     field.wrappedValue = "../its-own"
     #expect(harness.model.ownSettings(of: project).worktreeDirectory == "../its-own")
@@ -70,16 +77,19 @@ struct AppModelSettingsBindingsTests {
     #expect(harness.model.ownSettings(of: project).branchPrefix == "")
     #expect(
       harness.model.overrideToggle(\.branchPrefix, of: project, fallback: "team/").wrappedValue,
-      "blank is still the project having its say")
+      "blank is still the project having its say",
+    )
     #expect(
       harness.model.effectiveWorktreeSettings(for: harness.live).qualifiedBranch("tabs") == "tabs",
-      "and the branch it would create carries no prefix")
+      "and the branch it would create carries no prefix",
+    )
   }
 
   @Test func aWorktreeDefaultFieldWritesBackTheOtherFieldsAsTheyStand() {
     let harness = ModelHarness()
     harness.model.setWorktreeDefaults(
-      WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "team/"))
+      WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "team/")
+    )
 
     harness.model.worktreeDefaultBinding(\.branchPrefix).wrappedValue = "me/"
 
@@ -109,8 +119,11 @@ struct AppModelSettingsBindingsTests {
 
     #expect(
       harness.model.workspace.project(stale.id)?.isExpanded == false,
-      "the change is not lost")
+      "the change is not lost",
+    )
     #expect(
-      harness.model.ownSettings(of: stale).autoStartsAgent == true, "and the write still landed")
+      harness.model.ownSettings(of: stale).autoStartsAgent == true,
+      "and the write still landed",
+    )
   }
 }

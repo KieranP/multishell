@@ -14,12 +14,20 @@ public enum WorktreeFiles {
   /// returns a user's own entries that name somewhere else; see hooks.md.
   @discardableResult
   static func place(
-    _ listText: String, as placement: WorktreeFilePlacement, from repository: URL, to worktree: URL,
-    isRepositoryList: Bool = true, isStopRequested: @escaping @Sendable () -> Bool = { false }
+    _ listText: String,
+    as placement: WorktreeFilePlacement,
+    from repository: URL,
+    to worktree: URL,
+    isRepositoryList: Bool = true,
+    isStopRequested: @escaping @Sendable () -> Bool = { false },
   ) throws -> [String] {
     let placer = WorktreeFilePlacer(
-      placement, from: repository, to: worktree, isRepositoryList: isRepositoryList,
-      isStopRequested: isStopRequested)
+      placement,
+      from: repository,
+      to: worktree,
+      isRepositoryList: isRepositoryList,
+      isStopRequested: isStopRequested,
+    )
     let split = splitByContainment(Self.paths(in: listText), under: repository)
     var failures = isRepositoryList ? split.escapes : []
     var skipped = isRepositoryList ? [] : split.escapes.map(\.path)
@@ -46,7 +54,8 @@ public enum WorktreeFiles {
   /// On the spelling, before the disk, so `~/.aws.json` is refused rather
   /// than skipped for not existing under the repository. See settings.md.
   private static func splitByContainment(
-    _ paths: [String], under repository: URL
+    _ paths: [String],
+    under repository: URL,
   ) -> (contained: [String], escapes: [WorktreeFileFailure.PathFailure]) {
     var contained: [String] = []
     var escapes: [WorktreeFileFailure.PathFailure] = []
@@ -55,7 +64,8 @@ public enum WorktreeFiles {
         contained.append(path)
       } else {
         escapes.append(
-          WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape()))
+          WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape())
+        )
       }
     }
     return (contained, escapes)

@@ -12,10 +12,11 @@ struct WorktreeCoordinatorBranchesTests {
   @Test func eachLocalBranchCarriesItsLastCommitTime() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    try await fixture.commitOnBranch("feat", "later", file: "feat.txt", content: "a\n")
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n", message: "later")
 
     let scan = try #require(
-      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil))
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
     let main = try #require(scan.lastCommitDates["main"])
     let feat = try #require(scan.lastCommitDates["feat"])
 
@@ -30,14 +31,18 @@ struct WorktreeCoordinatorBranchesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "feat/tabs", in: fixture.project,
-      settings: fixture.worktreeSettings)
+      branch: "feat/tabs",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
     let worktree = try #require(
-      listed.first { $0.path.standardizedFileURL == path.standardizedFileURL })
+      listed.first { $0.path.standardizedFileURL == path.standardizedFileURL }
+    )
     let scan = try #require(
-      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil))
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
 
     #expect(worktree.branch == "feat/tabs")
     #expect(worktree.branch.flatMap { scan.lastCommitDates[$0] } != nil, "the lookup finds it")
@@ -51,12 +56,15 @@ struct WorktreeCoordinatorBranchesTests {
     let head = try await fixture.head(of: fixture.project.path)
     let path = fixture.root.appendingPathComponent("detached", isDirectory: true)
     _ = try await fixture.runner.run(
-      ["worktree", "add", "-q", "--detach", path.path, head], in: fixture.project.path)
+      ["worktree", "add", "-q", "--detach", path.path, head],
+      in: fixture.project.path,
+    )
 
     let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
     let detached = try #require(listed.first { $0.path.lastPathComponent == "detached" })
     let scan = try #require(
-      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil))
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
 
     #expect(detached.branch == nil)
     #expect(Set(scan.lastCommitDates.keys) == ["main"], "no date filed under a name it lacks")
@@ -67,7 +75,8 @@ struct WorktreeCoordinatorBranchesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let missing = try #require(
-      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "nowhere"))
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "nowhere")
+    )
     #expect(missing.mergeInputs == nil)
     #expect(missing.lastCommitDates["main"] != nil, "the dates come back with no base to measure")
   }
@@ -78,19 +87,25 @@ struct WorktreeCoordinatorBranchesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.addOrigin()
-    try await fixture.commitOnBranch("develop", "dev", file: "dev.txt", content: "a\n")
+    try await fixture.commitOnBranch("develop", file: "dev.txt", content: "a\n", message: "dev")
 
     let detected = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)?
-        .mergeInputs)
+        .mergeInputs
+    )
     #expect(
       detected.defaultBranch.shortName == "origin/main",
-      "the remote wins over a local main a pull has not caught up with")
+      "the remote wins over a local main a pull has not caught up with",
+    )
     #expect(detected.defaultBranch.nameWithoutRemote == "main")
 
     let overridden = try #require(
-      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "develop")?
-        .mergeInputs)
+      await fixture.coordinator.scanBranches(
+        of: fixture.project,
+        defaultBranchOverride: "develop",
+      )?
+      .mergeInputs
+    )
     #expect(overridden.defaultBranch.shortName == "develop")
   }
 }

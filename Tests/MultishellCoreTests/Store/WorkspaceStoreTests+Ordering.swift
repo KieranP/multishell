@@ -10,7 +10,12 @@ extension WorkspaceStoreTests {
     store.addProject(at: URL(fileURLWithPath: "/repos/b"))
     store.addProject(at: URL(fileURLWithPath: "/repos/c"))
     let worktree = Worktree(
-      path: project.path, projectID: project.id, head: "x", branch: "main", isPrimary: true)
+      path: project.path,
+      projectID: project.id,
+      head: "x",
+      branch: "main",
+      isPrimary: true,
+    )
     store.replaceWorktrees([worktree], forProject: project.id)
     return (store, worktree)
   }
@@ -33,19 +38,25 @@ extension WorkspaceStoreTests {
 
   @Test func aTabMovesBesideAnotherAndAnUnknownAnchorMovesNothing() {
     let (store, worktree) = storeWithThreeProjects()
-    let t1 = store.openTab(in: worktree.id)!
-    let t2 = store.openTab(in: worktree.id)!
-    let t3 = store.openTab(in: worktree.id)!
+    let firstTab = store.openTab(in: worktree.id)!
+    let secondTab = store.openTab(in: worktree.id)!
+    let thirdTab = store.openTab(in: worktree.id)!
 
-    store.moveTab(t3.id, .before, anchor: t1.id)
-    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t3.id, t1.id, t2.id])
+    store.moveTab(thirdTab.id, .before, anchor: firstTab.id)
+    #expect(
+      store.workspace.tabs(in: worktree.id).map(\.id) == [thirdTab.id, firstTab.id, secondTab.id]
+    )
 
-    store.moveTab(t1.id, .before, anchor: UUID())
-    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t3.id, t1.id, t2.id])
+    store.moveTab(firstTab.id, .before, anchor: UUID())
+    #expect(
+      store.workspace.tabs(in: worktree.id).map(\.id) == [thirdTab.id, firstTab.id, secondTab.id]
+    )
 
     // The trailing half of the last tab, which is the only way to the end
     // of the strip: there is no tab past it to land before.
-    store.moveTab(t3.id, .after, anchor: t2.id)
-    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t1.id, t2.id, t3.id])
+    store.moveTab(thirdTab.id, .after, anchor: secondTab.id)
+    #expect(
+      store.workspace.tabs(in: worktree.id).map(\.id) == [firstTab.id, secondTab.id, thirdTab.id]
+    )
   }
 }

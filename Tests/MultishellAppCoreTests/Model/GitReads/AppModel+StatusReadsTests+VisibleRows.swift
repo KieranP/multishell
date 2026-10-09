@@ -12,7 +12,11 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
@@ -38,7 +42,11 @@ extension AppModelStatusReadsTests {
     let otherProject = try await harness.addSecondProject()
     let otherMain = try #require(harness.model.workspace.worktrees(of: otherProject.id).first)
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     try harness.dirty(side)
@@ -59,7 +67,11 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     try harness.dirty(side)
@@ -98,7 +110,11 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
@@ -115,7 +131,11 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     await harness.model.createWorktree(
-      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+      branch: "side",
+      basedOn: nil,
+      createsBranch: true,
+      in: harness.project,
+    )
     let side = try #require(harness.worktree(onBranch: "side"))
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.clearStatuses()

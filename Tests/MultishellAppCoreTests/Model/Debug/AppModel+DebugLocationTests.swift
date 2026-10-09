@@ -10,7 +10,8 @@ struct AppModelDebugLocationTests {
     let harness = Harness()
     let location = harness.model.debugLocation(
       ofDirectory: URL(fileURLWithPath: "/elsewhere/scratch-repo"),
-      in: harness.model.worktreesByStandardizedPath())
+      in: harness.model.worktreesByStandardizedPath(),
+    )
 
     #expect(location == DebugLocation(projectName: nil, worktreeName: "scratch-repo"))
   }
@@ -19,12 +20,15 @@ struct AppModelDebugLocationTests {
     let harness = Harness()
     let location = harness.model.debugLocation(
       ofDirectory: harness.feature.path.appendingPathComponent("."),
-      in: harness.model.worktreesByStandardizedPath())
+      in: harness.model.worktreesByStandardizedPath(),
+    )
 
     #expect(
       location
         == DebugLocation(
           projectName: harness.project.name,
-          worktreeName: harness.model.displayName(of: harness.feature)))
+          worktreeName: harness.model.displayName(of: harness.feature),
+        )
+    )
   }
 }

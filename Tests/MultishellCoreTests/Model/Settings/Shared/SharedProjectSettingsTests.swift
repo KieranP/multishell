@@ -9,7 +9,7 @@ struct SharedProjectSettingsTests {
   @Test func everyFieldIsOptionalAndAWrongTypeCostsThatFieldOnly() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "branchPrefix": "team/", "iconTint": "blue", "postCreateHook": ["npm"], "iconGlyph": "🚀" }"#
+      #"{ "branchPrefix": "team/", "iconTint": "blue", "postCreateHook": ["npm"], "iconGlyph": "🚀" }"#,
     )
     #expect(shared.branchPrefix == "team/")
     #expect(shared.iconTint == nil && shared.postCreateHook == nil)
@@ -23,7 +23,8 @@ struct SharedProjectSettingsTests {
   @Test func blankStringsReadAsAbsentWhereNoneAndNoOpinionAgree() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "preCreateHook": "", "postCreateHook": "  ", "linkedPaths": "", "iconGlyph": "" }"#)
+      #"{ "preCreateHook": "", "postCreateHook": "  ", "linkedPaths": "", "iconGlyph": "" }"#,
+    )
     #expect(shared.preCreateHook == nil && shared.postCreateHook == nil)
     #expect(shared.linkedPaths == nil && shared.iconGlyph == nil)
     #expect(!shared.asksForTrust, "or the trust question would ask about an empty script")
@@ -34,7 +35,8 @@ struct SharedProjectSettingsTests {
   @Test func aBlankWorktreeFieldIsAnOpinionAndNotAnAbsence() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "worktreeDirectory": "  ", "branchPrefix": "", "defaultBranch": "" }"#)
+      #"{ "worktreeDirectory": "  ", "branchPrefix": "", "defaultBranch": "" }"#,
+    )
     #expect(shared.worktreeDirectory == "  ")
     #expect(shared.branchPrefix == "")
     #expect(shared.defaultBranch == "")
@@ -43,7 +45,8 @@ struct SharedProjectSettingsTests {
     let defaults = WorktreeSettings.globalDefaults
     #expect(
       layered.effectiveWorktreeSettings(defaults: defaults).branchPrefix == "",
-      "the file's no-prefix beats the reader's global")
+      "the file's no-prefix beats the reader's global",
+    )
   }
 
   @Test func aMissingFileLoadsAsNoneAndABrokenOneThrows() throws {
@@ -52,15 +55,22 @@ struct SharedProjectSettingsTests {
 
     #expect(try SharedProjectSettings.load(from: root) == nil)
     try #"{ "branchPrefix": "team/" }"#.write(
-      to: SharedProjectSettings.file(in: root), atomically: true, encoding: .utf8)
+      to: SharedProjectSettings.file(in: root),
+      atomically: true,
+      encoding: .utf8,
+    )
     let loaded = try #require(try SharedProjectSettings.load(from: root))
     #expect(loaded.branchPrefix == "team/")
     #expect(
       loaded.digest
         == FileDigest.sha256(of: try Data(contentsOf: SharedProjectSettings.file(in: root))),
-      "the digest is of the file's bytes, and is what a hook decision is held against")
+      "the digest is of the file's bytes, and is what a hook decision is held against",
+    )
     try "not json".write(
-      to: SharedProjectSettings.file(in: root), atomically: true, encoding: .utf8)
+      to: SharedProjectSettings.file(in: root),
+      atomically: true,
+      encoding: .utf8,
+    )
     #expect(throws: (any Error).self) { try SharedProjectSettings.load(from: root) }
   }
 
@@ -69,7 +79,8 @@ struct SharedProjectSettingsTests {
   @Test func anOrderTheBuildDoesNotKnowCostsThatKeyOnly() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "worktreeSortOrder": "byMergeState", "branchPrefix": "team/" }"#)
+      #"{ "worktreeSortOrder": "byMergeState", "branchPrefix": "team/" }"#,
+    )
     #expect(shared.worktreeSortOrder == nil)
     #expect(shared.branchPrefix == "team/")
     #expect(ProjectSettings().layered(over: shared).worktreeSortOrder == nil, "follows the global")
@@ -78,14 +89,17 @@ struct SharedProjectSettingsTests {
     #expect(wrongType.worktreeSortOrder == nil)
     let wrongFlag = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "showsActiveWorktreesFirst": "yes", "worktreeSortOrder": "createdOldestFirst" }"#)
+      #"{ "showsActiveWorktreesFirst": "yes", "worktreeSortOrder": "createdOldestFirst" }"#,
+    )
     #expect(wrongFlag.showsActiveWorktreesFirst == nil)
     #expect(wrongFlag.worktreeSortOrder == .createdOldestFirst, "the good key survives")
   }
 
   @Test func aFlagOfTheWrongTypeCostsThatFlagOnly() throws {
     let shared = try decodeJSON(
-      SharedProjectSettings.self, #"{ "autoStartAgent": "yes", "opensTerminalOnCreate": false }"#)
+      SharedProjectSettings.self,
+      #"{ "autoStartAgent": "yes", "opensTerminalOnCreate": false }"#,
+    )
     #expect(shared.autoStartsAgent == nil)
     #expect(shared.opensTerminalOnCreate == false)
   }
@@ -109,10 +123,12 @@ struct SharedProjectSettingsTests {
 
     let inForce = ProjectSettings(iconTint: 2).layered(over: existing)
     let written = try SharedProjectSettings(exporting: inForce).carryingOver(from: existing).write(
-      to: root)
+      to: root
+    )
 
     let json = try #require(
-      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
     #expect(json["$schema"] as? String == "https://example.test/multishell.json")
     #expect(json["branchPrefix"] as? String == "team/", "read, so in force, so exported")
     #expect(json["worktreeSortOrder"] as? String == "byMergeState", "an order a newer build named")
@@ -122,7 +138,10 @@ struct SharedProjectSettingsTests {
     #expect(reviewers?["default"] as? NSArray == ["meg", 3, true, NSNull(), 1.5] as NSArray)
     let text = try String(contentsOf: file, encoding: .utf8)
     #expect(text.contains("true") && text.contains("null"), "a bool stays a bool")
-    #expect(try SharedProjectSettings.load(from: root) == written, "what write returns is the file")
+    #expect(
+      try SharedProjectSettings.load(from: root) == written,
+      "what write returns is the file",
+    )
   }
 
   @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() throws {

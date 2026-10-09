@@ -11,7 +11,7 @@ public enum SplitMath {
     acrossDividerAfter index: Int,
     in weights: [Double],
     available: Double,
-    minimumPane: Double
+    minimumPane: Double,
   ) -> [Double] {
     guard index >= 0, index + 1 < weights.count, available > 0 else { return weights }
     let total = weights.reduce(0, +)

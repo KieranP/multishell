@@ -6,7 +6,7 @@ extension ProjectSettings {
     WorktreeSettings(
       worktreeDirectory: worktreeDirectory?.trimmingCharacters(in: .whitespaces)
         ?? defaults.worktreeDirectory,
-      branchPrefix: branchPrefix?.trimmingCharacters(in: .whitespaces) ?? defaults.branchPrefix
+      branchPrefix: branchPrefix?.trimmingCharacters(in: .whitespaces) ?? defaults.branchPrefix,
     )
   }
 }

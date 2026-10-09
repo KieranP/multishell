@@ -14,7 +14,8 @@ struct HookEnvironmentSection: View {
         } label: {
           HStack(spacing: 4) {
             Text(variable.name).font(
-              .system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
+              .system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced)
+            )
             CopyButton("$\(variable.name)", model: model)
           }
         }

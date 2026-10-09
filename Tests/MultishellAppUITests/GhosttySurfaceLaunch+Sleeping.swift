@@ -4,5 +4,8 @@ import Foundation
 
 extension GhosttySurfaceLaunch {
   static let sleeping = GhosttySurfaceLaunch(
-    workingDirectory: NSTemporaryDirectory(), environment: [:], command: "/bin/sleep 60")
+    workingDirectory: NSTemporaryDirectory(),
+    environment: [:],
+    command: "/bin/sleep 60",
+  )
 }

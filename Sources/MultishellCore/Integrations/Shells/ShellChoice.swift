@@ -17,9 +17,11 @@ public enum ShellChoice {
   /// The path in force for a project, or `nil` for `$SHELL`. `customID`
   /// resolves to `customPath`, and blank is `$SHELL` too.
   static func effectivePath(
-    global: String?, override: String?, customPath: String = ""
+    global: String?,
+    override: String?,
+    customPath: String = "",
   ) -> String? {
-    guard let chosen = ChosenID.effective(global: global, override: override, noneID: loginShellID)
+    guard let chosen = ChosenID.effective(global: global, noneID: loginShellID, override: override)
     else { return nil }
     guard chosen == customID else { return chosen }
     return trimmedCustomPath(customPath)

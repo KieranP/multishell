@@ -18,8 +18,10 @@ struct AppWorktreesPage: View {
       Section {
         InfoLabeledContent(t("worktrees.branch-prefix"), info: t("worktrees.branch-prefix-info")) {
           TextField(
-            t("worktrees.branch-prefix"), text: model.worktreeDefaultBinding(\.branchPrefix),
-            prompt: Text(t("worktrees.prefix-none")))
+            t("worktrees.branch-prefix"),
+            text: model.worktreeDefaultBinding(\.branchPrefix),
+            prompt: Text(t("worktrees.prefix-none")),
+          )
         }
         if let caption = model.workspace.worktreeDefaults.prefixExampleCaption {
           SettingsCaption(caption)
@@ -31,8 +33,10 @@ struct AppWorktreesPage: View {
           TextField(
             t("worktrees.hook-timeout"),
             value: model.settingBinding(
-              \.projectHookTimeoutSeconds, write: model.setProjectHookTimeoutSeconds),
-            format: .number
+              \.projectHookTimeoutSeconds,
+              write: model.setProjectHookTimeoutSeconds,
+            ),
+            format: .number,
           )
           .frame(width: 60)
           .multilineTextAlignment(.trailing)
@@ -45,7 +49,9 @@ struct AppWorktreesPage: View {
           Picker(
             t("worktrees.indicator"),
             selection: model.settingBinding(
-              \.gitStatusIndicator, write: model.setGitStatusIndicator)
+              \.gitStatusIndicator,
+              write: model.setGitStatusIndicator,
+            ),
           ) {
             ForEach(GitStatusIndicator.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
@@ -55,17 +61,29 @@ struct AppWorktreesPage: View {
 
       Section {
         InfoToggle(
-          t("worktrees.confirm-removal"), info: t("worktrees.confirm-removal-info"),
+          t("worktrees.confirm-removal"),
+          info: t("worktrees.confirm-removal-info"),
           isOn: model.settingBinding(
-            \.confirmsWorktreeRemoval, write: model.setConfirmsWorktreeRemoval))
+            \.confirmsWorktreeRemoval,
+            write: model.setConfirmsWorktreeRemoval,
+          ),
+        )
         InfoToggle(
-          t("worktrees.delete-branch"), info: t("worktrees.delete-branch-info"),
+          t("worktrees.delete-branch"),
+          info: t("worktrees.delete-branch-info"),
           isOn: model.settingBinding(
-            \.deletesBranchWithWorktree, write: model.setDeletesBranchWithWorktree))
+            \.deletesBranchWithWorktree,
+            write: model.setDeletesBranchWithWorktree,
+          ),
+        )
         InfoToggle(
-          t("worktrees.trash-removed"), info: t("worktrees.trash-removed-info"),
+          t("worktrees.trash-removed"),
+          info: t("worktrees.trash-removed-info"),
           isOn: model.settingBinding(
-            \.trashesRemovedWorktrees, write: model.setTrashesRemovedWorktrees))
+            \.trashesRemovedWorktrees,
+            write: model.setTrashesRemovedWorktrees,
+          ),
+        )
       }
     }
     .formStyle(.grouped)

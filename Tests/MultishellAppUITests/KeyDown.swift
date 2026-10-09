@@ -5,11 +5,22 @@ import Testing
 /// layout in use, so a test reads that back from the event rather than assume US.
 @MainActor
 func keyDown(
-  _ characters: String, keyCode: UInt16, flags: NSEvent.ModifierFlags = []
+  _ characters: String,
+  keyCode: UInt16,
+  flags: NSEvent.ModifierFlags = [],
 ) throws -> NSEvent {
   try #require(
     NSEvent.keyEvent(
-      with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 1, windowNumber: 0,
-      context: nil, characters: characters, charactersIgnoringModifiers: characters,
-      isARepeat: false, keyCode: keyCode))
+      with: .keyDown,
+      location: .zero,
+      modifierFlags: flags,
+      timestamp: 1,
+      windowNumber: 0,
+      context: nil,
+      characters: characters,
+      charactersIgnoringModifiers: characters,
+      isARepeat: false,
+      keyCode: keyCode,
+    )
+  )
 }

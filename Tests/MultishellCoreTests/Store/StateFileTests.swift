@@ -39,10 +39,12 @@ struct StateFileTests {
     #expect(survivors.contains { $0.hasSuffix(".broken.json") })
     #expect(
       FileManager.default.fileExists(atPath: reported?.path ?? ""),
-      "the alert names the backup, so it must be the file that was written")
+      "the alert names the backup, so it must be the file that was written",
+    )
     #expect(
       try String(contentsOf: directory.appendingPathComponent(survivors[0]), encoding: .utf8)
-        == "not json")
+        == "not json"
+    )
   }
 
   /// The decode path moved a file aside and the read path did not, so one
@@ -74,26 +76,38 @@ struct StateFileTests {
     let file = Scratch.statePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     var workspace = Workspace()
-    for p in 0..<20 {
-      let project = Project(path: URL(fileURLWithPath: "/repos/p\(p)"))
+    for projectNumber in 0..<20 {
+      let project = Project(path: URL(fileURLWithPath: "/repos/p\(projectNumber)"))
       workspace.projects.append(project)
-      for w in 0..<10 {
+      for worktreeNumber in 0..<10 {
         let worktree = Worktree(
-          path: URL(fileURLWithPath: "/repos/p\(p)-trees/w\(w)"), projectID: project.id,
-          head: "abc", branch: "w\(w)")
+          path: URL(fileURLWithPath: "/repos/p\(projectNumber)-trees/w\(worktreeNumber)"),
+          projectID: project.id,
+          head: "abc",
+          branch: "w\(worktreeNumber)",
+        )
         workspace.worktrees.append(worktree)
         var group = TabGroup(worktreeID: worktree.id)
         for _ in 0..<10 {
           let a = TerminalSession(
-            worktreeID: worktree.id, workingDirectory: worktree.path, title: "a")
+            worktreeID: worktree.id,
+            workingDirectory: worktree.path,
+            title: "a",
+          )
           let b = TerminalSession(
-            worktreeID: worktree.id, workingDirectory: worktree.path, title: "b")
+            worktreeID: worktree.id,
+            workingDirectory: worktree.path,
+            title: "b",
+          )
           workspace.sessions += [a, b]
           workspace.tabs.append(
             TerminalTab(
-              worktreeID: worktree.id, groupID: group.id,
+              worktreeID: worktree.id,
+              groupID: group.id,
               root: .split(axis: .horizontal, children: [.terminal(a.id), .terminal(b.id)]),
-              focusedSessionID: a.id))
+              focusedSessionID: a.id,
+            )
+          )
         }
         group.shownTabID = workspace.tabs.last?.id
         workspace.tabGroups.append(group)
@@ -135,7 +149,9 @@ struct StateFileTests {
     var workspace = Workspace()
     workspace.projects = [
       Project(
-        path: URL(fileURLWithPath: "/repos/demo"), settings: ProjectSettings(branchPrefix: "k/"))
+        path: URL(fileURLWithPath: "/repos/demo"),
+        settings: ProjectSettings(branchPrefix: "k/"),
+      )
     ]
     workspace.customWorktreeNames = ["/repos/demo": "trunk"]
     workspace.appearance.themeID = "multishell.light"
@@ -143,9 +159,13 @@ struct StateFileTests {
     workspace.appearance.terminalFontSize = 15
     workspace.appearance.uiFontSize = 16
     workspace.worktreeDefaults = WorktreeSettings(
-      worktreeDirectory: "/trees", branchPrefix: "team/")
+      worktreeDirectory: "/trees",
+      branchPrefix: "team/",
+    )
     workspace.notificationPreference = NotificationPreference(
-      notifiesOnAttention: true, notifiesOnDone: true)
+      notifiesOnAttention: true,
+      notifiesOnDone: true,
+    )
     workspace.preferredAgentID = "claude"
     workspace.customAgentCommand = "my-agent --flag"
     workspace.agentFlags = ["claude": "--model haiku"]

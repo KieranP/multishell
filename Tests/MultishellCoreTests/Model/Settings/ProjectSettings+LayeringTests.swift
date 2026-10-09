@@ -8,8 +8,14 @@ struct ProjectSettingsLayeringTests {
   @Test func theUsersValuesWinAndTheFileFillsWhatTheyLeftBlank() throws {
     let shared = try writtenAndReadBack(
       SharedProjectSettings(
-        worktreeDirectory: "../trees", branchPrefix: "team/", defaultBranch: "develop",
-        postCreateHook: "npm ci", iconGlyph: "hammer", iconTint: 4))
+        worktreeDirectory: "../trees",
+        branchPrefix: "team/",
+        defaultBranch: "develop",
+        postCreateHook: "npm ci",
+        iconGlyph: "hammer",
+        iconTint: 4,
+      )
+    )
     let blank = ProjectSettings().layered(over: shared)
     #expect(blank.branchPrefix == "team/", "naming a branch writes nothing")
     #expect(blank.defaultBranch == "develop", "a repository may name the branch it merges into")
@@ -18,7 +24,11 @@ struct ProjectSettingsLayeringTests {
     #expect(blank.worktreeDirectory == nil, "and so does where a checkout lands")
 
     var ownSettings = ProjectSettings(
-      branchPrefix: "me/", defaultBranch: "trunk", postCreateHook: "make", iconTint: 1)
+      branchPrefix: "me/",
+      defaultBranch: "trunk",
+      postCreateHook: "make",
+      iconTint: 1,
+    )
     ownSettings.trustDecisions = [
       TrustDecision(digest: try #require(shared.digest), isTrusted: true)
     ]
@@ -30,7 +40,8 @@ struct ProjectSettingsLayeringTests {
 
     #expect(
       ProjectSettings(branchPrefix: "me/").layered(over: nil)
-        == ProjectSettings(branchPrefix: "me/"))
+        == ProjectSettings(branchPrefix: "me/")
+    )
   }
 
   /// Unlike a hook this runs nothing the repository wrote, only the shell or agent the user
@@ -38,7 +49,7 @@ struct ProjectSettingsLayeringTests {
   @Test func aRepositoryMaySayWhatItsWorktreesOpenAndTheUsersOwnAnswerWins() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#
+      #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#,
     )
     #expect(shared.autoStartsAgent == true && shared.autoStartsAgentOnCreate == true)
     #expect(shared.opensTerminalOnSelect == false && shared.opensTerminalOnCreate == true)
@@ -59,7 +70,9 @@ struct ProjectSettingsLayeringTests {
 
   @Test func aGlyphNoBuildDrawsIsNotAChoiceAndDoesNotMaskTheRepositorys() throws {
     let shared = try decodeJSON(
-      SharedProjectSettings.self, #"{ "iconGlyph": "server.rack", "iconTint": 4 }"#)
+      SharedProjectSettings.self,
+      #"{ "iconGlyph": "server.rack", "iconTint": 4 }"#,
+    )
 
     let blank = ProjectSettings().layered(over: shared)
     #expect(blank.iconGlyph == "server.rack" && blank.iconTint == 4)
@@ -70,7 +83,8 @@ struct ProjectSettingsLayeringTests {
     let leftover = ProjectSettings(iconGlyph: "🚀").layered(over: shared)
     #expect(
       leftover.iconGlyph == "server.rack",
-      "an emoji from a build that offered them is a gap, not a choice over the file")
+      "an emoji from a build that offered them is a gap, not a choice over the file",
+    )
 
     let fileEmoji = try decodeJSON(SharedProjectSettings.self, #"{ "iconGlyph": "🚀" }"#)
     #expect(ProjectSettings().layered(over: fileEmoji).iconGlyph == nil, "and neither way round")
@@ -88,12 +102,14 @@ struct ProjectSettingsLayeringTests {
           let effective = settings.layered(over: shared)
           #expect(
             ProjectIcon.normalizedGlyph(effective.iconGlyph) == effective.iconGlyph,
-            "own \(own ?? "nil"), file \(file ?? "nil"): not a symbol name")
+            "own \(own ?? "nil"), file \(file ?? "nil"): not a symbol name",
+          )
 
           let exported = SharedProjectSettings(exporting: effective)
           #expect(
             ProjectSettings().layered(over: exported).iconGlyph == effective.iconGlyph,
-            "own \(own ?? "nil"), file \(file ?? "nil"): changed by the round trip")
+            "own \(own ?? "nil"), file \(file ?? "nil"): changed by the round trip",
+          )
         }
       }
     }
@@ -102,7 +118,8 @@ struct ProjectSettingsLayeringTests {
   @Test func aRepositoryMaySayWhatOrderItsWorktreesListInAndTheUsersOwnWins() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,
-      #"{ "worktreeSortOrder": "committedNewestFirst", "showsActiveWorktreesFirst": true }"#)
+      #"{ "worktreeSortOrder": "committedNewestFirst", "showsActiveWorktreesFirst": true }"#,
+    )
     #expect(shared.worktreeSortOrder == .committedNewestFirst)
     #expect(shared.showsActiveWorktreesFirst == true)
 
@@ -111,7 +128,8 @@ struct ProjectSettingsLayeringTests {
     #expect(blank.showsActiveWorktreesFirst == true)
 
     let own = ProjectSettings(
-      worktreeSortOrder: .alphabetical, showsActiveWorktreesFirst: false
+      worktreeSortOrder: .alphabetical,
+      showsActiveWorktreesFirst: false,
     ).layered(over: shared)
     #expect(own.worktreeSortOrder == .alphabetical, "the user's choice stands over the file's")
     #expect(own.showsActiveWorktreesFirst == false)
@@ -123,7 +141,8 @@ struct ProjectSettingsLayeringTests {
     #expect(exported.showsActiveWorktreesFirst == true)
     let written = try decodeJSON(
       SharedProjectSettings.self,
-      String(decoding: try JSONEncoder().encode(exported), as: UTF8.self))
+      String(decoding: try JSONEncoder().encode(exported), as: UTF8.self),
+    )
     #expect(written == exported)
   }
 }

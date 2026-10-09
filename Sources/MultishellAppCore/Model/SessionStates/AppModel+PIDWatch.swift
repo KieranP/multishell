@@ -2,6 +2,13 @@ import MultishellCore
 import MultishellProcess
 
 extension AppModel {
+  /// The pids worth a poll: those a state is about always, and those an
+  /// agent reported under only while the board is up; see agents.md.
+  var watchedPIDs: Set<Int32> {
+    guard showsAgentBoard else { return sessionStates.trackedPIDs }
+    return sessionStates.trackedPIDs.union(reportedAgents.values.compactMap(\.pid))
+  }
+
   /// An agent killed with Ctrl+C sends no Stop hook, so a named pid is
   /// polled and its state dropped once gone. No timeout.
   func updatePIDWatch() {
@@ -25,13 +32,6 @@ extension AppModel {
     }
   }
 
-  /// The pids worth a poll: those a state is about always, and those an
-  /// agent reported under only while the board is up; see agents.md.
-  var watchedPIDs: Set<Int32> {
-    guard showsAgentBoard else { return sessionStates.trackedPIDs }
-    return sessionStates.trackedPIDs.union(reportedAgents.values.compactMap(\.pid))
-  }
-
   /// One pass over them. A state whose process has gone loses the claim it
   /// was making; a pane whose agent has gone is a plain shell again.
   func sweepGonePIDs() {
@@ -44,7 +44,10 @@ extension AppModel {
     for pid in gone {
       for ending in sessionStates.endings(ofShell: pid) {
         apply(
-          SessionStateReport(state: .running, worker: ending.report), pid: nil, to: ending.key)
+          SessionStateReport(state: .running, worker: ending.report),
+          pid: nil,
+          to: ending.key,
+        )
       }
     }
   }

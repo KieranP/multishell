@@ -18,7 +18,10 @@ struct WeightedSplit<Content: View>: View {
     GeometryReader { geometry in
       let length = axis == .horizontal ? geometry.size.width : geometry.size.height
       let available = SplitMath.available(
-        Double(length), panes: shownWeights.count, divider: UIMetrics.splitDividerThickness)
+        Double(length),
+        panes: shownWeights.count,
+        divider: UIMetrics.splitDividerThickness,
+      )
       let sizes = SplitMath.sizes(of: shownWeights, sharing: available).map { CGFloat($0) }
 
       layout(sizes: sizes, available: CGFloat(available))
@@ -29,7 +32,8 @@ struct WeightedSplit<Content: View>: View {
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
     Group(subviews: content()) { subviews in
       SplitStack(subviews: subviews, axis: axis, sizes: sizes, theme: theme) {
-        index, translation in
+        index,
+        translation in
         resize(dividerAfter: index, by: translation, available: available)
       } onDragEnded: {
         if let moved = drag.end(over: weights) { onWeightsChange(moved) }
@@ -39,7 +43,11 @@ struct WeightedSplit<Content: View>: View {
 
   private func resize(dividerAfter index: Int, by translation: CGFloat, available: CGFloat) {
     drag.move(
-      dividerAfter: index, by: Double(translation), over: weights,
-      available: Double(available), minimumPane: UIMetrics.minimumPaneLength)
+      dividerAfter: index,
+      by: Double(translation),
+      over: weights,
+      available: Double(available),
+      minimumPane: UIMetrics.minimumPaneLength,
+    )
   }
 }

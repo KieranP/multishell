@@ -16,17 +16,23 @@ struct SidebarQuickStats: View {
         title: t("debug.quick-fps"),
         value: stats.framesPerSecondText,
         valueColor: theme.smoothnessColor(stats.smoothness),
-        trend: stats.frameRateTrend, trendColor: theme.debugAppSeriesColor)
+        trend: stats.frameRateTrend,
+        trendColor: theme.debugAppSeriesColor,
+      )
       cell(
         title: t("debug.quick-cpu"),
         value: stats.totalCPUText,
         valueColor: theme.textPrimary,
-        trend: stats.cpuTrend, trendColor: theme.debugAppSeriesColor)
+        trend: stats.cpuTrend,
+        trendColor: theme.debugAppSeriesColor,
+      )
       cell(
         title: t("debug.quick-memory"),
         value: stats.totalMemoryText,
         valueColor: theme.textPrimary,
-        trend: stats.memoryTrend, trendColor: theme.debugChildrenSeriesColor)
+        trend: stats.memoryTrend,
+        trendColor: theme.debugChildrenSeriesColor,
+      )
     }
     .padding(.horizontal, 6)
     .padding(.vertical, 5)
@@ -42,7 +48,11 @@ struct SidebarQuickStats: View {
   }
 
   private func cell(
-    title: String, value: String, valueColor: Color, trend: [Double], trendColor: Color
+    title: String,
+    value: String,
+    valueColor: Color,
+    trend: [Double],
+    trendColor: Color,
   ) -> some View {
     VStack(alignment: .leading, spacing: 1) {
       Text(title)

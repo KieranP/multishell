@@ -11,11 +11,11 @@ public struct FontDetection: Equatable, Sendable {
   let otherFamilies: [String]
 
   public init(monospaced: [String], otherFamilies: [String]) {
-    self.monospaced = monospaced.sorted {
-      $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+    self.monospaced = monospaced.sorted { lhs, rhs in
+      lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
     }
-    self.otherFamilies = otherFamilies.sorted {
-      $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+    self.otherFamilies = otherFamilies.sorted { lhs, rhs in
+      lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
     }
   }
 

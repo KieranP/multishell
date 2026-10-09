@@ -30,29 +30,47 @@ extension ProjectSettings {
     linkedPaths = try container.decode(String.self, forKey: .linkedPaths, or: "")
     copiedPaths = try container.decode(String.self, forKey: .copiedPaths, or: "")
     preferredAgentID = try container.decodeIfPresent(
-      String.self, forKey: .preferredAgentID)?.nonEmpty
+      String.self,
+      forKey: .preferredAgentID,
+    )?.nonEmpty
     // No `nonEmpty`: `""` is this field's only way to say "no flags here".
     agentFlags = try container.decodeIfPresent(String.self, forKey: .agentFlags)
     autoStartsAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartsAgent)
     // Absent is "follow the global", not "what `autoStartsAgent` says": seeding
     // it from the other turns the global into an override on every load.
     autoStartsAgentOnCreate = try container.decodeIfPresent(
-      Bool.self, forKey: .autoStartsAgentOnCreate)
-    opensTerminalOnSelect = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
-    opensTerminalOnCreate = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
+      Bool.self,
+      forKey: .autoStartsAgentOnCreate,
+    )
+    opensTerminalOnSelect = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .opensTerminalOnSelect,
+    )
+    opensTerminalOnCreate = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .opensTerminalOnCreate,
+    )
     // Tolerated: an order a newer build named costs the override, not the project.
     worktreeSortOrder = container.decodeTolerantly(
-      WorktreeSortOrder.self, forKey: .worktreeSortOrder)
+      WorktreeSortOrder.self,
+      forKey: .worktreeSortOrder,
+    )
     showsActiveWorktreesFirst = try container.decodeIfPresent(
-      Bool.self, forKey: .showsActiveWorktreesFirst)
+      Bool.self,
+      forKey: .showsActiveWorktreesFirst,
+    )
     preferredShellID = try container.decodeIfPresent(
-      String.self, forKey: .preferredShellID)?.nonEmpty
+      String.self,
+      forKey: .preferredShellID,
+    )?.nonEmpty
     iconGlyph = try container.decodeIfPresent(String.self, forKey: .iconGlyph)?.nonEmpty
     // Tolerated: a tint that is not a number costs the tint, not the file.
     iconTint = ProjectIcon.usableTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again.
     trustDecisions = container.decodeLossy(
-      TrustDecision.self, forKey: .trustDecisions)
+      TrustDecision.self,
+      forKey: .trustDecisions,
+    )
   }
 }
