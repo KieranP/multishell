@@ -43,6 +43,7 @@ public enum ProjectIcon {
     guard !trimmed.isEmpty, trimmed.unicodeScalars.allSatisfy(\.isASCII) else { return nil }
     return trimmed
   }
+
   /// A slot the theme lacks is no tint.
   static func usableTint(_ slot: Int?) -> Int? {
     guard let slot, (0..<Theme.ansiSlotCount).contains(slot) else { return nil }

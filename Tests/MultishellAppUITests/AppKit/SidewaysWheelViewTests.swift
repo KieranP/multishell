@@ -114,13 +114,13 @@ struct SidewaysWheelViewTests {
 
   /// A sideways turn is the scroller's own, and a click, a drag or a drop is
   /// the tabs': the catcher answers for none of them.
-  @Test func theCatcherTakesNoClickDragOrDrop() {
+  @Test func theCatcherAnswersNoHitTestWithoutAVerticalTurn() {
     let (window, _, catcher) = strip()
     #expect(catcher.hitTest(NSPoint(x: 10, y: 10)) == nil, "no event at all")
     withExtendedLifetime(window) {}
   }
 
-  @Test func aTurnWithNoScrollerToHandItToIsDropped() {
+  @Test func aTurnWithNoScrollerToHandItToLeavesTheStripAlone() {
     let (window, scroller, catcher) = strip()
     catcher.reference = ScrollerReference()
     catcher.scrollWheel(with: wheel(vertical: -40))

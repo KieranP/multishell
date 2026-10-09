@@ -75,8 +75,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     confirms: Bool,
     alwaysDeletesBranch: Bool,
     customName: String? = nil,
-    trashes: Bool = true,
     mergeState: WorktreeMergeState = .unknown,
+    trashes: Bool = true,
     isStatusUnread: Bool = false,
   ) -> Decision {
     let hasBranch = worktree.branch != nil

@@ -13,10 +13,7 @@ extension AppModel {
   /// Each worktree by its root's standardized path, built once for a table
   /// rather than searched for every row.
   func worktreesByStandardizedPath() -> [String: Worktree] {
-    Dictionary(
-      keepingFirst:
-        workspace.worktrees.map { ($0.path.standardizedFileURL.path, $0) }
-    )
+    Dictionary(keepingFirst: workspace.worktrees.map { ($0.path.standardizedFileURL.path, $0) })
   }
 
   /// Matched exactly, git running at a worktree's root: the lookup a report

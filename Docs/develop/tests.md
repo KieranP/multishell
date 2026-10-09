@@ -256,9 +256,9 @@ says why these are the rules.
   whatever order they land in: PromisedDropTests.
 - **A live socket whose accept backlog is full is not taken for a dead one**:
   UnixSocketServerTests, the queue blocked and the backlog filled by hand.
-- **The same suite starts a live server twice** and has a second process try the
-  claim, a process's own record locks never conflicting, and holds the path
-  limit to the staging name's.
+- **The same suite starts a live server twice, and fails a start**, and each
+  time has a second process try the claim, a process's own record locks never
+  conflicting, and holds the path limit to the staging name's.
 - **The pid the helper reports stops short of the app**:
   HelperSessionEnvironmentTests with two real shell layers under the test
   process posing as the app; ProcessAncestryTests has the walk on its own.

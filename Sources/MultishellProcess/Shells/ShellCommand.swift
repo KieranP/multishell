@@ -100,12 +100,14 @@ public enum ShellCommand {
     .filter { !$0.isEmpty }
     .joined(separator: "\n")
   }
+
   /// Back to the script's directory, as the rc files may leave the shell
   /// anywhere; then `set -e`, then the marker its stderr is read from.
   private static func prologue(entering directory: URL) -> String {
     "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\nset -e\n"
       + "printf '%s\\n' '\(stderrStartMarker)' >&2\n"
   }
+
   /// The part of a failure's stderr after the marker, or all of it where the
   /// script ended before writing one. The login shell `exec`s, so says no `logout`.
   static func stderrAfterMarker(_ text: String) -> String {

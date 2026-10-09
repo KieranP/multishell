@@ -3,7 +3,7 @@ import Testing
 
 @testable import MultishellCore
 
-/// The plugin's 70 lines of state are out of Swift's reach, so these run it under node
+/// The plugin's state is out of Swift's reach, so these run it under node
 /// with `spawn` replaced and read the argument lists back.
 @Suite(.serialized, .enabled(if: openCodeNode != nil))
 struct OpenCodePluginTests: OpenCodePluginDriver {
@@ -32,7 +32,6 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .tool(session: "parent"), .idle("parent"),
     ])
     #expect(out.map(chipSummary(of:)) == ["running true", "running", "done"])
-    #expect(out.map(chipSummary(of:)).last == "done")
   }
 
   @Test func theParentsDoneSaysItResumesAndListsTheChildrenStillBusy() throws {

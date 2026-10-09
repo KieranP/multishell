@@ -207,7 +207,7 @@ struct WorktreeGitRemovalTests {
     #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
-  @Test func removingAWorktreeWhoseDirectoryIsGonePrunesIt() async throws {
+  @Test func removingAWorktreeWhoseDirectoryIsGoneForgetsItsRecord() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let project = fixture.project

@@ -57,11 +57,18 @@ struct AccessibilityTextSidebarTests {
   /// The green glyph is read only where it is drawn, so work that is only in this worktree
   /// silences it here too.
   @Test func aMergedRowSaysSoBetweenItsLockAndItsChanges() {
+    let locked = Worktree(
+      path: URL(fileURLWithPath: "/trees/feat"),
+      projectID: "/r",
+      head: "abc",
+      branch: "feat",
+      isLocked: true,
+    )
     var behind = WorktreeStatus()
     behind.behind = 2
     #expect(
       AccessibilityText.worktree(
-        feature,
+        locked,
         state: nil,
         status: behind,
         operation: nil,
@@ -69,7 +76,7 @@ struct AccessibilityTextSidebarTests {
         isSelected: false,
         mergeState: .merged(.ancestor, into: "origin/main"),
       )
-        == "feat, linked worktree, Nothing running, Merged into origin/main, ↓2"
+        == "feat, linked worktree, Nothing running, locked, Merged into origin/main, ↓2"
     )
 
     var dirty = WorktreeStatus()

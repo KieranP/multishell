@@ -4,12 +4,12 @@ import Foundation
 /// what happened rather than "socket error".
 public struct SocketFailure: Error, CustomStringConvertible, Sendable {
   public enum Kind: Sendable, Equatable {
-    /// `sun_path` holds 104 bytes; a state directory under a long home
-    /// path can exceed it.
-    case pathTooLong
     /// Another process holds the socket's lock file or answered on the socket:
     /// a second instance of the app.
     case inUse
+    /// `sun_path` holds 104 bytes; a state directory under a long home
+    /// path can exceed it.
+    case pathTooLong
     case system(operation: String, code: Int32)
   }
 

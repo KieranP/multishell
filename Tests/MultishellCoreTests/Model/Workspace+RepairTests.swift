@@ -87,7 +87,7 @@ struct WorkspaceRepairTests {
     )
   }
 
-  @Test func aTabWithNoLiveSessionsIsRemovedAndTheActiveEntryMovesOn() {
+  @Test func aTabWithNoLiveSessionsIsRemovedAndItsGroupShowsTheTabLeft() {
     var (workspace, tab) = consistentWorkspace()
     let empty = TerminalTab(
       worktreeID: worktree.id,
@@ -267,15 +267,15 @@ struct WorkspaceRepairTests {
           Worktree(path: URL(fileURLWithPath: "/x"), projectID: "/gone", head: "h")
         )
       },
-      { workspace in
-        var split = workspace.tabs[0]
+      { damaged in
+        var split = damaged.tabs[0]
         split.root = .split(
           axis: .vertical,
           children: [.terminal(ghost), split.root],
           weights: [1],
         )
         split.focusedSessionID = ghost
-        workspace.tabs[0] = split
+        damaged.tabs[0] = split
       },
       { damaged in
         damaged.tabs.append(
@@ -289,8 +289,8 @@ struct WorkspaceRepairTests {
       },
       { $0.projects.append($0.projects[0]) },
       { $0.worktrees.append($0.worktrees[0]) },
-      { workspace in workspace.sessions.append(workspace.sessions[0]) },
-      { workspace in workspace.sessions[0].worktreeID = "/nowhere" },
+      { damaged in damaged.sessions.append(damaged.sessions[0]) },
+      { damaged in damaged.sessions[0].worktreeID = "/nowhere" },
     ]
     for _ in 0..<Int.random(in: 1...6, using: &rng) {
       damage.randomElement(using: &rng)!(&workspace)

@@ -287,16 +287,16 @@ extension SessionStatesTests {
     }
 
     step { _ = report(&$0, .running, started("w1")) }
-    step { states in
-      states.apply(
+    step { changing in
+      changing.apply(
         .init(state: .failed, message: "build failed"),
         pid: 99,
         for: .session(a),
         isSeen: false,
       )
     }
-    step { states in
-      states.apply(
+    step { changing in
+      changing.apply(
         .init(
           state: .attention,
           message: "Needs Bash",

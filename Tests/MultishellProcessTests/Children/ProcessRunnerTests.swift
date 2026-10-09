@@ -17,18 +17,12 @@ struct ProcessRunnerTests {
   }
 
   @Test func aNonZeroExitThrowsWithStderrAsTheMessage() async {
-    await #expect(throws: ProcessFailure.self) {
+    let failure = await #expect(throws: ProcessFailure.self) {
       try await runner.run(bourneShell, ["-c", "echo nope >&2; exit 3"], in: workingDirectory)
     }
-    do {
-      _ = try await runner.run(bourneShell, ["-c", "echo nope >&2; exit 3"], in: workingDirectory)
-    } catch let failure as ProcessFailure {
-      #expect(failure.status == 3)
-      #expect(failure.message == "nope")
-      #expect(failure.executable == "sh")
-    } catch {
-      Issue.record("wrong error type: \(error)")
-    }
+    #expect(failure?.status == 3)
+    #expect(failure?.message == "nope")
+    #expect(failure?.executable == "sh")
   }
 
   @Test func captureReturnsStatusInsteadOfThrowing() async throws {

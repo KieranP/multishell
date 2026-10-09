@@ -3,7 +3,7 @@ import MultishellCore
 // Declared order is the order the lists are placed in.
 // swiftlint:disable sorted_enum_cases
 /// What each of a project's two file lists does: a link shares the
-/// repository's file, a copy duplicates it. Case order is run order.
+/// repository's file, a copy duplicates it.
 public enum WorktreeFilePlacement: CaseIterable, Sendable {
   case link
   case copy

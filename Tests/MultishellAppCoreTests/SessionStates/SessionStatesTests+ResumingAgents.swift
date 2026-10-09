@@ -23,7 +23,7 @@ extension SessionStatesTests {
         backgroundShells: shells,
         resumesAfterWorkers: state == .done,
         conversationID: conversation,
-        workersOut: out.map { $0.map { WorkerReport(id: $0, phase: .working) } },
+        workersOut: out.map { ids in ids.map { WorkerReport(id: $0, phase: .working) } },
       ),
     )
   }

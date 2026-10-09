@@ -36,6 +36,7 @@ struct ShellCommandTests {
       try await launch("true", in: URL(fileURLWithPath: "/no/such/dir"))
     }
   }
+
   @Test func aLaunchedCommandIsReadAsShUnderZsh() async throws {
     let shell = try ScratchShell("/bin/zsh")
     defer { shell.tearDown() }

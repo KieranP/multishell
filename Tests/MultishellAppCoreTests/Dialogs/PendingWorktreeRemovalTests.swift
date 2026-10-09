@@ -27,14 +27,12 @@ struct PendingWorktreeRemovalTests {
     _ worktree: Worktree,
     confirms: Bool,
     alwaysDeletesBranch: Bool,
-    customName: String? = nil,
     mergeState: WorktreeMergeState = .unknown,
   ) throws -> PendingWorktreeRemoval {
     let decision = PendingWorktreeRemoval.decide(
       worktree,
       confirms: confirms,
       alwaysDeletesBranch: alwaysDeletesBranch,
-      customName: customName,
       mergeState: mergeState,
     )
     guard case .ask(let pending) = decision else {

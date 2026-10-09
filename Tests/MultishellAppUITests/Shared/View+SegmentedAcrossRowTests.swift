@@ -33,7 +33,7 @@ struct ViewSegmentedAcrossRowTests {
   @Test func theNewWorktreeBranchPickerSpansTheSheet() {
     let harness = ModelHarness()
     let sheet = NewWorktreeForm(model: harness.model, initialProjectID: harness.project.id)
-    let width: CGFloat = 520
+    let width = UIMetrics.newWorktreeSheetWidth
 
     let widths = OffscreenHost.read(
       sheet,

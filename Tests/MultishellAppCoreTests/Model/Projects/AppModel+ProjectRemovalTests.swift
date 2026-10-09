@@ -90,7 +90,7 @@ struct AppModelProjectRemovalTests {
     harness.model.removeProject(project)
 
     for (field, value) in ModelTraces.find(paths, in: harness.model, exempting: Self.exempt) {
-      #expect(Bool(false), "\(field) still names \(value) after its project was removed")
+      Issue.record("\(field) still names \(value) after its project was removed")
     }
   }
 

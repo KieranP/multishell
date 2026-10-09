@@ -65,8 +65,8 @@ extension AppModel {
       confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
       customName: customName(of: worktree),
-      trashes: workspace.trashesRemovedWorktrees,
       mergeState: mergeState(of: worktree),
+      trashes: workspace.trashesRemovedWorktrees,
       isStatusUnread: isStatusUnread,
     )
   }

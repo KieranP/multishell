@@ -117,7 +117,7 @@ struct AppModelDebugMemoryTableTests {
     )
   }
 
-  @Test func turningTheToolsOffForgetsWhatTheTerminalsHeld() async throws {
+  @Test func turningTheToolsOffForgetsWhatTheTerminalsHeld() async {
     let (harness, session) = Harness.withOnePane()
     harness.engine.terminalMemories[session.id] = 150
     harness.model.enableDebugTools()

@@ -34,12 +34,11 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     worktreeID: Worktree.ID,
     workingDirectory: URL,
     title: String,
-    id: UUID = UUID(),
     command: [String]? = nil,
     agentID: String? = nil,
     shellOverride: String? = nil,
   ) {
-    self.id = id
+    self.id = UUID()
     self.worktreeID = worktreeID
     self.workingDirectory = workingDirectory.standardizedFileURL
     self.title = title

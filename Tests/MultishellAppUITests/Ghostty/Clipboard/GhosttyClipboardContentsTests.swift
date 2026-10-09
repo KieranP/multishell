@@ -7,8 +7,8 @@ import Testing
 @Suite
 struct GhosttyClipboardContentsTests {
   @Test func aCopyIsReadForItsTextAndNothingElse() {
-    let read = CStrings.with(["image/png", GhosttyClipboardContents.textMime, "copied"]) {
-      strings in
+    let offered = ["image/png", GhosttyClipboardContents.textMime, "copied"]
+    let read = CStrings.with(offered) { strings in
       let contents = [
         ghostty_clipboard_content_s(mime: strings[0], data: strings[2], len: 3),
         ghostty_clipboard_content_s(mime: strings[1], data: strings[2], len: strlen(strings[2])),

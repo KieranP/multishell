@@ -5,34 +5,23 @@ import Testing
 
 extension ProcessRunnerTests {
   @Test func aMissingExecutableThrowsBeforeAnythingRuns() async {
-    let runner = ProcessRunner()
     await #expect(throws: (any Error).self) {
-      try await runner.run(
-        URL(fileURLWithPath: "/no/such/binary"),
-        [],
-        in: URL(fileURLWithPath: NSTemporaryDirectory()),
-      )
+      try await runner.run(URL(fileURLWithPath: "/no/such/binary"), [], in: workingDirectory)
     }
   }
 
   @Test func aMissingWorkingDirectoryThrows() async {
-    let runner = ProcessRunner()
     await #expect(throws: (any Error).self) {
-      try await runner.run(
-        URL(fileURLWithPath: "/bin/sh"),
-        ["-c", "true"],
-        in: URL(fileURLWithPath: "/no/such/dir"),
-      )
+      try await runner.run(bourneShell, ["-c", "true"], in: URL(fileURLWithPath: "/no/such/dir"))
     }
   }
 
   /// Each failure used to leak six descriptors, every five seconds on an unmounted drive. Other
   /// suites' descriptors come and go, so each side is the lowest reading over seconds.
   @Test func failedLaunchesDoNotLeakFileDescriptors() async throws {
-    let runner = ProcessRunner()
     func failToLaunch() async {
       _ = try? await runner.run(
-        URL(fileURLWithPath: "/bin/sh"),
+        bourneShell,
         ["-c", "true"],
         in: URL(fileURLWithPath: "/no/such/dir"),
       )

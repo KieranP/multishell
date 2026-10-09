@@ -24,11 +24,10 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
 
   init(
     worktreeID: Worktree.ID,
-    id: UUID = UUID(),
     weight: Double = 1,
     shownTabID: TerminalTab.ID? = nil,
   ) {
-    self.id = id
+    self.id = UUID()
     self.worktreeID = worktreeID
     self.weight = LayoutWeight.usable(weight)
     self.shownTabID = shownTabID

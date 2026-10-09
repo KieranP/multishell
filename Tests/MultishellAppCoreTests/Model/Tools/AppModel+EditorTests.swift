@@ -9,7 +9,7 @@ import Testing
 struct AppModelEditorTests {
   /// Nothing that acts on the tab in front of the user acts at all while the
   /// board covers it, and nothing starts a shell where a removal is running.
-  @Test func openInEditorLeavesTheBoardAndRefusesABusyWorktree() throws {
+  @Test func openInEditorLeavesTheBoardAndRefusesABusyWorktree() {
     let harness = Harness()
     harness.model.setPreferredEditor(EditorCatalogue.customID)
     harness.model.setCustomEditorCommand("my-editor {path}")

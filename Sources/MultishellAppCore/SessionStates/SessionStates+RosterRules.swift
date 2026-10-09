@@ -21,24 +21,24 @@ extension SessionStates {
       )
     }
     var place = WorkerRoster.Place(id: worker.id)
-    update(key) { entry in
-      let before = entry.roster.workers.workerCount
-      place = entry.record(worker)
+    update(key) { stored in
+      let before = stored.roster.workers.workerCount
+      place = stored.record(worker)
       // An idle agent takes a turn over this end, and that turn's Stop pays;
       // an end that took nobody off woke nothing.
-      if worker.phase == .ended, worker.wakesAgent != false, entry.displaced == .owedDone,
-        entry.roster.workers.workerCount < before
+      if worker.phase == .ended, worker.wakesAgent != false, stored.displaced == .owedDone,
+        stored.roster.workers.workerCount < before
       {
-        entry.isTurnUnderway = true
+        stored.isTurnUnderway = true
       }
     }
     let entry = entries[key] ?? Entry()
     let raiser = Entry.PromptRaiser.worker(place.id)
     switch state {
     case .attention:
-      update(key) { entry in
-        entry.rememberDisplaced(byPrompt: true)
-        entry.promptRaisers.insert(raiser)
+      update(key) { stored in
+        stored.rememberDisplaced(byPrompt: true)
+        stored.promptRaisers.insert(raiser)
       }
       return state
 
@@ -118,9 +118,9 @@ extension SessionStates {
     case .attention:
       // The agent asking claims a Working a worker put over nothing; a Done
       // it owed is still owed.
-      update(key) { entry in
-        if entry.displaced == .nothing { entry.displaced = nil }
-        entry.promptRaisers.insert(.agent)
+      update(key) { stored in
+        if stored.displaced == .nothing { stored.displaced = nil }
+        stored.promptRaisers.insert(.agent)
       }
       return state
 
@@ -132,9 +132,9 @@ extension SessionStates {
       guard entry.state != .failed else { return nil }
       // The main loop stopping is not the turn finishing: the Done is owed to
       // the last worker out, and a worker's prompt still up stays on the dot.
-      update(key) { entry in
-        if entry.displaced?.isFailure != true { entry.displaced = .owedDone }
-        if turnFollows { entry.isTurnUnderway = true }
+      update(key) { stored in
+        if stored.displaced?.isFailure != true { stored.displaced = .owedDone }
+        if turnFollows { stored.isTurnUnderway = true }
       }
       if entry.state == .attention, entry.promptRaisers.contains(where: { $0 != .agent }) {
         update(key) { _ = $0.answer(.agent) }
@@ -187,11 +187,11 @@ extension SessionStates {
     case .done, .owedDone: return .done
 
     case .failed(let note, let since):
-      update(key) { entry in
-        entry.state = .failed
-        entry.pid = nil
-        entry.note = note
-        entry.since = since
+      update(key) { stored in
+        stored.state = .failed
+        stored.pid = nil
+        stored.note = note
+        stored.since = since
       }
       return nil
     }

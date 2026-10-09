@@ -7,24 +7,8 @@ struct DebugStripLayer: Shape {
     case stalls([Bool])
     case midline
     case bars([DebugStripPoint?])
-    case band([DebugStripPoint?], lower: Boundary, upper: Boundary)
+    case band([DebugStripPoint?], lower: DebugStripBoundary, upper: DebugStripBoundary)
     case totalLine([DebugStripPoint?])
-  }
-
-  enum Boundary: Sendable {
-    case baseline
-    case app
-    case appWithTerminals
-    case total
-
-    func fraction(of point: DebugStripPoint) -> Double {
-      switch self {
-      case .baseline: 0
-      case .app: point.app
-      case .appWithTerminals: point.appWithTerminals
-      case .total: point.total
-      }
-    }
   }
 
   let kind: Kind
@@ -36,10 +20,10 @@ struct DebugStripLayer: Shape {
     case .bars(let points): bars(points, in: rect.size)
 
     case .band(let points, let lower, let upper):
-      areas(points, in: rect.size) { band($0, lower: lower, upper: upper) }
+      joinedSegments(points, in: rect.size) { band($0, lower: lower, upper: upper) }
 
     case .totalLine(let points):
-      areas(points, in: rect.size) { positions in
+      joinedSegments(points, in: rect.size) { positions in
         var path = Path()
         path.addLines(positions.map { CGPoint(x: $0.x, y: $0.y(.total)) })
         return path
@@ -79,7 +63,7 @@ struct DebugStripLayer: Shape {
     return path
   }
 
-  private func areas(
+  private func joinedSegments(
     _ points: [DebugStripPoint?],
     in size: CGSize,
     piece: ([DebugStripPosition]) -> Path,
@@ -89,12 +73,8 @@ struct DebugStripLayer: Shape {
     for segment in DebugStripSegment.segments(in: points) {
       path.addPath(
         piece(
-          segment.slotPositions.map { position in
-            DebugStripPosition(
-              x: position.slot * slotWidth,
-              point: position.point,
-              height: size.height,
-            )
+          segment.slotPositions.map { slot, point in
+            DebugStripPosition(x: slot * slotWidth, point: point, height: size.height)
           }
         )
       )
@@ -103,7 +83,11 @@ struct DebugStripLayer: Shape {
   }
 
   /// Closed back along the lower boundary.
-  private func band(_ positions: [DebugStripPosition], lower: Boundary, upper: Boundary) -> Path {
+  private func band(
+    _ positions: [DebugStripPosition],
+    lower: DebugStripBoundary,
+    upper: DebugStripBoundary,
+  ) -> Path {
     var path = Path()
     path.addLines(
       positions.map { CGPoint(x: $0.x, y: $0.y(upper)) }

@@ -10,7 +10,6 @@ enum PresentedRemovalFailure: Equatable, Sendable {
   case alert(title: String, message: String, retry: ForcedRetry?, wasWorktreeRemoved: Bool)
   /// The user stopped the pre-delete hook. The worktree stays, quietly.
   case stopped
-
   /// The worktree stays; the pane shows this until the user dismisses it.
   case vetoed(message: String, didTimeOut: Bool)
 

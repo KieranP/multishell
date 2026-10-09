@@ -58,10 +58,10 @@ extension WorkerRoster {
   /// Puts on what a list names that is not out, and marks all it names.
   private mutating func addListed(_ out: [WorkerReport]) {
     let listed = Set(out.map(\.id))
-    for worker in out where !isOut(worker.id) {
-      var listedWorker = Worker(id: worker.id, type: worker.type)
-      listedWorker.markNamedBeforeStart(isBackgroundShell: worker.isBackgroundShell == true)
-      add(listedWorker)
+    for report in out where !isOut(report.id) {
+      var worker = Worker(id: report.id, type: report.type)
+      worker.markNamedBeforeStart(isBackgroundShell: report.isBackgroundShell == true)
+      add(worker)
     }
     for index in workers.indices where listed.contains(workers[index].id) {
       workers[index].wasListed = true

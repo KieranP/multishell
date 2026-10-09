@@ -10,7 +10,7 @@ extension AgentHookPayload {
   }
 }
 
-// Beside the memberwise init, which stays synthesized.
+// Apart so the memberwise init the failable one calls stays synthesized.
 // swiftlint:disable:next no_grouping_extension
 extension AgentHookPayload.LaunchedTask {
   /// `nil` for a result that started nothing still running: a foreground

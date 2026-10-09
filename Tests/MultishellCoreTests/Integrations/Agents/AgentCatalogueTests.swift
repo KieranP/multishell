@@ -49,7 +49,7 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
   }
 
-  @Test func everyCatalogueAgentHasAMarkAndAParsableTint() {
+  @Test func everyCatalogueAgentsMarkIsItsOwnAndAnyTintItNamesParses() {
     for agent in AgentCatalogue.agents {
       #expect(AgentCatalogue.mark(agent.id) == agent.mark)
       guard agent.markTint != nil else { continue }

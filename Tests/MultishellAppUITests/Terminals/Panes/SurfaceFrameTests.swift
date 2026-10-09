@@ -25,7 +25,7 @@ struct SurfaceFrameTests {
 
     frame.show(NSView(), focused: true) { asked.append("second") }
     #expect(asked == ["first", "second"], "the closed pane was asked for the open one")
-    _ = window
+    withExtendedLifetime(window) {}
   }
 
   @Test func aPassThatChangesNothingDoesNotTakeTheKeyboardBack() {
@@ -35,7 +35,7 @@ struct SurfaceFrameTests {
     frame.show(surface, focused: true) { asked += 1 }
     frame.show(surface, focused: true) { asked += 1 }
     #expect(asked == 1, "typing in a field elsewhere is not interrupted")
-    _ = window
+    withExtendedLifetime(window) {}
   }
 
   @Test func aFrameHandedAnUnfocusedSessionDoesNotKeepTheLastOnesClaim() {
@@ -44,7 +44,7 @@ struct SurfaceFrameTests {
     frame.show(NSView(), focused: true) { asked += 1 }
     frame.show(NSView(), focused: false) { asked += 1 }
     #expect(asked == 1, "the new session is not the focused one")
-    _ = window
+    withExtendedLifetime(window) {}
   }
 
   /// A screenshot's preview drags nothing but a promise, so a frame missing

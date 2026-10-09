@@ -68,7 +68,7 @@ extension AppModel {
     if !shownInPane { present(error) }
   }
 
-  /// The first tab held back while the hook ran opens now, as the sheet answered
+  /// The first tab held back while the setup ran opens now, as the sheet answered
   /// or else the create settings say, and starts even out of view; terminals.md.
   func openHeldBackTab(of worktree: Worktree) {
     defer { newWorktreeFirstTabs[worktree.id] = nil }

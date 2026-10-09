@@ -6,6 +6,9 @@ extension Helper {
     "session", "cwd", "pid", "message", "agent", "subagent", "subagent-phase", "subagent-type",
     "new-turn", "shell", "resumes", "subagent-wakes", "subagent-parent", "out",
   ]
+  private static let workerDetailOptionNames = [
+    "subagent-phase", "subagent-type", "subagent-wakes", "subagent-parent",
+  ]
 
   static func runState(
     _ arguments: ArraySlice<String>,
@@ -46,11 +49,7 @@ extension Helper {
 
   private static func workerReport(from options: CommandOptions) throws -> WorkerReport? {
     guard let id = options["subagent"] else {
-      let orphan = ["subagent-phase", "subagent-type", "subagent-wakes", "subagent-parent"].first {
-        option in
-        options[option] != nil
-      }
-      if let orphan {
+      if let orphan = workerDetailOptionNames.first(where: { options[$0] != nil }) {
         throw UsageError("--\(orphan) needs --subagent")
       }
       return nil

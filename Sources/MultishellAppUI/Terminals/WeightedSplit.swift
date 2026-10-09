@@ -31,10 +31,8 @@ struct WeightedSplit<Content: View>: View {
 
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
     Group(subviews: content()) { subviews in
-      SplitStack(subviews: subviews, axis: axis, sizes: sizes, theme: theme) {
-        index,
-        translation in
-        resize(dividerAfter: index, by: translation, available: available)
+      SplitStack(subviews: subviews, axis: axis, sizes: sizes, theme: theme) { index, delta in
+        resize(dividerAfter: index, by: delta, available: available)
       } onDragEnded: {
         if let moved = drag.end(over: weights) { onWeightsChange(moved) }
       }

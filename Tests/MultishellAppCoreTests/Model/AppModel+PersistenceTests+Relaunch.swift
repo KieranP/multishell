@@ -7,7 +7,7 @@ import Testing
 @testable import MultishellCore
 
 extension AppModelPersistenceTests {
-  @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() throws {
+  @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() {
     let file = Scratch.statePath("relaunch")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 

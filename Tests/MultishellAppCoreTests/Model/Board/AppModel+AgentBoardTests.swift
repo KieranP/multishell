@@ -253,7 +253,7 @@ struct AppModelAgentBoardTests {
     #expect(!model.agentBoardCards[0].occupant.isAgent)
   }
 
-  @Test func theBoardIsBuiltOnceUntilSomethingItReadChanges() throws {
+  @Test func theBoardIsBuiltOnceUntilSomethingItReadChanges() {
     let (harness, session) = Harness.withOnePane()
     let model = harness.model
     model.setShowsAllTerminals(true)
@@ -268,7 +268,7 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoardBuilds == builds + 1)
   }
 
-  @Test func aViewHoldingTheCachedBoardIsToldWhenItChanges() throws {
+  @Test func aViewHoldingTheCachedBoardIsToldWhenItChanges() {
     let (harness, session) = Harness.withOnePane()
     let model = harness.model
     model.setShowsAllTerminals(true)

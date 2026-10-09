@@ -25,6 +25,7 @@ struct WorkerRoster: Equatable, Sendable {
   /// holds no Working.
   var hasWorkOut: Bool { workers.contains { !$0.hasFailed } }
 
+  /// A background shell's end is its exit, never a hook's.
   var firstNamedIndex: Int? {
     workers.firstIndex { worker in
       !worker.isBackgroundShell && !worker.hasEnded && !worker.hasFailed
@@ -159,7 +160,6 @@ struct WorkerRoster: Equatable, Sendable {
       return workers.firstIndex { $0.id == report.id }
     }
     let askingIndex = workers.lastIndex { $0.isAnonymous && asking.contains($0.id) }
-    // A background shell's end is its exit, never a hook's.
     return askingIndex ?? workers.lastIndex(where: \.isAnonymous) ?? firstNamedIndex
   }
 

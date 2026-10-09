@@ -4,9 +4,9 @@ extension UnixSocketServer {
   /// What a failed `accept` means. Every case but `waitForNextEvent` leaves
   /// the connection in the backlog, and the read source fires again on it.
   enum AcceptOutcome: Equatable {
-    case waitForNextEvent
-    case retryNow
     case outOfResources
+    case retryNow
+    case waitForNextEvent
 
     init(errno code: Int32) {
       switch code {

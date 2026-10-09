@@ -7,8 +7,8 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellGitKit
 
-/// The merged badge and the fetch behind it: what each worktree is
-/// measured against, and what a pass that finds nothing moved costs.
+/// The merged badge: what each worktree is measured against, and what a
+/// pass that finds nothing moved costs.
 @Suite(.serialized) @MainActor
 struct AppModelBranchScansTests {
   @Test func aBranchThatLandsGetsItsBadgeAndTheMainWorktreeNeverDoes() async throws {

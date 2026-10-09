@@ -12,7 +12,6 @@ public struct Worker: Identifiable, Equatable, Sendable {
   /// Ids given to workers reported without one, so an unnamed end takes one of
   /// those and never a named one.
   static let anonymousPrefix = "anonymous:"
-  var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
 
   public let id: String
   /// What the agent calls the kind, `nil` where no report said.
@@ -64,6 +63,8 @@ public struct Worker: Identifiable, Equatable, Sendable {
   var awaitsResume = false
 
   var isBackgroundShell: Bool { pid != nil || isListedShell }
+
+  var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
 
   /// The dot its row draws.
   public var shownState: SessionState { hasFailed ? .failed : .running }

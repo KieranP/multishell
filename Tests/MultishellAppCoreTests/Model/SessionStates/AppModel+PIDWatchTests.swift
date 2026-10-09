@@ -45,6 +45,27 @@ struct AppModelPIDWatchTests {
     #expect(harness.model.state(of: tab) == .running)
   }
 
+  @Test func aModelThatGoesWhileWatchingALiveProcessIsReleased() async throws {
+    let agent = try WaitingShell()
+    defer { agent.terminate() }
+    weak var model: AppModel<FakeSurface>?
+    do {
+      let harness = Harness()
+      harness.model.pidPollInterval = .seconds(30)
+      harness.model.select(harness.main)
+      let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+      harness.stateSource.send(
+        SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: agent.pid)
+      )
+      #expect(harness.model.pidWatch != nil)
+      model = harness.model
+      try await Task.sleep(for: .milliseconds(50))
+    }
+    try await waitUntil({ model == nil }, seconds: 2)
+
+    #expect(model == nil)
+  }
+
   /// Whether the agent or its shell is checked first is a set's order, so
   /// several pairs make sure both orders are met.
   @Test func anAgentDyingWithItsShellAnnouncesNothingWhicheverIsSweptFirst() {

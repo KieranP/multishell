@@ -33,10 +33,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// who is at the pane's prompt.
   public let id: String
   public let file: URL
-  /// The file as the settings window names it, `~` and all.
-  public var displayPath: String {
-    file.path.abbreviatingHomeDirectory(home: AgentHookCatalogue.home.path)
-  }
   let events: [AgentHookEvent]
   let format: Format
   /// What the agent asks of the user before it will run a hook, when it
@@ -68,6 +64,11 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   let toolResultsNameBackgroundTasks: Bool
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }
+
+  /// The file as the settings window names it, `~` and all.
+  public var displayPath: String {
+    file.path.abbreviatingHomeDirectory(home: AgentHookCatalogue.home.path)
+  }
 
   public var isOursAlone: Bool { format.isOursAlone }
 

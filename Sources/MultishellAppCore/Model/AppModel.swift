@@ -320,5 +320,6 @@ public final class AppModel<Surface> {
     autosave?.cancel()
     tabDragReleaseWatch?.cancel()
     projectDragReleaseWatch?.cancel()
+    pidWatch?.cancel()
   }
 }

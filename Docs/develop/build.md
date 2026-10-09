@@ -186,7 +186,8 @@
   picker, the board, a strip or the helper's usage error lists in that order,
   the order file lists are placed or a create or remove's stages run, the badge
   fit's widest-first, and `ANSIColor`, whose raw value is the palette index.
-  Each such enum is marked with its reason.
+  Each such enum is marked with its reason. SwiftLint checks top-level enums
+  only; a nested one follows the rule unchecked and unmarked.
 - **A type's extension in its own file is folded into it**, except where it
   keeps a memberwise init synthesized, and `WorkspaceStore`'s concerns, which
   must share its file. Those are marked.

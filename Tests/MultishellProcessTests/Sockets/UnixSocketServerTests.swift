@@ -30,12 +30,8 @@ struct UnixSocketServerTests {
     try first.start()
 
     let second = UnixSocketServer(path: path)
-    #expect(throws: SocketFailure.self) { try second.start() }
-    do {
-      try second.start()
-    } catch let failure as SocketFailure {
-      #expect(failure.kind == .inUse)
-    }
+    let failure = #expect(throws: SocketFailure.self) { try second.start() }
+    #expect(failure?.kind == .inUse)
     #expect(FileManager.default.fileExists(atPath: path.path), "the live socket was not unlinked")
 
     // The first instance goes away without cleaning up, as a crash would.
@@ -157,24 +153,16 @@ struct UnixSocketServerTests {
     }
   }
 
-  /// `flock` refuses a second description of a file even to the process holding it, so a
-  /// retry would otherwise read its own lock as another instance.
-  @Test func aFailedStartLetsItsClaimGoSoARetrySaysWhatIsWrong() {
+  /// A start that failed is not listening, so a claim it kept would turn the next launch away.
+  @Test(.enabled(if: InstalledShells.isInstalled("/usr/bin/python3")))
+  func aFailedStartLetsItsClaimGoForAnotherProcess() throws {
     let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "y", count: 120) + ".sock")
-    // Two instances, both kept: what the second must not meet is the first's
-    // abandoned lock, read as another copy of the app.
-    let servers = [UnixSocketServer(path: long), UnixSocketServer(path: long)]
-    defer { for server in servers { server.stop() } }
-    for (attempt, server) in servers.enumerated() {
-      do {
-        try server.start()
-        Issue.record("bound a path that cannot fit sun_path")
-      } catch let failure as SocketFailure {
-        #expect(failure.kind == .pathTooLong, "attempt \(attempt)")
-      } catch {
-        Issue.record("wrong error: \(error)")
-      }
-    }
+    let server = UnixSocketServer(path: long)
+    defer { server.stop() }
+    let failure = #expect(throws: SocketFailure.self) { try server.start() }
+    #expect(failure?.kind == .pathTooLong)
+    let answer = try lockAnswerFromAnotherProcess(at: server.claim.lockFilePath)
+    #expect(answer.hasPrefix("took"), "the claim was kept: \(answer)")
   }
 
   /// The probe finds this instance answering, and letting the claim go on that would leave
@@ -192,27 +180,7 @@ struct UnixSocketServerTests {
     try server.start()
     try server.start()
 
-    // Another process is the only honest reader: a process's own record
-    // locks never conflict with each other, so `F_GETLK` here says unlocked.
-    let taker = Process()
-    taker.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-    taker.arguments = [
-      "-c",
-      """
-      import fcntl, sys
-      handle = open(sys.argv[1], 'w')
-      try:
-          fcntl.lockf(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-          print('took', flush=True)
-      except OSError:
-          print('refused', flush=True)
-      """, server.claim.lockFilePath,
-    ]
-    let output = Pipe()
-    taker.standardOutput = output
-    try taker.run()
-    taker.waitUntilExit()
-    let answer = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    let answer = try lockAnswerFromAnotherProcess(at: server.claim.lockFilePath)
     #expect(answer.hasPrefix("refused"), "the claim was let go: \(answer)")
 
     try UnixSocketClient.send("still here\n", to: path)
@@ -269,6 +237,30 @@ struct UnixSocketServerTests {
 
     try await waitUntil { recorder.received.contains("after") }
     #expect(recorder.received == ["after"], "the flood produced no line")
+  }
+
+  /// Another process is the only honest reader: a process's own record locks never
+  /// conflict with each other, so `F_GETLK` here says unlocked.
+  private func lockAnswerFromAnotherProcess(at path: String) throws -> String {
+    let taker = Process()
+    taker.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+    taker.arguments = [
+      "-c",
+      """
+      import fcntl, sys
+      handle = open(sys.argv[1], 'w')
+      try:
+          fcntl.lockf(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+          print('took', flush=True)
+      except OSError:
+          print('refused', flush=True)
+      """, path,
+    ]
+    let output = Pipe()
+    taker.standardOutput = output
+    try taker.run()
+    taker.waitUntilExit()
+    return String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
   }
 
   private func plantDeadSocket(at path: String) throws {

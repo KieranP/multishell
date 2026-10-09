@@ -46,6 +46,8 @@ struct WorktreeStageHandlesTests {
     handles.beginCreation(with: second)
     #expect(!handles.isCurrentCreation(first), "the older create's steps are dropped")
     #expect(handles.isCurrentCreation(second))
+    handles.stopCreation()
+    #expect(second.isStopRequested && !first.isStopRequested)
 
     handles.endCreation(with: second)
     #expect(!handles.isCurrentCreation(second))

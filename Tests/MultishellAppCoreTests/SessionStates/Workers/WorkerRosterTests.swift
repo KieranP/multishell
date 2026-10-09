@@ -85,7 +85,10 @@ struct WorkerRosterTests {
     roster.record(WorkerReport(id: "a0", phase: .started))
     roster.record(WorkerReport(id: "f1", phase: .started))
     _ = roster.keepOnlyListedOut(
-      [WorkerReport(id: "a0", phase: .working), WorkerReport(id: "b1", phase: .working)],
+      [
+        WorkerReport(id: "a0", phase: .working),
+        WorkerReport(id: "b1", phase: .working, isBackgroundShell: true),
+      ],
       stopping: nil,
     )
     roster.record(WorkerReport(id: "a0", phase: .working, isPaused: true))

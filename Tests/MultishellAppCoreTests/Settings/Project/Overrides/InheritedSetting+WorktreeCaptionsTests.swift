@@ -3,7 +3,7 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellCore
 
-@Suite @MainActor
+@Suite
 struct InheritedSettingWorktreeCaptionsTests {
   @Test func aCaptionNamesTheFileOnlyWhileTheFileChoseAndNothingOverridesIt() {
     let fromFile = InheritedSetting<String>(value: ".worktrees", isFromRepository: true)

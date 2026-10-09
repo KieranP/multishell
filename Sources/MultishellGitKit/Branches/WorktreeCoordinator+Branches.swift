@@ -16,7 +16,7 @@ extension WorktreeCoordinator {
   public func deleteBranch(_ branch: String, in project: Project, force: Bool = false) async throws
   {
     do {
-      try await git.deleteBranch(branch, force: force, in: project)
+      try await git.deleteBranch(branch, in: project, force: force)
     } catch {
       throw BranchDeletionFailure(branch: branch, underlying: error)
     }

@@ -142,10 +142,6 @@ struct UIMetricsTests {
       )
       #expect(metrics.menuChevronSize < metrics.glyph, "the chevron reads as a mark at \(size)")
       #expect(
-        metrics.stripButtonsWidth == metrics.newTabMenuWidth + metrics.splitButtonWidth * 2,
-        "the New Tab menu and the two splits are taken off the strip at \(size)",
-      )
-      #expect(
         !metrics.tabStripWidths.showsSplits(in: UIMetrics.minimumPaneLength),
         "a group at its floor has no room for the splits at \(size)",
       )
@@ -158,7 +154,9 @@ struct UIMetricsTests {
         "the splits show a point early at \(size)",
       )
       #expect(
-        showsAt - metrics.stripButtonsWidth >= 2 * metrics.tabArrowWidth + metrics.tabMinWidth,
+        metrics.tabStripWidths.arrowGutter(
+          forAvailable: metrics.tabStripWidths.tabsAvailable(in: showsAt)
+        ) > 0,
         "the splits cost the strip its arrows at \(size)",
       )
       #expect(

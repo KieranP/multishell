@@ -211,8 +211,8 @@ struct GhosttyUserConfigTests {
       window-padding-balance = true
       config-file = themes/one-that-is-not-there
       """
-    let accepted = try libghosttyDiagnostics(GhosttyUserConfig.base(userContents: [contents]))
-    #expect(accepted.isEmpty, "\(accepted)")
+    let diagnostics = try libghosttyDiagnostics(GhosttyUserConfig.base(userContents: [contents]))
+    #expect(diagnostics.isEmpty, "\(diagnostics)")
     #expect(try !libghosttyDiagnostics(contents).isEmpty)
   }
 }

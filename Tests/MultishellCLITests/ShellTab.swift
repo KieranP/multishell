@@ -14,12 +14,12 @@ enum ShellTab {
     return file
   }
 
-  static func zshIntegrationDirectory(in root: URL, helper: URL? = nil) throws -> URL {
+  static func zshIntegrationDirectory(in root: URL) throws -> URL {
     let directory = root.appendingPathComponent("integration", isDirectory: true)
     try ShellIntegration.refresh(
       zshDirectory: directory,
       bashInit: root.appendingPathComponent("bash/init.bash"),
-      helper: (try helper ?? HelperBinary.require()).path,
+      helper: try HelperBinary.require().path,
     )
     return directory
   }
@@ -51,10 +51,9 @@ enum ShellTab {
     integration: URL,
     userZdotdir: URL,
     session: UUID = UUID(),
-    home: URL? = nil,
     worktree: String? = nil,
   ) -> [String: String] {
-    var environment = environment(socket: socket, session: session, home: home, worktree: worktree)
+    var environment = environment(socket: socket, session: session, worktree: worktree)
     environment["ZDOTDIR"] = integration.path
     environment["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
     return environment
@@ -95,11 +94,11 @@ enum ShellTab {
   /// An interactive bash under the generated init reading `script` as its
   /// input, typed at its prompt rather than handed over with `-c`.
   static func runBash(
-    _ bash: String,
     initFile: URL,
     feeding script: URL,
     in home: URL,
     environment: [String: String],
+    bash: String,
   ) async throws -> ProcessOutput {
     try await ProcessRunner().capture(
       URL(fileURLWithPath: "/bin/sh"),

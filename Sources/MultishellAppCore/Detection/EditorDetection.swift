@@ -22,8 +22,8 @@ public struct EditorDetection: Equatable, Sendable {
     var found: [String: Found] = [:]
     for editor in EditorCatalogue.editors {
       let application = editor.bundleIdentifier.flatMap(applicationLookup)
-      let executable = editor.executable.flatMap { executable in
-        ExecutableLookup.find(executable, searchPath: searchPath)
+      let executable = editor.executable.flatMap { name in
+        ExecutableLookup.find(name, searchPath: searchPath)
       }
       if application != nil || executable != nil {
         found[editor.id] = Found(application: application, executable: executable)

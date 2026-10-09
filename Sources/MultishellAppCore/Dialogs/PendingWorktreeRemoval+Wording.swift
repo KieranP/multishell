@@ -47,12 +47,14 @@ extension PendingWorktreeRemoval {
     ]
     if let branch = worktree.branch {
       switch branchHandling {
-      case .offersBoth: notes.append(t("worktree-removal.branch-asked", branch))
+      case .offersBoth:
+        notes.append(t("worktree-removal.branch-asked", branch))
 
       case .decided(deletesBranch: true):
         notes.append(t("worktree-removal.branch-deleted", branch))
 
-      case .decided(deletesBranch: false): notes.append(t("worktree-removal.branch-kept", branch))
+      case .decided(deletesBranch: false):
+        notes.append(t("worktree-removal.branch-kept", branch))
       }
     }
     if let branch = worktree.branch, let note = mergeState.removalNote(branch: branch) {

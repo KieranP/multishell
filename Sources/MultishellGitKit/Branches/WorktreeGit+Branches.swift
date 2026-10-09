@@ -55,7 +55,7 @@ extension WorktreeGit {
 
   /// `git branch -d`, which refuses a branch with commits no other branch
   /// has; `force` is `-D`.
-  func deleteBranch(_ branch: String, force: Bool, in project: Project) async throws {
+  func deleteBranch(_ branch: String, in project: Project, force: Bool) async throws {
     _ = try await runner.run(["branch", force ? "-D" : "-d", branch], in: project.path)
   }
 }

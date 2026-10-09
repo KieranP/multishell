@@ -48,7 +48,7 @@ enum GeminiSettings {
   }
 
   /// An empty `HOME` is Gemini's cue for the temporary directory, unlike
-  /// `underHome`'s fallback to the account's home.
+  /// `AgentHookCatalogue.home`'s fallback to the account's home.
   private static func geminiDirectory(_ environment: [String: String]) -> URL {
     let home =
       environment["GEMINI_CLI_HOME"]?.nonEmpty

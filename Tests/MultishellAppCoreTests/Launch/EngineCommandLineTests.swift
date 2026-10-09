@@ -8,17 +8,16 @@ import Testing
 
 @Suite
 struct EngineCommandLineTests {
-  @Test func zshAsTheLoginShellNeedsNoOverrideCommand() throws {
+  @Test func aLoginShellOtherThanBashNeedsNoOverrideCommand() throws {
     let bashInit = try Scratch.bashInitThatExists()
     defer { Scratch.remove(bashInit) }
-    #expect(
-      EngineCommandLine.overrideCommand(
-        forShell: "/bin/zsh",
-        loginShell: "/bin/zsh",
-        bashInit: bashInit,
+    for shell in ["/bin/zsh", "/usr/local/bin/fish"] {
+      #expect(
+        EngineCommandLine.overrideCommand(forShell: shell, loginShell: shell, bashInit: bashInit)
+          == nil,
+        "\(shell)",
       )
-        == nil
-    )
+    }
   }
 
   @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
@@ -94,19 +93,6 @@ struct EngineCommandLineTests {
         forShell: "/bin/bash",
         loginShell: "/bin/bash",
         bashInit: missing,
-      )
-        == nil
-    )
-  }
-
-  @Test func anUnknownShellIsLaunchedPlainly() throws {
-    let bashInit = try Scratch.bashInitThatExists()
-    defer { Scratch.remove(bashInit) }
-    #expect(
-      EngineCommandLine.overrideCommand(
-        forShell: "/usr/local/bin/fish",
-        loginShell: "/usr/local/bin/fish",
-        bashInit: bashInit,
       )
         == nil
     )

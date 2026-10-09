@@ -114,7 +114,7 @@ final class WorktreeFilesTests {
     )
   }
 
-  @Test func aPathTheRepositoryDoesNotHaveIsSkippedRatherThanFailing() throws {
+  @Test func aPathTheRepositoryDoesNotHaveIsPassedOverRatherThanFailing() throws {
     let (repository, worktree) = try repositoryAndWorktree()
     try "SECRET=1".write(to: repository.appending(path: ".env"), atomically: true, encoding: .utf8)
     try WorktreeFiles.place(".env\n.env.local", as: .copy, from: repository, to: worktree)

@@ -34,8 +34,8 @@ extension SessionStates {
     if let worker { syncRoster(toWorkersStop: report, stopping: worker.id, for: key) }
     if let launched = report.launched { update(key) { $0.roster.recordLaunch(launched) } }
     if let killed = report.killedTaskID {
-      update(key) { entry in
-        entry.forgetPrompts(ofWorkers: entry.roster.recordKill(killed))
+      update(key) { stored in
+        stored.forgetPrompts(ofWorkers: stored.roster.recordKill(killed))
       }
     }
     guard
@@ -56,13 +56,14 @@ extension SessionStates {
       if isOwnStop { update(key) { $0.resumesAfterWorkers = resumesAfterWorkers } }
 
     case .running, .attention:
-      update(key) { entry in
-        entry.state = state
-        if let pid { entry.pid = pid }
+      update(key) { stored in
+        stored.state = state
+        if let pid { stored.pid = pid }
       }
     }
-    update(key) { entry in
-      entry.workingIsShellCommand = report.isFromShellIntegration == true && entry.state == .running
+    update(key) { stored in
+      stored.workingIsShellCommand =
+        report.isFromShellIntegration == true && stored.state == .running
     }
     noteIfStanding(
       SessionNote(state: state, message: report.shownMessage, duration: report.duration),
@@ -75,13 +76,15 @@ extension SessionStates {
   /// list, or one cut at the cap, its background shells are only added.
   private mutating func syncRoster(toStop report: SessionStateReport, for key: Key) {
     let backgroundShells = report.backgroundShells ?? []
-    update(key) { entry in
+    update(key) { stored in
       if let workersOut = report.completeWorkersOut {
-        entry.forgetPrompts(ofWorkers: entry.roster.keepOnly(workersOut, shells: backgroundShells))
+        stored.forgetPrompts(
+          ofWorkers: stored.roster.keepOnly(workersOut, shells: backgroundShells)
+        )
       } else {
-        entry.roster.recordShells(backgroundShells)
+        stored.roster.recordShells(backgroundShells)
       }
-      entry.resumesAfterWorkers = report.resumesAfterWorkers == true
+      stored.resumesAfterWorkers = report.resumesAfterWorkers == true
     }
   }
 
@@ -93,9 +96,9 @@ extension SessionStates {
     for key: Key,
   ) {
     guard let workersOut = report.completeWorkersOut else { return }
-    update(key) { entry in
-      entry.forgetPrompts(
-        ofWorkers: entry.roster.keepOnlyListedOut(workersOut, stopping: workerID)
+    update(key) { stored in
+      stored.forgetPrompts(
+        ofWorkers: stored.roster.keepOnlyListedOut(workersOut, stopping: workerID)
       )
     }
   }
@@ -124,9 +127,9 @@ extension SessionStates {
   /// A finished state lands unless the user is looking and looking clears
   /// it; the process it was about is dropped either way.
   mutating func landFinished(_ state: SessionState, on key: Key, isSeen: Bool) {
-    update(key) { entry in
-      entry.state = isSeen && state.clearsWhenSeen ? nil : state
-      entry.pid = nil
+    update(key) { stored in
+      stored.state = isSeen && state.clearsWhenSeen ? nil : state
+      stored.pid = nil
     }
   }
 

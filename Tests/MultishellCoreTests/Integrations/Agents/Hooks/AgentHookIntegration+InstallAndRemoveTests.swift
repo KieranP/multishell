@@ -58,8 +58,8 @@ struct AgentHookIntegrationInstallAndRemoveTests: AgentHookFixtures {
     )
   }
 
-  /// Every existing install predates the two counting events, so Add has to
-  /// top them up without doubling the seven that are already there.
+  /// An install from before the two counting events lacks them, so Add tops them
+  /// up without doubling what is already there.
   @Test func addingOverAnOlderInstallFillsOnlyWhatIsMissing() throws {
     let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }

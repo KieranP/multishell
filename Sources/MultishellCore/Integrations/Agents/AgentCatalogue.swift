@@ -87,6 +87,6 @@ public enum AgentCatalogue {
   /// The id in force for a project: its override when it has one, else the
   /// global. `nil` means no agent, whichever side said so.
   static func effectiveID(global: String?, override: String?) -> String? {
-    ChosenID.effective(global: global, noneID: noneID, override: override)
+    ChosenID.effective(global: global, override: override, noneID: noneID)
   }
 }

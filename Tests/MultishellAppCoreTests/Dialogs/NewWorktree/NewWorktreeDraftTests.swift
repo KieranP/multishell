@@ -231,6 +231,7 @@ struct NewWorktreeDraftTests {
     draft.isCreating = true
     #expect(!draft.canCreate(checkedOut: ["main"]))
   }
+
   /// Create used to take any non-empty name, so the hook ran and git then
   /// refused it.
   @Test func createIsOffForANameGitWillNotTake() {

@@ -63,6 +63,7 @@ struct AppModelWorktreeSetupTests {
       "what the hook printed on either stream, then its status, and no rc noise",
     )
   }
+
   /// `npm install` in a post-create hook used to hold the sheet, and the whole app, for as
   /// long as it took.
   @Test func aSlowPostCreateHookReturnsAtOnceShowsItsProgressAndHoldsTheFirstTab() async throws {
@@ -214,6 +215,7 @@ struct AppModelWorktreeSetupTests {
       "the first tab opens as after a finish",
     )
   }
+
   /// A stage ending is not the user turning back to the pane.
   @Test func aStageEndingUnderTheAgentsBoardLeavesTheBoardUpAndStartsTheTabBehindIt()
     async throws
@@ -244,6 +246,7 @@ struct AppModelWorktreeSetupTests {
     )
     #expect(harness.engine.focused.isEmpty, "the keyboard is left where it was")
   }
+
   /// The first tab is the create's, so it opens under the create settings,
   /// agent included, without taking the keyboard from where the user is.
   @Test func aCreateFinishedOutOfViewStartsItsFirstTabInTheBackground() async throws {

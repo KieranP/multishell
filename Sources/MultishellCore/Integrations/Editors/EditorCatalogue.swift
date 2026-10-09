@@ -137,6 +137,6 @@ public enum EditorCatalogue {
 
   /// The id in force, or `nil` for none.
   static func effectiveID(_ id: String?) -> String? {
-    ChosenID.effective(global: id, noneID: noneID)
+    ChosenID.effective(global: id, override: nil, noneID: noneID)
   }
 }

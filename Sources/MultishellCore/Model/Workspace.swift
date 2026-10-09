@@ -104,7 +104,7 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   init() {}
 
-  // A field per line, each decoded with its default; see state-and-store.md.
+  // A field per line.
   // swiftlint:disable function_body_length
   /// Every field defaults, and every collection but projects is lossy;
   /// see Docs/design/state-and-store.md.

@@ -21,7 +21,7 @@ public enum ShellChoice {
     override: String?,
     customPath: String = "",
   ) -> String? {
-    guard let chosen = ChosenID.effective(global: global, noneID: loginShellID, override: override)
+    guard let chosen = ChosenID.effective(global: global, override: override, noneID: loginShellID)
     else { return nil }
     guard chosen == customID else { return chosen }
     return trimmedCustomPath(customPath)

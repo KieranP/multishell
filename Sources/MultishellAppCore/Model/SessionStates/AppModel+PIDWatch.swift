@@ -20,9 +20,8 @@ extension AppModel {
     guard pidWatch == nil else { return }
     pidWatch = Task { @MainActor [weak self] in
       while !Task.isCancelled {
-        guard let self else { return }
-        try? await Task.sleep(for: pidPollInterval)
-        guard !Task.isCancelled else { return }
+        try? await Task.sleep(for: self?.pidPollInterval ?? .zero)
+        guard let self, !Task.isCancelled else { return }
         sweepGonePIDs()
         if watchedPIDs.isEmpty {
           pidWatch = nil

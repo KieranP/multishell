@@ -12,7 +12,7 @@ extension SessionStatesTests {
     for (index, line) in ClaudeHookCapture.fanOut.enumerated() {
       try replay.feed(line, for: .session(a))
       let workers = replay.states.workers(.session(a))
-      let onRoster = Dictionary(workers.map { ($0.id, $0) }) { first, _ in first }
+      let onRoster = workers.keyedByID()
       #expect(
         replay.lastListedIDs.isSubset(of: onRoster.keys),
         "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster.keys))",
@@ -166,10 +166,10 @@ extension SessionStatesTests {
     var replay = try ClaudeHookReplay()
     defer { Scratch.remove(replay.directory) }
     let payloads = ClaudeHookCapture.mainInterrupted
-    let workers = [
+    let workerIDs = [
       "a016787520450c970", "a502d28281e37813e", "a0ae5dc453dd75eb6", "a6d07f6e138030eec",
     ]
-    let handBacks = try workers.map { id in
+    let handBacks = try workerIDs.map { id in
       try #require(
         payloads.firstIndex { payload in
           payload.contains(#""hook_event_name":"PostToolUse""#)
@@ -178,7 +178,7 @@ extension SessionStatesTests {
         }
       )
     }
-    let launches = try workers.map { id in
+    let launches = try workerIDs.map { id in
       try #require(payloads.firstIndex { $0.contains(#""agentId":"\#(id)""#) })
     }
     for (index, line) in payloads.enumerated() {
@@ -189,7 +189,7 @@ extension SessionStatesTests {
         replay.lastListedIDs.isSubset(of: onRoster),
         "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
       )
-      for (offset, id) in workers.enumerated()
+      for (offset, id) in workerIDs.enumerated()
       where (launches[offset]...handBacks[offset]).contains(index) {
         #expect(onRoster.contains(id), "event \(index): \(id) missing")
       }

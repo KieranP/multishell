@@ -28,9 +28,8 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
     groupID: TabGroup.ID,
     root: PaneNode,
     focusedSessionID: TerminalSession.ID,
-    id: UUID = UUID(),
   ) {
-    self.id = id
+    self.id = UUID()
     self.worktreeID = worktreeID
     self.groupID = groupID
     self.root = root
@@ -41,14 +40,12 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
     worktreeID: Worktree.ID,
     groupID: TabGroup.ID,
     session: TerminalSession.ID,
-    id: UUID = UUID(),
   ) {
     self.init(
       worktreeID: worktreeID,
       groupID: groupID,
       root: .terminal(session),
       focusedSessionID: session,
-      id: id,
     )
   }
 

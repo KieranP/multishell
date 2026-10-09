@@ -1,15 +1,14 @@
 // One string literal, the plugin's whole source.
 // swiftlint:disable function_body_length
 extension OpenCodePlugin {
-  /// The plugin's source, `helperPath` being a JavaScript expression.
-  static func javaScript(helperPath: String) -> String {
+  static func javaScript(helperExpression: String) -> String {
     """
     // Written by Multishell so its tabs can show what a session is doing.
     // Remove it from Settings > Agents, or delete this file.
     import { spawn } from "node:child_process"
     import { homedir } from "node:os"
 
-    const helper = \(helperPath)
+    const helper = \(helperExpression)
 
     // What is being asked for, from v2's PermissionRequest: its `tool` is the
     // call's ids, and the permission names the tool.

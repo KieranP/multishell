@@ -5,7 +5,7 @@ import Testing
 
 /// What a settings form says about a flag the project leaves alone. The
 /// global stopped being the only answer when the file gained these keys.
-@Suite @MainActor
+@Suite
 struct InheritedSettingTests {
   @Test func aFlagTheRepositorySuppliesIsNamedAsItsOwn() {
     let fromFile = InheritedSetting<Bool>(value: true, isFromRepository: true)

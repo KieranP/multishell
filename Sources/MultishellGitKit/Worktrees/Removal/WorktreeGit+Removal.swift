@@ -51,12 +51,12 @@ extension WorktreeGit {
         )
       }
     }
-    let lines = Self.absolutePaths(in: output, from: worktree.path)
+    let paths = Self.absolutePaths(in: output, from: worktree.path)
     // The top level too: a plain directory inside the main checkout answers
     // with the main repository's common directory.
     return await runOnDispatch {
-      lines.count == 2 && Self.sameComparablePath(lines[0], worktree.path)
-        && Self.sameComparablePath(lines[1], common)
+      paths.count == 2 && Self.sameComparablePath(paths[0], worktree.path)
+        && Self.sameComparablePath(paths[1], common)
     }
   }
 

@@ -34,15 +34,13 @@ extension AppModel {
   /// off the main actor, each pane's processes placed by what the engine says.
   func takeDebugSample() async {
     guard areDebugToolsEnabled else { return }
-    let hints = liveSessionIDs.reduce(into: [TerminalSession.ID: TerminalProcessHint]()) {
-      hints,
-      id in hints[id] = host.processHint(of: id)
+    var hints: [TerminalSession.ID: TerminalProcessHint] = [:]
+    var terminalMemoryBySession: [TerminalSession.ID: UInt64] = [:]
+    for id in liveSessionIDs {
+      hints[id] = host.processHint(of: id)
+      terminalMemoryBySession[id] = host.terminalMemory(of: id)
     }
     let terminalPaths = hints.compactMapValues(\.terminalPath)
-    let terminalMemoryBySession = liveSessionIDs.reduce(into: [TerminalSession.ID: UInt64]()) {
-      memory,
-      id in memory[id] = host.terminalMemory(of: id)
-    }
     let appPID = ProcessInfo.processInfo.processIdentifier
     let scanProcesses = debugSampler.scanProcesses
     let generation = debugSampler.generation

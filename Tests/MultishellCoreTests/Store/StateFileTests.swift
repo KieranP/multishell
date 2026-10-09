@@ -7,7 +7,6 @@ import Testing
 @Suite
 struct StateFileTests {
   @Test func stateWrittenBeforeAFieldExistedStillLoads() throws {
-    // Only what the very first build wrote: no appearance, no engine, no tabs.
     let file = try scratchStateFile(
       holding:
         #"{ "projects": [ { "path": "file:///repos/demo/" } ], "worktrees": [], "sessions": [] }"#

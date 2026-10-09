@@ -50,7 +50,7 @@ struct NewWorktreeForm: View {
       footer
     }
     .padding(20)
-    .frame(width: 520)
+    .frame(width: UIMetrics.newWorktreeSheetWidth)
     .task(id: draft.projectID) {
       model.fitAgent(of: &draft)
       await loadBranches()

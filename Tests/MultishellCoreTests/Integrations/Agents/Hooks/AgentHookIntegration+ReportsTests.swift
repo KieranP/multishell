@@ -74,7 +74,7 @@ struct AgentHookIntegrationReportsTests {
     let subagentsFolder = directory.appendingPathComponent("session/subagents")
     try FileManager.default.createDirectory(at: subagentsFolder, withIntermediateDirectories: true)
     try Data(
-      (#"{"agentType":"general-purpose","description":"Efficiency angle","#
+      (#"{"agentType":"general-purpose","description":"Efficiency angle","name":"reuse","#
         + #""parentAgentId":"a0","spawnDepth":2}"#).utf8
     ).write(to: subagentsFolder.appendingPathComponent("agent-a1.meta.json"))
     func worker(
@@ -98,6 +98,7 @@ struct AgentHookIntegrationReportsTests {
           phase: .working,
           type: "general-purpose",
           parentID: "a0",
+          name: "reuse",
           description: "Efficiency angle",
         )
     )

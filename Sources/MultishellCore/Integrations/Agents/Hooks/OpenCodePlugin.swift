@@ -2,7 +2,7 @@
 /// in `Resources`, which the helper cannot reach; see Docs/design/agents.md.
 enum OpenCodePlugin {
   static func source(helper: String) -> String {
-    javaScript(helperPath: javaScriptPath(helper))
+    javaScript(helperExpression: javaScriptPath(helper))
   }
 
   /// `$HOME` is the shell's, not JavaScript's, so the plugin asks the

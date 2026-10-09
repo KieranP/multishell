@@ -132,8 +132,8 @@ extension WorktreeFilesTests {
     #expect(failure?.failures.map(\.path) == ["vendor/dep"])
   }
 
-  /// A leading `/` or `~` is not a way out: it lands under the repository,
-  /// where there is nothing to copy, so it needs no rule of its own.
+  /// Guarded before the resolve, which would take `/` as relative and leave `~` unexpanded,
+  /// landing both inside the repository. See settings.md.
   @Test func anAbsolutePathOrATildeIsRefusedRatherThanFindingNothing() throws {
     let (repository, worktree) = try repositoryAndWorktree()
     let failure = #expect(throws: WorktreeFileFailure.self) {

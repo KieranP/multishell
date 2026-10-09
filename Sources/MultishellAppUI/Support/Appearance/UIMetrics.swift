@@ -41,6 +41,7 @@ struct UIMetrics: Equatable {
   /// Both settings windows, fixed, or a window would resize between tabs. 600
   /// is the tallest page plus slack; ViewSettingsWindowTests holds it.
   static let settingsWindowSize = CGSize(width: 560, height: 600)
+  static let newWorktreeSheetWidth: Double = 520
 
   let bodySize: Double
 

@@ -5,7 +5,7 @@ import Foundation
 public final class InputOrExitWatch {
   private typealias KernelEvent = Darwin.kevent
 
-  public enum Event: Sendable { case input, exited }
+  public enum Event: Sendable { case exited, input }
 
   private let descriptor: Int32
   private let kqueueDescriptor: Int32

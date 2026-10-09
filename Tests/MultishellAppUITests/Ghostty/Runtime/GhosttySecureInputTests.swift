@@ -9,21 +9,21 @@ import Testing
 struct GhosttySecureInputTests {
   private final class FakeSystem {
     var isAppActive = true
-    var enabled = false
-    var calls = 0
+    var isEnabled = false
+    var callCount = 0
   }
 
   private func secureInput(_ system: FakeSystem) -> GhosttySecureInput {
     GhosttySecureInput(
       isAppActive: { system.isAppActive },
       enable: {
-        system.calls += 1
-        system.enabled = true
+        system.callCount += 1
+        system.isEnabled = true
         return noErr
       },
       disable: {
-        system.calls += 1
-        system.enabled = false
+        system.callCount += 1
+        system.isEnabled = false
         return noErr
       },
     )
@@ -33,14 +33,14 @@ struct GhosttySecureInputTests {
     let system = FakeSystem()
     let input = secureInput(system)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
-    #expect(system.enabled)
+    #expect(system.isEnabled)
   }
 
   @Test func aPasswordPromptInAPaneWithoutTheKeyboardLeavesItOff() {
     let system = FakeSystem()
     let input = secureInput(system)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: false)
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
   }
 
   @Test func leavingThePromptOrClosingThePaneTurnsItOff() {
@@ -48,26 +48,26 @@ struct GhosttySecureInputTests {
     let input = secureInput(system)
     let pane = ObjectIdentifier(system)
     input.update(pane, wantsSecureInput: true, hasKeyboard: true)
-    #expect(system.enabled)
+    #expect(system.isEnabled)
     input.update(pane, wantsSecureInput: false, hasKeyboard: true)
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
     input.update(pane, wantsSecureInput: true, hasKeyboard: true)
-    #expect(system.enabled)
+    #expect(system.isEnabled)
     input.remove(pane)
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
   }
 
   @Test func anotherAppInFrontGetsItBackAndReturningTakesItAgain() {
     let system = FakeSystem()
     let input = secureInput(system)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
-    #expect(system.enabled)
+    #expect(system.isEnabled)
     system.isAppActive = false
     input.applicationDidResignActive()
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
     system.isAppActive = true
     input.applicationDidBecomeActive()
-    #expect(system.enabled)
+    #expect(system.isEnabled)
   }
 
   @Test func whileAnotherAppIsInFrontNothingIsTurnedOn() {
@@ -75,8 +75,8 @@ struct GhosttySecureInputTests {
     system.isAppActive = false
     let input = secureInput(system)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
-    #expect(!system.enabled)
-    #expect(system.calls == 0)
+    #expect(!system.isEnabled)
+    #expect(system.callCount == 0)
   }
 
   @Test func withPasswordPromptsIgnoredAPromptTurnsNothingOn() {
@@ -84,18 +84,18 @@ struct GhosttySecureInputTests {
     let input = secureInput(system)
     input.followsPasswordPrompts = false
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
   }
 
   @Test func turningPromptsOffLetsGoOfOneAlreadyOn() {
     let system = FakeSystem()
     let input = secureInput(system)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
-    #expect(system.enabled)
+    #expect(system.isEnabled)
     input.followsPasswordPrompts = false
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
     input.followsPasswordPrompts = true
-    #expect(system.enabled, "and taken again for the prompt still waiting")
+    #expect(system.isEnabled, "and taken again for the prompt still waiting")
   }
 
   @Test func aDisableMacOSRefusesIsTriedAgainNextTime() {
@@ -104,22 +104,22 @@ struct GhosttySecureInputTests {
     let input = GhosttySecureInput(
       isAppActive: { true },
       enable: {
-        system.enabled = true
+        system.isEnabled = true
         return noErr
       },
       disable: {
         guard !refuses else { return OSStatus(paramErr) }
-        system.enabled = false
+        system.isEnabled = false
         return noErr
       },
     )
     let pane = ObjectIdentifier(system)
     input.update(pane, wantsSecureInput: true, hasKeyboard: true)
     input.update(pane, wantsSecureInput: false, hasKeyboard: true)
-    #expect(system.enabled, "macOS refused")
+    #expect(system.isEnabled, "macOS refused")
     refuses = false
     input.update(pane, wantsSecureInput: false, hasKeyboard: false)
-    #expect(!system.enabled)
+    #expect(!system.isEnabled)
   }
 
   @Test func theKeybindTogglesAPanesPromptAndLibghosttySetsItOutright() {
@@ -134,6 +134,6 @@ struct GhosttySecureInputTests {
     let input = secureInput(system)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
-    #expect(system.calls == 1)
+    #expect(system.callCount == 1)
   }
 }

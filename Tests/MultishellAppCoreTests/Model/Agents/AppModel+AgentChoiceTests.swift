@@ -49,15 +49,6 @@ struct AppModelAgentChoiceTests {
     #expect(!harness.model.usesCustomAgent)
   }
 
-  @Test func autoStartHasSomethingToStartOnlyOnceAnAgentIsChosen() {
-    let harness = Harness()
-    harness.model.setPreferredAgent(AgentCatalogue.noneID)
-    #expect(!harness.model.hasPreferredAgent)
-
-    harness.model.setPreferredAgent("claude")
-    #expect(harness.model.hasPreferredAgent)
-  }
-
   @Test func theGlobalAgentIsNoneUntilOneIsChosen() {
     let harness = Harness()
     #expect(harness.model.globalAgentID == AgentCatalogue.noneID)

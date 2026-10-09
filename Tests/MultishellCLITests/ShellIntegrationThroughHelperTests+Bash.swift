@@ -112,11 +112,11 @@ extension ShellIntegrationThroughHelperTests {
     wait
     """.write(to: script, atomically: true, encoding: .utf8)
     let output = try await ShellTab.runBash(
-      bash,
       initFile: initFile,
       feeding: script,
       in: home,
       environment: environment,
+      bash: bash,
     )
 
     // The line installing their trap is itself reported, ours still standing
@@ -156,11 +156,11 @@ extension ShellIntegrationThroughHelperTests {
     let script = home.appendingPathComponent("drive.sh")
     try "uname\n".write(to: script, atomically: true, encoding: .utf8)
     let output = try await ShellTab.runBash(
-      bash,
       initFile: initFile,
       feeding: script,
       in: home,
       environment: environment,
+      bash: bash,
     )
 
     let theirs = (try? String(contentsOf: marks, encoding: .utf8)) ?? ""

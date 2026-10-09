@@ -62,6 +62,7 @@ struct AppModelSessionLaunchTests {
 
     #expect(prepared.command?.last == "my-agent; exec /bin/sh -l")
   }
+
   /// The flags are the user's, so they reach the command line whole, with
   /// `{{branch}}` standing for the tab's own worktree.
   @Test func anAgentTabCarriesTheFlagsWithItsPlaceholdersFilledIn() {
@@ -97,9 +98,10 @@ struct AppModelSessionLaunchTests {
       "blank runs it bare under a global that passes flags",
     )
   }
+
   /// A saved tab that comes back as `claude --continue` is the same tab,
   /// and the flags said how that tab is meant to run.
-  @Test func aResumedAgentTabIsStartedWithTheFlagsToo() throws {
+  @Test func aResumedAgentTabIsStartedWithTheFlagsToo() {
     let file = Scratch.statePath("agent-flags")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)
@@ -212,7 +214,7 @@ struct AppModelSessionLaunchTests {
     )
   }
 
-  @Test func aSavedAgentTabResumesWhereItCanAndIsAShellWhereItCannot() throws {
+  @Test func aSavedAgentTabResumesWhereItCanAndIsAShellWhereItCannot() {
     let file = Scratch.statePath("agent-relaunch")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)

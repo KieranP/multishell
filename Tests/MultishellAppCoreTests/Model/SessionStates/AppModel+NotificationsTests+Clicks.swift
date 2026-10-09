@@ -42,7 +42,7 @@ extension AppModelNotificationsTests {
     #expect(harness.model.workspace.activeTab(in: harness.feature.id)?.id == tab.id)
   }
 
-  @Test func aBannerClickReachesTheModelThroughTheNotifier() throws {
+  @Test func aBannerClickReachesTheModelThroughTheNotifier() {
     let harness = Harness()
     let first = harness.openBackgroundTab()
     #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id != first.id)

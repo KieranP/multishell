@@ -5,7 +5,7 @@ import Testing
 
 @Suite
 struct DebugProcessListTests {
-  @Test func aGroupsSelfIsItsTreeTopsOwnMemoryAndItsTotalIsEverythingUnderThem() {
+  @Test func aListsSelfIsItsTreeTopsOwnMemoryAndItsTotalIsEverythingUnderThem() {
     let list = DebugProcessList(processes: [
       .sample(pid: 10, parentPID: 1, footprint: 5),
       .sample(pid: 11, parentPID: 10, footprint: 600),

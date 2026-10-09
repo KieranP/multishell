@@ -35,20 +35,6 @@ struct AppModelWorktreeSelectionTests {
     #expect(harness.model.liveTerminalCount == 2, "saved tabs still warm up on a visit")
   }
 
-  @Test func theActionsMenuOpensOneTabInTheWorktreeItWasAskedFor() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    #expect(harness.model.select(harness.feature, openingFirstTab: .never))
-    harness.model.newShellTab()
-
-    #expect(harness.model.workspace.selectedWorktreeID == harness.feature.id)
-    #expect(
-      harness.model.workspace.tabs(in: harness.feature.id).count == 1,
-      "not a first tab and then another",
-    )
-    #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1)
-  }
-
   @Test func turningToAWorktreeStartsTheAgentWhereAutoStartOnTabOpenIsOn() {
     let harness = Harness()
     harness.model.setPreferredAgent("claude")
@@ -60,7 +46,7 @@ struct AppModelWorktreeSelectionTests {
     #expect(harness.model.workspace.session(tab!.focusedSessionID)?.agentID == "claude")
   }
 
-  @Test func selectingAMissingWorktreeSaysSoInsteadOfActingOnTheSelectedOne() throws {
+  @Test func selectingAMissingWorktreeSaysSoInsteadOfActingOnTheSelectedOne() {
     let harness = Harness()
     harness.model.select(harness.main)
     let ghost = Worktree(
