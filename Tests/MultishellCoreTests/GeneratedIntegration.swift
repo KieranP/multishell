@@ -10,14 +10,21 @@ struct GeneratedIntegration {
   let home: URL
   let zshDirectory: URL
   let bashInit: URL
+  let fishInit: URL
 
   init(helper: String) throws {
     root = Scratch.path("marks")
     home = root.appendingPathComponent("home", isDirectory: true)
     zshDirectory = root.appendingPathComponent("zsh", isDirectory: true)
     bashInit = root.appendingPathComponent("bash/init.bash")
+    fishInit = root.appendingPathComponent("fish/init.fish")
     try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    try ShellIntegration.refresh(zshDirectory: zshDirectory, bashInit: bashInit, helper: helper)
+    try ShellIntegration.refresh(
+      zshDirectory: zshDirectory,
+      bashInit: bashInit,
+      fishInit: fishInit,
+      helper: helper,
+    )
   }
 
   func tearDown() {

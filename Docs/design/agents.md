@@ -35,8 +35,8 @@ at the bottom.
 - **It moves a dot, raises a notification and decides how a dropped file is
   written.** It opens no tab, runs no command and puts no text at a prompt.
 - **Shell reports never go in the background**, or a fast command's finished
-  overtakes its started: zsh sends each inline, bash down one pipe to its relay
-  (terminals.md).
+  overtakes its started: zsh sends each inline, bash down one pipe to its relay,
+  fish through a helper launched for each (terminals.md).
 - **Four agents share one hook line and one parser**, each running a command at
   every lifecycle event with the same three fields. What differs is the file,
   what each calls an event and how that file spells a hook.

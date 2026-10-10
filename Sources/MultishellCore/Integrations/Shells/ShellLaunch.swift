@@ -1,7 +1,8 @@
 import Foundation
+import MultishellProcess
 
 /// How to launch a login shell so the command-status hooks reach that session
-/// only. zsh rides `ZDOTDIR`, bash `--init-file`; see Docs/design/terminals.md.
+/// only. zsh rides `ZDOTDIR`, bash `--init-file`, fish `-C`; see terminals.md.
 public enum ShellLaunch {
   /// The shell taking over when an agent tab's agent quits: `exec` plus the
   /// integration a fresh tab gets, as words for the caller to quote.
@@ -9,24 +10,43 @@ public enum ShellLaunch {
     forShell shellPath: String,
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     bashInit: URL = Paths.bashInitFile,
+    fishInit: URL = Paths.fishInitFile,
   ) -> [String] {
     if usesZshIntegration(shellPath, zshDirectory: zshDirectory) {
-      // Through env: fish and csh take no `VAR=value` before a command.
+      // Through env: csh and tcsh take no `VAR=value` before a command.
       return ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", shellPath, "-l"]
     }
+    let integration = integrationArguments(
+      forShell: shellPath,
+      bashInit: bashInit,
+      fishInit: fishInit,
+    )
+    return ["exec"] + (integration ?? [shellPath, "-l"])
+  }
+
+  /// bash or fish told to run its generated file, `nil` for another shell or
+  /// where that file is not there.
+  public static func integrationArguments(
+    forShell shellPath: String,
+    bashInit: URL,
+    fishInit: URL,
+  ) -> [String]? {
     switch shellPath.executableName {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return ["exec"] + bashInitArguments(forShell: shellPath, bashInit: bashInit)
+      return bashInitArguments(forShell: shellPath, bashInit: bashInit)
+
+    case "fish" where FileManager.default.fileExists(atPath: fishInit.path):
+      return fishInitArguments(forShell: shellPath, fishInit: fishInit)
 
     default:
-      return ["exec", shellPath, "-l"]
+      return nil
     }
   }
 
-  /// Only zsh and bash are given the marks that say a command finished; see
-  /// COMPAT.md.
+  /// zsh and bash are given the marks that say a command finished, and fish
+  /// 4 writes its own; see COMPAT.md.
   public static func reportsFinishedCommands(_ shellPath: String) -> Bool {
-    ["zsh", "bash"].contains(shellPath.executableName)
+    ["zsh", "bash", "fish"].contains(shellPath.executableName)
   }
 
   /// Points a zsh session's `ZDOTDIR` at the generated directory, and says
@@ -50,7 +70,13 @@ public enum ShellLaunch {
   }
 
   /// bash told to read the generated init file, as an interactive shell.
-  public static func bashInitArguments(forShell shellPath: String, bashInit: URL) -> [String] {
+  private static func bashInitArguments(forShell shellPath: String, bashInit: URL) -> [String] {
     [shellPath, "--init-file", bashInit.path, "-i"]
+  }
+
+  /// A login fish told to source the generated file once its own config has
+  /// run. The path is quoted, as fish reads `-C` as a line of its own.
+  static func fishInitArguments(forShell shellPath: String, fishInit: URL) -> [String] {
+    [shellPath, "-l", "-C", "source \(AnyShellQuoting.quote(fishInit.path))"]
   }
 }

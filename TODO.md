@@ -28,9 +28,6 @@ Most pressing first within each heading. A decision that gets made moves to
   off, open and close Debug Info, and print the latest samples and Memory by tab
   as JSON. Memory work today waits on the user for every step, as an agent may
   not send clicks (develop/memory.md).
-- State dots for fish, through `fish_preexec` and `fish_postexec` reporting
-  `command-started` and `command-finished`. COMPAT.md lists it as a terminal
-  with nothing injected.
 - State from OSC 7501, the program status protocol, for agents with no hooks.
   Waiting on upstream: at `246f702` only libghostty-vt parses it, and the app
   surfaces' `termio/stream_handler.zig` drops it and answers no `?` query.

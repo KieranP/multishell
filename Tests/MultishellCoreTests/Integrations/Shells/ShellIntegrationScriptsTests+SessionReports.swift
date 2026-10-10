@@ -225,4 +225,68 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(output.contains(#"line={"v":1,"state":"idle","session":"zsh-output""#), "\(output)")
   }
+
+  /// A fish run with a helper, under the home and spaced path it is written
+  /// as, that writes down what it is sent.
+  private func fishRun(
+    _ fish: String,
+    input: String,
+  ) async throws -> (output: String, sent: [String]) {
+    let files = try GeneratedIntegration(helper: "$HOME/Application Support/multishell")
+    defer { files.tearDown() }
+    let log = files.root.appendingPathComponent("log")
+    let directory = files.home.appendingPathComponent("Application Support")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try Scratch.script(
+      "printf '%s\\n' \"$*\" >> '\(log.path)'",
+      at: directory.appendingPathComponent("multishell"),
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "fish-home"
+    let launch = ShellLaunch.fishInitArguments(forShell: fish, fishInit: files.fishInit)
+    let output = try await interactiveShellOutput(
+      fish,
+      arguments: Array(launch.dropFirst()) + ["-i"],
+      environment: environment,
+      input: input,
+    )
+    return (output, Self.lines(of: log))
+  }
+
+  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  func fishFindsTheHelperUnderTheHomeAndSpacedPathItIsWrittenAs(fish: String) async throws {
+    let sent = try await fishRun(fish, input: "emit fish_preexec claude\nexit\n").sent
+
+    #expect(sent.first?.hasPrefix("command-started --pid ") == true)
+    #expect(sent.first?.hasSuffix(" --command claude") == true)
+  }
+
+  /// fish hands preexec the whole line, a backslash and newline included,
+  /// where Enter continued it.
+  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  func fishNamesAnAgentTypedOnTheLineAfterAContinuedPrefix(fish: String) async throws {
+    let sent = try await fishRun(
+      fish,
+      input: "emit fish_preexec 'env FOO=1 \\\nclaude --resume'\nexit\n",
+    ).sent
+
+    #expect(sent.first?.hasSuffix(" --command claude") == true, "\(sent)")
+  }
+
+  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  func fishPrintsNoErrorForAHelperRemovedAfterItStarted(fish: String) async throws {
+    let run = try await fishRun(
+      fish,
+      input: """
+        rm "$HOME/Application Support/multishell"
+        emit fish_preexec true
+        emit fish_postexec true
+        exit
+
+        """,
+    )
+
+    #expect(!run.output.contains("Unknown command"), "\(run.output)")
+  }
 }

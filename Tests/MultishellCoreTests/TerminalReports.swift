@@ -1,4 +1,4 @@
-/// The title, cursor and directory escapes the zsh integration writes beside its marks.
+/// The title, cursor and directory escapes the integrations write beside the marks.
 enum TerminalReports {
   /// The start of any title, for whether one was set at all.
   static let anyTitle = "\u{1B}]2;"

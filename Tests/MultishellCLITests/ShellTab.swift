@@ -14,11 +14,19 @@ enum ShellTab {
     return file
   }
 
+  static func fishInitFile(in home: URL) throws -> URL {
+    let file = home.appendingPathComponent("init.fish")
+    try ShellIntegrationScripts.forFish(helper: try HelperBinary.require().path)
+      .write(to: file, atomically: true, encoding: .utf8)
+    return file
+  }
+
   static func zshIntegrationDirectory(in root: URL) throws -> URL {
     let directory = root.appendingPathComponent("integration", isDirectory: true)
     try ShellIntegration.refresh(
       zshDirectory: directory,
       bashInit: root.appendingPathComponent("bash/init.bash"),
+      fishInit: root.appendingPathComponent("fish/init.fish"),
       helper: try HelperBinary.require().path,
     )
     return directory
@@ -35,6 +43,20 @@ enum ShellTab {
     environment["MULTISHELL_SOCKET"] = socket.path
     environment["MULTISHELL_SESSION"] = session.uuidString
     if let worktree { environment["MULTISHELL_WORKTREE"] = worktree }
+    return environment
+  }
+
+  /// fish finds its config through XDG before `HOME`, so a developer's own
+  /// would otherwise run in the test's shell.
+  static func fishEnvironment(
+    socket: URL,
+    home: URL,
+    session: UUID = UUID(),
+    worktree: String? = nil,
+  ) -> [String: String] {
+    var environment = environment(socket: socket, session: session, home: home, worktree: worktree)
+    environment["XDG_CONFIG_HOME"] = home.appendingPathComponent(".config").path
+    environment["XDG_DATA_HOME"] = home.appendingPathComponent(".local/share").path
     return environment
   }
 
@@ -87,6 +109,24 @@ enum ShellTab {
       URL(fileURLWithPath: "/bin/zsh"),
       ["-i", "-c", script],
       in: directory,
+      environment: environment,
+    )
+  }
+
+  /// `script` run by an interactive fish under the generated init. fish fires
+  /// its command events only at a real prompt, so the script emits them.
+  static func runFish(
+    _ fish: String,
+    initFile: URL,
+    script: String,
+    in home: URL,
+    environment: [String: String],
+  ) async throws -> ProcessOutput {
+    let launch = ShellLaunch.fishInitArguments(forShell: fish, fishInit: initFile)
+    return try await ProcessRunner().capture(
+      URL(fileURLWithPath: fish),
+      Array(launch.dropFirst()) + ["-i", "-c", script],
+      in: home,
       environment: environment,
     )
   }

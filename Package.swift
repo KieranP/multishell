@@ -22,8 +22,9 @@ let package = Package(
     // shell scripts and the libraries' catalogue; see Docs/design/translation.md.
     .target(
       name: "MultishellCore",
+      dependencies: ["MultishellProcess"],
       resources: [
-        .copy("Resources/zsh"), .copy("Resources/bash"),
+        .copy("Resources/zsh"), .copy("Resources/bash"), .copy("Resources/fish"),
         .process("Resources/en.lproj"),
       ],
     ),

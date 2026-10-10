@@ -20,6 +20,9 @@ struct ShellIntegrationScriptsTests {
     )
     .map { ("/bin/zsh", $0.value) }
     files.append(("/bin/bash", ShellIntegrationScripts.forBash(helper: "/x/multishell")))
+    for fish in InstalledShells.only(InstalledShells.fishCandidates) {
+      files.append((fish, ShellIntegrationScripts.forFish(helper: "/x/multishell")))
+    }
     for (index, (shell, contents)) in files.enumerated() {
       guard FileManager.default.isExecutableFile(atPath: shell) else { continue }
       let file = directory.appendingPathComponent("file\(index)")
@@ -42,22 +45,27 @@ struct ShellIntegrationScriptsTests {
   @Test func eachIncludedFileIsJoinedInAtTheIndentOfItsLine() {
     let zshrc = ShellIntegrationScripts.forZsh(helper: "/x/multishell")[".zshrc"] ?? ""
     let bash = ShellIntegrationScripts.forBash(helper: "/x/multishell")
-    #expect(!zshrc.contains("# include ") && !bash.contains("# include "))
+    let fish = ShellIntegrationScripts.forFish(helper: "/x/multishell")
+    #expect(![zshrc, bash, fish].contains { $0.contains("# include ") })
     #expect(zshrc.contains("\n  _multishell_terminal_precmd() {"))
     #expect(zshrc.contains("\n  _multishell_report_state() {"))
     #expect(bash.contains("\n  _multishell_relayed() {"))
     #expect(bash.contains("\n  _multishell_prompt_marks() {"))
+    #expect(fish.contains("\n    function _multishell_preexec --on-event fish_preexec"))
+    #expect(fish.contains("\n        function _multishell_prompt_cursor --on-event fish_prompt"))
+    #expect(fish.contains("\n        function sudo --wraps sudo"))
   }
 
   /// A placeholder left in reports no command, and the live-shell tests
-  /// catch that only where both shells are installed.
+  /// catch that only where each shell is installed.
   @Test func everyPlaceholderIsFilledInAndTheAgentsAreNamed() {
     var files = ShellIntegrationScripts.forZsh(helper: "/x/multishell")
     files["init.bash"] = ShellIntegrationScripts.forBash(helper: "/x/multishell")
+    files["init.fish"] = ShellIntegrationScripts.forFish(helper: "/x/multishell")
     for (name, text) in files {
       #expect(!text.contains("__MULTISHELL_"), "\(name) still holds a placeholder")
     }
-    for script in [files[".zshrc"] ?? "", files["init.bash"] ?? ""] {
+    for script in [files[".zshrc"], files["init.bash"], files["init.fish"]].map({ $0 ?? "" }) {
       for executable in AgentCatalogue.agents.map(\.executable) {
         #expect(
           script.contains(executable),

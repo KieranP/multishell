@@ -6,7 +6,7 @@ import MultishellProcess
 /// hands to bash as `exec -l <line>` (its Exec.zig).
 public enum EngineCommandLine {
   /// Its tab's command, or an override naming a chosen shell. zsh as `$SHELL`
-  /// needs none, its hooks riding in on `ZDOTDIR`.
+  /// needs none, its hooks riding in on `ZDOTDIR`; fish needs its `-C`.
   public static func of(_ session: TerminalSession) -> String? {
     if let command = session.command { return AnyShellQuoting.commandLine(command) }
     return overrideCommand(forShell: session.shellPath).map(AnyShellQuoting.commandLine)
@@ -18,21 +18,16 @@ public enum EngineCommandLine {
     forShell shellPath: String,
     loginShell: String = ShellChoice.loginShellPath(),
     bashInit: URL = Paths.bashInitFile,
+    fishInit: URL = Paths.fishInitFile,
   ) -> [String]? {
-    switch shellPath.executableName {
-    case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return [
-        "/bin/sh", "-c",
-        AnyShellQuoting.commandLine(
-          ["exec"] + ShellLaunch.bashInitArguments(forShell: shellPath, bashInit: bashInit)
-        ),
-      ]
-
-    case _ where shellPath != loginShell:
-      return [shellPath, "-l"]
-
-    default:
-      return nil
-    }
+    guard
+      let integration = ShellLaunch.integrationArguments(
+        forShell: shellPath,
+        bashInit: bashInit,
+        fishInit: fishInit,
+      )
+    else { return shellPath == loginShell ? nil : [shellPath, "-l"] }
+    guard shellPath.executableName == "bash" else { return integration }
+    return ["/bin/sh", "-c", AnyShellQuoting.commandLine(["exec"] + integration)]
   }
 }

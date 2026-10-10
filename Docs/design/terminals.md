@@ -532,3 +532,23 @@ at the bottom.
 - **An item's files are pasted in the order it names them**, a name it did not
   give going last. They land in whatever order its queue runs, so an item naming
   several pasted them out of order: `PromisedDropTests`.
+- **fish is told through `-C`**, a line it runs once its own config has, as bash
+  is told through `--init-file`. Ghostty's route, a `vendor_conf.d` reached
+  through `XDG_DATA_DIRS`, would be inherited by every child unless taken back.
+- **fish 4 writes every terminal mark itself**: prompt start with
+  `click_events`, input, output, the command's end with its status, OSC 7 and
+  the title. So the fish file adds only the cursor's shape and the `sudo` and
+  `ssh` wrappers in a Ghostty pane, and the engine's finished-command signal
+  comes from fish's own end mark.
+- **Cost: a fish before 4.0 writes no marks, and before 4.1 no click claim**,
+  and fish titles its pane whatever the `title` feature says.
+- **The fish cursor stands back under fish's vi mode**, whose own handler draws
+  a shape for every mode and would be overdrawn by ours.
+- **Each fish report launches the helper**, 9.4 ms, two a command. fish opens no
+  socket and holds no descriptor a relay could read, and a job of ours in the
+  background would be the one a bare `fg` resumed.
+- **fish's own tokenizer reads the agent's word**, quotes off, past the same
+  prefixes as zsh and bash. An abbreviation is expanded before the event fires.
+  Cost: an `alias` is a fish function, and the word typed is its name.
+- **fish runs its postexec for `exit`**, so `exit 3` reports a failure, and the
+  exit event then sends idle, ending the session as zsh's does.

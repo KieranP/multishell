@@ -186,10 +186,11 @@ What each addition needs beyond the code itself.
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
 - **A command wrapper.** A function in each shell's `command-wrappers` file,
-  zsh's and bash's, run only where the user's `shell-integration-features` name
-  it and standing back where they have a function of that name. Nothing holds
-  the two files to one list. The bash one must also run under macOS's bash 3.2,
-  which ShellIntegrationScriptsTests+CommandWrappers runs beside Homebrew's.
+  zsh's, bash's and fish's, run only where the user's
+  `shell-integration-features` name it and standing back where they have a
+  function of that name. Nothing holds the three files to one list. The bash one
+  must also run under macOS's bash 3.2, which
+  ShellIntegrationScriptsTests+CommandWrappers runs beside Homebrew's.
 - **A second frontend.** A target in this package depending on the four
   libraries, the package exporting no library product; fix the model to its view
   type once, and implement the platform, surface host, directory watcher and

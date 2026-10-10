@@ -6,6 +6,7 @@ public enum ShellIntegration {
   public static func refresh(
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     bashInit: URL = Paths.bashInitFile,
+    fishInit: URL = Paths.fishInitFile,
     helper: String = AgentHookCatalogue.helperReference,
   ) throws {
     for (name, contents) in ShellIntegrationScripts.forZsh(helper: helper) {
@@ -16,6 +17,9 @@ public enum ShellIntegration {
 
     try Data(ShellIntegrationScripts.forBash(helper: helper).utf8).writeAtomicallyCreatingDirectory(
       to: bashInit
+    )
+    try Data(ShellIntegrationScripts.forFish(helper: helper).utf8).writeAtomicallyCreatingDirectory(
+      to: fishInit
     )
   }
 }

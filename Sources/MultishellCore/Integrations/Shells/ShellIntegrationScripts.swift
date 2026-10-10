@@ -92,6 +92,11 @@ enum ShellIntegrationScripts {
     script("init.bash", in: "bash", helper: helper) + "\n"
   }
 
+  /// A fish file for `-C`, which runs once the user's config has.
+  static func forFish(helper: String) -> String {
+    script("init.fish", in: "fish", helper: helper) + "\n"
+  }
+
   /// A bundled script with its includes joined and placeholders filled, less
   /// its trailing newline so callers place it in a chain.
   private static func script(_ fileName: String, in folder: String, helper: String) -> String {

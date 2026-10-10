@@ -45,10 +45,10 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   the project whose directory fired before running git.
 - **A retitle reads no git where the shell says a command finished.** An agent's
   spinner retitles about once a second while it works, which read the focused
-  worktree five times a poll. fish and nu say nothing when one finishes, so
-  there a plain shell's retitle, its prompt coming back, is the only sign, and
-  it still reads. Cost: an agent typed at a fish prompt with no hooks installed
-  reads once a second.
+  worktree five times a poll. nu says nothing when one finishes, so there a
+  plain shell's retitle, its prompt coming back, is the only sign, and it still
+  reads. fish 4 writes its own end mark. Cost: an agent typed at a nu prompt
+  with no hooks installed reads once a second.
 - **Timer git reads only**, and the status read forbids optional locks, or it
   takes the index lock and fails the user's own commit. Cost: a change git makes
   elsewhere waits for a tick.

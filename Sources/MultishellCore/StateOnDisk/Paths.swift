@@ -36,6 +36,11 @@ public enum Paths {
       .appendingPathComponent("init.bash", isDirectory: false)
   }
 
+  public static var fishInitFile: URL {
+    integrationDirectory.appendingPathComponent("fish", isDirectory: true)
+      .appendingPathComponent("init.fish", isDirectory: false)
+  }
+
   /// Where a drag's promised files are copied. macOS materialises one into a
   /// per-drag directory the pane's own shell is refused; see terminals.md.
   public static var dropsDirectory: URL {

@@ -65,10 +65,10 @@ struct AppModelTerminalEventsTests {
     #expect(harness.model.pendingStatusRefreshes.isEmpty)
   }
 
-  @Test func aRetitleInFishSchedulesAStatusReadAsItsPromptIsTheOnlySign() {
+  @Test func aRetitleInNuSchedulesAStatusReadAsItsPromptIsTheOnlySign() {
     let harness = Harness()
     harness.model.setSettings(
-      ProjectSettings(preferredShellID: "/opt/homebrew/bin/fish"),
+      ProjectSettings(preferredShellID: "/opt/homebrew/bin/nu"),
       for: harness.project,
     )
     harness.model.select(harness.main)
@@ -83,10 +83,28 @@ struct AppModelTerminalEventsTests {
     #expect(harness.model.pendingStatusRefreshes[harness.main.id] != nil)
   }
 
-  @Test func aRetitleInFishFromAnAgentsTabSchedulesNoStatusRead() {
+  @Test func aRetitleInFishSchedulesNoStatusReadAsFishMarksEachCommandsEnd() {
     let harness = Harness()
     harness.model.setSettings(
       ProjectSettings(preferredShellID: "/opt/homebrew/bin/fish"),
+      for: harness.project,
+    )
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+
+    harness.engine.delegate?.terminalHost(
+      harness.engine,
+      didRetitle: tab.focusedSessionID,
+      to: "claude ~/demo",
+    )
+
+    #expect(harness.model.pendingStatusRefreshes.isEmpty)
+  }
+
+  @Test func aRetitleInNuFromAnAgentsTabSchedulesNoStatusRead() {
+    let harness = Harness()
+    harness.model.setSettings(
+      ProjectSettings(preferredShellID: "/opt/homebrew/bin/nu"),
       for: harness.project,
     )
     harness.model.select(harness.main)

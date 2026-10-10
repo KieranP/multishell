@@ -35,13 +35,15 @@ directory that does not exist.
 | ------------------ | ---------- | ------------- | ------------------- |
 | zsh                | Yes        | Yes           | Yes                 |
 | bash 3.2 and newer | Yes        | Yes           | Yes                 |
-| fish               | No         | No            | No                  |
+| fish 4.1 and newer | Yes        | Yes           | Yes                 |
 | nu                 | No         | No            | No                  |
 | Others             | No         | No            | No                  |
 
-fish and nu are found and offered in the shell picker, and run as terminals, but
-nothing is injected into them. Under nu, a dropped file whose name holds a
-single quote is pasted as a line nu cannot read.
+fish writes its own prompt marks, which came in fish 4.0, and its click-to-move
+came in 4.1. A fish `alias` is a function, so an agent typed through one is not
+marked. nu is found and offered in the shell picker, and runs as a terminal, but
+nothing is injected into it. Under nu, a dropped file whose name holds a single
+quote is pasted as a line nu cannot read.
 
 A project hook is an sh script, started from the project's shell so its startup
 files set the environment: interactive and login for sh, bash, zsh, dash, ksh,

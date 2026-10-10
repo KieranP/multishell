@@ -8,28 +8,60 @@ import Testing
 
 @Suite
 struct EngineCommandLineTests {
-  @Test func aLoginShellOtherThanBashNeedsNoOverrideCommand() throws {
-    let bashInit = try Scratch.bashInitThatExists()
-    defer { Scratch.remove(bashInit) }
-    for shell in ["/bin/zsh", "/usr/local/bin/fish"] {
+  @Test func zshAsTheLoginShellNeedsNoOverrideCommand() throws {
+    let initFile = try Scratch.initFileThatExists()
+    defer { Scratch.remove(initFile) }
+    #expect(
+      EngineCommandLine.overrideCommand(
+        forShell: "/bin/zsh",
+        loginShell: "/bin/zsh",
+        bashInit: initFile,
+        fishInit: initFile,
+      )
+        == nil
+    )
+  }
+
+  @Test func fishLaunchesWithTheGeneratedInitWhetherOrNotItIsTheLoginShell() throws {
+    let fishInit = try Scratch.initFileThatExists()
+    defer { Scratch.remove(fishInit) }
+    for loginShell in ["/opt/homebrew/bin/fish", "/bin/zsh"] {
       #expect(
-        EngineCommandLine.overrideCommand(forShell: shell, loginShell: shell, bashInit: bashInit)
-          == nil,
-        "\(shell)",
+        EngineCommandLine.overrideCommand(
+          forShell: "/opt/homebrew/bin/fish",
+          loginShell: loginShell,
+          fishInit: fishInit,
+        )
+          == [
+            "/opt/homebrew/bin/fish", "-l", "-C", "source \(AnyShellQuoting.quote(fishInit.path))",
+          ],
+        "\(loginShell)",
       )
     }
   }
 
-  @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
-    let bashInit = try Scratch.bashInitThatExists()
-    defer { Scratch.remove(bashInit) }
+  @Test func fishWithoutAGeneratedInitFallsBackToAPlainLogin() {
+    let missing = URL(fileURLWithPath: "/no/such/init.fish")
     #expect(
       EngineCommandLine.overrideCommand(
         forShell: "/opt/homebrew/bin/fish",
+        loginShell: "/opt/homebrew/bin/fish",
+        fishInit: missing,
+      )
+        == nil
+    )
+  }
+
+  @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
+    let bashInit = try Scratch.initFileThatExists()
+    defer { Scratch.remove(bashInit) }
+    #expect(
+      EngineCommandLine.overrideCommand(
+        forShell: "/opt/homebrew/bin/nu",
         loginShell: "/bin/zsh",
         bashInit: bashInit,
       )
-        == ["/opt/homebrew/bin/fish", "-l"]
+        == ["/opt/homebrew/bin/nu", "-l"]
     )
     #expect(
       EngineCommandLine.overrideCommand(
@@ -51,7 +83,7 @@ struct EngineCommandLineTests {
   }
 
   @Test func bashLaunchesWithTheGeneratedInitFile() throws {
-    let bashInit = try Scratch.bashInitThatExists()
+    let bashInit = try Scratch.initFileThatExists()
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(forShell: "/bin/bash", bashInit: bashInit)

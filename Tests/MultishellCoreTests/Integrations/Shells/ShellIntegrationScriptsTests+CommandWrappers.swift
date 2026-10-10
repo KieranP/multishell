@@ -5,7 +5,7 @@ import Testing
 @testable import MultishellCore
 
 /// `sudo` and `ssh` wrapped as the user's `shell-integration-features` ask, in
-/// zsh and in macOS's bash 3.2 and a current one.
+/// zsh, in macOS's bash 3.2 and a current one, and in fish.
 extension ShellIntegrationScriptsTests {
   /// Stand-ins on PATH that print the name they ran as, TERM and their arguments.
   private static let recordingCommands = """
@@ -18,6 +18,19 @@ extension ShellIntegrationScriptsTests {
     export TERMINFO=/bundle/terminfo
 
     """
+
+  private static let recordingCommandsForFish = """
+    mkdir -p ~/bin
+    for name in sudo ssh
+      printf '#!/bin/sh\\necho "${0##*/} TERM=$TERM $*"\\n' > ~/bin/$name
+      chmod +x ~/bin/$name
+    end
+    set -gx PATH ~/bin $PATH
+    set -gx TERMINFO /bundle/terminfo
+
+    """
+
+  private static let fishes = InstalledShells.only(InstalledShells.fishCandidates)
 
   @Test func zshSudoCarriesTheBundledTerminfoWhereTheUsersFeaturesAsk() async throws {
     let output = try await zshOutput(
@@ -220,5 +233,129 @@ extension ShellIntegrationScriptsTests {
       usersRC: Self.recordingCommands,
     )
     #expect(output.contains("--preserve-env=TERMINFO less -e log"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishSudoCarriesTheBundledTerminfoWhereTheUsersFeaturesAsk(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "sudo vim\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains("sudo TERM=dumb --preserve-env=TERMINFO vim"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishSudoeditIsPassedOnAsTyped(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "sudo -u root -e notes\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains(" -u root -e notes"), "\(output)")
+    #expect(!output.contains("--preserve-env"))
+  }
+
+  @Test(arguments: fishes)
+  func fishSudoKeepsTheTerminfoForACommandWithAnEOptionOfItsOwn(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "sudo less -e log\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains("--preserve-env=TERMINFO less -e log"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishSudoIsLeftAloneWhereTheUsersFeaturesLeaveItOut(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "title",
+      input: "sudo vim\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains("sudo TERM=dumb vim"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishKeepsAUsersOwnSudoFunction(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "sudo vim\nexit\n",
+      usersConfig: Self.recordingCommandsForFish + "function sudo; echo users-own-sudo; end\n",
+    )
+    #expect(output.contains("users-own-sudo"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishKeepsAUsersSudoFunctionFileItHasNotLoadedYet(fish: String) async throws {
+    let functionFile = """
+      mkdir -p ~/.config/fish/functions
+      echo 'function sudo; echo users-own-sudo; end' > ~/.config/fish/functions/sudo.fish
+
+      """
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "sudo vim\nexit\n",
+      usersConfig: Self.recordingCommandsForFish + functionFile,
+    )
+    #expect(output.contains("users-own-sudo"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishSshEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "ssh-env",
+      input: "ssh host\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(
+      output.contains(
+        "ssh TERM=xterm-256color -o SetEnv COLORTERM=truecolor"
+          + " -o SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION host"
+      ),
+      "\(output)",
+    )
+  }
+
+  @Test(arguments: fishes)
+  func fishSshTerminfoSendsATermEveryHostKnows(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "ssh-terminfo",
+      input: "ssh host\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains("ssh TERM=xterm-256color host"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishSshIsLeftAloneWhereTheUsersFeaturesLeaveItOut(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "ssh host\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains("ssh TERM=dumb host"), "\(output)")
+  }
+
+  @Test(arguments: fishes)
+  func fishOutsideGhosttyWrapsNothing(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo,ssh-env",
+      input: "sudo vim\nssh host\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+      termProgram: nil,
+    )
+    #expect(output.contains("sudo TERM=dumb vim"), "\(output)")
+    #expect(output.contains("ssh TERM=dumb host"), "\(output)")
   }
 }

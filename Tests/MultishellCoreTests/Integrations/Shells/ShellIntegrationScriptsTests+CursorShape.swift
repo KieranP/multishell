@@ -1,3 +1,4 @@
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -85,5 +86,32 @@ extension ShellIntegrationScriptsTests {
       before: "setopt err_return",
     )
     #expect(output.contains("_multishell_keymap_cursor"))
+  }
+
+  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  func fishShowsABarAtThePromptAndTheUsersShapeWhileACommandRuns(fish: String) async throws {
+    let input = "emit fish_prompt; emit fish_preexec true\nexit\n"
+    let blinking = try await fishOutput(fish, features: "cursor:blink", input: input)
+    #expect(blinking.contains(TerminalReports.cursorShape(5)), "\(blinking.debugDescription)")
+    #expect(blinking.contains(TerminalReports.cursorShape(0)))
+
+    let steady = try await fishOutput(fish, features: "cursor:steady", input: input)
+    #expect(steady.contains(TerminalReports.cursorShape(6)), "\(steady.debugDescription)")
+
+    let none = try await fishOutput(fish, features: "title", input: input)
+    #expect(none.contains(TerminalReports.cursorShape(5)) == false)
+    #expect(none.contains(TerminalReports.cursorShape(0)) == false)
+  }
+
+  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  func fishsOwnViModeCursorKeepsTheCursor(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "cursor",
+      input: "emit fish_prompt; emit fish_preexec true\nexit\n",
+      usersConfig: "fish_vi_key_bindings\n",
+    )
+    #expect(output.contains(TerminalReports.cursorShape(5)) == false, "\(output.debugDescription)")
+    #expect(output.contains(TerminalReports.cursorShape(0)) == false)
   }
 }
