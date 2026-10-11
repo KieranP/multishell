@@ -5,114 +5,140 @@
 <h1 align="center">Multishell</h1>
 
 <p align="center">
-  A native macOS terminal workspace for people who work in many git worktrees at once,<br>
-  built for running coding agents side by side.
+  A native macOS terminal for running coding agents across many git worktrees at once.
 </p>
 
 <p align="center">
-  Projects on the left, their worktrees under them, terminal tabs and splits for the one you have selected.<br>
-  Every terminal keeps running while you look at another worktree, and a dot on each tab and row says what it is doing.
+  Your projects sit in a sidebar with every worktree under them. Pick one and its tabs, splits and agents fill the window.<br>
+  Switch away and they keep running; a dot on each tab and row tells you which agents are working, waiting on you, or done.
 </p>
 
 <p align="center">
-  <img src="Docs/screenshot-light.png" width="49%" alt="Multishell in light mode: a project sidebar, a selected worktree, and a Claude Code tab split above a shell">
-  <img src="Docs/screenshot-dark.png" width="49%" alt="The same workspace in dark mode">
+  <img src="Docs/screenshot-light.png" width="48%" alt="Multishell in light mode: projects with their own icons and worktrees in the sidebar, and two groups of tabs side by side, Claude Code split above a shell on the left and a second Claude Code on the right">
+  &nbsp;&nbsp;
+  <img src="Docs/screenshot-dark.png" width="48%" alt="The same workspace in dark mode">
 </p>
 
 ## Install
 
-Requires macOS 26 Tahoe or later, Xcode 26 or later (Swift 6.2 or later) with
-its Metal toolchain, the Zig version Ghostty names, and `git` on your `PATH`.
-`make install` below goes through `xcodebuild`, which the command line tools
-alone do not have; see [Docs/develop/build.md](Docs/develop/build.md).
+There is no notarised release yet, so you build it from source. You need:
+
+- macOS 26 Tahoe or later
+- Xcode 26 or later (Swift 6.2), not only the command line tools
+- the Zig version Ghostty pins, `zig@0.16` today
+- `git` on your `PATH`
+
+Set up the toolchain once, and again after each Xcode update. Skip
+`xcode-select` if Xcode is already the active developer directory:
+
+```sh
+brew install zig@0.16                          # Scripts/build-ghostty.sh --zig-version names the version
+sudo xcode-select -s /Applications/Xcode.app
+sudo xcodebuild -license
+sudo xcodebuild -runFirstLaunch
+xcodebuild -downloadComponent MetalToolchain
+```
+
+Then clone, build and install into `/Applications`. `make signing-identity` is
+once per machine; its local certificate keeps the permissions you grant across
+rebuilds.
 
 ```sh
 git clone https://github.com/KieranP/multishell.git
 cd multishell
-brew install zig@0.16                          # keg-only, found by the build; Scripts/build-ghostty.sh --zig-version names the version
-xcodebuild -downloadComponent MetalToolchain   # once per Xcode install, for libghostty's shaders
-sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
-sudo xcodebuild -license                       # once per Xcode install, accept the agreement
-sudo xcodebuild -runFirstLaunch                # once per Xcode install
-make signing-identity                          # once per machine, so privacy grants survive a rebuild
-make install                                   # release build into /Applications
+make signing-identity
+make install
 ```
 
-`make run` builds and opens a debug copy that keeps its own state, so it sits
-beside an installed one. The first build compiles libghostty from the
-`ThirdParty/ghostty` submodule, a minute or two. Then add a repository with the
+The first build compiles libghostty from the `ThirdParty/ghostty` submodule,
+which takes a minute or two. Open Multishell and add a repository with the
 folder button at the top of the sidebar, or Cmd+O.
 
-If a build fails after a pull that moved or renamed files, run `make clean`
-once. It deletes `build/` and `.build/`, so the next build compiles the app from
-scratch; libghostty comes back in seconds from Zig's cache in the submodule. The
-build fetches the `ThirdParty/ghostty` submodule itself, and moves it when a
-pull moves the pin forward. One that moves it back, or a checkout of a branch
-pinned earlier, stops the build; `git submodule update ThirdParty/ghostty`
-matches the pin.
+`make run` builds and opens a debug copy with its own state, so it can run
+beside the installed one. If a build fails after a pull that moved files, run
+`make clean` once. If it stops because the submodule is behind its pin, run
+`git submodule update ThirdParty/ghostty`. The full build notes are in
+[Docs/develop/build.md](Docs/develop/build.md).
 
-**Agent hooks.** For the state dots to follow an agent, it has to report through
-its hooks. Open Settings > Agents > Hooks: every agent on your PATH that has
-them gets a row with Add, for Claude Code, Codex, Gemini CLI, Copilot CLI and
-OpenCode. Where the file is the agent's own, Multishell appends one entry per
-event, leaves the rest as it is, keeps a copy beside it the first time, and
-Remove takes only its own entries out again. Where the agent reads a directory
-of hook files, or a plugin, Multishell writes a file of its own and deletes it
-again. Codex asks you to trust a new hook once, with `/hooks`. Plain shell
-commands report without any of this. Until an agent's hooks are in, its dots
-never move and the Agents board stays empty.
+### Agent hooks
 
-Which shells and agents are supported, and how far each one goes, is in
-[COMPAT.md](COMPAT.md).
-
-To work on it, start with [AGENTS.md](AGENTS.md), which indexes `Docs/develop/`
-for the build, the tests and the rules, and `Docs/design/` for why things are
-the way they are. Pull requests are collaborators only, which
-[CONTRIBUTING.md](CONTRIBUTING.md) explains; issues are open to anyone, and
-[SECURITY.md](SECURITY.md) is where a vulnerability goes instead of an issue.
+zsh, bash and fish report their state with no setup. Agents report through their
+own hooks, so the dots and the Agents board stay still until you add them: open
+Settings > Agents > Hooks and click Add beside each agent. Multishell adds its
+entries to the agent's config, keeping a copy of the file the first time, or
+writes a file of its own; Remove takes out only what it added. Codex then asks
+you to trust the new hooks once, with `/hooks`. [COMPAT.md](COMPAT.md) lists
+every file it touches and how far each shell and agent goes.
 
 ## Features
 
-- Projects in a sidebar, every worktree under them, bare clones included.
-- Tabs, splits and side-by-side groups per worktree; drag a tab to another.
-- Terminals keep running while you look elsewhere.
-- New worktree and branch in one step, with a terminal or agent already open.
-- Removing a worktree moves it to the Trash, or deletes it if you would rather.
-- Copy or symlink `.env`, `node_modules` and the like into every new worktree.
-- A state dot per tab and worktree: working, waiting, done, failed.
-- Hooks for five agents; zsh and bash need no setup; anything else can call
-  `multishell state`.
-- An Agents board of every running agent, a chip counting the workers each has
-  out, and a Dock badge for those waiting.
-- A preferred agent one shortcut away, with flags per agent and per project.
-- Notifications for tabs you are not looking at, a toggle each for state.
+**Worktrees**
+
+- Every project in one sidebar, each with its own symbol and colour, every
+  worktree under it, bare clones included.
+- A new branch and worktree in one step, with a shell or agent already running
+  in it.
+- `.env`, `node_modules` and the like copied or symlinked into each new
+  worktree.
+- Pre and post hooks for create and remove, shareable with your team in
+  `.multishell.json`.
+- Rows show lines added and removed, ahead and behind, and a badge once the
+  branch has landed; sort, filter and rename them.
+- Removing a worktree moves it to the Trash, or deletes it if you prefer.
+
+**Terminals**
+
+- Tabs, splits and side-by-side tab groups per worktree.
+- Terminals keep running while you look at another worktree, and a tab dragged
+  to another worktree moves without restarting.
+- libghostty draws the terminals, with light and dark themes and your own in
+  JSON.
+- Find in a pane with Cmd+F, and click in the prompt to move the cursor there.
 - Drop files from Finder onto a terminal as `@` mentions or quoted paths.
-- Find in a pane with Cmd+F, through libghostty's own search.
-- Lines added and removed, ahead/behind and landed badges on rows; sort, filter,
-  rename.
-- Pre and post hooks for create and delete, shareable in `.multishell.json`.
-- View > Enable Debug Tools for frame rate, CPU, memory and git timings.
-- A `multishell` command to script and test it: projects, worktrees, tabs, panes
-  and settings, reading and waiting on a pane, screenshots and Debug Info;
-  `multishell help` lists them.
-- libghostty for the terminals, JSON themes, Open in Editor, and no changes to
-  your shell's rc files.
+- Open the worktree in your editor.
+- Your shell rc files are never edited.
+
+**Agents**
+
+- Claude Code, Codex, Gemini CLI, Copilot CLI and OpenCode, each with its own
+  icon on its tab.
+- A state dot per tab and worktree: working, waiting on you, done or failed.
+- An Agents board of every running agent, a chip counting the subagents and
+  background shells each has out, and a Dock badge for the ones waiting.
+- Your preferred agent one shortcut away, with its flags set globally or per
+  project.
+- Notifications for tabs you are not looking at, toggled per state.
+- Saved agent tabs resume their session on the next launch.
+
+**Scripting**
+
+- A `multishell` command that drives the app: projects, worktrees, tabs, panes
+  and settings, reading and waiting on a pane, and screenshots.
+  `multishell help` lists it all.
+- `multishell state` lets any script or shell set its tab's dot.
+- View > Enable Debug Tools shows frame rate, CPU, memory and git timings.
 
 ## Status
 
-Builds and runs from source on macOS, and the permissions you grant survive a
-rebuild thanks to the local certificate. There is no notarised release yet, so
-build it yourself. Currently only supports macOS. Currently available in English
-only.
+- Source builds only; no notarised release yet.
+- macOS 26 and later, built and run on Apple silicon. Intel is untested.
+- English only.
 
-Every line of code was written by an AI (Claude), under direction from a human
-who set the requirements and reviewed the results in the running app. The design
-decisions under `Docs/design/` were argued out in that conversation. The
+Every line of code was written by an AI (Claude), directed by a human who set
+the requirements and reviewed the results in the running app. The design
+decisions under `Docs/design/` were argued out in that conversation; the
 architecture, the trade-offs and what shipped were human calls.
+
+## Contributing
+
+Start with [AGENTS.md](AGENTS.md), which indexes `Docs/develop/` for the build,
+tests and rules, and `Docs/design/` for why things are the way they are. Pull
+requests are from collaborators only, as [CONTRIBUTING.md](CONTRIBUTING.md)
+explains. Issues are open to anyone. Report a vulnerability through
+[SECURITY.md](SECURITY.md) instead of an issue.
 
 ## License
 
 Copyright (C) 2026 Kieran Pilkington. GNU Affero General Public License v3.0;
-see [LICENSE](LICENSE).
-
-Third party notices are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+see [LICENSE](LICENSE). Third party notices are in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
