@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 extension AppModel {
   /// What the reconciler opens: the session's shell or agent line. A restored tab
@@ -35,6 +36,7 @@ extension AppModel {
         customLine: AgentCatalogue.customCommandLine(
           workspace.customAgentCommand,
           values: values,
+          forShellNamed: shell.executable.lastPathComponent,
           task: task ?? "",
         ),
         shell: shell,

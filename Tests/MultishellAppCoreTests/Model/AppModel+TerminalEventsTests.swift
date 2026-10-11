@@ -168,7 +168,7 @@ struct AppModelTerminalEventsTests {
   @Test func aFinishedCommandClearsWorkingAndAFailedOneOutlastsALook() {
     let harness = Harness()
     let first = harness.openBackgroundTab()
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: first.focusedSessionID, pid: 1)
     )
 

@@ -9,17 +9,21 @@ struct EditorCatalogueCustomCommandTests {
     let path = URL(fileURLWithPath: "/Users/me/My Work/repo")
     let environment = ["MULTISHELL_WORKTREE_PATH": "/Users/me/My Work/repo"]
     #expect(
-      EditorCatalogue.customCommandLine("code-insiders {path}", path: path)
+      EditorCatalogue.customCommandLine("code-insiders {path}", path: path, forShellNamed: "zsh")
         == ShellLine(text: #"code-insiders "$MULTISHELL_WORKTREE_PATH""#, environment: environment)
     )
     #expect(
-      EditorCatalogue.customCommandLine("  micro  ", path: path)
+      EditorCatalogue.customCommandLine("  micro  ", path: path, forShellNamed: "zsh")
         == ShellLine(text: #"micro "$MULTISHELL_WORKTREE_PATH""#, environment: environment),
       "no placeholder: the path is appended",
     )
-    #expect(EditorCatalogue.customCommandLine("  ", path: path) == nil)
+    #expect(EditorCatalogue.customCommandLine("  ", path: path, forShellNamed: "zsh") == nil)
     #expect(
-      EditorCatalogue.customCommandLine("open -a X {path} && echo {path}", path: path)?.text
+      EditorCatalogue.customCommandLine(
+        "open -a X {path} && echo {path}",
+        path: path,
+        forShellNamed: "zsh",
+      )?.text
         == #"open -a X "$MULTISHELL_WORKTREE_PATH" && echo "$MULTISHELL_WORKTREE_PATH""#
     )
   }

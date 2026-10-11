@@ -14,7 +14,7 @@ struct AppModelControlTabDescriptionTests {
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
     harness.engine.frames[tab.sessionIDs[0]] = CGRect(x: 0, y: 40, width: 300, height: 500)
 
-    let reply = try #require(await harness.stateSource.ask(.describeTab(id: tab.id)))
+    let reply = try #require(await harness.messageSource.ask(.describeTab(id: tab.id)))
 
     #expect(reply.outputFields["worktree"] as? String == ControlID.worktree(harness.main.id))
     let layout = try #require(reply.outputFields["layout"] as? [String: Any])

@@ -1,7 +1,7 @@
 import AppKit
 import CoreImage
 
-/// A view drawn into a PNG, needing no Screen Recording grant: Ghostty's frames
+/// A view drawn into a PNG, needing no Screen Recording grant: Ghostty's surfaces
 /// first, then AppKit's cached view over them, clear there; agents.md.
 @MainActor
 enum ViewScreenshot {

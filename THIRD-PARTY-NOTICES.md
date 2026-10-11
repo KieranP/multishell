@@ -16,7 +16,7 @@ patches in `ThirdParty/ghostty-patches/`. Each licence text is in
 | zig-objc                 | 2023 Mitchell Hashimoto                              | MIT                         | [zig-objc.txt](Licenses/zig-objc.txt)                                                |
 | z2d                      | 2024-2026 Chris Marchesi                             | MPL-2.0, with MIT portions  | [z2d.txt](Licenses/z2d.txt), [MPL-2.0.txt](Licenses/MPL-2.0.txt)                     |
 | uucode                   | 2026 Jacob Sandlund                                  | MIT                         | [uucode.txt](Licenses/uucode.txt)                                                    |
-| Unicode data, via uucode | 1991-2025 Unicode, Inc.                              | Unicode License v3          | [Unicode.txt](Licenses/Unicode.txt)                                                  |
+| Unicode data, via uucode | 1991-2026 Unicode, Inc.                              | Unicode License v3          | [Unicode.txt](Licenses/Unicode.txt)                                                  |
 | Oniguruma                | 2002-2021 K.Kosako                                   | BSD-2-Clause                | [Oniguruma.txt](Licenses/Oniguruma.txt)                                              |
 | simdutf                  | 2021 The simdutf authors                             | MIT                         | [simdutf.txt](Licenses/simdutf.txt)                                                  |
 | Highway                  | The Highway Project Authors                          | BSD-3-Clause                | [Highway.txt](Licenses/Highway.txt)                                                  |

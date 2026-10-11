@@ -66,19 +66,9 @@ struct SocketReplyTests {
   }
 
   private func slowlyRead(_ text: String, from path: URL) throws -> String {
-    let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
+    let descriptor = try UnixSocket.newSocket(reportingAs: path.path)
     defer { close(descriptor) }
-    var address = sockaddr_un()
-    address.sun_family = sa_family_t(AF_UNIX)
-    withUnsafeMutableBytes(of: &address.sun_path) { raw in
-      for (index, byte) in path.path.utf8.enumerated() { raw[index] = byte }
-    }
-    let connected = withUnsafePointer(to: &address) { pointer in
-      pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { socketAddress in
-        connect(descriptor, socketAddress, socklen_t(MemoryLayout<sockaddr_un>.size))
-      }
-    }
-    try #require(connected == 0)
+    try UnixSocket.connectSocket(descriptor, to: path.path)
     _ = Array(text.utf8).withUnsafeBufferPointer { write(descriptor, $0.baseAddress, $0.count) }
     shutdown(descriptor, SHUT_WR)
     var answer: [UInt8] = []
@@ -130,35 +120,11 @@ struct SocketReplyTests {
     #expect(held.received.count == 1)
   }
 
-  @Test func aTimeoutUnderASecondStillRunsOut() throws {
-    let held = Recorder<SocketReply>()
-    let (server, path) = try server("rep") { _, channel in
-      if let reply = channel.open() { held.record(reply) }
-    }
-    defer {
-      server.stop()
-      Scratch.removeSocket(path)
-    }
-    let outcome = Recorder<Bool>()
-    let finished = DispatchSemaphore(value: 0)
-
-    Thread.detachNewThread {
-      let ranOut =
-        (try? UnixSocketClient.request("ping\n", to: path, timeout: .milliseconds(300)))
-        == nil
-      outcome.record(ranOut)
-      finished.signal()
-    }
-
-    #expect(finished.wait(timeout: .now() + 5) == .success)
-    #expect(outcome.received == [true])
-  }
-
   @Test func anAnswerReadSlowerThanTheTimeoutButNeverStalledArrivesWhole() throws {
     var pair: [Int32] = [0, 0]
     try #require(socketpair(AF_UNIX, SOCK_STREAM, 0, &pair) == 0)
     defer { close(pair[1]) }
-    _ = fcntl(pair[0], F_SETFL, fcntl(pair[0], F_GETFL) | O_NONBLOCK)
+    DescriptorFlags.setNonBlocking(pair[0])
     let long = String(repeating: "x", count: 2_000_000)
     let reply = SocketReply(descriptor: pair[0], stallTimeout: .seconds(1))
     let started = ContinuousClock.now

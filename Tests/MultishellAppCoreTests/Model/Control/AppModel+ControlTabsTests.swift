@@ -24,7 +24,7 @@ struct AppModelControlTabsTests {
     harness.model.splitActivePane(.horizontal)
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
 
-    let reply = try #require(await harness.stateSource.ask(.listTabs(worktree: nil)))
+    let reply = try #require(await harness.messageSource.ask(.listTabs(worktree: nil)))
 
     #expect(reply.outputFields["worktreeInView"] as? String == ControlID.worktree(harness.main.id))
     let worktrees = try #require(reply.outputFields["worktrees"] as? [[String: Any]])
@@ -47,12 +47,12 @@ struct AppModelControlTabsTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
     )
 
     let reply = try #require(
-      await harness.stateSource.ask(.listTabs(worktree: ControlID.worktree(harness.main.id)))
+      await harness.messageSource.ask(.listTabs(worktree: ControlID.worktree(harness.main.id)))
     )
 
     let worktrees = try #require(reply.outputFields["worktrees"] as? [[String: Any]])
@@ -71,12 +71,12 @@ struct AppModelControlTabsTests {
     let elsewhere = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
 
     #expect(
-      await harness.stateSource.ask(.moveTab(id: second.id, before: true, anchor: first.id))
+      await harness.messageSource.ask(.moveTab(id: second.id, before: true, anchor: first.id))
         == .done
     )
     #expect(harness.model.workspace.tabs(in: harness.main.id).map(\.id) == [second.id, first.id])
     #expect(
-      await harness.stateSource.ask(.moveTab(id: second.id, before: true, anchor: elsewhere.id))
+      await harness.messageSource.ask(.moveTab(id: second.id, before: true, anchor: elsewhere.id))
         == .refused(.tabInAnotherWorktree(id: elsewhere.id))
     )
   }
@@ -86,9 +86,9 @@ struct AppModelControlTabsTests {
     harness.model.select(harness.main)
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
 
-    #expect(await harness.stateSource.ask(.renameTab(id: tab.id, title: "Server")) == .done)
+    #expect(await harness.messageSource.ask(.renameTab(id: tab.id, title: "Server")) == .done)
     #expect(harness.model.workspace.tab(tab.id)?.customTitle == "Server")
-    #expect(await harness.stateSource.ask(.renameTab(id: tab.id, title: nil)) == .done)
+    #expect(await harness.messageSource.ask(.renameTab(id: tab.id, title: nil)) == .done)
     #expect(harness.model.workspace.tab(tab.id)?.customTitle == nil)
   }
 
@@ -97,7 +97,7 @@ struct AppModelControlTabsTests {
     harness.model.select(harness.feature)
     let background = harness.openBackgroundTab()
 
-    let reply = await harness.stateSource.ask(.selectTab(id: background.id))
+    let reply = await harness.messageSource.ask(.selectTab(id: background.id))
 
     #expect(reply == .done)
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
@@ -108,13 +108,13 @@ struct AppModelControlTabsTests {
     let harness = Harness()
     let id = UUID()
 
-    #expect(await harness.stateSource.ask(.selectTab(id: id)) == .refused(.noTab(id: id)))
+    #expect(await harness.messageSource.ask(.selectTab(id: id)) == .refused(.noTab(id: id)))
     #expect(
-      await harness.stateSource.ask(.closeTab(id: id, force: true)) == .refused(.noTab(id: id))
+      await harness.messageSource.ask(.closeTab(id: id, force: true)) == .refused(.noTab(id: id))
     )
-    #expect(await harness.stateSource.ask(.selectPane(id: id)) == .refused(.noPane(id: id)))
+    #expect(await harness.messageSource.ask(.selectPane(id: id)) == .refused(.noPane(id: id)))
     #expect(
-      await harness.stateSource.ask(.closePane(id: id, force: false)) == .refused(.noPane(id: id))
+      await harness.messageSource.ask(.closePane(id: id, force: false)) == .refused(.noPane(id: id))
     )
   }
 
@@ -122,16 +122,19 @@ struct AppModelControlTabsTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    harness.messageSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+    )
 
     #expect(
-      await harness.stateSource.ask(.closeTab(id: tab.id, force: false)) == .refused(.agentWorking)
+      await harness.messageSource.ask(.closeTab(id: tab.id, force: false))
+        == .refused(.agentWorking)
     )
     #expect(harness.model.pendingClose == nil)
     #expect(harness.model.workspace.tab(tab.id) != nil)
 
     #expect(
-      await harness.stateSource.ask(.closePane(id: tab.focusedSessionID, force: true)) == .done
+      await harness.messageSource.ask(.closePane(id: tab.focusedSessionID, force: true)) == .done
     )
     #expect(harness.model.workspace.tab(tab.id) == nil)
     #expect(harness.engine.closed == [tab.focusedSessionID])
@@ -145,7 +148,7 @@ struct AppModelControlTabsTests {
     try #require(tabs.count == 2)
     harness.model.beginRenamingTab(tabs[0].id)
 
-    let reply = await harness.stateSource.ask(.renameTab(id: tabs[1].id, title: "server"))
+    let reply = await harness.messageSource.ask(.renameTab(id: tabs[1].id, title: "server"))
 
     #expect(reply == .done)
     #expect(harness.model.renamingTabID == tabs[0].id)
@@ -155,9 +158,9 @@ struct AppModelControlTabsTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let feature = ControlID.worktree(harness.feature.id)
-    _ = await harness.stateSource.ask(.newTab(order(feature)))
-    _ = await harness.stateSource.ask(.newTab(order(feature)))
-    _ = await harness.stateSource.ask(.newTab(order(feature)))
+    _ = await harness.messageSource.ask(.newTab(order(feature)))
+    _ = await harness.messageSource.ask(.newTab(order(feature)))
+    _ = await harness.messageSource.ask(.newTab(order(feature)))
     let tabs = harness.model.workspace.tabs(in: harness.feature.id)
     let field = try #require(
       harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID
@@ -166,12 +169,13 @@ struct AppModelControlTabsTests {
     let focusedBefore = harness.engine.focused
 
     #expect(
-      await harness.stateSource.ask(.moveTab(id: tabs[0].id, before: false, anchor: tabs[1].id))
+      await harness.messageSource.ask(.moveTab(id: tabs[0].id, before: false, anchor: tabs[1].id))
         == .done
     )
-    #expect(await harness.stateSource.ask(.closeTab(id: tabs[2].id, force: false)) == .done)
+    #expect(await harness.messageSource.ask(.closeTab(id: tabs[2].id, force: false)) == .done)
     #expect(
-      await harness.stateSource.ask(.closePane(id: tabs[1].focusedSessionID, force: false)) == .done
+      await harness.messageSource.ask(.closePane(id: tabs[1].focusedSessionID, force: false))
+        == .done
     )
 
     #expect(harness.model.findFieldSessionID == field)

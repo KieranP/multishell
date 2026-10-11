@@ -10,12 +10,7 @@ import Testing
 @Suite(.serialized)
 struct HelperDebugSamplesTests {
   @Test func followingPrintsEachNewSampleOnALineOfItsOwnAndStopsAtTheCount() async throws {
-    let landed = Mutex(0)
-    let app = try ControlListener { _ in
-      let newest = landed.withLock { count in
-        defer { count += 1 }
-        return count
-      }
+    let app = try ControlListener.answeringInTurn { newest in
       let samples = (0...newest).map { #"{"sequence":\#($0),"appMemory":7}"# }
       return .output("[" + samples.joined(separator: ",") + "]")
     }
@@ -61,13 +56,8 @@ struct HelperDebugSamplesTests {
   }
 
   @Test func aSampleLandingAsTheBacklogIsReadIsPrintedOnce() async throws {
-    let asked = Mutex(0)
-    let app = try ControlListener { _ in
-      let call = asked.withLock { count in
-        defer { count += 1 }
-        return count
-      }
-      return .output(call == 0 ? #"[{"sequence":0}]"# : #"[{"sequence":0},{"sequence":1}]"#)
+    let app = try ControlListener.answeringInTurn { call in
+      .output(call == 0 ? #"[{"sequence":0}]"# : #"[{"sequence":0},{"sequence":1}]"#)
     }
     defer { app.stop() }
 

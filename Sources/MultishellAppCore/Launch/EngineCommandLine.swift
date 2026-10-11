@@ -21,7 +21,7 @@ public enum EngineCommandLine {
     fishInit: URL = Paths.fishInitFile,
   ) -> [String]? {
     guard
-      let integration = ShellLaunch.integrationArguments(
+      let integration = ShellLaunch.initFileArguments(
         forShell: shellPath,
         bashInit: bashInit,
         fishInit: fishInit,

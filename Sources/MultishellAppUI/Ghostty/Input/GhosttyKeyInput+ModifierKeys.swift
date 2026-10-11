@@ -1,19 +1,16 @@
 import AppKit
-import Carbon.HIToolbox
 import GhosttyKit
 
 /// The modifier keys a chord holds, each down before the key and up after, as
 /// a keyboard sends them: libghostty keeps the last modifiers it saw for the mouse.
 extension GhosttyKeyInput {
-  private static let modifierKeys: [(flag: NSEvent.ModifierFlags, code: Int)] = [
-    (.shift, kVK_Shift), (.control, kVK_Control), (.option, kVK_Option), (.command, kVK_Command),
-  ]
+  private static let modifierKeys = GhosttyModifiers.leftHandKeys
 
   static func modifierPresses(for flags: NSEvent.ModifierFlags) -> [Self] {
     var held: NSEvent.ModifierFlags = []
     return modifierKeys.filter { flags.contains($0.flag) }.compactMap { key in
       held.insert(key.flag)
-      return modifierChange(key.code, held, GHOSTTY_ACTION_PRESS)
+      return modifierChange(key.keyCode, held, GHOSTTY_ACTION_PRESS)
     }
   }
 
@@ -21,15 +18,17 @@ extension GhosttyKeyInput {
     var held = flags.intersection(NSEvent.ModifierFlags(modifierKeys.map(\.flag)))
     return modifierKeys.reversed().filter { flags.contains($0.flag) }.compactMap { key in
       held.remove(key.flag)
-      return modifierChange(key.code, held, GHOSTTY_ACTION_RELEASE)
+      return modifierChange(key.keyCode, held, GHOSTTY_ACTION_RELEASE)
     }
   }
 
   private static func modifierChange(
-    _ code: Int,
+    _ keyCode: UInt16,
     _ held: NSEvent.ModifierFlags,
     _ action: ghostty_input_action_e,
   ) -> Self? {
-    keyEvent(code, held, .flagsChanged, characters: "", unmodified: "").map { Self($0, action) }
+    keyEvent(Int(keyCode), held, .flagsChanged, characters: "", unmodified: "").map { event in
+      Self(event, action)
+    }
   }
 }

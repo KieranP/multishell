@@ -75,7 +75,7 @@ struct EditorLaunchTests {
           title: "Neovim",
           command: [
             "/bin/zsh", "-l", "-i", "-c",
-            LeadingPathLine.statement(for: .loginZsh)
+            LeadingPathStatement.line(for: .loginZsh)
               + "/opt/homebrew/bin/nvim .; exec /bin/zsh -l",
           ],
         )
@@ -91,7 +91,7 @@ struct EditorLaunchTests {
           command: [
             "/usr/bin/env", "MULTISHELL_WORKTREE_PATH=/Users/me/Work/repo trees/feat",
             "/bin/zsh", "-l", "-i", "-c",
-            LeadingPathLine.statement(for: .loginZsh)
+            LeadingPathStatement.line(for: .loginZsh)
               + #"code-insiders "$MULTISHELL_WORKTREE_PATH"; exec /bin/zsh -l"#,
           ],
         )

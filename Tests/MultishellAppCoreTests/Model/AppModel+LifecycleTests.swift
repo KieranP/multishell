@@ -58,7 +58,7 @@ struct AppModelLifecycleTests {
     let file = Scratch.statePath("second-copy")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
-    harness.stateSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+    harness.messageSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
 
     await harness.model.start()
 
@@ -73,7 +73,7 @@ struct AppModelLifecycleTests {
 
   @Test func aCopyThatCouldNotQuitAfterHandingOverStartsNoShell() async {
     let harness = Harness()
-    harness.stateSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+    harness.messageSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
     await harness.model.start()
 
     harness.model.select(harness.main)

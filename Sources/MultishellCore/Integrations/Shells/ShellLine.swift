@@ -14,7 +14,13 @@ public struct ShellLine: Hashable, Sendable {
 
   /// `line` with each token read from a variable holding its value. The read
   /// is quoted for where the token sits, so it is one word inside any quotes.
-  init(_ line: String, substituting tokens: [String: (variable: String, value: String)]) {
+  init(
+    _ line: String,
+    substituting tokens: [String: (variable: String, value: String)],
+    forShellNamed shellName: String,
+  ) {
+    // fish alone reads `\'` and `\\` inside single quotes; tcsh keeps both as typed.
+    let escapesInSingleQuotes = shellName == "fish"
     var text = ""
     var environment: [String: String] = [:]
     var quote: Character?
@@ -31,6 +37,10 @@ public struct ShellLine: Hashable, Sendable {
         escaping = false
       } else if character == "\\", quote != "'" {
         escaping = true
+      } else if character == "\\", escapesInSingleQuotes,
+        ["'", "\\"].contains(rest.dropFirst().first)
+      {
+        escaping = true
       } else if let open = quote {
         if character == open { quote = nil }
       } else if character == "'" || character == "\"" {
@@ -43,7 +53,7 @@ public struct ShellLine: Hashable, Sendable {
   }
 
   /// Closes the user's quote, reads the variable double-quoted, and reopens
-  /// it: one spelling that sh, zsh, bash, dash and tcsh read as one word.
+  /// it: one spelling that sh, zsh, bash, dash, tcsh and fish read as one word.
   private static func reading(_ variable: String, inside quote: Character?) -> String {
     let read = "\"$\(variable)\""
     guard let quote else { return read }

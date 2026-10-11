@@ -11,7 +11,7 @@ extension AppModelControlTabsTests {
     harness.model.select(harness.main)
 
     let reply = try #require(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .newTab(order(ControlID.worktree(harness.main.id), command: ["npm", "run", "dev"]))
       )
     )
@@ -34,7 +34,7 @@ extension AppModelControlTabsTests {
     harness.model.select(harness.main)
     let feature = ControlID.worktree(harness.feature.id)
 
-    let reply = try #require(await harness.stateSource.ask(.newTab(order(feature))))
+    let reply = try #require(await harness.messageSource.ask(.newTab(order(feature))))
 
     #expect(reply.refusal == nil)
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
@@ -46,7 +46,7 @@ extension AppModelControlTabsTests {
   @Test func anIDNoWorktreeHasIsRefusedByThatID() async throws {
     let harness = Harness()
 
-    let reply = await harness.stateSource.ask(.newTab(order("w-00000000")))
+    let reply = await harness.messageSource.ask(.newTab(order("w-00000000")))
 
     #expect(reply == .refused(.noWorktree(id: "w-00000000")))
     #expect(harness.model.workspace.tabs.isEmpty)
@@ -56,7 +56,7 @@ extension AppModelControlTabsTests {
     let harness = Harness()
     harness.model.select(harness.main)
 
-    _ = await harness.stateSource.ask(
+    _ = await harness.messageSource.ask(
       .newTab(order(ControlID.worktree(harness.main.id), agentID: "claude", task: "fix it"))
     )
 
@@ -71,7 +71,7 @@ extension AppModelControlTabsTests {
     let before = harness.model.workspace.tabs.count
     let alertBefore = harness.model.presentedError?.id
 
-    let reply = await harness.stateSource.ask(
+    let reply = await harness.messageSource.ask(
       .newTab(order(ControlID.worktree(harness.main.id), agentID: "bogus"))
     )
 
@@ -90,7 +90,7 @@ extension AppModelControlTabsTests {
     harness.model.select(harness.main)
     let before = harness.model.workspace.tabs.count
 
-    let reply = await harness.stateSource.ask(
+    let reply = await harness.messageSource.ask(
       .newTab(order(ControlID.worktree(harness.main.id), agentID: AgentCatalogue.claudeID))
     )
 

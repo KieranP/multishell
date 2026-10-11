@@ -25,11 +25,14 @@ enum UnixSocket {
     guard descriptor >= 0 else {
       throw SocketFailure(kind: .system(operation: "socket", code: errno), path: path)
     }
-    // A write to a peer that has gone would otherwise kill the process
-    // with SIGPIPE.
+    suppressSIGPIPE(on: descriptor)
+    return descriptor
+  }
+
+  /// A write to a peer that has gone would otherwise kill the process with SIGPIPE.
+  static func suppressSIGPIPE(on descriptor: Int32) {
     var on: Int32 = 1
     setsockopt(descriptor, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
-    return descriptor
   }
 
   static func connectSocket(_ descriptor: Int32, to path: String) throws {

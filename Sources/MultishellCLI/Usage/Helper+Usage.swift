@@ -52,17 +52,6 @@ extension Helper {
     let topics: [([String], String)] = [
       (Array(helpCommands), usage),
       (["version", "--version"], versionUsage),
-      (["open", "quit", "info"], appUsage),
-      (["config"], configUsage),
-      (["projects"], projectUsage),
-      (["worktrees"], worktreeUsage),
-      (["tabs"], tabUsage),
-      (["panes"], paneUsage),
-      (["ui"], uiUsage),
-      (["window"], windowUsage),
-      (["board"], boardUsage),
-      (["sidebar"], sidebarUsage),
-      (["debug"], debugUsage),
       ([stateName], stateUsage),
       ([commandStartedName, commandFinishedName, relayName], shellReportUsage),
       (
@@ -70,8 +59,9 @@ extension Helper {
         agentHookUsage,
       ),
     ]
+    let controlTopics = ControlCommand.allCases.map { ([$0.rawValue], usage(of: $0)) }
     return Dictionary(
-      topics.flatMap { words, text in words.map { ($0, text) } },
+      (topics + controlTopics).flatMap { words, text in words.map { ($0, text) } },
       uniquingKeysWith: { first, _ in first },
     )
   }()
@@ -79,5 +69,21 @@ extension Helper {
   /// One command's arguments, or `nil` for a word that is not a command.
   static func usage(of topic: String) -> String? {
     usageByTopic[topic]
+  }
+
+  private static func usage(of command: ControlCommand) -> String {
+    switch command {
+    case .info, .open, .quit: appUsage
+    case .board: boardUsage
+    case .config: configUsage
+    case .debug: debugUsage
+    case .panes: paneUsage
+    case .projects: projectUsage
+    case .sidebar: sidebarUsage
+    case .tabs: tabUsage
+    case .userInterface: uiUsage
+    case .window: windowUsage
+    case .worktrees: worktreeUsage
+    }
   }
 }

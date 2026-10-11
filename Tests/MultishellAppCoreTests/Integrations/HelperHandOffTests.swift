@@ -40,7 +40,7 @@ struct HelperHandOffTests {
     #expect(HelperHandOff.helper(inBundleOf: root.appendingPathComponent("bin/other")) == nil)
   }
 
-  @Test func aLaunchThroughALinkPutsTheBundlesOwnDirectoriesOnAPanesPath() throws {
+  @Test func theBundlesDirectoriesAreFoundThroughALinkToItsExecutable() throws {
     let root = Scratch.path("handoff")
     defer { Scratch.remove(root) }
     let bundle = try linkedBundle(in: root)

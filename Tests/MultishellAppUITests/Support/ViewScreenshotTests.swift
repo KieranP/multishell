@@ -5,7 +5,7 @@ import Testing
 
 @Suite @MainActor
 struct ViewScreenshotTests {
-  @Test func aFrameIsPlacedAtItsOwnSizeFromTheTopLeftAsTheLayerShowsItNotStretched() {
+  @Test func aSurfaceIsPlacedAtItsOwnSizeFromTheTopLeftAsTheLayerShowsItNotStretched() {
     let pane = CGRect(x: 10, y: 20, width: 300, height: 200)
 
     let resizing = ViewScreenshot.place(

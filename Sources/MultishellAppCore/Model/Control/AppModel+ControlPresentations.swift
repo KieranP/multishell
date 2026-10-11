@@ -18,7 +18,7 @@ extension AppModel {
   }
 
   /// The topmost's Cancel, or its Escape for a name field; answers what went.
-  func answerDismissPresentation() -> ControlReply {
+  func replyToDismissPresentation() -> ControlReply {
     guard let top = presentations.first else { return .refused(.nothingPresented) }
     dismiss(top.kind)
     return .json(top)

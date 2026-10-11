@@ -2,7 +2,7 @@ import MultishellCore
 
 extension AppModel {
   /// Built from the calls the sidebar's own views make, so it lists what they draw.
-  func answerListSidebar() -> ControlReply {
+  func replyToListSidebar() -> ControlReply {
     let sessions = sessionIDsByWorktree
     let entries = sidebarEntries
     let projects = entries.map { entry in
@@ -24,6 +24,12 @@ extension AppModel {
         emptyMessage: sidebarEmptyMessage(showing: entries),
       )
     )
+  }
+
+  /// As typed into the sidebar's filter; empty puts the field away.
+  func replyToFilterSidebar(_ text: String) -> ControlReply {
+    if text.isEmpty { setShowsSidebarFilter(false) } else { sidebarFilterText = text }
+    return .done
   }
 
   private func sidebarWorktreeRow(

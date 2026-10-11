@@ -79,7 +79,7 @@ struct AppModelTabClosingTests {
     harness.model.newTab()
     let working = harness.model.workspace.activeTab(in: harness.main.id)!
     harness.model.select(harness.feature)
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: working.focusedSessionID,
@@ -101,7 +101,9 @@ struct AppModelTabClosingTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    harness.messageSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+    )
     harness.model.closeActiveTab()
 
     harness.model.answerClose(.tab(tab.id), confirmed: false)
@@ -115,7 +117,7 @@ struct AppModelTabClosingTests {
     harness.model.select(harness.main)
     harness.model.newTab()
     let building = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: building.focusedSessionID,
@@ -136,7 +138,7 @@ struct AppModelTabClosingTests {
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     harness.model.splitActivePane(.horizontal)
     let pane = harness.model.workspace.tab(tab.id)!.focusedSessionID
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: pane))
+    harness.messageSource.send(SessionStateReport(state: .running, sessionID: pane))
 
     harness.model.closeActivePane()
     #expect(harness.model.pendingClose == .pane(pane))
@@ -152,7 +154,9 @@ struct AppModelTabClosingTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    harness.messageSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+    )
 
     harness.model.closeActiveTab()
     #expect(harness.model.pendingClose == .tab(tab.id))
@@ -170,7 +174,7 @@ struct AppModelTabClosingTests {
     harness.model.newTab()
     let second = harness.model.workspace.activeTab(in: harness.main.id)!
     for tab in [first, second] {
-      harness.stateSource.send(
+      harness.messageSource.send(
         SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
       )
     }
@@ -190,7 +194,9 @@ struct AppModelTabClosingTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    harness.messageSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+    )
 
     harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: tab.focusedSessionID)
 
@@ -216,7 +222,9 @@ struct AppModelTabClosingTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    harness.messageSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+    )
 
     harness.model.closeActiveTab()
     #expect(harness.model.pendingClose == .tab(tab.id))

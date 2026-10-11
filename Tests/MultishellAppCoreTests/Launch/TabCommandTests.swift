@@ -17,7 +17,7 @@ struct TabCommandTests {
     #expect(
       command == [
         "/bin/zsh", "-l", "-i", "-c",
-        LeadingPathLine.statement(for: .loginZsh) + "claude --continue; exec /bin/zsh -l",
+        LeadingPathStatement.line(for: .loginZsh) + "claude --continue; exec /bin/zsh -l",
       ]
     )
   }
@@ -181,16 +181,6 @@ struct TabCommandTests {
     #expect(path.components(separatedBy: "/lead/helper").count == 2, "\(shell): \(path)")
   }
 
-  @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/ksh", "/opt/homebrew/bin/fish"])
-  func anAgentsLineReordersPathInTheLoginShellItselfStartingNoOtherShell(shell: String) {
-    let statement = LeadingPathLine.statement(
-      for: ShellInvocation(executable: URL(fileURLWithPath: shell), arguments: ["-l", "-i", "-c"])
-    )
-
-    #expect(statement.contains(SessionEnvironment.leadingPathVariable), "\(shell)")
-    #expect(!statement.contains("/bin/sh"), "\(shell): \(statement)")
-  }
-
   @Test func aCustomLineIsUsedAsTypedAndBlankMeansNothing() {
     #expect(
       TabCommand.running(
@@ -208,7 +198,7 @@ struct TabCommandTests {
       )
         == [
           "/bin/zsh", "-l", "-i", "-c",
-          LeadingPathLine.statement(for: .loginZsh) + "my-agent --model x; exec /bin/zsh -l",
+          LeadingPathStatement.line(for: .loginZsh) + "my-agent --model x; exec /bin/zsh -l",
         ]
     )
   }
@@ -222,7 +212,7 @@ struct TabCommandTests {
       TabCommand.running(customLine: line, shell: .loginZsh, handOver: "exec /bin/zsh -l") == [
         "/usr/bin/env", "MULTISHELL_BRANCH=feat$(x)", "MULTISHELL_PROJECT_NAME=demo",
         "/bin/zsh", "-l", "-i", "-c",
-        LeadingPathLine.statement(for: .loginZsh)
+        LeadingPathStatement.line(for: .loginZsh)
           + #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
       ]
     )

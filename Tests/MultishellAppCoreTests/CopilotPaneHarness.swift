@@ -27,7 +27,7 @@ import MultishellCore
         pid: nil,
       )
     else { return nil }
-    harness.stateSource.send(report)
+    harness.messageSource.send(report)
     return report
   }
 }

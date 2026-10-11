@@ -88,7 +88,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("_multishell_keymap_cursor"))
   }
 
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishShowsABarAtThePromptAndTheUsersShapeWhileACommandRuns(fish: String) async throws {
     let input = "emit fish_prompt; emit fish_preexec true\nexit\n"
     let blinking = try await fishOutput(fish, features: "cursor:blink", input: input)
@@ -103,7 +103,7 @@ extension ShellIntegrationScriptsTests {
     #expect(none.contains(TerminalReports.cursorShape(0)) == false)
   }
 
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishsOwnViModeCursorKeepsTheCursor(fish: String) async throws {
     let output = try await fishOutput(
       fish,

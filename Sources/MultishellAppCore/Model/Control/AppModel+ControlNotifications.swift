@@ -3,7 +3,7 @@ import MultishellCore
 extension AppModel {
   /// From the app's own log of what it posted: the centre itself says
   /// nothing of a banner once shown.
-  func answerDebugNotifications() -> ControlReply {
+  func replyToDebugNotifications() -> ControlReply {
     // Only a key's newest banner can still be up; the centre replaced the rest.
     var newest: [SessionStates.Key: Int] = [:]
     for (index, entry) in notificationLog.entries.enumerated() { newest[entry.key] = index }

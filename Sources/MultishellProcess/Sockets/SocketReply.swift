@@ -19,20 +19,18 @@ public final class SocketReply: Sendable {
 
   private let descriptor: Mutex<Int32>
   private let stallTimeout: Duration
-  private let writes: DispatchQueue
+  private let replyQueue: DispatchQueue
   private let hangUpWatch = Mutex<(any DispatchSourceTimer)?>(nil)
 
   init(
     descriptor: Int32,
-    writingOn writes: DispatchQueue = connectionQueue(),
+    writingOn replyQueue: DispatchQueue = connectionQueue(),
     stallTimeout: Duration = defaultStallTimeout,
   ) {
     self.descriptor = Mutex(descriptor)
-    self.writes = writes
+    self.replyQueue = replyQueue
     self.stallTimeout = stallTimeout
-    // A client gone before its answer would otherwise kill the app.
-    var on: Int32 = 1
-    setsockopt(descriptor, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
+    UnixSocket.suppressSIGPIPE(on: descriptor)
   }
 
   /// Serial, one a connection: two answers written at once on one socket
@@ -55,7 +53,7 @@ public final class SocketReply: Sendable {
   /// `onHangUp` once, should the client close before the answer is sent: a
   /// helper killed mid-request. Its half-close after the request is not one.
   public func watchForHangUp(_ onHangUp: @escaping @Sendable () -> Void) {
-    let timer = DispatchSource.makeTimerSource(queue: writes)
+    let timer = DispatchSource.makeTimerSource(queue: replyQueue)
     timer.schedule(
       deadline: .now() + Self.hangUpPollInterval,
       repeating: Self.hangUpPollInterval,
@@ -92,7 +90,7 @@ public final class SocketReply: Sendable {
     stopWatchingForHangUp()
     guard let descriptor = take() else { return }
     let stallTimeout = stallTimeout
-    writes.async {
+    replyQueue.async {
       Self.write(Array(text.utf8), to: descriptor, stallTimeout: stallTimeout)
       close(descriptor)
     }

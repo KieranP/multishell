@@ -68,7 +68,7 @@ struct AppModelControlWorktreesTests {
     let harness = Harness()
 
     #expect(
-      await harness.stateSource.ask(.renameWorktree(id: "w-00000000", name: "x"))
+      await harness.messageSource.ask(.renameWorktree(id: "w-00000000", name: "x"))
         == .refused(.noWorktree(id: "w-00000000"))
     )
   }
@@ -78,7 +78,7 @@ struct AppModelControlWorktreesTests {
     harness.model.beginRenamingWorktree(harness.feature)
     let main = ControlID.worktree(harness.main.id)
 
-    #expect(await harness.stateSource.ask(.renameWorktree(id: main, name: "Trunk")) == .done)
+    #expect(await harness.messageSource.ask(.renameWorktree(id: main, name: "Trunk")) == .done)
     #expect(harness.model.renamingWorktreeID == harness.feature.id)
   }
 }

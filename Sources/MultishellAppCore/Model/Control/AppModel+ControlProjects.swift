@@ -14,7 +14,7 @@ extension AppModel {
     }
   }
 
-  func answerListProjects() -> ControlReply {
+  func replyToListProjects() -> ControlReply {
     .json(projectEntries)
   }
 
@@ -26,7 +26,7 @@ extension AppModel {
   }
 
   /// Add Project's, a subfolder or a linked worktree adding its repository.
-  func answerAddProject(at path: String) async -> ControlReply {
+  func replyToAddProject(at path: String) async -> ControlReply {
     await addProject(at: URL(fileURLWithPath: path, isDirectory: true))
     guard let project = project(atPath: path) else {
       return .refused(.projectNotAdded(path: path))
@@ -36,7 +36,7 @@ extension AppModel {
 
   /// The sidebar's Remove, without its dialog: closing a plain shell is what
   /// was asked for, and only a working agent is refused.
-  func answerRemoveProject(_ id: String, force: Bool) -> ControlReply {
+  func replyToRemoveProject(_ id: String, force: Bool) -> ControlReply {
     guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
     let sessions = workspace.worktrees(of: project.id).flatMap { worktree in
       workspace.sessions(in: worktree.id).map(\.id)

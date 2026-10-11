@@ -10,7 +10,7 @@ struct AppModelControlProjectSettingsTests {
     let harness = Harness()
 
     let reply = try #require(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .readProjectSettings(project: ControlID.project(harness.project.id), key: nil)
       )
     )
@@ -25,17 +25,17 @@ struct AppModelControlProjectSettingsTests {
     let project = ControlID.project(harness.project.id)
 
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeProjectSetting(project: project, key: "autoStartAgent", value: "true")
       ) == .done
     )
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeProjectSetting(project: project, key: "branchPrefix", value: "12")
       ) == .done
     )
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeProjectSetting(project: project, key: "iconTint", value: "3")
       ) == .done
     )
@@ -52,7 +52,7 @@ struct AppModelControlProjectSettingsTests {
     settings.autoStartsAgent = true
     harness.model.setSettings(settings, for: harness.project)
 
-    let reply = await harness.stateSource.ask(
+    let reply = await harness.messageSource.ask(
       .writeProjectSetting(
         project: ControlID.project(harness.project.id),
         key: "autoStartAgent",
@@ -69,25 +69,25 @@ struct AppModelControlProjectSettingsTests {
     let project = ControlID.project(harness.project.id)
 
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeProjectSetting(project: project, key: "autoStartAgent", value: "maybe")
       )
         == .refused(.invalidValue(key: "autoStartAgent", value: "maybe"))
     )
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeProjectSetting(project: project, key: "worktreeSortOrder", value: "sideways")
       )
         == .refused(.invalidValue(key: "worktreeSortOrder", value: "sideways"))
     )
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeProjectSetting(project: project, key: "sharedHooks", value: "[]")
       )
         == .refused(.noSetting(key: "sharedHooks"))
     )
     #expect(
-      await harness.stateSource.ask(.readProjectSettings(project: "p-00000000", key: nil))
+      await harness.messageSource.ask(.readProjectSettings(project: "p-00000000", key: nil))
         == .refused(.noProject(id: "p-00000000"))
     )
     #expect(harness.model.ownSettings(of: harness.project).autoStartsAgent == nil)
@@ -97,7 +97,7 @@ struct AppModelControlProjectSettingsTests {
     let harness = Harness()
     let quoted = "\"/Applications/My App/setup\""
 
-    let reply = await harness.stateSource.ask(
+    let reply = await harness.messageSource.ask(
       .writeProjectSetting(
         project: ControlID.project(harness.project.id),
         key: "postCreateHook",
@@ -112,7 +112,7 @@ struct AppModelControlProjectSettingsTests {
   @Test func nullIsRefusedWhereTheSettingHasNoGlobalToFollow() async {
     let harness = Harness()
 
-    let reply = await harness.stateSource.ask(
+    let reply = await harness.messageSource.ask(
       .writeProjectSetting(
         project: ControlID.project(harness.project.id),
         key: "preCreateHook",

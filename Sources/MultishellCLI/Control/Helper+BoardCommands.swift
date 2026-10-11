@@ -8,7 +8,7 @@ extension Helper {
     -> Int32
   {
     guard arguments.first == "list", arguments.count == 1 else {
-      throw UsageError("board needs: list", topic: "board")
+      throw UsageError("board needs: list", topic: ControlCommand.board.rawValue)
     }
     return try ask(.listBoard, environment: environment)
   }

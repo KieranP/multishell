@@ -15,7 +15,7 @@ public final class AppModel<Surface> {
   let platform: any Platform
   @ObservationIgnored let store: WorkspaceStore
   @ObservationIgnored let reconciler: SessionReconciler
-  @ObservationIgnored let stateSource: any SessionStateSource
+  @ObservationIgnored let messageSource: any MessageSource
   @ObservationIgnored let notifier: any SessionNotifier
   @ObservationIgnored let watcher: any DirectoryWatcher
   /// `var`: git is looked up again once the login shell's PATH is known, which
@@ -263,7 +263,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var isYieldingToRunningInstance = false
   /// Set by `multishell quit` while it quits, having already refused over a
   /// working agent, so the quit confirmation is not raised.
-  @ObservationIgnored public internal(set) var quitsWithoutAsking = false
+  @ObservationIgnored var quitsWithoutAsking = false
   /// Set while saves are failing, so the alert is raised once rather than
   /// again after every change until the disk is writable.
   @ObservationIgnored var hasReportedSaveFailure = false
@@ -273,6 +273,9 @@ public final class AppModel<Surface> {
   /// Shells actually running, as opposed to saved tabs waiting to be opened.
   public var liveTerminalCount: Int { liveSessionIDs.count }
 
+  /// Every live shell is a pty that quitting kills, unless `multishell quit` already asked.
+  public var asksBeforeQuitting: Bool { liveTerminalCount > 0 && !quitsWithoutAsking }
+
   /// Dependencies are passed in so tests run the whole model against fakes.
   /// The platform GUI passes its real ones.
   public init(
@@ -281,7 +284,7 @@ public final class AppModel<Surface> {
     coordinator: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
     platform: any Platform = NullPlatform(),
-    stateSource: any SessionStateSource = NullSessionStateSource(),
+    messageSource: any MessageSource = NullMessageSource(),
     notifier: any SessionNotifier = NullNotifier(),
     loadError: (any Error)? = nil,
   ) {
@@ -291,7 +294,7 @@ public final class AppModel<Surface> {
     self.reconciler = SessionReconciler(store: store, host: host)
     self.coordinator = coordinator
     self.watcher = watcher
-    self.stateSource = stateSource
+    self.messageSource = messageSource
     self.notifier = notifier
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 

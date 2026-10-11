@@ -17,10 +17,10 @@ extension AppModelSessionReportsTests {
     let shell = try WaitingShell()
     defer { shell.terminate() }
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session, pid: ownPID, agentID: "claude")
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -48,7 +48,7 @@ extension AppModelSessionReportsTests {
     let ownPID = ProcessInfo.processInfo.processIdentifier
     let shell = deadPID()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -65,10 +65,10 @@ extension AppModelSessionReportsTests {
     )
     #expect(harness.notifier.posted.isEmpty)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session, agentID: "claude")
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -88,7 +88,7 @@ extension AppModelSessionReportsTests {
     let ownPID = ProcessInfo.processInfo.processIdentifier
     let shell = deadPID()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -98,7 +98,7 @@ extension AppModelSessionReportsTests {
         resumesAfterWorkers: true,
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -119,7 +119,7 @@ extension AppModelSessionReportsTests {
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -127,7 +127,7 @@ extension AppModelSessionReportsTests {
         resumesAfterWorkers: true,
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -136,7 +136,7 @@ extension AppModelSessionReportsTests {
       )
     )
     #expect(harness.notifier.withdrawn.count == 1, "the Done was not true")
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -147,7 +147,7 @@ extension AppModelSessionReportsTests {
     #expect(harness.model.state(ofPane: session) == .running)
     #expect(harness.notifier.posted.count == 1)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -166,7 +166,7 @@ extension AppModelSessionReportsTests {
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     func stop(_ out: [String]) {
-      harness.stateSource.send(
+      harness.messageSource.send(
         SessionStateReport(
           state: .done,
           sessionID: session,
@@ -183,7 +183,7 @@ extension AppModelSessionReportsTests {
       harness.model.workers(ofPane: session).map(\.id) == ["w1"],
       "its start not heard yet",
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -205,7 +205,7 @@ extension AppModelSessionReportsTests {
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -213,7 +213,7 @@ extension AppModelSessionReportsTests {
         worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,
@@ -221,7 +221,7 @@ extension AppModelSessionReportsTests {
         resumesAfterWorkers: true,
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -232,7 +232,7 @@ extension AppModelSessionReportsTests {
     #expect(harness.model.state(ofPane: session) == .running, "the woken turn is still writing")
     #expect(harness.notifier.posted.isEmpty)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session,

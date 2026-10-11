@@ -53,6 +53,7 @@ below.
 
 - [Docs/DEVELOP.md](Docs/DEVELOP.md) indexes `Docs/develop/`: the build, the
   tests, the layout, what an addition needs, what is on disk, what macOS asks
-  for, the dependencies, the open findings and the queued work.
+  for, the dependencies, how memory is measured, the open findings and the
+  queued work.
 - [Docs/DESIGN.md](Docs/DESIGN.md) indexes `Docs/design/`: why each decision
   went the way it did, and the rules that follow from it.

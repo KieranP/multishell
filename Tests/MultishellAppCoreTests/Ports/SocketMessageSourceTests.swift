@@ -7,10 +7,10 @@ import Testing
 @testable import MultishellProcess
 
 @Suite(.serialized) @MainActor
-struct SocketStateSourceTests {
+struct SocketMessageSourceTests {
   @Test func aReportOnTheSocketReachesTheHandlerAndAStrayLineDoesNot() async throws {
     let path = Scratch.socketPath("src")
-    let source = SocketStateSource(path: path)
+    let source = SocketMessageSource(path: path)
     defer {
       source.stop()
       Scratch.removeSocket(path)
@@ -39,7 +39,7 @@ struct SocketStateSourceTests {
 
   @Test func aRequestIsAnsweredOnItsConnectionAndAReportOrUnknownRequestIsNot() async throws {
     let path = Scratch.socketPath("src")
-    let source = SocketStateSource(path: path)
+    let source = SocketMessageSource(path: path)
     defer {
       source.stop()
       Scratch.removeSocket(path)
@@ -69,7 +69,7 @@ struct SocketStateSourceTests {
 
   @Test func aRequestWhoseHelperHangsUpHasItsAnswerCancelled() async throws {
     let path = Scratch.socketPath("src")
-    let source = SocketStateSource(path: path)
+    let source = SocketMessageSource(path: path)
     defer {
       source.stop()
       Scratch.removeSocket(path)
@@ -100,7 +100,7 @@ struct SocketStateSourceTests {
   @Test func stopUnlinksTheSocketSoTheNextLaunchNeedNotProbeIt() throws {
     let path = Scratch.socketPath("src")
     defer { Scratch.removeSocket(path) }
-    let source = SocketStateSource(path: path)
+    let source = SocketMessageSource(path: path)
     try source.start()
     #expect(FileManager.default.fileExists(atPath: path.path))
     source.stop()

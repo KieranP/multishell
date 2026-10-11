@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import Synchronization
 import TestScratch
 
 @testable import MultishellCLI
@@ -27,6 +28,21 @@ final class ControlListener: Sendable {
       replying.send((try? reply.encodedLine()) ?? "")
     }
     try server.start()
+  }
+
+  /// `answer` is told how many requests came before this one.
+  static func answeringInTurn(
+    _ answer: @escaping @Sendable (Int) -> ControlReply?
+  ) throws -> ControlListener {
+    let turns = Mutex(0)
+    return try ControlListener { _ in
+      answer(
+        turns.withLock { count in
+          defer { count += 1 }
+          return count
+        }
+      )
+    }
   }
 
   func stop() {

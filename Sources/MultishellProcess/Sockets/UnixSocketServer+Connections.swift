@@ -2,12 +2,12 @@ import Foundation
 import Synchronization
 
 extension UnixSocketServer {
-  /// Unchecked: `buffer` and `replies` are touched only by its read source's
+  /// Unchecked: `buffer` and `replyQueue` are touched only by its read source's
   /// handler, which runs on the server's serial queue.
   final class Connection: @unchecked Sendable {
     let source: any DispatchSourceRead
     /// Made by the first reply: a report's connection never answers.
-    lazy var replies = SocketReply.connectionQueue()
+    lazy var replyQueue = SocketReply.connectionQueue()
     var buffer = LineBuffer()
     init(source: any DispatchSourceRead) { self.source = source }
   }

@@ -55,9 +55,8 @@ struct WorktreeStageHandles: Sendable {
     creationStopper === stopper
   }
 
-  /// A create from the command line leaves the sheet's Cancel and progress to one it shows.
-  mutating func beginCreation(with stopper: ProcessStopper, takesOverTheSheet: Bool = true) {
-    if takesOverTheSheet { creationStopper = stopper }
+  mutating func beginCreation(with stopper: ProcessStopper) {
+    creationStopper = stopper
   }
 
   /// Only the create still showing lets go: two can overlap, and the first

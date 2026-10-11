@@ -7,7 +7,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "window"
+    let topic = ControlCommand.window.rawValue
     switch (arguments.first, arguments.count) {
     case ("size", 3):
       guard let width = points(arguments.dropFirst().first), let height = points(arguments.last)

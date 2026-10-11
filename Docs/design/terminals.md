@@ -402,7 +402,7 @@ at the bottom.
   one, bar a step over the only match: the engine posts only a changed
   selection, and `panes find --next` waited out its two seconds. A find text
   differing only in ASCII case keeps both, the engine sending none for it
-  (`theSameTextAgainOrInAnotherCaseKeepsTheCountTheEngineWillNotResend`).
+  (`aFindTextInAnotherCaseKeepsTheCountAndANewOneDropsIt`).
 - **`panes find` prints a count once it holds for three looks**: the engine
   posts a 0 as a search changes, then a running total as it reads the scrollback
   (`aCountIsPrintedOnceTheEngineHasSettledNotItsInterimZero`). Cost: the total
@@ -599,7 +599,7 @@ at the bottom.
 - **The line runs the integration's own file, so no other shell starts for it**:
   zsh's and fish's own, and bash's for the rest, written in POSIX sh so sh, ksh
   and dash run it too. The Swift copy that builds a pane's PATH is the fourth
-  (`anAgentsLineReordersPathInTheLoginShellItselfStartingNoOtherShell`).
+  (`aLoginShellsLineReadsTheLeadingPathInItsOwnSyntaxStartingNoOtherShell`).
 - **The app drops the launching shell's own session state before any pane
   starts**: mise's `__MISE_*` and direnv's record of what it loaded. `open` from
   a pane passes that pane's environment on, and mise in a new pane then rebuilt

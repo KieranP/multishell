@@ -7,6 +7,17 @@ import Testing
 
 @Suite @MainActor
 struct AppModelTests {
+  @Test func quittingAsksOnlyWhileAShellIsLiveAndNoCommandLineQuitIsUnderWay() {
+    let harness = Harness()
+    #expect(!harness.model.asksBeforeQuitting)
+
+    harness.model.select(harness.main)
+    #expect(harness.model.asksBeforeQuitting)
+
+    harness.model.quitsWithoutAsking = true
+    #expect(!harness.model.asksBeforeQuitting)
+  }
+
   @Test(arguments: [3, 4, 6, 9, 12, 17, 25, 33] as [UInt64])
   func anySequenceOfActionsAndEventsKeepsTheRuntimeConsistent(seed: UInt64) {
     var generator = SeededGenerator(seed: seed)
@@ -72,7 +83,7 @@ struct AppModelTests {
         // Some reports name an agent, as Claude's hooks do; an id this
         // build does not know is as likely as one it does.
         let agent = ["claude", "future-agent", nil].randomElement(using: &generator)!
-        harness.stateSource.send(
+        harness.messageSource.send(
           SessionStateReport(
             state: state,
             sessionID: session,

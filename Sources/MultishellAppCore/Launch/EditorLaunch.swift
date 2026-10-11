@@ -25,7 +25,12 @@ enum EditorLaunch {
     handOver: String,
   ) -> Action? {
     if editorID == EditorCatalogue.customID {
-      guard let line = EditorCatalogue.customCommandLine(customTemplate, path: directory),
+      guard
+        let line = EditorCatalogue.customCommandLine(
+          customTemplate,
+          path: directory,
+          forShellNamed: shell.executable.lastPathComponent,
+        ),
         let command = TabCommand.running(customLine: line, shell: shell, handOver: handOver)
       else { return nil }
       return .openTab(title: title(of: line.text), command: command)

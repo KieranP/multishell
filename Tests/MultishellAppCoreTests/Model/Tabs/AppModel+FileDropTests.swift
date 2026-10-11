@@ -59,7 +59,7 @@ struct AppModelFileDropTests {
     let session = harness.model.workspace.sessions(in: harness.main.id)[0]
     #expect(session.agentID == nil, "a plain shell tab")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .idle,
         sessionID: session.id,
@@ -83,7 +83,7 @@ struct AppModelFileDropTests {
     harness.model.select(harness.main)
     let session = harness.model.workspace.sessions(in: harness.main.id)[0]
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .done,
         sessionID: session.id,
@@ -105,7 +105,7 @@ struct AppModelFileDropTests {
     harness.model.select(harness.main)
     let session = harness.model.workspace.sessions(in: harness.main.id)[0]
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session.id,

@@ -56,7 +56,8 @@ extension AppModel {
         deletingBranch: deletesBranch ? worktree.branch : nil,
       )
       failure = presented
-      guard report(presented, of: error, on: worktree, in: project) else { return failure }
+      let worktreeIsGone = reportRemovalFailure(presented, of: error, on: worktree, in: project)
+      guard worktreeIsGone else { return failure }
     }
     worktreeOperations.clear(worktree.id)
     await refreshWorktrees(of: project)
@@ -67,7 +68,7 @@ extension AppModel {
 
   /// Says what went wrong where `failure` puts it. `true` where the worktree
   /// went regardless, so the refresh after a removal still runs.
-  private func report(
+  private func reportRemovalFailure(
     _ failure: PresentedRemovalFailure,
     of error: any Error,
     on worktree: Worktree,

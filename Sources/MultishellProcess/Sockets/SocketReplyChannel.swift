@@ -11,6 +11,6 @@ public struct SocketReplyChannel: Sendable {
   public func open() -> SocketReply? {
     let copy = dup(descriptor)
     guard copy >= 0 else { return nil }
-    return SocketReply(descriptor: copy, writingOn: connection.replies)
+    return SocketReply(descriptor: copy, writingOn: connection.replyQueue)
   }
 }

@@ -27,8 +27,10 @@ at the bottom.
 - **It runs in the pane, not a modal**, which would hold the window. A failed
   one holds its worktree until Dismiss. Pre-create has no worktree yet, so it
   runs under the sheet, whose Cancel stops it. A create asked for over the
-  control socket has no sheet, so only the hook timeout ends its pre-create, and
-  a timeout of zero, no limit, lets it run until it exits.
+  control socket has no sheet, so the `multishell` command that asked stands in
+  for Cancel: its exit, Ctrl-C included, stops the pre-create, as does the hook
+  timeout. With a timeout of zero, no limit, and the command left waiting, it
+  runs until it exits.
 - **Stopped through ProcessStopper**: SIGHUP to the process group then SIGKILL.
   Interactive shells ignore SIGTERM, and a shell with no terminal does not pass
   SIGHUP on. The SIGKILL is held back only where the group's leader started

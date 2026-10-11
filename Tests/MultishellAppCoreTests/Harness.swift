@@ -11,7 +11,7 @@ final class Harness {
   let store: WorkspaceStore
   let engine = FakeEngine()
   let watcher = FakeWatcher()
-  let stateSource = FakeStateSource()
+  let messageSource = FakeMessageSource()
   let notifier = FakeNotifier()
   let platform = FakePlatform()
   /// Live, not the copy made at setup: `Project` is a value and its shared
@@ -22,11 +22,11 @@ final class Harness {
   let root: URL
   let stateFile: URL
 
-  /// `socketSource` stands in for `stateSource`, for a test of the real socket.
+  /// `socketSource` stands in for `messageSource`, for a test of the real socket.
   init(
     savedSelection: Bool = false,
     stateFile: URL? = nil,
-    socketSource: (any SessionStateSource)? = nil,
+    socketSource: (any MessageSource)? = nil,
   ) {
     root = Scratch.path("appmodel")
     try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -50,7 +50,7 @@ final class Harness {
       coordinator: nil,
       watcher: watcher,
       platform: platform,
-      stateSource: socketSource ?? stateSource,
+      messageSource: socketSource ?? messageSource,
       notifier: notifier,
     )
     model.statusReadLog.pace = .unpaced

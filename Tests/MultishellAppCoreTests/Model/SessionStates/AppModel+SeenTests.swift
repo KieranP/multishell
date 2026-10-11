@@ -17,11 +17,11 @@ struct AppModelSeenTests {
     let focused = tab.focusedSessionID
     let other = tab.sessionIDs.first { $0 != focused }!
 
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: other))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: other))
     #expect(harness.model.state(ofPane: other) == .done, "on screen, but nobody is in it")
     #expect(harness.notifier.posted.isEmpty, "and on screen, so no banner")
 
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: focused))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: focused))
     #expect(harness.model.state(ofPane: focused) == nil, "the focused pane's Done is seen at once")
 
     harness.model.show(pane: other)
@@ -53,7 +53,7 @@ struct AppModelSeenTests {
     harness.model.splitActivePane(.horizontal)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     let other = tab.sessionIDs.first { $0 != tab.focusedSessionID }!
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: other))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: other))
     #expect(harness.model.state(ofPane: other) == .done)
 
     harness.engine.delegate?.terminalHost(harness.engine, didFocus: other)

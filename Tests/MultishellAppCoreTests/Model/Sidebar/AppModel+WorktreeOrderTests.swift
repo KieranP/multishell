@@ -77,7 +77,7 @@ struct AppModelWorktreeOrderTests {
       "a terminal is enough",
     )
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, workingDirectory: extra.path.path)
     )
     #expect(

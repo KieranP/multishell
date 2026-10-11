@@ -10,7 +10,7 @@ struct AppModelControlSidebarTests {
     let harness = Harness()
     harness.model.select(harness.main)
 
-    let reply = try #require(await harness.stateSource.ask(.listSidebar))
+    let reply = try #require(await harness.messageSource.ask(.listSidebar))
 
     let projects = try #require(reply.outputFields["projects"] as? [[String: Any]])
     #expect(projects.compactMap { $0["id"] as? String } == [ControlID.project(harness.project.id)])
@@ -27,7 +27,7 @@ struct AppModelControlSidebarTests {
     let harness = Harness()
     harness.model.sidebarFilterText = "feature"
 
-    let filtered = try #require(await harness.stateSource.ask(.listSidebar))
+    let filtered = try #require(await harness.messageSource.ask(.listSidebar))
     let projects = try #require(filtered.outputFields["projects"] as? [[String: Any]])
     let worktrees = try #require(projects.first?["worktrees"] as? [[String: Any]])
     #expect(
@@ -37,9 +37,21 @@ struct AppModelControlSidebarTests {
 
     harness.model.sidebarFilterText = ""
     harness.model.toggleExpansion(of: harness.project)
-    let collapsed = try #require(await harness.stateSource.ask(.listSidebar))
+    let collapsed = try #require(await harness.messageSource.ask(.listSidebar))
     let rows = try #require(collapsed.outputFields["projects"] as? [[String: Any]])
     #expect(rows.first?["isExpanded"] as? Bool == false)
     #expect((rows.first?["worktrees"] as? [Any])?.isEmpty == true)
+  }
+
+  @Test func theSidebarFilterTakesTextAndEmptyPutsTheFieldAway() async {
+    let harness = Harness()
+
+    _ = await harness.messageSource.ask(.filterSidebar(text: "feat"))
+    #expect(harness.model.sidebarFilterText == "feat")
+    #expect(harness.model.showsSidebarFilter)
+
+    _ = await harness.messageSource.ask(.filterSidebar(text: ""))
+    #expect(harness.model.sidebarFilterText.isEmpty)
+    #expect(!harness.model.showsSidebarFilter)
   }
 }

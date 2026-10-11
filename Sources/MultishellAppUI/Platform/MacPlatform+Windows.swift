@@ -14,8 +14,8 @@ extension MacPlatform {
         isKey: window.isKeyWindow,
         width: window.frame.width,
         height: window.frame.height,
-        sheet: window.attachedSheet?.title,
         isFullScreen: window.styleMask.contains(.fullScreen),
+        sheet: window.attachedSheet?.title,
       )
     }
   }

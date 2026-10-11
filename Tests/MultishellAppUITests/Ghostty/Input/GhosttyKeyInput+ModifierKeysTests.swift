@@ -20,7 +20,7 @@ struct GhosttyKeyInputModifierKeysTests {
     #expect(presses.allSatisfy { $0.text == nil })
   }
 
-  @Test func theyComeUpInReverseLeavingNoModifierHeld() {
+  @Test func aChordsModifiersComeUpInReverseLeavingNoneHeld() {
     let releases = GhosttyKeyInput.modifierReleases(for: [.command, .shift])
 
     #expect(releases.map(\.keyCode) == [UInt32(kVK_Command), UInt32(kVK_Shift)])

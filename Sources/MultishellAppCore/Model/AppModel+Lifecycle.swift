@@ -5,7 +5,7 @@ extension AppModel {
   /// Opens the socket and asks git what each project actually has, over a
   /// workspace already read from disk. Terminals are not restored.
   public func start() async {
-    guard startStateSource() else { return }
+    guard startMessageSource() else { return }
     // On the main actor, before `start` first yields, so no tab can open ahead.
     presentingFailure { try refreshAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.
@@ -19,9 +19,9 @@ extension AppModel {
 
   /// Opens the inbound channel. `false` where another copy of this build
   /// holds it: this one hands over to it and quits; see state-and-store.md.
-  func startStateSource() -> Bool {
+  func startMessageSource() -> Bool {
     do {
-      try stateSource.start()
+      try messageSource.start()
       return true
     } catch let failure as SocketFailure where failure.kind == .inUse {
       isYieldingToRunningInstance = true
@@ -40,6 +40,6 @@ extension AppModel {
   /// launch does not have to probe it.
   public func shutDown() {
     saveNow()
-    stateSource.stop()
+    messageSource.stop()
   }
 }

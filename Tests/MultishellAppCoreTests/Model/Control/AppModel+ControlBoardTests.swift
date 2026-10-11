@@ -10,11 +10,11 @@ struct AppModelControlBoardTests {
     let harness = Harness()
     harness.model.setShowsAllTerminals(true)
     let tab = harness.openBackgroundTab()
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
     )
 
-    let reply = try #require(await harness.stateSource.ask(.listBoard))
+    let reply = try #require(await harness.messageSource.ask(.listBoard))
 
     #expect(reply.outputFields["showsAllTerminals"] as? Bool == true)
     let columns = try #require(reply.outputFields["columns"] as? [[String: Any]])

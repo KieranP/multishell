@@ -9,7 +9,7 @@ extension String {
   var withoutLeadingPathStatement: String {
     for shell in ["/bin/zsh", "/opt/homebrew/bin/fish", "/bin/bash"] {
       let invocation = ShellInvocation(executable: URL(fileURLWithPath: shell), arguments: ["-l"])
-      let statement = LeadingPathLine.statement(for: invocation)
+      let statement = LeadingPathStatement.line(for: invocation)
       if hasPrefix(statement) { return String(dropFirst(statement.count)) }
     }
     return self

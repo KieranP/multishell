@@ -2,7 +2,7 @@ import MultishellCore
 
 extension AppModel {
   /// The board as built for drawing, whether or not it is on screen.
-  func answerListBoard() -> ControlReply {
+  func replyToListBoard() -> ControlReply {
     .json(
       BoardListing(
         showsAllTerminals: showsAllTerminals,

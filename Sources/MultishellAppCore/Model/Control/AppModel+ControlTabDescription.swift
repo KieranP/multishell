@@ -3,7 +3,7 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  func answerDescribeTab(_ id: TerminalTab.ID) -> ControlReply {
+  func replyToDescribeTab(_ id: TerminalTab.ID) -> ControlReply {
     guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
     let shown = Set(workspace.shownTabs(in: tab.worktreeID).map(\.id))
     return .json(

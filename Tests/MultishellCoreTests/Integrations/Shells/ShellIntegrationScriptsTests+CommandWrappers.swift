@@ -30,8 +30,6 @@ extension ShellIntegrationScriptsTests {
 
     """
 
-  private static let fishes = InstalledShells.only(InstalledShells.fishCandidates)
-
   @Test func zshSudoCarriesTheBundledTerminfoWhereTheUsersFeaturesAsk() async throws {
     let output = try await zshOutput(
       features: "sudo",
@@ -235,7 +233,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("--preserve-env=TERMINFO less -e log"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSudoCarriesTheBundledTerminfoWhereTheUsersFeaturesAsk(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -246,7 +244,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("sudo TERM=dumb --preserve-env=TERMINFO vim"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSudoeditIsPassedOnAsTyped(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -258,7 +256,7 @@ extension ShellIntegrationScriptsTests {
     #expect(!output.contains("--preserve-env"))
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSudoKeepsTheTerminfoForACommandWithAnEOptionOfItsOwn(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -269,7 +267,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("--preserve-env=TERMINFO less -e log"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSudoIsLeftAloneWhereTheUsersFeaturesLeaveItOut(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -280,7 +278,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("sudo TERM=dumb vim"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishKeepsAUsersOwnSudoFunction(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -291,7 +289,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("users-own-sudo"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishKeepsAUsersSudoFunctionFileItHasNotLoadedYet(fish: String) async throws {
     let functionFile = """
       mkdir -p ~/.config/fish/functions
@@ -307,7 +305,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("users-own-sudo"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSshEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -324,7 +322,7 @@ extension ShellIntegrationScriptsTests {
     )
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSshTerminfoSendsATermEveryHostKnows(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -335,7 +333,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("ssh TERM=xterm-256color host"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishSshIsLeftAloneWhereTheUsersFeaturesLeaveItOut(fish: String) async throws {
     let output = try await fishOutput(
       fish,
@@ -346,7 +344,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("ssh TERM=dumb host"), "\(output)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishOutsideGhosttyWrapsNothing(fish: String) async throws {
     let output = try await fishOutput(
       fish,

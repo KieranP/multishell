@@ -10,7 +10,7 @@ extension Helper {
     _ arguments: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let topic = "debug"
+    let topic = ControlCommand.debug.rawValue
     let (words, options) = positionals(arguments)
     guard words.count <= 1 else {
       throw UsageError("debug screenshot takes one FILE at most", topic: topic)

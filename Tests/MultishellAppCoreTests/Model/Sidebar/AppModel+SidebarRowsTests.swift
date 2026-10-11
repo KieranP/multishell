@@ -52,7 +52,7 @@ struct AppModelSidebarRowsTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
     )
     let sessions = harness.model.sessionIDsByWorktree

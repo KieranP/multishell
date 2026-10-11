@@ -11,7 +11,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "debug"
+    let topic = ControlCommand.debug.rawValue
     let rest = arguments.dropFirst()
     switch (arguments.first, rest.first, rest.count) {
     case ("tools", "on", 1):
@@ -53,7 +53,7 @@ extension Helper {
     _ arguments: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let topic = "debug"
+    let topic = ControlCommand.debug.rawValue
     let (words, options) = positionals(arguments)
     guard words.count == 2, let state = SessionState(rawValue: words[1]) else {
       let states = SessionState.allCases.map(\.rawValue).joined(separator: ", ")

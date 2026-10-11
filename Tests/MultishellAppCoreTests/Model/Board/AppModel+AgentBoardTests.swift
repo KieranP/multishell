@@ -20,7 +20,7 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.cardCount == 1)
     #expect(model.agentBoard.count(of: .idle) == 1)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
     )
     model.setShowsAllTerminals(false)
@@ -65,7 +65,7 @@ struct AppModelAgentBoardTests {
 
   @Test func aCardCarriesWhereItIsAndWhatItLastSaid() {
     let (harness, session) = Harness.withOnePane()
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .attention,
         sessionID: session.id,
@@ -92,7 +92,7 @@ struct AppModelAgentBoardTests {
     #expect(!model.isPaneInView(session.id))
 
     model.setShowsAllTerminals(true)
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: session.id))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: session.id))
     #expect(model.agentBoard.count(of: .done) == 1)
 
     model.show(model.agentBoard.column(.done).cards[0])
@@ -111,7 +111,7 @@ struct AppModelAgentBoardTests {
     for state in [SessionState.attention, .running, .done, .failed, .idle] {
       for shells in [false, true] {
         model.setShowsAllTerminals(shells)
-        harness.stateSource.send(
+        harness.messageSource.send(
           SessionStateReport(state: state, sessionID: session.id, agentID: "claude")
         )
         let board = model.agentBoard
@@ -130,7 +130,7 @@ struct AppModelAgentBoardTests {
     let model = harness.model
     #expect(model.sidebarLaneCounts.isEmpty)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
     )
     #expect(model.sidebarLaneCounts == [AgentBoardLaneCount(.working, 1)])
@@ -148,7 +148,7 @@ struct AppModelAgentBoardTests {
     agent.arguments = ["60"]
     try agent.run()
     let pid = agent.processIdentifier
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, pid: pid, agentID: "claude")
     )
     #expect(model.agentBoard.count(of: .working) == 1)
@@ -171,7 +171,7 @@ struct AppModelAgentBoardTests {
     model.showAgentBoard()
     let cards = model.agentBoard.cardCount
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .attention,
         workingDirectory: harness.feature.path.path,
@@ -198,7 +198,7 @@ struct AppModelAgentBoardTests {
 
     model.setShowsAllTerminals(true)
     model.showAgentBoard()
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: watched!.id))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: watched!.id))
     #expect(model.agentBoard.count(of: .done) == 1)
 
     // A tab in the other worktree closes, which reconciles and marks
@@ -239,10 +239,10 @@ struct AppModelAgentBoardTests {
     let tab = harness.store.workspace.tabs[0]
     let gone = deadPID()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, pid: gone, agentID: "claude")
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude")
     )
     #expect(model.reportedAgents[session.id] != nil)

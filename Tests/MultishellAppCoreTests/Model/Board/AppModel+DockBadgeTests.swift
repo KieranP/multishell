@@ -16,18 +16,18 @@ struct AppModelDockBadgeTests {
     model.showAgentBoard()
     harness.platform.badges.removeAll()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: session.id, agentID: "claude")
     )
     #expect(harness.platform.badges.last == 1)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .failed, sessionID: session.id, agentID: "claude")
     )
     #expect(model.agentBoard.count(of: .waiting) == 1)
     #expect(harness.platform.badges == [1], "one waiting, still")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
     )
     #expect(harness.platform.badges.last == .some(nil), "nothing waiting is no badge at all")
@@ -39,7 +39,7 @@ struct AppModelDockBadgeTests {
     model.showAgentBoard()
     harness.platform.badges.removeAll()
 
-    harness.stateSource.send(SessionStateReport(state: .failed, sessionID: session.id))
+    harness.messageSource.send(SessionStateReport(state: .failed, sessionID: session.id))
     #expect(harness.platform.badges.isEmpty, "a shell, and shells are hidden")
 
     model.setShowsAllTerminals(true)
@@ -54,10 +54,10 @@ struct AppModelDockBadgeTests {
     model.select(harness.feature)
     harness.platform.badges.removeAll()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, pid: 1, agentID: "claude")
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .idle, sessionID: session.id, agentID: "claude")
     )
     harness.engine.delegate?.terminalHost(

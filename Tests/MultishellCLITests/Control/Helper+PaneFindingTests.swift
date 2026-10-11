@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 import TestScratch
 import Testing
 
@@ -10,12 +9,7 @@ import Testing
 @Suite(.serialized)
 struct HelperPaneFindingTests {
   @Test func aFindWaitsForTheEngineToCountAndPrintsTheBar() async throws {
-    let looks = Mutex(0)
-    let app = try ControlListener { _ in
-      let look = looks.withLock { count in
-        defer { count += 1 }
-        return count
-      }
+    let app = try ControlListener.answeringInTurn { look in
       let total = look < 2 ? "" : #","total":3"#
       return .output(#"{"id":"P","find":{"text":"error"\#(total)}}"#)
     }
@@ -51,12 +45,7 @@ struct HelperPaneFindingTests {
   }
 
   @Test func aCountIsPrintedOnceTheEngineHasSettledNotItsInterimZero() async throws {
-    let looks = Mutex(0)
-    let app = try ControlListener { _ in
-      let look = looks.withLock { count in
-        defer { count += 1 }
-        return count
-      }
+    let app = try ControlListener.answeringInTurn { look in
       let total = look < 3 ? 0 : 5
       return .output(#"{"id":"P","find":{"text":"x","total":\#(total)}}"#)
     }
@@ -72,12 +61,7 @@ struct HelperPaneFindingTests {
   }
 
   @Test func aStepWaitsForTheNewSelection() async throws {
-    let looks = Mutex(0)
-    let app = try ControlListener { _ in
-      let look = looks.withLock { count in
-        defer { count += 1 }
-        return count
-      }
+    let app = try ControlListener.answeringInTurn { look in
       let selected = look < 2 ? "" : #","selected":1"#
       return .output(#"{"id":"P","find":{"text":"x","total":5\#(selected)}}"#)
     }

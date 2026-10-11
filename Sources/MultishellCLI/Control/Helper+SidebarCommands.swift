@@ -8,7 +8,7 @@ extension Helper {
     -> Int32
   {
     guard arguments.first == "list", arguments.count == 1 else {
-      throw UsageError("sidebar needs: list", topic: "sidebar")
+      throw UsageError("sidebar needs: list", topic: ControlCommand.sidebar.rawValue)
     }
     return try ask(.listSidebar, environment: environment)
   }

@@ -16,7 +16,7 @@ struct AppModelAgentIDAtThePromptTests {
     #expect(model.agentIDAtThePrompt(of: tab) == nil, "a plain shell")
     #expect(model.agentIDAtThePrompt(of: session) == nil)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "codex")
     )
     #expect(model.agentIDAtThePrompt(of: tab) == "codex")
@@ -29,7 +29,7 @@ struct AppModelAgentIDAtThePromptTests {
     let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session.id,
@@ -40,7 +40,7 @@ struct AppModelAgentIDAtThePromptTests {
     #expect(model.agentIDAtThePrompt(of: session) == "codex")
     #expect(model.agentBoardCards[0].occupant == .agent(id: "codex", name: "Codex"))
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .done, sessionID: session.id, isFromShellIntegration: true)
     )
     #expect(
@@ -55,7 +55,7 @@ struct AppModelAgentIDAtThePromptTests {
     let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session.id,
@@ -65,7 +65,7 @@ struct AppModelAgentIDAtThePromptTests {
     )
     #expect(model.agentIDAtThePrompt(of: session) == "codex")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, isFromShellIntegration: true)
     )
     #expect(model.agentIDAtThePrompt(of: session) == nil, "`ls` is not codex")
@@ -77,7 +77,7 @@ struct AppModelAgentIDAtThePromptTests {
     let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session.id,
@@ -85,7 +85,7 @@ struct AppModelAgentIDAtThePromptTests {
         isFromShellIntegration: true,
       )
     )
-    harness.stateSource.send(SessionStateReport(state: .attention, sessionID: session.id))
+    harness.messageSource.send(SessionStateReport(state: .attention, sessionID: session.id))
     #expect(model.agentIDAtThePrompt(of: session) == "codex")
   }
 
@@ -95,7 +95,7 @@ struct AppModelAgentIDAtThePromptTests {
     let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session.id,
@@ -103,7 +103,7 @@ struct AppModelAgentIDAtThePromptTests {
         isFromShellIntegration: true,
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "codex")
     )
     #expect(model.agentIDAtThePrompt(of: session) == "codex")

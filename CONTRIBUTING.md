@@ -30,11 +30,13 @@ make lint     # what CI runs, --strict: a warning fails; needs the swiftlint
               # version .swiftlint.yml names
 make test     # every suite, the app's included
 make build    # bundle it, which CI does not do for you
+make release  # the optimised bundle make install ships, which neither builds
 ```
 
-All four have to pass. [Docs/develop/build.md](Docs/develop/build.md) covers
-what you cannot verify from a terminal: there is no screen and no Apple events,
-so say what you checked rather than that it works.
+All five have to pass. [Docs/develop/build.md](Docs/develop/build.md) covers
+driving a debug build from the `multishell` command line, which reads panes and
+takes screenshots without Apple events, and what that still leaves unverified.
+Say what you checked rather than that it works.
 
 Fixing a bug starts with a test that fails on the bug and passes on the fix.
 [Docs/develop/tests.md](Docs/develop/tests.md) has the conventions a new one

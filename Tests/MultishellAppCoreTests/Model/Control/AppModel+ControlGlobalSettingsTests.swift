@@ -9,7 +9,7 @@ struct AppModelControlGlobalSettingsTests {
   @Test func theListNamesEverySettingByItsStateFileKey() async throws {
     let harness = Harness()
 
-    let reply = try #require(await harness.stateSource.ask(.readGlobalSettings(key: nil)))
+    let reply = try #require(await harness.messageSource.ask(.readGlobalSettings(key: nil)))
 
     let keys = Set(reply.outputFields.keys)
     for key in [
@@ -26,24 +26,26 @@ struct AppModelControlGlobalSettingsTests {
     let harness = Harness()
 
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "autoStartAgent", value: "true"))
+      await harness.messageSource.ask(.writeGlobalSetting(key: "autoStartAgent", value: "true"))
         == .done
     )
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "preferredAgentID", value: "codex"))
+      await harness.messageSource.ask(.writeGlobalSetting(key: "preferredAgentID", value: "codex"))
         == .done
     )
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "notifications.done", value: "true"))
+      await harness.messageSource.ask(
+        .writeGlobalSetting(key: "notifications.done", value: "true")
+      )
         == .done
     )
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeGlobalSetting(key: "agentFlags.claude", value: "--verbose")
       ) == .done
     )
     #expect(
-      await harness.stateSource.ask(
+      await harness.messageSource.ask(
         .writeGlobalSetting(key: "worktreeSortOrder", value: "alphabetical")
       ) == .done
     )
@@ -53,7 +55,7 @@ struct AppModelControlGlobalSettingsTests {
     #expect(harness.model.workspace.notificationPreference[.done])
     #expect(harness.model.workspace.agentFlags["claude"] == "--verbose")
     #expect(harness.model.workspace.worktreeSortOrder == .alphabetical)
-    let read = await harness.stateSource.ask(.readGlobalSettings(key: "preferredAgentID"))
+    let read = await harness.messageSource.ask(.readGlobalSettings(key: "preferredAgentID"))
     #expect(read?.output == #""codex""#)
   }
 
@@ -61,19 +63,21 @@ struct AppModelControlGlobalSettingsTests {
     let harness = Harness()
 
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "autoStartAgent", value: "maybe"))
+      await harness.messageSource.ask(.writeGlobalSetting(key: "autoStartAgent", value: "maybe"))
         == .refused(.invalidValue(key: "autoStartAgent", value: "maybe"))
     )
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "preferredAgentID", value: "nobody"))
+      await harness.messageSource.ask(
+        .writeGlobalSetting(key: "preferredAgentID", value: "nobody")
+      )
         == .refused(.invalidValue(key: "preferredAgentID", value: "nobody"))
     )
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "hookTimeoutSeconds", value: "-1"))
+      await harness.messageSource.ask(.writeGlobalSetting(key: "hookTimeoutSeconds", value: "-1"))
         == .refused(.invalidValue(key: "hookTimeoutSeconds", value: "-1"))
     )
     #expect(
-      await harness.stateSource.ask(.readGlobalSettings(key: "nope"))
+      await harness.messageSource.ask(.readGlobalSettings(key: "nope"))
         == .refused(.noSetting(key: "nope"))
     )
     #expect(!harness.model.workspace.autoStartsAgent)
@@ -85,7 +89,7 @@ struct AppModelControlGlobalSettingsTests {
 
     for (key, value) in [("defaultShell", "zhs"), ("preferredEditorID", "vscod")] {
       #expect(
-        await harness.stateSource.ask(.writeGlobalSetting(key: key, value: value))
+        await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value))
           == .refused(.invalidValue(key: key, value: value))
       )
     }
@@ -97,12 +101,12 @@ struct AppModelControlGlobalSettingsTests {
     let harness = Harness()
 
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "fontName", value: "Menloo"))
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fontName", value: "Menloo"))
         == .refused(.invalidValue(key: "fontName", value: "Menloo"))
     )
     #expect(harness.model.workspace.appearance.terminalFontName == nil)
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "fontName", value: "Menlo")) == .done
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fontName", value: "Menlo")) == .done
     )
     #expect(harness.model.workspace.appearance.terminalFontName == "Menlo")
   }
@@ -113,14 +117,14 @@ struct AppModelControlGlobalSettingsTests {
 
     for (key, value) in [("fontSize", "40"), ("fontSize", "8"), ("uiFontSize", "19")] {
       #expect(
-        await harness.stateSource.ask(.writeGlobalSetting(key: key, value: value))
+        await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value))
           == .refused(.invalidValue(key: key, value: value))
       )
     }
     #expect(harness.model.workspace.appearance.terminalFontSize == before.terminalFontSize)
     #expect(harness.model.workspace.appearance.uiFontSize == before.uiFontSize)
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "fontSize", value: "24")) == .done
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fontSize", value: "24")) == .done
     )
   }
 
@@ -133,7 +137,9 @@ struct AppModelControlGlobalSettingsTests {
     ]
 
     for (key, value) in accepted {
-      #expect(await harness.stateSource.ask(.writeGlobalSetting(key: key, value: value)) == .done)
+      #expect(
+        await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value)) == .done
+      )
     }
   }
 
@@ -142,7 +148,7 @@ struct AppModelControlGlobalSettingsTests {
     harness.model.setPreferredAgent("claude")
 
     #expect(
-      await harness.stateSource.ask(.writeGlobalSetting(key: "preferredAgentID", value: ""))
+      await harness.messageSource.ask(.writeGlobalSetting(key: "preferredAgentID", value: ""))
         == .done
     )
 
@@ -153,7 +159,7 @@ struct AppModelControlGlobalSettingsTests {
     let harness = Harness()
     let before = harness.model.workspace.appearance.themeID
 
-    let reply = await harness.stateSource.ask(.writeGlobalSetting(key: "themeID", value: ""))
+    let reply = await harness.messageSource.ask(.writeGlobalSetting(key: "themeID", value: ""))
 
     #expect(reply == .refused(.invalidValue(key: "themeID", value: "")))
     #expect(harness.model.workspace.appearance.themeID == before)

@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  func answerDescribePane(_ id: TerminalSession.ID) -> ControlReply {
+  func replyToDescribePane(_ id: TerminalSession.ID) -> ControlReply {
     guard let tab = workspace.tab(owning: id), let session = workspace.session(id) else {
       return .refused(.noPane(id: id))
     }

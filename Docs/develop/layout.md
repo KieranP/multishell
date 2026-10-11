@@ -99,10 +99,10 @@
 
 ## Style
 
-- **`swift-format` from the toolchain with the root config.** Every top-level
-  type gets a file named for it, an error type, a null object and a test's
-  helper included; an extension of another type goes in
-  `<Type>+<Concern>.swift`.
+- **`swift-format` from the toolchain and SwiftLint, each with its root
+  config**; build.md says which rules are off and why. Every top-level type gets
+  a file named for it, an error type, a null object and a test's helper
+  included; an extension of another type goes in `<Type>+<Concern>.swift`.
 - **A helper that would be `private` goes internal in a file of its own**,
   beside the type it serves, or at the suite's root for a test's, so a file
   never holds two. A type nested inside another stays with it. A dialog is a

@@ -29,7 +29,9 @@ extension Helper {
   ) throws
     -> Int32
   {
-    guard arguments.isEmpty else { throw UsageError("open takes no arguments", topic: "open") }
+    guard arguments.isEmpty else {
+      throw UsageError("open takes no arguments", topic: ControlCommand.open.rawValue)
+    }
     guard let app = ownApp else {
       printError("this helper is in no app bundle, so there is no app to open")
       return 1
@@ -61,7 +63,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let force = try isForced(arguments, topic: "quit")
+    let force = try isForced(arguments, topic: ControlCommand.quit.rawValue)
     let answer: ControlReply?
     do {
       answer = try reply(to: .quit(force: force), environment: environment)
@@ -88,7 +90,9 @@ extension Helper {
   ) throws
     -> Int32
   {
-    guard arguments.isEmpty else { throw UsageError("info takes no arguments", topic: "info") }
+    guard arguments.isEmpty else {
+      throw UsageError("info takes no arguments", topic: ControlCommand.info.rawValue)
+    }
     return try ask(.info, environment: environment)
   }
 }

@@ -8,7 +8,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "worktrees"
+    let topic = ControlCommand.worktrees.rawValue
     let (words, options) = positionals(arguments.dropFirst())
     switch (arguments.first, words.count) {
     case ("list", 0...1):
@@ -74,7 +74,7 @@ extension Helper {
     project: String,
     _ arguments: ArraySlice<String>,
   ) throws -> NewWorktreeOrder {
-    let topic = "worktrees"
+    let topic = ControlCommand.worktrees.rawValue
     let options = try CommandOptions(
       arguments,
       valued: ["from", "agent", "prompt"],

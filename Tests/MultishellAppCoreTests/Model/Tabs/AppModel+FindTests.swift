@@ -416,6 +416,44 @@ struct AppModelFindTests {
     #expect(harness.model.findBarSessionIDs.isEmpty)
   }
 
+  @Test func aFindTextInAnotherCaseKeepsTheCountAndANewOneDropsIt() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("error", of: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(3), in: pane)
+
+    harness.model.setFindText("ERROR", of: pane)
+    #expect(harness.model.searchCounts[pane]?.total == 3)
+    harness.model.setFindText("warning", of: pane)
+    #expect(harness.model.searchCounts[pane]?.total == nil)
+  }
+
+  @Test func aStepDropsTheSelectionItLeavesUntilTheEngineSaysTheNewOne() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("x", of: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(5), in: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .selected(4), in: pane)
+
+    harness.model.findNext(in: pane)
+
+    #expect(harness.model.searchCounts[pane]?.selected == nil)
+    #expect(harness.model.searchCounts[pane]?.total == 5)
+  }
+
+  @Test func aStepOverTheOnlyMatchKeepsTheSelectionTheEngineWillNotResend() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("x", of: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(1), in: pane)
+    harness.model.findNext(in: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .selected(0), in: pane)
+
+    harness.model.findNext(in: pane)
+
+    #expect(harness.model.searchCounts[pane]?.selected == 0)
+  }
+
   private func paneWithFindOpen(_ harness: Harness) -> TerminalSession.ID {
     if harness.model.workspace.selectedWorktreeID == nil { harness.model.select(harness.main) }
     harness.model.showFind()

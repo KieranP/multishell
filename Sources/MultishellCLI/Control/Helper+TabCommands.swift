@@ -8,7 +8,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "tabs"
+    let topic = ControlCommand.tabs.rawValue
     // Its `--` starts a command, not more words.
     if arguments.first == "open" {
       return try ask(.newTab(try tabOrder(arguments.dropFirst())), environment: environment)
@@ -71,7 +71,7 @@ extension Helper {
   }
 
   private static func tabOrder(_ arguments: ArraySlice<String>) throws -> NewTabOrder {
-    let topic = "tabs"
+    let topic = ControlCommand.tabs.rawValue
     let (head, command) = splitAtDoubleDash(arguments)
     let (words, optionWords) = positionals(head)
     guard words.count == 1 else {

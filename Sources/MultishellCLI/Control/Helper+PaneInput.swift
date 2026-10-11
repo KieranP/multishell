@@ -8,8 +8,13 @@ extension Helper {
     _ arguments: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let enter = try CommandOptions(arguments, valued: [], flags: ["enter"], topic: "panes")
-      .has("enter")
+    let enter = try CommandOptions(
+      arguments,
+      valued: [],
+      flags: ["enter"],
+      topic: ControlCommand.panes.rawValue,
+    )
+    .has("enter")
     return try ask(
       .typeIntoPane(id: id, text: text, pressingReturn: enter),
       environment: environment,
@@ -37,7 +42,7 @@ extension Helper {
       throw UsageError(
         "no key \(word); a key is a letter, digit or US punctuation key, or one of "
           + ControlKey.names.joined(separator: ", ") + ", after any of ctrl-, alt-, shift-, cmd-",
-        topic: "panes",
+        topic: ControlCommand.panes.rawValue,
       )
     }
     return key

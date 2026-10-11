@@ -2,12 +2,12 @@
 /// in `Resources`, which the helper cannot reach; see Docs/design/agents.md.
 enum OpenCodePlugin {
   static func source(helper: String) -> String {
-    javaScript(helperExpression: javaScriptPath(helper))
+    javaScript(helperExpression: helperExpression(helper))
   }
 
   /// `$HOME` is the shell's, not JavaScript's, so the plugin asks the
   /// runtime for the home directory and keeps the rest of the path.
-  private static func javaScriptPath(_ helper: String) -> String {
+  private static func helperExpression(_ helper: String) -> String {
     let prefix = "$HOME"
     guard helper.hasPrefix(prefix) else { return quoted(helper) }
     return "homedir() + " + quoted(String(helper.dropFirst(prefix.count)))

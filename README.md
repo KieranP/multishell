@@ -56,7 +56,7 @@ folder button at the top of the sidebar, or Cmd+O.
 
 `make run` builds and opens a debug copy with its own state, so it can run
 beside the installed one. If a build fails after a pull that moved files, run
-`make clean` once. If it stops because the submodule is behind its pin, run
+`make clean` once. If it stops because the submodule is past its pin, run
 `git submodule update ThirdParty/ghostty`. The full build notes are in
 [Docs/develop/build.md](Docs/develop/build.md).
 
@@ -114,7 +114,9 @@ every file it touches and how far each shell and agent goes.
 
 - A `multishell` command that drives the app: projects, worktrees, tabs, panes
   and settings, reading and waiting on a pane, and screenshots.
-  `multishell help` lists it all.
+  `multishell help` lists it all. Multishell's own terminals have it on their
+  `PATH`; Install Command Line Tool under Settings > Agents > Hooks links it
+  into `/usr/local/bin` for other terminals.
 - `multishell state` lets any script or shell set its tab's dot.
 - View > Enable Debug Tools shows frame rate, CPU, memory and git timings.
 

@@ -2,7 +2,7 @@ import MultishellCore
 
 /// A channel the test drives by hand.
 @MainActor
-final class FakeStateSource: SessionStateSource {
+final class FakeMessageSource: MessageSource {
   var onReport: (@MainActor (SessionStateReport) -> Void)?
   var onRequest: ControlRequestHandler?
   /// Thrown by `start`, standing in for a socket another copy holds.

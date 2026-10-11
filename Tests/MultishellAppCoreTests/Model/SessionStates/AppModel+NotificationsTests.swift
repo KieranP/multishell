@@ -8,19 +8,19 @@ import Testing
 struct AppModelNotificationsTests {
   @Test func aBackgroundPanesBannersFollowThePreference() {
     let harness = Harness()
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, workingDirectory: harness.main.path.path)
     )
     #expect(harness.notifier.posted.isEmpty, "off until turned on")
     harness.model.setNotificationPreference(.everyState)
     let first = harness.openBackgroundTab()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: first.focusedSessionID)
     )
     #expect(harness.notifier.posted.isEmpty, "working is never a banner")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .attention,
         sessionID: first.focusedSessionID,
@@ -33,11 +33,11 @@ struct AppModelNotificationsTests {
     #expect(harness.notifier.posted.first?.key == .session(first.focusedSessionID))
 
     harness.model.setNotificationPreference(NotificationPreference(notifiesOnAttention: true))
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
     #expect(harness.notifier.posted.count == 1)
 
     harness.model.setNotificationPreference(.off)
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: first.focusedSessionID)
     )
     #expect(harness.notifier.posted.count == 1)
@@ -47,7 +47,7 @@ struct AppModelNotificationsTests {
     let harness = Harness()
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .attention,
         sessionID: tab.focusedSessionID,
@@ -68,15 +68,15 @@ struct AppModelNotificationsTests {
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
 
-    harness.stateSource.send(SessionStateReport(state: .attention, sessionID: session))
+    harness.messageSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(harness.notifier.posted.count == 1)
     #expect(harness.notifier.withdrawn.isEmpty, "nothing has changed yet")
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: session))
+    harness.messageSource.send(SessionStateReport(state: .running, sessionID: session))
     #expect(harness.notifier.withdrawn == [.session(session)])
     #expect(harness.notifier.posted.count == 1, "working raises none of its own")
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: session))
+    harness.messageSource.send(SessionStateReport(state: .running, sessionID: session))
     #expect(harness.notifier.withdrawn.count == 1, "taken back once, not on every report after")
   }
 
@@ -88,7 +88,7 @@ struct AppModelNotificationsTests {
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
 
-    harness.stateSource.send(SessionStateReport(state: .attention, sessionID: session))
+    harness.messageSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(harness.notifier.posted.count == 1)
 
     harness.model.activate(tab)
@@ -109,7 +109,7 @@ struct AppModelNotificationsTests {
     let session = tab.focusedSessionID
 
     harness.platform.isActive = false
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: session))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: session))
     #expect(harness.notifier.posted.count == 1, "shown, but nobody is looking")
     #expect(harness.model.sessionStates[.session(session)] == .done, "and the dot says so too")
 
@@ -135,7 +135,7 @@ struct AppModelNotificationsTests {
     let first = harness.openBackgroundTab()
     let session = first.focusedSessionID
 
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: session))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: session))
     #expect(harness.notifier.posted.count == 1)
 
     harness.model.closeTab(first.id)

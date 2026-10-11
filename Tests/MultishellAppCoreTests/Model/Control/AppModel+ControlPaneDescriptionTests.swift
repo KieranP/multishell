@@ -10,11 +10,13 @@ struct AppModelControlPaneDescriptionTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
     )
 
-    let reply = try #require(await harness.stateSource.ask(.describePane(id: tab.focusedSessionID)))
+    let reply = try #require(
+      await harness.messageSource.ask(.describePane(id: tab.focusedSessionID))
+    )
 
     #expect(reply.outputFields["tab"] as? String == tab.id.uuidString)
     #expect(reply.outputFields["worktree"] as? String == ControlID.worktree(harness.main.id))
@@ -27,7 +29,7 @@ struct AppModelControlPaneDescriptionTests {
     let harness = Harness()
     let tab = harness.openBackgroundTab()
     let pane = tab.focusedSessionID
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: pane,
@@ -36,7 +38,7 @@ struct AppModelControlPaneDescriptionTests {
       )
     )
 
-    let reply = try #require(await harness.stateSource.ask(.describePane(id: pane)))
+    let reply = try #require(await harness.messageSource.ask(.describePane(id: pane)))
 
     let workers = try #require(reply.outputFields["workers"] as? [[String: Any]])
     #expect(workers.compactMap { $0["id"] as? String } == ["w1"])

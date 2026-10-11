@@ -10,10 +10,10 @@ struct AppModelControlDebugTests {
   @Test func theDebugReadingsAndThePanelAreRefusedWhileTheToolsAreOff() async {
     let harness = Harness()
 
-    #expect(await harness.stateSource.ask(.debugSamples(last: 5)) == .refused(.debugToolsOff))
-    #expect(await harness.stateSource.ask(.debugMemory) == .refused(.debugToolsOff))
-    #expect(await harness.stateSource.ask(.debugGitRuns(last: 5)) == .refused(.debugToolsOff))
-    #expect(await harness.stateSource.ask(.setDebugInfo(shown: true)) == .refused(.debugToolsOff))
+    #expect(await harness.messageSource.ask(.debugSamples(last: 5)) == .refused(.debugToolsOff))
+    #expect(await harness.messageSource.ask(.debugMemory) == .refused(.debugToolsOff))
+    #expect(await harness.messageSource.ask(.debugGitRuns(last: 5)) == .refused(.debugToolsOff))
+    #expect(await harness.messageSource.ask(.setDebugInfo(shown: true)) == .refused(.debugToolsOff))
     #expect(!harness.model.showsDebugInfo)
   }
 
@@ -21,14 +21,14 @@ struct AppModelControlDebugTests {
     let harness = Harness()
     harness.model.debugSampler.interval = .seconds(3_600)
 
-    #expect(await harness.stateSource.ask(.setDebugTools(enabled: true)) == .done)
+    #expect(await harness.messageSource.ask(.setDebugTools(enabled: true)) == .done)
     #expect(harness.model.areDebugToolsEnabled)
-    #expect(await harness.stateSource.ask(.setDebugInfo(shown: true)) == .done)
+    #expect(await harness.messageSource.ask(.setDebugInfo(shown: true)) == .done)
     #expect(harness.model.showsDebugInfo)
 
-    #expect(await harness.stateSource.ask(.setDebugInfo(shown: false)) == .done)
+    #expect(await harness.messageSource.ask(.setDebugInfo(shown: false)) == .done)
     #expect(!harness.model.showsDebugInfo)
-    #expect(await harness.stateSource.ask(.setDebugTools(enabled: false)) == .done)
+    #expect(await harness.messageSource.ask(.setDebugTools(enabled: false)) == .done)
     #expect(!harness.model.areDebugToolsEnabled)
   }
 
@@ -37,7 +37,7 @@ struct AppModelControlDebugTests {
     harness.model.enableDebugTools(scan: .sample(appMemory: 400, trees: []))
     for _ in 0..<3 { await harness.model.takeDebugSample() }
 
-    let reply = try #require(await harness.stateSource.ask(.debugSamples(last: 2)))
+    let reply = try #require(await harness.messageSource.ask(.debugSamples(last: 2)))
 
     let samples = try #require(reply.outputObject as? [[String: Any]])
     #expect(samples.compactMap { $0["sequence"] as? Int } == [1, 2])
@@ -53,7 +53,7 @@ struct AppModelControlDebugTests {
     harness.model.enableDebugTools(scan: .sample(appMemory: 400, trees: []))
     await harness.model.takeDebugSample()
 
-    let reply = try #require(await harness.stateSource.ask(.debugMemory))
+    let reply = try #require(await harness.messageSource.ask(.debugMemory))
 
     #expect(reply.outputFields["appMemory"] as? Int == 400)
     #expect(reply.outputFields["appMemoryOutsideTerminals"] as? Int == 350)
@@ -67,7 +67,9 @@ struct AppModelControlDebugTests {
     harness.model.enableDebugTools()
     let next = harness.model.debugHistory.nextSequence
 
-    let reply = try #require(await harness.stateSource.ask(.markDebugSample(name: "open 20 tabs")))
+    let reply = try #require(
+      await harness.messageSource.ask(.markDebugSample(name: "open 20 tabs"))
+    )
     await harness.model.takeDebugSample()
     await harness.model.takeDebugSample()
 
@@ -79,7 +81,7 @@ struct AppModelControlDebugTests {
   @Test func aMarkWithTheToolsOffGoesToTheTraceAndNoSample() async throws {
     let harness = Harness()
 
-    let reply = try #require(await harness.stateSource.ask(.markDebugSample(name: "x")))
+    let reply = try #require(await harness.messageSource.ask(.markDebugSample(name: "x")))
 
     #expect(reply.outputFields["sample"] is NSNull)
     #expect(harness.platform.signposts == ["x"])
@@ -93,7 +95,7 @@ struct AppModelControlDebugTests {
       inSample: 2,
     )
 
-    let reply = try #require(await harness.stateSource.ask(.debugGitRuns(last: 1)))
+    let reply = try #require(await harness.messageSource.ask(.debugGitRuns(last: 1)))
 
     let runs = try #require(reply.outputObject as? [[String: Any]])
     #expect(runs.count == 1)
@@ -108,10 +110,10 @@ struct AppModelControlDebugTests {
     harness.platform.workspaceWindowScreenshot = Data([1, 2, 3])
     harness.engine.screenshots[pane] = Data([4, 5])
 
-    #expect(await harness.stateSource.ask(.screenshot(pane: nil)) == .output("AQID"))
-    #expect(await harness.stateSource.ask(.screenshot(pane: pane)) == .output("BAU="))
+    #expect(await harness.messageSource.ask(.screenshot(pane: nil)) == .output("AQID"))
+    #expect(await harness.messageSource.ask(.screenshot(pane: pane)) == .output("BAU="))
     harness.platform.workspaceWindowScreenshot = nil
-    #expect(await harness.stateSource.ask(.screenshot(pane: nil)) == .refused(.screenshotFailed))
+    #expect(await harness.messageSource.ask(.screenshot(pane: nil)) == .refused(.screenshotFailed))
   }
 
   @Test func aGitRunTheAppStartedIsAnsweredWithTheSampleItEndedIn() async throws {
@@ -141,7 +143,7 @@ struct AppModelControlDebugTests {
       .sample(sequence: 1, framesPerSecond: 120, appCPUPercent: 40, elapsed: .seconds(2))
     )
 
-    let reply = try #require(await harness.stateSource.ask(.debugSummary(last: 60)))
+    let reply = try #require(await harness.messageSource.ask(.debugSummary(last: 60)))
 
     #expect(reply.outputFields["sampleCount"] as? Int == 2)
     #expect(reply.outputFields["seconds"] as? Double == 3)

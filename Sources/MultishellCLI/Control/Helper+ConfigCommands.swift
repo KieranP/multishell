@@ -7,7 +7,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "config"
+    let topic = ControlCommand.config.rawValue
     let rest = arguments.dropFirst()
     switch arguments.first {
     case "global":

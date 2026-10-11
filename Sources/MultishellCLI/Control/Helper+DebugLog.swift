@@ -12,7 +12,7 @@ extension Helper {
     _ arguments: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let topic = "debug"
+    let topic = ControlCommand.debug.rawValue
     let options = try CommandOptions(
       arguments,
       valued: ["since"],

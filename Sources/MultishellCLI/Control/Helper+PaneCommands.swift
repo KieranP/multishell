@@ -8,7 +8,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "panes"
+    let topic = ControlCommand.panes.rawValue
     let (words, options) = positionals(arguments.dropFirst())
     switch (arguments.first, words.count) {
     case ("split", 0):

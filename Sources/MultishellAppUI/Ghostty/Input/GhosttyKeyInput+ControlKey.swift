@@ -38,14 +38,7 @@ extension GhosttyKeyInput {
     let type: NSEvent.EventType = action == GHOSTTY_ACTION_RELEASE ? .keyUp : .keyDown
     guard let event = Self.event(for: key, type) else { return nil }
     let flags = translationFlags ?? event.modifierFlags
-    let translated =
-      flags == event.modifierFlags
-      ? event
-      : event.keyCopy(
-        characters: event.characters(byApplyingModifiers: flags) ?? "",
-        charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
-        modifierFlags: flags,
-      ) ?? event
+    let translated = event.translated(to: flags)
     self.init(
       event,
       action,

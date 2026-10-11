@@ -1,7 +1,7 @@
 # Agents
 
-The inbound channel, each agent's hooks, and the board that shows them. Newest
-at the bottom.
+The inbound channel, each agent's hooks, the board that shows them and the
+command line's requests on the same socket. Newest at the bottom.
 
 - **The inbound channel is a Unix socket and a small helper.** Not a URL scheme,
   which would activate the app dozens of times a minute; not netcat, for the
@@ -290,8 +290,11 @@ at the bottom.
   around the login shell so no shell parses a value on the way.
 - **The read is quoted for where the placeholder sits**: the user's quote is
   closed, the variable read double-quoted, the quote reopened. That one spelling
-  is one word in sh, zsh, bash, dash, tcsh and fish, checked against the first
-  five with hostile values.
+  is one word in sh, zsh, bash, dash, tcsh and fish, each checked with hostile
+  values.
+- **Finding the user's quotes needs the login shell's name**: fish alone reads
+  `\'` and `\\` inside single quotes, so `'it\'s {{task}}'` is one quoted string
+  there and a quote left open in the rest.
 - **A wrong guess about the quoting costs a split word, never a command**: a
   placeholder inside `$(…)` inside double quotes reads unquoted, and bash splits
   it, but nothing in a value is ever run.

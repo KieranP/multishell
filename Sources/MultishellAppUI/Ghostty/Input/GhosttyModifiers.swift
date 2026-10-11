@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import GhosttyKit
 
 /// AppKit's modifier flags in libghostty's spelling and back, after Ghostty's
@@ -12,21 +13,25 @@ enum GhosttyModifiers {
   /// Keycodes are AppKit's; the device masks are the side bits AppKit leaves
   /// in a flag's raw value.
   private static let modifierKeys: [ModifierKey] = [
-    (0x38, GHOSTTY_MODS_SHIFT, NX_DEVICELSHIFTKEYMASK, nil),
-    (0x3C, GHOSTTY_MODS_SHIFT, NX_DEVICERSHIFTKEYMASK, GHOSTTY_MODS_SHIFT_RIGHT),
-    (0x3B, GHOSTTY_MODS_CTRL, NX_DEVICELCTLKEYMASK, nil),
-    (0x3E, GHOSTTY_MODS_CTRL, NX_DEVICERCTLKEYMASK, GHOSTTY_MODS_CTRL_RIGHT),
-    (0x3A, GHOSTTY_MODS_ALT, NX_DEVICELALTKEYMASK, nil),
-    (0x3D, GHOSTTY_MODS_ALT, NX_DEVICERALTKEYMASK, GHOSTTY_MODS_ALT_RIGHT),
-    (0x37, GHOSTTY_MODS_SUPER, NX_DEVICELCMDKEYMASK, nil),
-    (0x36, GHOSTTY_MODS_SUPER, NX_DEVICERCMDKEYMASK, GHOSTTY_MODS_SUPER_RIGHT),
+    (UInt16(kVK_Shift), GHOSTTY_MODS_SHIFT, NX_DEVICELSHIFTKEYMASK, nil),
+    (UInt16(kVK_RightShift), GHOSTTY_MODS_SHIFT, NX_DEVICERSHIFTKEYMASK, GHOSTTY_MODS_SHIFT_RIGHT),
+    (UInt16(kVK_Control), GHOSTTY_MODS_CTRL, NX_DEVICELCTLKEYMASK, nil),
+    (UInt16(kVK_RightControl), GHOSTTY_MODS_CTRL, NX_DEVICERCTLKEYMASK, GHOSTTY_MODS_CTRL_RIGHT),
+    (UInt16(kVK_Option), GHOSTTY_MODS_ALT, NX_DEVICELALTKEYMASK, nil),
+    (UInt16(kVK_RightOption), GHOSTTY_MODS_ALT, NX_DEVICERALTKEYMASK, GHOSTTY_MODS_ALT_RIGHT),
+    (UInt16(kVK_Command), GHOSTTY_MODS_SUPER, NX_DEVICELCMDKEYMASK, nil),
+    (UInt16(kVK_RightCommand), GHOSTTY_MODS_SUPER, NX_DEVICERCMDKEYMASK, GHOSTTY_MODS_SUPER_RIGHT),
   ]
+
+  /// The left-hand key of each modifier, in the order a chord presses them.
+  static let leftHandKeys: [(flag: NSEvent.ModifierFlags, keyCode: UInt16)] =
+    modifierKeys.filter { $0.rightHandMod == nil }.map { (flags($0.mod), $0.keyCode) }
 
   private static let rightHandMods = modifierKeys.compactMap { key in
     key.rightHandMod.map { (deviceMask: key.deviceMask, mod: $0) }
   }
 
-  private static let capsLockKeyCode: UInt16 = 0x39
+  private static let capsLockKeyCode = UInt16(kVK_CapsLock)
 
   private static let sidelessMods: [(NSEvent.ModifierFlags, ghostty_input_mods_e)] = [
     (.shift, GHOSTTY_MODS_SHIFT), (.control, GHOSTTY_MODS_CTRL), (.option, GHOSTTY_MODS_ALT),

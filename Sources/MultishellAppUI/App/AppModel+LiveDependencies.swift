@@ -14,7 +14,7 @@ extension AppModel {
       coordinator: try? WorktreeCoordinator(),
       watcher: DispatchDirectoryWatcher(),
       platform: platform,
-      stateSource: SocketStateSource(),
+      messageSource: SocketMessageSource(),
       notifier: UserNotificationNotifier(),
       loadError: loadError,
     )

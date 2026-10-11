@@ -12,7 +12,7 @@ struct AppModelControlPanesTests {
     let first = onlyPane.id
     harness.model.splitActivePane(.vertical)
 
-    let reply = await harness.stateSource.ask(.selectPane(id: first))
+    let reply = await harness.messageSource.ask(.selectPane(id: first))
 
     #expect(reply == .done)
     #expect(harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == first)
@@ -25,7 +25,7 @@ struct AppModelControlPanesTests {
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
 
     let reply = try #require(
-      await harness.stateSource.ask(.splitPane(axis: .vertical, tab: tab.id))
+      await harness.messageSource.ask(.splitPane(axis: .vertical, tab: tab.id))
     )
 
     let split = try #require(harness.model.workspace.tab(tab.id))
@@ -43,7 +43,7 @@ struct AppModelControlPanesTests {
       return true
     }
 
-    _ = await harness.stateSource.ask(.splitPane(axis: .vertical, tab: nil))
+    _ = await harness.messageSource.ask(.splitPane(axis: .vertical, tab: nil))
 
     #expect(probed.received == [harness.main.path.path])
   }
@@ -55,7 +55,7 @@ struct AppModelControlPanesTests {
     harness.model.directoryProbe = DirectoryProbe { _ in false }
 
     let reply = try #require(
-      await harness.stateSource.ask(.splitPane(axis: .vertical, tab: nil))
+      await harness.messageSource.ask(.splitPane(axis: .vertical, tab: nil))
     )
 
     guard case .alert(let title, _)? = reply.refusal else {
@@ -71,7 +71,7 @@ struct AppModelControlPanesTests {
     let harness = Harness()
 
     #expect(
-      await harness.stateSource.ask(.splitPane(axis: .horizontal, tab: nil))
+      await harness.messageSource.ask(.splitPane(axis: .horizontal, tab: nil))
         == .refused(.nothingInView)
     )
   }
@@ -82,7 +82,7 @@ struct AppModelControlPanesTests {
     let pane = onlyPane.id
 
     #expect(
-      await harness.stateSource.ask(.typeIntoPane(id: pane, text: "make", pressingReturn: true))
+      await harness.messageSource.ask(.typeIntoPane(id: pane, text: "make", pressingReturn: true))
         == .done
     )
 
@@ -90,7 +90,7 @@ struct AppModelControlPanesTests {
     #expect(harness.engine.pasted.isEmpty)
     harness.engine.close(pane)
     #expect(
-      await harness.stateSource.ask(.typeIntoPane(id: pane, text: "x", pressingReturn: false))
+      await harness.messageSource.ask(.typeIntoPane(id: pane, text: "x", pressingReturn: false))
         == .refused(.paneNotLive(id: pane))
     )
   }
@@ -101,16 +101,16 @@ struct AppModelControlPanesTests {
     harness.engine.screens[pane] = (screen: "$ make\nok\n", scrollback: "earlier\n")
 
     #expect(
-      await harness.stateSource.ask(.readPane(id: pane, includingScrollback: false))
+      await harness.messageSource.ask(.readPane(id: pane, includingScrollback: false))
         == .output("$ make\nok\n")
     )
     #expect(
-      await harness.stateSource.ask(.readPane(id: pane, includingScrollback: true))
+      await harness.messageSource.ask(.readPane(id: pane, includingScrollback: true))
         == .output("earlier\n$ make\nok\n")
     )
     harness.engine.close(pane)
     #expect(
-      await harness.stateSource.ask(.readPane(id: pane, includingScrollback: false))
+      await harness.messageSource.ask(.readPane(id: pane, includingScrollback: false))
         == .refused(.paneNotLive(id: pane))
     )
   }
@@ -123,7 +123,7 @@ struct AppModelControlPanesTests {
     let pane = tab.focusedSessionID
     let report = SessionStateReport(state: .running, sessionID: pane, agentID: "claude")
 
-    let reply = try #require(await harness.stateSource.ask(.reportPaneState(report)))
+    let reply = try #require(await harness.messageSource.ask(.reportPaneState(report)))
 
     #expect(reply.outputFields["state"] as? String == "running")
     #expect(harness.model.state(of: tab) == .running)
@@ -135,11 +135,11 @@ struct AppModelControlPanesTests {
     let gone = UUID()
 
     #expect(
-      await harness.stateSource.ask(.reportPaneState(.init(state: .done, sessionID: gone)))
+      await harness.messageSource.ask(.reportPaneState(.init(state: .done, sessionID: gone)))
         == .refused(.noPane(id: gone))
     )
     #expect(
-      await harness.stateSource.ask(.reportPaneState(.init(state: .done, sessionID: pane)))
+      await harness.messageSource.ask(.reportPaneState(.init(state: .done, sessionID: pane)))
         == .refused(.paneNotLive(id: pane))
     )
   }
@@ -149,11 +149,11 @@ struct AppModelControlPanesTests {
     let pane = onlyPane.id
     let keys = try #require(["ctrl-c", "escape"].map(ControlKey.init(parsing:)) as? [ControlKey])
 
-    #expect(await harness.stateSource.ask(.pressKeys(id: pane, keys: keys)) == .done)
+    #expect(await harness.messageSource.ask(.pressKeys(id: pane, keys: keys)) == .done)
     #expect(harness.engine.pressed.map(\.keys) == [keys])
     let cold = try #require(harness.model.store.openTab(in: harness.feature.id)?.focusedSessionID)
     #expect(
-      await harness.stateSource.ask(.pressKeys(id: cold, keys: keys))
+      await harness.messageSource.ask(.pressKeys(id: cold, keys: keys))
         == .refused(.paneNotLive(id: cold))
     )
   }
@@ -162,7 +162,7 @@ struct AppModelControlPanesTests {
     let (harness, onlyPane) = Harness.withOnePane()
     let pane = onlyPane.id
 
-    #expect(await harness.stateSource.ask(.pasteIntoPane(id: pane, text: "a\nb")) == .done)
+    #expect(await harness.messageSource.ask(.pasteIntoPane(id: pane, text: "a\nb")) == .done)
 
     #expect(harness.engine.pasted.map(\.text) == ["a\nb"])
     #expect(harness.engine.typed.isEmpty)
@@ -174,7 +174,7 @@ struct AppModelControlPanesTests {
     harness.model.worktreeOperations.begin(.removingWorktree, on: harness.main.id)
 
     #expect(
-      await harness.stateSource.ask(.splitPane(axis: .vertical, tab: nil))
+      await harness.messageSource.ask(.splitPane(axis: .vertical, tab: nil))
         == .refused(.worktreeNotReady(id: ControlID.worktree(harness.main.id)))
     )
   }
@@ -188,7 +188,7 @@ struct AppModelControlPanesTests {
     )
 
     #expect(
-      await harness.stateSource.ask(.pressKeys(id: onlyPane.id, keys: [known, unknown]))
+      await harness.messageSource.ask(.pressKeys(id: onlyPane.id, keys: [known, unknown]))
         == .refused(.noKey(name: "f13"))
     )
     #expect(harness.engine.pressed.isEmpty)

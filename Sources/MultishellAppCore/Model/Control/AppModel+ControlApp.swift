@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  func answerInfo() -> ControlReply {
+  func replyToInfo() -> ControlReply {
     .json(
       AppInfo(
         pid: ProcessInfo.processInfo.processIdentifier,
@@ -17,7 +17,7 @@ extension AppModel {
 
   /// A turn later, so the answer is on its way first; the helper waits for
   /// the socket to go rather than for the answer.
-  func answerQuit(force: Bool) -> ControlReply {
+  func replyToQuit(force: Bool) -> ControlReply {
     if refusesOverWorkingAgent(in: workspace.sessions.map(\.id), force: force) {
       return .refused(.agentWorking)
     }

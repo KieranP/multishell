@@ -17,7 +17,7 @@ extension Helper {
     _ arguments: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let topic = "panes"
+    let topic = ControlCommand.panes.rawValue
     let options = try CommandOptions(
       arguments,
       valued: [],

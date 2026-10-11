@@ -20,7 +20,7 @@ struct ShellIntegrationScriptsTests {
     )
     .map { ("/bin/zsh", $0.value) }
     files.append(("/bin/bash", ShellIntegrationScripts.forBash(helper: "/x/multishell")))
-    for fish in InstalledShells.only(InstalledShells.fishCandidates) {
+    for fish in InstalledShells.fishes {
       files.append((fish, ShellIntegrationScripts.forFish(helper: "/x/multishell")))
     }
     for (index, (shell, contents)) in files.enumerated() {

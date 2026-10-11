@@ -20,7 +20,9 @@ What each addition needs beyond the code itself.
   it can, which `panes read`, `tabs show` and `debug screenshot` answer from;
   one that cannot returns `nil` and the request is refused or the frame left
   out. Search counts reach the model through the delegate, whose default drops
-  them, so `panes find` prints what it has at its two-second limit.
+  them, so `panes find` prints what it has at its two-second limit. A host that
+  cannot say a session's terminal memory returns `nil`, and Debug Info leaves
+  that screen and scrollback in the app's row.
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
@@ -189,18 +191,21 @@ What each addition needs beyond the code itself.
   agents' placeholders and joins the rest through `# include` lines, a
   `leading-path` file of its own among them. Then a path in `Paths`, a generator
   in the integration scripts, a write in the integration refresh, and a case in
-  `ShellLaunch.integrationArguments`, the one way in for both a fresh tab and
-  the shell taking over when an agent quits. Add its generated file to
+  `ShellLaunch.initFileArguments`, the one way in for both a fresh tab and the
+  shell taking over when an agent quits. Add its generated file to
   `everyGeneratedFileParsesInItsShell` and
-  `everyPlaceholderIsFilledInAndTheAgentsAreNamed`.
+  `everyPlaceholderIsFilledInAndTheAgentsAreNamed`. A shell macOS does not ship
+  gets its Homebrew paths in `InstalledShells`, as fish has, so a machine
+  without it drops those tests' cases.
 - **It reports a command started and finished through the helper**, naming the
   program where it is one of the agents, and does nothing when the session
   variable is unset. Name it in `ShellLaunch.reportsFinishedCommands` too, or
   its panes also read git on every retitle, the fallback for shells that report
   nothing.
 - **The engine's own shell integration is off** (design/terminals.md), so prompt
-  marks and the `sudo` and `ssh` wrappers are the new shell's scripts to write,
-  or its panes go without click-to-move and the wrappers.
+  marks, the cursor's shape and the `sudo` and `ssh` wrappers are the new
+  shell's scripts to write, or its panes go without click-to-move, the shape and
+  the wrappers.
 - **The refresh's new parameter takes a default**, so the test callers that pass
   it every path, `GeneratedIntegration`, `ShellTab` and ShellIntegrationTests,
   still compile without the new one and write that shell's file into the debug
@@ -208,8 +213,14 @@ What each addition needs beyond the code itself.
 - **As a login shell it runs agents' lines only if it is in
   `ShellInvocation.interactiveLoginShells`**; left out, they run through
   `/bin/sh` and miss its PATH. One whose syntax is not sh's also needs a branch
-  in `LeadingPathLine`, as fish has, or the line opens with a statement it
-  cannot parse.
+  picking its `leading-path` file in
+  `ShellIntegrationScripts.leadingPathStatement(forShellNamed:)`, as fish has,
+  or the line opens with a statement it cannot parse.
+- **A shell that reads quotes unlike sh needs a branch in `ShellLine`'s scan**,
+  as fish has for `\'` inside single quotes, or a placeholder in a custom agent
+  or editor line runs as its variable's name (ShellLineTests). Every word the
+  app types still goes through `AnyShellQuoting`, so check the new shell reads
+  its spelling alike.
 - **Add it to the searched shells if Homebrew leaves it out of `/etc/shells`**,
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
@@ -250,9 +261,9 @@ What each addition needs beyond the code itself.
 - **A new refusal** is a case in `ControlRefusal` and its English in the
   helper's `ControlRefusal+Wording`, naming the command that gets past it where
   there is one; the app's catalogue takes none (design/translation.md).
-- **A new command group** also needs its word in the helper's `runControl`, a
-  topic in `usageByTopic` and a line in the overview `usage`. Nothing forces the
-  topic: left out, `help` on the word answers no command.
+- **A new command group is a case of `ControlCommand`**, and the compiler then
+  asks for its branch in `runControl` and its text in `usage(of:)`. Nothing
+  forces its line in the overview `usage`.
 - **A key `panes key` names** goes in `ControlKey.names` and in the engine's
   `namedKeyCodes`. Nothing forces the second: a name with no code is skipped and
   the request still answers done.
@@ -319,7 +330,8 @@ What each addition needs beyond the code itself.
   are numbered so a translation may reorder them.
 - **A service a pane can reach.** A usage string in the Info.plist template, in
   this app's words, and the matching entitlement where the hardened runtime has
-  one. Neither stands in for the other (design/signing.md, permissions.md).
+  one. Neither stands in for the other (design/signing.md,
+  develop/permissions.md).
 - **A language.** That code's folder beside the English one in both halves, both
   files translated, and a line for it in each target's resources in the
   manifest. The bundling script takes the list from the app half's folders.

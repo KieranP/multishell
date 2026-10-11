@@ -127,7 +127,7 @@ final class MacPlatform: Platform {
     NSApp.terminate(nil)
   }
 
-  /// The delegate's confirmation reads `AppModel.quitsWithoutAsking`.
+  /// The delegate's confirmation reads `AppModel.asksBeforeQuitting`.
   func quit() {
     NSApp.terminate(nil)
   }

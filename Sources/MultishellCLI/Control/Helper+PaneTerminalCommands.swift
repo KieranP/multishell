@@ -10,7 +10,7 @@ extension Helper {
     _ options: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32? {
-    let topic = "panes"
+    let topic = ControlCommand.panes.rawValue
     switch (command, words.count) {
     case ("type", 2):
       return try typeIntoPane(

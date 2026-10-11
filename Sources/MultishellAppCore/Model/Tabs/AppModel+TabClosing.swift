@@ -30,7 +30,7 @@ extension AppModel {
   public func answerClose(_ pending: PendingClose, confirmed: Bool) {
     guard pendingClose == pending else { return }
     pendingClose = nil
-    if confirmed { perform(pending) }
+    if confirmed { closeWithoutAsking(pending) }
   }
 
   /// A close whose subject has gone has nothing left to ask. Run from the
@@ -61,10 +61,10 @@ extension AppModel {
       pendingClose = close
       return
     }
-    perform(close)
+    closeWithoutAsking(close)
   }
 
-  func perform(_ close: PendingClose, takingFocus: Bool = true) {
+  func closeWithoutAsking(_ close: PendingClose, takingFocus: Bool = true) {
     switch close {
     case .pane(let id): store.closeSession(id)
     case .tab(let id): store.closeTab(id)

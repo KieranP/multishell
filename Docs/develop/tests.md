@@ -176,7 +176,7 @@ says why these are the rules.
   the pane's Done**: AppModel+SessionReportsTests+CopilotWorkers, captured
   payloads driven through the helper's report into the model.
 - **No value in a custom command or editor line is run**, inside the user's
-  quotes or out: ShellLineTests under five real shells.
+  quotes or out: ShellLineTests under five real shells and each installed fish.
 - **A hook variable renamed under hooks already written**: HookVariableTests.
 - **The plugin follows a child session**: OpenCodePluginTests runs the generated
   JavaScript with spawn replaced and reads back what the helper would have been
@@ -260,12 +260,12 @@ says why these are the rules.
   time has a second process try the claim, a process's own record locks never
   conflicting, and holds the path limit to the staging name's.
 - **A request is answered on its own connection, a report or an unknown request
-  never**: SocketStateSourceTests, over a real socket. **An answer sent after
+  never**: SocketMessageSourceTests, over a real socket. **An answer sent after
   the client's EOF still arrives, and one held open runs the client out of time,
-  under a second too, one that stops reading holds up no other, and one read
-  slowly but steadily arrives whole past the timeout**: SocketReplyTests. **A
-  request nobody reads runs out of time while still being sent**:
-  UnixSocketClientTests, a socket that listens and never accepts.
+  one that stops reading holds up no other, and one read slowly but steadily
+  arrives whole past the timeout**: SocketReplyTests. **A request nobody reads
+  runs out of time while still being sent, and a timeout under a second still
+  runs out**: UnixSocketClientTests, a socket that listens and never accepts.
 - **The command line reaches its own build's app**: HelperControlTests holds the
   pane's `MULTISHELL_SOCKET` aside, and PathsVariantTests reads the variant of
   the bundle a helper reached through a link is in, gives two worktree names
@@ -420,19 +420,21 @@ says why these are the rules.
   each keymap, each only where the user's features ask:
   ShellIntegrationScriptsTests +PromptMarks, +DirectoryReports, +Title and
   +CursorShape, run through +ZshOutput, which loads zle by hand for the keymap
-  hooks a piped shell would not register.
+  hooks a piped shell would not register. fish's cursor runs through
+  +FishOutput.
 - **bash launched as libghostty launches a command**, `exec -l`, still reading
   our init file: EngineCommandLineTests.
 - **`sudo` and `ssh` wrapped only where the user's features ask, and a function
   of their own by either name kept**: ShellIntegrationScriptsTests
-  +CommandWrappers, the bash half under `InstalledBashes.all`.
+  +CommandWrappers, the bash half under `InstalledBashes.all` and the fish half
+  under `InstalledShells.fishes`.
 - **A removal dialog left up for a worktree git no longer lists, and Remove
   offered on the main worktree**:
   AppModel+WorktreeListRefreshTests+RemovedOutsideTheApp and
   AppModelWorktreeRemovalRequestTests, both through the one place each is
   decided.
 - **A second copy of the app writing the workspace file**:
-  AppModelLifecycleTests hands the fake state source an in-use socket and
+  AppModelLifecycleTests hands the fake message source an in-use socket and
   expects the platform asked to hand over, no poll started, and no file after a
   change.
 - **Two saves landing out of order**: WorkspaceStoreTests+OrderedSaves prepares
@@ -585,6 +587,9 @@ says why these are the rules.
 - **A bash behaviour runs under every installed bash**, `InstalledBashes.all` in
   TestScratch: the system's 3.2 and a newer one differ in `$!`, `wait` and, from
   5.3, how the PIPE trap is read.
+- **A fish behaviour runs under each installed fish**, `InstalledShells.fishes`
+  in TestScratch. macOS ships no fish, so a machine without Homebrew's drops
+  those cases rather than failing them, and CI installs none.
 - **A hook or the login capture leaves a named history file alone**:
   ShellCommandTests+HookShells under bash, sh and ksh, and
   LoginShellEnvironmentTests.

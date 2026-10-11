@@ -4,6 +4,7 @@ import Foundation
 /// drops its case rather than passing it.
 public enum InstalledShells {
   public static let fishCandidates = ["/opt/homebrew/bin/fish", "/usr/local/bin/fish"]
+  public static let fishes = only(fishCandidates)
 
   public static func only(_ paths: [String]) -> [String] {
     paths.filter(isInstalled)

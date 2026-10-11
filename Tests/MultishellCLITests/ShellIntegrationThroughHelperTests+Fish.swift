@@ -6,7 +6,7 @@ import Testing
 @testable import MultishellProcess
 
 extension ShellIntegrationThroughHelperTests {
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishRunsTheUsersConfigThenReportsEachCommandAndItsExit(fish: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -59,7 +59,7 @@ extension ShellIntegrationThroughHelperTests {
     #expect(reports.compactMap(\.duration) == [1.5, 0.007])
   }
 
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishOutsideATabReportsNothing(fish: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }

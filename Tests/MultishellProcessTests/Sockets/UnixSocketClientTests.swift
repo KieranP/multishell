@@ -128,6 +128,19 @@ struct UnixSocketClientTests {
     )
   }
 
+  @Test func aRequestWithATimeoutUnderASecondStillRunsOut() throws {
+    let (listener, path) = try listening()
+    defer {
+      close(listener)
+      Scratch.removeSocket(path)
+    }
+    #expect(
+      runsOutOfTime(within: 5) {
+        _ = try UnixSocketClient.request("ping\n", to: path, timeout: .milliseconds(300))
+      }
+    )
+  }
+
   /// Bound and listening, with nothing accepting until the test does.
   private func listening() throws -> (listener: Int32, path: URL) {
     let path = Scratch.socketPath("srv")

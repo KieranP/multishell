@@ -68,7 +68,7 @@ struct ShellLaunchTests {
 
   /// The init file lives under Application Support, a path with a space in
   /// it, and `-C` hands fish a line it parses as its own.
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishSourcesAnInitFileWhosePathHoldsASpaceAQuoteAndABackslash(fish: String) async throws {
     let directory = try Scratch.directory("fish init")
     defer { Scratch.remove(directory) }

@@ -101,22 +101,24 @@ enum Helper {
   ) throws
     -> Int32?
   {
+    guard let word = arguments.first, let command = ControlCommand(rawValue: word) else {
+      return nil
+    }
     let rest = arguments.dropFirst()
-    switch arguments.first {
-    case "open": return try runOpen(rest, environment: environment)
-    case "quit": return try runQuit(rest, environment: environment)
-    case "info": return try runInfo(rest, environment: environment)
-    case "config": return try runConfig(rest, environment: environment)
-    case "projects": return try runProjects(rest, environment: environment)
-    case "worktrees": return try runWorktrees(rest, environment: environment)
-    case "tabs": return try runTabs(rest, environment: environment)
-    case "panes": return try runPanes(rest, environment: environment)
-    case "ui": return try runUI(rest, environment: environment)
-    case "board": return try runBoard(rest, environment: environment)
-    case "sidebar": return try runSidebar(rest, environment: environment)
-    case "window": return try runWindow(rest, environment: environment)
-    case "debug": return try runDebug(rest, environment: environment)
-    default: return nil
+    switch command {
+    case .open: return try runOpen(rest, environment: environment)
+    case .quit: return try runQuit(rest, environment: environment)
+    case .info: return try runInfo(rest, environment: environment)
+    case .config: return try runConfig(rest, environment: environment)
+    case .projects: return try runProjects(rest, environment: environment)
+    case .worktrees: return try runWorktrees(rest, environment: environment)
+    case .tabs: return try runTabs(rest, environment: environment)
+    case .panes: return try runPanes(rest, environment: environment)
+    case .userInterface: return try runUI(rest, environment: environment)
+    case .board: return try runBoard(rest, environment: environment)
+    case .sidebar: return try runSidebar(rest, environment: environment)
+    case .window: return try runWindow(rest, environment: environment)
+    case .debug: return try runDebug(rest, environment: environment)
     }
   }
 

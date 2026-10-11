@@ -3,7 +3,11 @@ import Foundation
 extension EditorCatalogue {
   /// The user's template with `{path}` read from the environment. One
   /// without the placeholder gets the path appended.
-  public static func customCommandLine(_ template: String, path: URL) -> ShellLine? {
+  public static func customCommandLine(
+    _ template: String,
+    path: URL,
+    forShellNamed shellName: String,
+  ) -> ShellLine? {
     let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return nil }
     let token = "{path}"
@@ -11,6 +15,7 @@ extension EditorCatalogue {
     return ShellLine(
       line,
       substituting: [token: (WorktreePlaceholder.worktreePath.variable, path.path)],
+      forShellNamed: shellName,
     )
   }
 }

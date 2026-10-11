@@ -6,12 +6,17 @@ import Testing
 
 @Suite
 struct ShellLineTests {
-  private func run(_ shell: String, _ line: ShellLine, in directory: URL) async throws -> String {
+  private func run(
+    _ shell: String,
+    _ line: ShellLine,
+    in directory: URL,
+    environment: [String: String] = Scratch.shellEnvironment,
+  ) async throws -> String {
     let command = line.prefixing([shell, "-c", line.text])
     return try await Detached.output(
       of: command[0],
       Array(command.dropFirst()),
-      environment: Scratch.shellEnvironment,
+      environment: environment,
       in: directory,
       standardError: .discarded,
     )
@@ -35,6 +40,7 @@ struct ShellLineTests {
       let line = AgentCatalogue.customCommandLine(
         template,
         values: WorktreePlaceholder.sampleValues(branch: hostile),
+        forShellNamed: shell.executableName,
       )
       #expect(try await run(shell, line, in: directory) == expected, "\(template)")
     }
@@ -55,8 +61,45 @@ struct ShellLineTests {
       "printf '%s|'": "\(path.path)|",
     ]
     for (template, expected) in expectations {
-      let line = try #require(EditorCatalogue.customCommandLine(template, path: path))
+      let line = try #require(
+        EditorCatalogue.customCommandLine(
+          template,
+          path: path,
+          forShellNamed: shell.executableName,
+        )
+      )
       #expect(try await run(shell, line, in: directory) == expected, "\(template)")
+    }
+    #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("ran").path))
+  }
+
+  @Test(arguments: InstalledShells.fishes)
+  func fishReadsEachPlaceholderAsTextWithItsOwnEscapesInSingleQuotes(shell: String) async throws {
+    let directory = try Scratch.directory("custom-line-fish")
+    defer { Scratch.remove(directory) }
+    let hostile = "feat$(date>ran) 'x\\"
+    let expectations = [
+      "printf '%s|' {{task}}": "\(hostile)|",
+      "printf '%s|' \"on {{task}}\"": "on \(hostile)|",
+      "printf '%s|' 'on {{task}}'": "on \(hostile)|",
+      "printf '%s|' \"{{task}}\"x": "\(hostile)x|",
+      #"printf '%s|' 'it\'s {{task}}'"#: "it's \(hostile)|",
+      #"printf '%s|' 'a\\' {{task}}"#: "a\\|\(hostile)|",
+    ]
+    for (template, expected) in expectations {
+      let line = AgentCatalogue.customCommandLine(
+        template,
+        values: [:],
+        forShellNamed: "fish",
+        task: hostile,
+      )
+      let output = try await run(
+        shell,
+        line,
+        in: directory,
+        environment: Scratch.bareShellEnvironment(home: directory),
+      )
+      #expect(output == expected, "\(template)")
     }
     #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("ran").path))
   }

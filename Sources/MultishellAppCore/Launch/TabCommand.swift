@@ -41,7 +41,7 @@ enum TabCommand {
     shell: ShellInvocation,
     handOver: String,
   ) -> [String] {
-    let leadingPath = LeadingPathLine.statement(for: shell)
+    let leadingPath = LeadingPathStatement.line(for: shell)
     return [shell.executable.path] + shell.arguments + ["\(leadingPath)\(commandLine); \(handOver)"]
   }
 }

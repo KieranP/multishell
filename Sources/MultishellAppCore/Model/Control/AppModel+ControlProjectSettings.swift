@@ -8,7 +8,7 @@ extension AppModel {
     ProjectSettings.CodingKeys.allCases.filter { $0 != .trustDecisions }.map(\.rawValue)
   }
 
-  func answerReadProjectSettings(of id: String, key: String?) -> ControlReply {
+  func replyToReadProjectSettings(of id: String, key: String?) -> ControlReply {
     guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
     let fields = encodedFields(of: ownSettings(of: project))
     guard let key else {
@@ -24,7 +24,7 @@ extension AppModel {
 
   /// `null` follows the global; else the text as typed where the key takes text,
   /// quotes and all, or as JSON, so `true` and `12` are what they say.
-  func answerWriteProjectSetting(of id: String, _ key: String, _ value: String) -> ControlReply {
+  func replyToWriteProjectSetting(of id: String, _ key: String, _ value: String) -> ControlReply {
     guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
     guard Self.projectSettingKeys.contains(key) else { return .refused(.noSetting(key: key)) }
     let parsed = try? JSONSerialization.jsonObject(

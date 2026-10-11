@@ -39,10 +39,10 @@
   is the commit count, and `MultishellCommit` names the commit, with a suffix
   for a modified tree. The About panel shows it beside the build number, so a
   bug report still says what was installed: AboutPanelTests.
-- **`make` builds libghostty first**, from the submodule, into `.build/ghostty`:
-  about 80 s cold here, nothing while the submodule, the patches, the script,
-  Zig and Xcode are unchanged, and 2 s after a `make clean` or
-  `swift package reset`: Zig keeps its cache and fetched packages in the
+- **Every target that compiles builds libghostty first**, from the submodule,
+  into `.build/ghostty`: about 80 s cold here, nothing while the submodule, the
+  patches, the script, Zig and Xcode are unchanged, and 2 s after a `make clean`
+  or `swift package reset`: Zig keeps its cache and fetched packages in the
   submodule's `.zig-cache/` and `zig-pkg/`, which neither touches. A bare
   `swift build` needs it built already, the package naming the xcframework by
   path; `make libghostty` does it.

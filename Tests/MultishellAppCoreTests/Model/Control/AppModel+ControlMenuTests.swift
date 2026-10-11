@@ -13,12 +13,12 @@ struct AppModelControlMenuTests {
       PlatformMenuItem(path: ["Edit", "Paste"], isEnabled: false, isChecked: false),
     ]
 
-    let listed = await harness.stateSource.ask(.listMenuItems)
-    let chosen = await harness.stateSource.ask(
+    let listed = await harness.messageSource.ask(.listMenuItems)
+    let chosen = await harness.messageSource.ask(
       .performMenuItem(path: ["View", "Enable Debug Tools"])
     )
-    let greyed = await harness.stateSource.ask(.performMenuItem(path: ["Edit", "Paste"]))
-    let missing = await harness.stateSource.ask(.performMenuItem(path: ["Edit", "Frobnicate"]))
+    let greyed = await harness.messageSource.ask(.performMenuItem(path: ["Edit", "Paste"]))
+    let missing = await harness.messageSource.ask(.performMenuItem(path: ["Edit", "Frobnicate"]))
 
     #expect((listed?.outputObject as? [[String: Any]])?.count == 2)
     #expect(chosen == .done)

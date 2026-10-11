@@ -16,8 +16,8 @@ public struct PlatformWindow: Encodable, Equatable, Sendable {
     isKey: Bool,
     width: Double,
     height: Double,
+    isFullScreen: Bool,
     sheet: String?,
-    isFullScreen: Bool = false,
   ) {
     self.identifier = identifier
     self.title = title

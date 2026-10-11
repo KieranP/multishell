@@ -15,7 +15,7 @@ extension Helper {
     _ arguments: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let topic = "panes"
+    let topic = ControlCommand.panes.rawValue
     let options = try CommandOptions(
       arguments,
       valued: ["state", "text", "timeout"],
@@ -66,7 +66,7 @@ extension Helper {
       let states = [noState] + SessionState.allCases.map(\.rawValue)
       throw UsageError(
         "--state takes one of: \(states.joined(separator: ", "))",
-        topic: "panes",
+        topic: ControlCommand.panes.rawValue,
       )
     }
     // The app keeps no idle state: an idle report takes the dot away.
@@ -88,7 +88,7 @@ extension Helper {
     guard let expression = try? NSRegularExpression(pattern: pattern) else {
       throw UsageError(
         "--text is no pattern NSRegularExpression reads: \(pattern)",
-        topic: "panes",
+        topic: ControlCommand.panes.rawValue,
       )
     }
     var readsScrollback = includingScrollback

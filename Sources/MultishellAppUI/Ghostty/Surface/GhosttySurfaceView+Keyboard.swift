@@ -10,7 +10,7 @@ extension GhosttySurfaceView {
       return
     }
     let action = event.isARepeat ? GHOSTTY_ACTION_REPEAT : GHOSTTY_ACTION_PRESS
-    let translation = translated(event, on: surface)
+    let translation = event.translated(to: translationFlags(for: event.modifierFlags, on: surface))
     let wasComposing = !markedText.isEmpty
     let layoutBefore = wasComposing ? nil : KeyboardInputSource.currentID
     textCommittedInKeyDown = []
@@ -81,21 +81,18 @@ extension GhosttySurfaceView {
     input.withCValue { _ = ghostty_surface_key(surface, $0) }
   }
 
-  /// The event with the modifiers libghostty translates with (Option as Alt);
-  /// the original where unchanged, as Korean input breaks on a copy.
-  private func translated(_ event: NSEvent, on surface: ghostty_surface_t) -> NSEvent {
+  /// `flags` with the modifiers libghostty translates with (Option as Alt), the rest kept.
+  func translationFlags(
+    for flags: NSEvent.ModifierFlags,
+    on surface: ghostty_surface_t,
+  ) -> NSEvent.ModifierFlags {
     let wanted = GhosttyModifiers.flags(
-      ghostty_surface_key_translation_mods(surface, GhosttyModifiers.mods(event.modifierFlags))
+      ghostty_surface_key_translation_mods(surface, GhosttyModifiers.mods(flags))
     )
-    var flags = event.modifierFlags
+    var translation = flags
     for flag in [NSEvent.ModifierFlags.shift, .control, .option, .command] {
-      if wanted.contains(flag) { flags.insert(flag) } else { flags.remove(flag) }
+      if wanted.contains(flag) { translation.insert(flag) } else { translation.remove(flag) }
     }
-    guard flags != event.modifierFlags else { return event }
-    return event.keyCopy(
-      characters: event.characters(byApplyingModifiers: flags) ?? "",
-      charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
-      modifierFlags: flags,
-    ) ?? event
+    return translation
   }
 }

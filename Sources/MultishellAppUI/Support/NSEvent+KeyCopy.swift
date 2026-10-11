@@ -21,4 +21,15 @@ extension NSEvent {
       keyCode: keyCode,
     )
   }
+
+  /// This key event with `flags`, its characters as the layout gives them
+  /// there; itself where unchanged, as Korean input breaks on a copy.
+  func translated(to flags: NSEvent.ModifierFlags) -> NSEvent {
+    guard flags != modifierFlags else { return self }
+    return keyCopy(
+      characters: characters(byApplyingModifiers: flags) ?? "",
+      charactersIgnoringModifiers: charactersIgnoringModifiers ?? "",
+      modifierFlags: flags,
+    ) ?? self
+  }
 }

@@ -74,8 +74,8 @@ Workers the chip counting the subagents and background shells it has out, `@` a
 dropped file arriving as `@path` rather than a quoted one. Gemini has no
 subagent hooks, so its chip counts only the shells it backgrounded. Codex runs
 no hook until you trust it once with `/hooks`. OpenCode is given a plugin, and
-is the only one that reports your answer, so its Waiting clears then rather than
-at the next tool call.
+is the only one that reports your answer to a permission prompt, so its Waiting
+clears then rather than at the next tool call.
 
 | Agent       | File                                      | Ours alone |
 | ----------- | ----------------------------------------- | ---------- |

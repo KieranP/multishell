@@ -10,6 +10,7 @@ struct AgentCatalogueCustomCommandTests {
     let line = AgentCatalogue.customCommandLine(
       #"my-agent --name={{worktree}} "in {{project_path}}" 'at {{worktree_path}}' {{nonsense}}"#,
       values: values,
+      forShellNamed: "zsh",
     )
     #expect(
       line.text
@@ -24,7 +25,11 @@ struct AgentCatalogueCustomCommandTests {
       "only what the line names",
     )
     #expect(
-      AgentCatalogue.customCommandLine(#"my-agent \{{branch}}"#, values: values).text
+      AgentCatalogue.customCommandLine(
+        #"my-agent \{{branch}}"#,
+        values: values,
+        forShellNamed: "zsh",
+      ).text
         == #"my-agent \{{branch}}"#,
       "an escaped brace is the user's text",
     )
@@ -34,6 +39,7 @@ struct AgentCatalogueCustomCommandTests {
     let line = AgentCatalogue.customCommandLine(
       "my-agent --ask {{task}}",
       values: values,
+      forShellNamed: "zsh",
       task: "Fix it\nnow $(touch /tmp/pwned)",
     )
 

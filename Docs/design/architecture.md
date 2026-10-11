@@ -65,8 +65,8 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
 - **A timeout whose child exits 0 is withdrawn.** A child that begins its exit
   between the stopper's check and its SIGHUP takes the signal to no effect, and
   a finished hook or git call read as timed out: 2 runs in 3,200 at a 50 ms
-  timeout. A SIGHUP death is never 0: bash, sh, ksh and dash re-raise it, zsh,
-  tcsh and csh exit 1. fish is untried.
+  timeout. A SIGHUP death is never 0: bash, sh, ksh, dash and fish 4.9 re-raise
+  it, zsh, tcsh and csh exit 1.
 - **The stopper goes back to unused**, or the stage that lent it to a hook read
   it as stopped and took back the worktree it had just made. A Cancel made while
   the timeout stood is kept for the next child. Cost: a script that traps SIGHUP

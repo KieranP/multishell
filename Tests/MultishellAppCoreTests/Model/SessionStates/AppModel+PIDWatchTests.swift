@@ -14,7 +14,7 @@ struct AppModelPIDWatchTests {
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     let gone = deadPID()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: gone)
     )
     #expect(harness.model.state(of: tab) == .running)
@@ -32,7 +32,7 @@ struct AppModelPIDWatchTests {
     let agent = try WaitingShell()
     defer { agent.terminate() }
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: tab.focusedSessionID,
@@ -54,7 +54,7 @@ struct AppModelPIDWatchTests {
       harness.model.pidPollInterval = .seconds(30)
       harness.model.select(harness.main)
       let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-      harness.stateSource.send(
+      harness.messageSource.send(
         SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: agent.pid)
       )
       #expect(harness.model.pidWatch != nil)
@@ -76,8 +76,10 @@ struct AppModelPIDWatchTests {
     for _ in 0..<12 {
       let agent = deadPID()
       let shell = deadPID()
-      harness.stateSource.send(SessionStateReport(state: .running, sessionID: session, pid: agent))
-      harness.stateSource.send(
+      harness.messageSource.send(
+        SessionStateReport(state: .running, sessionID: session, pid: agent)
+      )
+      harness.messageSource.send(
         SessionStateReport(
           state: .done,
           sessionID: session,

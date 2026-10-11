@@ -13,9 +13,9 @@ struct MultishellApp: App {
       RootView(model: model, platform: platform)
         .frame(minWidth: 720, minHeight: 420)
         .task {
+          appDelegate.asksBeforeQuitting = { model.asksBeforeQuitting }
           appDelegate.liveTerminalCount = { model.liveTerminalCount }
           appDelegate.workingAgentCount = { model.workingAgentCount }
-          appDelegate.quitsWithoutAsking = { model.quitsWithoutAsking }
           appDelegate.onWillTerminate = {
             model.shutDown()
           }

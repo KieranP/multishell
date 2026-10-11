@@ -18,22 +18,26 @@ to and no bounty.
 ## What counts
 
 The app spawns shells, reads and writes files in your repositories, runs hooks
-from a project's `.multishell.json`, and listens on a unix socket in
+from a project's `.multishell.json`, writes its hooks into an agent's own config
+under your home folder when you install them, and listens on a unix socket in
 `~/Library/Application Support/Multishell/` for state reports from agents and
-shells. What would interest me:
+shells and for requests from the `multishell` command line. What would interest
+me:
 
 - Anything a cloned repository can make happen without a click. A hook from a
   `.multishell.json` someone else committed is meant to need the trust prompt
   first; see `Docs/design/settings.md`.
-- Anything a local process can do through the socket beyond reporting state, or
-  a report that reaches somewhere it should not. See `Docs/design/agents.md`.
+- Anything another user can do through the socket, a request that answers the
+  trust prompt or drives another build's app, or a report that reaches somewhere
+  it should not. See `Docs/design/agents.md`.
 - Reading or writing outside the worktree from a branch name, a path or a theme
   file.
 - A privilege escalation out of the one script that asks for administrator
   rights, which links the `multishell` CLI into `/usr/local/bin`.
 
-Out of scope: a command you typed into a pane doing what you typed, and the
-absence of notarisation, which COMPAT.md already states.
+Out of scope: a command you typed into a pane doing what you typed, a process
+running as you driving the app through the socket, which can run a command in a
+pane by design, and the absence of notarisation, which COMPAT.md already states.
 
 ## Supported versions
 

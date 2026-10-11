@@ -7,6 +7,7 @@ extension AgentCatalogue {
   public static func customCommandLine(
     _ line: String,
     values: [WorktreePlaceholder: String],
+    forShellNamed shellName: String,
     task: String = "",
   ) -> ShellLine {
     var tokens: [String: (variable: String, value: String)] = [:]
@@ -14,6 +15,6 @@ extension AgentCatalogue {
       tokens[placeholder.token] = (placeholder.variable, value)
     }
     tokens[taskToken] = ("MULTISHELL_TASK", AgentTaskArgument.oneLine(task))
-    return ShellLine(line, substituting: tokens)
+    return ShellLine(line, substituting: tokens, forShellNamed: shellName)
   }
 }

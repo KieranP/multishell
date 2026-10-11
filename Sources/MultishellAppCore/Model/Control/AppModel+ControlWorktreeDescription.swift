@@ -5,7 +5,7 @@ import MultishellGitKit
 extension AppModel {
   /// Its row's status and badge and any stage under way, beside its list line.
   /// Git is read first: the poll pauses while the app is in the background.
-  func answerDescribeWorktree(_ id: String) async -> ControlReply {
+  func replyToDescribeWorktree(_ id: String) async -> ControlReply {
     guard let asked = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     let isStatusFresh = await refreshStatus(of: asked.id, forced: true)
     guard let worktree = workspace.worktree(asked.id) else { return .refused(.noWorktree(id: id)) }

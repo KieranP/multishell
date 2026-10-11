@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  func answerListWorktrees(of id: String?) -> ControlReply {
+  func replyToListWorktrees(of id: String?) -> ControlReply {
     var worktrees = workspace.worktrees
     if let id {
       guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
@@ -14,7 +14,7 @@ extension AppModel {
   }
 
   /// The menu's Rename or Use Branch Name, without the field.
-  func answerRenameWorktree(_ id: String, to name: String?) -> ControlReply {
+  func replyToRenameWorktree(_ id: String, to name: String?) -> ControlReply {
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     renameWorktree(worktree.id, to: name)
     return .done
@@ -40,7 +40,7 @@ extension AppModel {
 
   /// As the sheet makes one. An agent or a task names the first tab;
   /// neither leaves it to the create settings.
-  func answerNewWorktree(_ order: NewWorktreeOrder) async -> ControlReply {
+  func replyToNewWorktree(_ order: NewWorktreeOrder) async -> ControlReply {
     guard let project = project(withControlID: order.projectID) else {
       return .refused(.noProject(id: order.projectID))
     }
@@ -69,7 +69,7 @@ extension AppModel {
 
   /// The row's Remove, without its dialog: the removal settings decide the
   /// Trash, and the branch goes only when asked.
-  func answerRemoveWorktree(_ order: WorktreeRemovalOrder) async -> ControlReply {
+  func replyToRemoveWorktree(_ order: WorktreeRemovalOrder) async -> ControlReply {
     let id = order.worktreeID
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     guard worktree.isRemovable else { return .refused(.worktreeNotRemovable(id: id)) }
@@ -97,7 +97,7 @@ extension AppModel {
   }
 
   /// A click on the row.
-  func answerSelectWorktree(_ id: String) -> ControlReply {
+  func replyToSelectWorktree(_ id: String) -> ControlReply {
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     guard select(worktree) else { return .refused(.worktreeNotReady(id: id)) }
     return .done

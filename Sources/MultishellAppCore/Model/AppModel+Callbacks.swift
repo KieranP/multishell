@@ -25,8 +25,8 @@ extension AppModel {
     reconciler.onLiveSessionsChanged = { [weak self] in self?.noteLiveSessionsChanged() }
     reconciler.onCloseRequest = { [weak self] id in self?.closePane(id) }
     reconciler.onSearchCount = { [weak self] id, count in self?.noteSearchCount(count, in: id) }
-    stateSource.onReport = { [weak self] report in self?.receive(report) }
-    stateSource.onRequest = { [weak self] request in await self?.answer(request) }
+    messageSource.onReport = { [weak self] report in self?.receive(report) }
+    messageSource.onRequest = { [weak self] request in await self?.answer(request) }
     notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in
       Task { await self?.refreshProjectsIfChanged(under: changed) }

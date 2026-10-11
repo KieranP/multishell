@@ -150,7 +150,7 @@ struct AppModelTabGroupsTests {
     let watched = harness.model.workspace.shownTab(ofGroup: groups.first)!.focusedSessionID
     #expect(harness.model.focusedGroup?.id == groups.second.id)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .done, sessionID: watched, workingDirectory: nil, pid: nil)
     )
 

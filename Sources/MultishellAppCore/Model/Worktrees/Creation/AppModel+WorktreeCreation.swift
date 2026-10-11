@@ -58,7 +58,8 @@ extension AppModel {
     let claimed = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
       .flatMap(claimPath(_:))
     let stopper = ProcessStopper()
-    stageHandles.beginCreation(with: stopper, takesOverTheSheet: takesOverTheSheet)
+    // A create from the command line leaves the sheet's Cancel and progress to one it shows.
+    if takesOverTheSheet { stageHandles.beginCreation(with: stopper) }
     defer {
       if stageHandles.isCurrentCreation(stopper) { worktreeCreationStep = nil }
       stageHandles.endCreation(with: stopper)

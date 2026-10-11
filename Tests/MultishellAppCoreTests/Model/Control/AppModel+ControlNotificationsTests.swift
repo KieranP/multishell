@@ -11,11 +11,13 @@ struct AppModelControlNotificationsTests {
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let pane = tab.focusedSessionID
-    harness.stateSource.send(SessionStateReport(state: .attention, sessionID: pane, message: "Hi"))
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: pane))
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: pane))
+    harness.messageSource.send(
+      SessionStateReport(state: .attention, sessionID: pane, message: "Hi")
+    )
+    harness.messageSource.send(SessionStateReport(state: .running, sessionID: pane))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: pane))
 
-    let reply = try #require(await harness.stateSource.ask(.debugNotifications))
+    let reply = try #require(await harness.messageSource.ask(.debugNotifications))
 
     let banners = try #require(reply.outputFields["banners"] as? [[String: Any]])
     #expect(banners.count == harness.notifier.posted.count)

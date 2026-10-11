@@ -80,7 +80,11 @@ struct AgentFlagsTests {
     )
     #expect(AgentFlags.arguments("--w={{worktree}}", values: values) == ["--w={{project_path}}"])
     #expect(
-      AgentCatalogue.customCommandLine("run --name={{branch}}", values: values).environment
+      AgentCatalogue.customCommandLine(
+        "run --name={{branch}}",
+        values: values,
+        forShellNamed: "zsh",
+      ).environment
         == ["MULTISHELL_BRANCH": "feat/{{project}}"]
     )
   }
@@ -94,7 +98,11 @@ struct AgentFlagsTests {
       let flags = AgentFlags.arguments("--name={{branch}}", values: values)
       #expect(flags == ["--name=\(hostile)"], "one argument, expanded but not run")
 
-      let custom = AgentCatalogue.customCommandLine("my-agent --name={{branch}}", values: values)
+      let custom = AgentCatalogue.customCommandLine(
+        "my-agent --name={{branch}}",
+        values: values,
+        forShellNamed: "zsh",
+      )
       #expect(custom.text == "my-agent --name=\"$MULTISHELL_BRANCH\"", "read, never written in")
       #expect(custom.environment == ["MULTISHELL_BRANCH": hostile])
     }

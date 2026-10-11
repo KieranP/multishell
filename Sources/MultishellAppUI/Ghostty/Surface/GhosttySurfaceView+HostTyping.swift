@@ -20,9 +20,7 @@ extension GhosttySurfaceView {
   func press(_ keys: [ControlKey]) -> Bool {
     guard let surface else { return false }
     for key in keys {
-      let flags = GhosttyModifiers.flags(
-        ghostty_surface_key_translation_mods(surface, GhosttyModifiers.mods(key.modifierFlags))
-      )
+      let flags = translationFlags(for: key.modifierFlags, on: surface)
       guard let down = GhosttyKeyInput(key, GHOSTTY_ACTION_PRESS, translationFlags: flags),
         let up = GhosttyKeyInput(key, GHOSTTY_ACTION_RELEASE)
       else { return false }

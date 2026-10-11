@@ -8,7 +8,6 @@ import Testing
 /// the PATH a pane was given; the users' files here stand in for it.
 extension ShellIntegrationScriptsTests {
   private static let lead = "/lead/helper:/lead/app"
-  private static let fishes = InstalledShells.only(InstalledShells.fishCandidates)
 
   private func environment(_ files: GeneratedIntegration) -> [String: String] {
     var environment = files.environment(termProgram: "ghostty")
@@ -60,7 +59,7 @@ extension ShellIntegrationScriptsTests {
     #expect(path.components(separatedBy: "/lead/helper").count == 2, "\(path)")
   }
 
-  @Test(arguments: fishes)
+  @Test(arguments: InstalledShells.fishes)
   func fishPutsTheAppsEntriesBackInFrontOfWhatItsConfigAdded(fish: String) async throws {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }

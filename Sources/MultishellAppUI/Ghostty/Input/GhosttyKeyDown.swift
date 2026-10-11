@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 
 /// What one key-down sends libghostty, decided from what the input method did
 /// with it, after Ghostty's own `SurfaceView_AppKit.keyDown`.
@@ -48,7 +49,9 @@ enum GhosttyKeyDown {
   /// Arrows still move after the input method commits on them; plain Left
   /// does not, the Korean input methods leaving the caret in place.
   private static func replaysAfterCommit(keyCode: UInt16, flags: NSEvent.ModifierFlags) -> Bool {
-    let (left, right, down, up): (UInt16, UInt16, UInt16, UInt16) = (0x7B, 0x7C, 0x7D, 0x7E)
+    let (left, right, down, up) = (
+      UInt16(kVK_LeftArrow), UInt16(kVK_RightArrow), UInt16(kVK_DownArrow), UInt16(kVK_UpArrow),
+    )
     switch keyCode {
     case right, down, up: return true
     case left: return !flags.isDisjoint(with: [.shift, .control, .option, .command])

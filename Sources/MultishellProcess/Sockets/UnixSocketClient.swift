@@ -1,7 +1,7 @@
 import Foundation
 
-/// Connects, writes, closes. Blocking, and meant for a command-line helper
-/// whose whole job this is; the app never calls it.
+/// Connects, writes, and for a request reads the answer to EOF. Blocking, and
+/// meant for a command-line helper whose whole job this is; the app never calls it.
 public enum UnixSocketClient {
   /// `timeout` nil waits as long as the listener takes to read it.
   public static func send(_ text: String, to path: URL, timeout: Duration? = nil) throws {

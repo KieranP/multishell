@@ -2,10 +2,10 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// `SessionStateSource` over the Unix socket in the state directory. Handlers
+/// `MessageSource` over the Unix socket in the state directory. Handlers
 /// run on the main queue, so lines arrive in order and without a hop.
 @MainActor
-public final class SocketStateSource: SessionStateSource {
+public final class SocketMessageSource: MessageSource {
   /// An empty line would read to the helper as an app older than itself.
   nonisolated private static let unencodedReplyLine =
     (try? ControlReply.refused(.replyNotEncoded).encodedLine()) ?? ""

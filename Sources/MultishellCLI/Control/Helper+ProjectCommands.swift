@@ -8,7 +8,7 @@ extension Helper {
   ) throws
     -> Int32
   {
-    let topic = "projects"
+    let topic = ControlCommand.projects.rawValue
     let (words, options) = positionals(arguments.dropFirst())
     switch (arguments.first, words.count) {
     case ("list", 0):

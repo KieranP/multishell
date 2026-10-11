@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 import TestScratch
 import Testing
 
@@ -14,12 +13,8 @@ struct HelperPaneWaitingTests {
   }
 
   @Test func aWaitForAStateReturnsOnceThePaneShowsItAndPrintsThePane() async throws {
-    let looks = Mutex(0)
-    let app = try ControlListener { _ in
-      looks.withLock { count in
-        count += 1
-        return count < 3 ? Self.pane("running") : Self.pane("done")
-      }
+    let app = try ControlListener.answeringInTurn { look in
+      look < 2 ? Self.pane("running") : Self.pane("done")
     }
     defer { app.stop() }
 
@@ -76,12 +71,8 @@ struct HelperPaneWaitingTests {
   }
 
   @Test func aWaitInTheScrollbackReadsItOnceThenWatchesTheScreen() async throws {
-    let looks = Mutex(0)
-    let app = try ControlListener { _ in
-      looks.withLock { count in
-        count += 1
-        return .output(count < 3 ? "building\n" : "ready\n")
-      }
+    let app = try ControlListener.answeringInTurn { look in
+      .output(look < 2 ? "building\n" : "ready\n")
     }
     defer { app.stop() }
     let pane = UUID()

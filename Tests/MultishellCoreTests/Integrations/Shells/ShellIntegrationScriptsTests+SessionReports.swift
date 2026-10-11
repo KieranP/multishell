@@ -254,7 +254,7 @@ extension ShellIntegrationScriptsTests {
     return (output, Self.lines(of: log))
   }
 
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishFindsTheHelperUnderTheHomeAndSpacedPathItIsWrittenAs(fish: String) async throws {
     let sent = try await fishRun(fish, input: "emit fish_preexec claude\nexit\n").sent
 
@@ -264,7 +264,7 @@ extension ShellIntegrationScriptsTests {
 
   /// fish hands preexec the whole line, a backslash and newline included,
   /// where Enter continued it.
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishNamesAnAgentTypedOnTheLineAfterAContinuedPrefix(fish: String) async throws {
     let sent = try await fishRun(
       fish,
@@ -274,7 +274,7 @@ extension ShellIntegrationScriptsTests {
     #expect(sent.first?.hasSuffix(" --command claude") == true, "\(sent)")
   }
 
-  @Test(arguments: InstalledShells.only(InstalledShells.fishCandidates))
+  @Test(arguments: InstalledShells.fishes)
   func fishPrintsNoErrorForAHelperRemovedAfterItStarted(fish: String) async throws {
     let run = try await fishRun(
       fish,

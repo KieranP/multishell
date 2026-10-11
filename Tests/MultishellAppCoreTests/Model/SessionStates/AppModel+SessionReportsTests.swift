@@ -14,20 +14,20 @@ struct AppModelSessionReportsTests {
     let harness = Harness()
     let first = harness.openBackgroundTab()
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: first.focusedSessionID)
     )
     #expect(harness.model.state(of: first) == .running)
     #expect(harness.model.state(ofWorktree: harness.main.id) == .running)
     #expect(harness.model.workingAgentCount == 1)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: first.focusedSessionID)
     )
     harness.model.activate(first)
     #expect(harness.model.state(of: first) == .attention, "looking is not answering")
 
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
     #expect(harness.model.state(of: first) == nil, "done for the shown tab has been seen")
   }
 
@@ -36,7 +36,7 @@ struct AppModelSessionReportsTests {
     harness.model.select(harness.main)
     let id = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: id,
@@ -47,7 +47,9 @@ struct AppModelSessionReportsTests {
     #expect(harness.model.state(ofPane: id) == .running)
     #expect(harness.model.workingAgentCount == 0)
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: id, agentID: "claude"))
+    harness.messageSource.send(
+      SessionStateReport(state: .running, sessionID: id, agentID: "claude")
+    )
     #expect(harness.model.workingAgentCount == 1)
   }
 
@@ -56,7 +58,7 @@ struct AppModelSessionReportsTests {
     harness.model.select(harness.main)
     let id = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: id,
@@ -73,14 +75,14 @@ struct AppModelSessionReportsTests {
     let cold = harness.model.workspace.sessions(in: harness.feature.id)[0]
     harness.model.select(harness.main)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: UUID(),
         workingDirectory: harness.main.path.path,
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: cold.id,
@@ -98,12 +100,12 @@ struct AppModelSessionReportsTests {
     let harness = Harness()
     harness.model.select(harness.main)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path)
     )
     #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
     #expect(harness.model.state(ofWorktree: harness.main.id) == nil)
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .done, workingDirectory: harness.feature.path.path + "/")
     )
     #expect(harness.model.state(ofWorktree: harness.feature.id) == .done)
@@ -114,7 +116,7 @@ struct AppModelSessionReportsTests {
       "selecting the worktree is seeing it",
     )
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, workingDirectory: "/nowhere/at/all")
     )
     #expect(harness.model.sessionStates.showsNothing)
@@ -126,7 +128,7 @@ struct AppModelSessionReportsTests {
     let harness = Harness()
     harness.model.select(harness.main)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .attention,
         workingDirectory: harness.feature.path.appendingPathComponent("packages/api").path,
@@ -138,7 +140,7 @@ struct AppModelSessionReportsTests {
       "the deepest worktree, not the first",
     )
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .failed,
         workingDirectory: harness.main.path.appendingPathComponent("featurette").path,
@@ -159,7 +161,7 @@ struct AppModelSessionReportsTests {
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     let ownPID = ProcessInfo.processInfo.processIdentifier
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: tab.focusedSessionID,
@@ -181,7 +183,7 @@ struct AppModelSessionReportsTests {
     harness.model.setNotificationPreference(.everyState)
     harness.model.renameWorktree(harness.feature.id, to: "Checkout flow")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path)
     )
 
@@ -197,19 +199,19 @@ struct AppModelSessionReportsTests {
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
         worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash")
     )
     #expect(harness.notifier.posted.count == 1)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -229,16 +231,16 @@ struct AppModelSessionReportsTests {
     harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session, agentID: "claude")
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .done, sessionID: session, agentID: "claude")
     )
     #expect(harness.model.state(ofWorktree: harness.main.id) == .done)
     #expect(harness.notifier.posted.count == 1)
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -246,7 +248,7 @@ struct AppModelSessionReportsTests {
         worker: WorkerReport(id: "w1", phase: .started, type: "Explore"),
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         workingDirectory: harness.main.path.path,
@@ -268,7 +270,7 @@ struct AppModelSessionReportsTests {
     #expect(card?.workers.map(\.type) == ["Explore"], "a card has its own pane's only")
     #expect(card?.workers.first?.startedAt != nil, "stamped by the model's clock")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: session,
@@ -276,7 +278,7 @@ struct AppModelSessionReportsTests {
         worker: WorkerReport(id: "w1", phase: .ended),
       )
     )
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         workingDirectory: harness.main.path.path,
@@ -297,21 +299,21 @@ struct AppModelSessionReportsTests {
     let tab = harness.openBackgroundTab()
     let id = tab.focusedSessionID
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: id))
+    harness.messageSource.send(SessionStateReport(state: .running, sessionID: id))
     #expect(harness.model.state(of: tab) == .running, "the shell hook as `claude` starts")
 
-    harness.stateSource.send(SessionStateReport(state: .idle, sessionID: id))
+    harness.messageSource.send(SessionStateReport(state: .idle, sessionID: id))
     #expect(harness.model.state(of: tab) == nil, "SessionStart: an agent at its prompt is idle")
 
-    harness.stateSource.send(SessionStateReport(state: .running, sessionID: id))
+    harness.messageSource.send(SessionStateReport(state: .running, sessionID: id))
     #expect(harness.model.state(of: tab) == .running, "UserPromptSubmit or PreToolUse")
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash")
     )
     #expect(harness.model.state(of: tab) == .attention)
 
-    harness.stateSource.send(SessionStateReport(state: .done, sessionID: id))
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: id))
     #expect(harness.model.state(of: tab) == .done)
   }
 
@@ -320,7 +322,7 @@ struct AppModelSessionReportsTests {
     let tab = harness.openBackgroundTab()
     let id = tab.focusedSessionID
 
-    harness.stateSource.send(
+    harness.messageSource.send(
       SessionStateReport(
         state: .running,
         sessionID: id,
@@ -329,21 +331,23 @@ struct AppModelSessionReportsTests {
         isFromShellIntegration: true,
       )
     )
-    harness.stateSource.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
+    harness.messageSource.send(
+      SessionStateReport(state: .idle, sessionID: id, startsSession: true)
+    )
 
     #expect(harness.model.state(of: tab) == nil)
   }
 
   @Test func reportsOverARealSocketReachTheModel() async throws {
     let path = Scratch.socketPath("model")
-    let source = SocketStateSource(path: path)
+    let source = SocketMessageSource(path: path)
     defer {
       source.stop()
       Scratch.removeSocket(path)
     }
     let harness = Harness(socketSource: source)
     let model = harness.model
-    _ = model.startStateSource()
+    _ = model.startMessageSource()
     let tab = harness.openBackgroundTab()
 
     let report = SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
