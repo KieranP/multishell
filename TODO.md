@@ -20,7 +20,7 @@ Most pressing first within each heading. A decision that gets made moves to
   server with a test watcher below, opened in every new worktree. A post-create
   hook runs in one pane and cannot describe tabs.
 - State from OSC 7501, the program status protocol, for agents with no hooks.
-  Waiting on upstream: at `246f702` only libghostty-vt parses it, and the app
+  Waiting on upstream: at `24da727` only libghostty-vt parses it, and the app
   surfaces' `termio/stream_handler.zig` drops it and answers no `?` query.
   Wiring it ourselves would be a patch of roughly 100 to 200 lines, declined
   2026-10-10.
