@@ -63,15 +63,16 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
 - **A copy that failed to quit starts no shell.** Its tabs' reports would reach
   the running copy's socket.
 - **Debug builds keep their own state file, socket, integration and drops
-  directories**, so a debug run beside the installed app touches none of them.
-  Themes and the helper link are shared (develop/state-on-disk.md).
+  directories, and their own helper link**, so a debug run beside the installed
+  app touches none of them. Themes and the hooks' helper link are shared
+  (develop/state-on-disk.md).
 - **`WorkspaceStore` only grows**: `private(set) var workspace` keeps every
   writer inside it, so each new mutation is another method there. Lookups it
   repeats belong on `Workspace`, where the store's methods share them.
 - **A plain shell's title is saved empty**, put in words when drawn: saved as
-  the word, a fish or nu tab kept the old language's after a change, those
-  shells never retitling. Cost: a build before this one draws such a tab
-  untitled until its shell names it.
+  the word, a nu tab kept the old language's after a change, nu never retitling.
+  Cost: a build before this one draws such a tab untitled until its shell names
+  it.
 - **The load forgets a retired agent's id**: a tab restores as a plain shell, a
   preference falls back. Kept, it raised an install alert at every run for an
   agent the app no longer offers. Cost: the next save drops the id, so an older

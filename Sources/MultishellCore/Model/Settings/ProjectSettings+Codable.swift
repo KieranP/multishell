@@ -3,7 +3,7 @@ import Foundation
 extension ProjectSettings {
   /// Renamed fields keep their old keys; a new key would drop every trust
   /// answer, shell and auto-start choice already saved.
-  enum CodingKeys: String, CodingKey {
+  public enum CodingKeys: String, CodingKey, CaseIterable {
     case worktreeDirectory, branchPrefix, defaultBranch
     case preCreateHook, postCreateHook, preDeleteHook, postDeleteHook
     case linkedPaths, copiedPaths

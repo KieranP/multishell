@@ -11,19 +11,21 @@ extension MacPlatform {
     end installTool
     """
 
-  var bundledHelper: URL? {
-    let helper = Bundle.main.bundleURL
-      .appendingPathComponent("Contents/Helpers/multishell", isDirectory: false)
-    return FileManager.default.isExecutableFile(atPath: helper.path) ? helper : nil
+  /// Static too, for the launch that hands its arguments over before any
+  /// platform exists.
+  nonisolated static var bundledHelper: URL? {
+    Bundle.main.executableURL.flatMap(HelperHandOff.helper(inBundleOf:))
   }
 
-  /// Links `/usr/local/bin/multishell` to the stable link, through an
-  /// administrator prompt, so the tool survives the app moving.
+  var bundledHelper: URL? { Self.bundledHelper }
+
+  /// Links `/usr/local/bin/multishell` to this build's own stable link, through
+  /// an administrator prompt, so the tool survives the app moving.
   func installCommandLineTool() throws {
     try AppleScriptRunner.call(
       Self.installToolScript,
       handler: "installTool",
-      arguments: [Paths.helperLink.path, HelperLink.commandLineToolLink.path],
+      arguments: [Paths.buildHelperLink.path, HelperLink.commandLineToolLink.path],
     )
   }
 }

@@ -127,3 +127,8 @@ shipped hook. Newest at the bottom.
   It selected through the store and skipped the question, so a tab opened in
   another project's worktree ran with that file unasked about
   (AppModelSharedSettingsTests).
+- **`config project set` decodes the new settings back before it saves them**,
+  and refuses a value the decoder would drop or change: a blank agent id, a tint
+  off the palette, `null` on a hook, which has no global to follow. Saved as
+  given, it would read as unset on the next load. The trust answers are not
+  settable there at all (agents.md; AppModelControlProjectSettingsTests).

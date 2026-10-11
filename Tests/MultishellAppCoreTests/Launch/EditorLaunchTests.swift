@@ -73,7 +73,11 @@ struct EditorLaunchTests {
       action("nvim", found: .init(application: nil, executable: nvim))
         == .openTab(
           title: "Neovim",
-          command: ["/bin/zsh", "-l", "-i", "-c", "/opt/homebrew/bin/nvim .; exec /bin/zsh -l"],
+          command: [
+            "/bin/zsh", "-l", "-i", "-c",
+            LeadingPathLine.statement(for: .loginZsh)
+              + "/opt/homebrew/bin/nvim .; exec /bin/zsh -l",
+          ],
         )
     )
     #expect(action("nvim", found: .init(application: nil, executable: nil)) == nil)
@@ -87,7 +91,8 @@ struct EditorLaunchTests {
           command: [
             "/usr/bin/env", "MULTISHELL_WORKTREE_PATH=/Users/me/Work/repo trees/feat",
             "/bin/zsh", "-l", "-i", "-c",
-            #"code-insiders "$MULTISHELL_WORKTREE_PATH"; exec /bin/zsh -l"#,
+            LeadingPathLine.statement(for: .loginZsh)
+              + #"code-insiders "$MULTISHELL_WORKTREE_PATH"; exec /bin/zsh -l"#,
           ],
         )
     )

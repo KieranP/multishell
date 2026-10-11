@@ -6,8 +6,17 @@ import MultishellCore
 public enum HelperLink {
   public static let commandLineToolLink = URL(fileURLWithPath: "/usr/local/bin/multishell")
 
-  static var isCommandLineToolInstalled: Bool {
-    FileManager.default.fileExists(atPath: commandLineToolLink.path)
+  /// Offered over nothing, a dangling link or the shared one an older install
+  /// named; never over another build's link or a file of the user's own.
+  static func isCommandLineToolInstalled(
+    link: URL = commandLineToolLink,
+    sharedLink: URL = Paths.helperLink,
+  ) -> Bool {
+    let manager = FileManager.default
+    guard let destination = try? manager.destinationOfSymbolicLink(atPath: link.path) else {
+      return (try? manager.attributesOfItem(atPath: link.path)) != nil
+    }
+    return destination != sharedLink.path && manager.fileExists(atPath: link.path)
   }
 
   /// Points `link` at `helper`, replacing whatever was there. Nothing to do

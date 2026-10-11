@@ -60,7 +60,7 @@ struct AppModelSessionLaunchTests {
 
     let prepared = harness.model.preparedForLaunch(session)
 
-    #expect(prepared.command?.last == "my-agent; exec /bin/sh -l")
+    #expect(prepared.command?.last?.withoutLeadingPathStatement == "my-agent; exec /bin/sh -l")
   }
 
   /// The flags are the user's, so they reach the command line whole, with
@@ -81,20 +81,21 @@ struct AppModelSessionLaunchTests {
     )
 
     #expect(
-      harness.model.preparedForLaunch(session).command?.last
+      harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
         == "claude '--name=feature' --model opus; exec /bin/sh -l"
     )
 
     harness.model.setSettings(ProjectSettings(agentFlags: "--model haiku"), for: harness.project)
     #expect(
-      harness.model.preparedForLaunch(session).command?.last
+      harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
         == "claude --model haiku; exec /bin/sh -l",
       "the project's line replaces the global one",
     )
 
     harness.model.setSettings(ProjectSettings(agentFlags: ""), for: harness.project)
     #expect(
-      harness.model.preparedForLaunch(session).command?.last == "claude; exec /bin/sh -l",
+      harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
+        == "claude; exec /bin/sh -l",
       "blank runs it bare under a global that passes flags",
     )
   }
@@ -118,7 +119,11 @@ struct AppModelSessionLaunchTests {
     after.select(before.main)
 
     let opened = engine.opened.first { store.workspace.session($0.id)?.title == "Claude Code" }
-    #expect(opened?.command?.last?.hasPrefix("claude --continue '--name=main'; ") == true)
+    #expect(
+      opened?.command?.last?.withoutLeadingPathStatement.hasPrefix(
+        "claude --continue '--name=main'; "
+      ) == true
+    )
   }
 
   @Test func aTaskFollowsTheFlagsOnTheFirstLaunchOnly() {
@@ -137,11 +142,11 @@ struct AppModelSessionLaunchTests {
     harness.model.pendingAgentTasks[session.id] = "Fix the redirect"
 
     #expect(
-      harness.model.preparedForLaunch(session).command?.last
+      harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
         == "claude --model opus -- 'Fix the redirect'; exec /bin/sh -l"
     )
     #expect(
-      harness.model.preparedForLaunch(session).command?.last
+      harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
         == "claude --model opus; exec /bin/sh -l",
       "a relaunch in the same run does not ask again",
     )
@@ -182,7 +187,10 @@ struct AppModelSessionLaunchTests {
     )
 
     let command = harness.model.preparedForLaunch(session).command
-    #expect(command?.last == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#)
+    #expect(
+      command?.last?.withoutLeadingPathStatement
+        == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#
+    )
     #expect(
       command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_WORKTREE_NAME=The fix"],
       "the value is handed over around the shell, never written into its line",
@@ -228,7 +236,11 @@ struct AppModelSessionLaunchTests {
     let byTitle = Dictionary(
       uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) }
     )
-    #expect(byTitle["Claude Code"]?.command?.last?.hasPrefix("claude --continue; ") == true)
+    #expect(
+      byTitle["Claude Code"]?.command?.last?.withoutLeadingPathStatement.hasPrefix(
+        "claude --continue; "
+      ) == true
+    )
     #expect(
       byTitle["Flagless"]?.command == nil,
       "no resume flag, so a plain shell keeps the title",
@@ -263,7 +275,11 @@ struct AppModelSessionLaunchTests {
     harness.model.setCustomAgentCommand("my-agent --fast")
     harness.model.select(harness.main)
     harness.model.newAgentTab()
-    #expect(harness.engine.opened.last?.command?.last?.hasPrefix("my-agent --fast; ") == true)
+    #expect(
+      harness.engine.opened.last?.command?.last?.withoutLeadingPathStatement.hasPrefix(
+        "my-agent --fast; "
+      ) == true
+    )
     #expect(
       harness.model.title(of: harness.model.workspace.activeTab(in: harness.main.id)!)
         == "Custom command"

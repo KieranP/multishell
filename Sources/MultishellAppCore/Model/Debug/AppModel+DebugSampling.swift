@@ -24,7 +24,8 @@ extension AppModel {
   func stopDebugSamplingAndClear() {
     debugSampler.stop()
     platform.stopDisplayFrameCallbacks()
-    debugHistory = DebugHistory()
+    debugHistory = DebugHistory(numberingFrom: debugHistory.nextSequence)
+    debugGitRuns = DebugGitRunLog()
     debugProcessAttribution = .empty
     debugTerminalMemoryBySession = [:]
     pausedDebugSnapshot = nil
@@ -58,9 +59,11 @@ extension AppModel {
       exited: gitActivity.finishedRuns.compactMap(\.exitUsage).map { ($0.pid, $0.cpuTime) },
     )
     let cpuPercentByPID = cpu.byPID
+    let sequence = debugHistory.nextSequence
+    debugGitRuns.append(gitActivity.finishedRuns, inSample: sequence)
     debugHistory.append(
       DebugSample(
-        sequence: debugHistory.nextSequence,
+        sequence: sequence,
         takenAt: Date(),
         elapsed: elapsed,
         frameRate: debugSampler.frameRateMeter.takeReading(at: now),
@@ -75,9 +78,11 @@ extension AppModel {
         terminalMemory: terminalMemoryBySession.values.reduce(0, +),
         childrenMemory: children.totalMemory,
         stateReportCount: debugSampler.stateReportCount,
+        marks: debugSampler.pendingMarks,
       )
     )
     debugSampler.stateReportCount = 0
+    debugSampler.pendingMarks = []
     debugProcessAttribution = PaneProcessAttribution(
       trees: scan.trees,
       terminalDevices: scan.terminalDevices,

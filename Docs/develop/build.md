@@ -102,8 +102,8 @@
 - **Xcode's own build of the same package writes no path** and looks in the
   bundle's resources first, so the script runs `xcodebuild` and refuses a binary
   that carries a build path.
-- **The CLI comes the same way**, reading the libraries' catalogue on every
-  hook, so it would fail the same way. Both go through the same checks.
+- **The CLI comes the same way**, linking the same libraries, so it could carry
+  the same path. Both go through the same checks.
 - **The checks pipe into a counting grep, not a quiet one**: under `pipefail` a
   quiet grep quits at its first match, `strings` writes into a closed pipe, and
   the pipeline's SIGPIPE status reads a match as a miss.
@@ -171,12 +171,13 @@
   `isEmpty`, since it prints `x` when it fails.
 - **Size and complexity limits sit just above the largest that exists**: 60-line
   functions, complexity 15, 9 parameters, 4-member tuples, types nested two
-  deep, 120-column lines. They stop growth rather than force a split. Three
+  deep, 120-column lines. They stop growth rather than force a split. Four
   exceed them by choice and are marked: `SVGPathParser.path(fromData:)` (kept
-  whole on 2026-09-30), `OpenCodePlugin.javaScript`, one string literal, and
-  `Workspace.init(from:)`, a field per line; `WorkspaceStore` passes 400 lines
-  because every writer of its `private(set)` state must live in the file.
-  `closure_body_length` is off: a SwiftUI `Form` is one closure.
+  whole on 2026-09-30), `OpenCodePlugin.javaScript(helperExpression:)`, one
+  string literal, `Workspace.init(from:)`, a field per line, and
+  `AppModel.reply(to:)`, one case per control request; `WorkspaceStore` passes
+  400 lines because every writer of its `private(set)` state must live in the
+  file. `closure_body_length` is off: a SwiftUI `Form` is one closure.
 - **Names are three letters or more**, bar `a`, `b`, `c`, `x`, `y`, `i`, `id`,
   `at`, `on`, `to`, `up`, `fd` and the persisted `_0`.
 - **Members sit in SwiftLint's `type_contents_order`**: cases, type aliases,
@@ -205,10 +206,43 @@
 - **Format what you touched, then lint, test, build and release.** All pass, no
   warnings.
 
+## Driving a debug build
+
+- **The command line drives a running copy without a click**: open tabs, type
+  and run a line in a pane, read a pane's text and wait on it, report a state,
+  open the board and the settings windows, size the window, clear a dialog,
+  change settings, read Debug Info, mark and follow its samples, and write the
+  window or a pane to a PNG. `multishell help` lists it, and each helper drives
+  only its own build's app, a worktree's debug build its own. So call
+  `build/Multishell.app/Contents/Helpers/multishell`, not the `multishell` on
+  PATH, which belongs to whichever build installed it (state-on-disk.md).
+- **`multishell info` lists what is up**: an alert or dialog stalls a script
+  that cannot click, and `multishell ui dismiss` cancels the topmost.
+- **Look with `multishell debug screenshot`**, which writes a new PNG under
+  `/tmp` and prints `{"path": …}`, then read it. It is the app drawing itself,
+  terminals included, and needs no permission.
+- **Run it against a scratch home, never the account's.** A launch writes the
+  state directory, re-points the helper links the installed app's hooks use, and
+  its shells write history. `CFFIXED_USER_HOME` moves Foundation's home and
+  `HOME` the helper's, so set both on the app and on every helper call.
+- **A pane's shell still runs as the account**: the engine starts it through
+  `/usr/bin/login -flp`, which sets `HOME` from the account, so it reads the
+  real startup files and writes the real history. Typing into a pane in a
+  scratch run wrote `~/.zsh_history`; drive the app without typing into panes.
+- **Keep that home's path short**, a symlink from `/tmp` to the scratch
+  directory: the socket sits under it, and `sun_path` holds 104 bytes.
+- **Launch the binary itself**, `build/Multishell.app/Contents/MacOS/Multishell`
+  under `env -i` with those two variables, not `open` or `multishell open`:
+  LaunchServices passes no environment. Wait until `multishell info` answers,
+  and end with `multishell quit --force`.
+- **Turn `trashesRemovedWorktrees` off first** where a run removes worktrees, or
+  they land in the account's Trash.
+
 ## What you cannot verify
 
-- **You cannot see or drive the app.** No Apple events, no screen recording. Do
-  not try, and do not ask for those permissions.
+- **You cannot drive the app's desktop.** No Apple events, no screen recording.
+  Do not try, and do not ask for those permissions; the command line and its
+  screenshots are the way in.
 - **You can lay a view out in-process.** A hosting view inside a window that is
   never ordered in measures and renders, asking for nothing, and the sizing
   options give the size SwiftUI would refuse to go below.
@@ -221,8 +255,10 @@
   where the AppKit display path renders the tab's content.
 - **A minimum width reports where text stops wrapping**, not where a control is
   cut off, so it reads as a clip for any page with a caption.
-- **Metal is untried**: a terminal surface is expected to come out blank,
-  neither path capturing a drawable, but nobody has looked.
+- **A terminal's frame is an IOSurface on its layer**, which `ViewScreenshot`
+  draws under AppKit's cached view, clear there: that is how `debug screenshot`
+  shows terminals with their focus ring, checked on a debug build. An in-process
+  render of a view has no live terminal to show.
 - **Otherwise a view change stops at the checks above**: say what is unverified
   and leave the looking to the user. BUGS.md takes no entry for it, since
   whether a feature draws and works is checked by hand as it is built.

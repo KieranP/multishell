@@ -1,0 +1,113 @@
+import Foundation
+
+/// One key `multishell config global` reads and writes, written through the
+/// setter the Settings window calls, so what follows a change still does.
+@MainActor
+struct ControlSetting {
+  let key: String
+  /// JSON-ready: a Bool, a number, a String, or NSNull for none.
+  let read: () -> Any
+  /// `false` where the text is no value the key takes.
+  let write: (String) -> Bool
+
+  static func flag(
+    _ key: String,
+    _ read: @escaping () -> Bool,
+    _ write: @escaping (Bool) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: read,
+      write: { text in
+        guard let value = Bool(text) else { return false }
+        write(value)
+        return true
+      },
+    )
+  }
+
+  static func text(
+    _ key: String,
+    _ read: @escaping () -> String,
+    accepts: @escaping (String) -> Bool = { _ in true },
+    _ write: @escaping (String) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: read,
+      write: { text in
+        guard accepts(text) else { return false }
+        write(text)
+        return true
+      },
+    )
+  }
+
+  /// Empty text is none, which reads back as null.
+  static func optionalText(
+    _ key: String,
+    _ read: @escaping () -> String?,
+    accepts: @escaping (String) -> Bool = { _ in true },
+    _ write: @escaping (String?) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: { read().map { $0 as Any } ?? NSNull() },
+      write: { text in
+        guard text.isEmpty || accepts(text) else { return false }
+        write(text.isEmpty ? nil : text)
+        return true
+      },
+    )
+  }
+
+  /// Refused outside `range` rather than clamped, so a write reads back as given.
+  static func number(
+    _ key: String,
+    _ read: @escaping () -> Double,
+    in range: ClosedRange<Double>,
+    _ write: @escaping (Double) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: read,
+      write: { text in
+        guard let value = Double(text), range.contains(value) else { return false }
+        write(value)
+        return true
+      },
+    )
+  }
+
+  static func count(
+    _ key: String,
+    _ read: @escaping () -> Int,
+    _ write: @escaping (Int) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: read,
+      write: { text in
+        guard let value = Int(text), value >= 0 else { return false }
+        write(value)
+        return true
+      },
+    )
+  }
+
+  static func choice<Value: RawRepresentable<String>>(
+    _ key: String,
+    _ read: @escaping () -> Value,
+    _ write: @escaping (Value) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: { read().rawValue },
+      write: { text in
+        guard let value = Value(rawValue: text) else { return false }
+        write(value)
+        return true
+      },
+    )
+  }
+}

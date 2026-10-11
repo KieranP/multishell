@@ -32,22 +32,24 @@ extension AppModel {
     worktreeCreationStep = step
   }
 
-  /// Returns once the worktree exists and is selected, or the create failed; the
-  /// hook runs on in the pane. `firstTab` nil leaves the tab to the create settings.
+  /// Returns once the worktree exists and is selected, or `nil` once the create failed;
+  /// the hook runs on in the pane. `firstTab` nil leaves the tab to the create settings.
+  @discardableResult
   public func createWorktree(
     branch: String,
     basedOn startPoint: String?,
     createsBranch: Bool,
     in project: Project,
     firstTab: NewWorktreeFirstTab? = nil,
-  ) async {
+    takesOverTheSheet: Bool = true,
+  ) async -> Worktree? {
     // The workspace, not the value handed in: a sheet held open across a
     // removal would add a worktree nothing in the app lists.
-    guard let coordinator, workspace.project(project.id) != nil else { return }
+    guard let coordinator, workspace.project(project.id) != nil else { return nil }
     // A branch can add the symlink without moving the file's bytes, so the
     // verdict cached at the read is asked of the disk again; see settings.md.
     let project = await reconfineSharedSettings(of: project)
-    guard workspace.project(project.id) != nil else { return }
+    guard workspace.project(project.id) != nil else { return nil }
     let effective = effectiveProject(project)
     let settings = effectiveWorktreeSettings(for: project)
     let shell = workspace.effectiveShellPath(for: effective)
@@ -56,7 +58,7 @@ extension AppModel {
     let claimed = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
       .flatMap(claimPath(_:))
     let stopper = ProcessStopper()
-    stageHandles.beginCreation(with: stopper)
+    stageHandles.beginCreation(with: stopper, takesOverTheSheet: takesOverTheSheet)
     defer {
       if stageHandles.isCurrentCreation(stopper) { worktreeCreationStep = nil }
       stageHandles.endCreation(with: stopper)
@@ -64,22 +66,28 @@ extension AppModel {
     }
     let path: URL
     do {
-      path = try await coordinator.create(
-        branch: branch,
-        in: effective,
-        settings: settings,
-        basedOn: startPoint,
-        createsBranch: createsBranch,
-        shellPath: shell,
-        timeout: workspace.projectHookTimeout,
-        stopper: stopper,
-        onStep: { [weak self] step in
-          Task { @MainActor in self?.noteCreationStep(step, of: stopper) }
-        },
-      )
+      // A request's task is cancelled when its helper hangs up: Ctrl-C stops
+      // a create from the command line as the sheet's Cancel stops its own.
+      path = try await withTaskCancellationHandler {
+        try await coordinator.create(
+          branch: branch,
+          in: effective,
+          settings: settings,
+          basedOn: startPoint,
+          createsBranch: createsBranch,
+          shellPath: shell,
+          timeout: workspace.projectHookTimeout,
+          stopper: stopper,
+          onStep: { [weak self] step in
+            Task { @MainActor in self?.noteCreationStep(step, of: stopper) }
+          },
+        )
+      } onCancel: {
+        stopper.stop()
+      }
     } catch {
       reportUnlessStopped(error)
-      return
+      return nil
     }
     await refreshWorktrees(of: project)
     await rearmWatcher()
@@ -88,7 +96,7 @@ extension AppModel {
       createsBranch: createsBranch,
       settings: settings,
     )
-    guard let created = createdWorktree(at: path, branchName: name, in: project) else { return }
+    guard let created = createdWorktree(at: path, branchName: name, in: project) else { return nil }
     if let firstTab { newWorktreeFirstTabs[created.id] = firstTab }
     beginWorktreeSetup(
       of: created,
@@ -100,6 +108,7 @@ extension AppModel {
     select(created, openingFirstTab: .onCreate)
     // A setup still running holds the tab back, and `openHeldBackTab` takes it.
     if !isBusy(created.id) { newWorktreeFirstTabs[created.id] = nil }
+    return created
   }
 
   /// The user's Cancel, of the hook or of git itself, is nothing to report.

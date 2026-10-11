@@ -2,6 +2,7 @@
 @MainActor
 public final class NullSessionStateSource: SessionStateSource {
   public var onReport: (@MainActor (SessionStateReport) -> Void)?
+  public var onRequest: ControlRequestHandler?
   public init() {}
   public func start() throws {}
   public func stop() {}

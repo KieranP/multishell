@@ -25,7 +25,6 @@ extension AgentHookCatalogue {
     let runsTheHelper = words.contains { word in
       word == Paths.helperName || word.hasSuffix("/" + Paths.helperName)
     }
-    let namesASubcommand = words.contains { $0 == subcommand || $0 == legacySubcommand }
-    return runsTheHelper && namesASubcommand
+    return runsTheHelper && (words.contains(subcommand) || words.contains(retiredSubcommand))
   }
 }

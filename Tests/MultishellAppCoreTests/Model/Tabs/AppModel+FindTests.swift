@@ -65,6 +65,20 @@ struct AppModelFindTests {
     )
   }
 
+  @Test func aFindTextDifferingOnlyInCaseKeepsTheSelectionSoTheNextStepMovesOn() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+
+    harness.model.setFindText("make", of: pane)
+    harness.model.findNext()
+    harness.model.setFindText("MAKE", of: pane)
+    harness.model.findNext()
+
+    #expect(
+      harness.engine.searched.map(\.command) == [.find("make"), .nearest, .find("MAKE"), .next]
+    )
+  }
+
   @Test func reopeningABarStartsItsSearchAgainFromNearestThePrompt() {
     let harness = Harness()
     let pane = paneWithFindOpen(harness)

@@ -42,12 +42,13 @@ extension AppModel {
 
   /// The store's half alone, for a caller that reconciles later. The task
   /// waits for the tab's first launch.
-  private func addAgentTab(
+  @discardableResult
+  func addAgentTab(
     _ agentID: String,
     in worktree: Worktree,
     group: TabGroup.ID?,
     task: String = "",
-  ) {
+  ) -> TerminalTab? {
     let tab = store.openTab(
       in: worktree.id,
       group: group,
@@ -55,6 +56,7 @@ extension AppModel {
       agentID: agentID,
     )
     if let tab, !task.isEmpty { pendingAgentTasks[tab.focusedSessionID] = task }
+    return tab
   }
 
   /// What a new tab is by default here, and the first tab a worktree gets

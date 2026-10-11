@@ -25,6 +25,8 @@ struct DebugSample: Sendable, Equatable {
   let terminalMemory: UInt64
   let childrenMemory: UInt64
   let stateReportCount: Int
+  /// What `multishell debug mark` named in this second, oldest first.
+  var marks: [String] = []
 
   var totalMemory: UInt64 { appMemory + childrenMemory }
   var totalCPUPercent: Double { appCPUPercent + childrenCPUPercent }

@@ -176,7 +176,7 @@ struct UnixSocketServerTests {
       Scratch.removeSocket(path)
     }
     let recorder = Recorder<String>()
-    server.onLine = { recorder.record($0) }
+    server.onLine = { line, _ in recorder.record(line) }
     try server.start()
     try server.start()
 

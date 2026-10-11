@@ -9,36 +9,27 @@ import Testing
 /// the test wrote.
 @Suite(.serialized)
 struct HelperHookInstallationTests {
-  @Test func printingTheHooksGivesTheSnippetWithoutTouchingAnyFile() async throws {
+  @Test func printingTheHooksGivesTheFileAsInstallWritesItWithoutTouchingAnyFile() async throws {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
-    let environment = ["HOME": home.path]
+    let installed = try Scratch.directory("installed-home")
+    defer { Scratch.remove(installed) }
 
-    let claude = try await HelperBinary.run(
-      ["install-agent-hooks", "--agent", "claude", "--print"],
-      environment: environment,
-    )
-    #expect(claude.succeeded)
-    let object =
-      try JSONSerialization.jsonObject(with: Data(claude.standardOutput.utf8)) as? [String: Any]
-    let hooks = object?["hooks"] as? [String: Any] ?? [:]
-    #expect(Set(hooks.keys) == Set(AgentHookCatalogue.claude.events.map(\.name)))
-    #expect(AgentHookCatalogue.claude.holdsAnyOfOurHooks(object ?? [:]))
+    for agent in ["claude", "copilot", "opencode"] {
+      let printed = try await HelperBinary.run(
+        ["install-agent-hooks", "--agent", agent, "--print"],
+        environment: ["HOME": home.path],
+      )
+      let install = try await HelperBinary.run(
+        ["install-agent-hooks", "--agent", agent],
+        environment: ["HOME": installed.path],
+      )
+      let fields = try JSONSerialization.jsonObject(with: Data(install.standardOutput.utf8))
+      let file = try #require((fields as? [String: String])?["file"], "\(agent)")
 
-    let copilot = try await HelperBinary.run(
-      ["install-agent-hooks", "--agent", "copilot", "--print"],
-      environment: environment,
-    )
-    #expect(copilot.succeeded)
-    let file =
-      try JSONSerialization.jsonObject(with: Data(copilot.standardOutput.utf8)) as? [String: Any]
-    #expect(file?["version"] as? Int == 1)
-
-    let plugin = try await HelperBinary.run(
-      ["install-agent-hooks", "--agent", "opencode", "--print"],
-      environment: environment,
-    )
-    #expect(plugin.succeeded && plugin.standardOutput.contains("MultishellPlugin"))
+      #expect(printed.succeeded && install.succeeded, "\(agent): \(printed.standardError)")
+      #expect(printed.standardOutput == (try String(contentsOfFile: file, encoding: .utf8)))
+    }
     #expect(try FileManager.default.contentsOfDirectory(atPath: home.path).isEmpty)
   }
 
@@ -90,5 +81,22 @@ struct HelperHookInstallationTests {
     )
     #expect(removed.succeeded, "\(removed.standardError)")
     #expect(AgentHookCatalogue.codex.installState(in: file) == .absent)
+  }
+
+  @Test func installingAndRemovingNameTheAgentAndItsFileAsJSON() async throws {
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    let environment = ["HOME": home.path]
+
+    for command in ["install-agent-hooks", "remove-agent-hooks"] {
+      let output = try await HelperBinary.run(
+        [command, "--agent", "claude"],
+        environment: environment,
+      )
+      let printed = try JSONSerialization.jsonObject(with: Data(output.standardOutput.utf8))
+      let fields = printed as? [String: String]
+      #expect(fields?["agent"] == "claude", "\(command): \(output.standardOutput)")
+      #expect(fields?["file"]?.hasPrefix(home.path) == true, "\(command)")
+    }
   }
 }

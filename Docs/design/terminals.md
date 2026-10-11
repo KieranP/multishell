@@ -373,6 +373,8 @@ at the bottom.
   field stepped the other pane's search in a split.
 - **Escape, the close button and the menu's close all hand the keyboard to the
   bar's own pane**, not the focused one, as the sidebar filter hands it back.
+  `panes find --close` moves no keyboard, as no other request does
+  (`aCloseLeavesTheKeyboardWhereItWas`).
 - **The field takes the keyboard on the open keystroke alone**, through a
   request the bar claims once it is on screen; a bar a worktree switch brings
   back claims nothing.
@@ -394,6 +396,30 @@ at the bottom.
   is a plain key again and only the bar ends a search.
 - **The engine's search-for-selection is left bound and does nothing here**, its
   whole effect being an action the app does not answer yet (TODO.md).
+- **The engine's match counts are kept per pane while its bar is up.** Its
+  search total and selected index arrive as actions of their own, a turn after
+  the search. A step drops the selected index until the engine names the new
+  one, bar a step over the only match: the engine posts only a changed
+  selection, and `panes find --next` waited out its two seconds. A find text
+  differing only in ASCII case keeps both, the engine sending none for it
+  (`theSameTextAgainOrInAnotherCaseKeepsTheCountTheEngineWillNotResend`).
+- **`panes find` prints a count once it holds for three looks**: the engine
+  posts a 0 as a search changes, then a running total as it reads the scrollback
+  (`aCountIsPrintedOnceTheEngineHasSettledNotItsInterimZero`). Cost: the total
+  is the engine's, and after 200,000 lines it counted more matches than the
+  scrollback it still held, read back whole. It keeps matches in pages it has
+  pruned until a later feed sweeps them, which the host cannot ask for.
+- **A key the command line presses is a key event, not text**: a US keyboard's
+  key code and modifiers, with the text the current layout gives that key, as a
+  real press carries, so libghostty encodes Ctrl+C, Escape and the arrows as a
+  keyboard would. Option types the layout's character unless the user's
+  `macos-option-as-alt` makes it Alt, asked of the surface for each key. Its
+  modifier keys go down before it and up after, as a keyboard sends them:
+  libghostty keeps the last modifiers it saw for the mouse, so a Cmd left held
+  kept a link under the pointer lit (`GhosttyKeyInputModifierKeysTests`).
+- **Cost: a key is named by its place on a US keyboard**, so on another layout
+  `a` types what that key types there. `GhosttyKeyInputControlKeyTests` runs
+  only under the US layout.
 - **The same find text set again is nothing to the model.** The field commits on
   Return as well as on each keystroke, and a repeat taken as a change would send
   the find text again and start the selection over.
@@ -402,14 +428,14 @@ at the bottom.
 - **A navigate sent with the find text selects nothing either**: both go through
   one mailbox, which drains before the thread has matched anything, so the first
   step is the model's to send and to remember.
-- **Find text differing only in case is unchanged to the engine**, so the
+- **Find text differing only in ASCII case is unchanged to the engine**, so the
   selection stands and the step after it moves on by one.
 - **An empty find text ends the engine's search outright**, so an emptied field
   sends a search with nothing after it and the bar's close sends the end action,
   which also tells the engine's own bar.
-- **Cost, for now: no "3 of 12".** The engine reports its match count and which
-  is selected through two surface actions the app does not decode yet
-  (appearance.md, TODO.md).
+- **Cost, for now: no "3 of 12" in the bar.** The engine's match count and
+  selection are decoded and kept for `panes find`, but the bar does not show
+  them yet (appearance.md, TODO.md).
 - **Sessions warm up when visited**, a saved workspace implying dozens of shells
   at launch. Selecting a worktree opens a terminal unless told not to; a create
   is asked about separately. Cost: four settings where there were two.
@@ -552,3 +578,34 @@ at the bottom.
   Cost: an `alias` is a fish function, and the word typed is its name.
 - **fish runs its postexec for `exit`**, so `exit 3` reports a failure, and the
   exit event then sends idle, ending the session as zsh's does.
+- **Each pane's PATH starts with the helper's directory, then the app's.**
+  libghostty appends its own executable's directory, `Contents/MacOS`, and on a
+  case-insensitive disk `multishell` there is the app, `Multishell`, so typing
+  it opened a second copy. An embedder's variables are applied after that
+  append, so the host writes PATH whole. First, not last: a build started from
+  another's pane, as `make run` is, inherits that one's `Contents/MacOS`, and an
+  installed build from before the hand-off below opened a copy of itself and
+  never answered
+  (`theHelperComesAheadOfAnotherBuildsAppOnAPathInheritedFromItsPane`).
+- **The integration puts the two back in front after the startup files**, from
+  `MULTISHELL_LEADING_PATH`: a login shell's profile runs `path_helper`, which
+  moves `/etc/paths` ahead of an inherited PATH, so `/usr/local/bin/multishell`
+  answered for whichever build it was installed from. Cost: an entry the user's
+  own files put first sits behind ours.
+- **An agent's or editor's line opens with the same reordering**, in the login
+  shell's own syntax, a bash or fish login shell running none of our files. csh
+  is left out: `-i -c` reads no `.login`, where its `path_helper` runs
+  (`theAgentFindsTheAppsEntriesAheadOfWhatTheLoginProfileAdded`).
+- **The line runs the integration's own file, so no other shell starts for it**:
+  zsh's and fish's own, and bash's for the rest, written in POSIX sh so sh, ksh
+  and dash run it too. The Swift copy that builds a pane's PATH is the fourth
+  (`anAgentsLineReordersPathInTheLoginShellItselfStartingNoOtherShell`).
+- **The app drops the launching shell's own session state before any pane
+  starts**: mise's `__MISE_*` and direnv's record of what it loaded. `open` from
+  a pane passes that pane's environment on, and mise in a new pane then rebuilt
+  PATH from the parent's, the helper going last again
+  (`InheritedShellStateTests`). Their settings stay.
+- **The app's executable hands any argument but AppKit's to its helper**, by
+  `execv`, for a shell whose own files rebuild PATH and for `Multishell help`
+  typed against the bundle. AppKit's are a single dash and a name, as `-psn_`
+  and `-AppleLanguages` are, `-h` excepted (`HelperHandOffTests`).

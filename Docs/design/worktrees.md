@@ -34,9 +34,11 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **The filter reads only the rows it brings back**, those not polled through
   every keystroke since the pause before: it ran a full round at each pause.
 - **A row being read is not read again beside it.** Opening a project or
-  filtering re-read rows the poll was already reading. A removal's read is the
-  exception, having to start after the click, and changing the indicator frees
-  every row, the read in flight no longer counting.
+  filtering re-read rows the poll was already reading. A removal's read and
+  `worktrees show` are the exceptions, each having to start after what asked for
+  it, and changing the indicator frees every row, the read in flight no longer
+  counting. Cost: `worktrees show` runs git every call, past the pace, so a
+  script polling it on a slow repository reads as often as it asks.
 - **A prompt's refresh asked for during that read is read once it lands**, past
   the pace. Dropped, a command finishing mid-read left the badge on what git saw
   before it until the next read due, ten times a slow read.
@@ -150,8 +152,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **The main worktree and a bare repository are refused by the coordinator**,
   not only by the condition that hides the menu item: the call is public and the
   trash step would take `.git` with it.
-- **One predicate is read by the menu, the request and the coordinator**, so the
-  two cannot part.
+- **One predicate is read by the menu, the removal request, the command line's
+  `worktrees remove` and the coordinator**, so none can part from the others.
 - **A missing directory is refused, not worked around.** A shell spawned in one
   silently lands in the home directory.
 - **That check waits a second at most**, the stat running off the main actor: a
@@ -229,7 +231,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **The add takes its path from the one derivation**, so what the sheet shows,
   what is held back and what is made cannot part. The create handle is one slot,
   the sheet showing one create, and the first of two to end lets go only of its
-  own, so the other keeps its Cancel and its steps.
+  own, so the other keeps its Cancel and its steps. A create from the command
+  line takes no slot, or the sheet's Cancel would stop that one instead.
 - **git's own mark is read too**: the list prints `locked initializing` while an
   add is checking out, which covers an add run in a terminal and a symlinked
   volume, where git lists a path other than the planned one. The claim stays for

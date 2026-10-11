@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import GhosttyKit
 
 /// One key event as libghostty takes it, after Ghostty's own
@@ -35,12 +36,42 @@ struct GhosttyKeyInput {
   /// Text an input method commits rather than a key types. Keycode 0 and no
   /// modifiers, so libghostty encodes the text alone.
   init(committing text: String, _ action: ghostty_input_action_e = GHOSTTY_ACTION_PRESS) {
+    self.init(
+      action: action,
+      keyCode: 0,
+      mods: GHOSTTY_MODS_NONE,
+      consumedMods: GHOSTTY_MODS_NONE,
+      unshiftedCodepoint: 0,
+      text: text,
+    )
+  }
+
+  private init(
+    action: ghostty_input_action_e,
+    keyCode: UInt32,
+    mods: ghostty_input_mods_e,
+    consumedMods: ghostty_input_mods_e,
+    unshiftedCodepoint: UInt32,
+    text: String?,
+  ) {
     self.action = action
-    keyCode = 0
-    mods = GHOSTTY_MODS_NONE
-    consumedMods = GHOSTTY_MODS_NONE
-    unshiftedCodepoint = 0
+    self.keyCode = keyCode
+    self.mods = mods
+    self.consumedMods = consumedMods
+    self.unshiftedCodepoint = unshiftedCodepoint
     self.text = text
+  }
+
+  /// The Return key alone, its carriage return encoded by libghostty.
+  static func returnKey(_ action: ghostty_input_action_e) -> Self {
+    Self(
+      action: action,
+      keyCode: UInt32(kVK_Return),
+      mods: GHOSTTY_MODS_NONE,
+      consumedMods: GHOSTTY_MODS_NONE,
+      unshiftedCodepoint: 13,
+      text: nil,
+    )
   }
 
   /// libghostty encodes control characters, DEL among them, itself from the key

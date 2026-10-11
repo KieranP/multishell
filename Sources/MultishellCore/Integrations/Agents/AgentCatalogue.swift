@@ -7,6 +7,8 @@ public enum AgentCatalogue {
   /// The command the user typed in settings, run as written.
   public static let customID = "custom"
   public static let claudeID = "claude"
+  /// Every id a tab can start: the catalogue's, and the custom command.
+  public static var startableIDs: [String] { agents.map(\.id) + [customID] }
   static let codexID = "codex"
   static let geminiID = "gemini"
   static let copilotID = "copilot"

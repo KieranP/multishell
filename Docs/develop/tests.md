@@ -259,6 +259,55 @@ says why these are the rules.
 - **The same suite starts a live server twice, and fails a start**, and each
   time has a second process try the claim, a process's own record locks never
   conflicting, and holds the path limit to the staging name's.
+- **A request is answered on its own connection, a report or an unknown request
+  never**: SocketStateSourceTests, over a real socket. **An answer sent after
+  the client's EOF still arrives, and one held open runs the client out of time,
+  under a second too, one that stops reading holds up no other, and one read
+  slowly but steadily arrives whole past the timeout**: SocketReplyTests. **A
+  request nobody reads runs out of time while still being sent**:
+  UnixSocketClientTests, a socket that listens and never accepts.
+- **The command line reaches its own build's app**: HelperControlTests holds the
+  pane's `MULTISHELL_SOCKET` aside, and PathsVariantTests reads the variant of
+  the bundle a helper reached through a link is in, gives two worktree names
+  that start alike files of their own, and carries over a state file saved under
+  the cut name from before the hash. **The installed tool is offered only over
+  nothing, a dangling link or the shared one**: HelperLinkTests. **A link that
+  cannot be made leaves the shell integration written**: AppLaunchFilesTests.
+- **`open` launches the bundle the helper is in and waits for its answer**:
+  HelperAppCommandsTests, a copy of the helper in a bundle of the test's own and
+  a stand-in for `/usr/bin/open` named by `MULTISHELL_OPENER`, a debug build's
+  alone, since a test may not launch an app.
+- **`multishell` in a pane is the helper, not the app**: SessionEnvironmentTests
+  orders PATH, HelperHandOffTests the app's own hand-off, through a link to its
+  executable too. **A login profile moving `/etc/paths` ahead leaves ours in
+  front**: ShellIntegrationScriptsTests+LeadingPath under zsh, each bash and
+  fish, a user's file standing in for `path_helper`, and TabCommandTests runs an
+  agent's line through each login shell the same way.
+- **Each request does what its menu item or click does, and is refused rather
+  than asked over a working agent**: the AppModelControl suites, through the
+  fake channel; the worktree and project ones on real git. Typing reaching a
+  real shell needs the engine, so it was run by hand against a debug build with
+  `CFFIXED_USER_HOME` on a scratch home, which keeps its state and links off the
+  account but not a pane's history (build.md); so were a pane's text read, the
+  window and pane screenshots, and the settings windows' identifiers.
+- **Two requests' alerts each answer their own request, and the user's comes
+  back**: AppModelControlRequestAlertsTests, which also files nothing for an
+  alert raised under a request that has answered.
+- **A wait returns once the pane gets there and says how long it waited when it
+  does not**: HelperPaneWaitingTests, a stand-in app whose answer changes look
+  by look. **Following prints each new sample once and stops at the count**:
+  HelperDebugSamplesTests the same way, and AppModelDebugToolsTests numbers on
+  from the last sample when the tools go off and on. **A screenshot is written
+  by the helper**: HelperDebugScreenshotTests. **A find prints once the engine
+  has counted**: HelperPaneFindingTests; the count's way from the engine to the
+  model is AppModelControlFindTests, through the fake engine's delegate.
+  Pressing Ctrl+C, a find's count and the menu were run by hand against a debug
+  build. **A pane caught mid-resize is placed in a screenshot at its surface's
+  own size from the top left**, as the layer shows it, not stretched:
+  ViewScreenshotTests.
+- **A key the command line presses types what that key types**:
+  GhosttyKeyInputControlKeyTests, which runs only under a US layout, its texts
+  being that layout's; under any other it is skipped, not failed.
 - **The pid the helper reports stops short of the app**:
   HelperSessionEnvironmentTests with two real shell layers under the test
   process posing as the app; ProcessAncestryTests has the walk on its own.
@@ -548,6 +597,13 @@ says why these are the rules.
   account's; a model the harness builds stubs every launch write.
 - **Every scratch directory and socket is removed** by the test or its harness,
   and the socket helper takes the claim file the server keeps.
+- **A helper command that could reach the app names its socket in
+  `MULTISHELL_CONTROL_SOCKET`**: ControlListener's `environment`, or a path
+  nobody holds. Without it a debug helper outside a bundle asks the plain debug
+  build's socket in the account's Application Support, which the developer's own
+  debug app may hold. `HelperBinary.run` names one nobody listens on, for both
+  the control and the report socket, wherever a test names none, so a usage
+  error that stops being one fails the test instead of reaching that app.
 - **A fake git that waits on a gate file also stops once the scratch root is
   gone** wherever the read can outlive the test: one started after teardown
   finds no gate to wait for and would spin for good. The hung-read tests in

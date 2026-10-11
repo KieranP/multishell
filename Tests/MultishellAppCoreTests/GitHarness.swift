@@ -154,6 +154,27 @@ struct GitHarness {
     )
   }
 
+  /// A model on fake git that holds the repository check in `folder` until
+  /// `gate` exists, touching `asked` as it starts, and then answers no.
+  func modelWithRepositoryCheckHeld(
+    in folder: URL,
+    until gate: URL,
+    asked: URL,
+  ) throws
+    -> AppModel<FakeSurface>
+  {
+    try modelOnFakeGit(
+      """
+      if [ "$*" = "rev-parse --git-dir" ] && [ "$(basename "$PWD")" = "\(folder.lastPathComponent)" ]; then
+        touch "\(asked.path)"
+        while [ ! -f "\(gate.path)" ] && [ -d "\(root.path)" ]; do sleep 0.02; done
+        exit 1
+      fi
+      exit 0
+      """
+    )
+  }
+
   /// `git worktree add -b` run by hand, as the user would outside the app.
   func addOutsideTheApp(_ branch: String, at directory: URL) async throws {
     try await TestRepository.addWorktree(

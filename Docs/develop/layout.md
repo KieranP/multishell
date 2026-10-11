@@ -7,9 +7,9 @@
   `.multishell.json` under `Model/Settings/Shared/`, and a worktree's tabs and
   panes under `Model/Tabs/`; store; theme; ports; the sessions and the reports
   about them; the decoding every persisted type leans on; the libraries' word
-  lookup; where the app keeps its state on disk, under `StateOnDisk/`; and,
-  under `Support/`, the small extensions and helpers every other library reaches
-  for.
+  lookup; where the app keeps its state on disk, under `StateOnDisk/`; the
+  command line's requests and the app's answers, under `Control/`; and, under
+  `Support/`, the small extensions and helpers every other library reaches for.
 - **MultishellProcess**: the children it starts, how a shell is started and
   quoted, sockets, what the kernel answers about a process, a descriptor or a
   terminal, under `Kernel/`, and, under `Support/`, what belongs to no concern.
@@ -25,16 +25,18 @@
   when to notify, the worktree creates and removals under way, every decision a
   view makes; what a screen reader is told; what it needs from the app, and its
   own implementations of Core's ports, under `Ports/`; what Debug Info measures
-  and shows, under `Debug/`; and, under `Support/`, the pieces that belong to no
-  concern.
+  and shows, under `Debug/`; the JSON the command line prints and the settings
+  keys it takes, under `Control/`; and, under `Support/`, the pieces that belong
+  to no concern.
 - **AppModel's extensions sit under `Model/` by concern**: agents, the board,
   what each session is doing, tabs, worktrees, git reads, projects, the
-  sidebar's rows, the detail area, the debug tools' sampling and tables, and the
-  tools it drives. What spans them all stays at the root beside the type, since
-  the concerns are too many for one alphabetical listing to keep a concern's
-  files together.
+  sidebar's rows, the detail area, the debug tools' sampling and tables, the
+  tools it drives, and the command line's requests. What spans them all stays at
+  the root beside the type, since the concerns are too many for one alphabetical
+  listing to keep a concern's files together.
 - **AppCore's `Integrations/` is the app's own side of them**: the helper and
-  shell-integration files it installs, and each agent's hooks as installed.
+  shell-integration files it installs, each agent's hooks as installed, and what
+  the app's executable hands the helper when started with a command.
 - **Everything about a program someone else wrote is in Core's
   `Integrations/`**, one folder per kind: agents, editors, shells, and the files
   every agent's hooks are written into, under `AgentHookFiles/`. Another agent
@@ -44,9 +46,12 @@
   agent's own files under `Agents/Hooks/AgentOwnFiles/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed in
   the bundle as `multishell`, since it and the app would share one products path
-  on a case-insensitive disk. **MultishellAppUI is the app**, built as
-  `Multishell`: views, the engine host, the Mac platform port, and a word lookup
-  of its own.
+  on a case-insensitive disk. Its commands that drive the app sit under
+  `Control/` by command group, beside the parsing, polling and errors they
+  share; every command's usage text, the reports' included, under `Usage/`; and
+  the reports hooks and shells send under `Reports/`. **MultishellAppUI is the
+  app**, built as `Multishell`: views, the engine host, the Mac platform port,
+  and a word lookup of its own.
 - **Its views sit under the part of the window they draw**: the sidebar, the
   detail area, a group of tabs or a pane in it, the board, Debug Info, a
   settings window, a dialog. The rest draw no part of one: reused small views
@@ -111,8 +116,10 @@
 ## Layering rules
 
 - **The four libraries import Foundation, Darwin, Dispatch, System, Observation,
-  Synchronization and CryptoKit, which Apple ships, and one package, nothing
-  else**: swift-subprocess in the process layer (dependencies.md).
+  Synchronization, CryptoKit and CoreGraphics, which Apple ships, and one
+  package, nothing else**: swift-subprocess in the process layer
+  (dependencies.md). CoreGraphics is there for the `CGRect` a pane's frame comes
+  back as.
 - **MultishellAppUI is views, AppKit and the engine host.** Everything else
   lives in MultishellAppCore, including a plain value beside a view unless it
   names SwiftUI, AppKit, a Mac measurement or the engine.

@@ -2,7 +2,7 @@ import MultishellCore
 
 extension AppModel {
   /// What the platform, the reconciler, the socket, the notifier and the
-  /// watcher report back, each routed to the model.
+  /// watcher report back or ask, each routed to the model.
   func wireCallbacks() {
     // Statuses poll only while frontmost, so a return would show badges five
     // seconds stale. The permission is read back for the same reason.
@@ -24,7 +24,9 @@ extension AppModel {
     reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
     reconciler.onLiveSessionsChanged = { [weak self] in self?.noteLiveSessionsChanged() }
     reconciler.onCloseRequest = { [weak self] id in self?.closePane(id) }
+    reconciler.onSearchCount = { [weak self] id, count in self?.noteSearchCount(count, in: id) }
     stateSource.onReport = { [weak self] report in self?.receive(report) }
+    stateSource.onRequest = { [weak self] request in await self?.answer(request) }
     notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in
       Task { await self?.refreshProjectsIfChanged(under: changed) }

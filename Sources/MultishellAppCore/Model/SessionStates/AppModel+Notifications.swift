@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 extension AppModel {
@@ -30,12 +31,11 @@ extension AppModel {
     } else {
       subject = place
     }
-    notifier.notify(
-      title: NotificationPolicy.title(subject: subject, project: project, worktree: place),
-      body: NotificationPolicy.body(for: state, message: report.shownMessage),
-      about: key,
-    )
+    let title = NotificationPolicy.title(subject: subject, project: project, worktree: place)
+    let body = NotificationPolicy.body(for: state, message: report.shownMessage)
+    notifier.notify(title: title, body: body, about: key)
     notifiedKeys.insert(key)
+    notificationLog.append(.init(title: title, body: body, key: key, postedAt: Date()))
   }
 
   /// Takes a banner back where what it said has stopped being true. The dot

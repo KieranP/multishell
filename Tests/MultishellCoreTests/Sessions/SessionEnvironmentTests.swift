@@ -41,4 +41,85 @@ struct SessionEnvironmentTests {
       #expect(variables[SessionEnvironment.appPIDVariable] != nil, "\(shell)")
     }
   }
+
+  @Test func theHelpersDirectoryLeadsJustAheadOfTheAppsWhichTheEngineWouldAppend() {
+    let session = TerminalSession(
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "",
+    )
+    let bundle = BundleDirectories(
+      helper: URL(fileURLWithPath: "/A.app/Contents/Helpers"),
+      app: URL(fileURLWithPath: "/A.app/Contents/MacOS"),
+    )
+
+    let variables = SessionEnvironment.variables(
+      for: session,
+      socket: URL(fileURLWithPath: "/s"),
+      bundle: bundle,
+      inheritedPath: "/usr/bin:/A.app/Contents/MacOS:/bin",
+    )
+
+    #expect(variables["PATH"] == "/A.app/Contents/Helpers:/A.app/Contents/MacOS:/usr/bin:/bin")
+  }
+
+  @Test func theLeadingEntriesAreNamedForTheShellToPutBackAfterItsProfile() {
+    let session = TerminalSession(
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "",
+    )
+    let bundle = BundleDirectories(
+      helper: URL(fileURLWithPath: "/A.app/Contents/Helpers"),
+      app: URL(fileURLWithPath: "/A.app/Contents/MacOS"),
+    )
+
+    let variables = SessionEnvironment.variables(
+      for: session,
+      socket: URL(fileURLWithPath: "/s"),
+      bundle: bundle,
+      inheritedPath: "/usr/bin",
+    )
+
+    #expect(
+      variables[SessionEnvironment.leadingPathVariable]
+        == "/A.app/Contents/Helpers:/A.app/Contents/MacOS"
+    )
+  }
+
+  @Test func theHelperComesAheadOfAnotherBuildsAppOnAPathInheritedFromItsPane() {
+    let session = TerminalSession(
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "",
+    )
+    let bundle = BundleDirectories(
+      helper: URL(fileURLWithPath: "/build/A.app/Contents/Helpers"),
+      app: URL(fileURLWithPath: "/build/A.app/Contents/MacOS"),
+    )
+
+    let variables = SessionEnvironment.variables(
+      for: session,
+      socket: URL(fileURLWithPath: "/s"),
+      bundle: bundle,
+      inheritedPath: "/usr/bin:/Applications/A.app/Contents/MacOS:/bin",
+    )
+
+    let path = variables["PATH"]?.split(separator: ":").map(String.init) ?? []
+    let helper = path.firstIndex(of: "/build/A.app/Contents/Helpers")
+    let other = path.firstIndex(of: "/Applications/A.app/Contents/MacOS")
+    #expect(helper != nil && other != nil && helper! < other!, "\(path)")
+  }
+
+  @Test func withNoBundleThePathIsLeftToTheEngine() {
+    let session = TerminalSession(
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w"),
+      title: "",
+    )
+
+    #expect(
+      SessionEnvironment.variables(for: session, socket: URL(fileURLWithPath: "/s"))["PATH"] == nil
+    )
+  }
 }

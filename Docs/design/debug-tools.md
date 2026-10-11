@@ -121,3 +121,21 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   same strips as shapes held 23 MB in a probe, at the same CPU at one update a
   second, and about 2 points more of WindowServer at 60. A colour is a shape of
   its own.
+- **The command line reads the live history, not the paused panel**, so a
+  script's samples run on while someone holds Debug Info still. With the tools
+  off a reading is refused rather than answered empty
+  (AppModelControlDebugTests).
+- **`debug samples --summary` weighs each mean by the seconds its samples
+  covered**, as a slot weighs its rates, so a held sample counts for the seconds
+  it held.
+- **Git runs are also kept one by one, the newest 1,000**, each with the sample
+  it ended in: the tallies add runs up per command and lose which one was slow.
+  A burst of status reads is hundreds. They go with the samples when the tools
+  turn off.
+- **A mark goes into the next sample and into Instruments' Points of Interest.**
+  The signpost is sent with the tools off too, so a trace taken without the
+  display link's wake-ups still shows where the action fell.
+- **The banners posted are logged whether the tools are on or not**, the newest
+  50, since the notification centre says nothing of a banner once shown. Only
+  the newest about a pane or worktree can still be up, the centre having
+  replaced the rest, so `debug notifications` reports only that one as standing.

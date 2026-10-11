@@ -92,6 +92,9 @@ the way they are. Pull requests are collaborators only, which
   rename.
 - Pre and post hooks for create and delete, shareable in `.multishell.json`.
 - View > Enable Debug Tools for frame rate, CPU, memory and git timings.
+- A `multishell` command to script and test it: projects, worktrees, tabs, panes
+  and settings, reading and waiting on a pane, screenshots and Debug Info;
+  `multishell help` lists them.
 - libghostty for the terminals, JSON themes, Open in Editor, and no changes to
   your shell's rc files.
 

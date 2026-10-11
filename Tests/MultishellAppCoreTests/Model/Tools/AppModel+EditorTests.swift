@@ -108,7 +108,10 @@ struct AppModelEditorTests {
       "the tab is brought on screen",
     )
     #expect(harness.model.liveTerminalCount == 1)
-    #expect(harness.engine.opened.last?.command?.last?.hasPrefix("my-editor ") == true)
+    #expect(
+      harness.engine.opened.last?.command?.last?.withoutLeadingPathStatement.hasPrefix("my-editor ")
+        == true
+    )
     #expect(
       harness.engine.opened.last?.command?.contains(
         "MULTISHELL_WORKTREE_PATH=\(harness.main.path.path)"

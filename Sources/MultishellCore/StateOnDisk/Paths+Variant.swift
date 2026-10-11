@@ -15,31 +15,35 @@ extension Paths {
     #endif
   }
 
-  /// Through the enclosing `.app`: CFBundle takes `Contents/Helpers` for the
-  /// main bundle, so the helper would read the wrong socket.
-  private static let bundledVariantName: String? = {
-    var directory = Bundle.main.bundleURL
-    // Bounded on component count: at the root `deletingLastPathComponent`
-    // appends `..` rather than standing still, so the obvious loop hangs.
-    while directory.pathComponents.count > 1 {
-      if directory.pathExtension == "app" {
-        let plist = directory.appendingPathComponent("Contents/Info.plist", isDirectory: false)
-        guard let data = try? Data(contentsOf: plist),
-          let contents = try? PropertyListSerialization.propertyList(from: data, format: nil)
-            as? [String: Any]
-        else { return nil }
-        return contents[variantKey] as? String
-      }
-      directory = directory.deletingLastPathComponent()
-    }
-    return Bundle.main.object(forInfoDictionaryKey: variantKey) as? String
+  static let bundledVariantName: String? = {
+    guard let executable = Bundle.main.executableURL,
+      let name = variantName(ofBundleHolding: executable)
+    else { return Bundle.main.object(forInfoDictionaryKey: variantKey) as? String }
+    return name
   }()
 
-  /// Split from `variant` so a test can name the value without a bundle. Cut
-  /// to 14 of `[A-Za-z0-9_-]` for `sun_path` and its `.b`; see state-on-disk.md.
+  /// Through the enclosing `.app`: CFBundle takes `Contents/Helpers` for the
+  /// main bundle, and `/usr/local/bin`'s link for one, so either reads another socket.
+  static func variantName(ofBundleHolding executable: URL) -> String? {
+    guard let app = executable.enclosingAppBundle else { return nil }
+    let plist = app.appendingPathComponent("Contents/Info.plist", isDirectory: false)
+    guard let data = try? Data(contentsOf: plist),
+      let contents = try? PropertyListSerialization.propertyList(from: data, format: nil)
+        as? [String: Any]
+    else { return nil }
+    return contents[variantKey] as? String
+  }
+
+  /// Split from `variant` so a test can name the value without a bundle. At
+  /// most 14 of `[A-Za-z0-9_-]` for `sun_path` and its `.b`; see state-on-disk.md.
   static func debugVariant(named name: String?) -> String {
     guard let name, !name.isEmpty else { return ".debug" }
-    let safe = name.prefix(14).map { $0.isPortableNameCharacter ? $0 : "-" }
-    return ".debug-" + String(safe)
+    guard name.count > 14 || !name.allSatisfy(\.isPortableNameCharacter) else {
+      return ".debug-" + name
+    }
+    // A name cut or respelled keeps a hash of the whole, so two that start
+    // alike still get files of their own.
+    let start = name.prefix(9).map { $0.isPortableNameCharacter ? $0 : "-" }
+    return ".debug-" + String(start) + "-" + String(format: "%04x", name.stableHash & 0xFFFF)
   }
 }

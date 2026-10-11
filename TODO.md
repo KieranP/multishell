@@ -19,15 +19,6 @@ Most pressing first within each heading. A decision that gets made moves to
 - A tab layout per project in `.multishell.json`, such as an agent beside a dev
   server with a test watcher below, opened in every new worktree. A post-create
   hook runs in one pane and cannot describe tabs.
-- More CLI commands over the existing socket: `multishell open .` to add the
-  project and select this worktree,
-  `multishell new-worktree <branch> [--agent] [--prompt]`, and
-  `multishell tab -- <command>`, so scripts and agents can drive the app.
-- CLI commands an agent can drive a debug build with, so a measurement needs no
-  one to click: open, close and select tabs and panes, turn Debug Tools on and
-  off, open and close Debug Info, and print the latest samples and Memory by tab
-  as JSON. Memory work today waits on the user for every step, as an agent may
-  not send clicks (develop/memory.md).
 - State from OSC 7501, the program status protocol, for agents with no hooks.
   Waiting on upstream: at `246f702` only libghostty-vt parses it, and the app
   surfaces' `termio/stream_handler.zig` drops it and answers no `?` query.

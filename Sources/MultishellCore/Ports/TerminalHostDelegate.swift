@@ -18,6 +18,12 @@ public protocol TerminalHostDelegate: AnyObject {
     didFinishCommandIn id: TerminalSession.ID,
     exitCode: Int32?,
   )
+  /// The engine's search counted its matches, or which one it is on.
+  func terminalHost(
+    _ host: any TerminalHost,
+    didCount count: TerminalSearchCount,
+    in id: TerminalSession.ID,
+  )
 }
 
 extension TerminalHostDelegate {
@@ -29,4 +35,11 @@ extension TerminalHostDelegate {
   ) {
     terminalHost(host, didSeeActivityIn: id)
   }
+
+  /// A delegate with no find bar has no use for a count.
+  public func terminalHost(
+    _ host: any TerminalHost,
+    didCount count: TerminalSearchCount,
+    in id: TerminalSession.ID,
+  ) {}
 }

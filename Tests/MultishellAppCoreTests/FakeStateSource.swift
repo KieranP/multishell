@@ -4,6 +4,7 @@ import MultishellCore
 @MainActor
 final class FakeStateSource: SessionStateSource {
   var onReport: (@MainActor (SessionStateReport) -> Void)?
+  var onRequest: ControlRequestHandler?
   /// Thrown by `start`, standing in for a socket another copy holds.
   var startError: (any Error)?
   func start() throws {
@@ -11,4 +12,9 @@ final class FakeStateSource: SessionStateSource {
   }
   func stop() {}
   func send(_ report: SessionStateReport) { onReport?(report) }
+
+  /// `nil` where the model dropped the answer, as the helper would read it.
+  func ask(_ request: ControlRequest) async -> ControlReply? {
+    await onRequest?(request)
+  }
 }

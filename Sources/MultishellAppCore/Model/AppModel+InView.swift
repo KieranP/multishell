@@ -37,4 +37,8 @@ extension AppModel {
   public func isInView(_ worktree: Worktree) -> Bool {
     worktreeIDInView == worktree.id
   }
+
+  func isWorktreeInView(of tab: TerminalTab) -> Bool {
+    worktreeIDInView == tab.worktreeID
+  }
 }

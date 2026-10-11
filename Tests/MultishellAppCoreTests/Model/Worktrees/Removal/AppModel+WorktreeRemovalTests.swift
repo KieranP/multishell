@@ -21,7 +21,7 @@ struct AppModelWorktreeRemovalTests {
     harness.model.setSettings(ProjectSettings(preDeleteHook: "sleep 1"), for: harness.project)
     #expect(harness.model.liveTerminalCount == 1)
 
-    let removal = Task { await harness.model.removeWorktree(worktree, deletesBranch: false) }
+    let removal = Task { _ = await harness.model.removeWorktree(worktree, deletesBranch: false) }
     var seen: Set<WorktreeOperation.Stage> = []
     try await waitUntil(
       {

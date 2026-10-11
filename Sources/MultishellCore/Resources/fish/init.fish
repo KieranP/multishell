@@ -1,6 +1,8 @@
 # Multishell's fish integration, run through `-C` once the user's config has.
 # Two halves: what a Ghostty pane is told, and what the app is told.
 
+# include leading-path.fish
+
 # fish 4 writes its own prompt marks, directory and title; terminals.md.
 if status is-interactive; and test "$TERM_PROGRAM" = ghostty
     # Ghostty exports the user's shell-integration-features, `cursor:blink` and all.

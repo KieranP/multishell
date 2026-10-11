@@ -53,6 +53,16 @@ struct WorktreeStageHandlesTests {
     #expect(!handles.isCurrentCreation(second))
   }
 
+  @Test func aCommandLineCreateIsNeverTheOneTheSheetCancels() {
+    var handles = WorktreeStageHandles()
+    let commandLine = ProcessStopper()
+    handles.beginCreation(with: commandLine, takesOverTheSheet: false)
+
+    #expect(!handles.isCurrentCreation(commandLine))
+    handles.stopCreation()
+    #expect(!commandLine.isStopRequested)
+  }
+
   @Test func theFirstOfTwoCreatesToEndLeavesTheOtherItsCancel() {
     var handles = WorktreeStageHandles()
     let first = ProcessStopper()

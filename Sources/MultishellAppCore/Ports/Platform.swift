@@ -21,6 +21,12 @@ public protocol Platform: AnyObject, Sendable {
   /// it. `nil` where there is no such place to name.
   var notificationSettingsLocation: String? { get }
 
+  /// The app's open windows, for `multishell info`.
+  var windows: [PlatformWindow] { get }
+  /// Every item of the menu bar, for `multishell ui menu`.
+  var menuItems: [PlatformMenuItem] { get }
+  var isWorkspaceWindowFullScreen: Bool { get }
+
   func closeKeyWindow()
 
   /// A directory picker, or `nil` when the user cancels.
@@ -57,4 +63,23 @@ public protocol Platform: AnyObject, Sendable {
   /// Another copy of this build holds the socket: bring it forward and quit
   /// this one. A platform with no such notion does nothing and returns.
   func handOverToRunningInstance()
+
+  /// Quits without the confirmation, the command line having asked for it.
+  func quit()
+
+  func show(_ window: AuxiliaryWindow)
+  func close(_ window: AuxiliaryWindow)
+  /// `false` where the main window is closed.
+  func resizeWorkspaceWindow(width: Double, height: Double) -> Bool
+  /// `false` where the main window is closed; the change animates in after.
+  func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool
+  /// The main window as drawn, its panes included, as a PNG; `nil` where it
+  /// is closed or has not drawn.
+  func screenshotWorkspaceWindow() -> Data?
+  /// A named instant in the platform's trace, where a profiler lines it up.
+  func signpost(_ name: String)
+  /// The item at `path`, titles from the bar down, chosen as a click would.
+  func performMenuItem(_ path: [String]) -> PlatformMenuOutcome
+  /// Whether a font family by this name is installed now, as the font picker lists them.
+  func hasFontFamily(_ family: String) -> Bool
 }

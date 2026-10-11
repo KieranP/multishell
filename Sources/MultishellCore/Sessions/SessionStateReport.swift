@@ -186,8 +186,6 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
 
   /// One line, newline-terminated, ready for the socket.
   public func encodedLine() throws -> String {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-    return String(decoding: try encoder.encode(self), as: UTF8.self) + "\n"
+    try JSONEncoder.socketLine(self)
   }
 }

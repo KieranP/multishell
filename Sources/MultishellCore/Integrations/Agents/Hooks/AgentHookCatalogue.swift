@@ -4,9 +4,9 @@ import Foundation
 /// all run. See Docs/design/agents.md for why each event was chosen.
 public enum AgentHookCatalogue {
   public static let subcommand = "agent-hook"
-  /// What builds before this one wrote into a settings file. Those lines are
-  /// still there after an update, and still work.
-  public static let legacySubcommand = "claude-hook"
+  /// What the first builds wrote. The helper exits 0 on it and reports nothing,
+  /// as an exit of 2 is Claude blocking the tool; the line is ours to replace.
+  public static let retiredSubcommand = "claude-hook"
   /// An agent kills a hook that runs longer than this. The helper connects,
   /// writes one line and exits; anything longer means the app is wedged.
   static let timeoutSeconds = 5

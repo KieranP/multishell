@@ -32,8 +32,9 @@ at the bottom.
 - **A report carries only what the app cannot see itself**: state, pid, message,
   a duration so a fast command posts no banner, and the agent, a pane's agent
   usually being started by hand.
-- **It moves a dot, raises a notification and decides how a dropped file is
-  written.** It opens no tab, runs no command and puts no text at a prompt.
+- **A report moves a dot, raises a notification and decides how a dropped file
+  is written.** It opens no tab, runs no command and puts no text at a prompt; a
+  request from the command line may do all three (below).
 - **Shell reports never go in the background**, or a fast command's finished
   overtakes its started: zsh sends each inline, bash down one pipe to its relay,
   fish through a helper launched for each (terminals.md).
@@ -60,6 +61,12 @@ at the bottom.
 - **A settings file of the user's holding any hook of ours counts as
   installed**, so one an older build wrote, short an event added since, reads as
   needing Update rather than as not installed.
+- **The first builds' `claude-hook` line is still known as ours**, and the
+  helper exits 0 on it and reports nothing until Update replaces it. An unknown
+  command exits 2, which Claude takes as blocking a tool, a prompt or a stop,
+  and only a line known as ours is one Remove and Update take out
+  (`theLineTheFirstBuildsWroteIsStillOursToReplace`,
+  `theFirstBuildsClaudeHookLineExitsZeroInSilenceAndReportsNothing`).
 - **A file of the user's is never rewritten unasked**, the write sorting its
   keys and re-indenting it; the row offers Update instead, which takes ours out
   and puts this build's in, a hook of theirs inside our group kept.
@@ -318,8 +325,8 @@ at the bottom.
   carries one, for any agent. Claude's comes from a file beside its transcript
   or from the result of the call that launched it, both below.
 - **The wire field is an object naming the worker.** The older count field is
-  still read, each increment as an unnamed worker, because the helper link is
-  shared between builds and points at whichever launched last.
+  still read, each increment as an unnamed worker, because the hooks' helper
+  link is shared between builds and points at whichever launched last.
 - **The same link makes the reverse meeting happen**, so a start and an end also
   write the count beside the object; a tool call writes none, or each would put
   another unnamed worker on an older app's roster.
@@ -848,3 +855,155 @@ at the bottom.
   task already, and a flag naming it would pass it twice.
 - **A task goes with the tab's first launch only**, and is runtime state, so a
   restored tab resumes without asking again.
+- **The command line's requests share the reports' socket**, one JSON line in
+  and one answer back on the same connection. A second socket would need its own
+  claim, and its name would eat into the `sun_path` budget a worktree's variant
+  already spends (develop/state-on-disk.md).
+- **A request and a report tell themselves apart by shape**: a request has
+  `request` beside `v` and no `state`, so neither parses as the other, and a
+  request this app does not know gets no answer, which the helper reads as an
+  app older than itself. So does one whose `v` is newer than the app's, a case
+  of the same name possibly meaning something else by then.
+- **Requests open tabs, run commands, type at a prompt, create and remove
+  worktrees, and change settings, in both builds.** Reversed 2026-10-10, so a
+  user can script their start-up over many projects and an agent can drive a
+  debug build. Cost: a process of the user's that can connect to the socket can
+  run a command in a pane, outside any sandbox an agent runs in that lets it
+  reach a Unix socket. The socket stays mode 0600, which is all that separates
+  users.
+- **Typing is keystrokes, not a paste**: libghostty brackets a paste for a
+  prompt that asked, and zsh holds a bracketed newline in the line rather than
+  running it, so the text goes as an input method's commit and Return as its own
+  key. `panes paste` is the paste, for text meant to wait at the prompt.
+- **A request goes to the helper's own build's socket, never the pane's
+  `MULTISHELL_SOCKET`**, so a debug helper run in a release app's tab drives the
+  debug app. Reports keep the pane's, being about that pane.
+  `MULTISHELL_CONTROL_SOCKET` names another, for the tests, and only in a debug
+  build, so one left in a release shell's environment cannot turn its helper on
+  another app.
+- **A request is done as the menu item or click it stands for**, through the
+  same model call, so a setting written from the command line repaints and
+  refreshes as the Settings window's does. An alert the action raises comes back
+  as the refusal, in the app's language, and is taken down, so it does not stand
+  in the app after the command line has had its words. An alert is the request's
+  only where it was made in the request's own task, which the alert records as
+  it is made: one waiting on git or a hook has the app going on around it, and a
+  guess from what was on screen after took a click's alert for its reason and
+  took it down. What goes back up is what the request's alert covered when it
+  went up, not what stood when the request began: a click or the model may have
+  raised or taken one down in between, and an alert the user dismissed meanwhile
+  is not brought back. One a click or an answered request raised between two of
+  the request's alerts is what goes back up instead, or the request's finish
+  wiped it unanswered
+  (`aUsersAlertRaisedBetweenTwoOfARequestsAlertsComesBackWhenItFinishes`).
+- **A request whose alert another request covered still answers with it**, and
+  the later one then takes down to what the earlier one's covered: answered
+  plainly, the first left its own alert to come back up after it had replied,
+  with nothing left to take it down. A task a request starts inherits its id, so
+  an alert is filed only while that request is still being answered.
+- **A request answers with its newest alert even once it is gone from the
+  screen**, replaced by a click's or dismissed. Answered plainly, a create whose
+  git failed exited 0
+  (`aRequestWhoseAlertAClickReplacedAnswersWithItAndLeavesTheClicksUp`). Only an
+  alert going up in its own request's task is filed, so one a finishing request
+  puts back is not taken for a new one: two requests finishing out of order
+  brought the second's answered alert back over the user's
+  (`twoRequestsAlertsFinishedInReverseOrderAnswerEachAndTheUsersComesBack`).
+- **An agent named for a new tab or worktree is checked before anything opens.**
+  The launch would otherwise open a plain shell in its place and raise its alert
+  once a run, so a script would read a shell as the agent and a retry would
+  answer success.
+- **Nothing a request does waits on a dialog.** A close, removal or quit over a
+  working agent is refused unless `--force`, and otherwise done without asking:
+  a dialog nobody at the command line sees would stand until someone clicks.
+- **A removal forces the branch delete only with `--force-delete-branch`**, as
+  git's `branch -D`. The alert's Force Deletion is taken down with the alert,
+  and the worktree is gone by then, so a second request could not reach the
+  branch (`aForcedBranchDeletionDeletesABranchGitWouldKeepAndRaisesNoAlert`).
+  Reversed 2026-10-11 from `--force` doing both: getting past a working agent
+  then also lost an unmerged branch's commits
+  (`aForcePastAWorkingAgentStillLeavesABranchGitWouldKeep`).
+- **A helper that hangs up cancels its request**, so Ctrl-C on `worktrees add`
+  stops the pre-create hook or git as the sheet's Cancel does. The helper shuts
+  its writing half after the request, so EOF says nothing; the reply polls for
+  POLLHUP, which macOS sets only once both halves are shut, every 250 ms until
+  it is sent. A cancelled task stops nothing else: nothing else a request awaits
+  checks for it.
+- **The app answers in data and the helper words it**, its output staying
+  English (translation.md): ids and JSON on success, a typed refusal otherwise.
+- **Whatever a command prints is JSON**, indented and sorted as the app's
+  answers are, so a script reads every command one way: a screenshot's path, a
+  pane's text, a wait's line, the version, the hooks it installed. `panes read`
+  and `debug log` take `--plain` for text a person reads; a refusal stays words
+  on standard error with exit 1. `install-agent-hooks --print` is the one
+  exception: it prints the agent's file as a write makes it, as it did before
+  the other commands came, so `> ~/.codex/hooks.json` writes a working file.
+- **A tab asked for in a worktree out of view opens there without switching to
+  it**, so a script does not move the user's view. A worktree with no shells yet
+  starts its saved tabs with it.
+- **A project or worktree is named on the command line by a short id**, `p-` or
+  `w-` and eight hex digits of a hash of the path the model keys it by. Reversed
+  2026-10-10 from the path itself, with a folder inside one naming it too: the
+  user wanted a path only where one is the input, which is `projects add` and
+  the file `debug screenshot` writes, and an id the lists print everywhere else.
+  Nothing new is saved, so the id is the same every run. Cost: a moved folder
+  gets a new id, as the model already makes it a new project; and two paths
+  whose hashes meet would share one, the first listed answering, which at 32
+  bits a sidebar's few dozen never reach.
+- **Global settings go through a key table, project settings through their
+  JSON.** Each global has its own setter with side effects, so each key calls
+  it; a project's are one struct saved whole. Keys are the state file's, never
+  renamed. The shared-settings trust answers are left out: only the app's own
+  question may give them.
+- **A global value the Settings window could not set is refused**, not stored or
+  clamped: a font family this Mac lacks, a size off its slider's range. A
+  clamped write answered done and read back as another number.
+- **Waiting and following are polled from the helper.** `panes wait` and
+  `debug samples --follow` ask a short request every quarter or half second and
+  the app answers each at once, so a long wait holds no connection open in the
+  app and a helper killed mid-wait leaves nothing behind. Cost: a look every 250
+  ms, a pane read or a describe, each a main-thread turn. A samples look asks
+  for the newest two, and for thirty only where it finds it missed some.
+- **A wait with `--scrollback` reads the scrollback at its first look only**,
+  then the screen. Ghostty keeps about 10 MB of it, read under the renderer lock
+  on the main thread, so a full read each look holds the window that long four
+  times a second. Cost: a match that scrolls past a whole screen between two
+  looks is missed, as it is for a wait without the flag
+  (`aWaitInTheScrollbackReadsItOnceThenWatchesTheScreen`).
+- **A pane is read as the engine holds it, not as drawn**, through libghostty's
+  own text read under its renderer lock: a pane out of view reads as well as one
+  on screen, and the text has no colour or layout. The screen read is the live
+  one, not the viewport, so a pane scrolled up still shows what comes in.
+- **A screenshot is the app drawing itself, not a screen capture**, so it asks
+  for no Screen Recording grant. Ghostty presents each frame as an IOSurface on
+  the pane's layer, which AppKit's cached window leaves clear, so the surfaces
+  are drawn first and the cached window over them: a pane's fade and focus ring
+  stay on top, which drawing the surfaces last covered. The app sends the PNG in
+  its answer and the helper writes the file, so no request names a path the app
+  writes to.
+- **A reported state goes through the app's own handling of a hook's report**,
+  as a request rather than a report line, so the answer says what the pane then
+  shows. It is how the dots, banners and board are tested without an agent.
+- **What is up on screen is listed and dismissed from the model**: the alert,
+  each confirmation, the shared-settings question, the New Worktree sheet and
+  the name fields, topmost first. Dismissing is each one's Cancel, so a script
+  stalled behind a dialog nobody sees can clear it without a click. The sheet is
+  only closed: a create running may be a request's, not the sheet's.
+- **A menu item is chosen by its titles, as a click would**: the menu validates
+  first, so a greyed-out item is refused rather than run, and every action a
+  shortcut reaches is reachable without one. Titles are the app's language.
+  Cost: AppKit inserts View > Enter Full Screen only as the menu first opens, so
+  the bar a request walks lacks it until a person has; `window full-screen`
+  calls the window's own toggle instead.
+- **The banners posted are logged in the app**, the newest fifty, since the
+  notification centre says nothing of one once shown; only a pane's newest can
+  still be up, the centre replacing the rest.
+- **What a row or a tab shows is listed from the calls its views make**:
+  `sidebar list` from the sidebar's entries, order and pane rows, `board list`
+  from the board as built, `tabs show` from the pane tree and the engine's view
+  frames. A test reads the same values the screen draws, not a copy of them.
+- **`worktrees show` reads git before it answers**, since the status poll pauses
+  while the app is in the background, as a scripted copy usually is.
+- **The settings windows open through SwiftUI's own openers**, which only a view
+  can reach, so the root view hands them to the platform. AppKit cannot open a
+  SwiftUI scene, and closing one goes by the window's identifier.

@@ -24,4 +24,34 @@ struct HelperLinkTests {
     try HelperLink.refresh(to: nil, link: untouched)
     #expect(!FileManager.default.fileExists(atPath: untouched.path), "no helper, no link")
   }
+
+  @Test func theToolIsOfferedOnlyWhereNothingIsThereOrItNamesTheSharedLink() throws {
+    let root = Scratch.path("helperlink")
+    defer { Scratch.remove(root) }
+    let tool = root.appendingPathComponent("usr-local-bin/multishell")
+    let shared = root.appendingPathComponent("bin/multishell")
+    let otherBuilds = root.appendingPathComponent("cli/multishell")
+    let gone = root.appendingPathComponent("cli.debug-removed/multishell")
+    let helper = root.appendingPathComponent("A.app/Contents/Helpers/multishell")
+    for directory in [tool, helper].map({ $0.deletingLastPathComponent() }) {
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+    try Data().write(to: helper)
+    try HelperLink.refresh(to: helper, link: shared)
+    try HelperLink.refresh(to: helper, link: otherBuilds)
+    let installed = { HelperLink.isCommandLineToolInstalled(link: tool, sharedLink: shared) }
+
+    #expect(!installed(), "nothing there")
+    try FileManager.default.createSymbolicLink(at: tool, withDestinationURL: shared)
+    #expect(!installed(), "the shared link is whichever build launched last")
+    try FileManager.default.removeItem(at: tool)
+    try FileManager.default.createSymbolicLink(at: tool, withDestinationURL: gone)
+    #expect(!installed(), "a link to a build since deleted")
+    try FileManager.default.removeItem(at: tool)
+    try FileManager.default.createSymbolicLink(at: tool, withDestinationURL: otherBuilds)
+    #expect(installed(), "another build's own link")
+    try FileManager.default.removeItem(at: tool)
+    try Data("#!/bin/sh\n".utf8).write(to: tool)
+    #expect(installed(), "a file of the user's own")
+  }
 }

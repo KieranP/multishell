@@ -14,7 +14,7 @@ struct IntegrationInstallState: Sendable {
     return Self(
       installedHooks: Set(states.filter { $0.state != .absent }.map(\.id)),
       staleHooks: Set(states.filter { $0.state == .stale }.map(\.id)),
-      isCommandLineToolInstalled: HelperLink.isCommandLineToolInstalled,
+      isCommandLineToolInstalled: HelperLink.isCommandLineToolInstalled(),
     )
   }
 }

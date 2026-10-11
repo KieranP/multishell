@@ -1,4 +1,5 @@
 import GhosttyKit
+import MultishellCore
 
 /// The surface actions the app answers, copied out of libghostty's payload,
 /// whose pointers live only for the callback.
@@ -9,6 +10,7 @@ enum GhosttySurfaceEvent: Equatable {
   case pointerShape(ghostty_action_mouse_shape_e)
   case pointerVisible(Bool)
   case retitled(String)
+  case searchCount(TerminalSearchCount)
   /// libghostty saw a password prompt start or end, or a keybind toggled it.
   case secureInput(ghostty_action_secure_input_e)
 
@@ -31,6 +33,14 @@ enum GhosttySurfaceEvent: Equatable {
 
     case GHOSTTY_ACTION_SECURE_INPUT:
       self = .secureInput(action.action.secure_input)
+
+    case GHOSTTY_ACTION_SEARCH_TOTAL:
+      let total = action.action.search_total.total
+      self = .searchCount(.total(total < 0 ? nil : total))
+
+    case GHOSTTY_ACTION_SEARCH_SELECTED:
+      let selected = action.action.search_selected.selected
+      self = .searchCount(.selected(selected < 0 ? nil : selected))
 
     case GHOSTTY_ACTION_MOUSE_VISIBILITY:
       self = .pointerVisible(action.action.mouse_visibility == GHOSTTY_MOUSE_VISIBLE)

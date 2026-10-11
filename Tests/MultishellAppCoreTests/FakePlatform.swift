@@ -17,6 +17,10 @@ final class FakePlatform: Platform {
   var bundledHelper: URL?
   var installedCommandLineTool = false
   var handedOverToRunningInstance = false
+  var quitCount = 0
+  var isWorkspaceWindowFullScreen = false
+  /// Runs inside `quit`, which returning stands for AppKit not ending the app.
+  var onQuit: () -> Void = {}
   var logged: [String] = []
   /// Where `moveToTrash` puts things, standing in for the Trash; `nil`
   /// makes it refuse.
@@ -34,6 +38,16 @@ final class FakePlatform: Platform {
   var notificationSettingsLocation: String? = "System Settings > Notifications"
   /// What the model asked to be called on each frame; a test calls it.
   var onDisplayFrame: (@MainActor (ContinuousClock.Instant) -> Void)?
+  var windows: [PlatformWindow] = []
+  var menuItems: [PlatformMenuItem] = []
+  var performedMenuItems: [[String]] = []
+  var shownWindows: [AuxiliaryWindow] = []
+  var closedWindows: [AuxiliaryWindow] = []
+  /// `nil` stands for a closed main window.
+  var workspaceWindowSize: (width: Double, height: Double)? = (1_200, 800)
+  var workspaceWindowScreenshot: Data?
+  var signposts: [String] = []
+  var fontFamilies: Set<String> = ["Menlo", "SF Mono"]
 
   func log(_ message: String) { logged.append(message) }
 
@@ -57,9 +71,34 @@ final class FakePlatform: Platform {
   }
   func installCommandLineTool() throws { installedCommandLineTool = true }
   func handOverToRunningInstance() { handedOverToRunningInstance = true }
+  func quit() {
+    quitCount += 1
+    onQuit()
+  }
   func setBadgeCount(_ count: Int?) { badges.append(count) }
   func startDisplayFrameCallbacks(
     _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
   ) { onDisplayFrame = onFrame }
   func stopDisplayFrameCallbacks() { onDisplayFrame = nil }
+  func show(_ window: AuxiliaryWindow) { shownWindows.append(window) }
+  func close(_ window: AuxiliaryWindow) { closedWindows.append(window) }
+  func resizeWorkspaceWindow(width: Double, height: Double) -> Bool {
+    guard workspaceWindowSize != nil else { return false }
+    workspaceWindowSize = (width, height)
+    return true
+  }
+  func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool {
+    guard workspaceWindowSize != nil else { return false }
+    isWorkspaceWindowFullScreen = isOn
+    return true
+  }
+  func screenshotWorkspaceWindow() -> Data? { workspaceWindowScreenshot }
+  func signpost(_ name: String) { signposts.append(name) }
+  func hasFontFamily(_ family: String) -> Bool { fontFamilies.contains(family) }
+  func performMenuItem(_ path: [String]) -> PlatformMenuOutcome {
+    guard let item = menuItems.first(where: { $0.path == path }) else { return .notFound }
+    guard item.isEnabled else { return .disabled }
+    performedMenuItems.append(path)
+    return .performed
+  }
 }

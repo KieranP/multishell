@@ -1,5 +1,6 @@
 import AppKit
 import GhosttyKit
+import MultishellCore
 
 /// One terminal: a libghostty surface drawing into this view, after Ghostty's
 /// own `SurfaceView_AppKit`. Its shell starts as the view is made.
@@ -10,6 +11,7 @@ final class GhosttySurfaceView: NSView {
   var onRetitle: ((String) -> Void)?
   var onBell: (() -> Void)?
   var onCommandFinish: ((Int?) -> Void)?
+  var onSearchCount: ((TerminalSearchCount) -> Void)?
   /// The shell's process ended and libghostty closed the pane.
   var onExit: (() -> Void)?
   /// libghostty was asked to close the pane while its process runs, as by a keybind.

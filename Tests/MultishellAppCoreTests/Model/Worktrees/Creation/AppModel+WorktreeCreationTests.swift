@@ -236,7 +236,7 @@ struct AppModelWorktreeCreationTests {
       },
       seconds: 15,
     )
-    await create.value
+    _ = await create.value
 
     #expect(seen.contains(.preCreateHook), "the sheet could name the hook it waited on: \(seen)")
     #expect(harness.model.worktreeCreationStep == nil, "cleared once the sheet's part is over")
@@ -269,7 +269,7 @@ struct AppModelWorktreeCreationTests {
     try await waitUntil { slow.worktreeCreationStep == .addingWorktree }
     #expect(slow.worktreeCreationStep == .addingWorktree)
     slow.cancelWorktreeCreation()
-    await create.value
+    _ = await create.value
 
     #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     #expect(slow.presentedError == nil, "the user's own Cancel is nothing to report")
@@ -339,7 +339,7 @@ struct AppModelWorktreeCreationTests {
     #expect(harness.model.worktreeCreationStep == .preCreateHook)
 
     harness.model.cancelWorktreeCreation()
-    await create.value
+    _ = await create.value
 
     #expect(harness.model.presentedError == nil)
     #expect(harness.worktree(onBranch: "never") == nil)
@@ -419,8 +419,8 @@ struct AppModelWorktreeCreationTests {
     )
 
     try Data().write(to: gate)
-    await first.value
-    await second.value
+    _ = await first.value
+    _ = await second.value
 
     #expect(!claims().isClaimed(plannedOne) && !claims().isClaimed(plannedTwo), "each let go")
     let one = try #require(harness.worktree(onBranch: "one"))

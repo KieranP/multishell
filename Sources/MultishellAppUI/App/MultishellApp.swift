@@ -1,7 +1,6 @@
 import MultishellAppCore
 import SwiftUI
 
-@main
 struct MultishellApp: App {
   @State private var platform: MacPlatform
   @State private var model: AppModel
@@ -16,6 +15,7 @@ struct MultishellApp: App {
         .task {
           appDelegate.liveTerminalCount = { model.liveTerminalCount }
           appDelegate.workingAgentCount = { model.workingAgentCount }
+          appDelegate.quitsWithoutAsking = { model.quitsWithoutAsking }
           appDelegate.onWillTerminate = {
             model.shutDown()
           }

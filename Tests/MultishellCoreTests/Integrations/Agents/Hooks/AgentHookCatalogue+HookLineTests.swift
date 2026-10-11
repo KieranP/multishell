@@ -51,13 +51,13 @@ struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
     return process.terminationStatus
   }
 
-  /// Settings files still hold the `claude-hook` line the first builds wrote, and an install that
-  /// missed it would append a second one beside it.
-  @Test func theLineAnOlderBuildWroteIsStillOurs() {
-    #expect(AgentHookCatalogue.isOurHook(legacyClaudeHookLine))
+  /// The helper no longer answers to that name, so the line exits 2, which Claude
+  /// takes as blocking; only knowing it as ours lets Remove and Update take it out.
+  @Test func theLineTheFirstBuildsWroteIsStillOursToReplace() {
+    #expect(AgentHookCatalogue.isOurHook(retiredClaudeHookLine))
     #expect(
       AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: [
-        "hooks": groups(claudeEvents, command: legacyClaudeHookLine)
+        "hooks": groups(claudeEvents, command: retiredClaudeHookLine)
       ])
     )
   }
@@ -81,13 +81,5 @@ struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
     let reference = AgentHookCatalogue.helperReference
     #expect(reference.hasPrefix("$HOME/"), "\(reference)")
     #expect(reference.hasSuffix("/bin/multishell"))
-  }
-
-  private func groups(_ events: [String], command: String) -> [String: Any] {
-    var hooks: [String: Any] = [:]
-    for event in events {
-      hooks[event] = [["hooks": [["type": "command", "command": command]]]]
-    }
-    return hooks
   }
 }

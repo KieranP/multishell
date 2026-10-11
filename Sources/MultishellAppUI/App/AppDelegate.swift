@@ -7,6 +7,7 @@ import MultishellProcess
 final class AppDelegate: NSObject, NSApplicationDelegate {
   var liveTerminalCount: @MainActor () -> Int = { 0 }
   var workingAgentCount: @MainActor () -> Int = { 0 }
+  var quitsWithoutAsking: @MainActor () -> Bool = { false }
   var onWillTerminate: @MainActor () -> Void = {}
 
   func applicationWillFinishLaunching(_ notification: Notification) {
@@ -23,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
     let (terminals, working) = (liveTerminalCount(), workingAgentCount())
-    guard terminals > 0 else { return .terminateNow }
+    guard terminals > 0, !quitsWithoutAsking() else { return .terminateNow }
 
     let alert = QuitAlert.make(terminals: terminals, working: working)
     return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel

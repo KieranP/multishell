@@ -23,7 +23,8 @@ public final class WorkspaceStore {
   /// Loads saved state. `loadError` is set, not thrown, so the app still
   /// starts and can tell the user what happened.
   public static func restored() -> (store: WorkspaceStore, loadError: (any Error)?) {
-    restored(from: StateFile())
+    Paths.carryOverStateFileFromBeforeTheHash()
+    return restored(from: StateFile())
   }
 
   static func restored(from file: StateFile) -> (store: WorkspaceStore, loadError: (any Error)?) {

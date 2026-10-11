@@ -28,7 +28,7 @@ extension AppModel {
   /// Sets or clears a name without going through the field; `nil` is the
   /// menu's Use Branch Name.
   public func renameWorktree(_ id: Worktree.ID, to name: String?) {
-    renamingWorktreeID = nil
+    if renamingWorktreeID == id { renamingWorktreeID = nil }
     store.setCustomName(name, forWorktree: id)
   }
 }

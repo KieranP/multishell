@@ -8,12 +8,13 @@ extension AppModel {
     _ id: TerminalTab.ID,
     _ placement: TerminalTab.Placement,
     anchor: TerminalTab.ID,
+    takingFocus: Bool = true,
   ) -> Bool {
     guard changesTheStrip(id, placement, anchor) else { return true }
     guard store.moveTab(id, placement, anchor: anchor) else { return false }
     // The drop activates the tab in its new group, so without this the engine
     // keeps focus on the one now hidden behind it.
-    reconcileSessions(takingFocus: true)
+    reconcileSessions(takingFocus: takingFocus)
     return true
   }
 

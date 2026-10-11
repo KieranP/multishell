@@ -27,6 +27,19 @@ struct AppModelDebugToolsTests {
     #expect(harness.model.debugHistory.samples.isEmpty)
   }
 
+  @Test func aSampleAfterTheToolsGoOffAndOnIsNumberedPastTheLastOneBefore() async throws {
+    let harness = harnessWithDebugTools()
+    await harness.model.takeDebugSample()
+    await harness.model.takeDebugSample()
+    let before = try #require(harness.model.debugHistory.latest?.sequence)
+
+    harness.model.setDebugToolsEnabled(false)
+    harness.model.enableDebugTools()
+    await harness.model.takeDebugSample()
+
+    #expect(try #require(harness.model.debugHistory.latest?.sequence) > before)
+  }
+
   @Test func aSampleAskedForWhileTheToolsAreOffRecordsNothing() async {
     let harness = Harness()
     harness.model.debugSampler.scanProcesses = { _, _ in .sample(appMemory: 400, trees: []) }

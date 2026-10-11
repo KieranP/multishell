@@ -16,6 +16,9 @@ extension GhosttySurfaceView {
     case .commandFinished(let exitCode):
       onCommandFinish?(exitCode)
 
+    case .searchCount(let count):
+      onSearchCount?(count)
+
     case .pointerShape(let shape):
       guard let cursor = GhosttyPointerShape.cursor(for: shape) else { return }
       pointer = cursor

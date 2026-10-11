@@ -9,6 +9,8 @@ struct DebugSampler {
   var frameRateMeter = FrameRateMeter()
   var cpuUsageMeter = CPUUsageMeter()
   var stateReportCount = 0
+  /// Names `multishell debug mark` gave since the last sample.
+  var pendingMarks: [String] = []
   var lastSampleAt: ContinuousClock.Instant?
   /// Bumped at each start and stop, so a sample begun before either lands nowhere.
   var generation = 0
@@ -37,5 +39,6 @@ struct DebugSampler {
     cpuUsageMeter = CPUUsageMeter()
     lastSampleAt = nil
     stateReportCount = 0
+    pendingMarks = []
   }
 }

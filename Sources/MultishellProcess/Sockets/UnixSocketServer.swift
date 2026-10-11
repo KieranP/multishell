@@ -1,8 +1,8 @@
 import Foundation
 import Synchronization
 
-/// Listens on a Unix socket and hands each line to `onLine`. Handler-driven,
-/// so no thread waits; the file is mode 0600 and its lines move a dot.
+/// Listens on a Unix socket and hands each line to `onLine`, with the
+/// connection to answer on. Handler-driven, so no thread waits; mode 0600.
 public final class UnixSocketServer: Sendable {
   struct State {
     var listener: (any DispatchSourceRead)?
@@ -12,9 +12,9 @@ public final class UnixSocketServer: Sendable {
 
   /// A connection that sends more than this without a newline is not
   /// speaking the protocol and is dropped.
-  static let maximumLineLength = 64 * 1024
+  public static let maximumLineLength = 64 * 1024
 
-  public var onLine: (@Sendable (String) -> Void)? {
+  public var onLine: (@Sendable (String, SocketReplyChannel) -> Void)? {
     get { lineHandler.withLock { $0 } }
     set { lineHandler.withLock { $0 = newValue } }
   }
@@ -23,7 +23,7 @@ public final class UnixSocketServer: Sendable {
   let claim: SocketClaim
   let queue: DispatchQueue
   let state = Mutex(State())
-  private let lineHandler = Mutex<(@Sendable (String) -> Void)?>(nil)
+  private let lineHandler = Mutex<(@Sendable (String, SocketReplyChannel) -> Void)?>(nil)
 
   public init(path: URL, queue: DispatchQueue = DispatchQueue(label: "multishell.socket")) {
     self.path = path.path

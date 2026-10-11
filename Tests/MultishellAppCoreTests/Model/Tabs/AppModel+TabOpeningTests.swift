@@ -20,8 +20,14 @@ struct AppModelTabOpeningTests {
     #expect(harness.model.title(of: tab) == "Claude Code")
     let opened = harness.engine.opened.last!
     #expect(opened.id == session.id)
-    #expect(opened.command?.last?.hasPrefix("claude; ") == true, "\(opened.command ?? [])")
-    #expect(opened.command?.last?.contains("exec ") == true, "a shell takes over after the agent")
+    #expect(
+      opened.command?.last?.withoutLeadingPathStatement.hasPrefix("claude; ") == true,
+      "\(opened.command ?? [])",
+    )
+    #expect(
+      opened.command?.last?.withoutLeadingPathStatement.contains("exec ") == true,
+      "a shell takes over after the agent",
+    )
   }
 
   @Test func autoStartMakesNewTabAndTheFirstTabTheAgentButNeverASplit() {

@@ -14,7 +14,12 @@ struct TabCommandTests {
       shell: .loginZsh,
       handOver: "exec /bin/zsh -l",
     )
-    #expect(command == ["/bin/zsh", "-l", "-i", "-c", "claude --continue; exec /bin/zsh -l"])
+    #expect(
+      command == [
+        "/bin/zsh", "-l", "-i", "-c",
+        LeadingPathLine.statement(for: .loginZsh) + "claude --continue; exec /bin/zsh -l",
+      ]
+    )
   }
 
   @Test func argumentsWithSpacesAreQuotedAndTheUsersShellIsExecd() {
@@ -23,7 +28,10 @@ struct TabCommandTests {
       shell: .loginZsh,
       handOver: "exec /opt/homebrew/bin/nu -l",
     )
-    #expect(command.last == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l")
+    #expect(
+      command.last?.withoutLeadingPathStatement
+        == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l"
+    )
   }
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
@@ -128,6 +136,61 @@ struct TabCommandTests {
     }
   }
 
+  /// Each user's file stands in for the `path_helper` a login profile runs.
+  @Test(
+    arguments: InstalledShells.only(
+      ["/bin/zsh", "/bin/sh", "/bin/ksh", "/bin/dash"] + InstalledBashes.all
+        + InstalledShells.fishCandidates
+    )
+  )
+  func theAgentFindsTheAppsEntriesAheadOfWhatTheLoginProfileAdded(shell: String) async throws {
+    let home = try Scratch.directory("tab-command")
+    defer { Scratch.remove(home) }
+    let prepend = "export PATH=\"/opt/first:$PATH\"\n"
+    try Data(prepend.utf8).write(to: home.appendingPathComponent(".zprofile"))
+    try Data(prepend.utf8).write(to: home.appendingPathComponent(".bash_profile"))
+    try Data(prepend.utf8).write(to: home.appendingPathComponent(".profile"))
+    let fishConfig = home.appendingPathComponent(".config/fish", isDirectory: true)
+    try FileManager.default.createDirectory(at: fishConfig, withIntermediateDirectories: true)
+    try Data("set -gx PATH /opt/first $PATH\n".utf8)
+      .write(to: fishConfig.appendingPathComponent("config.fish"))
+    let lead = "/lead/helper:/lead/app"
+    var environment = Scratch.bareShellEnvironment(home: home)
+    environment["PATH"] = lead + ":/usr/bin:/bin"
+    environment[SessionEnvironment.leadingPathVariable] = lead
+    let command = TabCommand.running(
+      ["/usr/bin/printenv", "PATH"],
+      shell: ShellInvocation(
+        executable: URL(fileURLWithPath: shell),
+        arguments: ["-l", "-i", "-c"],
+      ),
+      handOver: "exit",
+    )
+
+    let text = try await Detached.output(
+      of: command[0],
+      Array(command.dropFirst()),
+      environment: environment,
+      in: home,
+      standardError: .discarded,
+    )
+
+    let path = try #require(text.split(separator: "\n").last { $0.hasPrefix("/") }, "\(text)")
+    #expect(path.hasPrefix(lead + ":"), "\(shell): \(path)")
+    #expect(path.contains("/opt/first"), "\(shell) read no profile: \(path)")
+    #expect(path.components(separatedBy: "/lead/helper").count == 2, "\(shell): \(path)")
+  }
+
+  @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/ksh", "/opt/homebrew/bin/fish"])
+  func anAgentsLineReordersPathInTheLoginShellItselfStartingNoOtherShell(shell: String) {
+    let statement = LeadingPathLine.statement(
+      for: ShellInvocation(executable: URL(fileURLWithPath: shell), arguments: ["-l", "-i", "-c"])
+    )
+
+    #expect(statement.contains(SessionEnvironment.leadingPathVariable), "\(shell)")
+    #expect(!statement.contains("/bin/sh"), "\(shell): \(statement)")
+  }
+
   @Test func aCustomLineIsUsedAsTypedAndBlankMeansNothing() {
     #expect(
       TabCommand.running(
@@ -143,7 +206,10 @@ struct TabCommandTests {
         shell: .loginZsh,
         handOver: "exec /bin/zsh -l",
       )
-        == ["/bin/zsh", "-l", "-i", "-c", "my-agent --model x; exec /bin/zsh -l"]
+        == [
+          "/bin/zsh", "-l", "-i", "-c",
+          LeadingPathLine.statement(for: .loginZsh) + "my-agent --model x; exec /bin/zsh -l",
+        ]
     )
   }
 
@@ -155,7 +221,9 @@ struct TabCommandTests {
     #expect(
       TabCommand.running(customLine: line, shell: .loginZsh, handOver: "exec /bin/zsh -l") == [
         "/usr/bin/env", "MULTISHELL_BRANCH=feat$(x)", "MULTISHELL_PROJECT_NAME=demo",
-        "/bin/zsh", "-l", "-i", "-c", #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
+        "/bin/zsh", "-l", "-i", "-c",
+        LeadingPathLine.statement(for: .loginZsh)
+          + #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
       ]
     )
   }

@@ -4,17 +4,19 @@ import MultishellGitKit
 import MultishellProcess
 
 extension AppModel {
-  /// The pane shows each stage while this runs. What a failed stage does is
-  /// `PresentedRemovalFailure`'s decision; this attaches the retry it names.
+  /// The pane shows each stage; `PresentedRemovalFailure` decides what a failed one does,
+  /// and is returned, so a request knows its alert as its own.
+  @discardableResult
   func removeWorktree(
     _ worktree: Worktree,
     deletesBranch: Bool,
+    forcesBranchDeletion: Bool = false,
     trashes: Bool? = nil,
-  ) async {
+  ) async -> PresentedRemovalFailure? {
     // Here, before the stage begins, as each request reaches this in a Task of its own.
     guard let coordinator, let project = workspace.project(worktree.projectID),
       !isBusy(worktree.id)
-    else { return }
+    else { return nil }
     if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
     let effective = effectiveProject(project)
     let trashes = trashes ?? workspace.trashesRemovedWorktrees
@@ -25,6 +27,7 @@ extension AppModel {
     let stopper = ProcessStopper()
     stageHandles.holdStopper(stopper, on: worktree.id)
     defer { stageHandles.releaseStopper(stopper, on: worktree.id) }
+    var failure: PresentedRemovalFailure?
     do {
       try await coordinator.remove(
         worktree,
@@ -37,6 +40,7 @@ extension AppModel {
           }
         },
         deletesBranch: deletesBranch,
+        forcesBranchDeletion: forcesBranchDeletion,
         shellPath: workspace.effectiveShellPath(for: effective),
         timeout: workspace.projectHookTimeout,
         stopper: stopper,
@@ -47,32 +51,28 @@ extension AppModel {
         },
       )
     } catch {
-      let worktreeIsGone = reportRemovalFailure(
+      let presented = PresentedRemovalFailure(
         error,
-        of: worktree,
-        deletesBranch: deletesBranch,
-        in: project,
+        deletingBranch: deletesBranch ? worktree.branch : nil,
       )
-      guard worktreeIsGone else { return }
+      failure = presented
+      guard report(presented, of: error, on: worktree, in: project) else { return failure }
     }
     worktreeOperations.clear(worktree.id)
     await refreshWorktrees(of: project)
     await rearmWatcher()
     reconcileSessions(takingFocus: true)
+    return failure
   }
 
-  /// Says what went wrong where `PresentedRemovalFailure` puts it. `true` where the
-  /// worktree went regardless, so the refresh after a removal still runs.
-  private func reportRemovalFailure(
-    _ error: any Error,
-    of worktree: Worktree,
-    deletesBranch: Bool,
+  /// Says what went wrong where `failure` puts it. `true` where the worktree
+  /// went regardless, so the refresh after a removal still runs.
+  private func report(
+    _ failure: PresentedRemovalFailure,
+    of error: any Error,
+    on worktree: Worktree,
     in project: Project,
   ) -> Bool {
-    let failure = PresentedRemovalFailure(
-      error,
-      deletingBranch: deletesBranch ? worktree.branch : nil,
-    )
     switch failure {
     case .stopped:
       worktreeOperations.clear(worktree.id)

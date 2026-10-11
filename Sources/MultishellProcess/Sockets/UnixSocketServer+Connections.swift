@@ -2,10 +2,12 @@ import Foundation
 import Synchronization
 
 extension UnixSocketServer {
-  /// Unchecked: `buffer` is touched only by its read source's handler, which
-  /// runs on the server's serial queue.
+  /// Unchecked: `buffer` and `replies` are touched only by its read source's
+  /// handler, which runs on the server's serial queue.
   final class Connection: @unchecked Sendable {
     let source: any DispatchSourceRead
+    /// Made by the first reply: a report's connection never answers.
+    lazy var replies = SocketReply.connectionQueue()
     var buffer = LineBuffer()
     init(source: any DispatchSourceRead) { self.source = source }
   }
@@ -61,11 +63,12 @@ extension UnixSocketServer {
 
   private func readLines(from descriptor: Int32, into connection: Connection) {
     let onLine = onLine
+    let channel = SocketReplyChannel(descriptor: descriptor, connection: connection)
     var chunk = [UInt8](repeating: 0, count: 4096)
     while true {
       let count = read(descriptor, &chunk, chunk.count)
       if count > 0 {
-        for line in connection.buffer.append(chunk[0..<count]) { onLine?(line) }
+        for line in connection.buffer.append(chunk[0..<count]) { onLine?(line, channel) }
         if connection.buffer.pendingByteCount > Self.maximumLineLength {
           drop(descriptor, connection)
           return
@@ -73,7 +76,7 @@ extension UnixSocketServer {
       } else if count == 0 {
         // EOF. A client that wrote one line and closed without a newline
         // still meant it.
-        if let rest = connection.buffer.takeRest() { onLine?(rest) }
+        if let rest = connection.buffer.takeRest() { onLine?(rest, channel) }
         drop(descriptor, connection)
         return
       } else {

@@ -2,7 +2,7 @@ import Foundation
 
 /// The integration scripts a shell sources, and the generated startup files
 /// carrying them into this app's terminals; see Docs/design/terminals.md.
-enum ShellIntegrationScripts {
+public enum ShellIntegrationScripts {
   private static let helperPlaceholder = "__MULTISHELL_HELPER__"
   /// The agents a shell may report starting, filled in when the file is
   /// generated; see Docs/design/agents.md.
@@ -124,7 +124,7 @@ enum ShellIntegrationScripts {
     }.joined(separator: "\n")
   }
 
-  private static func resource(_ fileName: String, in folder: String) -> String {
+  static func resource(_ fileName: String, in folder: String) -> String {
     guard
       let url = Bundle.coreResources.url(
         forResource: fileName,

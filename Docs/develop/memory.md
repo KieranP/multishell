@@ -33,9 +33,11 @@ came out of it are in design/debug-tools.md.
   loop inside a test never drains the main queue, so a test of what a deferred
   free releases awaits instead (`GhosttyTerminalHostTests`
   `closedSessionsLetTheirSurfaceViewsGo`).
-- **Opening a tab or the panel needs a click**, which an agent may not send
-  (TODO.md). Sample once a second with `footprint` in a loop and have the step
-  done by hand.
+- **An agent opens a tab or the panel through the debug build's helper**,
+  `build/Multishell.app/Contents/Helpers/multishell`: `tabs open`,
+  `debug tools on`, `debug info show`, then `debug samples` and `debug memory`
+  for the readings, and `info` for the pid to hand `footprint`. `debug mark`
+  before a step prints the sample it lands in, to find the step in the readings.
 
 ## Where it goes
 

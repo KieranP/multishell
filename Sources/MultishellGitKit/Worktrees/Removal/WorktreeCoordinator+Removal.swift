@@ -10,6 +10,7 @@ extension WorktreeCoordinator {
     in project: Project,
     trash: @Sendable (URL) async throws -> Void,
     deletesBranch: Bool = false,
+    forcesBranchDeletion: Bool = false,
     shellPath: String? = nil,
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
@@ -41,7 +42,7 @@ extension WorktreeCoordinator {
     }
     if deletesBranch, let branch = worktree.branch {
       onStep?(.deletingBranch)
-      try await deleteBranch(branch, in: project)
+      try await deleteBranch(branch, in: project, force: forcesBranchDeletion)
     }
   }
 

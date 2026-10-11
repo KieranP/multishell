@@ -17,6 +17,16 @@ public protocol TerminalHost: AnyObject {
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool
 
+  /// Text typed into a session as keystrokes, unbracketed, then Return where
+  /// asked, so a shell runs the line. `false` when it reached no pty.
+  @discardableResult
+  func type(_ text: String, pressingReturn: Bool, into id: TerminalSession.ID) -> Bool
+
+  /// Keys pressed and let go in turn, as a person would: Escape, an arrow,
+  /// Ctrl+C. `false` when it reached no pty.
+  @discardableResult
+  func press(_ keys: [ControlKey], in id: TerminalSession.ID) -> Bool
+
   /// Applied to every open terminal and to any opened afterwards.
   func apply(_ theme: Theme, appearance: Appearance)
 

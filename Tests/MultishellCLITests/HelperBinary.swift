@@ -1,5 +1,6 @@
 import Foundation
 
+@testable import MultishellCLI
 @testable import MultishellCore
 @testable import MultishellProcess
 
@@ -12,6 +13,8 @@ enum HelperBinary {
       "no helper beside the test bundle at \(path); is MultishellCLI built?"
     }
   }
+
+  private static let nobodyListening = "/tmp/multishell-test-nobody-listening.sock"
 
   static let url: URL = {
     let products = Bundle.allBundles.first { $0.bundleURL.pathExtension == "xctest" }?
@@ -39,6 +42,12 @@ enum HelperBinary {
   ) async throws -> ProcessOutput {
     var environment = environment
     environment["PATH"] = ProcessInfo.processInfo.environment["PATH"]
+    // Unnamed, a socket is the account's own, and a test that forgot its
+    // listener would drive the developer's running app.
+    for variable in [Helper.controlSocketVariable, SessionEnvironment.socketVariable]
+    where environment[variable] == nil {
+      environment[variable] = nobodyListening
+    }
     let runner = ProcessRunner()
     guard let stdin else {
       return try await runner.capture(

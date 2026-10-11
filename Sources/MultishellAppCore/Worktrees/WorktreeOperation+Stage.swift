@@ -2,7 +2,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension WorktreeOperation {
-  public enum Stage: Equatable, Sendable {
+  /// Raw values are what `worktrees show` prints, kept through a case rename.
+  public enum Stage: String, Equatable, Sendable {
     case linkingFiles
     case copyingFiles
     case postCreateHook

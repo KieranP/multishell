@@ -2,6 +2,8 @@
 # its socket. The app joins each half's included files as it writes the .zshrc.
 autoload -Uz add-zsh-hook 2>/dev/null
 
+# include leading-path.zsh
+
 # What a zsh pane tells Ghostty, whose own integration is off: prompt marks,
 # a command's end, title, cursor and directory. Why each: terminals.md.
 if [ "${TERM_PROGRAM-}" = ghostty ]; then

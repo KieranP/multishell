@@ -9,14 +9,28 @@ public enum SessionEnvironment {
   /// The app's own pid, where the helper's walk up from a prompt stops; see
   /// Docs/design/agents.md.
   public static let appPIDVariable = "MULTISHELL_APP_PID"
+  /// Ours, for a shell's integration to put back in front once a login
+  /// profile's `path_helper` has moved `/etc/paths` ahead; terminals.md.
+  static let leadingPathVariable = "MULTISHELL_LEADING_PATH"
 
-  public static func variables(for session: TerminalSession, socket: URL) -> [String: String] {
+  /// `bundle` names the helper's and the app's directories, where PATH is
+  /// written whole: the engine reads an embedder's after its own append.
+  public static func variables(
+    for session: TerminalSession,
+    socket: URL,
+    bundle: BundleDirectories? = nil,
+    inheritedPath: String? = ProcessInfo.processInfo.environment["PATH"],
+  ) -> [String: String] {
     var variables = [
       sessionVariable: session.id.uuidString,
       worktreeVariable: session.workingDirectory.path,
       socketVariable: socket.path,
       appPIDVariable: String(ProcessInfo.processInfo.processIdentifier),
     ]
+    if let bundle {
+      variables["PATH"] = searchPath(inheritedPath, leadingWith: bundle)
+      variables[leadingPathVariable] = leadingEntries(of: bundle).joined(separator: ":")
+    }
     variables.merge(ShellLaunch.zshEnvironment(forShell: session.shellPath)) { current, _ in
       current
     }

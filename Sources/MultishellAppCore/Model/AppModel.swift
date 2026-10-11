@@ -25,7 +25,12 @@ public final class AppModel<Surface> {
   /// than start afresh; see `preparedForLaunch`.
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
 
-  var presentedError: PresentedError?
+  var presentedError: PresentedError? {
+    didSet { noteAlertRaised(over: oldValue) }
+  }
+  @ObservationIgnored var alertRecordsOfRequests: [UUID: RequestAlertRecord] = [:]
+  /// Only these file an alert: a task a request left running carries its id on.
+  @ObservationIgnored var requestsBeingAnswered: Set<UUID> = []
   public var newWorktreeRequest: NewWorktreeRequest?
   public internal(set) var pendingWorktreeRemoval: PendingWorktreeRemoval?
   public internal(set) var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
@@ -73,6 +78,8 @@ public final class AppModel<Surface> {
   /// The pane whose bar's field has the keyboard, which the menu's find items
   /// act on ahead of the focused pane, a field taking no store focus.
   var findFieldSessionID: TerminalSession.ID?
+  /// What the engine's search last counted in each pane with a bar up.
+  @ObservationIgnored var searchCounts: [TerminalSession.ID: PaneSearchCount] = [:]
 
   /// What a tab drag is doing. Here, not in the group tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.
@@ -111,6 +118,8 @@ public final class AppModel<Surface> {
   /// What the panel shows while paused, the sampling going on under it.
   var pausedDebugSnapshot: DebugSnapshot?
   @ObservationIgnored var debugSampler = DebugSampler()
+  /// The newest git runs one by one, for `multishell debug git`; no view reads it.
+  @ObservationIgnored var debugGitRuns = DebugGitRunLog()
 
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.
@@ -146,6 +155,7 @@ public final class AppModel<Surface> {
   /// Keys whose banner may still be on screen, so one is taken back only
   /// where there is one to take back. A key leaves as its banner does.
   @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
+  @ObservationIgnored var notificationLog = NotificationLog()
   /// Worktrees whose saved tabs have been given live shells. Empty at launch,
   /// so a relaunch starts nothing; shrinks only as worktrees are forgotten.
   @ObservationIgnored var warmWorktrees: Set<Worktree.ID> = []
@@ -170,7 +180,7 @@ public final class AppModel<Surface> {
   }
   /// A harness stands in for both, the real ones writing the account's own files.
   @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) throws -> Void =
-    AppLaunchFiles.refresh
+    { try AppLaunchFiles.refresh(helper: $0) }
   @ObservationIgnored var sweepPromisedDropCopies: @Sendable () -> Void = {
     PromisedDropCopies.sweep()
   }
@@ -251,6 +261,9 @@ public final class AppModel<Surface> {
   /// Set where another copy holds the socket: two copies autosaving one file
   /// leave the last writer's, so this one writes nothing; see state-and-store.md.
   @ObservationIgnored var isYieldingToRunningInstance = false
+  /// Set by `multishell quit` while it quits, having already refused over a
+  /// working agent, so the quit confirmation is not raised.
+  @ObservationIgnored public internal(set) var quitsWithoutAsking = false
   /// Set while saves are failing, so the alert is raised once rather than
   /// again after every change until the disk is writable.
   @ObservationIgnored var hasReportedSaveFailure = false

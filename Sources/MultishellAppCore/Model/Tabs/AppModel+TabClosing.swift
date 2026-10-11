@@ -64,11 +64,11 @@ extension AppModel {
     perform(close)
   }
 
-  private func perform(_ close: PendingClose) {
+  func perform(_ close: PendingClose, takingFocus: Bool = true) {
     switch close {
     case .pane(let id): store.closeSession(id)
     case .tab(let id): store.closeTab(id)
     }
-    reconcileSessions(takingFocus: true)
+    reconcileSessions(takingFocus: takingFocus)
   }
 }

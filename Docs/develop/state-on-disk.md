@@ -3,13 +3,20 @@
 Under `~/Library/Application Support/Multishell`.
 
 - **A debug build keeps its own state file, socket, integration and drops
-  directories**; themes and the helper link are shared.
+  directories, and its own helper link**; themes and the hooks' helper link are
+  shared.
 - **A debug build made in a git worktree adds that worktree's name**, so two can
   run at once. The bundling script writes the name into the Info.plist, `open`
   passing no environment to what it launches.
 - **The name is cut short and spelled conservatively**, a socket path having
-  only `sun_path` to fit in, some of it taken by the staging suffix.
-- **Settings prints the state file**, which is how you see which one a running
+  only `sun_path` to fit in, some of it taken by the staging suffix. A name cut
+  or respelled ends in a hash of the whole, so `feature-auth-login` and
+  `feature-auth-logout` keep their own files. A state file from before the hash,
+  under the plain cut name, is moved to the new one at launch where nothing is
+  there yet. Cost: two worktrees that shared the cut name shared one file, which
+  the first to launch takes.
+- **Settings prints the state file**, and `multishell info` the state file and
+  socket of the copy that answered, which is how you see which ones a running
   copy has.
 - **`state.json`**: sidebar, tabs, the groups they sit in with their widths and
   shown tab, pane trees, worktree names and creation dates, every setting.
@@ -31,7 +38,9 @@ Under `~/Library/Application Support/Multishell`.
   folder inside it, written when the user opens the folder and not loaded.
 - **The socket is mode 0600**, bound under a staging name and renamed into
   place, so it is never briefly world-readable: the mode comes from the umask at
-  bind, and umask is process-wide.
+  bind, and umask is process-wide. The command line's requests come in on it
+  too, so that mode is all that stops another account running a command in a
+  pane (design/agents.md).
 - **So the longest path that binds is two bytes shorter than `sun_path`
   allows**, the `.b` of the staging name, and the refusal names the socket
   rather than the staging file, which is no concern of the user's.
@@ -44,11 +53,16 @@ Under `~/Library/Application Support/Multishell`.
   until it execs, and this process spawns freely.
 - **A connect alone cannot tell**: a listener whose accept backlog is full
   refuses one exactly as a dead socket does.
-- **A symlink to the helper in the current bundle** is refreshed at launch. Hook
-  lines reference that path through the home directory.
-- **`/usr/local/bin/multishell` is a link to that link**, made only when the
-  user installs the tool, through an administrator prompt. Every build shares
-  that link, so the tool runs the last copy that started without handing over.
+- **Symlinks to the helper in the current bundle** are refreshed at launch: the
+  shared one in `bin/`, which hook lines reference through the home directory,
+  and the build's own in `cli/`.
+- **`/usr/local/bin/multishell` is a link to the build's own link**, `cli/`
+  beside `bin/` with the variant in its name, made only when the user installs
+  the tool, through an administrator prompt. It once named the shared link, so
+  after a debug launch the installed tool drove the debug app; an install still
+  naming it, or a link left dangling, reads as not installed, and Settings
+  offers it again. Another build's link or a file of the user's own counts as
+  installed, so two builds do not take it from each other.
 - **The integration directory is generated at launch** from the scripts bundled
   in MultishellCore, so an edit there lasts until the next launch.
 - **The drops directory holds files a drag promised rather than handed over**,
@@ -57,6 +71,8 @@ Under `~/Library/Application Support/Multishell`.
   per load, gone as soon as libghostty has read it: libghostty reads config from
   no other source, and nothing outlives a load for another copy to sweep
   (design/terminals.md).
+- **`multishell debug screenshot` writes its PNG from the helper**, to the file
+  named or a new one under `/tmp`, so the app writes to no path a request names.
 - **libghostty is built without its crash reporter**, so it keeps no crash
   directory, and it never opens the user's Ghostty config, which the app reads
   and never writes.

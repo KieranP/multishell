@@ -33,5 +33,15 @@ final class RecordingHost: TerminalHost {
     return true
   }
 
+  func type(_ text: String, pressingReturn: Bool, into id: TerminalSession.ID) -> Bool {
+    log.append("type \(text)")
+    return true
+  }
+
+  func press(_ keys: [ControlKey], in id: TerminalSession.ID) -> Bool {
+    log.append("press \(keys.map(\.key))")
+    return true
+  }
+
   func apply(_ theme: Theme, appearance: Appearance) {}
 }

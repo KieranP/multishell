@@ -53,9 +53,10 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   hairline's to give.
 - **Not a strip across the pane.** A strip takes a row from every pane it is up
   in; a bar floating over the corner costs the terminal nothing.
-- **No match count beside the field yet**, which Ghostty has. libghostty reports
-  the total and the selected match as two surface actions the app does not
-  decode yet (TODO.md); an empty slot would read as broken meanwhile.
+- **No match count beside the field yet**, which Ghostty has. The app decodes
+  libghostty's total and selected match and keeps them for `panes find`
+  (terminals.md), but the bar does not show them (TODO.md); an empty slot would
+  read as broken meanwhile.
 - **The theme sets the engine's search colours**, or it paints matches in its
   own defaults: matches in the theme's yellow, the selected one in the ring's
   colour, both with whichever of background and foreground is darker as their

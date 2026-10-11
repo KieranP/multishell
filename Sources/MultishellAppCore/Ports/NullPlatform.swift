@@ -8,6 +8,9 @@ public final class NullPlatform: Platform {
   public var workspaceWindowIsKey: Bool { true }
   public var bundledHelper: URL? { nil }
   public var notificationSettingsLocation: String? { nil }
+  public var windows: [PlatformWindow] { [] }
+  public var menuItems: [PlatformMenuItem] { [] }
+  public var isWorkspaceWindowFullScreen: Bool { false }
 
   public init() {}
 
@@ -25,8 +28,17 @@ public final class NullPlatform: Platform {
   public func setBadgeCount(_ count: Int?) {}
   public func log(_ message: String) {}
   public func handOverToRunningInstance() {}
+  public func quit() {}
   public func startDisplayFrameCallbacks(
     _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
   ) {}
   public func stopDisplayFrameCallbacks() {}
+  public func show(_ window: AuxiliaryWindow) {}
+  public func close(_ window: AuxiliaryWindow) {}
+  public func resizeWorkspaceWindow(width: Double, height: Double) -> Bool { false }
+  public func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool { false }
+  public func screenshotWorkspaceWindow() -> Data? { nil }
+  public func signpost(_ name: String) {}
+  public func performMenuItem(_ path: [String]) -> PlatformMenuOutcome { .notFound }
+  public func hasFontFamily(_ family: String) -> Bool { false }
 }

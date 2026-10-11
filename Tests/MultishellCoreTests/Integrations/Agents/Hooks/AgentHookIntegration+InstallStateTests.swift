@@ -142,4 +142,18 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     settings["hooks"] = hooks
     return settings
   }
+
+  @Test func aSettingsFileHoldingOnlyTheRetiredLineAsksForUpdateWhichReplacesIt() throws {
+    let (directory, file) = try scratchSettingsFile()
+    defer { Scratch.remove(directory) }
+    let claude = AgentHookCatalogue.claude
+    let hooks = groups(claude.events.map(\.name), command: retiredClaudeHookLine)
+    try JSONSerialization.data(withJSONObject: ["hooks": hooks]).write(to: file)
+
+    #expect(claude.installState(in: file, helper: helper) == .stale)
+    try claude.install(into: file, helper: helper)
+
+    #expect(claude.installState(in: file, helper: helper) == .current)
+    #expect(try !String(contentsOf: file, encoding: .utf8).contains("claude-hook"))
+  }
 }

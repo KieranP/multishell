@@ -11,6 +11,8 @@ unset _multishell_profile
 if [ "$_multishell_profiled" = 0 ] && [ -f "$HOME/.bashrc" ]; then . "$HOME/.bashrc"; fi
 unset _multishell_profiled
 
+# include leading-path.sh
+
 if [ "${TERM_PROGRAM-}" = ghostty ]; then
   # Ghostty exports the user's shell-integration-features, `cursor:blink` and all.
   _multishell_has_feature() {

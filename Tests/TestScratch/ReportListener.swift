@@ -10,7 +10,7 @@ public final class ReportListener {
   public init(prefix: String = "cli") throws {
     path = Scratch.socketPath(prefix)
     server = UnixSocketServer(path: path)
-    server.onLine = { [recorder] in recorder.record($0) }
+    server.onLine = { [recorder] line, _ in recorder.record(line) }
     try server.start()
   }
 

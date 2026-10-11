@@ -13,7 +13,11 @@ final class MacPlatform: Platform {
   /// were issued there or in a settings window. Set by `WindowAccessor`.
   weak var workspaceWindow: NSWindow?
   var onDidBecomeActive: (@MainActor () -> Void)?
+  /// The scenes' own window openers, which only a view can reach; set by
+  /// `WindowOpenerRegistration` for the command line's `ui show`.
+  var openAuxiliaryWindow: ((AuxiliaryWindow) -> Void)?
   private let logger = Logger(subsystem: bundleIdentifier, category: "platform")
+  private let signposter = OSSignposter(subsystem: bundleIdentifier, category: .pointsOfInterest)
   private var displayFrameLink: DisplayFrameLink?
 
   private var observers: [any NSObjectProtocol] = []
@@ -90,6 +94,15 @@ final class MacPlatform: Platform {
     logger.notice("\(message, privacy: .public)")
   }
 
+  func hasFontFamily(_ family: String) -> Bool {
+    InstalledFonts.lists(family)
+  }
+
+  /// Under Points of Interest, where Instruments draws it on the timeline.
+  func signpost(_ name: String) {
+    signposter.emitEvent("mark", "\(name, privacy: .public)")
+  }
+
   func startDisplayFrameCallbacks(
     _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
   ) {
@@ -111,6 +124,11 @@ final class MacPlatform: Platform {
     NSRunningApplication.runningApplications(withBundleIdentifier: identifier)
       .first { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }?
       .activate()
+    NSApp.terminate(nil)
+  }
+
+  /// The delegate's confirmation reads `AppModel.quitsWithoutAsking`.
+  func quit() {
     NSApp.terminate(nil)
   }
 }

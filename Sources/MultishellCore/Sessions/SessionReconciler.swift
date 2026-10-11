@@ -33,6 +33,8 @@ public final class SessionReconciler: TerminalHostDelegate {
   /// The engine was asked to close a pane whose process still runs. Left to
   /// the GUI, whose close asks first where an agent is working.
   public var onCloseRequest: (@MainActor (TerminalSession.ID) -> Void)?
+  /// The engine's search counted in a session, for its find bar.
+  public var onSearchCount: (@MainActor (TerminalSession.ID, TerminalSearchCount) -> Void)?
 
   public var liveSessionIDs: Set<TerminalSession.ID> { host.liveSessionIDs }
 
@@ -104,6 +106,14 @@ public final class SessionReconciler: TerminalHostDelegate {
 
   public func terminalHost(_ host: any TerminalHost, didAskToClose id: TerminalSession.ID) {
     onCloseRequest?(id)
+  }
+
+  public func terminalHost(
+    _ host: any TerminalHost,
+    didCount count: TerminalSearchCount,
+    in id: TerminalSession.ID,
+  ) {
+    onSearchCount?(id, count)
   }
 
   /// The process is already gone, so the surface must go too; leaving it

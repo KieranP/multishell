@@ -2,7 +2,7 @@ import Foundation
 
 /// Where Multishell keeps its state; see Docs/develop/state-on-disk.md.
 public enum Paths {
-  private static var stateDirectory: URL {
+  static var stateDirectory: URL {
     let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     return base.appendingPathComponent("Multishell", isDirectory: true)
   }
@@ -55,6 +55,13 @@ public enum Paths {
   /// holding the bundle's own path breaks when the app moves.
   public static var helperLink: URL {
     stateDirectory.appendingPathComponent("bin", isDirectory: true)
+      .appendingPathComponent(helperName, isDirectory: false)
+  }
+
+  /// This build's own link to its helper, which `/usr/local/bin` names: the
+  /// shared one follows whichever build launched last.
+  public static var buildHelperLink: URL {
+    stateDirectory.appendingPathComponent("cli\(variant)", isDirectory: true)
       .appendingPathComponent(helperName, isDirectory: false)
   }
 }

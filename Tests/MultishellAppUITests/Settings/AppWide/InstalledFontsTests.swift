@@ -15,4 +15,14 @@ struct InstalledFontsTests {
     #expect(InstalledFonts.reload() == detected)
     #expect(InstalledFonts.detection == detected)
   }
+
+  @Test func aFamilyIsListedOnlyWhereThePickerOffersIt() {
+    let detected = InstalledFonts.reload()
+
+    for family in detected.monospaced + detected.otherFamilies {
+      #expect(InstalledFonts.lists(family), "\(family)")
+    }
+    #expect(!InstalledFonts.lists("Menloo"))
+    #expect(!InstalledFonts.lists(""))
+  }
 }

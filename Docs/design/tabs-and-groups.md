@@ -112,6 +112,10 @@ bottom.
 - **They stop at a floor**, below which the icon, the title and the close button
   run into each other and into the next tab. Past the floor the strip scrolls
   and clips.
+- **The floor is never under what the active tab draws besides its title, plus
+  two characters of title.** Scaled from the font size alone, it left the active
+  tab almost no title at UI sizes 10 to 12
+  (`aTabStripsMeasuresHoldWhatTheyDrawAtEverySize`).
 - **A group minimum is not the answer**, which is where this started: it would
   have to grow with the number of tabs, and a worktree with eight would stop
   being something you can put beside another. The floor belongs to the tab.
@@ -229,3 +233,10 @@ bottom.
 - **A project drag ends as a rebuilt tab button's does.** The sidebar's rows sit
   in a `LazyVStack`, which recycles a row scrolled away mid-drag, and the
   session's end reaches only a source still on screen, so the release ends it.
+- **`tabs move` places a tab beside another of its worktree, in any group**, as
+  a drop on that tab does. With no drag going on, a group it empties can close
+  at once. No request takes a tab to another worktree; only the sidebar drag
+  does (`aTabMovesBesideAnotherOfItsWorktreeAndNotBesideAnotherWorktrees`).
+- **A rename from the command line leaves a name field open on another tab**, so
+  a script naming one tab does not throw away what the user is typing into
+  another's (`renamingATabLeavesTheFieldOpenOnAnotherAlone`).

@@ -4,7 +4,7 @@ extension AppModel {
   /// Sets or clears a title without going through the field; `nil` is the
   /// menu's Use Shell Title.
   public func renameTab(_ id: TerminalTab.ID, to title: String?) {
-    renamingTabID = nil
+    if renamingTabID == id { renamingTabID = nil }
     store.setCustomTitle(title, forTab: id)
   }
 

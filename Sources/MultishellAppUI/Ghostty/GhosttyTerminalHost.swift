@@ -6,6 +6,9 @@ import MultishellCore
 /// config. Three config layers; see Docs/design/terminals.md.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
+  private static let bundleDirectories =
+    Bundle.main.executableURL.flatMap(HelperHandOff.bundleDirectories(of:))
+
   weak var delegate: (any TerminalHostDelegate)?
 
   private let lazyRuntime: LazyGhosttyRuntime
@@ -22,7 +25,11 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     guard views[session.id] == nil else { return }
     let launch = GhosttySurfaceLaunch(
       workingDirectory: session.workingDirectory.path,
-      environment: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
+      environment: SessionEnvironment.variables(
+        for: session,
+        socket: Paths.socketFile,
+        bundle: Self.bundleDirectories,
+      ),
       command: EngineCommandLine.of(session),
     )
     let view = GhosttySurfaceView(runtime: lazyRuntime.runtime, launch: launch)
@@ -47,6 +54,9 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
         )
       }
     }
+    view.onSearchCount = { [weak self] count in
+      self.map { $0.delegate?.terminalHost($0, didCount: count, in: id) }
+    }
     view.onExit = { [weak self] in self.map { $0.delegate?.terminalHost($0, didExit: id) } }
     view.onCloseRequest = { [weak self] in
       self.map { $0.delegate?.terminalHost($0, didAskToClose: id) }
@@ -60,6 +70,7 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     view.onRetitle = nil
     view.onBell = nil
     view.onCommandFinish = nil
+    view.onSearchCount = nil
     view.onExit = nil
     view.onCloseRequest = nil
     view.onFocus = nil
@@ -86,12 +97,38 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     views[id]?.terminalMemory
   }
 
+  func text(of id: TerminalSession.ID, includingScrollback: Bool) -> String? {
+    views[id]?.text(includingScrollback: includingScrollback)
+  }
+
+  /// From the content view's top left, as `window size` measures the window.
+  func frame(of id: TerminalSession.ID) -> CGRect? {
+    guard let view = views[id], let content = view.window?.contentView else { return nil }
+    var frame = view.convert(view.bounds, to: content)
+    if !content.isFlipped { frame.origin.y = content.bounds.height - frame.maxY }
+    return frame
+  }
+
+  /// Only once in a window: a pane out of view has never drawn there.
+  func screenshot(of id: TerminalSession.ID) -> Data? {
+    guard let view = views[id], view.window != nil else { return nil }
+    return ViewScreenshot.png(of: view)
+  }
+
   /// libghostty frames this as a paste itself. `false` means there is no
   /// surface, which a session with no shell running has none of.
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
     guard !text.isEmpty, let view = views[id] else { return false }
     return view.typeAsPaste(text)
+  }
+
+  func type(_ text: String, pressingReturn: Bool, into id: TerminalSession.ID) -> Bool {
+    views[id]?.typeAsKeys(text, pressingReturn: pressingReturn) ?? false
+  }
+
+  func press(_ keys: [ControlKey], in id: TerminalSession.ID) -> Bool {
+    views[id]?.press(keys) ?? false
   }
 
   func focus(_ id: TerminalSession.ID) {

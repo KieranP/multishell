@@ -16,11 +16,21 @@ enum InstalledFonts {
     return detection
   }
 
+  /// Asked afresh, not of the cache, so a font installed since launch counts.
+  static func lists(_ family: String) -> Bool {
+    families(of: NSFontManager.shared).contains(family)
+  }
+
+  /// A family named with a leading dot is the system's own, never offered.
+  private static func families(of manager: NSFontManager) -> [String] {
+    manager.availableFontFamilies.filter { !$0.hasPrefix(".") }
+  }
+
   private static func detect() -> FontDetection {
     let manager = NSFontManager.shared
     var monospaced: [String] = []
     var others: [String] = []
-    for family in manager.availableFontFamilies where !family.hasPrefix(".") {
+    for family in families(of: manager) {
       if isMonospaced(family, manager: manager) {
         monospaced.append(family)
       } else {

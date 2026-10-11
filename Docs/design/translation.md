@@ -124,3 +124,15 @@ Newest at the bottom.
   so in a region that writes a comma Debug Info's sizes use one and the rates
   and durations beside them do not. The clock time under the timeline's pointer
   follows the region too, being `Date.formatted`.
+- **The app answers the command line in data and the helper words it.** A
+  refusal crosses the socket as a case and its fields, so neither catalogue
+  holds the helper's sentences and its output stays English
+  (`ControlRefusal+Wording`).
+- **Cost: what the app said itself still comes back in its language.** An alert
+  a request raised returns as the refusal in its translated words, and
+  `multishell info` lists an alert's words and each window's title the same way,
+  as `multishell debug notifications` does each banner, so one line of the
+  helper's output can mix two languages.
+- **A menu item is named by its titles as the menu draws them**, so
+  `multishell ui menu` lists them in the app's language, and a script naming an
+  item works only under the language it was written in.

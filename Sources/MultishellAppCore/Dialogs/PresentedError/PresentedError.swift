@@ -18,6 +18,9 @@ public struct PresentedError: Identifiable {
   /// The launch alert about a missing git, which finding git on the login
   /// shell's PATH takes down; nothing else is dismissed by the model.
   let saysGitIsMissing: Bool
+  /// Read from the task it is made in: an alert another's click raised meanwhile
+  /// is not a command line request's to answer with or take down.
+  let raisingRequestID = ControlRequestScope.id
 
   init(title: String, message: String) {
     self.title = title

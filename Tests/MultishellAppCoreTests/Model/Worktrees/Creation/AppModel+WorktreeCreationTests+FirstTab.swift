@@ -12,7 +12,11 @@ extension AppModelWorktreeCreationTests {
     let created = try #require(harness.worktree(onBranch: branch))
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
     let session = try #require(harness.model.workspace.session(tab.focusedSessionID))
-    return (session, harness.engine.opened.last { $0.id == session.id }?.command?.last)
+    return (
+      session,
+      harness.engine.opened.last { $0.id == session.id }?.command?.last?
+        .withoutLeadingPathStatement,
+    )
   }
 
   @Test func theSheetsAgentStartsWithItsTaskWhateverTheCreateSettingsSay() async throws {

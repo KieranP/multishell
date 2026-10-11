@@ -28,6 +28,7 @@ struct RootView: View {
       }
     }
     .background(WindowAccessor { platform.workspaceWindow = $0 })
+    .modifier(WindowOpenerRegistration(platform: platform))
     .ignoresSafeArea()
     .preferredColorScheme(theme.colorScheme)
     .worktreeRemovalAlert(model: model)

@@ -12,9 +12,15 @@ What each addition needs beyond the code itself.
   the model (design/terminals.md). A replacement implements the surface-host
   protocol and is passed to the model in the Mac half.
 - **What a host owes**: the session environment to the child, a finished command
-  reported if the engine can tell, paste framed as a bracketed paste, and each
-  session's pty path and foreground pid where it knows them, without which Debug
-  Info puts every pane under Other processes.
+  reported if the engine can tell, paste framed as a bracketed paste, typed text
+  sent unbracketed as keystrokes so a shell runs the line, and each session's
+  pty path and foreground pid where it knows them, without which Debug Info puts
+  every pane under Other processes.
+- **A surface host also gives a pane's text, frame and last drawn image** where
+  it can, which `panes read`, `tabs show` and `debug screenshot` answer from;
+  one that cannot returns `nil` and the request is refused or the frame left
+  out. Search counts reach the model through the delegate, whose default drops
+  them, so `panes find` prints what it has at its two-second limit.
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
@@ -102,7 +108,9 @@ What each addition needs beyond the code itself.
 - **A field on a sidebar row** also goes in that row's hand-written `==`, which
   leaves the closures out; a field missing there never redraws the row, and no
   test catches it (design/appearance.md). A row of a new height goes into
-  `UIMetrics.projectBlockHeight`, or the drop line lands in the wrong half.
+  `UIMetrics.projectBlockHeight`, or the drop line lands in the wrong half. A
+  field a script should read goes on `SidebarRowListing` too, filled from the
+  same values the row draws.
 - **A column on the Agents board.** A case in the lane enum in draw order, its
   title, the state whose colour its header wears, and a line in the lane lookup,
   total over the state so a state with no column is a compile error. The
@@ -110,7 +118,8 @@ What each addition needs beyond the code itself.
 - **Each further column asks for another column's width and gap**, and four
   already ask for more window than the app's minimum.
 - **A fact on a board card.** A field on the card, filled where cards are built,
-  a line in the card view and in the accessibility text.
+  a line in the card view and in the accessibility text, and a field on
+  `BoardListing.Card` for `board list`, which nothing forces.
 - **A fact off a report rather than the workspace** also needs a field on the
   session note, which carries the state it arrived with so it stops being shown
   once the pane has moved on.
@@ -128,11 +137,15 @@ What each addition needs beyond the code itself.
   `DebugStripBoundary`, a band in `DebugStripChart`, a colour in
   `Theme+DebugColors` and an entry in `DebugSeriesLegend`, and its name in the
   detail line widens the label.
+- **A new reading also goes in `DebugSampleRecord`** for `debug samples`, and in
+  `DebugSummaryRecord` for `--summary`. Nothing forces either: left out, the
+  command line never sees it.
 - **A column in a debug table.** A title in the table's header and a cell in its
   row at the same `UIMetrics` width, the figure in the stacked row's caption,
-  and, for Memory by tab, a part in its accessibility text. Raise the table's
-  width in ems in `DebugTableLayout` by hand. Nothing measures the columns, so
-  one left short crowds them before the rows stack.
+  and, for Memory by tab, a part in its accessibility text and a field in
+  `DebugMemoryRecord` for `debug memory`. Raise the table's width in ems in
+  `DebugTableLayout` by hand. Nothing measures the columns, so one left short
+  crowds them before the rows stack.
 - **A keyboard shortcut.** An entry in the shortcuts table, listed in `all`,
   which both the menu item and the engine's unbind derive from.
 - **A key the engine names rather than takes the character of** needs a case in
@@ -150,6 +163,10 @@ What each addition needs beyond the code itself.
   Escape and `.defaultAction` gives Return (design/smaller-decisions.md). Its
   answer is an `AppModel` method, `answerClose` the pattern, so the view only
   forwards the button chosen and the model's tests cover what it does.
+- **A dialog also goes in the model's `presentations`**, topmost first, as a
+  `PresentationEntry` kind whose Cancel `dismiss` calls. Nothing forces the
+  list: left out, `multishell info` does not show it and `ui dismiss` cannot
+  clear it, so a script stalls behind a dialog nobody sees.
 - **A project icon.** A name in one of the symbol groups, or a new group. It
   must exist as far back as the deployment target; a name that does not resolve
   draws nothing rather than failing.
@@ -169,11 +186,13 @@ What each addition needs beyond the code itself.
   trunk, which the tiers place first.
 - **A shell with command-status hooks.** A folder in the libraries' resources,
   copied whole in the manifest, whose init file carries the helper's and the
-  agents' placeholders and joins the rest through `# include` lines. Then a path
-  in `Paths`, a generator in the integration scripts, a write in the integration
-  refresh, and a way in for both a fresh tab, through `EngineCommandLine`, and
-  the shell taking over when an agent quits, through `ShellLaunch`. Add its
-  generated file to `everyGeneratedFileParsesInItsShell`.
+  agents' placeholders and joins the rest through `# include` lines, a
+  `leading-path` file of its own among them. Then a path in `Paths`, a generator
+  in the integration scripts, a write in the integration refresh, and a case in
+  `ShellLaunch.integrationArguments`, the one way in for both a fresh tab and
+  the shell taking over when an agent quits. Add its generated file to
+  `everyGeneratedFileParsesInItsShell` and
+  `everyPlaceholderIsFilledInAndTheAgentsAreNamed`.
 - **It reports a command started and finished through the helper**, naming the
   program where it is one of the agents, and does nothing when the session
   variable is unset. Name it in `ShellLaunch.reportsFinishedCommands` too, or
@@ -182,6 +201,15 @@ What each addition needs beyond the code itself.
 - **The engine's own shell integration is off** (design/terminals.md), so prompt
   marks and the `sudo` and `ssh` wrappers are the new shell's scripts to write,
   or its panes go without click-to-move and the wrappers.
+- **The refresh's new parameter takes a default**, so the test callers that pass
+  it every path, `GeneratedIntegration`, `ShellTab` and ShellIntegrationTests,
+  still compile without the new one and write that shell's file into the debug
+  build's own integration folder.
+- **As a login shell it runs agents' lines only if it is in
+  `ShellInvocation.interactiveLoginShells`**; left out, they run through
+  `/bin/sh` and miss its PATH. One whose syntax is not sh's also needs a branch
+  in `LeadingPathLine`, as fish has, or the line opens with a statement it
+  cannot parse.
 - **Add it to the searched shells if Homebrew leaves it out of `/etc/shells`**,
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
@@ -199,7 +227,35 @@ What each addition needs beyond the code itself.
   copy may return and leave the alert standing, a platform with no display link
   may never call back and leave the frame rate blank, and a notifier that needs
   no permission answers unavailable to both questions, which keeps the settings
-  page from promising a dialog.
+  page from promising a dialog. A platform with no windows or menu bar to offer
+  lists none, and refuses `window size`, `window full-screen`, choosing a menu
+  item and `debug screenshot`.
+- **A command-line request.** A case in `ControlRequest`, its answer in the
+  model's `reply(to:)`, which the compiler holds total, its parsing in its
+  group's file under the helper's `Control/`, its arguments in the group's file
+  under `Usage/` and its word in the group's line of the overview `usage`, which
+  nothing checks. The model's side is tested in its AppModelControl suite
+  through the fake channel.
+- **A request's alerts are made in its own task**: an alert records the request
+  whose task made it, and only that request answers with it and takes it down.
+  Work handed to `Task.detached` or a queue callback leaves the request's task,
+  so its alert stays up unanswered (design/agents.md).
+- **A request over a working agent takes `--force`** and is refused with
+  `agentWorking` without it. It never opens the dialog the click would. Any
+  other forcing, such as a branch delete git would refuse, gets a flag of its
+  own.
+- **A request that runs long stops when its task is cancelled**, which the
+  helper hanging up does. A stopper it holds is stopped from a
+  `withTaskCancellationHandler`, as a create's is.
+- **A new refusal** is a case in `ControlRefusal` and its English in the
+  helper's `ControlRefusal+Wording`, naming the command that gets past it where
+  there is one; the app's catalogue takes none (design/translation.md).
+- **A new command group** also needs its word in the helper's `runControl`, a
+  topic in `usageByTopic` and a line in the overview `usage`. Nothing forces the
+  topic: left out, `help` on the word answers no command.
+- **A key `panes key` names** goes in `ControlKey.names` and in the engine's
+  `namedKeyCodes`. Nothing forces the second: a name with no code is skipped and
+  the request still answers done.
 - **A persisted field.** Decode with a default, an unknown enum value included,
   and add a decoding case to that type's own tests.
 - **The verb carries the choice**: the strict decode where a wrong type should
@@ -219,6 +275,10 @@ What each addition needs beyond the code itself.
   which must sit in that one file beside the private setter, a method on the
   model doing whatever else the change needs, and the row bound through the
   model's setting accessor.
+- **A preference also needs a row in `config global`'s key table**,
+  `globalSettings`, under its state-file key and through that same setter.
+  Nothing forces the row: left out, the command line neither lists nor sets it.
+  A project setting needs none, its keys coming from the coding keys.
 - **A project override** is a second field on the project settings and a
   resolver reading those first; if a repository may ship it, a shared-settings
   field, a line in the layering and an `InheritableSettingKeys` member pairing
@@ -235,8 +295,12 @@ What each addition needs beyond the code itself.
   tests, not in a view.
 - **A per-build file.** On the variant pattern, so a debug run never touches the
   installed app's state and two worktrees never touch each other's. A file a
-  hook or the helper reads from outside either stays shared, as the helper link
-  does, or has its path handed over in the environment, as the socket does.
+  hook reads from outside either stays shared, as the hooks' helper link does,
+  or has its path handed over in the environment, as the socket is for a report.
+  One the helper finds for itself, as a request finds the socket, takes the
+  variant of the bundle the helper sits in, its links followed, since
+  `/usr/local/bin` reaches it through the build's own `cli` link
+  (develop/state-on-disk.md).
 - **A settings row.** Bind through the model's setting accessor, which re-reads
   the stored value; a field with its own binding goes stale against a change
   made elsewhere.
