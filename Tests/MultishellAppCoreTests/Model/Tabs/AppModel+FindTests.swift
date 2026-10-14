@@ -26,7 +26,7 @@ struct AppModelFindTests {
     harness.model.setFindText("", of: pane)
 
     #expect(harness.engine.searched.map(\.id) == [pane, pane])
-    #expect(harness.engine.searched.map(\.command) == [.find("make"), .find("")])
+    #expect(harness.engine.searched.map(\.step) == [.find("make"), .find("")])
     #expect(harness.model.findText(of: pane) == "")
   }
 
@@ -40,7 +40,7 @@ struct AppModelFindTests {
     harness.model.setFindText("make", of: pane)
     harness.model.findNext()
 
-    #expect(harness.engine.searched.map(\.command) == [.find("make"), .nearest])
+    #expect(harness.engine.searched.map(\.step) == [.find("make"), .nearest])
   }
 
   /// The engine selects nothing on a new find text, and a step sent with it runs
@@ -58,7 +58,7 @@ struct AppModelFindTests {
     harness.model.findNext()
 
     #expect(
-      harness.engine.searched.map(\.command) == [
+      harness.engine.searched.map(\.step) == [
         .find("make"), .nearest, .previous, .next,
         .find("grep"), .nearest, .next,
       ]
@@ -75,7 +75,7 @@ struct AppModelFindTests {
     harness.model.findNext()
 
     #expect(
-      harness.engine.searched.map(\.command) == [.find("make"), .nearest, .find("MAKE"), .next]
+      harness.engine.searched.map(\.step) == [.find("make"), .nearest, .find("MAKE"), .next]
     )
   }
 
@@ -89,7 +89,7 @@ struct AppModelFindTests {
     harness.model.showFind()
     harness.model.findNext()
 
-    #expect(harness.engine.searched.suffix(2).map(\.command) == [.find("make"), .nearest])
+    #expect(harness.engine.searched.suffix(2).map(\.step) == [.find("make"), .nearest])
   }
 
   /// Clicking into a bar's field moves the store's focus nowhere, so the menu
@@ -134,7 +134,7 @@ struct AppModelFindTests {
     harness.model.setFindText("make", of: pane)
     harness.model.findNext()
     harness.model.findPrevious()
-    #expect(harness.engine.searched.map(\.command) == [.find("make"), .nearest, .previous])
+    #expect(harness.engine.searched.map(\.step) == [.find("make"), .nearest, .previous])
   }
 
   @Test func closingEndsTheSearchAndHandsTheKeyboardBackToThePane() {
@@ -146,7 +146,7 @@ struct AppModelFindTests {
     harness.model.closeFind(in: pane)
 
     #expect(harness.model.findBarSessionIDs.isEmpty)
-    #expect(harness.engine.searched.last?.command == .end)
+    #expect(harness.engine.searched.last?.step == .end)
     #expect(harness.engine.focused.count == focusedBefore + 1)
     #expect(harness.model.findText(of: pane) == "make", "the find text waits for the next open")
   }
@@ -171,7 +171,7 @@ struct AppModelFindTests {
 
     harness.model.showFind()
 
-    #expect(harness.engine.searched.last?.command == .find("make"))
+    #expect(harness.engine.searched.last?.step == .find("make"))
   }
 
   @Test func findNextWithTheBarClosedDoesNothingAndTheMenuItemSaysSo() {
@@ -186,7 +186,7 @@ struct AppModelFindTests {
     harness.model.findPrevious()
 
     #expect(harness.model.findBarSessionIDs.isEmpty)
-    #expect(harness.engine.searched.last?.command == .end)
+    #expect(harness.engine.searched.last?.step == .end)
   }
 
   @Test func closeFindTakesDownThePaneInViewsBarAndNoOther() {
@@ -202,7 +202,7 @@ struct AppModelFindTests {
 
     #expect(harness.model.findBarSessionIDs == [first])
     #expect(harness.engine.searched.last?.id == second)
-    #expect(harness.engine.searched.last?.command == .end)
+    #expect(harness.engine.searched.last?.step == .end)
     #expect(harness.engine.focused.count == focusedBefore + 1)
 
     harness.model.closeFind()
@@ -222,7 +222,7 @@ struct AppModelFindTests {
     harness.model.showFind()
 
     #expect(harness.model.takeFindFieldRequest(pane))
-    #expect(harness.engine.searched.map(\.command) == [.find("make")])
+    #expect(harness.engine.searched.map(\.step) == [.find("make")])
   }
 
   @Test func aBarShownAgainByAWorktreeSwitchLeavesTheKeyboardInThePane() {
@@ -264,7 +264,7 @@ struct AppModelFindTests {
     #expect(harness.model.findText(of: first) == "make")
     #expect(harness.model.findText(of: second) == "grep")
     #expect(harness.engine.searched.map(\.id) == [first, second])
-    #expect(harness.engine.searched.map(\.command) == [.find("make"), .find("grep")])
+    #expect(harness.engine.searched.map(\.step) == [.find("make"), .find("grep")])
   }
 
   @Test func aBarsOwnArrowsStepItsOwnPaneWhileAnotherPaneHasTheKeyboard() {
@@ -279,7 +279,7 @@ struct AppModelFindTests {
     harness.model.findNext(in: second)
 
     #expect(harness.engine.searched.map(\.id) == [first, first, first])
-    #expect(harness.engine.searched.map(\.command) == [.find("make"), .nearest, .previous])
+    #expect(harness.engine.searched.map(\.step) == [.find("make"), .nearest, .previous])
     #expect(harness.model.findBarSessionIDs == [first], "the second pane has no bar and gets none")
   }
 
@@ -410,7 +410,7 @@ struct AppModelFindTests {
     #expect(!harness.model.findIsOpenInView)
 
     harness.model.hideAgentBoard()
-    harness.platform.workspaceWindowIsKey = false
+    harness.platform.isWorkspaceWindowKey = false
     harness.model.showFind()
     harness.model.findNext()
     #expect(harness.model.findBarSessionIDs.isEmpty)

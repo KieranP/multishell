@@ -5,7 +5,7 @@ import MultishellProcess
 struct FrameRateMeter {
   /// A reading no later than this after the one before had the main thread
   /// free, the sampler running on it too; a stall holds both up.
-  static let longestOnTimeGap = Duration.milliseconds(1_500)
+  private static let longestOnTimeGap = Duration.milliseconds(1_500)
 
   private var framesSinceReading = 0
   private var longestFrameSinceReading = Duration.zero

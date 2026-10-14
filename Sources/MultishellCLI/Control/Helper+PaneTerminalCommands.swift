@@ -7,7 +7,7 @@ extension Helper {
   static func runPaneTerminal(
     _ command: String?,
     _ words: [String],
-    _ options: ArraySlice<String>,
+    _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32? {
     let topic = ControlCommand.panes.rawValue
@@ -16,26 +16,26 @@ extension Helper {
       return try typeIntoPane(
         try tabOrPaneID(words[0], topic: topic),
         words[1],
-        options,
+        optionWords,
         environment: environment,
       )
 
     case ("read", 1):
       return try readPane(
         try tabOrPaneID(words[0], topic: topic),
-        options,
+        optionWords,
         environment: environment,
       )
 
     case ("wait", 1):
       return try waitForPane(
         try tabOrPaneID(words[0], topic: topic),
-        options,
+        optionWords,
         environment: environment,
       )
 
     case ("paste", 2):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try pasteIntoPane(
         try tabOrPaneID(words[0], topic: topic),
         words[1],
@@ -43,7 +43,7 @@ extension Helper {
       )
 
     case ("key", 2...):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try pressKeys(
         words.dropFirst(),
         in: try tabOrPaneID(words[0], topic: topic),
@@ -54,7 +54,7 @@ extension Helper {
       return try findInPane(
         try tabOrPaneID(words[0], topic: topic),
         text: words.dropFirst().first,
-        options,
+        optionWords,
         environment: environment,
       )
 

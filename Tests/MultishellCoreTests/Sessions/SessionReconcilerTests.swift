@@ -6,7 +6,7 @@ import Testing
 @Suite @MainActor
 struct SessionReconcilerTests {
   let store: WorkspaceStore
-  let host = RecordingHost()
+  let host = FakeTerminalHost()
   let reconciler: SessionReconciler
   let worktree: Worktree
 

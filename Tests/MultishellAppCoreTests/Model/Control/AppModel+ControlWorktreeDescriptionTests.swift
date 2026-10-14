@@ -12,11 +12,7 @@ struct AppModelControlWorktreeDescriptionTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let main = try #require(harness.model.workspace.worktrees.first)
-    try "dirty".write(
-      to: main.path.appendingPathComponent("file.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try harness.dirty(main)
 
     let reply = await harness.model.answer(.describeWorktree(id: ControlID.worktree(main.id)))
 

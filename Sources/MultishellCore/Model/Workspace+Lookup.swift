@@ -35,17 +35,9 @@ extension Workspace {
     tabGroups.firstIndex { $0.id == id }
   }
 
-  public func tab(before tab: TerminalTab.ID) -> TerminalTab? {
-    neighbour(of: tab, .previous)
-  }
-
-  public func tab(after tab: TerminalTab.ID) -> TerminalTab? {
-    neighbour(of: tab, .next)
-  }
-
-  /// Cycling stays inside the tab's own group.
-  private func neighbour(
-    of id: TerminalTab.ID,
+  /// Cycling stays inside the tab's own group, wrapping at either end.
+  public func neighbour(
+    ofTab id: TerminalTab.ID,
     _ direction: CycleDirection,
   ) -> TerminalTab? {
     guard let current = tab(id) else { return nil }

@@ -14,9 +14,9 @@ extension AppModel {
         title: title(ofPane: session, in: tab),
         isLive: liveSessionIDs.contains(id),
         isFocused: tab.focusedSessionID == id,
-        agent: session.agentID,
+        agent: agentIDAtThePrompt(of: session),
         state: state(ofPane: id),
-        workers: workers(ofPane: id).map(PaneDescription.Worker.init),
+        workers: workers(ofPane: id).map(PaneDescription.WorkerRecord.init),
         find: findBarSessionIDs.contains(id)
           ? PaneDescription.Find(
             text: findText(of: id),

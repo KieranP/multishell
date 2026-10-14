@@ -269,10 +269,11 @@ says why these are the rules.
 - **The command line reaches its own build's app**: HelperControlTests holds the
   pane's `MULTISHELL_SOCKET` aside, and PathsVariantTests reads the variant of
   the bundle a helper reached through a link is in, gives two worktree names
-  that start alike files of their own, and carries over a state file saved under
-  the cut name from before the hash. **The installed tool is offered only over
-  nothing, a dangling link or the shared one**: HelperLinkTests. **A link that
-  cannot be made leaves the shell integration written**: AppLaunchFilesTests.
+  that start alike files of their own, and PathsStateFileCarryOverTests carries
+  over a state file saved under the cut name from before the hash. **The
+  installed tool is offered only over nothing, a dangling link or the shared
+  one**: HelperLinkTests. **A link that cannot be made leaves the shell
+  integration written**: AppLaunchFilesTests.
 - **`open` launches the bundle the helper is in and waits for its answer**:
   HelperAppCommandsTests, a copy of the helper in a bundle of the test's own and
   a stand-in for `/usr/bin/open` named by `MULTISHELL_OPENER`, a debug build's

@@ -168,7 +168,7 @@ struct HelperStateReportsTests {
   @Test func stateWithNobodyListeningFailsLoudly() async throws {
     let output = try await HelperBinary.run(
       ["state", "done"],
-      environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"],
+      environment: ["MULTISHELL_SOCKET": HelperBinary.nobodyListening],
     )
     #expect(output.status == 1)
     #expect(output.standardError.contains("could not reach Multishell"))

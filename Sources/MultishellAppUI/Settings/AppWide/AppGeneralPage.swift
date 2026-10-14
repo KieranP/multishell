@@ -18,7 +18,7 @@ struct AppGeneralPage: View {
             write: model.setPreferredEditor,
           ),
           options: model.editorDetection.options(selected:),
-          rescanning: model,
+          refreshing: model,
           info: t("general.editor-info"),
         )
         if model.usesCustomEditor {

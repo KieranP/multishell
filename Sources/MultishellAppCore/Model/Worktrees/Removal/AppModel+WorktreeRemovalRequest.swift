@@ -95,11 +95,9 @@ extension AppModel {
 
   /// What the confirmation should warn about, beyond the removal itself.
   public func worktreeRemovalWarning(for pending: PendingWorktreeRemoval) -> String? {
-    PendingWorktreeRemoval.warning(
+    pending.warning(
       changedFiles: statuses[pending.worktree.id]?.changedFiles ?? 0,
       liveTerminals: liveTerminalCount(in: pending.worktree.id),
-      isStatusUnread: pending.isStatusUnread,
-      trashes: pending.trashes,
     )
   }
 }

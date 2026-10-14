@@ -63,6 +63,29 @@ struct AppModelControlTabsTests {
     #expect(tabs[0]["state"] as? String == "attention")
   }
 
+  @Test func aListedPaneNamesTheAgentAtItsPromptAsTheSidebarAndBoardDo() async throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.messageSource.send(
+      SessionStateReport(
+        state: .running,
+        sessionID: tab.focusedSessionID,
+        command: "codex",
+        isFromShellIntegration: true,
+      )
+    )
+
+    let reply = try #require(
+      await harness.messageSource.ask(.listTabs(worktree: ControlID.worktree(harness.main.id)))
+    )
+
+    let worktrees = try #require(reply.outputFields["worktrees"] as? [[String: Any]])
+    let tabs = try #require(worktrees[0]["tabs"] as? [[String: Any]])
+    let panes = try #require(tabs[0]["panes"] as? [[String: Any]])
+    #expect(panes[0]["agent"] as? String == "codex")
+  }
+
   @Test func aTabMovesBesideAnotherOfItsWorktreeAndNotBesideAnotherWorktrees() async throws {
     let harness = Harness()
     let first = harness.openBackgroundTab()
@@ -71,12 +94,16 @@ struct AppModelControlTabsTests {
     let elsewhere = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
 
     #expect(
-      await harness.messageSource.ask(.moveTab(id: second.id, before: true, anchor: first.id))
+      await harness.messageSource.ask(
+        .moveTab(id: second.id, placement: .before, anchor: first.id)
+      )
         == .done
     )
     #expect(harness.model.workspace.tabs(in: harness.main.id).map(\.id) == [second.id, first.id])
     #expect(
-      await harness.messageSource.ask(.moveTab(id: second.id, before: true, anchor: elsewhere.id))
+      await harness.messageSource.ask(
+        .moveTab(id: second.id, placement: .before, anchor: elsewhere.id)
+      )
         == .refused(.tabInAnotherWorktree(id: elsewhere.id))
     )
   }
@@ -169,7 +196,9 @@ struct AppModelControlTabsTests {
     let focusedBefore = harness.engine.focused
 
     #expect(
-      await harness.messageSource.ask(.moveTab(id: tabs[0].id, before: false, anchor: tabs[1].id))
+      await harness.messageSource.ask(
+        .moveTab(id: tabs[0].id, placement: .after, anchor: tabs[1].id)
+      )
         == .done
     )
     #expect(await harness.messageSource.ask(.closeTab(id: tabs[2].id, force: false)) == .done)

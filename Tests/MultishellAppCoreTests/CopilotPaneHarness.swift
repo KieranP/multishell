@@ -4,11 +4,11 @@ import MultishellCore
 @testable import MultishellAppCore
 
 @MainActor struct CopilotPaneHarness {
-  static let copilot = AgentHookCatalogue.integration("copilot")!
+  private static let copilot = AgentHookCatalogue.integration("copilot")!
 
-  let harness = Harness()
-  let tab: TerminalTab
-  var session: TerminalSession.ID { tab.focusedSessionID }
+  private let harness = Harness()
+  private let tab: TerminalTab
+  private var session: TerminalSession.ID { tab.focusedSessionID }
 
   var state: SessionState? { harness.model.state(of: tab) }
   var workers: [String] { harness.model.sessionStates.workers(.session(session)).map(\.id) }

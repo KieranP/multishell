@@ -135,8 +135,8 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     views[id]?.takeFirstResponder()
   }
 
-  func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
-    views[id]?.performBindingAction(GhosttySearchActions.action(for: command)) ?? false
+  func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool {
+    views[id]?.performBindingAction(GhosttySearchActions.action(for: step)) ?? false
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {

@@ -13,7 +13,7 @@ enum PromisedDrop {
 
   /// How long a source is given before the drop is answered without it: room
   /// for a large file, and a bound on one that never answers.
-  static let defaultPatience: TimeInterval = 120
+  private static let defaultPatience: TimeInterval = 120
 
   static func receivers(from sender: any NSDraggingInfo) -> [NSFilePromiseReceiver] {
     sender.draggingPasteboard.readObjects(forClasses: [NSFilePromiseReceiver.self])

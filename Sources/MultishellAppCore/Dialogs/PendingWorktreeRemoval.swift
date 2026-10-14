@@ -57,10 +57,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   init(
     worktree: Worktree,
     branchHandling: BranchHandling,
-    customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown,
-    trashes: Bool = true,
-    isStatusUnread: Bool = false,
+    customName: String?,
+    mergeState: WorktreeMergeState,
+    trashes: Bool,
+    isStatusUnread: Bool,
   ) {
     self.worktree = worktree
     self.branchHandling = branchHandling
@@ -74,10 +74,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     _ worktree: Worktree,
     confirms: Bool,
     alwaysDeletesBranch: Bool,
-    customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown,
-    trashes: Bool = true,
-    isStatusUnread: Bool = false,
+    customName: String?,
+    mergeState: WorktreeMergeState,
+    trashes: Bool,
+    isStatusUnread: Bool,
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch

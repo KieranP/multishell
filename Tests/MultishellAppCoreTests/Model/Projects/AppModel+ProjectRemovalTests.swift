@@ -24,13 +24,7 @@ struct AppModelProjectRemovalTests {
 
     // `harness.project` re-read each time: the create takes its hooks off the
     // value it is handed, so a copy from before the settings write has none.
-    await harness.model.createWorktree(
-      branch: "setup",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "setup"))
+    let created = try await harness.createWorktree(onBranch: "setup")
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
 
     // Taken before the removal, which is what clears the entry.

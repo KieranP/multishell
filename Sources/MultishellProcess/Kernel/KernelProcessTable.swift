@@ -54,8 +54,8 @@ public enum KernelProcessTable {
   }
 
   static func parent(of pid: Int32) -> Int32? {
-    guard let info = record(of: pid) else { return nil }
-    return info.kp_eproc.e_ppid
+    guard let record = record(of: pid) else { return nil }
+    return record.kp_eproc.e_ppid
   }
 
   /// The executable's name as the kernel keeps it: 16 characters, which is

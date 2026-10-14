@@ -19,7 +19,7 @@ struct NotificationSettingsTextTests {
     }
     #expect(
       NotificationSettingsText.rows.allSatisfy { row in
-        !row.info.contains(NotificationSettingsText.note(for: .notAsked, settingsLocation: nil))
+        !row.info.contains(NotificationSettingsText.caption(for: .notAsked, settingsLocation: nil))
       },
       "what holds for every notification is said once at the foot of the page",
     )
@@ -32,19 +32,19 @@ struct NotificationSettingsTextTests {
   }
 
   /// The three toggles do nothing until a refusal is lifted, so where to lift it
-  /// is all the note says then.
-  @Test func aRefusalReplacesTheNoteAndSaysWhereToLiftIt() {
+  /// is all the caption says then.
+  @Test func aRefusalReplacesTheCaptionAndSaysWhereToLiftIt() {
     let place = "System Settings > Notifications"
-    let refused = NotificationSettingsText.note(for: .refused, settingsLocation: place)
+    let refused = NotificationSettingsText.caption(for: .refused, settingsLocation: place)
     #expect(refused.contains(place), "the desktop names the place, not this")
     for authorization in [NotificationAuthorization.notAsked, .allowed, .unavailable] {
       #expect(
-        NotificationSettingsText.note(for: authorization, settingsLocation: place) != refused,
+        NotificationSettingsText.caption(for: authorization, settingsLocation: place) != refused,
         "\(authorization)",
       )
     }
     #expect(
-      !NotificationSettingsText.note(for: .refused, settingsLocation: nil).contains("Settings"),
+      !NotificationSettingsText.caption(for: .refused, settingsLocation: nil).contains("Settings"),
       "a desktop with no such place is not sent to one",
     )
   }
@@ -53,11 +53,13 @@ struct NotificationSettingsTextTests {
   /// and a page there would promise a dialog nobody will see.
   @Test func onlyAnUnansweredPermissionPromisesToAsk() {
     #expect(
-      NotificationSettingsText.note(for: .notAsked, settingsLocation: nil).contains("Permission")
+      NotificationSettingsText.caption(for: .notAsked, settingsLocation: nil).contains("Permission")
     )
     for settled in [NotificationAuthorization.allowed, .unavailable] {
       #expect(
-        !NotificationSettingsText.note(for: settled, settingsLocation: nil).contains("Permission"),
+        !NotificationSettingsText.caption(for: settled, settingsLocation: nil).contains(
+          "Permission"
+        ),
         "\(settled)",
       )
     }

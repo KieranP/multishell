@@ -22,7 +22,7 @@ extension AppModel {
 
   func replyToSelectPane(_ id: TerminalSession.ID) -> ControlReply {
     guard let tab = workspace.tab(owning: id) else { return .refused(.noPane(id: id)) }
-    if let refusal = refusalToBringIntoView(tab) { return .refused(refusal) }
+    if let refusal = bringIntoView(tab) { return .refused(refusal) }
     show(pane: id, in: tab)
     return .done
   }

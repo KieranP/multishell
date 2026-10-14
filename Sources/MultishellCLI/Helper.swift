@@ -69,7 +69,7 @@ enum Helper {
         throw UsageError("unknown command \(arguments[0])")
       }
     } catch let error as UsageError {
-      return reportUsageError(error, for: arguments)
+      return printUsageError(error, for: arguments)
     } catch {
       printError("\(error)")
       return 1
@@ -78,7 +78,7 @@ enum Helper {
 
   /// Later in the line a help flag may be an option's value, so only a line
   /// that fails to parse is taken as asking for help.
-  private static func reportUsageError(_ error: UsageError, for arguments: [String]) -> Int32 {
+  private static func printUsageError(_ error: UsageError, for arguments: [String]) -> Int32 {
     if let command = arguments.first, asksForHelp(arguments) { return printHelp(on: command) }
     printError("\(error.message)\n\n\(error.topic.flatMap(usage(of:)) ?? usage)")
     return 2

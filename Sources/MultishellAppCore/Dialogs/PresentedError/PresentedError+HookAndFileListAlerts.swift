@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 import MultishellGitKit
 import MultishellProcess
@@ -30,8 +31,11 @@ extension PresentedError {
         case .link: t("error.files-not-linked")
         case .copy: t("error.files-not-copied")
         }
+      let paths = failure.failures.map { "\($0.path): \(placementCause($0.underlying))" }
       return (
-        title, ([failure.description] + describeSkipped(failure.skipped)).joined(separator: "\n\n"),
+        title,
+        ([paths.joined(separator: "\n")] + describeSkipped(failure.skipped))
+          .joined(separator: "\n\n"),
       )
 
     case let skipped as WorktreeFileSkipped:
@@ -40,6 +44,12 @@ extension PresentedError {
     default:
       return nil
     }
+  }
+
+  /// Why one listed path was not placed: ours for an escape, else the
+  /// system's own words for what it refused.
+  private static func placementCause(_ error: any Error) -> String {
+    error is WorktreeFileEscape ? t("worktree-file.escape") : error.localizedDescription
   }
 
   /// What an entry must be, and the entries that were not; none for none.

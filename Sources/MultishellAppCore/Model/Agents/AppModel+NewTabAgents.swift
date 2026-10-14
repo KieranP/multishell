@@ -11,7 +11,7 @@ extension AppModel {
 
   /// What a New Tab menu offers: the PATH scan's finds in catalogue order,
   /// then the custom command once typed. Run on either changing, never from a view.
-  func refreshNewTabAgents() {
+  func rebuildNewTabAgents() {
     var ids = AgentCatalogue.agents.map(\.id).filter(agentDetection.isInstalled)
     if !workspace.customAgentCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       ids.append(AgentCatalogue.customID)

@@ -265,8 +265,9 @@ What each addition needs beyond the code itself.
   asks for its branch in `runControl` and its text in `usage(of:)`. Nothing
   forces its line in the overview `usage`.
 - **A key `panes key` names** goes in `ControlKey.names` and in the engine's
-  `namedKeyCodes`. Nothing forces the second: a name with no code is skipped and
-  the request still answers done.
+  `namedKeyCodes`. Nothing forces the second: a name with no code stops the
+  press there, the keys before it already sent, and the request is refused as
+  `paneNotLive`.
 - **A persisted field.** Decode with a default, an unknown enum value included,
   and add a decoding case to that type's own tests.
 - **The verb carries the choice**: the strict decode where a wrong type should

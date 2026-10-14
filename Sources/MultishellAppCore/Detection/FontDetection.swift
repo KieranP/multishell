@@ -19,7 +19,7 @@ public struct FontDetection: Equatable, Sendable {
     }
   }
 
-  func isInstalled(_ family: String) -> Bool {
+  private func isInstalled(_ family: String) -> Bool {
     family == Self.systemID || monospaced.contains(family) || otherFamilies.contains(family)
   }
 

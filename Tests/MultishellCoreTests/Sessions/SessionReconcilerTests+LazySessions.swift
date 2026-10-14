@@ -9,7 +9,7 @@ extension SessionReconcilerTests {
     let warmTab = store.openTab(in: warm.id)!
     store.openTab(in: cold.id)
 
-    let host = RecordingHost()
+    let host = FakeTerminalHost()
     let reconciler = SessionReconciler(store: store, host: host)
     var callbacks = 0
     reconciler.onLiveSessionsChanged = { callbacks += 1 }

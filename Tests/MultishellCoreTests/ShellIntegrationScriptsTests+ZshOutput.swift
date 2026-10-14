@@ -1,4 +1,5 @@
 import Foundation
+import MultishellProcess
 import TestScratch
 import Testing
 
@@ -7,7 +8,7 @@ import Testing
 /// A real zsh run against the generated files, as a Ghostty pane starts it.
 extension ShellIntegrationScriptsTests {
   static let zshPath = "/bin/zsh"
-  static let scriptProgramPath = "/usr/bin/script"
+  private static let scriptProgramPath = "/usr/bin/script"
 
   func zshOutput(
     features: String?,
@@ -56,7 +57,7 @@ extension ShellIntegrationScriptsTests {
     let script = """
       zmodload zsh/zle zsh/zleparameter
       \(before)
-      source \(Scratch.shellWord(zshrc))
+      source \(AnyShellQuoting.quote(zshrc))
       \(after)
       """
     var environment = files.environment(termProgram: "ghostty")
@@ -76,7 +77,7 @@ extension ShellIntegrationScriptsTests {
     defer { files.tearDown() }
     let zshrc = files.zshDirectory.appendingPathComponent(".zshrc").path
     let script = """
-      source \(Scratch.shellWord(zshrc))
+      source \(AnyShellQuoting.quote(zshrc))
       _multishell_prompted=1
       \(after)
       """

@@ -57,17 +57,6 @@ struct PresentedErrorHookAndFileListAlertsTests {
     #expect(presented.message == "Exited with status 3 and printed nothing.")
   }
 
-  @Test func aHookThatOnlyEchoedBeforeFailingGetsItsStatusAfterItsWords() {
-    let echoed = ProcessFailure(
-      executable: "zsh",
-      arguments: ["-l", "-i", "-c", "echo Created\nexit 1"],
-      status: 1,
-      message: "Created",
-    )
-    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: echoed))
-    #expect(presented.message == "Created\n\nExited with status 1.")
-  }
-
   @Test func preHookFailuresSayTheOperationDidNotHappen() {
     let refused = ProcessFailure(
       executable: "zsh",

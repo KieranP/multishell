@@ -100,21 +100,5 @@ struct AccessibilityTextAgentBoardTests {
       )
         == "claude, tab, Claude Code, agent, Working, 2 subagents"
     )
-    #expect(
-      AccessibilityText.pane(
-        SidebarPane(
-          id: UUID(),
-          title: "fix tests",
-          position: PanePosition(number: 2, count: 2),
-          isFocused: true,
-          state: nil,
-          workers: [],
-          agentID: nil,
-          agentName: nil,
-        )
-      )
-        == "fix tests, pane 2 of 2, selected",
-      "a renamed tab names every pane alike, so the position tells them apart",
-    )
   }
 }

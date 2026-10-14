@@ -40,7 +40,7 @@ struct WorktreeCoordinatorStatusTests {
       ).trimmingCharacters(in: .whitespacesAndNewlines)
     }.compactMap(Int.init)
     #expect(peaks.count == 20, "every run recorded a peak")
-    #expect(peaks.max() ?? 0 <= SharedReadState.maxConcurrentReads, "\(peaks)")
+    #expect(peaks.max() ?? 0 <= SharedReadState.maximumConcurrentReads, "\(peaks)")
     #expect(peaks.max() ?? 0 >= 4, "runs did not overlap: \(peaks)")
   }
 

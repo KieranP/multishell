@@ -12,12 +12,12 @@ extension Helper {
   /// answers at once, so a long wait costs the app nothing between looks.
   static func waitForPane(
     _ id: UUID,
-    _ arguments: ArraySlice<String>,
+    _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
     let topic = ControlCommand.panes.rawValue
     let options = try CommandOptions(
-      arguments,
+      optionWords,
       valued: ["state", "text", "timeout"],
       flags: ["scrollback"],
       topic: topic,
@@ -63,9 +63,8 @@ extension Helper {
     environment: [String: String],
   ) throws -> (Duration) throws -> String? {
     guard state == noState || SessionState(rawValue: state) != nil else {
-      let states = [noState] + SessionState.allCases.map(\.rawValue)
       throw UsageError(
-        "--state takes one of: \(states.joined(separator: ", "))",
+        "--state takes one of: \(noState), \(stateList)",
         topic: ControlCommand.panes.rawValue,
       )
     }

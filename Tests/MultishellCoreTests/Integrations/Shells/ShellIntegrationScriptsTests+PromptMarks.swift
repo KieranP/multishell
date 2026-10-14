@@ -110,14 +110,11 @@ extension ShellIntegrationScriptsTests {
   /// the mark's brace as a literal percent's and show the rest.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func aPromptEndingInAPercentKeepsItAndStillGetsTheInputMark() async throws {
-    let zsh = "/bin/zsh"
-    let files = try GeneratedIntegration(helper: "/bin/echo")
-    defer { files.tearDown() }
-    try files.writeHomeFile(".zshrc", "PS1='ready%'\n")
-    var environment = files.environment(termProgram: "ghostty")
-    environment["ZDOTDIR"] = files.zshDirectory.path
-
-    let output = try await interactiveShellOutput(zsh, arguments: ["-i"], environment: environment)
+    let output = try await zshOutput(
+      features: nil,
+      input: "true\nexit\n",
+      usersRC: "PS1='ready%'\n",
+    )
     #expect(output.contains("ready%" + PromptMarks.input), "the percent shown, then the mark")
     #expect(output.contains("%{") == false, "and no brace leaks into the prompt")
   }
@@ -147,18 +144,11 @@ extension ShellIntegrationScriptsTests {
   /// last. bash 5.1 made `PROMPT_COMMAND` an array; an older one runs only element 0.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
   func theUsersOwnPromptCommandEntriesKeepTheirPlaceBetweenOurs() async throws {
-    let bash = "/bin/bash"
-    let files = try GeneratedIntegration(helper: "/bin/echo")
-    defer { files.tearDown() }
-    try files.writeHomeFile(".bashrc", "PROMPT_COMMAND=(theirs_first theirs_second)\n")
-    var environment = files.environment(termProgram: "ghostty")
-    environment[SessionEnvironment.sessionVariable] = "prompt-command"
-
-    let output = try await interactiveShellOutput(
-      bash,
-      arguments: ["--init-file", files.bashInit.path, "-i"],
-      environment: environment,
+    let output = try await bashOutput(
+      "/bin/bash",
+      features: nil,
       input: "declare -p PROMPT_COMMAND\nexit\n",
+      usersRC: "PROMPT_COMMAND=(theirs_first theirs_second)\n",
     )
     let declared = try #require(output.range(of: "declare -a PROMPT_COMMAND=")).upperBound
     let listing = output[declared...]
@@ -173,18 +163,11 @@ extension ShellIntegrationScriptsTests {
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
   func anArrayPromptCommandStillRunsOurHooksOnABashThatRunsOnlyItsFirstElement() async throws {
-    let bash = "/bin/bash"
-    let files = try GeneratedIntegration(helper: "/bin/echo")
-    defer { files.tearDown() }
-    try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND=(theirs_first theirs_second)\n")
-    var environment = files.environment(termProgram: "ghostty")
-    environment[SessionEnvironment.sessionVariable] = "array-prompt-command"
-
-    let output = try await interactiveShellOutput(
-      bash,
-      arguments: ["--init-file", files.bashInit.path, "-i"],
-      environment: environment,
+    let output = try await bashOutput(
+      "/bin/bash",
+      features: nil,
       input: "true\nexit\n",
+      usersRC: "PS1='> '\nPROMPT_COMMAND=(theirs_first theirs_second)\n",
     )
     #expect(output.contains(PromptMarks.claim))
     #expect(output.contains("> " + PromptMarks.input))

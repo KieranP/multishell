@@ -40,8 +40,8 @@ struct ProjectGeneralPage: View {
           ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
         }
         .disabled(!isOverridden)
-      } footer: { order in
-        SettingsCaption(order.caption)
+      } footer: { inherited in
+        SettingsCaption(inherited.caption)
       }
 
       OverrideSection(

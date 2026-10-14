@@ -34,11 +34,11 @@ final class PipeBuffer: Sendable {
   /// Stops reading and counts the pipe as drained. Only the first call does
   /// anything.
   func finish() {
-    let first = state.withLock { state in
+    let wasUnfinished = state.withLock { state in
       defer { state.finished = true }
       return !state.finished
     }
-    guard first else { return }
+    guard wasUnfinished else { return }
     handle.readabilityHandler = nil
     group.leave()
   }

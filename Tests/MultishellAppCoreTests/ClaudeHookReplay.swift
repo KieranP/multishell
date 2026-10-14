@@ -9,11 +9,11 @@ import Testing
 /// states, as the helper and the app would, noting what each list named.
 struct ClaudeHookReplay {
   let directory: URL
-  let claude = AgentHookCatalogue.integration("claude")!
+  private let claude = AgentHookCatalogue.integration("claude")!
   var states = SessionStates()
   var lastListedIDs: Set<String> = []
   var launcherByWorkerID: [String: String] = [:]
-  var startedWorkerIDs: Set<String> = []
+  private var startedWorkerIDs: Set<String> = []
 
   init() throws {
     directory = try Scratch.directory("claude-capture")

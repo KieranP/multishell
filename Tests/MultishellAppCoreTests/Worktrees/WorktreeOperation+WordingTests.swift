@@ -11,14 +11,15 @@ struct WorktreeOperationWordingTests {
     #expect(create.title == "Running the post-create hook…")
     #expect(create.detail.contains("first terminal opens"))
 
-    let removal = WorktreeOperation(.init(WorktreeRemovalStep.preDeleteHook))
+    let removal = WorktreeOperation(.init(WorktreeRemovalStep.preDeleteHook, trashes: true))
     #expect(removal.stage == .preDeleteHook)
     #expect(removal.detail.contains("stays if the hook refuses"))
     #expect(
-      WorktreeOperation(.init(WorktreeRemovalStep.deletingBranch)).title == "Deleting the branch…"
+      WorktreeOperation(.init(WorktreeRemovalStep.deletingBranch, trashes: true)).title
+        == "Deleting the branch…"
     )
     #expect(
-      WorktreeOperation(.init(WorktreeRemovalStep.postDeleteHook)).detail.contains(
+      WorktreeOperation(.init(WorktreeRemovalStep.postDeleteHook, trashes: true)).detail.contains(
         "terminals close"
       )
     )

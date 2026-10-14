@@ -16,7 +16,7 @@ final class FakeEngine: TerminalSurfaceHost {
   var typed: [(id: TerminalSession.ID, text: String)] = []
   var pressed: [(id: TerminalSession.ID, keys: [ControlKey])] = []
   /// Every search step, in order, whichever pane it was for.
-  var searched: [(id: TerminalSession.ID, command: TerminalSearch)] = []
+  var searched: [(id: TerminalSession.ID, step: TerminalSearch)] = []
   /// What the reconciler asked for, command line included.
   var opened: [TerminalSession] = []
   weak var delegate: (any TerminalHostDelegate)?
@@ -55,9 +55,9 @@ final class FakeEngine: TerminalSurfaceHost {
     typed.append((id, text + (pressingReturn ? "\r" : "")))
     return true
   }
-  func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
+  func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool {
     guard liveSessionIDs.contains(id) else { return false }
-    searched.append((id, command))
+    searched.append((id, step))
     return true
   }
   func view(for id: TerminalSession.ID) -> FakeSurface? { nil }

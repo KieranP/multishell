@@ -5,14 +5,14 @@ import SwiftUI
 /// than marks.
 struct FindBarButton: View {
   let symbol: String
-  let label: String
+  let help: String
   let theme: Theme
   let metrics: UIMetrics
   let action: () -> Void
   @State private var isHovered = false
 
   var body: some View {
-    PlainGlyphButton(help: label, action: action) {
+    PlainGlyphButton(help: help, action: action) {
       Image(systemName: symbol)
         .font(.system(size: metrics.bodySize, weight: .medium))
         .foregroundStyle(isHovered ? theme.textPrimary : theme.textSecondary)

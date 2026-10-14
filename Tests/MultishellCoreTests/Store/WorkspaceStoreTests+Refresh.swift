@@ -26,7 +26,7 @@ extension WorkspaceStoreTests {
     #expect(counter.changes == 1)
     moved.head = "moved again"
     store.replaceWorktrees([moved], forProject: project.id)
-    #expect(counter.changes == 2, "a second change is counted, not folded into the first")
+    #expect(counter.changes == 2, "a second change is counted, not merged into the first")
   }
 
   @Test func refreshKeepsTabsOfWorktreesThatSurvive() {
@@ -39,5 +39,17 @@ extension WorkspaceStoreTests {
 
     #expect(store.workspace.tabs.map(\.id) == [tab.id])
     #expect(store.workspace.worktree(worktree.id)?.head == "def5678")
+  }
+
+  @Test func refreshDropsTabsForWorktreesThatVanished() {
+    let (store, project, worktree) = demoStore()
+    store.openTab(in: worktree.id)
+    store.selectWorktree(worktree.id)
+
+    store.replaceWorktrees([], forProject: project.id)
+
+    #expect(store.workspace.tabs.isEmpty)
+    #expect(store.workspace.sessions.isEmpty)
+    #expect(store.workspace.selectedWorktreeID == nil)
   }
 }

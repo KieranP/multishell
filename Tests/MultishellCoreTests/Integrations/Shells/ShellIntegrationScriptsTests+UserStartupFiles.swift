@@ -51,7 +51,7 @@ extension ShellIntegrationScriptsTests {
     defer { files.tearDown() }
     var environment = files.environment(termProgram: nil)
 
-    if FileManager.default.isExecutableFile(atPath: "/bin/zsh") {
+    if InstalledShells.isInstalled("/bin/zsh") {
       try files.writeHomeFile(".zshrc", "setopt nounset\n")
       environment["ZDOTDIR"] = files.zshDirectory.path
       let output = try await interactiveShellOutput(

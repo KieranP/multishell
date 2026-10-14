@@ -6,6 +6,8 @@ import Testing
 
 @Suite(.serialized)
 struct UnixSocketServerTests {
+  private static let python = URL(fileURLWithPath: "/usr/bin/python3")
+
   @Test func linesFromSeveralClientsArriveWholeAndTheFileIsPrivate() async throws {
     let listener = try ReportListener(prefix: "srv")
     defer { listener.stop() }
@@ -36,7 +38,7 @@ struct UnixSocketServerTests {
 
     // The first instance goes away without cleaning up, as a crash would.
     first.stop()
-    try plantDeadSocket(at: first.path)
+    try plantDeadSocket(at: path.path)
     #expect(FileManager.default.fileExists(atPath: path.path))
     try second.start()
     second.stop()
@@ -78,7 +80,7 @@ struct UnixSocketServerTests {
 
   /// So the claim decides: a socket file beside a claim another process holds has a live
   /// owner, whatever the connect said, and taking it would leave that owner deaf for good.
-  @Test(.enabled(if: InstalledShells.isInstalled("/usr/bin/python3")))
+  @Test(.enabled(if: FileManager.default.isExecutableFile(atPath: python.path)))
   func aSocketWhoseClaimAnotherProcessHoldsIsNotTakenOver() throws {
     let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
@@ -93,7 +95,7 @@ struct UnixSocketServerTests {
     defer { unlink(path.path) }
 
     let holder = Process()
-    holder.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+    holder.executableURL = Self.python
     holder.arguments = [
       "-c",
       """
@@ -154,7 +156,7 @@ struct UnixSocketServerTests {
   }
 
   /// A start that failed is not listening, so a claim it kept would turn the next launch away.
-  @Test(.enabled(if: InstalledShells.isInstalled("/usr/bin/python3")))
+  @Test(.enabled(if: FileManager.default.isExecutableFile(atPath: python.path)))
   func aFailedStartLetsItsClaimGoForAnotherProcess() throws {
     let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "y", count: 120) + ".sock")
     let server = UnixSocketServer(path: long)
@@ -167,7 +169,7 @@ struct UnixSocketServerTests {
 
   /// The probe finds this instance answering, and letting the claim go on that would leave
   /// the socket unguarded while the listener kept accepting.
-  @Test(.enabled(if: InstalledShells.isInstalled("/usr/bin/python3")))
+  @Test(.enabled(if: FileManager.default.isExecutableFile(atPath: python.path)))
   func startingALiveServerAgainKeepsItsClaim() async throws {
     let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
@@ -243,7 +245,7 @@ struct UnixSocketServerTests {
   /// conflict with each other, so `F_GETLK` here says unlocked.
   private func lockAnswerFromAnotherProcess(at path: String) throws -> String {
     let taker = Process()
-    taker.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+    taker.executableURL = Self.python
     taker.arguments = [
       "-c",
       """

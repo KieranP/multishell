@@ -143,11 +143,8 @@ struct AppModelAgentBoardTests {
     let model = harness.model
     model.pidPollInterval = .milliseconds(10)
 
-    let agent = Process()
-    agent.executableURL = URL(fileURLWithPath: "/bin/sleep")
-    agent.arguments = ["60"]
-    try agent.run()
-    let pid = agent.processIdentifier
+    let agent = try WaitingShell()
+    let pid = agent.pid
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, pid: pid, agentID: "claude")
     )
@@ -155,7 +152,6 @@ struct AppModelAgentBoardTests {
     #expect(model.watchedPIDs.contains(pid))
 
     agent.terminate()
-    agent.waitUntilExit()
     try await waitUntil { model.agentBoard.isEmpty }
     #expect(model.agentBoard.isEmpty, "the pane is a shell again")
     #expect(model.reportedAgents[session.id] == nil)

@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -18,6 +19,6 @@ struct ProcessGroupTests {
     var later = timeval()
     gettimeofday(&later, nil)
     #expect(ProcessGroup.isStillOurs(hungUpAt: later, group: group))
-    #expect(!ProcessGroup.isStillOurs(hungUpAt: later, group: 999_999))
+    #expect(!ProcessGroup.isStillOurs(hungUpAt: later, group: deadPID()))
   }
 }

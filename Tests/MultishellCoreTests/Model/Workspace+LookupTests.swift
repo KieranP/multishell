@@ -36,10 +36,10 @@ struct WorkspaceLookupTests {
     let firstTab = store.openTab(in: worktree.id)!
     let secondTab = store.openTab(in: worktree.id)!
 
-    #expect(store.workspace.tab(after: secondTab.id)?.id == firstTab.id)
-    #expect(store.workspace.tab(before: firstTab.id)?.id == secondTab.id)
+    #expect(store.workspace.neighbour(ofTab: secondTab.id, .next)?.id == firstTab.id)
+    #expect(store.workspace.neighbour(ofTab: firstTab.id, .previous)?.id == secondTab.id)
     store.closeTab(secondTab.id)
-    #expect(store.workspace.tab(after: firstTab.id) == nil)
+    #expect(store.workspace.neighbour(ofTab: firstTab.id, .next) == nil)
   }
 
   @Test func tabCyclingStaysInsideItsGroup() {
@@ -50,9 +50,12 @@ struct WorkspaceLookupTests {
     let first = store.workspace.groups(in: worktree.id)[0]
     store.moveTab(c.id, .after, toNewGroupOf: first.id)
 
-    #expect(store.workspace.tab(after: a.id)?.id == b.id)
-    #expect(store.workspace.tab(after: b.id)?.id == a.id, "wraps within the group")
-    #expect(store.workspace.tab(after: c.id) == nil, "a group of one has nowhere to go")
+    #expect(store.workspace.neighbour(ofTab: a.id, .next)?.id == b.id)
+    #expect(store.workspace.neighbour(ofTab: b.id, .next)?.id == a.id, "wraps within the group")
+    #expect(
+      store.workspace.neighbour(ofTab: c.id, .next) == nil,
+      "a group of one has nowhere to go",
+    )
   }
 
   @Test func twoTabsShareAGroupOnlyWhileBothAreInIt() {

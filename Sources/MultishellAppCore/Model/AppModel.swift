@@ -28,7 +28,7 @@ public final class AppModel<Surface> {
   var presentedError: PresentedError? {
     didSet { noteAlertRaised(over: oldValue) }
   }
-  @ObservationIgnored var alertRecordsOfRequests: [UUID: RequestAlertRecord] = [:]
+  @ObservationIgnored var alertsByRequest: [UUID: RequestAlerts] = [:]
   /// Only these file an alert: a task a request left running carries its id on.
   @ObservationIgnored var requestsBeingAnswered: Set<UUID> = []
   public var newWorktreeRequest: NewWorktreeRequest?
@@ -190,10 +190,10 @@ public final class AppModel<Surface> {
   var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
   public internal(set) var agentDetection = AgentDetection.empty {
-    didSet { refreshNewTabAgents() }
+    didSet { rebuildNewTabAgents() }
   }
   /// The agents a New Tab menu lists, held rather than worked out: a strip's
-  /// body reads it on every render. Rebuilt by `refreshNewTabAgents`.
+  /// body reads it on every render. Rebuilt by `rebuildNewTabAgents`.
   public internal(set) var newTabAgentIDs: [String] = []
   /// Which shells the machine has, from `/etc/shells` and that PATH.
   public internal(set) var shellDetection = ShellDetection.empty
@@ -299,7 +299,7 @@ public final class AppModel<Surface> {
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 
     reloadThemes()
-    refreshNewTabAgents()
+    rebuildNewTabAgents()
     host.apply(currentTheme, appearance: store.workspace.appearance)
     // Said on the process's PATH alone. `refreshLoginEnvironment` looks again
     // on the login shell's and takes this back if it finds git there.

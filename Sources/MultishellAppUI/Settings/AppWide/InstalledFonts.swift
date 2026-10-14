@@ -11,7 +11,7 @@ enum InstalledFonts {
 
   /// Replaces the cache, which Refresh must: the Appearance page's `@State`
   /// default reads it again each time the window opens.
-  static func reload() -> FontDetection {
+  static func refresh() -> FontDetection {
     detection = detect()
     return detection
   }

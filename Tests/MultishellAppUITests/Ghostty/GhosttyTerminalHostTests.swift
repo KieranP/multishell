@@ -1,4 +1,5 @@
 import AppKit
+import TestScratch
 import Testing
 
 @testable import MultishellAppUI
@@ -9,7 +10,7 @@ import Testing
 struct GhosttyTerminalHostTests {
   @Test func aSessionReportsNothingOnceClosed() throws {
     let host = GhosttyTerminalHost(lazyRuntime: LazyGhosttyRuntime(readBase: { "" }))
-    let delegate = RecordingTerminalHostDelegate()
+    let delegate = FakeTerminalHostDelegate()
     host.delegate = delegate
     let session = TerminalSession(
       worktreeID: "/w",
@@ -51,9 +52,7 @@ struct GhosttyTerminalHostTests {
         host.close(session.id)
       }
     }
-    for _ in 0..<100 where !isReleased.allSatisfy({ $0() }) {
-      try await Task.sleep(for: .milliseconds(20))
-    }
+    try await waitUntil({ isReleased.allSatisfy { $0() } }, seconds: 2)
 
     withExtendedLifetime(window) {
       let releasedCount = isReleased.filter { $0() }.count

@@ -66,7 +66,7 @@ struct UntrackedLineCounterTests {
 
   /// `git worktree list` says nothing about the URL being a directory, and a
   /// base not marked as one resolves a relative path against its parent.
-  @Test func aPathResolvesUnderADirectoryUrlNotMarkedAsOne() throws {
+  @Test func aPathResolvesUnderADirectoryURLNotMarkedAsOne() throws {
     let root = try Scratch.directory("untracked")
     defer { Scratch.remove(root) }
     try "a\nb\n".write(

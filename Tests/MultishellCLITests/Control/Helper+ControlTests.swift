@@ -93,7 +93,7 @@ struct HelperControlTests {
       (["tabs", "close", id.uuidString, "--force"], .closeTab(id: id, force: true)),
       (
         ["tabs", "move", id.uuidString, "--after", other.uuidString],
-        .moveTab(id: id, before: false, anchor: other),
+        .moveTab(id: id, placement: .after, anchor: other),
       ),
       (["tabs", "rename", id.uuidString, "Server"], .renameTab(id: id, title: "Server")),
       (["tabs", "rename", id.uuidString], .renameTab(id: id, title: nil)),
@@ -260,7 +260,7 @@ struct HelperControlTests {
   @Test func noAppListeningExitsOneSayingSo() async throws {
     let output = try await HelperBinary.run(
       ["debug", "memory"],
-      environment: [Helper.controlSocketVariable: "/tmp/ms-nobody.sock"],
+      environment: [Helper.controlSocketVariable: HelperBinary.nobodyListening],
     )
 
     #expect(output.status == 1)

@@ -236,7 +236,7 @@ struct AppModelTabClosingTests {
   @Test func closingInAnotherWindowClosesThatWindowNotAPane() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.platform.workspaceWindowIsKey = false
+    harness.platform.isWorkspaceWindowKey = false
 
     harness.model.closeActivePane()
     harness.model.closeActiveTab()

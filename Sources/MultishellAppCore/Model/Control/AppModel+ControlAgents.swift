@@ -4,13 +4,11 @@ extension AppModel {
   /// Asked before a tab opens, which would otherwise come up a plain shell
   /// that a script reads as the agent's; the launch's own checks, ahead of it.
   private func refusalToStart(agent id: String) -> ControlRefusal? {
-    guard id != AgentCatalogue.customID else { return nil }
-    guard AgentCatalogue.agent(id) != nil else { return .noAgent(id: id) }
-    // Until the login shell has answered, the launch lets the shell say so.
-    guard loginEnvironment == nil || agentDetection.isInstalled(id) else {
-      return .agentNotInstalled(id: id)
+    switch agentStartProblem(id) {
+    case .notInCatalogue: .noAgent(id: id)
+    case .notInstalled: .agentNotInstalled(id: id)
+    case nil: nil
     }
-    return nil
   }
 
   /// `nil` where neither an agent nor a task is asked for; else the agent

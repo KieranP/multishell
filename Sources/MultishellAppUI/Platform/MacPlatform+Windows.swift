@@ -24,7 +24,7 @@ extension MacPlatform {
     workspaceWindow?.styleMask.contains(.fullScreen) ?? false
   }
 
-  /// Through the scene's own opener, which `WindowOpenerRegistration` hands over.
+  /// Through the scene's own opener, which `registeringWindowOpeners` hands over.
   func show(_ window: AuxiliaryWindow) {
     openAuxiliaryWindow?(window)
     NSApp.activate()

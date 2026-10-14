@@ -31,7 +31,7 @@ enum AgentHookFile {
 
   /// Where a write lands. A link at the end of the path is written through,
   /// not over, so a dotfiles repo keeps seeing the file; see agents.md.
-  static func destination(of file: URL) -> URL {
+  private static func destination(of file: URL) -> URL {
     var current = file
     // Followed link by link: `resolvingSymlinksInPath` hands back a link whose
     // target does not exist yet, and the write would replace it.

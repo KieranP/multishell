@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 extension Helper {
   /// What `debug log` covers unless told, in `log show`'s own spelling.
@@ -60,7 +61,7 @@ extension Helper {
     subsystem: String,
     span: String,
     follows: Bool,
-    isPlain: Bool = false,
+    isPlain: Bool,
   ) -> [String] {
     let predicate = #"subsystem == "\#(subsystem)" AND processID == \#(pid)"#
     let style = ["--style", isPlain ? "compact" : "ndjson", "--predicate", predicate]
@@ -72,16 +73,10 @@ extension Helper {
   /// As they come, for `--follow`: `log` heads its stream with a line of
   /// prose, which is no JSON and is left out.
   static func forEachJSONLine(in handle: FileHandle, _ body: (String) -> Void) throws {
-    var pending = Data()
+    var pending = LineBuffer()
     while let chunk = try handle.read(upToCount: 4_096), !chunk.isEmpty {
-      pending.append(chunk)
-      while let newline = pending.firstIndex(of: UInt8(ascii: "\n")) {
-        let line = String(decoding: pending[..<newline], as: UTF8.self)
-        pending.removeSubrange(...newline)
-        if line.hasPrefix("{") { body(line) }
-      }
+      for line in pending.append(chunk) where line.hasPrefix("{") { body(line) }
     }
-    let unterminated = String(decoding: pending, as: UTF8.self)
-    if unterminated.hasPrefix("{") { body(unterminated) }
+    if let unterminated = pending.takeRest(), unterminated.hasPrefix("{") { body(unterminated) }
   }
 }

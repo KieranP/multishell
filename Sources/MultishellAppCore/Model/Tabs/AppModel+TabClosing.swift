@@ -46,7 +46,7 @@ extension AppModel {
   /// Both keystrokes. One issued in a settings window closes that window
   /// instead, and nothing happens with no tab on screen.
   private func closeInTabInView(_ closing: (TerminalTab) -> PendingClose) {
-    guard platform.workspaceWindowIsKey else {
+    guard platform.isWorkspaceWindowKey else {
       platform.closeKeyWindow()
       return
     }

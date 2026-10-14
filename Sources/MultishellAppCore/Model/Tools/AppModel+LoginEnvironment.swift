@@ -7,7 +7,7 @@ import MultishellProcess
 /// shells, editors and git.
 extension AppModel {
   /// Which PATH the agents are looked up on, for the agent picker's (i).
-  public var agentPathNote: String {
+  public var agentPathInfo: String {
     switch loginEnvironment?.source {
     case nil: t("agents.path-asking")
     case .loginShell(let shell): t("agents.path-from-login-shell", shell.path)

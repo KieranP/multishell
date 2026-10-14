@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 extension AppModelSessionReportsTests {
   /// The board and the sidebar's Agents row are drawn from `reportedAgents`,

@@ -22,7 +22,7 @@ products="$derived/Build/Products/$configuration"
 
 version="$(bundle_version "$root")"
 commit="$(bundle_commit "$root")"
-commits="$(bundle_build_number "$root")"
+build_number="$(bundle_build_number "$root")"
 variant="$(bundle_variant "$root" "$config")"
 
 rm -rf "$app"
@@ -50,7 +50,7 @@ copy_info_plist_strings "$resources" "$app/Contents/Resources"
 
 render_template "$bundling/Info.plist.in" \
     @VERSION@ "$version" \
-    @BUILD@ "$commits" \
+    @BUILD@ "$build_number" \
     @COMMIT@ "$commit" \
     @VARIANT@ "$variant" \
     @COPYRIGHT@ "$(bundle_copyright)" \

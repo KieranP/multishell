@@ -35,7 +35,7 @@
 "agents.command-prompt" = "my-agent --flag";
 "agents.flags" = "CLI Flags:";
 "agents.flags-info" = "Added to the agent's command line every time a tab starts it, resuming included. Quotes group a value with a space in it. Kept per agent.";
-"agents.helper-info" = "For your own hooks: `multishell state running|attention|done|error|idle` marks the tab it runs in. Asks for an administrator password.";
+"agents.helper-info" = "Drives the app from a terminal; `multishell help` lists how. In your own hooks, `multishell state running|attention|done|error|idle` marks the tab it runs in. Asks for an administrator password.";
 "agents.helper-label" = "multishell:";
 "agents.hooks-section" = "Agent hooks";
 "agents.install-helper" = "Install Command Line Tool…";
@@ -260,7 +260,7 @@
 "tab.state-click-to-clear" = "%@. Click to clear.";
 "tab.use-shell-title" = "Use Shell Title";
 "terminal.default-shell" = "Default shell:";
-"terminal.default-shell-info" = "What new tabs run. Project hooks start in it for your startup files, then run as sh. Running terminals keep their shell. zsh and bash get the command-status hooks. Any project can override this.";
+"terminal.default-shell-info" = "What new tabs run. Project hooks start in it for your startup files, then run as sh. Running terminals keep their shell. zsh, bash and fish get the command-status hooks. Any project can override this.";
 "terminal.open-on-create" = "Open a terminal when a worktree is created";
 "terminal.open-on-create-info" = "On, a worktree gets its first shell as soon as it is created, or once its post-create hook has finished. Off, it is shown empty unless the sheet starts an agent. Any project can override this.";
 "terminal.open-on-select" = "Open a terminal when a worktree is selected";

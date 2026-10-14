@@ -13,9 +13,10 @@ struct KernelProcessTableTests {
   }
 
   @Test func launchdIsKnownAndAPidNothingHoldsIsNot() {
+    let pid = deadPID()
     #expect(KernelProcessTable.name(of: 1) != nil)
-    #expect(KernelProcessTable.name(of: 999_999_999) == nil)
-    #expect(KernelProcessTable.parent(of: 999_999_999) == nil)
+    #expect(KernelProcessTable.name(of: pid) == nil)
+    #expect(KernelProcessTable.parent(of: pid) == nil)
   }
 
   /// Failed once in a full run with the marked child unlisted, for a reason
@@ -36,6 +37,6 @@ struct KernelProcessTableTests {
 
     #expect(found().contains(marked.pid))
     #expect(!found().contains(plain.pid))
-    #expect(KernelProcessTable.children(of: 999_999_999, whoseArgumentsContain: "x").isEmpty)
+    #expect(KernelProcessTable.children(of: deadPID(), whoseArgumentsContain: "x").isEmpty)
   }
 }

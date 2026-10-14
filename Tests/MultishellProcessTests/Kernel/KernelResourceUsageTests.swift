@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -26,6 +27,6 @@ struct KernelResourceUsageTests {
   }
 
   @Test func aPidNothingHoldsHasNoUsage() {
-    #expect(KernelResourceUsage.of(999_999_999) == nil)
+    #expect(KernelResourceUsage.of(deadPID()) == nil)
   }
 }

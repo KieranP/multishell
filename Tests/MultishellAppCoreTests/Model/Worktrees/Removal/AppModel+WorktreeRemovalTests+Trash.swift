@@ -10,13 +10,7 @@ extension AppModelWorktreeRemovalTests {
   @Test func aTrashThatRefusesFallsBackToDeletingTheDirectory() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "stuck",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "stuck"))
+    let worktree = try await harness.createWorktree(onBranch: "stuck")
     harness.platform.trash = nil
 
     await harness.model.removeWorktree(worktree, deletesBranch: false)
@@ -32,13 +26,7 @@ extension AppModelWorktreeRemovalTests {
   @Test func theTrashIsAskedOffTheMainThread() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "heavy",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "heavy"))
+    let worktree = try await harness.createWorktree(onBranch: "heavy")
     harness.platform.trash = nil
 
     await harness.model.removeWorktree(worktree, deletesBranch: false)
@@ -53,13 +41,7 @@ extension AppModelWorktreeRemovalTests {
   @Test func aDirectoryThatCanBeNeitherTrashedNorDeletedKeepsTheWorktree() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "pinned",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "pinned"))
+    let worktree = try await harness.createWorktree(onBranch: "pinned")
     harness.platform.trash = nil
     // A read-only parent refuses the unlink of its entries.
     let container = worktree.path.deletingLastPathComponent()

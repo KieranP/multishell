@@ -37,7 +37,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case listWorktrees(project: String?)
   /// A name put into the next debug sample and the signpost log.
   case markDebugSample(name: String)
-  case moveTab(id: UUID, before: Bool, anchor: UUID)
+  case moveTab(id: UUID, placement: TerminalTab.Placement, anchor: UUID)
   case newTab(NewTabOrder)
   case newWorktree(NewWorktreeOrder)
   /// Text put in as a paste, bracketed where the program asked.
@@ -76,7 +76,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
 
   /// The wire's one object a line: the version beside the request, which
   /// a report never holds, so neither parses as the other.
-  struct Envelope: Codable {
+  private struct Envelope: Codable {
     enum CodingKeys: String, CodingKey {
       case request
       case version = "v"

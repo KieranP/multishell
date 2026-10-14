@@ -33,11 +33,11 @@ public protocol TerminalHost: AnyObject {
   /// A step of the engine's own search over the session's scrollback.
   /// `false` where the engine has no such session, or no search at all.
   @discardableResult
-  func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool
+  func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool
 }
 
 extension TerminalHost {
   /// An engine with no search: the bar's steps land nowhere rather than
   /// failing the host.
-  public func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
+  public func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
 }

@@ -240,7 +240,9 @@ command line's requests on the same socket. Newest at the bottom.
   partial column at the edge saying there is more.
 - **No end arrows**, which the tab strip needs because a tab scrolled out of
   sight is one you forget exists; the board has four fixed columns.
-- **No line of output on a card**: the engine hands no scrollback to the core.
+- **No line of output on a card**: the core can read a pane's text since
+  `panes read`, but each read takes the engine's renderer lock on the main
+  thread, a cost paid per card every time a line would refresh.
 - **Flags are stored per agent id**, not as one line for whichever agent is
   chosen: flags are written for a particular CLI, so a line kept across a change
   of agent is one the other will reject.
@@ -968,10 +970,10 @@ command line's requests on the same socket. Newest at the bottom.
   ms, a pane read or a describe, each a main-thread turn. A samples look asks
   for the newest two, and for thirty only where it finds it missed some.
 - **A wait with `--scrollback` reads the scrollback at its first look only**,
-  then the screen. Ghostty keeps about 10 MB of it, read under the renderer lock
-  on the main thread, so a full read each look holds the window that long four
-  times a second. Cost: a match that scrolls past a whole screen between two
-  looks is missed, as it is for a wait without the flag
+  then the screen. Ghostty keeps up to 50 MB of it by default, read under the
+  renderer lock on the main thread, so a full read each look holds the window
+  that long four times a second. Cost: a match that scrolls past a whole screen
+  between two looks is missed, as it is for a wait without the flag
   (`aWaitInTheScrollbackReadsItOnceThenWatchesTheScreen`).
 - **A pane is read as the engine holds it, not as drawn**, through libghostty's
   own text read under its renderer lock: a pane out of view reads as well as one
@@ -1005,6 +1007,10 @@ command line's requests on the same socket. Newest at the bottom.
   `sidebar list` from the sidebar's entries, order and pane rows, `board list`
   from the board as built, `tabs show` from the pane tree and the engine's view
   frames. A test reads the same values the screen draws, not a copy of them.
+- **Every command naming a pane's agent names the one at its prompt**, as its
+  mark does. Reading the agent the tab was opened as, `panes show` and
+  `tabs list` missed a `claude` typed into a shell tab that `sidebar list` and
+  `board list` showed (`aPaneNamesTheAgentAtItsPromptAsTheSidebarAndBoardDo`).
 - **`worktrees show` reads git before it answers**, since the status poll pauses
   while the app is in the background, as a scripted copy usually is.
 - **The settings windows open through SwiftUI's own openers**, which only a view

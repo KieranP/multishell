@@ -6,11 +6,11 @@ import Foundation
 /// repository looks like is decided in one place.
 public enum TestRepository {
   /// What fixture commits are authored as. Not a real address.
-  static let committerEmail = "tests@multishell.local"
+  private static let committerEmail = "tests@multishell.local"
   public static let committerName = "Multishell Tests"
   /// Named rather than taken from the machine's `init.defaultBranch`, which
   /// a developer may have set to anything.
-  static let initialBranch = "main"
+  private static let initialBranch = "main"
 
   /// The identity goes on the repository, so a developer's global config cannot change
   /// what tests commit as; the first commit makes `HEAD` resolvable.

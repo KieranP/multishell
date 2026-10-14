@@ -5,10 +5,10 @@ import Testing
 @testable import MultishellGitKit
 
 @Suite
-struct DebugGitCommandWordingTests {
-  private func row(peakMemory: UInt64?, location: DebugLocation?) -> DebugGitCommand {
+struct DebugGitCommandRowWordingTests {
+  private func row(peakMemory: UInt64?, location: DebugLocation?) -> DebugGitCommandRow {
     let run = GitRun.sample(peakMemory: peakMemory)
-    return DebugGitCommand(
+    return DebugGitCommandRow(
       command: "status",
       tally: GitCommandTally.byCommand([run, run])["status"]!,
       slowestLocation: location,

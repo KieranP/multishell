@@ -103,15 +103,7 @@ extension AppModelStatusReadsTests {
       in: repository,
     )
     let outside = harness.root.appendingPathComponent("outside", isDirectory: true)
-    let git = harness.git
-    let add = Task {
-      try await TestRepository.addWorktree(
-        onNewBranch: "outside",
-        at: outside,
-        in: repository,
-        using: git,
-      )
-    }
+    let add = Task { try await harness.addOutsideTheApp("outside", at: outside) }
     let lock = repository.appendingPathComponent(".git/worktrees/outside/locked")
     try await waitUntil { FileManager.default.fileExists(atPath: lock.path) }
 
@@ -133,14 +125,8 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
 
-    await harness.model.createWorktree(
-      branch: "plain",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    let created = try await harness.createWorktree(onBranch: "plain")
 
-    let created = try #require(harness.worktree(onBranch: "plain"))
     #expect(!harness.model.pathClaims.isClaimed(created.id))
     try harness.dirty(created)
 
@@ -176,13 +162,7 @@ extension AppModelStatusReadsTests {
     )
     harness.model.setSettings(ProjectSettings(copiedPaths: ".env"), for: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "listed",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "listed"))
+    let created = try await harness.createWorktree(onBranch: "listed")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     #expect(harness.model.worktreeOperations.isEmpty, "the copy is done")
 
@@ -207,13 +187,7 @@ extension AppModelStatusReadsTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "slow",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "slow"))
+    let created = try await harness.createWorktree(onBranch: "slow")
     let two = created.path.appendingPathComponent("build/two").path
     try await waitUntil({ FileManager.default.fileExists(atPath: two) }, seconds: 4)
 

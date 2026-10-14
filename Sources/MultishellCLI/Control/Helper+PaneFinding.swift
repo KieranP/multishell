@@ -14,12 +14,12 @@ extension Helper {
   static func findInPane(
     _ id: UUID,
     text: String?,
-    _ arguments: ArraySlice<String>,
+    _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
     let topic = ControlCommand.panes.rawValue
     let options = try CommandOptions(
-      arguments,
+      optionWords,
       valued: [],
       flags: ["next", "previous", "close"],
       topic: topic,
@@ -28,11 +28,11 @@ extension Helper {
       ("next", .next), ("previous", .previous), ("close", .close),
     ]
     let asked =
-      steps.filter { options.has($0.flag) }.map(\.action) + (text.map { [.search($0)] } ?? [])
+      steps.filter { options.has($0.flag) }.map(\.action) + (text.map { [.open($0)] } ?? [])
     guard asked.count == 1, let action = asked.first else {
       throw UsageError("panes find needs TEXT or one of --next, --previous, --close", topic: topic)
     }
-    if case .search(let text) = action, text.isEmpty {
+    if case .open(let text) = action, text.isEmpty {
       throw UsageError("panes find needs TEXT to find", topic: topic)
     }
     let answer = try output(of: .findInPane(id: id, action: action), environment: environment)
@@ -40,7 +40,7 @@ extension Helper {
       switch action {
       case .close: nil
 
-      case .search:
+      case .open:
         try settledFind(of: id, after: answer, field: "total", environment: environment)
 
       case .next, .previous:

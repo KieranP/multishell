@@ -40,8 +40,8 @@ extension AppModel {
     case .selectTab(let id): replyToSelectTab(id)
     case .closeTab(let id, let force): replyToCloseTab(id, force: force)
 
-    case .moveTab(let id, let before, let anchor):
-      replyToMoveTab(id, before: before, anchor: anchor)
+    case .moveTab(let id, let placement, let anchor):
+      replyToMoveTab(id, placement, anchor: anchor)
 
     case .renameTab(let id, let title): replyToRenameTab(id, to: title)
     case .splitPane(let axis, let tab): replyToSplitPane(axis, inTab: tab)

@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Hands the scenes' window openers to the platform: a command-line request has
 /// no view to call them from, and AppKit cannot open a SwiftUI scene.
-struct WindowOpenerRegistration: ViewModifier {
+struct WindowOpenerRegistrationModifier: ViewModifier {
   let platform: MacPlatform
   @Environment(\.openSettings) private var openSettings
   @Environment(\.openWindow) private var openWindow

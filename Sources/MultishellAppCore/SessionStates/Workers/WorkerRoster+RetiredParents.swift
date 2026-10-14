@@ -10,7 +10,7 @@ extension WorkerRoster {
     guard worker.pid == nil, worker.id != Worker.overflowID else { return }
     retired.removeAll { $0.id == worker.id }
     retired.append(worker)
-    if retired.count > Self.retiredLimit { retired.removeFirst() }
+    retired.keepLast(Self.retiredLimit)
   }
 
   /// A parent named after it retired goes back on above its child, stopped, and

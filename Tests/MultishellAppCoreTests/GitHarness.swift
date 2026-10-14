@@ -214,6 +214,12 @@ struct GitHarness {
     return try #require(model.workspace.projects.first { $0.id != project.id })
   }
 
+  /// A new branch from the repository's `HEAD`, as a create with no start point makes.
+  func createWorktree(onBranch branch: String) async throws -> Worktree {
+    await model.createWorktree(branch: branch, basedOn: nil, createsBranch: true, in: project)
+    return try #require(worktree(onBranch: branch))
+  }
+
   func worktree(onBranch branch: String) -> Worktree? {
     model.workspace.worktrees(of: project.id).first { $0.branch == branch }
   }

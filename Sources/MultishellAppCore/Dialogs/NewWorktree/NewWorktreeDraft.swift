@@ -29,7 +29,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
 
   /// The project whose branches are on screen. Create waits for it to match
   /// the picker, so a stale load cannot enable it.
-  private(set) var loadedProjectID: Project.ID?
+  private var loadedProjectID: Project.ID?
 
   /// Whether what is typed is a name git would refuse, for the sheet to say
   /// so. An empty field is not yet wrong.

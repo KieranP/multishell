@@ -117,4 +117,14 @@ struct DebugTimelineTests {
     #expect(timeline.shownSlot(hovering: 150) == latest, "a pointer left from a longer range")
     #expect(timeline.shownSlot(hovering: 0) == latest, "an empty slot before the history began")
   }
+
+  @Test func aRangeHasStallsOnlyWhereASecondHadAFrameOverTheThreshold() {
+    let stalled = (0..<3).map { sequence in
+      DebugSample.sample(sequence: sequence, longestFrame: .milliseconds(sequence == 0 ? 9 : 150))
+    }
+    let smooth = (0..<3).map { DebugSample.sample(sequence: $0, longestFrame: .milliseconds(9)) }
+
+    #expect(DebugTimeline(history: .of(stalled), range: .oneMinute).hasStalls)
+    #expect(!DebugTimeline(history: .of(smooth), range: .oneMinute).hasStalls)
+  }
 }

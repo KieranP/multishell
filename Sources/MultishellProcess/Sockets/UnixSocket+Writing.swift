@@ -17,8 +17,8 @@ extension UnixSocket {
       }
       if count >= 0 {
         written += count
-        if count > 0, renewingOnProgress, let spent = deadline {
-          deadline = SocketDeadline(after: spent.timeout)
+        if count > 0, renewingOnProgress, let previous = deadline {
+          deadline = SocketDeadline(after: previous.timeout)
         }
         continue
       }

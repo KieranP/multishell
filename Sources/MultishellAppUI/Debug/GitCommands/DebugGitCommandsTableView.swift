@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Every git command run over the range, the most time spent first.
 struct DebugGitCommandsTableView: View {
-  let gitCommands: [DebugGitCommand]
+  let gitCommands: [DebugGitCommandRow]
   let layout: DebugTableLayout
   let theme: Theme
   let metrics: UIMetrics
@@ -19,9 +19,9 @@ struct DebugGitCommandsTableView: View {
           .debugTableRow(theme, verticalPadding: 6)
       } else {
         if layout == .columns { header }
-        ForEach(gitCommands) { gitCommand in
+        ForEach(gitCommands) { row in
           DebugGitCommandRowView(
-            gitCommand: gitCommand,
+            row: row,
             layout: layout,
             theme: theme,
             metrics: metrics,

@@ -5,7 +5,7 @@ import SwiftUI
 /// A row of the Git commands table: in columns, or with its numbers stacked
 /// under the command where the panel is too narrow for them.
 struct DebugGitCommandRowView: View {
-  let gitCommand: DebugGitCommand
+  let row: DebugGitCommandRow
   let layout: DebugTableLayout
   let theme: Theme
   let metrics: UIMetrics
@@ -17,13 +17,13 @@ struct DebugGitCommandRowView: View {
 
       case .stacked:
         DebugStackedRowView(
-          captions: gitCommand.stackedCaptions,
+          captions: row.stackedCaptions,
           theme: theme,
           metrics: metrics,
         ) {
           command
         } headline: {
-          Text(gitCommand.totalDurationText)
+          Text(row.totalDurationText)
             .monospacedDigit()
             .foregroundStyle(theme.textPrimary)
         }
@@ -38,20 +38,20 @@ struct DebugGitCommandRowView: View {
   private var columns: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
       command.frame(maxWidth: .infinity, alignment: .leading)
-      number(gitCommand.runCountText, width: metrics.debugCountColumnWidth)
-      number(gitCommand.totalDurationText)
-      number(gitCommand.meanDurationText)
-      number(gitCommand.slowestDurationText)
-      number(gitCommand.meanPeakMemoryText, width: metrics.debugMemoryValueColumnWidth)
-      number(gitCommand.peakMemoryText, width: metrics.debugMemoryValueColumnWidth)
-      Text(gitCommand.slowestLocationText)
+      number(row.runCountText, width: metrics.debugCountColumnWidth)
+      number(row.totalDurationText)
+      number(row.meanDurationText)
+      number(row.slowestDurationText)
+      number(row.meanPeakMemoryText, width: metrics.debugMemoryValueColumnWidth)
+      number(row.peakMemoryText, width: metrics.debugMemoryValueColumnWidth)
+      Text(row.slowestLocationText)
         .foregroundStyle(theme.textSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
   }
 
   private var command: some View {
-    Text(gitCommand.command)
+    Text(row.command)
       .font(.system(size: metrics.caption, design: .monospaced))
       .foregroundStyle(theme.textPrimary)
   }

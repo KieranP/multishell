@@ -13,38 +13,38 @@ extension Helper {
     if arguments.first == "open" {
       return try ask(.newTab(try tabOrder(arguments.dropFirst())), environment: environment)
     }
-    let (words, options) = positionals(arguments.dropFirst())
+    let (words, optionWords) = positionals(arguments.dropFirst())
     switch (arguments.first, words.count) {
     case ("list", 0...1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(
         .listTabs(worktree: try words.first.map { try worktreeID($0, topic: topic) }),
         environment: environment,
       )
 
     case ("show", 1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(
         .describeTab(id: try tabOrPaneID(words[0], topic: topic)),
         environment: environment,
       )
 
     case ("select", 1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(
         .selectTab(id: try tabOrPaneID(words[0], topic: topic)),
         environment: environment,
       )
 
     case ("close", 1):
-      let force = try isForced(options, topic: topic)
+      let force = try isForced(optionWords, topic: topic)
       return try ask(
         .closeTab(id: try tabOrPaneID(words[0], topic: topic), force: force),
         environment: environment,
       )
 
     case ("move", 1):
-      let options = try CommandOptions(options, valued: ["before", "after"], topic: topic)
+      let options = try CommandOptions(optionWords, valued: ["before", "after"], topic: topic)
       guard let anchor = options["before"] ?? options["after"],
         (options["before"] == nil) != (options["after"] == nil)
       else {
@@ -52,13 +52,13 @@ extension Helper {
       }
       let request = ControlRequest.moveTab(
         id: try tabOrPaneID(words[0], topic: topic),
-        before: options["before"] != nil,
+        placement: options["before"] != nil ? .before : .after,
         anchor: try tabOrPaneID(anchor, topic: topic),
       )
       return try ask(request, environment: environment)
 
     case ("rename", 1...2):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       let title = givenName(in: words)
       return try ask(
         .renameTab(id: try tabOrPaneID(words[0], topic: topic), title: title),

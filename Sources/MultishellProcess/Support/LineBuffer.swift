@@ -20,7 +20,7 @@ public struct LineBuffer: Sendable {
 
   /// What follows the last newline, `nil` where nothing does; the buffer is
   /// left empty.
-  mutating func takeRest() -> String? {
+  public mutating func takeRest() -> String? {
     guard !pending.isEmpty else { return nil }
     defer { pending.removeAll() }
     return String(decoding: pending, as: UTF8.self)

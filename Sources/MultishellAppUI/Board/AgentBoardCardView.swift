@@ -4,7 +4,7 @@ import MultishellGitKit
 import SwiftUI
 
 /// One pane's card, read in the sidebar's order; see Docs/design/appearance.md.
-/// No output on it: the engine hands the core no scrollback.
+/// No output on it: a pane's text is read under the engine's renderer lock.
 struct AgentBoardCardView: View {
   let model: AppModel
   let card: AgentBoardCard

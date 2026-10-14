@@ -16,12 +16,12 @@ public enum ShellLaunch {
       // Through env: csh and tcsh take no `VAR=value` before a command.
       return ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", shellPath, "-l"]
     }
-    let integration = initFileArguments(
+    let initFileLaunch = initFileArguments(
       forShell: shellPath,
       bashInit: bashInit,
       fishInit: fishInit,
     )
-    return ["exec"] + (integration ?? [shellPath, "-l"])
+    return ["exec"] + (initFileLaunch ?? [shellPath, "-l"])
   }
 
   /// bash or fish told to run its generated file, `nil` for another shell or

@@ -71,11 +71,10 @@ struct FindBar: View {
     }
   }
 
-  private func button(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View
-  {
+  private func button(_ symbol: String, _ help: String, action: @escaping () -> Void) -> some View {
     FindBarButton(
       symbol: symbol,
-      label: label,
+      help: help,
       theme: theme,
       metrics: model.metrics,
       action: action,

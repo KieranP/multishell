@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -192,9 +193,11 @@ struct AppModelWorktreeListRefreshTests {
     defer { harness.tearDown() }
     let other = try await harness.addSecondProject()
     let common = try #require(await harness.model.commonGitDirectory(of: harness.project))
-    _ = try await harness.git.run(
-      ["worktree", "add", "-b", "quiet", harness.root.appendingPathComponent("quiet").path],
+    try await TestRepository.addWorktree(
+      onNewBranch: "quiet",
+      at: harness.root.appendingPathComponent("quiet"),
       in: other.path,
+      using: harness.git,
     )
     harness.watcher.watched = []
 

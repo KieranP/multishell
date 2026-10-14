@@ -48,7 +48,7 @@ struct HelperAgentHookReportsTests {
     #expect(ignored.succeeded && ignored.standardOutput.isEmpty && ignored.standardError.isEmpty)
     let orphan = try await HelperBinary.run(
       ["agent-hook", "--agent", "claude"],
-      environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"],
+      environment: ["MULTISHELL_SOCKET": HelperBinary.nobodyListening],
       stdin: #"{"hook_event_name":"Stop","cwd":"/w"}"#,
     )
     #expect(orphan.succeeded && orphan.standardError.isEmpty)

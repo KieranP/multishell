@@ -5,6 +5,9 @@ import SwiftUI
 /// A strip whose tabs have shrunk as far as they go and still do not fit: a
 /// scroller with an arrow at each end that has tabs past it.
 struct ScrollingTabStrip<Tabs: View>: View {
+  /// Computed, as a generic type holds no stored static.
+  private static var scrollAnimation: Animation { .easeOut(duration: 0.16) }
+
   let model: AppModel
   let theme: Theme
   /// How wide each tab is drawn, and the floor it stopped at; see
@@ -63,7 +66,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
       }
       .onChange(of: shownTabID) { _, id in
         guard let id else { return }
-        withAnimation(.easeOut(duration: 0.16)) { proxy.scrollTo(id, anchor: .center) }
+        withAnimation(Self.scrollAnimation) { proxy.scrollTo(id, anchor: .center) }
       }
     }
   }
@@ -107,7 +110,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
       ),
       tabIDs.indices.contains(index)
     else { return }
-    withAnimation(.easeOut(duration: 0.16)) {
+    withAnimation(Self.scrollAnimation) {
       proxy.scrollTo(tabIDs[index], anchor: end == .leading ? .leading : .trailing)
     }
   }

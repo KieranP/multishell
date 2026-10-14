@@ -14,14 +14,14 @@ public enum HelperLink {
   ) -> Bool {
     let manager = FileManager.default
     guard let destination = try? manager.destinationOfSymbolicLink(atPath: link.path) else {
-      return (try? manager.attributesOfItem(atPath: link.path)) != nil
+      return link.hasEntryOnDisk
     }
     return destination != sharedLink.path && manager.fileExists(atPath: link.path)
   }
 
   /// Points `link` at `helper`, replacing whatever was there. Nothing to do
   /// when there is no bundled helper.
-  static func refresh(to helper: URL?, link: URL = Paths.helperLink) throws {
+  static func refresh(to helper: URL?, link: URL) throws {
     guard let helper else { return }
     let manager = FileManager.default
     try manager.createDirectory(

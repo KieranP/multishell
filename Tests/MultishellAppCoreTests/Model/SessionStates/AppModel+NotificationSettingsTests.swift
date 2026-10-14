@@ -52,7 +52,7 @@ struct AppModelNotificationSettingsTests {
     harness.model.setNotificationPreference(NotificationPreference(notifiesOnDone: true))
     await harness.settled()
     #expect(harness.model.notificationAuthorization == .refused)
-    #expect(harness.model.notificationSettingsNote.contains("System Settings"))
+    #expect(harness.model.notificationSettingsCaption.contains("System Settings"))
 
     harness.model.setNotificationPreference(
       NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true)

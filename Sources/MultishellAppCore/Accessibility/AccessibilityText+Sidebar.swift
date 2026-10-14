@@ -10,7 +10,7 @@ extension AccessibilityText {
     isMissing: Bool,
     state: SessionState?,
     worktreeCount: Int,
-    isFetching: Bool = false,
+    isFetching: Bool,
   ) -> String {
     var parts = [
       t("spoken.project", name),
@@ -32,8 +32,8 @@ extension AccessibilityText {
     operation: WorktreeOperation?,
     terminalCount: Int,
     isSelected: Bool,
-    customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown,
+    customName: String?,
+    mergeState: WorktreeMergeState,
   ) -> String {
     var parts = [
       t("spoken.named", customName ?? worktree.name, worktree.kindText(inSentence: true))

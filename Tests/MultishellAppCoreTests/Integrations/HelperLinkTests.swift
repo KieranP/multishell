@@ -25,7 +25,7 @@ struct HelperLinkTests {
     #expect(!FileManager.default.fileExists(atPath: untouched.path), "no helper, no link")
   }
 
-  @Test func theToolIsOfferedOnlyWhereNothingIsThereOrItNamesTheSharedLink() throws {
+  @Test func theToolIsOfferedOverNothingADanglingLinkOrTheSharedLinkOnly() throws {
     let root = Scratch.path("helperlink")
     defer { Scratch.remove(root) }
     let tool = root.appendingPathComponent("usr-local-bin/multishell")

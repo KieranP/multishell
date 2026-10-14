@@ -570,9 +570,10 @@ at the bottom.
   and fish titles its pane whatever the `title` feature says.
 - **The fish cursor stands back under fish's vi mode**, whose own handler draws
   a shape for every mode and would be overdrawn by ours.
-- **Each fish report launches the helper**, 9.4 ms, two a command. fish opens no
-  socket and holds no descriptor a relay could read, and a job of ours in the
-  background would be the one a bare `fg` resumed.
+- **Each fish report launches the helper**, two a command, the 9.4 ms a command
+  bash's relay saves. fish opens no socket and holds no descriptor a relay could
+  read, and a job of ours in the background would be the one a bare `fg`
+  resumed.
 - **fish's own tokenizer reads the agent's word**, quotes off, past the same
   prefixes as zsh and bash. An abbreviation is expanded before the event fires.
   Cost: an `alias` is a fish function, and the word typed is its name.

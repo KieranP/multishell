@@ -14,14 +14,7 @@ extension PendingWorktreeRemoval {
 
   /// What the confirmation warns about beyond the removal: uncommitted files,
   /// or that they went unread, and the shells still running there.
-  static func warning(
-    changedFiles: Int,
-    liveTerminals: Int,
-    isStatusUnread: Bool = false,
-    trashes: Bool = true,
-  )
-    -> String?
-  {
+  func warning(changedFiles: Int, liveTerminals: Int) -> String? {
     var notes: [String] = []
     if isStatusUnread {
       notes.append(trashes ? t("removal.changes-unread") : t("removal.changes-unread-deleted"))

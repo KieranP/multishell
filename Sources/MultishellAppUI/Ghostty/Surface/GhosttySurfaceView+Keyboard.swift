@@ -10,14 +10,14 @@ extension GhosttySurfaceView {
       return
     }
     let action = event.isARepeat ? GHOSTTY_ACTION_REPEAT : GHOSTTY_ACTION_PRESS
-    let translation = event.translated(to: translationFlags(for: event.modifierFlags, on: surface))
+    let translated = event.translated(to: translationFlags(for: event.modifierFlags, on: surface))
     let wasComposing = !markedText.isEmpty
     let layoutBefore = wasComposing ? nil : KeyboardInputSource.currentID
     textCommittedInKeyDown = []
     defer { textCommittedInKeyDown = nil }
     keyEquivalent.reset()
 
-    interpretKeyEvents([translation])
+    interpretKeyEvents([translated])
     // A key that switched the input source was the system's to act on.
     if !wasComposing, layoutBefore != KeyboardInputSource.currentID { return }
     syncPreedit(clearingIfEmpty: wasComposing)
@@ -27,9 +27,9 @@ extension GhosttySurfaceView {
       isComposing: !markedText.isEmpty,
       committed: textCommittedInKeyDown ?? [],
       characters: event.characters,
-      keyText: translation.ghosttyText,
-      keyCode: translation.keyCode,
-      flags: translation.modifierFlags,
+      keyText: translated.ghosttyText,
+      keyCode: translated.keyCode,
+      flags: translated.modifierFlags,
     )
     for delivery in deliveries {
       switch delivery {
@@ -40,7 +40,7 @@ extension GhosttySurfaceView {
         var input = GhosttyKeyInput(
           event,
           action,
-          translationFlags: translation.modifierFlags,
+          translationFlags: translated.modifierFlags,
           text: text,
         )
         input.isComposing = isComposing

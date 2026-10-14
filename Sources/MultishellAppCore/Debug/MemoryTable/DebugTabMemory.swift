@@ -14,7 +14,7 @@ struct DebugTabMemory: Sendable, Equatable, Identifiable {
 
   /// A tab with a live shell always runs one, so none found means the engine
   /// could not place it, and its processes are unknown rather than none.
-  var isPlaced: Bool { !processList.processes.isEmpty }
+  private var isPlaced: Bool { !processList.processes.isEmpty }
 
   var processCount: Int? { isPlaced ? processList.processes.count : nil }
 

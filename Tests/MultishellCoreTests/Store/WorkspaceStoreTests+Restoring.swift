@@ -117,8 +117,7 @@ extension WorkspaceStoreTests {
             { "id": "\#(kept)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" },
             { "id": "\#(orphaned)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" } ],
           "tabs": [
-            { "id": "\#(keptTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(kept)",
-              "root": { "terminal": { "_0": "\#(kept)" } } },
+            \#(tabJSON(id: keptTab, session: kept)),
             { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(orphaned)",
               "root": { "stack": { "pages": [ { "terminal": { "_0": "\#(orphaned)" } } ] } } } ],
           "activeTabByWorktree": { "/repos/demo": "\#(keptTab)" } }

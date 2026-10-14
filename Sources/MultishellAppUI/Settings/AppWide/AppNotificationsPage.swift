@@ -2,7 +2,7 @@ import MultishellAppCore
 import SwiftUI
 
 /// Settings > Notifications, one toggle per reported state. The rows and the
-/// note are `NotificationSettingsText`, which also words a refusal.
+/// caption are `NotificationSettingsText`, which also words a refusal.
 struct AppNotificationsPage: View {
   let model: AppModel
 
@@ -15,7 +15,7 @@ struct AppNotificationsPage: View {
       } header: {
         Text(t("notifications.header"))
       } footer: {
-        SettingsCaption(model.notificationSettingsNote)
+        SettingsCaption(model.notificationSettingsCaption)
       }
     }
     .formStyle(.grouped)

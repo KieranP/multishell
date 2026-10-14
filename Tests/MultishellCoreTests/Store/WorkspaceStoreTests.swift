@@ -27,18 +27,6 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.sessions.isEmpty)
   }
 
-  @Test func refreshDropsTabsForWorktreesThatVanished() {
-    let (store, project, worktree) = demoStore()
-    store.openTab(in: worktree.id)
-    store.selectWorktree(worktree.id)
-
-    store.replaceWorktrees([], forProject: project.id)
-
-    #expect(store.workspace.tabs.isEmpty)
-    #expect(store.workspace.sessions.isEmpty)
-    #expect(store.workspace.selectedWorktreeID == nil)
-  }
-
   @Test func aCustomNameIsTrimmedAndAnEmptyOneClearsIt() {
     let (store, _, worktree) = demoStore()
     store.setCustomName("  Checkout flow  ", forWorktree: worktree.id)

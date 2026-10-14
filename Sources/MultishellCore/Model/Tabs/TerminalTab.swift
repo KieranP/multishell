@@ -5,7 +5,7 @@ import Foundation
 public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
   /// Where a dragged tab lands beside the tab or group it was dropped on.
   /// Nested because SwiftUI has a `TabPlacement` a view would disambiguate.
-  public enum Placement: Equatable, Sendable {
+  public enum Placement: Codable, Equatable, Sendable {
     case before
     case after
   }

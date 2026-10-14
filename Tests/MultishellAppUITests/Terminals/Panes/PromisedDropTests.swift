@@ -22,9 +22,7 @@ struct PromisedDropTests {
   /// Twenty seconds before giving up, which is a two-core runner's headroom
   /// over a handful of operations.
   private func awaitDelivery(_ delivery: Delivery) async throws -> [URL] {
-    for _ in 0..<400 where delivery.urls == nil {
-      try await Task.sleep(for: .milliseconds(50))
-    }
+    try await waitUntil({ delivery.urls != nil }, seconds: 20)
     return try #require(delivery.urls, "the drop was never delivered")
   }
 

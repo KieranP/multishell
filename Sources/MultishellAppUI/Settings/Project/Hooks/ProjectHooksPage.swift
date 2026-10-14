@@ -53,25 +53,25 @@ struct ProjectHooksPage: View {
   private func createSection(_ shared: SharedProjectSettings?) -> some View {
     Section {
       MonospacedEditor(
-        title: t("hooks.pre-create"),
+        label: t("hooks.pre-create"),
         info: t("hooks.pre-create-info"),
         placeholder: shared?.preCreateHook,
         text: model.settingBinding(\.preCreateHook, of: project),
       )
       MonospacedEditor(
-        title: t("hooks.linked-paths"),
+        label: t("hooks.linked-paths"),
         info: t("hooks.linked-paths-info", SharedProjectSettings.fileName),
         placeholder: shared?.linkedPaths,
         text: model.settingBinding(\.linkedPaths, of: project),
       )
       MonospacedEditor(
-        title: t("hooks.copied-paths"),
+        label: t("hooks.copied-paths"),
         info: t("hooks.copied-paths-info", SharedProjectSettings.fileName),
         placeholder: shared?.copiedPaths,
         text: model.settingBinding(\.copiedPaths, of: project),
       )
       MonospacedEditor(
-        title: t("hooks.post-create"),
+        label: t("hooks.post-create"),
         info: t("hooks.post-create-info"),
         placeholder: shared?.postCreateHook,
         text: model.settingBinding(\.postCreateHook, of: project),
@@ -82,13 +82,13 @@ struct ProjectHooksPage: View {
   private func deleteSection(_ shared: SharedProjectSettings?) -> some View {
     Section {
       MonospacedEditor(
-        title: t("hooks.pre-delete"),
+        label: t("hooks.pre-delete"),
         info: t("hooks.pre-delete-info"),
         placeholder: shared?.preDeleteHook,
         text: model.settingBinding(\.preDeleteHook, of: project),
       )
       MonospacedEditor(
-        title: t("hooks.post-delete"),
+        label: t("hooks.post-delete"),
         info: t("hooks.post-delete-info"),
         placeholder: shared?.postDeleteHook,
         text: model.settingBinding(\.postDeleteHook, of: project),

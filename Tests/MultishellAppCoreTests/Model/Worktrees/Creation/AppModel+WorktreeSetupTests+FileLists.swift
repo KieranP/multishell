@@ -26,13 +26,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "copied",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "copied"))
+    let created = try await harness.createWorktree(onBranch: "copied")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "a path the repository does not have is skipped")
@@ -59,13 +53,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "linked",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "linked"))
+    let created = try await harness.createWorktree(onBranch: "linked")
     // Read before the setup task has had the actor: the stage the pane
     // opens on is the link list, whatever else the project has.
     #expect(harness.model.worktreeOperations[created.id]?.stage == .linkingFiles)
@@ -102,13 +90,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.refreshWorktrees(of: harness.project)
     try harness.answerTrust(true)
 
-    await harness.model.createWorktree(
-      branch: "stuck",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "stuck"))
+    let created = try await harness.createWorktree(onBranch: "stuck")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
@@ -145,13 +127,7 @@ extension AppModelWorktreeSetupTests {
     )
     await harness.model.refreshWorktrees(of: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "shared",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "shared"))
+    let created = try await harness.createWorktree(onBranch: "shared")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
@@ -167,13 +143,7 @@ extension AppModelWorktreeSetupTests {
     #expect(harness.model.worktreeOperations[created.id] == nil, "the link stage ended")
 
     try harness.answerTrust(true)
-    await harness.model.createWorktree(
-      branch: "trusted",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let second = try #require(harness.worktree(onBranch: "trusted"))
+    let second = try await harness.createWorktree(onBranch: "trusted")
     await harness.model.stageHandles.setupTask(of: second.id)?.value
 
     #expect(
@@ -196,13 +166,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "halted",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "halted"))
+    let created = try await harness.createWorktree(onBranch: "halted")
     // Before the setup task has had the actor: the stage's handle is made
     // early so the stop lands at its first path, not in a race with it.
     #expect(harness.model.worktreeOperations[created.id]?.stage == .copyingFiles)
@@ -238,13 +202,7 @@ extension AppModelWorktreeSetupTests {
     )
     await harness.model.refreshWorktrees(of: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "shared",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "shared"))
+    let created = try await harness.createWorktree(onBranch: "shared")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
@@ -274,13 +232,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.refreshWorktrees(of: harness.project)
     try harness.answerTrust(true)
 
-    await harness.model.createWorktree(
-      branch: "escaped",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "escaped"))
+    let created = try await harness.createWorktree(onBranch: "escaped")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
@@ -315,13 +267,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "mine",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "mine"))
+    let created = try await harness.createWorktree(onBranch: "mine")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     let shown = try #require(harness.model.worktreeOperations[created.id])
@@ -343,13 +289,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "mine",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "mine"))
+    let created = try await harness.createWorktree(onBranch: "mine")
     harness.model.cancelStage(of: created)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
@@ -369,13 +309,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "mine",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "mine"))
+    let created = try await harness.createWorktree(onBranch: "mine")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.worktreeOperations[created.id] == nil, "every stage ended")
@@ -406,13 +340,7 @@ extension AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "mine",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "mine"))
+    let created = try await harness.createWorktree(onBranch: "mine")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(

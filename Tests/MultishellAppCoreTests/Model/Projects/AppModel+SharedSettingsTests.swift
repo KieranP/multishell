@@ -132,13 +132,7 @@ struct AppModelSharedSettingsTests {
     #expect(!planned.path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.path + "/."))
     #expect(planned.path.hasSuffix("-worktrees/x"), "the app default, not the file's")
 
-    await harness.model.createWorktree(
-      branch: "x",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "x"))
+    let worktree = try await harness.createWorktree(onBranch: "x")
     await harness.model.stageHandles.setupTask(of: worktree.id)?.value
     #expect(
       !FileManager.default.fileExists(
@@ -406,18 +400,12 @@ struct AppModelSharedSettingsTests {
       withDestinationURL: elsewhere,
     )
 
-    await harness.model.createWorktree(
-      branch: "feat",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    let created = try await harness.createWorktree(onBranch: "feat")
 
     #expect(
       try FileManager.default.contentsOfDirectory(atPath: elsewhere.path).isEmpty,
       "the link leads out of the checkout, so the file's directory is not in force",
     )
-    let created = try #require(harness.worktree(onBranch: "feat"))
     #expect(!created.path.standardizedFileURL.path.hasPrefix(elsewhere.standardizedFileURL.path))
   }
 

@@ -13,17 +13,10 @@ extension AppModelWorktreeOrderTests {
     defer { harness.tearDown() }
     // Cut alphabetically last first, so a name order and a commit order
     // disagree and only the right one can pass.
-    for branch in ["zulu", "alpha"] {
-      await harness.model.createWorktree(
-        branch: branch,
-        basedOn: nil,
-        createsBranch: true,
-        in: harness.project,
-      )
-    }
+    let zulu = try await harness.createWorktree(onBranch: "zulu")
+    _ = try await harness.createWorktree(onBranch: "alpha")
     // git prints the committer date in whole seconds, so a clock date can tie every branch
     // and fall back to the name order this test rules out.
-    let zulu = try #require(harness.model.workspace.worktrees.first { $0.branch == "zulu" })
     try "work\n".write(
       to: zulu.path.appendingPathComponent("a.txt"),
       atomically: true,

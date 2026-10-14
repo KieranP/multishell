@@ -24,7 +24,7 @@ struct ShellIntegrationScriptsTests {
       files.append((fish, ShellIntegrationScripts.forFish(helper: "/x/multishell")))
     }
     for (index, (shell, contents)) in files.enumerated() {
-      guard FileManager.default.isExecutableFile(atPath: shell) else { continue }
+      guard InstalledShells.isInstalled(shell) else { continue }
       let file = directory.appendingPathComponent("file\(index)")
       try contents.write(to: file, atomically: true, encoding: .utf8)
       let process = Process()

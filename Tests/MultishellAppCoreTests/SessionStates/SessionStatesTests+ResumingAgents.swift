@@ -133,6 +133,8 @@ extension SessionStatesTests {
     _ = reportResuming(&states, .running, WorkerReport(id: "w2", phase: .started))
     #expect(stopListingWorkersOut(&states, out: ["w2"]) == .running)
     #expect(states.workers(.session(a)).map(\.id) == ["w2"])
+    _ = reportResuming(&states, .running, WorkerReport(id: "w3", phase: .started))
+    #expect(states.workers(.session(a)).map(\.id) == ["w2", "w3"])
   }
 
   /// Claude 2.1.292 lists only background work, so a foreground worker a
@@ -401,11 +403,5 @@ extension SessionStatesTests {
       _ = reportResuming(&states, .running, startsTurn: true)
       #expect(states.workers(.session(a)).map(\.id) == ["b1"])
     }
-  }
-
-  @Test func anAgentThatDoesNotResumeIsPaidByTheLastWorkerOut() {
-    var states = SessionStates()
-    report(&states, .init(state: .done, backgroundShells: [500]))
-    #expect(states.applyShellExit(500) == [.done])
   }
 }

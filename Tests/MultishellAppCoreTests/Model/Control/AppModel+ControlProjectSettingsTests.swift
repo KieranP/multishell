@@ -64,7 +64,7 @@ struct AppModelControlProjectSettingsTests {
     #expect(harness.model.ownSettings(of: harness.project).autoStartsAgent == nil)
   }
 
-  @Test func aValueTheSettingsWouldNotKeepAndTheTrustAnswersAreRefused() async {
+  @Test func aValueTheSettingsWouldNotKeepAndTheTrustAnswersAreRefusedAsIsAnUnknownProject() async {
     let harness = Harness()
     let project = ControlID.project(harness.project.id)
 

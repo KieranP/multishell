@@ -117,7 +117,7 @@ struct WorktreeHooksTests {
     #expect(try await fixture.coordinator.git.list(project).count == 2, "the worktree exists")
   }
 
-  @Test func aFailingHookLeavesTheWorktreeInPlace() async throws {
+  @Test func aFailingPostCreateHookLeavesTheWorktreeInPlace() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
 
@@ -237,13 +237,7 @@ struct WorktreeHooksTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(preDeleteHook: "pwd > where.txt")
-    let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "vanished",
-      in: project,
-      settings: fixture.worktreeSettings,
-    )
-    let worktree = try await fixture.worktree(onBranch: "vanished", in: project)
-    try FileManager.default.removeItem(at: path)
+    let (worktree, _) = try await fixture.worktreeWithItsDirectoryGone()
 
     try await fixture.coordinator.removeUnlinking(worktree, in: project)
 

@@ -13,7 +13,13 @@ struct HelperDebugLogTests {
     let app = (pid: Int32(42), subsystem: "io.multishell.app")
 
     #expect(
-      Helper.logArguments(pid: app.pid, subsystem: app.subsystem, span: "5m", follows: false)
+      Helper.logArguments(
+        pid: app.pid,
+        subsystem: app.subsystem,
+        span: "5m",
+        follows: false,
+        isPlain: false,
+      )
         == [
           "show", "--last", "5m", "--info", "--debug", "--style", "ndjson", "--predicate",
           predicate,

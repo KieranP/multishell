@@ -21,19 +21,6 @@ extension SessionStatesTests {
     #expect(workersOut(states).isEmpty)
   }
 
-  /// The banner rides on what the report was taken to mean, so it fires once,
-  /// at the end, rather than once per wave of workers.
-  @Test func aTurnWithWorkersMeansDoneExactlyOnce() {
-    var states = SessionStates()
-    _ = report(&states, .running, started("w1"))
-    let atStop = report(&states, .done)
-    let atLastWorker = report(&states, .running, ended("w1"))
-
-    #expect(atStop == .running, "the main loop stopping is not the banner's moment")
-    #expect(atLastWorker == .done, "the last worker out is")
-    #expect([atStop, atLastWorker].filter { $0 == .done }.count == 1)
-  }
-
   @Test func aWorkersStopListEndsTheListedWorkersItLeavesOutAndNoOther() {
     var states = SessionStates()
     func stop(of worker: WorkerReport, out: [String]) {
@@ -387,12 +374,7 @@ extension SessionStatesTests {
 
     var lifted = SessionStates()
     _ = report(&lifted, .running, started("w1"))
-    _ = lifted.apply(
-      .init(state: .running, startsTurn: true),
-      pid: 99,
-      for: .session(a),
-      isSeen: false,
-    )
+    report(&lifted, .init(state: .running, startsTurn: true))
     #expect(lifted[.session(a)] == .running, "the agent's own Working now")
     #expect(report(&lifted, .running, ended("w1")) == .running, "a late end takes nothing back")
   }

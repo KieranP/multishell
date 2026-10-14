@@ -28,7 +28,7 @@ extension WorktreeCoordinatorMergesTests {
       return Project(path: path)
     }
     let inputs = stubInputs(defaultBranchTip: "a")
-    let branches = (1...SharedReadState.maxConcurrentReads).map { "b\($0)" }
+    let branches = (1...SharedReadState.maximumConcurrentReads).map { "b\($0)" }
 
     async let first = coordinator.readMerges(of: branches, in: projects[0], inputs: inputs)
     async let second = coordinator.readMerges(of: branches, in: projects[1], inputs: inputs)
@@ -42,6 +42,6 @@ extension WorktreeCoordinatorMergesTests {
     let peak = counts.split(whereSeparator: \.isNewline).compactMap { line in
       Int(line.trimmingCharacters(in: .whitespaces))
     }.max()
-    #expect(peak.map { $0 <= SharedReadState.maxConcurrentReads } == true, "\(peak ?? 0)")
+    #expect(peak.map { $0 <= SharedReadState.maximumConcurrentReads } == true, "\(peak ?? 0)")
   }
 }

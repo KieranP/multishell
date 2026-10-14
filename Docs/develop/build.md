@@ -21,8 +21,9 @@
 ## Build, test, run
 
 - **The Makefile is the entry point**: `signing-identity` once per machine, then
-  `test`, `test-app`, `build`, `release`, `run`, `install`, `format` and `lint`.
-  Each carries a comment line above it in the Makefile saying what it does.
+  `test`, `compile-app`, `build`, `release`, `run`, `install`, `format` and
+  `lint`. Each carries a comment line above it in the Makefile saying what it
+  does.
 - **`make-app.sh` builds the app and the CLI with `xcodebuild`** and wraps them
   in a bundle, the CLI among its helpers.
 - **libghostty finds its terminfo through `GHOSTTY_RESOURCES_DIR`**, which the

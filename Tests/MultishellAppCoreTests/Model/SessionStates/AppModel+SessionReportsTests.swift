@@ -32,9 +32,8 @@ struct AppModelSessionReportsTests {
   }
 
   @Test func aPlainCommandRunningIsNoAgentStillWorking() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let id = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+    let (harness, onlyPane) = Harness.withOnePane()
+    let id = onlyPane.id
 
     harness.messageSource.send(
       SessionStateReport(
@@ -54,9 +53,8 @@ struct AppModelSessionReportsTests {
   }
 
   @Test func anAgentTypedAtThePromptWithNoHooksCountsAsWorking() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let id = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+    let (harness, onlyPane) = Harness.withOnePane()
+    let id = onlyPane.id
 
     harness.messageSource.send(
       SessionStateReport(

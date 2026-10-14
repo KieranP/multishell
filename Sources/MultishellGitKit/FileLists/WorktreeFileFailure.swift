@@ -4,19 +4,20 @@ import Foundation
 /// everything else on the list is in it; only these paths are missing.
 public struct WorktreeFileFailure: Error, CustomStringConvertible {
   public struct PathFailure: Sendable {
-    let path: String
-    let underlying: any Error
+    public let path: String
+    public let underlying: any Error
   }
 
   /// Which list it was, so what is said about it can say linked or copied.
   public let placement: WorktreeFilePlacement
-  let failures: [PathFailure]
+  public let failures: [PathFailure]
   /// Entries skipped for naming somewhere else, by any list, kept apart from
   /// `failures`: the title says this list failed to place those.
   public let skipped: [String]
 
+  /// The log's form. What the user is shown is `PresentedError`'s.
   public var description: String {
-    failures.map { "\($0.path): \($0.underlying.localizedDescription)" }.joined(separator: "\n")
+    failures.map { "\($0.path): \($0.underlying)" }.joined(separator: "\n")
   }
 
   public init(placement: WorktreeFilePlacement, failures: [PathFailure], skipped: [String] = []) {

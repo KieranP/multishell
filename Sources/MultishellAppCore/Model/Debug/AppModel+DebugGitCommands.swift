@@ -2,7 +2,7 @@ import MultishellCore
 
 extension AppModel {
   /// Every git command run over the range, the most time spent first.
-  public func debugGitCommands(for range: DebugRange) -> [DebugGitCommand] {
+  public func debugGitCommands(for range: DebugRange) -> [DebugGitCommandRow] {
     var tallies: [String: GitCommandTally] = [:]
     for sample in shownDebugSnapshot.history.samples(in: range) {
       for (command, tally) in sample.gitCommands {
@@ -13,7 +13,7 @@ extension AppModel {
     return
       tallies
       .map { command, tally in
-        DebugGitCommand(
+        DebugGitCommandRow(
           command: command,
           tally: tally,
           slowestLocation: tally.slowestDirectory.map { directory in

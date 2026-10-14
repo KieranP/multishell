@@ -4,7 +4,7 @@ import Foundation
 
 /// Records what the reconciler asks of a host, in order.
 @MainActor
-final class RecordingHost: TerminalHost {
+final class FakeTerminalHost: TerminalHost {
   var liveSessionIDs: Set<TerminalSession.ID> = []
   var opened: [TerminalSession] = []
   var log: [String] = []

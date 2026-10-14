@@ -14,7 +14,7 @@ struct WorkspaceRepairTests {
   }
 
   /// Every tab of a state file written before groups existed names no group.
-  static func ungroupEveryTab(_ workspace: inout Workspace) {
+  private static func ungroupEveryTab(_ workspace: inout Workspace) {
     for index in workspace.tabs.indices { workspace.tabs[index].groupID = TabGroup.unassigned }
   }
 

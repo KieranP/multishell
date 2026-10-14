@@ -2,7 +2,7 @@ import MultishellCore
 
 /// What a git row says in its cells, and where the table is too narrow for
 /// its columns.
-extension DebugGitCommand {
+extension DebugGitCommandRow {
   public var runCountText: String { "\(tally.runCount)" }
 
   public var totalDurationText: String { DebugValueText.duration(tally.totalDuration) }

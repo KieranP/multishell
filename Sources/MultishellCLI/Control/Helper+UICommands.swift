@@ -9,8 +9,8 @@ extension Helper {
     -> Int32
   {
     let topic = ControlCommand.userInterface.rawValue
-    let (words, options) = positionals(arguments.dropFirst())
-    try noOptions(options, topic: topic)
+    let (words, optionWords) = positionals(arguments.dropFirst())
+    try noOptions(optionWords, topic: topic)
     switch (arguments.first, words.count) {
     case ("show", 1...2):
       let view = try controlView(words[0])
@@ -49,9 +49,9 @@ extension Helper {
 
   private static func controlView(_ word: String) throws -> ControlView {
     guard let view = ControlView(rawValue: word) else {
-      let views = ControlView.allCases.map(\.rawValue).joined(separator: ", ")
+      let viewList = ControlView.allCases.map(\.rawValue).joined(separator: ", ")
       throw UsageError(
-        "no view \(word); the views are \(views)",
+        "no view \(word); the views are \(viewList)",
         topic: ControlCommand.userInterface.rawValue,
       )
     }

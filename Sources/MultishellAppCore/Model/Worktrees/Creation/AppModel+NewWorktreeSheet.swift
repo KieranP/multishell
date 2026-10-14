@@ -6,7 +6,9 @@ extension AppModel {
   /// Opens the sheet for `project`, or the one being worked in. With several
   /// projects and nothing selected the picker starts blank.
   public func requestNewWorktree(in project: Project? = nil) {
-    newWorktreeRequest = NewWorktreeRequest(projectID: (project ?? projectInView)?.id)
+    newWorktreeRequest = NewWorktreeRequest(
+      projectID: (project ?? projectOrOnlyProject(of: worktreeInView))?.id
+    )
   }
 
   /// What git refuses to check out a second time in the draft's project, none

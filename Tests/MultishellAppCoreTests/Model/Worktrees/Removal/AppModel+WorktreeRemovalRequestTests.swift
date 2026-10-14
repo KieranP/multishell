@@ -56,13 +56,7 @@ struct AppModelWorktreeRemovalRequestTests {
   @Test func answeringTheDialogWithAButtonRemovesAsThatButtonSays() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "answered",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "answered"))
+    let worktree = try await harness.createWorktree(onBranch: "answered")
     await harness.model.requestWorktreeRemoval(of: worktree)?.value
     let pending = try #require(harness.model.pendingWorktreeRemoval)
     let choice = try #require(pending.choices.indices.last)
@@ -80,7 +74,10 @@ struct AppModelWorktreeRemovalRequestTests {
     let pending = PendingWorktreeRemoval(
       worktree: harness.feature,
       branchHandling: .offersBoth,
+      customName: nil,
+      mergeState: .unknown,
       trashes: true,
+      isStatusUnread: false,
     )
     harness.model.pendingWorktreeRemoval = pending
 
@@ -93,13 +90,7 @@ struct AppModelWorktreeRemovalRequestTests {
   @Test func aConfirmedRemovalKeepsTheTrashTheDialogNamedThoughTheSettingChanged() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "kept",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "kept"))
+    let worktree = try await harness.createWorktree(onBranch: "kept")
     await harness.model.requestWorktreeRemoval(of: worktree)?.value
     let pending = try #require(harness.model.pendingWorktreeRemoval)
     #expect(pending.message(warning: nil).hasPrefix("Moves "))
@@ -116,6 +107,8 @@ struct AppModelWorktreeRemovalRequestTests {
     let pending = PendingWorktreeRemoval(
       worktree: harness.feature,
       branchHandling: .decided(deletesBranch: false),
+      customName: nil,
+      mergeState: .unknown,
       trashes: true,
       isStatusUnread: true,
     )

@@ -28,9 +28,9 @@ final class ModelHarness {
     self.store = store
     model = MultishellAppUI.AppModel(
       store: store,
-      host: NoEngine(),
+      host: NullEngine(),
       coordinator: nil,
-      watcher: NoWatcher(),
+      watcher: NullWatcher(),
     )
   }
 

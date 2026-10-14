@@ -34,7 +34,8 @@ struct ProcessTreeScanTests {
   }
 
   @Test func aPidNothingHoldsHasNoChildrenAndNoUsage() {
-    #expect(ProcessTreeScan.childTrees(of: 999_999_999).isEmpty)
-    #expect(ProcessTreeScan.usage(of: 999_999_999) == nil)
+    let pid = deadPID()
+    #expect(ProcessTreeScan.childTrees(of: pid).isEmpty)
+    #expect(ProcessTreeScan.usage(of: pid) == nil)
   }
 }

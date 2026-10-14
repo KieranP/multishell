@@ -10,13 +10,13 @@ struct AppModelControlFindTests {
     let (harness, onlyPane) = Harness.withOnePane()
     let pane = onlyPane.id
 
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("error")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("error")))
     harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(3), in: pane)
     harness.engine.delegate?.terminalHost(harness.engine, didCount: .selected(0), in: pane)
     let reply = try #require(await harness.messageSource.ask(.describePane(id: pane)))
 
     #expect(harness.model.findBarSessionIDs.contains(pane))
-    #expect(harness.engine.searched.last?.command == .find("error"))
+    #expect(harness.engine.searched.last?.step == .find("error"))
     let find = try #require(reply.outputFields["find"] as? [String: Any])
     #expect(find["text"] as? String == "error")
     #expect(find["total"] as? Int == 3)
@@ -31,10 +31,10 @@ struct AppModelControlFindTests {
       await harness.messageSource.ask(.findInPane(id: pane, action: .next))
         == .refused(.noFindBar(id: pane))
     )
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("x")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("x")))
     harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(1), in: pane)
     _ = await harness.messageSource.ask(.findInPane(id: pane, action: .next))
-    #expect(harness.engine.searched.last?.command == .nearest)
+    #expect(harness.engine.searched.last?.step == .nearest)
     let closed = try #require(
       await harness.messageSource.ask(.findInPane(id: pane, action: .close))
     )
@@ -46,7 +46,7 @@ struct AppModelControlFindTests {
   @Test func aCloseLeavesTheKeyboardWhereItWas() async throws {
     let (harness, onlyPane) = Harness.withOnePane()
     let pane = onlyPane.id
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("x")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("x")))
     let focusedBefore = harness.engine.focused
 
     _ = await harness.messageSource.ask(.findInPane(id: pane, action: .close))
@@ -58,10 +58,10 @@ struct AppModelControlFindTests {
   @Test func theSameTextSearchedAgainKeepsTheCountTheEngineWillNotResend() async throws {
     let (harness, onlyPane) = Harness.withOnePane()
     let pane = onlyPane.id
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("error")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("error")))
     harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(3), in: pane)
 
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("error")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("error")))
 
     #expect(harness.model.searchCounts[pane]?.total == 3)
   }
@@ -69,13 +69,13 @@ struct AppModelControlFindTests {
   @Test func theSameTextSearchedAgainKeepsTheSelectionSoTheNextStepMovesOn() async throws {
     let (harness, onlyPane) = Harness.withOnePane()
     let pane = onlyPane.id
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("x")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("x")))
     _ = await harness.messageSource.ask(.findInPane(id: pane, action: .next))
 
-    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .search("x")))
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("x")))
     _ = await harness.messageSource.ask(.findInPane(id: pane, action: .next))
 
-    #expect(harness.engine.searched.last?.command == .next)
+    #expect(harness.engine.searched.last?.step == .next)
   }
 
   @Test func anEmptyFindTextIsRefusedAsNothingToFind() async throws {
@@ -83,7 +83,7 @@ struct AppModelControlFindTests {
     let pane = onlyPane.id
 
     #expect(
-      await harness.messageSource.ask(.findInPane(id: pane, action: .search("")))
+      await harness.messageSource.ask(.findInPane(id: pane, action: .open("")))
         == .refused(.noFindText(id: pane))
     )
     harness.model.showFind()

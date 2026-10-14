@@ -8,7 +8,7 @@ struct StatusPollPace: Sendable {
   /// How long the frontmost app waits between rounds of status reads.
   let interval: Duration
   /// The disk spends at most one part in this many on a worktree's status.
-  let costMultiple: Int
+  private let costMultiple: Int
 
   func isDue(
     lastRead: ContinuousClock.Instant?,

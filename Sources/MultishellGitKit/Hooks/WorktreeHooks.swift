@@ -12,9 +12,9 @@ public enum WorktreeHooks {
     for project: Project,
     worktreePath: URL,
     branch: String,
-    shellPath: String? = nil,
-    timeout: Duration? = nil,
-    stopper: ProcessStopper? = nil,
+    shellPath: String?,
+    timeout: Duration?,
+    stopper: ProcessStopper?,
     onWillRun: () -> Void = {},
   ) async throws {
     let script = trimmedScript(stage, in: project.settings)

@@ -11,7 +11,7 @@ struct WorktreeGitInitializingTests {
   @Test func aWorktreeLockedWithNoIndexYetIsBeingMadeInWhateverLanguageGitSaysSo() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+    _ = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "making",
       in: fixture.project,
       settings: fixture.worktreeSettings,
@@ -29,17 +29,9 @@ struct WorktreeGitInitializingTests {
       [.modificationDate: linkedAt.addingTimeInterval(-1)],
       ofItemAtPath: lock.path,
     )
-    try await TestRepository.addWorktree(
-      onNewBranch: "pinned",
-      at: path.deletingLastPathComponent().appendingPathComponent("pinned"),
-      in: fixture.project.path,
-      using: fixture.runner,
-    )
+    let pinned = try await fixture.addWorktree(onNewBranch: "pinned")
     _ = try await fixture.runner.run(
-      [
-        "worktree", "lock", "--reason", "initialisiere",
-        path.deletingLastPathComponent().appendingPathComponent("pinned").path,
-      ],
+      ["worktree", "lock", "--reason", "initialisiere", pinned.path],
       in: fixture.project.path,
     )
 

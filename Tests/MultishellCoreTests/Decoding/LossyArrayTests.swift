@@ -8,7 +8,7 @@ import Testing
 @Suite
 struct LossyArrayTests {
   @Test func aTabWithAPaneKindFromANewerBuildIsDroppedAndTheProjectsKept() throws {
-    let good = tabJSON(root: #"{ "terminal": { "_0": "\#(UUID().uuidString)" } }"#)
+    let good = tabJSON()
     let newer = tabJSON(root: #"{ "tabs": { "children": [] } }"#)
     let workspace = try decodeJSON(
       Workspace.self,
@@ -23,7 +23,7 @@ struct LossyArrayTests {
   }
 
   @Test func badElementsOfEveryShapeAreSkippedWithoutStalling() throws {
-    let sound = tabJSON(root: #"{ "terminal": { "_0": "\#(UUID().uuidString)" } }"#)
+    let sound = tabJSON()
     let workspace = try decodeJSON(
       Workspace.self,
       #"""

@@ -25,7 +25,7 @@ extension AppModel {
 
   public func setCustomAgentCommand(_ command: String) {
     store.setCustomAgentCommand(command)
-    refreshNewTabAgents()
+    rebuildNewTabAgents()
   }
 
   public func setAgentFlags(_ flags: String, for id: String) {

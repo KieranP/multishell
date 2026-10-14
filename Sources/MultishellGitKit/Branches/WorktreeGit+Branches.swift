@@ -50,7 +50,7 @@ extension WorktreeGit {
   func deleteBranchIfUnlisted(_ branch: String, in project: Project) async {
     guard let listed = try? await list(project), !listed.contains(where: { $0.branch == branch })
     else { return }
-    _ = try? await runner.run(["branch", "-D", branch], in: project.path)
+    try? await deleteBranch(branch, in: project, force: true)
   }
 
   /// `git branch -d`, which refuses a branch with commits no other branch

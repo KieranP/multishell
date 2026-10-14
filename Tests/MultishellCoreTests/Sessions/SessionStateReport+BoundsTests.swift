@@ -55,7 +55,7 @@ struct SessionStateReportBoundsTests {
     )
     #expect(
       report?.workersOut?.count == SessionStateReport.maximumWorkersOut,
-      "as many as a roster's places and folds",
+      "about as many as a roster holds",
     )
     #expect(report?.workersOut?.first?.id == "w1", "the unnamed one is dropped")
   }

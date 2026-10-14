@@ -5,11 +5,11 @@ extension Helper {
   static func typeIntoPane(
     _ id: UUID,
     _ text: String,
-    _ arguments: ArraySlice<String>,
+    _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
     let enter = try CommandOptions(
-      arguments,
+      optionWords,
       valued: [],
       flags: ["enter"],
       topic: ControlCommand.panes.rawValue,

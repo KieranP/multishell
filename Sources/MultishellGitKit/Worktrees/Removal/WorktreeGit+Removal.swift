@@ -86,12 +86,12 @@ extension WorktreeGit {
   ) async throws -> URL? {
     let records = WorktreeRecords.worktreesDirectory(in: try await commonGitDirectory(project))
     return await runOnDispatch {
-      let names =
+      let entries =
         (try? FileManager.default.contentsOfDirectory(
           at: records,
           includingPropertiesForKeys: nil,
         )) ?? []
-      return names.first { record in
+      return entries.first { record in
         guard
           let target = Self.directoryNamed(
             inFile: record.appendingPathComponent("gitdir"),

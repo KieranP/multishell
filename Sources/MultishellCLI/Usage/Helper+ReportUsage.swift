@@ -2,6 +2,7 @@ import MultishellCore
 
 extension Helper {
   static let knownAgentList = AgentHookCatalogue.integrations.map(\.id).joined(separator: ", ")
+  static let stateList = SessionState.allCases.map(\.rawValue).joined(separator: ", ")
 
   static let stateUsage = """
     usage: multishell state <running|attention|done|error|idle> [--session ID]

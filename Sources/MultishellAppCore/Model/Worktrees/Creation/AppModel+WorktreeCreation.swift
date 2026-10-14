@@ -52,7 +52,7 @@ extension AppModel {
     guard workspace.project(project.id) != nil else { return nil }
     let effective = effectiveProject(project)
     let settings = effectiveWorktreeSettings(for: project)
-    let shell = workspace.effectiveShellPath(for: effective)
+    let shellPath = workspace.effectiveShellPath(for: effective)
     // The row can arrive mid-checkout: git writes its record before the
     // first file, and that directory is watched. See worktrees.md.
     let claimed = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
@@ -76,7 +76,7 @@ extension AppModel {
           settings: settings,
           basedOn: startPoint,
           createsBranch: createsBranch,
-          shellPath: shell,
+          shellPath: shellPath,
           timeout: workspace.projectHookTimeout,
           stopper: stopper,
           onStep: { [weak self] step in
@@ -103,7 +103,7 @@ extension AppModel {
       of: created,
       branch: name,
       in: effective,
-      shellPath: shell,
+      shellPath: shellPath,
       lists: fileLists(of: project, inEffect: effective),
     )
     select(created, openingFirstTab: .onCreate)

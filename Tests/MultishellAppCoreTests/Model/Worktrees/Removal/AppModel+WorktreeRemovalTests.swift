@@ -1,5 +1,6 @@
 import Foundation
 import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -11,13 +12,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func removalShowsItsStageInThePaneUntilItEnds() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "going",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "going"))
+    let worktree = try await harness.createWorktree(onBranch: "going")
     harness.model.setSettings(ProjectSettings(preDeleteHook: "sleep 1"), for: harness.project)
     #expect(harness.model.liveTerminalCount == 1)
 
@@ -44,13 +39,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func aFailingPreDeleteHookLeavesTheWorktreeAndItsShells() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "kept",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "kept"))
+    let worktree = try await harness.createWorktree(onBranch: "kept")
     harness.model.setSettings(ProjectSettings(preDeleteHook: "exit 1"), for: harness.project)
 
     harness.model.presentedError = nil
@@ -75,13 +64,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func removingAWorktreeClosesItsShellsAndDropsItsTabs() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "gone",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "gone"))
+    let worktree = try await harness.createWorktree(onBranch: "gone")
     harness.model.newTab()
     #expect(harness.model.liveTerminalCount == 2)
 
@@ -104,13 +87,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func aRemovedWorktreeGoesToTheTrashWithItsUncommittedWork() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "dirty",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "dirty"))
+    let worktree = try await harness.createWorktree(onBranch: "dirty")
     try "uncommitted\n".write(
       to: worktree.path.appendingPathComponent("work.txt"),
       atomically: true,
@@ -120,6 +97,10 @@ struct AppModelWorktreeRemovalTests {
     let pending = PendingWorktreeRemoval(
       worktree: worktree,
       branchHandling: .decided(deletesBranch: false),
+      customName: nil,
+      mergeState: .unknown,
+      trashes: true,
+      isStatusUnread: false,
     )
     #expect(
       pending.message(warning: harness.model.worktreeRemovalWarning(for: pending))
@@ -143,23 +124,16 @@ struct AppModelWorktreeRemovalTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setTrashesRemovedWorktrees(false)
-    await harness.model.createWorktree(
-      branch: "gone",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "gone"))
-    try "uncommitted\n".write(
-      to: worktree.path.appendingPathComponent("work.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    let worktree = try await harness.createWorktree(onBranch: "gone")
+    try harness.dirty(worktree)
     await harness.model.refreshStatuses()
     let pending = PendingWorktreeRemoval(
       worktree: worktree,
       branchHandling: .decided(deletesBranch: false),
+      customName: nil,
+      mergeState: .unknown,
       trashes: false,
+      isStatusUnread: false,
     )
     #expect(
       harness.model.worktreeRemovalWarning(for: pending)?.contains("deleted with the directory")
@@ -177,13 +151,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func removingWithTheBranchDeletesItAndAnUnmergedOneOffersTheForcedForm() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "merged",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let merged = try #require(harness.worktree(onBranch: "merged"))
+    let merged = try await harness.createWorktree(onBranch: "merged")
 
     await harness.model.removeWorktree(merged, deletesBranch: true)
 
@@ -192,20 +160,13 @@ struct AppModelWorktreeRemovalTests {
     let branches = try await harness.branches()
     #expect(!branches.contains("merged"))
 
-    await harness.model.createWorktree(
-      branch: "ahead",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
+    let ahead = try await harness.createWorktree(onBranch: "ahead")
+    try await TestRepository.commit(
+      "ahead",
+      files: ["w.txt": "work\n"],
+      in: ahead.path,
+      using: harness.git,
     )
-    let ahead = try #require(harness.worktree(onBranch: "ahead"))
-    try "work\n".write(
-      to: ahead.path.appendingPathComponent("w.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    _ = try await harness.git.run(["add", "."], in: ahead.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", "ahead"], in: ahead.path)
 
     await harness.model.removeWorktree(ahead, deletesBranch: true)
 
@@ -224,13 +185,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func aFailingPostDeleteHookKeepsTheBranchAndSaysSo() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "hooked",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "hooked"))
+    let worktree = try await harness.createWorktree(onBranch: "hooked")
     harness.model.setSettings(ProjectSettings(postDeleteHook: "exit 2"), for: harness.project)
 
     await harness.model.removeWorktree(worktree, deletesBranch: true)
@@ -245,13 +200,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func cancelOnAPreDeleteHookLeavesTheWorktreeQuietly() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "kept",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let worktree = try #require(harness.worktree(onBranch: "kept"))
+    let worktree = try await harness.createWorktree(onBranch: "kept")
     harness.model.setSettings(ProjectSettings(preDeleteHook: "sleep 30"), for: harness.project)
     harness.model.setConfirmsWorktreeRemoval(false)
     harness.model.setDeletesBranchWithWorktree(true)
@@ -291,13 +240,7 @@ struct AppModelWorktreeRemovalTests {
   @Test func aLockedWorktreeIsForgottenLockAndAll() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "locked",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    var worktree = try #require(harness.worktree(onBranch: "locked"))
+    var worktree = try await harness.createWorktree(onBranch: "locked")
     _ = try await harness.git.run(
       ["worktree", "lock", worktree.path.path],
       in: harness.project.path,

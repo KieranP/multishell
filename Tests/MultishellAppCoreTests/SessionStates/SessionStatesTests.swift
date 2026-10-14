@@ -7,7 +7,7 @@ import Testing
 @Suite
 struct SessionStatesTests {
   let a = UUID()
-  let b = UUID()
+  private let b = UUID()
 
   @Test func doneIsAboutTheUserAndClearsWhenSeen() {
     var states = SessionStates()

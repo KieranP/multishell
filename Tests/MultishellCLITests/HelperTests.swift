@@ -131,7 +131,7 @@ struct HelperTests {
   }
 
   @Test func aMisspeltOptionWithAValueIsAUsageErrorForEveryReportingCommand() async throws {
-    let environment = ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"]
+    let environment = ["MULTISHELL_SOCKET": HelperBinary.nobodyListening]
     let lines = [
       ["state", "running", "--sesion", UUID().uuidString],
       ["command-started", "--pdi", "4242"],

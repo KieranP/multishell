@@ -1,8 +1,7 @@
 import MultishellCore
 
 extension ControlRefusal {
-  private static let agentIDs = AgentCatalogue.startableIDs
-    .joined(separator: ", ")
+  private static let startableAgentList = AgentCatalogue.startableIDs.joined(separator: ", ")
 
   var wording: String {
     switch self {
@@ -13,7 +12,7 @@ extension ControlRefusal {
     case .invalidBranchName(let name): "git would refuse the branch name \(name)"
     case .invalidValue(let key, let value): "\(key) takes no value \"\(value)\""
     case .menuItemDisabled(let path): "\(path) is greyed out in the menu now"
-    case .noAgent(let id): "no agent \(id); the agents are \(Self.agentIDs)"
+    case .noAgent(let id): "no agent \(id); the agents are \(Self.startableAgentList)"
     case .noAgentChosen: "the project prefers no agent; name one with --agent"
 
     case .noFindBar(let id):

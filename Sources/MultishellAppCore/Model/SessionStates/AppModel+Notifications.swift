@@ -21,17 +21,21 @@ extension AppModel {
       ),
       let worktree = workspace.worktree(worktreeID)
     else { return }
-    let project = workspace.project(worktree.projectID)?.name ?? ""
+    let projectName = workspace.project(worktree.projectID)?.name ?? ""
     // The name the user gave the worktree: a notification arrives with the
     // app off screen, and the sidebar they picture says that.
-    let place = workspace.displayName(of: worktree)
+    let worktreeName = workspace.displayName(of: worktree)
     let subject: String
     if case .session(let id) = key, let tab = workspace.tab(owning: id) {
       subject = title(of: tab)
     } else {
-      subject = place
+      subject = worktreeName
     }
-    let title = NotificationPolicy.title(subject: subject, project: project, worktree: place)
+    let title = NotificationPolicy.title(
+      subject: subject,
+      project: projectName,
+      worktree: worktreeName,
+    )
     let body = NotificationPolicy.body(for: state, message: report.shownMessage)
     notifier.notify(title: title, body: body, about: key)
     notifiedKeys.insert(key)

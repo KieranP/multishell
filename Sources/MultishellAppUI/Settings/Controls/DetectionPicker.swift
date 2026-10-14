@@ -38,7 +38,7 @@ extension DetectionPicker {
     label: String,
     selection: Binding<String>,
     options: @escaping (String) -> [DetectionOption],
-    rescanning model: AppModel,
+    refreshing model: AppModel,
     info: String,
     isEnabled: Bool = true,
   ) {

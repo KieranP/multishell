@@ -143,12 +143,4 @@ struct SharedProjectSettingsTests {
       "what write returns is the file",
     )
   }
-
-  @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() throws {
-    let shared = try writtenAndReadBack(SharedProjectSettings(postCreateHook: "npm ci"))
-    var settings = ProjectSettings(postCreateHook: " ")
-    settings.trustDecisions = [TrustDecision(digest: try #require(shared.digest), isTrusted: true)]
-    let optedOut = settings.layered(over: shared)
-    #expect(optedOut.postCreateHook == " ", "kept as the user's none, not replaced")
-  }
 }

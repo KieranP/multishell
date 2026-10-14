@@ -40,7 +40,7 @@ struct GitCommandTallyTests {
     #expect(slowerSecond.slowestDirectory?.path == "/b")
   }
 
-  @Test func anEmptyTallyHasNoMeanDuration() {
+  @Test func theMeanDurationOfAnEmptyTallyIsZero() {
     #expect(GitCommandTally().meanDuration == .zero)
   }
 

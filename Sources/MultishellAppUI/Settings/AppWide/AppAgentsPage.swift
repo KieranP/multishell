@@ -45,8 +45,8 @@ struct AppAgentsPage: View {
         label: t("agents.preferred-agent"),
         selection: model.preferredAgentBinding,
         options: model.agentDetection.options(selected:),
-        rescanning: model,
-        info: model.agentPathNote,
+        refreshing: model,
+        info: model.agentPathInfo,
       )
       if model.usesCustomAgent {
         CustomChoiceField(

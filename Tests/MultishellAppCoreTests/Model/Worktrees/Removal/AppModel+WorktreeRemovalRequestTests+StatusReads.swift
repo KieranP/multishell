@@ -10,13 +10,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func askingToRemoveAWorktreeReadsItsStatusFirst() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     try harness.dirty(side)
@@ -31,13 +25,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aRemovalThatAsksNothingRequestedTwiceRunsOnce() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let log = harness.root.appendingPathComponent("pre-delete.log")
@@ -60,13 +48,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aSlowWorktreeIsStillReadBeforeItsRemovalDialog() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     try harness.dirty(side)
@@ -83,13 +65,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aRowOnScreenThePaceHoldsBackIsStillReadBeforeItsRemovalDialog() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     try harness.dirty(side)
     harness.clearStatuses()
@@ -105,20 +81,8 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aRemovalReadLandingLateLeavesTheDialogThatOpenedMeanwhile() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "gated",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    await harness.model.createWorktree(
-      branch: "quick",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let gated = try #require(harness.worktree(onBranch: "gated"))
-    let quick = try #require(harness.worktree(onBranch: "quick"))
+    let gated = try await harness.createWorktree(onBranch: "gated")
+    let quick = try await harness.createWorktree(onBranch: "quick")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let gate = harness.root.appendingPathComponent("go")
@@ -149,13 +113,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aRemovalAskedTwiceWhileItsStatusIsReadReadsItOnce() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "gated",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let gated = try #require(harness.worktree(onBranch: "gated"))
+    let gated = try await harness.createWorktree(onBranch: "gated")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let gate = harness.root.appendingPathComponent("go")
@@ -173,13 +131,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aRemovalWhoseStatusReadHangsStillOpensItsDialog() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "hung",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let hung = try #require(harness.worktree(onBranch: "hung"))
+    let hung = try await harness.createWorktree(onBranch: "hung")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let gate = harness.root.appendingPathComponent("go")
@@ -198,13 +150,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func askingAgainWhileTheLastRemovalsReadStillHangsStartsNoOtherRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "hung",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let hung = try #require(harness.worktree(onBranch: "hung"))
+    let hung = try await harness.createWorktree(onBranch: "hung")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let gate = harness.root.appendingPathComponent("go")
@@ -226,13 +172,7 @@ extension AppModelWorktreeRemovalRequestTests {
   {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "slow",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let slow = try #require(harness.worktree(onBranch: "slow"))
+    let slow = try await harness.createWorktree(onBranch: "slow")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let gate = harness.root.appendingPathComponent("go")
@@ -254,13 +194,7 @@ extension AppModelWorktreeRemovalRequestTests {
   @Test func aRemovalWhoseStatusReadFailsSaysTheChangesWentUnread() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "refused",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let refused = try #require(harness.worktree(onBranch: "refused"))
+    let refused = try await harness.createWorktree(onBranch: "refused")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     let fake = try harness.modelOnFakeGit(

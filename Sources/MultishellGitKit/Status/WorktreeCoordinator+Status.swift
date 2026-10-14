@@ -4,13 +4,13 @@ import MultishellCore
 /// Many worktrees' statuses read side by side, and what those reads remember.
 extension WorktreeCoordinator {
   /// Statuses for many worktrees at once, each with how long git took, one
-  /// that could not be read simply absent. At most `maxConcurrentReads` run together.
+  /// that could not be read simply absent. At most `maximumConcurrentReads` run together.
   public func readStatuses(
     of worktrees: [Worktree],
     counting indicator: GitStatusIndicator = .default,
   ) async -> [Worktree.ID: StatusReading] {
     let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
-      width: SharedReadState.maxConcurrentReads
+      width: SharedReadState.maximumConcurrentReads
     ) { worktree in
       let started = ContinuousClock.now
       let status = try? await git.status(of: worktree, counting: indicator)

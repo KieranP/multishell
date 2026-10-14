@@ -14,7 +14,7 @@ struct AppTerminalPage: View {
           label: t("terminal.default-shell"),
           selection: model.preferredShellBinding,
           options: model.shellDetection.options(selected:),
-          rescanning: model,
+          refreshing: model,
           info: t("terminal.default-shell-info"),
         )
         if model.usesCustomShell {

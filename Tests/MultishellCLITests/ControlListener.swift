@@ -9,7 +9,7 @@ import TestScratch
 /// A socket standing in for the app, keeping each request and answering
 /// with what `answer` gives it, or with nothing for `nil`, as an older app does.
 final class ControlListener: Sendable {
-  let path = Scratch.socketPath("ctl")
+  private let path = Scratch.socketPath("ctl")
   let requests = Recorder<ControlRequest>()
   private let server: UnixSocketServer
 

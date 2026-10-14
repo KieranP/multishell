@@ -36,7 +36,7 @@ extension WorktreeOperation {
       }
     }
 
-    init(_ removal: WorktreeRemovalStep, trashes: Bool = true) {
+    init(_ removal: WorktreeRemovalStep, trashes: Bool) {
       switch removal {
       case .preDeleteHook: self = .preDeleteHook
       case .removingWorktree: self = trashes ? .removingWorktree : .deletingWorktree

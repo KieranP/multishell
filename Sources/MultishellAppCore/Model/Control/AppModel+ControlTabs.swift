@@ -34,7 +34,7 @@ extension AppModel {
                   id: session.id,
                   title: title(ofPane: session, in: tab),
                   isLive: liveSessionIDs.contains(session.id),
-                  agent: session.agentID,
+                  agent: agentIDAtThePrompt(of: session),
                   state: state(ofPane: session.id),
                 )
               },
@@ -56,7 +56,7 @@ extension AppModel {
       let (shell, handOver) = TabCommand.loginShell(handingOverTo: shellPath(for: worktree))
       opened = store.openTab(
         in: worktree.id,
-        title: URL(fileURLWithPath: program).lastPathComponent,
+        title: program.executableName,
         command: TabCommand.running(command, shell: shell, handOver: handOver),
       )
     } else {
@@ -78,7 +78,7 @@ extension AppModel {
 
   func replyToSelectTab(_ id: TerminalTab.ID) -> ControlReply {
     guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
-    if let refusal = refusalToBringIntoView(tab) { return .refused(refusal) }
+    if let refusal = bringIntoView(tab) { return .refused(refusal) }
     activate(tab)
     return .done
   }
@@ -92,13 +92,16 @@ extension AppModel {
 
   /// A drag onto another tab's edge, which may be in another group of the
   /// same worktree.
-  func replyToMoveTab(_ id: TerminalTab.ID, before: Bool, anchor: TerminalTab.ID) -> ControlReply {
+  func replyToMoveTab(
+    _ id: TerminalTab.ID,
+    _ placement: TerminalTab.Placement,
+    anchor: TerminalTab.ID,
+  ) -> ControlReply {
     guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
     guard let other = workspace.tab(anchor) else { return .refused(.noTab(id: anchor)) }
     guard tab.worktreeID == other.worktreeID else {
       return .refused(.tabInAnotherWorktree(id: anchor))
     }
-    let placement: TerminalTab.Placement = before ? .before : .after
     guard moveTab(id, placement, anchor: anchor, takingFocus: isWorktreeInView(of: tab)) else {
       return .refused(.noTab(id: anchor))
     }

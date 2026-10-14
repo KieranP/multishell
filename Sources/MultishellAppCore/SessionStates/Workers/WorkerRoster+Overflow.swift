@@ -3,7 +3,7 @@ import MultishellCore
 /// The one place every worker past the roster limit shares.
 extension WorkerRoster {
   /// How many ids the overflow place tells apart; a worker past that is dropped.
-  static let overflowLimit = 1024
+  private static let overflowLimit = 1024
 
   var overflowedAnonymousID: String? {
     overflowed.keys.first { $0.hasPrefix(Worker.anonymousPrefix) }
@@ -48,7 +48,7 @@ extension WorkerRoster {
   }
 
   /// One of a place's occurrences, and the place itself with its last.
-  mutating func removeOne(at index: Int) {
+  private mutating func removeOne(at index: Int) {
     if workers[index].occurrences > 1 {
       workers[index].occurrences -= 1
     } else {

@@ -122,6 +122,11 @@ extension AppModelControlWorktreesTests {
       in: created.path,
       using: harness.git,
     )
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
+    harness.model.select(created)
+    let tab = try #require(harness.model.workspace.activeTab(in: created.id))
+    harness.model.receive(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    #expect(harness.model.isAgentWorking(in: tab.focusedSessionID))
 
     let reply = await harness.model.answer(
       .removeWorktree(

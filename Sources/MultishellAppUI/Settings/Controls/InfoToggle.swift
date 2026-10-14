@@ -1,16 +1,16 @@
 import SwiftUI
 
 struct InfoToggle: View {
-  let title: String
+  let label: String
   let info: String
   @Binding var isOn: Bool
 
   var body: some View {
-    Toggle(isOn: $isOn) { InfoLabel(title, info: info) }
+    Toggle(isOn: $isOn) { InfoLabel(label, info: info) }
   }
 
-  init(_ title: String, info: String, isOn: Binding<Bool>) {
-    self.title = title
+  init(_ label: String, info: String, isOn: Binding<Bool>) {
+    self.label = label
     self.info = info
     _isOn = isOn
   }

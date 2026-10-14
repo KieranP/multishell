@@ -4,7 +4,7 @@ import MultishellCore
 extension AppModel {
   /// Named as `state.json` names them, a nested one with a dot.
   var globalSettings: [ControlSetting] {
-    appearanceSettings + agentSettings + worktreeSettings + toolSettings
+    appearanceSettings + agentSettings + worktreeSettings + terminalSettings + editorSettings
       + NotificationPreference.notifiableStates.map(notificationSetting)
   }
 
@@ -41,7 +41,7 @@ extension AppModel {
 
   private var agentSettings: [ControlSetting] {
     let known = Set(AgentCatalogue.startableIDs)
-    let flags = known.sorted().map { id in
+    let flagSettings = known.sorted().map { id in
       ControlSetting.text(
         "agentFlags.\(id)",
         { self.workspace.agentFlags[id] ?? "" },
@@ -62,7 +62,7 @@ extension AppModel {
         { self.workspace.autoStartsAgentOnCreate },
         setAutoStartsAgentOnCreate,
       ),
-    ] + flags
+    ] + flagSettings
   }
 
   private var worktreeSettings: [ControlSetting] {
@@ -95,10 +95,11 @@ extension AppModel {
         { self.workspace.projectHookTimeoutSeconds },
         setProjectHookTimeoutSeconds,
       ),
+      .choice("gitStatusIndicator", { self.workspace.gitStatusIndicator }, setGitStatusIndicator),
     ]
   }
 
-  private var toolSettings: [ControlSetting] {
+  private var terminalSettings: [ControlSetting] {
     [
       .flag(
         "opensTerminalOnSelect",
@@ -117,6 +118,11 @@ extension AppModel {
         setPreferredShell,
       ),
       .text("customShellPath", { self.workspace.customShellPath }, setCustomShellPath),
+    ]
+  }
+
+  private var editorSettings: [ControlSetting] {
+    [
       .optionalText(
         "preferredEditorID",
         { self.workspace.preferredEditorID },
@@ -127,7 +133,6 @@ extension AppModel {
         setPreferredEditor,
       ),
       .text("customEditorCommand", { self.workspace.customEditorCommand }, setCustomEditorCommand),
-      .choice("gitStatusIndicator", { self.workspace.gitStatusIndicator }, setGitStatusIndicator),
     ]
   }
 

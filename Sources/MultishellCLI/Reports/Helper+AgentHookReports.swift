@@ -37,9 +37,10 @@ extension Helper {
   /// Which agent a hook line names; one naming none reports nothing, as
   /// every line written names one. Read by hand, as a hook must never fail.
   static func agentID(in arguments: [String]) -> String? {
-    guard let flag = arguments.firstIndex(of: "--agent"), flag + 1 < arguments.count else {
+    guard let flagIndex = arguments.firstIndex(of: "--agent"), flagIndex + 1 < arguments.count
+    else {
       return nil
     }
-    return arguments[flag + 1]
+    return arguments[flagIndex + 1]
   }
 }

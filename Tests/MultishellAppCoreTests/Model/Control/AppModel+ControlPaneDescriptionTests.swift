@@ -44,4 +44,22 @@ struct AppModelControlPaneDescriptionTests {
     #expect(workers.compactMap { $0["id"] as? String } == ["w1"])
     #expect(workers.first?["type"] as? String == "Explore")
   }
+
+  @Test func aPaneNamesTheAgentAtItsPromptAsTheSidebarAndBoardDo() async throws {
+    let harness = Harness()
+    let tab = harness.openBackgroundTab()
+    let pane = tab.focusedSessionID
+    harness.messageSource.send(
+      SessionStateReport(
+        state: .running,
+        sessionID: pane,
+        command: "codex",
+        isFromShellIntegration: true,
+      )
+    )
+
+    let reply = try #require(await harness.messageSource.ask(.describePane(id: pane)))
+
+    #expect(reply.outputFields["agent"] as? String == "codex")
+  }
 }

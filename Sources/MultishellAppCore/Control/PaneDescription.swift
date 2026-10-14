@@ -5,7 +5,7 @@ import MultishellCore
 /// state a script waits on.
 struct PaneDescription: Encodable, Equatable {
   /// One worker the agent reported, by the agent's own id for it.
-  struct Worker: Encodable, Equatable {
+  struct WorkerRecord: Encodable, Equatable {
     let id: String
     let type: String?
     let name: String?
@@ -14,7 +14,7 @@ struct PaneDescription: Encodable, Equatable {
     let parent: String?
     let startedAt: Date?
 
-    init(_ worker: MultishellAppCore.Worker) {
+    init(_ worker: Worker) {
       id = worker.id
       type = worker.type
       name = worker.name
@@ -44,7 +44,7 @@ struct PaneDescription: Encodable, Equatable {
   /// The pane's own dot, `nil` for none.
   let state: SessionState?
   /// What its agent has out, oldest first, as its chip lists them.
-  let workers: [Worker]
+  let workers: [WorkerRecord]
   /// `nil` while its find bar is down.
   let find: Find?
 }

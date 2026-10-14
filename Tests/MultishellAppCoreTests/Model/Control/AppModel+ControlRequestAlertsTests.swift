@@ -15,7 +15,7 @@ struct AppModelControlRequestAlertsTests {
       harness.model.presentedError = PresentedError(title: "Late", message: "From a task")
     }
 
-    #expect(harness.model.alertRecordsOfRequests.isEmpty)
+    #expect(harness.model.alertsByRequest.isEmpty)
   }
 
   @Test func twoRequestsAlertsAnswerEachInTheOrderTheyFinishAndTheUsersComesBack() {
@@ -43,7 +43,7 @@ struct AppModelControlRequestAlertsTests {
         == .refused(.alert(title: "Second", message: "Raised over it"))
     )
     #expect(model.presentedError?.id == users.id)
-    #expect(model.alertRecordsOfRequests.isEmpty)
+    #expect(model.alertsByRequest.isEmpty)
   }
 
   @Test func twoRequestsAlertsFinishedInReverseOrderAnswerEachAndTheUsersComesBack() {

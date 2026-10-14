@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import MultishellAppCore
@@ -25,12 +26,12 @@ struct DebugMemoryRowWordingTests {
 
   @Test func theTotalRowLeavesItsCountAndSelfEmptyWhereATabWithoutThemShowsADash() {
     let total = row(.total, processCount: nil, selfMemory: nil, subtitle: "")
-    let unplaced = row(.unattributed, processCount: nil, selfMemory: nil)
+    let unplacedTab = row(.tab(UUID()), processCount: nil, selfMemory: nil)
 
     #expect(total.processCountText == "")
     #expect(total.selfMemoryText == "")
-    #expect(unplaced.processCountText == "–")
-    #expect(unplaced.selfMemoryText == "–")
+    #expect(unplacedTab.processCountText == "–")
+    #expect(unplacedTab.selfMemoryText == "–")
   }
 
   @Test func aNarrowRowSaysItsSubtitleCountAndSelfUnderItsName() {

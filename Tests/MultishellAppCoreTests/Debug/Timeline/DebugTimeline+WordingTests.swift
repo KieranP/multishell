@@ -10,13 +10,11 @@ struct DebugTimelineWordingTests {
     }
     let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
     #expect(timeline.stallSummary == "2 seconds with a frame over 100 ms")
-    #expect(timeline.hasStalls)
   }
 
-  @Test func aRangeWithNoStallSaysNoneAndHasNoStalls() {
+  @Test func aRangeWithNoStallSaysNone() {
     let samples = (0..<3).map { DebugSample.sample(sequence: $0, longestFrame: .milliseconds(9)) }
     let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
     #expect(timeline.stallSummary == "0 seconds with a frame over 100 ms")
-    #expect(!timeline.hasStalls)
   }
 }

@@ -54,17 +54,16 @@ extension Helper {
     environment: [String: String],
   ) throws -> Int32 {
     let topic = ControlCommand.debug.rawValue
-    let (words, options) = positionals(arguments)
+    let (words, optionWords) = positionals(arguments)
     guard words.count == 2, let state = SessionState(rawValue: words[1]) else {
-      let states = SessionState.allCases.map(\.rawValue).joined(separator: ", ")
-      throw UsageError("debug report needs PANE_ID and one of: \(states)", topic: topic)
+      throw UsageError("debug report needs PANE_ID and one of: \(stateList)", topic: topic)
     }
-    let reported = try CommandOptions(options, valued: ["agent", "message"], topic: topic)
+    let options = try CommandOptions(optionWords, valued: ["agent", "message"], topic: topic)
     let report = SessionStateReport(
       state: state,
       sessionID: try tabOrPaneID(words[0], topic: topic),
-      message: reported["message"],
-      agentID: reported["agent"],
+      message: options["message"],
+      agentID: options["agent"],
     )
     return try ask(.reportPaneState(report), environment: environment)
   }

@@ -29,7 +29,7 @@ struct DetectionOverrideSection: View {
         label: pickerLabel,
         selection: selection,
         options: options,
-        rescanning: model,
+        refreshing: model,
         info: pickerInfo,
         isEnabled: isOverridden,
       )

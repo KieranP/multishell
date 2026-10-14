@@ -10,9 +10,9 @@ struct GitCommandTally: Sendable, Equatable {
   var slowestDuration = Duration.zero
   var slowestDirectory: URL?
   /// Runs whose peak was read, which the mean is over.
-  var measuredRunCount = 0
-  var totalPeakMemory: UInt64 = 0
-  var highestPeakMemory: UInt64 = 0
+  private var measuredRunCount = 0
+  private var totalPeakMemory: UInt64 = 0
+  private var highestPeakMemory: UInt64 = 0
 
   var meanDuration: Duration {
     runCount > 0 ? totalDuration / runCount : .zero

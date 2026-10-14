@@ -7,7 +7,7 @@ extension AppModel {
     if let refusal = refusalToReachLivePane(id) { return .refused(refusal) }
     if let refusal = refusalToFind(action, in: id) { return .refused(refusal) }
     switch action {
-    case .search(let text): openFind(on: text, in: id)
+    case .open(let text): openFind(on: text, in: id)
     case .next: findNext(in: id)
     case .previous: findPrevious(in: id)
     case .close: endFind(in: id)
@@ -15,12 +15,12 @@ extension AppModel {
     return replyToDescribePane(id)
   }
 
-  /// A search needs text; the rest need the bar open, and a step its text.
+  /// Opening needs text; the rest need the bar open, and a step its text.
   private func refusalToFind(
     _ action: PaneFindAction,
     in id: TerminalSession.ID,
   ) -> ControlRefusal? {
-    if case .search(let text) = action {
+    if case .open(let text) = action {
       return text.isEmpty ? .noFindText(id: id) : nil
     }
     guard findBarSessionIDs.contains(id) else { return .noFindBar(id: id) }

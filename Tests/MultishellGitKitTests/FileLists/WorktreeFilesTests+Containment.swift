@@ -9,7 +9,7 @@ extension WorktreeFilesTests {
   @Test(arguments: WorktreeFilePlacement.allCases)
   func aPathThatReachesOutsideTheRepositoryIsRefused(_ placement: WorktreeFilePlacement) throws {
     let (repository, worktree) = try repositoryAndWorktree()
-    let outside = repository.deletingLastPathComponent().appending(path: "outside")
+    let outside = root.appending(path: "outside")
     try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
     try "TOP SECRET".write(to: outside.appending(path: "key"), atomically: true, encoding: .utf8)
 
@@ -152,7 +152,6 @@ extension WorktreeFilesTests {
   /// destination is somewhere new rather than a file already there.
   @Test func aSymlinkedFolderCannotDivertTheReadOrTheWrite() throws {
     let (repository, worktree) = try repositoryAndWorktree()
-    let root = repository.deletingLastPathComponent()
     let read = root.appending(path: "elsewhere-read")
     let write = root.appending(path: "elsewhere-write")
     for url in [read, write] {
@@ -185,7 +184,7 @@ extension WorktreeFilesTests {
     _ placement: WorktreeFilePlacement
   ) throws {
     let (repository, worktree) = try repositoryAndWorktree()
-    let outside = repository.deletingLastPathComponent().appending(path: "outside")
+    let outside = root.appending(path: "outside")
     try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
     try "TOP SECRET".write(to: outside.appending(path: "real"), atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(

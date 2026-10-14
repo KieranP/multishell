@@ -25,9 +25,9 @@
   when to notify, the worktree creates and removals under way, every decision a
   view makes; what a screen reader is told; what it needs from the app, and its
   own implementations of Core's ports, under `Ports/`; what Debug Info measures
-  and shows, under `Debug/`; the JSON the command line prints and the settings
-  keys it takes, under `Control/`; and, under `Support/`, the pieces that belong
-  to no concern.
+  and shows, under `Debug/`; the JSON the command line prints, the settings keys
+  it takes and what a request keeps while it runs, under `Control/`; and, under
+  `Support/`, the pieces that belong to no concern.
 - **AppModel's extensions sit under `Model/` by concern**: agents, the board,
   what each session is doing, tabs, worktrees, git reads, projects, the
   sidebar's rows, the detail area, the debug tools' sampling and tables, the

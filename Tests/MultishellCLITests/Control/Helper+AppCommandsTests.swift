@@ -11,7 +11,7 @@ struct HelperAppCommandsTests {
   @Test func quittingAnAppThatHasGoneSucceedsAndARefusalIsSaid() async throws {
     let gone = try await HelperBinary.run(
       ["quit"],
-      environment: [Helper.controlSocketVariable: "/tmp/ms-nobody.sock"],
+      environment: [Helper.controlSocketVariable: HelperBinary.nobodyListening],
     )
     #expect(gone.succeeded, "\(gone.standardError)")
 
@@ -49,12 +49,7 @@ struct HelperAppCommandsTests {
     try FileManager.default.copyItem(at: try HelperBinary.require(), to: helper)
     let opener = root.appendingPathComponent("opener")
     let record = root.appendingPathComponent("opened").path
-    try "#!/bin/sh\nprintf '%s' \"$1\" > '\(record)'\nexit \(exitStatus)\n".write(
-      to: opener,
-      atomically: true,
-      encoding: .utf8,
-    )
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: opener.path)
+    try Scratch.script("printf '%s' \"$1\" > '\(record)'\nexit \(exitStatus)", at: opener)
     return (root, helper, opener)
   }
 
@@ -103,7 +98,7 @@ struct HelperAppCommandsTests {
   @Test func openingFromAHelperInNoBundleSaysSo() async throws {
     let output = try await HelperBinary.run(
       ["open"],
-      environment: [Helper.controlSocketVariable: "/tmp/ms-nobody.sock"],
+      environment: [Helper.controlSocketVariable: HelperBinary.nobodyListening],
     )
 
     #expect(output.status == 1)

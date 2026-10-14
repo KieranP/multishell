@@ -11,13 +11,7 @@ extension AppModelStatusReadsTests {
   @Test func aCollapsedProjectsWorktreesAreNotReadUntilItOpens() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
     for worktree in [side, main] {
@@ -41,13 +35,7 @@ extension AppModelStatusReadsTests {
     defer { harness.tearDown() }
     let otherProject = try await harness.addSecondProject()
     let otherMain = try #require(harness.model.workspace.worktrees(of: otherProject.id).first)
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     try harness.dirty(side)
     harness.model.setExpanded(false, for: harness.project)
@@ -66,13 +54,7 @@ extension AppModelStatusReadsTests {
   @Test func aCollapsedProjectsRowTheFilterShowsIsRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     try harness.dirty(side)
     harness.clearStatuses()
@@ -109,13 +91,7 @@ extension AppModelStatusReadsTests {
   @Test func renamingARowOfACollapsedProjectReadsTheRowsItOpens() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.model.setExpanded(false, for: harness.project)
     try harness.dirty(side)
@@ -130,13 +106,7 @@ extension AppModelStatusReadsTests {
   @Test func anExpandedProjectsRowTheFilterHidesIsNotRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     harness.model.select(try #require(harness.worktree(onBranch: "main")))
     harness.clearStatuses()
 

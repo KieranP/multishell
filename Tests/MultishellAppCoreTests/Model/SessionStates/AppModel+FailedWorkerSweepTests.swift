@@ -8,10 +8,9 @@ import Testing
 @Suite @MainActor
 struct AppModelFailedWorkerSweepTests {
   @Test func aKilledWorkersRowGoesOnceItsLingerIsOverAndNoTaskIsLeft() async throws {
-    let harness = Harness()
+    let (harness, onlyPane) = Harness.withOnePane()
     harness.model.failedWorkerLingering = 0.1
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+    let session = onlyPane.id
     func workers() -> [Worker] { harness.model.sessionStates.workers(.session(session)) }
 
     harness.messageSource.send(

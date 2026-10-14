@@ -5,9 +5,9 @@ import Testing
 
 @Suite
 struct PaneNodeEditingTests {
-  let a = UUID()
-  let b = UUID()
-  let c = UUID()
+  private let a = UUID()
+  private let b = UUID()
+  private let c = UUID()
 
   @Test func removingTheOnlyTerminalEmptiesTheTree() {
     #expect(PaneNode.terminal(a).removing(a) == nil)

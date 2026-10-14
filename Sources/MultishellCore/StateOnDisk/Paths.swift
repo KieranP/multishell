@@ -15,8 +15,8 @@ public enum Paths {
     stateDirectory.appendingPathComponent("themes", isDirectory: true)
   }
 
-  /// Where the app listens for session-state reports. In the state
-  /// directory, not `$TMPDIR`, so a hook can find it without being told.
+  /// Where the app listens for session-state reports and command-line requests.
+  /// In the state directory, not `$TMPDIR`, so a hook finds it untold.
   public static var socketFile: URL {
     stateDirectory.appendingPathComponent("multishell\(variant).sock", isDirectory: false)
   }

@@ -13,7 +13,7 @@ struct HelperDebugScreenshotTests {
     let file = Scratch.path("snap").appendingPathExtension("png")
     defer {
       app.stop()
-      try? FileManager.default.removeItem(at: file)
+      Scratch.remove(file)
     }
     let pane = UUID()
 
@@ -48,7 +48,7 @@ struct HelperDebugScreenshotTests {
     let file = Scratch.path("snap").appendingPathExtension("png")
     defer {
       app.stop()
-      try? FileManager.default.removeItem(at: file)
+      Scratch.remove(file)
     }
 
     let output = try await HelperBinary.run(
@@ -68,12 +68,12 @@ struct HelperDebugScreenshotTests {
     try FileManager.default.removeItem(at: planted)
     try FileManager.default.createSymbolicLink(at: planted, withDestinationURL: target)
     defer {
-      try? FileManager.default.removeItem(at: planted)
-      try? FileManager.default.removeItem(at: target)
+      Scratch.remove(planted)
+      Scratch.remove(target)
     }
 
     let written = try Helper.writeScreenshot(Data([1, 2, 3]), to: nil, at: date)
-    defer { try? FileManager.default.removeItem(at: written) }
+    defer { Scratch.remove(written) }
 
     #expect(try Data(contentsOf: target) == Data([9]))
     #expect(written != planted)

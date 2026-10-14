@@ -27,7 +27,7 @@ struct AppAppearancePage: View {
           label: t("appearance.terminal-font"),
           selection: model.terminalFontBinding,
           options: fonts.options(selected:),
-          refresh: { fonts = InstalledFonts.reload() },
+          refresh: { fonts = InstalledFonts.refresh() },
           info: t("appearance.font-info"),
         )
         sizeRow(

@@ -14,9 +14,9 @@ enum HelperBinary {
     }
   }
 
-  private static let nobodyListening = "/tmp/multishell-test-nobody-listening.sock"
+  static let nobodyListening = "/tmp/multishell-test-nobody-listening.sock"
 
-  static let url: URL = {
+  private static let url: URL = {
     let products = Bundle.allBundles.first { $0.bundleURL.pathExtension == "xctest" }?
       .bundleURL.deletingLastPathComponent()
     return (products ?? URL(fileURLWithPath: ".build/debug")).appendingPathComponent(

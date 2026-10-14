@@ -13,14 +13,8 @@ struct AppModelWorktreeCreationTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
 
-    await harness.model.createWorktree(
-      branch: "feat/tabs",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    let created = try await harness.createWorktree(onBranch: "feat/tabs")
 
-    let created = try #require(harness.worktree(onBranch: "feat/tabs"))
     #expect(harness.model.presentedError == nil)
     #expect(created.path.lastPathComponent == "feat-tabs")
     #expect(FileManager.default.fileExists(atPath: created.path.path))
@@ -44,13 +38,7 @@ struct AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
     harness.model.setOpensTerminalOnCreate(false)
 
-    await harness.model.createWorktree(
-      branch: "quiet",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let quiet = try #require(harness.worktree(onBranch: "quiet"))
+    let quiet = try await harness.createWorktree(onBranch: "quiet")
     #expect(harness.model.workspace.tabs(in: quiet.id).isEmpty, "created, and shown empty")
 
     let main = try #require(harness.worktree(onBranch: "main"))
@@ -62,13 +50,7 @@ struct AppModelWorktreeCreationTests {
     )
 
     harness.model.setSettings(ProjectSettings(opensTerminalOnCreate: true), for: harness.project)
-    await harness.model.createWorktree(
-      branch: "loud",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let loud = try #require(harness.worktree(onBranch: "loud"))
+    let loud = try await harness.createWorktree(onBranch: "loud")
     #expect(
       harness.model.workspace.tabs(in: loud.id).count == 1,
       "the project override turns it on",
@@ -81,13 +63,7 @@ struct AppModelWorktreeCreationTests {
     harness.model.setPreferredAgent("claude")
     harness.model.setAutoStartsAgentOnCreate(true)
 
-    await harness.model.createWorktree(
-      branch: "working",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "working"))
+    let created = try await harness.createWorktree(onBranch: "working")
     let first = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
@@ -105,13 +81,7 @@ struct AppModelWorktreeCreationTests {
       ProjectSettings(autoStartsAgentOnCreate: false),
       for: harness.project,
     )
-    await harness.model.createWorktree(
-      branch: "plain",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let plain = try #require(harness.worktree(onBranch: "plain"))
+    let plain = try await harness.createWorktree(onBranch: "plain")
     let shell = try #require(harness.model.workspace.activeTab(in: plain.id))
     #expect(
       harness.model.workspace.session(shell.focusedSessionID)?.agentID == nil,
@@ -125,13 +95,7 @@ struct AppModelWorktreeCreationTests {
     harness.model.setPreferredAgent("claude")
     harness.model.setAutoStartsAgent(true)
 
-    await harness.model.createWorktree(
-      branch: "byhand",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "byhand"))
+    let created = try await harness.createWorktree(onBranch: "byhand")
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(tab.focusedSessionID)?.agentID == nil,
@@ -162,13 +126,7 @@ struct AppModelWorktreeCreationTests {
       "the file says looking does not start one",
     )
 
-    await harness.model.createWorktree(
-      branch: "shipped",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "shipped"))
+    let created = try await harness.createWorktree(onBranch: "shipped")
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(
       harness.model.workspace.session(tab.focusedSessionID)?.agentID == "claude",

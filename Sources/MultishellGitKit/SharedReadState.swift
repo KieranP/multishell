@@ -3,8 +3,8 @@
 struct SharedReadState: Sendable {
   /// How many merge reads run at once across every project, and how many
   /// status reads one round runs; see Docs/design/merged-branch.md.
-  static let maxConcurrentReads = 8
+  static let maximumConcurrentReads = 8
 
   let untrackedMemo = UntrackedLineMemo()
-  let mergeSlots = ConcurrencySlots(width: maxConcurrentReads)
+  let mergeSlots = ConcurrencySlots(width: maximumConcurrentReads)
 }

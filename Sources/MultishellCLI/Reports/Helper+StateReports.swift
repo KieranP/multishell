@@ -2,7 +2,8 @@ import Foundation
 import MultishellCore
 
 extension Helper {
-  /// The subcommand an agent integration without hooks runs.
+  /// The subcommand OpenCode's plugin, the shell scripts and a user's own
+  /// hooks run to report a state.
   static let stateName = "state"
 
   private static let stateOptionNames: Set<String> = [
@@ -19,7 +20,7 @@ extension Helper {
   ) throws -> Int32 {
     guard let name = arguments.first, let state = SessionState(rawValue: name) else {
       throw UsageError(
-        "state needs one of: \(SessionState.allCases.map(\.rawValue).joined(separator: ", "))",
+        "state needs one of: \(stateList)",
         topic: stateName,
       )
     }

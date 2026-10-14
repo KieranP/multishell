@@ -98,8 +98,8 @@ struct DispatchDirectoryWatcherTests {
       Scratch.remove(second)
     }
     let watcher = DispatchDirectoryWatcher()
-    await watcher.watch([first, URL(fileURLWithPath: "/definitely/not/here")])
-    await watcher.watch([second])
+    await watcher.watch([first])
+    await watcher.watch([second, URL(fileURLWithPath: "/definitely/not/here")])
     defer { watcher.stop() }
 
     let changed = changes(of: watcher)

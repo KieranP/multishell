@@ -21,8 +21,8 @@ extension SessionStateReport {
   /// never ending its workers or a Stop naming thousands grows it for good.
   public static let rosterCapacity = 64
 
-  /// A roster's places and the ids its overflow place folds, so a Stop can
-  /// list all it holds; a list this long may have been cut, and prunes nothing.
+  /// About what a model's roster holds, its places and the ids its overflow
+  /// place holds; a list this long may have been cut, and prunes nothing.
   static let maximumWorkersOut = 1024
 
   /// The list of workers out, `nil` where it may have been cut at the cap.

@@ -35,7 +35,7 @@ struct GhosttyInputMethodRectTests {
     #expect(rect == CGRect(x: 100, y: 40, width: 24, height: 16))
   }
 
-  @Test func itIsNeverShorterThanACell() {
+  @Test func theInputRectIsNeverShorterThanACell() {
     let rect = GhosttyInputMethodRect.rect(
       imePoint: CGRect(x: 100, y: 40, width: 0, height: 0),
       range: NSRange(location: 0, length: 0),

@@ -19,6 +19,15 @@ extension AppModel {
     return prepared
   }
 
+  /// `nil` for the custom agent. One not on PATH passes until the login shell
+  /// has answered: detection knows nothing then, so the shell says it is missing.
+  func agentStartProblem(_ id: String) -> AgentStartProblem? {
+    guard id != AgentCatalogue.customID else { return nil }
+    guard AgentCatalogue.agent(id) != nil else { return .notInCatalogue }
+    guard loginEnvironment == nil || agentDetection.isInstalled(id) else { return .notInstalled }
+    return nil
+  }
+
   /// `shell` takes over when the agent quits; the agent runs through the
   /// login shell. The worktree resolves the flag line's placeholders.
   private func agentCommand(
@@ -43,14 +52,8 @@ extension AppModel {
         handOver: handOver,
       )
     }
-    guard let agent = AgentCatalogue.agent(id) else {
-      alertMissingAgentOnce(id, name: id)
-      return nil
-    }
-    // Until the login shell has answered, detection knows nothing; let the
-    // shell say "command not found" in the tab rather than refuse here.
-    if loginEnvironment != nil, !agentDetection.isInstalled(id) {
-      alertMissingAgentOnce(id, name: agent.name)
+    guard let agent = AgentCatalogue.agent(id), agentStartProblem(id) == nil else {
+      alertMissingAgentOnce(id, name: AgentCatalogue.agent(id)?.name ?? id)
       return nil
     }
     guard let arguments = AgentLaunch.arguments(for: agent, resume: resume) else { return nil }

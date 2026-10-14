@@ -3,14 +3,14 @@ import SwiftUI
 /// One multi-line monospaced field: a hook's script, or a file list. The only
 /// placeholder is what the repository ships, so grey means that alone.
 struct MonospacedEditor: View {
-  let title: String
+  let label: String
   let info: String
   let placeholder: String?
   @Binding var text: String
 
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
-      InfoLabel(title, info: info)
+      InfoLabel(label, info: info)
       TextEditor(text: $text)
         .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
         .scrollContentBackground(.hidden)

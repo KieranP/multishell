@@ -205,7 +205,7 @@ extension SessionStatesTests {
   @Test func theAgentsOwnWorkingGivesUpWhatAWorkerDisplacedEvenUnanswered() {
     var overDone = SessionStates()
     _ = report(&overDone, .running)
-    overDone.apply(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
+    report(&overDone, .init(state: .done))
     _ = report(&overDone, .running, started("w1"))
     _ = report(&overDone, .running, started("w2"))
     _ = report(&overDone, .attention, WorkerReport(id: "w1", phase: .working))
@@ -229,15 +229,13 @@ extension SessionStatesTests {
     var byEnd = SessionStates()
     _ = report(&byEnd, .running, started("code-review"))
     _ = report(&byEnd, .running, started("code-review"))
-    byEnd.apply(
+    report(
+      &byEnd,
       .init(
         state: .attention,
         message: "Needs Bash",
         worker: WorkerReport(id: "code-review", phase: .working),
       ),
-      pid: 99,
-      for: .session(a),
-      isSeen: false,
     )
     #expect(byEnd[.session(a)] == .attention)
 
@@ -287,24 +285,15 @@ extension SessionStatesTests {
     }
 
     step { _ = report(&$0, .running, started("w1")) }
+    step { _ = report(&$0, .init(state: .failed, message: "build failed")) }
     step { changing in
-      changing.apply(
-        .init(state: .failed, message: "build failed"),
-        pid: 99,
-        for: .session(a),
-        isSeen: false,
-      )
-    }
-    step { changing in
-      changing.apply(
+      report(
+        &changing,
         .init(
           state: .attention,
           message: "Needs Bash",
           worker: WorkerReport(id: "w1", phase: .working),
         ),
-        pid: 99,
-        for: .session(a),
-        isSeen: false,
       )
     }
     step { _ = report(&$0, .running, working("w1")) }

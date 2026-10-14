@@ -11,7 +11,7 @@ public protocol Platform: AnyObject, Sendable {
   var onDidBecomeActive: (@MainActor () -> Void)? { get set }
   /// Whether a keyboard command should act on the workspace: in any other
   /// window Cmd+W closes that window, not a pane nobody can see.
-  var workspaceWindowIsKey: Bool { get }
+  var isWorkspaceWindowKey: Bool { get }
 
   /// The helper binary shipped with this build, or `nil` outside a bundle.
   /// `HelperLink` points the stable link at it on launch.

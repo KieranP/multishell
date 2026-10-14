@@ -9,7 +9,7 @@ extension AppModel {
 
   func replyToSetDebugInfo(_ shown: Bool) -> ControlReply {
     guard shown else {
-      if showsDebugInfo { uncoverDetail() }
+      hideDebugInfo()
       return .done
     }
     guard areDebugToolsEnabled else { return .refused(.debugToolsOff) }

@@ -26,10 +26,7 @@ extension AppModel {
 
   /// The tab one place along the strip, wrapping at either end.
   private func activateAdjacentTab(_ direction: CycleDirection) {
-    guard
-      let current = tabInView,
-      let next = direction == .next
-        ? workspace.tab(after: current.id) : workspace.tab(before: current.id)
+    guard let current = tabInView, let next = workspace.neighbour(ofTab: current.id, direction)
     else { return }
     activate(next)
   }

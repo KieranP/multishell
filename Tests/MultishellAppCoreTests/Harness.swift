@@ -20,7 +20,7 @@ final class Harness {
   let main: Worktree
   let feature: Worktree
   let root: URL
-  let stateFile: URL
+  private let stateFile: URL
 
   /// `socketSource` stands in for `messageSource`, for a test of the real socket.
   init(
@@ -65,9 +65,9 @@ final class Harness {
     }
   }
 
-  /// A test's own agent on a PATH nothing else has, so detection reads the
-  /// scratch directory and not the machine.
-  func installFakeAgent(_ name: String) throws {
+  /// A test's own stand-in for a tool on a PATH nothing else has, so detection
+  /// reads the scratch directory and not the machine.
+  func installOnLoginPath(_ name: String) throws {
     try fakeBin([name], in: root.appendingPathComponent("bin", isDirectory: true))
   }
 

@@ -1,5 +1,5 @@
-/// What the terminal surface is told to unbind, or it eats these before
-/// the menu bar sees them.
+/// What the terminal surface is told to unbind: shortcuts it would eat before
+/// the menu bar or the system sees them, and plain keys the program needs.
 enum GhosttyUnbinds {
   /// Hides the Dock. Listed so nothing here claims it, and so the reason Move
   /// Tab to New Group is not on it stays written down.

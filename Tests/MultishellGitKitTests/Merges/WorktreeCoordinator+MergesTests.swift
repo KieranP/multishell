@@ -204,7 +204,6 @@ struct WorktreeCoordinatorMergesTests {
   {
     let (fixture, checkout) = try await RepositoryFixture.makeBare()
     defer { fixture.tearDown() }
-    let bare = fixture.project.path
     let cutFrom = try await fixture.head(of: checkout)
     try await TestRepository.commit(
       "the trunk moves on",
@@ -213,14 +212,7 @@ struct WorktreeCoordinatorMergesTests {
       using: fixture.runner,
     )
 
-    let old = fixture.root.appendingPathComponent("trees/old", isDirectory: true)
-    try await TestRepository.addWorktree(
-      onNewBranch: "old",
-      at: old,
-      in: bare,
-      using: fixture.runner,
-      from: cutFrom,
-    )
+    _ = try await fixture.addWorktree(onNewBranch: "old", from: cutFrom)
 
     let worktreeGit = WorktreeGit(runner: fixture.runner)
     #expect(
@@ -240,14 +232,7 @@ struct WorktreeCoordinatorMergesTests {
     #expect(states["old"] == .unmerged, "nothing to derive it from, so nothing said")
 
     // A commit is logged even here, so a branch that landed keeps its badge.
-    let work = fixture.root.appendingPathComponent("trees/work", isDirectory: true)
-    try await TestRepository.addWorktree(
-      onNewBranch: "work",
-      at: work,
-      in: bare,
-      using: fixture.runner,
-      from: "main",
-    )
+    let work = try await fixture.addWorktree(onNewBranch: "work", from: "main")
     try await TestRepository.commit(
       "work of its own",
       files: ["work.txt": "work of its own\n"],

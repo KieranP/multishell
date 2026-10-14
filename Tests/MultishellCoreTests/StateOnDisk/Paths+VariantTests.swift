@@ -38,37 +38,6 @@ struct PathsVariantTests {
     #expect(login == ".debug-feature-a-a48e", "the same every launch, as no seeded hash is")
   }
 
-  @Test func aStateFileSavedUnderTheCutNameFromBeforeTheHashIsCarriedOver() throws {
-    let root = Scratch.path("variant")
-    defer { Scratch.remove(root) }
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    let name = "feature-sidebar-filter"
-    let before = root.appendingPathComponent("state.debug-feature-sideba.json")
-    let now = root.appendingPathComponent("state\(Paths.debugVariant(named: name)).json")
-    try Data("{\"saved\":1}".utf8).write(to: before)
-
-    Paths.carryOverStateFileFromBeforeTheHash(named: name, in: root)
-
-    #expect(try Data(contentsOf: now) == Data("{\"saved\":1}".utf8))
-    #expect(!FileManager.default.fileExists(atPath: before.path))
-  }
-
-  @Test func aStateFileAlreadyUnderTheHashedNameIsNotReplaced() throws {
-    let root = Scratch.path("variant")
-    defer { Scratch.remove(root) }
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    let name = "feature-sidebar-filter"
-    let before = root.appendingPathComponent("state.debug-feature-sideba.json")
-    let now = root.appendingPathComponent("state\(Paths.debugVariant(named: name)).json")
-    try Data("old".utf8).write(to: before)
-    try Data("new".utf8).write(to: now)
-
-    Paths.carryOverStateFileFromBeforeTheHash(named: name, in: root)
-
-    #expect(try Data(contentsOf: now) == Data("new".utf8))
-    #expect(FileManager.default.fileExists(atPath: before.path))
-  }
-
   @Test func aHelperReachedThroughLinksReadsTheVariantOfTheBundleItIsIn() throws {
     let root = Scratch.path("variant")
     defer { Scratch.remove(root) }

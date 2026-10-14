@@ -11,11 +11,11 @@ extension Helper {
     environment: [String: String],
   ) throws -> Int32 {
     let topic = ControlCommand.debug.rawValue
-    let (words, options) = positionals(arguments)
+    let (words, optionWords) = positionals(arguments)
     guard words.count <= 1 else {
       throw UsageError("debug screenshot takes one FILE at most", topic: topic)
     }
-    let pane = try CommandOptions(options, valued: ["pane"], topic: topic)["pane"].map { text in
+    let pane = try CommandOptions(optionWords, valued: ["pane"], topic: topic)["pane"].map { text in
       try tabOrPaneID(text, topic: topic)
     }
     let encoded = try output(of: .screenshot(pane: pane), environment: environment) ?? ""

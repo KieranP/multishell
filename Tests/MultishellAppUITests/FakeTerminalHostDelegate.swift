@@ -1,7 +1,7 @@
 import MultishellCore
 
 @MainActor
-final class RecordingTerminalHostDelegate: TerminalHostDelegate {
+final class FakeTerminalHostDelegate: TerminalHostDelegate {
   private(set) var reports: [TerminalSession.ID] = []
 
   func terminalHost(_ host: any TerminalHost, didRetitle id: TerminalSession.ID, to title: String) {

@@ -1,3 +1,5 @@
+import MultishellProcess
+
 extension Helper {
   static let paneUsage = """
     usage: multishell panes split [--down] [--tab TAB_ID]
@@ -12,7 +14,7 @@ extension Helper {
     usage: multishell panes type PANE_ID [--enter] -- TEXT
         Type TEXT into the pane as keystrokes, not a paste, then press Return
         with --enter, so a shell runs it. The keyboard stays where it was.
-        TEXT that starts with a dash goes after --. A request holds 64 KB.
+        TEXT that starts with a dash goes after --. A request holds \(UnixSocketServer.maximumLineLength / 1024) KB.
     usage: multishell panes paste PANE_ID TEXT
     usage: multishell panes paste PANE_ID -- TEXT
         Put TEXT in as a paste, as a drop or Cmd+V does: bracketed where the

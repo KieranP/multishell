@@ -4,12 +4,12 @@ import MultishellCore
 extension Helper {
   static func readPane(
     _ id: UUID,
-    _ arguments: ArraySlice<String>,
+    _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
     let topic = ControlCommand.panes.rawValue
     let options = try CommandOptions(
-      arguments,
+      optionWords,
       valued: ["lines"],
       flags: ["scrollback", "plain"],
       topic: topic,

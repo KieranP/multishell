@@ -15,7 +15,7 @@ struct SocketDeadline {
   func waitUntil(_ descriptor: Int32, isReadyFor event: Int32) -> Bool {
     let remaining = ContinuousClock.now.duration(to: end)
     guard remaining > .zero else { return false }
-    var ready = pollfd(fd: descriptor, events: Int16(event), revents: 0)
-    return poll(&ready, 1, Int32(remaining.inMilliseconds) + 1) != 0
+    var poller = pollfd(fd: descriptor, events: Int16(event), revents: 0)
+    return poll(&poller, 1, Int32(remaining.inMilliseconds) + 1) != 0
   }
 }

@@ -6,10 +6,19 @@ import Testing
 @Suite
 struct WorktreeOperationStageTests {
   @Test func removalStepsMapOntoPaneStages() {
-    #expect(WorktreeOperation.Stage(WorktreeRemovalStep.preDeleteHook) == .preDeleteHook)
-    #expect(WorktreeOperation.Stage(WorktreeRemovalStep.removingWorktree) == .removingWorktree)
-    #expect(WorktreeOperation.Stage(WorktreeRemovalStep.postDeleteHook) == .postDeleteHook)
-    #expect(WorktreeOperation.Stage(WorktreeRemovalStep.deletingBranch) == .deletingBranch)
+    #expect(
+      WorktreeOperation.Stage(WorktreeRemovalStep.preDeleteHook, trashes: true) == .preDeleteHook
+    )
+    #expect(
+      WorktreeOperation.Stage(WorktreeRemovalStep.removingWorktree, trashes: true)
+        == .removingWorktree
+    )
+    #expect(
+      WorktreeOperation.Stage(WorktreeRemovalStep.postDeleteHook, trashes: true) == .postDeleteHook
+    )
+    #expect(
+      WorktreeOperation.Stage(WorktreeRemovalStep.deletingBranch, trashes: true) == .deletingBranch
+    )
     #expect(
       WorktreeOperation.Stage(WorktreeRemovalStep.removingWorktree, trashes: false)
         == .deletingWorktree

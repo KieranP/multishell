@@ -15,7 +15,7 @@ struct InkedPixels {
 
   init(_ bitmap: NSBitmapImageRep) { self.bitmap = bitmap }
 
-  func inked(_ x: Int, _ y: Int) -> Bool {
+  private func inked(_ x: Int, _ y: Int) -> Bool {
     (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.3
   }
 

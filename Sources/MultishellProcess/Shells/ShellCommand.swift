@@ -111,7 +111,8 @@ public enum ShellCommand {
   /// The part of a failure's stderr after the marker, or all of it where the
   /// script ended before writing one. The login shell `exec`s, so says no `logout`.
   static func stderrAfterMarker(_ text: String) -> String {
-    let script = text.range(of: stderrStartMarker).map { String(text[$0.upperBound...]) } ?? text
-    return script.trimmingCharacters(in: .whitespacesAndNewlines)
+    let scriptStderr =
+      text.range(of: stderrStartMarker).map { String(text[$0.upperBound...]) } ?? text
+    return scriptStderr.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }

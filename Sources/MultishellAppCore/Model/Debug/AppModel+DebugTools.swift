@@ -26,7 +26,7 @@ extension AppModel {
       startDebugSampling()
     } else {
       stopDebugSamplingAndClear()
-      if showsDebugInfo { uncoverDetail() }
+      hideDebugInfo()
     }
   }
 
@@ -36,6 +36,12 @@ extension AppModel {
     guard areDebugToolsEnabled else { return }
     detailCover = .debugInfo
     updatePIDWatch()
+  }
+
+  /// `uncoverDetail`, where it is the panel that covers the panes.
+  func hideDebugInfo() {
+    guard showsDebugInfo else { return }
+    uncoverDetail()
   }
 
   /// Holds the panel still for reading; the sidebar and the sampling go on.

@@ -28,7 +28,7 @@ extension AppModel {
   /// A tab in front while the workspace window is key; not under the board
   /// or from a settings window, as with a close.
   private var paneTakesKeystrokes: Bool {
-    platform.workspaceWindowIsKey && tabInView != nil
+    platform.isWorkspaceWindowKey && tabInView != nil
   }
 
   /// The pane a find keystroke acts on: `menuFindPane`, but only while there is

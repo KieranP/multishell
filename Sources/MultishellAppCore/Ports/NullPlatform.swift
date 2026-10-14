@@ -5,7 +5,7 @@ import Foundation
 public final class NullPlatform: Platform {
   public var onDidBecomeActive: (@MainActor () -> Void)?
   public var isActive: Bool { true }
-  public var workspaceWindowIsKey: Bool { true }
+  public var isWorkspaceWindowKey: Bool { true }
   public var bundledHelper: URL? { nil }
   public var notificationSettingsLocation: String? { nil }
   public var windows: [PlatformWindow] { [] }

@@ -8,7 +8,7 @@ extension WorktreeFilesTests {
   /// each name it finds is judged against the disk like any other.
   @Test func aGlobCannotExpandOntoSomethingOutsideTheRepository() throws {
     let (repository, worktree) = try repositoryAndWorktree()
-    let outside = repository.deletingLastPathComponent().appending(path: "outside")
+    let outside = root.appending(path: "outside")
     try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
     try "TOP SECRET".write(to: outside.appending(path: "key"), atomically: true, encoding: .utf8)
     try "SECRET=1".write(

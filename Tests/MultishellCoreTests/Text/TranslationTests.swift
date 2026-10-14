@@ -70,7 +70,7 @@ struct TranslationTests {
   /// numbering only some is miscounted by `formatPlaceholders`, so the check above passes it.
   @Test func everyPhraseWithSeveralArgumentsNumbersThem() throws {
     for (key, english) in try Self.catalogue() {
-      let all = english.matches(of: /%[0-9]*\$?[0-9.]*[@dfs]/).map { String($0.output) }
+      let all = english.formatSpecifiers
       let numbered = all.filter { $0.contains("$") }
       #expect(
         numbered.isEmpty || numbered.count == all.count,

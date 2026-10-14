@@ -14,7 +14,7 @@ final class MacPlatform: Platform {
   weak var workspaceWindow: NSWindow?
   var onDidBecomeActive: (@MainActor () -> Void)?
   /// The scenes' own window openers, which only a view can reach; set by
-  /// `WindowOpenerRegistration` for the command line's `ui show`.
+  /// `registeringWindowOpeners` for the command line's `ui show`.
   var openAuxiliaryWindow: ((AuxiliaryWindow) -> Void)?
   private let logger = Logger(subsystem: bundleIdentifier, category: "platform")
   private let signposter = OSSignposter(subsystem: bundleIdentifier, category: .pointsOfInterest)
@@ -26,7 +26,7 @@ final class MacPlatform: Platform {
 
   /// `NSApp` is nil until an application object exists, which it never does
   /// under `swift test`; no app means no other window can be key.
-  var workspaceWindowIsKey: Bool {
+  var isWorkspaceWindowKey: Bool {
     guard let key = NSApp?.keyWindow else { return true }
     return key === workspaceWindow
   }

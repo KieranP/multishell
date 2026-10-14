@@ -38,7 +38,7 @@ struct SessionStateReportTests {
 
   /// The dot moves on the first of the two reports a permission prompt
   /// makes, and the banner waits for the second.
-  @Test func aSilentReportIsCarriedAndKeepsItsBannerBack() throws {
+  @Test func aSilentReportCarriesItsFlagAndAnOrdinaryOneLeavesItOut() throws {
     let silent = SessionStateReport(state: .attention, isSilent: true)
     #expect(try silent.encodedLine().contains("\"silent\":true"))
     #expect(SessionStateReport.parse(try silent.encodedLine())?.isSilent == true)

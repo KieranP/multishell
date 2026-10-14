@@ -23,7 +23,7 @@ public enum NotificationSettingsText {
 
   /// The caption at the foot of the page, said once rather than behind each
   /// row's (i). A refusal replaces it; no desktop is named here.
-  static func note(
+  static func caption(
     for authorization: NotificationAuthorization,
     settingsLocation: String?,
   ) -> String {

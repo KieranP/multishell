@@ -12,13 +12,7 @@ extension AppModelWorktreeListRefreshTests {
   @Test func aWorktreeRemovedOutsideTheAppTakesItsMergedBadgeAndCommitDateWithIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "gone",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "gone"))
+    let created = try await harness.createWorktree(onBranch: "gone")
 
     harness.model.mergeStates[created.id] = .merged(.ancestor, into: "main")
     harness.model.lastCommitDates[created.id] = Date(timeIntervalSince1970: 1000)
@@ -55,13 +49,7 @@ extension AppModelWorktreeListRefreshTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setGitStatusIndicator(.stagedAndUnstaged)
-    await harness.model.createWorktree(
-      branch: "side",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let side = try #require(harness.worktree(onBranch: "side"))
+    let side = try await harness.createWorktree(onBranch: "side")
     try "a\nb\n".write(
       to: side.path.appendingPathComponent("new.txt"),
       atomically: true,
@@ -81,13 +69,7 @@ extension AppModelWorktreeListRefreshTests {
   @Test func aRemovalDialogClosesWhenGitStopsListingItsWorktree() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "asked",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "asked"))
+    let created = try await harness.createWorktree(onBranch: "asked")
     await harness.model.requestWorktreeRemoval(of: created)?.value
     #expect(harness.model.pendingWorktreeRemoval?.id == created.id)
 
@@ -106,13 +88,7 @@ extension AppModelWorktreeListRefreshTests {
   @Test func aWorktreeRemovedOutsideTheAppTakesItsShellsWithIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "gone",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "gone"))
+    let created = try await harness.createWorktree(onBranch: "gone")
     let sessions = Set(harness.model.workspace.sessions(in: created.id).map(\.id))
     #expect(harness.engine.liveSessionIDs == sessions)
 
@@ -139,13 +115,7 @@ extension AppModelWorktreeListRefreshTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "setup",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "setup"))
+    let created = try await harness.createWorktree(onBranch: "setup")
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
     let setup = harness.model.stageHandles.setupTask(of: created.id)
     let began = ContinuousClock.now

@@ -21,10 +21,12 @@ extension PresentedError {
       )
 
     case let invalid as InvalidBranchName:
-      return (t("error.invalid-branch-title"), invalid.errorDescription ?? "")
+      return (t("error.invalid-branch-title"), t("branch-name.invalid", invalid.branch))
 
     case let notRemovable as WorktreeNotRemovable:
-      return (t("error.not-a-worktree-title"), notRemovable.errorDescription ?? "")
+      return (
+        t("error.not-a-worktree-title"), t("worktree.not-removable", notRemovable.path.path),
+      )
 
     case is GitUnavailable:
       return (t("error.git-not-found-title"), t("error.git-not-found-message"))

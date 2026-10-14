@@ -27,6 +27,8 @@ struct AccessibilityTextSidebarTests {
         operation: nil,
         terminalCount: 3,
         isSelected: true,
+        customName: nil,
+        mergeState: .unknown,
       )
         == "feat, linked worktree, selected, Working, +0 −0 · 2 modified · ↑1, 3 terminals"
     )
@@ -38,6 +40,8 @@ struct AccessibilityTextSidebarTests {
         operation: nil,
         terminalCount: 0,
         isSelected: false,
+        customName: nil,
+        mergeState: .unknown,
       ) == "feat, linked worktree, Nothing running"
     )
     let failed = WorktreeOperation(.postCreateHook, failure: "npm ERR!")
@@ -49,6 +53,8 @@ struct AccessibilityTextSidebarTests {
         operation: failed,
         terminalCount: 0,
         isSelected: false,
+        customName: nil,
+        mergeState: .unknown,
       )
       .contains("failed: The post-create hook failed")
     )
@@ -74,6 +80,7 @@ struct AccessibilityTextSidebarTests {
         operation: nil,
         terminalCount: 0,
         isSelected: false,
+        customName: nil,
         mergeState: .merged(.ancestor, into: "origin/main"),
       )
         == "feat, linked worktree, Nothing running, locked, Merged into origin/main, ↓2"
@@ -90,6 +97,7 @@ struct AccessibilityTextSidebarTests {
         operation: nil,
         terminalCount: 0,
         isSelected: false,
+        customName: nil,
         mergeState: .merged(.ancestor, into: "origin/main"),
       ).contains("Merged")
     )
@@ -101,6 +109,7 @@ struct AccessibilityTextSidebarTests {
         operation: nil,
         terminalCount: 0,
         isSelected: false,
+        customName: nil,
         mergeState: .unmerged,
       ).contains("Merged")
     )
@@ -122,6 +131,7 @@ struct AccessibilityTextSidebarTests {
         terminalCount: 0,
         isSelected: false,
         customName: "Checkout flow",
+        mergeState: .unknown,
       )
         == "Checkout flow, linked worktree, branch feat, Nothing running"
     )
@@ -135,6 +145,7 @@ struct AccessibilityTextSidebarTests {
         isMissing: true,
         state: .attention,
         worktreeCount: 1,
+        isFetching: false,
       )
         == "acme, project, collapsed, 1 worktree, not reachable, Waiting for input"
     )
@@ -145,6 +156,7 @@ struct AccessibilityTextSidebarTests {
         isMissing: false,
         state: nil,
         worktreeCount: 4,
+        isFetching: false,
       )
         == "acme, project, expanded, 4 worktrees"
     )
@@ -158,5 +170,20 @@ struct AccessibilityTextSidebarTests {
         isFetching: true,
       ) == "acme, project, expanded, 4 worktrees, fetching"
     )
+  }
+
+  /// A renamed tab names every pane alike, so the position tells them apart.
+  @Test func aPaneInARenamedTabSaysItsPosition() {
+    let pane = SidebarPane(
+      id: UUID(),
+      title: "fix tests",
+      position: PanePosition(number: 2, count: 2),
+      isFocused: true,
+      state: nil,
+      workers: [],
+      agentID: nil,
+      agentName: nil,
+    )
+    #expect(AccessibilityText.pane(pane) == "fix tests, pane 2 of 2, selected")
   }
 }

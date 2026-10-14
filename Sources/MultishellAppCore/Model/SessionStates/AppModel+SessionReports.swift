@@ -27,8 +27,8 @@ extension AppModel {
     if let id = report.sessionID {
       guard liveSessionIDs.contains(id), workspace.session(id) != nil else { return }
       // Who is at that prompt, so a drop is written as that agent reads a file.
-      if let agent = report.agentID {
-        setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agent, pid: pid))
+      if let agentID = report.agentID {
+        setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agentID, pid: pid))
       }
       noteCommandAgent(report, of: id)
       apply(report, pid: pid, to: .session(id))

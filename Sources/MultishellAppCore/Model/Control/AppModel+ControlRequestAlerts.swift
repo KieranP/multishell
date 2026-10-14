@@ -10,13 +10,13 @@ extension AppModel {
   /// alert over one of its takes down to what this one's went up over.
   func finishAnswering(_ requestID: UUID, with reply: ControlReply) -> ControlReply {
     requestsBeingAnswered.remove(requestID)
-    guard let record = alertRecordsOfRequests.removeValue(forKey: requestID) else { return reply }
-    for (laterID, later) in alertRecordsOfRequests
+    guard let alerts = alertsByRequest.removeValue(forKey: requestID) else { return reply }
+    for (laterID, later) in alertsByRequest
     where later.covered?.raisingRequestID == requestID {
-      alertRecordsOfRequests[laterID]?.covered = record.covered
+      alertsByRequest[laterID]?.covered = alerts.covered
     }
-    if presentedError?.raisingRequestID == requestID { presentedError = record.covered }
-    return Self.refusal(showing: record.newest)
+    if presentedError?.raisingRequestID == requestID { presentedError = alerts.covered }
+    return Self.refusal(showing: alerts.newest)
   }
 
   /// What stood when the request's first alert went up, or a newer one no request
@@ -25,13 +25,13 @@ extension AppModel {
     guard let alert = presentedError, let id = alert.raisingRequestID,
       id == ControlRequestScope.id, requestsBeingAnswered.contains(id)
     else { return }
-    guard alertRecordsOfRequests[id] != nil else {
-      alertRecordsOfRequests[id] = RequestAlertRecord(newest: alert, covered: covered)
+    guard alertsByRequest[id] != nil else {
+      alertsByRequest[id] = RequestAlerts(newest: alert, covered: covered)
       return
     }
-    alertRecordsOfRequests[id]?.newest = alert
+    alertsByRequest[id]?.newest = alert
     guard let covered, !(covered.raisingRequestID.map(requestsBeingAnswered.contains) ?? false)
     else { return }
-    alertRecordsOfRequests[id]?.covered = covered
+    alertsByRequest[id]?.covered = covered
   }
 }

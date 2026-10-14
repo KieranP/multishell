@@ -14,8 +14,8 @@ enum GhosttyRuntimeCallbacks {
       supports_selection_clipboard: supportsSelectionClipboard,
       wakeup_cb: { GhosttyTicker.wakeUp($0) },
       action_cb: { _, target, action in Self.perform(action, on: target) },
-      read_clipboard_cb: { userdata, location, request, mimes, count, wantsList in
-        Self.readClipboard(userdata, location, request, mimes, count, wantsList)
+      read_clipboard_cb: { userdata, location, handle, mimes, count, wantsList in
+        Self.readClipboard(userdata, location, handle, mimes, count, wantsList)
       },
       confirm_read_clipboard_cb: { userdata, confirm, handle, kind in
         Self.confirmReadClipboard(userdata, confirm, handle, kind)

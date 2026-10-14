@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 @testable import MultishellGitKit
 @testable import MultishellProcess
 
@@ -11,19 +11,19 @@ import Testing
 struct AppModelLoginEnvironmentTests {
   @Test func theAgentPathNoteNamesWhereThePathCameFrom() {
     let harness = Harness()
-    #expect(harness.model.agentPathNote == t("agents.path-asking"))
+    #expect(harness.model.agentPathInfo == t("agents.path-asking"))
 
     harness.model.loginEnvironment = LoginShellEnvironment(
       variables: [:],
       source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
     )
-    #expect(harness.model.agentPathNote == t("agents.path-from-login-shell", "/bin/zsh"))
+    #expect(harness.model.agentPathInfo == t("agents.path-from-login-shell", "/bin/zsh"))
 
     harness.model.loginEnvironment = LoginShellEnvironment(
       variables: [:],
       source: .processFallback(reason: "timed out after 5s"),
     )
-    #expect(harness.model.agentPathNote == t("agents.path-fallback", "timed out after 5s"))
+    #expect(harness.model.agentPathInfo == t("agents.path-fallback", "timed out after 5s"))
   }
 
   /// A saved agent tab clicked while PATH is still being scanned must not read as missing,
@@ -43,7 +43,7 @@ struct AppModelLoginEnvironmentTests {
 
   @Test func theLoginEnvironmentFeedsDetection() async throws {
     let harness = Harness()
-    try harness.installFakeAgent("claude")
+    try harness.installOnLoginPath("claude")
     #expect(harness.model.loginEnvironment == nil)
     await harness.model.refreshLoginEnvironment()
     #expect(harness.model.loginEnvironment?.path != nil)
@@ -97,7 +97,7 @@ struct AppModelLoginEnvironmentTests {
   @Test(arguments: [true, false])
   func aGitFoundOnlyOnTheLoginPathIsTimedJustWhileDebugToolsAreOn(enabled: Bool) async throws {
     let harness = Harness()
-    try harness.installFakeAgent("git")
+    try harness.installOnLoginPath("git")
     harness.model.enableDebugTools()
 
     await harness.model.refreshLoginEnvironment()

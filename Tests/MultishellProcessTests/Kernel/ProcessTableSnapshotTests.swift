@@ -24,8 +24,9 @@ struct ProcessTableSnapshotTests {
 
   @Test func aPidNothingHoldsHasNoChildrenNameOrTerminal() {
     let table = ProcessTableSnapshot.take()
-    #expect(table.children(of: 999_999_999).isEmpty)
-    #expect(table.name(of: 999_999_999) == nil)
-    #expect(table.terminalDevice(of: 999_999_999) == nil)
+    let pid = deadPID()
+    #expect(table.children(of: pid).isEmpty)
+    #expect(table.name(of: pid) == nil)
+    #expect(table.terminalDevice(of: pid) == nil)
   }
 }

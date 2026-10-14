@@ -14,13 +14,7 @@ struct AppModelWorktreeSetupTests {
     defer { harness.tearDown() }
     harness.model.setSettings(ProjectSettings(postCreateHook: "exit 3"), for: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "hooked",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "hooked"))
+    let created = try await harness.createWorktree(onBranch: "hooked")
     #expect(harness.model.workspace.selectedWorktreeID == created.id, "shown before the hook ends")
     harness.model.presentedError = nil
     await harness.model.stageHandles.setupTask(of: created.id)?.value
@@ -48,13 +42,7 @@ struct AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "loud",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "loud"))
+    let created = try await harness.createWorktree(onBranch: "loud")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
@@ -71,14 +59,8 @@ struct AppModelWorktreeSetupTests {
     defer { harness.tearDown() }
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 3"), for: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "slow",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    let created = try await harness.createWorktree(onBranch: "slow")
 
-    let created = try #require(harness.worktree(onBranch: "slow"))
     // No clock needed: a create that waited out the hook would leave the operation
     // finished and the first tab open, which the next three read.
     #expect(harness.model.workspace.selectedWorktreeID == created.id)
@@ -122,14 +104,8 @@ struct AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "bashed",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    let created = try await harness.createWorktree(onBranch: "bashed")
 
-    let created = try #require(harness.worktree(onBranch: "bashed"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     let shell = try String(
       contentsOf: created.path.appendingPathComponent("shell.txt"),
@@ -146,13 +122,7 @@ struct AppModelWorktreeSetupTests {
       for: harness.project,
     )
 
-    await harness.model.createWorktree(
-      branch: "served",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "served"))
+    let created = try await harness.createWorktree(onBranch: "served")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
     let written = try String(
       contentsOf: created.path.appendingPathComponent("sleep.pid"),
@@ -176,13 +146,7 @@ struct AppModelWorktreeSetupTests {
     )
     let started = ContinuousClock.now
 
-    await harness.model.createWorktree(
-      branch: "slow",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "slow"))
+    let created = try await harness.createWorktree(onBranch: "slow")
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(ContinuousClock.now - started < .seconds(10))
@@ -197,13 +161,7 @@ struct AppModelWorktreeSetupTests {
     defer { harness.tearDown() }
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 30"), for: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "stopped",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "stopped"))
+    let created = try await harness.createWorktree(onBranch: "stopped")
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
     harness.model.cancelStage(of: created)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
@@ -226,13 +184,7 @@ struct AppModelWorktreeSetupTests {
     harness.model.setOpensTerminalOnCreate(true)
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 30"), for: harness.project)
 
-    await harness.model.createWorktree(
-      branch: "roster",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "roster"))
+    let created = try await harness.createWorktree(onBranch: "roster")
     harness.model.showAgentBoard()
     harness.model.cancelStage(of: created)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
@@ -259,13 +211,7 @@ struct AppModelWorktreeSetupTests {
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 30"), for: harness.project)
     let main = harness.model.workspace.worktrees(of: harness.project.id)[0]
 
-    await harness.model.createWorktree(
-      branch: "owed",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
-    let created = try #require(harness.worktree(onBranch: "owed"))
+    let created = try await harness.createWorktree(onBranch: "owed")
     harness.model.select(main)
     let focusedBefore = harness.engine.focused.count
     harness.model.cancelStage(of: created)

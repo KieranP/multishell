@@ -9,10 +9,10 @@ extension Helper {
     -> Int32
   {
     let topic = ControlCommand.worktrees.rawValue
-    let (words, options) = positionals(arguments.dropFirst())
+    let (words, optionWords) = positionals(arguments.dropFirst())
     switch (arguments.first, words.count) {
     case ("list", 0...1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(
         .listWorktrees(project: try words.first.map { try projectID($0, topic: topic) }),
         environment: environment,
@@ -22,13 +22,13 @@ extension Helper {
       let order = try worktreeOrder(
         branch: words[1],
         project: try projectID(words[0], topic: topic),
-        options,
+        optionWords,
       )
       return try ask(.newWorktree(order), environment: environment, timeout: nil)
 
     case ("remove", 1):
       let options = try CommandOptions(
-        options,
+        optionWords,
         valued: [],
         flags: ["delete-branch", "force-delete-branch", "force"],
         topic: topic,
@@ -43,14 +43,14 @@ extension Helper {
       return try ask(.removeWorktree(order), environment: environment, timeout: nil)
 
     case ("show", 1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(
         .describeWorktree(id: try worktreeID(words[0], topic: topic)),
         environment: environment,
       )
 
     case ("rename", 1...2):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       let name = givenName(in: words)
       return try ask(
         .renameWorktree(id: try worktreeID(words[0], topic: topic), name: name),
@@ -58,7 +58,7 @@ extension Helper {
       )
 
     case ("select", 1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(
         .selectWorktree(id: try worktreeID(words[0], topic: topic)),
         environment: environment,
@@ -72,11 +72,11 @@ extension Helper {
   private static func worktreeOrder(
     branch: String,
     project: String,
-    _ arguments: ArraySlice<String>,
+    _ optionWords: ArraySlice<String>,
   ) throws -> NewWorktreeOrder {
     let topic = ControlCommand.worktrees.rawValue
     let options = try CommandOptions(
-      arguments,
+      optionWords,
       valued: ["from", "agent", "prompt"],
       flags: ["existing"],
       topic: topic,

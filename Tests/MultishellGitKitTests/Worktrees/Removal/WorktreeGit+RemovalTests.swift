@@ -212,14 +212,8 @@ struct WorktreeGitRemovalTests {
     defer { fixture.tearDown() }
     let project = fixture.project
     let coordinator = fixture.coordinator
-    let path = try await coordinator.createThenRunPostCreateHook(
-      branch: "ghost",
-      in: project,
-      settings: fixture.worktreeSettings,
-    )
-    try FileManager.default.removeItem(at: path)
+    let (ghost, _) = try await fixture.worktreeWithItsDirectoryGone()
 
-    let ghost = try await fixture.worktree(onBranch: "ghost")
     try await coordinator.removeUnlinking(ghost, in: project)
 
     #expect(try await coordinator.git.list(project).count == 1)

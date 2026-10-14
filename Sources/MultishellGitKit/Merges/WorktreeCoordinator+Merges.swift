@@ -18,7 +18,7 @@ extension WorktreeCoordinator {
     }
 
     let readings = await branches.mapConcurrentlyUnordered(
-      width: SharedReadState.maxConcurrentReads
+      width: SharedReadState.maximumConcurrentReads
     ) { branch in
       await git.readState.mergeSlots.holding {
         let started = ContinuousClock.now

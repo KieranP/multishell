@@ -9,18 +9,18 @@ extension Helper {
     -> Int32
   {
     let topic = ControlCommand.projects.rawValue
-    let (words, options) = positionals(arguments.dropFirst())
+    let (words, optionWords) = positionals(arguments.dropFirst())
     switch (arguments.first, words.count) {
     case ("list", 0):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(.listProjects, environment: environment)
 
     case ("add", 0...1):
-      try noOptions(options, topic: topic)
+      try noOptions(optionWords, topic: topic)
       return try ask(.addProject(path: absolutePath(words.first)), environment: environment)
 
     case ("remove", 1):
-      let force = try isForced(options, topic: topic)
+      let force = try isForced(optionWords, topic: topic)
       return try ask(
         .removeProject(id: try projectID(words[0], topic: topic), force: force),
         environment: environment,

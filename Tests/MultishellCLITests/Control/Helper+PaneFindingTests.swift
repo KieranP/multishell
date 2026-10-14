@@ -26,7 +26,7 @@ struct HelperPaneFindingTests {
     let fields = printed as? [String: Any]
     #expect(fields?["pane"] as? String == pane.uuidString)
     #expect((fields?["find"] as? [String: Any])?["total"] as? Int == 3)
-    #expect(app.requests.received.first == .findInPane(id: pane, action: .search("error")))
+    #expect(app.requests.received.first == .findInPane(id: pane, action: .open("error")))
   }
 
   @Test func closingPrintsTheBarAsGone() async throws {

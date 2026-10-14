@@ -61,8 +61,7 @@ extension Helper {
     ]
     let controlTopics = ControlCommand.allCases.map { ([$0.rawValue], usage(of: $0)) }
     return Dictionary(
-      (topics + controlTopics).flatMap { words, text in words.map { ($0, text) } },
-      uniquingKeysWith: { first, _ in first },
+      keepingFirst: (topics + controlTopics).flatMap { words, text in words.map { ($0, text) } }
     )
   }()
 

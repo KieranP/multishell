@@ -21,13 +21,13 @@ public enum EngineCommandLine {
     fishInit: URL = Paths.fishInitFile,
   ) -> [String]? {
     guard
-      let integration = ShellLaunch.initFileArguments(
+      let initFileLaunch = ShellLaunch.initFileArguments(
         forShell: shellPath,
         bashInit: bashInit,
         fishInit: fishInit,
       )
     else { return shellPath == loginShell ? nil : [shellPath, "-l"] }
-    guard shellPath.executableName == "bash" else { return integration }
-    return ["/bin/sh", "-c", AnyShellQuoting.commandLine(["exec"] + integration)]
+    guard shellPath.executableName == "bash" else { return initFileLaunch }
+    return ["/bin/sh", "-c", AnyShellQuoting.commandLine(["exec"] + initFileLaunch)]
   }
 }

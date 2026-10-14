@@ -31,9 +31,9 @@ public enum PromisedDropCopies {
         options: [.skipsHiddenFiles],
       )) ?? []
     for drop in drops {
-      let modified = try? drop.resourceValues(forKeys: [.contentModificationDateKey])
-        .contentModificationDate
-      guard let modified, now.timeIntervalSince(modified) > retention else { continue }
+      guard let modified = drop.modificationDate, now.timeIntervalSince(modified) > retention else {
+        continue
+      }
       try? manager.removeItem(at: drop)
     }
   }

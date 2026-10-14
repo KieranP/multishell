@@ -62,14 +62,21 @@ struct RepositoryFixture {
     _ = try await runner.run(["checkout", "-q", "main"], in: project.path)
   }
 
-  /// A linked worktree under `trees/` on a new branch cut where `main` is.
-  func addWorktree(onNewBranch branch: String) async throws -> URL {
+  /// A linked worktree under `trees/` on a new branch, cut where `main` is unless
+  /// told otherwise.
+  func addWorktree(
+    onNewBranch branch: String,
+    from startPoint: String = "HEAD",
+  ) async throws
+    -> URL
+  {
     let tree = root.appendingPathComponent("trees/\(branch)", isDirectory: true)
     try await TestRepository.addWorktree(
       onNewBranch: branch,
       at: tree,
       in: project.path,
       using: runner,
+      from: startPoint,
     )
     return tree
   }

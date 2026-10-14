@@ -4,7 +4,7 @@ import MultishellAppCore
 import MultishellCore
 
 @MainActor
-final class NoEngine: TerminalSurfaceHost {
+final class NullEngine: TerminalSurfaceHost {
   var liveSessionIDs: Set<TerminalSession.ID> = []
   weak var delegate: (any TerminalHostDelegate)?
   func open(_ session: TerminalSession) throws {}

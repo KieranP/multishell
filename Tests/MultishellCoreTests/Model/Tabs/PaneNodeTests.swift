@@ -5,9 +5,9 @@ import Testing
 
 @Suite
 struct PaneNodeTests {
-  let a = UUID()
-  let b = UUID()
-  let c = UUID()
+  private let a = UUID()
+  private let b = UUID()
+  private let c = UUID()
 
   @Test func sessionIDsAreCollectedInOrder() {
     let inner = PaneNode.split(axis: .horizontal, children: [.terminal(b), .terminal(c)])

@@ -7,7 +7,7 @@ import Foundation
 final class FakePlatform: Platform {
   var isActive = true
   var onDidBecomeActive: (@MainActor () -> Void)?
-  var workspaceWindowIsKey = true
+  var isWorkspaceWindowKey = true
   var closedKeyWindows = 0
   var directoryToChoose: URL?
   var revealed: [URL] = []

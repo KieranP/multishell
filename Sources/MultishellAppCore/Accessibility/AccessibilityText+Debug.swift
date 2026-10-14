@@ -57,8 +57,8 @@ extension AccessibilityText {
     } else if row.terminalRow != nil {
       parts.append(t("spoken.runs-in-terminal"))
     }
-    parts.append(t("spoken.self-memory", DebugValueText.memory(process.selfMemory)))
-    parts.append(t("spoken.total-memory", DebugValueText.memory(process.totalMemory)))
+    parts.append(t("spoken.self-memory", process.selfMemoryText))
+    parts.append(t("spoken.total-memory", process.totalMemoryText))
     return parts.joined(separator: ", ")
   }
 }

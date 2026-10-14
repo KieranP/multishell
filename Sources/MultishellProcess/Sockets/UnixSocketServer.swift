@@ -19,7 +19,7 @@ public final class UnixSocketServer: Sendable {
     set { lineHandler.withLock { $0 = newValue } }
   }
 
-  let path: String
+  private let path: String
   let claim: SocketClaim
   let queue: DispatchQueue
   let state = Mutex(State())

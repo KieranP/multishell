@@ -6,7 +6,7 @@ extension Helper {
   /// options so a word may start with a dash; a lone `-` is a word, as in POSIX.
   static func positionals(
     _ arguments: ArraySlice<String>
-  ) -> (words: [String], options: ArraySlice<String>) {
+  ) -> (words: [String], optionWords: ArraySlice<String>) {
     let end = arguments.firstIndex(of: "--")
     let head = arguments[..<(end ?? arguments.endIndex)]
     let firstOption = head.firstIndex { $0.hasPrefix("-") && $0 != "-" } ?? head.endIndex
@@ -22,13 +22,13 @@ extension Helper {
       .standardizedFileURL.path
   }
 
-  static func noOptions(_ options: ArraySlice<String>, topic: String) throws {
-    _ = try CommandOptions(options, valued: [], topic: topic)
+  static func noOptions(_ optionWords: ArraySlice<String>, topic: String) throws {
+    _ = try CommandOptions(optionWords, valued: [], topic: topic)
   }
 
   /// Whether `--force` is the one option given.
-  static func isForced(_ options: ArraySlice<String>, topic: String) throws -> Bool {
-    try CommandOptions(options, valued: [], flags: ["force"], topic: topic).has("force")
+  static func isForced(_ optionWords: ArraySlice<String>, topic: String) throws -> Bool {
+    try CommandOptions(optionWords, valued: [], flags: ["force"], topic: topic).has("force")
   }
 
   /// A tab's or pane's id, as `tabs list` prints them.
