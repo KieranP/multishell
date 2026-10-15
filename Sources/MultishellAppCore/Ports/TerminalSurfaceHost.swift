@@ -19,6 +19,9 @@ public protocol TerminalSurfaceHost<Surface>: TerminalHost {
   /// kept. `nil` for a session not open.
   func text(of id: TerminalSession.ID, includingScrollback: Bool) -> String?
 
+  /// The selected text, trailing spaces kept; `nil` with none, or for a session not open.
+  func selectionText(of id: TerminalSession.ID) -> String?
+
   /// Where the session's view sits in its window, in points from the top left;
   /// `nil` for one not on screen.
   func frame(of id: TerminalSession.ID) -> CGRect?

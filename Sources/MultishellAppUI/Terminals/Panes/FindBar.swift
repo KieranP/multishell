@@ -37,24 +37,33 @@ struct FindBar: View {
   }
 
   /// The text sits in a well one step back from the panel, the way a
-  /// terminal's own colour sits behind its chrome.
+  /// terminal's own colour sits behind its chrome, with the count at its end.
   private func well(_ metrics: UIMetrics) -> some View {
-    TextField(t("find.prompt"), text: model.findTextBinding(of: sessionID))
-      .textFieldStyle(.plain)
-      .font(.system(size: metrics.bodySize))
-      .foregroundStyle(theme.textPrimary)
-      .focused($isFieldFocused)
-      .onChange(of: isFieldFocused) { model.noteFindField(focused: $1, of: sessionID) }
-      .onSubmit(submit)
-      .onExitCommand { model.closeFind(in: sessionID) }
-      .padding(.horizontal, 10)
-      .frame(height: metrics.findControlSize)
-      .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3))
-      .overlay(
-        RoundedRectangle(cornerRadius: Self.cornerRadius - 3).strokeBorder(
-          theme.findWellBorderColor
-        )
+    HStack(spacing: 6) {
+      TextField(t("find.prompt"), text: model.findTextBinding(of: sessionID))
+        .textFieldStyle(.plain)
+        .font(.system(size: metrics.bodySize))
+        .foregroundStyle(theme.textPrimary)
+        .focused($isFieldFocused)
+        .onChange(of: isFieldFocused) { model.noteFindField(focused: $1, of: sessionID) }
+        .onSubmit(submit)
+        .onExitCommand { model.closeFind(in: sessionID) }
+      if let count = model.findMatchCount(of: sessionID) {
+        Text(count.text)
+          .font(.system(size: metrics.secondary).monospacedDigit())
+          .foregroundStyle(theme.textSecondary)
+          .fixedSize()
+          .accessibilityLabel(count.spokenText)
+      }
+    }
+    .padding(.horizontal, 10)
+    .frame(height: metrics.findControlSize)
+    .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3))
+    .overlay(
+      RoundedRectangle(cornerRadius: Self.cornerRadius - 3).strokeBorder(
+        theme.findWellBorderColor
       )
+    )
   }
 
   private func claimField() {

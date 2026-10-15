@@ -394,8 +394,20 @@ at the bottom.
 - **Escape is released too**: the engine binds it to end the search as a
   performable key, so while a search ran it ate Escape in the pane. Released, it
   is a plain key again and only the bar ends a search.
+- **Cmd+F over a selection in the pane finds its text**, read off the pane as
+  the keystroke lands and set as if typed. A Cmd+F from the field keeps what was
+  typed there.
+- **A selection is taken once.** It stays drawn after the bar opens, so a Cmd+F
+  after typing over it, or after closing the bar, took it back and lost the
+  typed text (`aSelectionAlreadyTakenLeavesWhatWasTypedAfterIt`). A Cmd+F with
+  nothing selected forgets it. Cost: the same text selected again with no Cmd+F
+  between is not taken.
+- **Only a selection on one line with something in it is taken**: the engine
+  matches within a line, and Cmd+A then Cmd+F put the whole scrollback in the
+  field. Its trailing spaces are dropped, as the copy key drops them, libghostty
+  reading a selection with them kept.
 - **The engine's search-for-selection is left bound and does nothing here**, its
-  whole effect being an action the app does not answer yet (TODO.md).
+  whole effect being an action the app does not answer. Cmd+F covers it.
 - **The engine's match counts are kept per pane while its bar is up.** Its
   search total and selected index arrive as actions of their own, a turn after
   the search. A step drops the selected index until the engine names the new
@@ -431,7 +443,28 @@ at the bottom.
 - **An empty find text ends the engine's search outright**, so an emptied field
   sends a search with nothing after it and the bar's close sends the end action,
   which also tells the engine's own bar.
-- **The bar shows no "3 of 12" yet** (appearance.md, TODO.md).
+- **The bar numbers matches down the scrollback, as Chrome does down a page.**
+  The engine numbers them from the prompt up, so the first step shows the last
+  match, `34/34`, and Next wraps to `1/34`
+  (`theCountNumbersMatchesDownTheScrollbackAsNextWalksTowardsThePrompt`).
+- **The bar shows the match a step left until the engine names the next**, a
+  turn later, or its count blinked to `-/34` on every Return. `panes find` still
+  sees the selection dropped, so it waits for the new one
+  (`aStepKeepsShowingTheMatchItLeftUntilTheEngineNamesTheNext`).
+- **Counts wait for the end the engine posts for each replaced search**, or the
+  bar said `0/0` on every keystroke, and a count still in flight for a find text
+  typed past showed as the new one's. A search is replaced only where the engine
+  held one: a bar up on a non-empty find text differing in more than ASCII case
+  (`countsForFindTextsTypedPastAreDroppedUntilTheLastSearchStarts`). Cost: a
+  find text typed past with no matches ends the wait one 0 early.
+- **The end is a 0, or no total where the find text was emptied**: that stops
+  the engine's search thread rather than changing its text, and the thread posts
+  no total as it quits. Waiting for a 0 there dropped every later count
+  (`emptyingTheFieldShowsNoCountAndTheNextFindTextCountsAfresh`).
+- **A selected match past the total shows as none selected.** A switch to the
+  alternate screen posts that screen's total but no cleared match, and the bar
+  read `-17/3` (`aSelectedMatchPastANewTotalIsShownAsNoneSelected`). Cost: a
+  stale match inside the new total still shows until the next step.
 - **Sessions warm up when visited**, a saved workspace implying dozens of shells
   at launch. Selecting a worktree opens a terminal unless told not to; a create
   is asked about separately. Cost: four settings where there were two.

@@ -31,11 +31,6 @@ Most pressing first within each heading. A decision that gets made moves to
   mouse-only and the terminal takes every keystroke. The sidebar filter, hidden
   behind the header's glass, is mouse-only too. Each new binding is an
   `AppShortcut` in `AppShortcutCatalogue.all`.
-- Use Selection for Find: Cmd+F with text highlighted puts that text in the
-  search field, read with `ghostty_surface_read_selection`. The engine's own
-  binding for it stays bound and does nothing here until then.
-- The find bar's match count, "3 of 12": show the search total and selected
-  match, which `GhosttySurfaceEvent` already decodes, beside the field.
 
 ## Packaging
 

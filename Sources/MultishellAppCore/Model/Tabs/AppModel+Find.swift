@@ -37,14 +37,30 @@ extension AppModel {
     paneTakesKeystrokes ? menuFindPane : nil
   }
 
-  /// Cmd+F: a bar on the focused pane of the tab in front, or the field's own
-  /// bar asked for again. Find text typed there before is searched again.
+  /// Cmd+F: a bar on the focused pane of the tab in front, or the field's own bar
+  /// asked for again, finding the pane's selection or else the last find text.
   public func showFind() {
     guard let id = keystrokeFindPane else { return }
-    if findBarSessionIDs.insert(id).inserted, !findText(of: id).isEmpty {
+    let wasUp = !findBarSessionIDs.insert(id).inserted
+    if let selection = takeSelection(in: id), selection != findText(of: id) {
+      replaceFindText(with: selection, in: id, barWasUp: wasUp)
+    } else if !wasUp, !findText(of: id).isEmpty {
       search(findText(of: id), in: id)
     }
     findFieldRequests.insert(id)
+  }
+
+  /// The pane's selection the first time a Cmd+F finds it there, outliving the
+  /// find text typed over it; never from the field. terminals.md.
+  private func takeSelection(in id: TerminalSession.ID) -> String? {
+    guard findFieldSessionID != id else { return nil }
+    guard let text = host.selectionText(of: id)?.withoutTrailingWhitespace else {
+      takenFindSelections[id] = nil
+      return nil
+    }
+    guard text.isFindableOnOneLine, text != takenFindSelections[id] else { return nil }
+    takenFindSelections[id] = text
+    return text
   }
 
   /// The bar's, once it is on screen: `true` once per Cmd+F, and the field
@@ -79,26 +95,52 @@ extension AppModel {
   /// The command line's: the pane's bar up on `text`, as typing it there.
   func openFind(on text: String, in id: TerminalSession.ID) {
     let wasUp = !findBarSessionIDs.insert(id).inserted
+    replaceFindText(with: text, in: id, barWasUp: wasUp)
+  }
+
+  /// A bar not up before has no search in the engine for `text` to replace.
+  private func replaceFindText(with text: String, in id: TerminalSession.ID, barWasUp: Bool) {
     let searched = findText(of: id)
     findTexts[id] = text
-    search(text, in: id, replacing: wasUp ? searched : nil)
+    search(text, in: id, replacing: barWasUp ? searched : nil)
+  }
+
+  /// `nil` until the engine has counted.
+  public func findMatchCount(of id: TerminalSession.ID) -> FindMatchCount? {
+    searchCounts[id]?.matchCount
   }
 
   /// The engine's count, kept only while the pane has a bar up.
   func noteSearchCount(_ count: TerminalSearchCount, in id: TerminalSession.ID) {
     guard findBarSessionIDs.contains(id) else { return }
     switch count {
-    case .total(let total): searchCounts[id, default: .init()].total = total
-    case .selected(let selected): searchCounts[id, default: .init()].selected = selected
+    case .total(let total): updateSearchCount(of: id) { $0.noteTotal(total) }
+    case .selected(let selected): updateSearchCount(of: id) { $0.noteSelected(selected) }
     }
   }
 
+  /// Written only where it changed: every bar up reads the counts.
+  private func updateSearchCount(
+    of id: TerminalSession.ID,
+    _ change: (inout PaneSearchCount) -> Void,
+  ) {
+    var count = searchCounts[id] ?? .init()
+    change(&count)
+    setIfChanged(\.searchCounts[id], count)
+  }
+
   /// `searched` is the text the engine holds, `nil` for none: one equal but for
-  /// ASCII case it skips, so its count and selection stand.
+  /// ASCII case it skips, so its count and selected match stand.
   private func search(_ text: String, in id: TerminalSession.ID, replacing searched: String? = nil)
   {
     if searched.map({ !$0.isSameSearchText(as: text) }) ?? true {
-      searchCounts[id] = nil
+      setIfChanged(
+        \.searchCounts[id],
+        PaneSearchCount.forNewSearch(
+          after: searchCounts[id],
+          endingOne: searched?.isEmpty == false,
+        ),
+      )
       steppedFindSessionIDs.remove(id)
     }
     host.search(.find(text), in: id)
@@ -131,8 +173,10 @@ extension AppModel {
   private func step(_ direction: TerminalSearch, in id: TerminalSession.ID) {
     guard findBarSessionIDs.contains(id), !findText(of: id).isEmpty else { return }
     // The engine says the match it lands on a turn later, and nothing for a
-    // step back onto the only match, whose selection stands; terminals.md.
-    if searchCounts[id]?.total != 1 { searchCounts[id]?.selected = nil }
+    // step back onto the only match, which stays selected; terminals.md.
+    if let count = searchCounts[id], count.total != 1 {
+      updateSearchCount(of: id) { $0.noteStep() }
+    }
     host.search(steppedFindSessionIDs.insert(id).inserted ? .nearest : direction, in: id)
   }
 
@@ -149,7 +193,7 @@ extension AppModel {
   func endFind(in id: TerminalSession.ID) -> Bool {
     guard findBarSessionIDs.remove(id) != nil else { return false }
     steppedFindSessionIDs.remove(id)
-    searchCounts[id] = nil
+    setIfChanged(\.searchCounts[id], nil)
     // The torn-down field may never say it lost the keyboard.
     if findFieldSessionID == id { findFieldSessionID = nil }
     host.search(.end, in: id)
@@ -164,7 +208,11 @@ extension AppModel {
     setIfChanged(\.findTexts, findTexts.filter { existingSessionIDs.contains($0.key) })
     setIfChanged(\.findFieldRequests, findFieldRequests.filter(existingSessionIDs.contains))
     steppedFindSessionIDs = steppedFindSessionIDs.filter(existingSessionIDs.contains)
-    searchCounts = searchCounts.filter { existingSessionIDs.contains($0.key) }
+    setIfChanged(\.searchCounts, searchCounts.filter { existingSessionIDs.contains($0.key) })
+    setIfChanged(
+      \.takenFindSelections,
+      takenFindSelections.filter { existingSessionIDs.contains($0.key) },
+    )
     if let field = findFieldSessionID, !existingSessionIDs.contains(field) {
       findFieldSessionID = nil
     }

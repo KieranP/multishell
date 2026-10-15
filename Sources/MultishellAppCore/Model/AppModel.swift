@@ -78,8 +78,10 @@ public final class AppModel<Surface> {
   /// The pane whose bar's field has the keyboard, which the menu's find items
   /// act on ahead of the focused pane, a field taking no store focus.
   var findFieldSessionID: TerminalSession.ID?
+  /// The selection each pane's Cmd+F last took as its find text; see `showFind`.
+  var takenFindSelections: [TerminalSession.ID: String] = [:]
   /// What the engine's search last counted in each pane with a bar up.
-  @ObservationIgnored var searchCounts: [TerminalSession.ID: PaneSearchCount] = [:]
+  var searchCounts: [TerminalSession.ID: PaneSearchCount] = [:]
 
   /// What a tab drag is doing. Here, not in the group tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.

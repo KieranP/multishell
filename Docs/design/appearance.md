@@ -50,9 +50,10 @@
   hairline's to give.
 - **Not a strip across the pane.** A strip takes a row from every pane it is up
   in; a bar floating over the corner costs the terminal nothing.
-- **No match count beside the field yet**, which Ghostty has. The app keeps the
-  engine's counts for `panes find` (terminals.md) but the bar does not show them
-  (TODO.md); an empty slot would read as broken meanwhile.
+- **The match count sits at the end of the well, as Chrome's "1/34"**, grey and
+  in fixed-width digits so it does not jitter as it counts. Nothing shows until
+  the engine has counted, `-/34` before a step selects a match, and `0/0` for
+  none (`FindMatchCountTests`). VoiceOver hears "match 1 of 34".
 - **The theme sets the engine's search colours**, or it paints matches in its
   own defaults: matches in the theme's yellow, the selected one in the ring's
   colour, both with whichever of background and foreground is darker as their

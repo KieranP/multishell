@@ -16,11 +16,25 @@ extension GhosttySurfaceView {
       ),
       rectangle: false,
     )
-    var text = ghostty_text_s()
     // A blank screen dumps nothing, which reads as a failure.
-    guard ghostty_surface_read_text(surface, selection, &text) else { return "" }
+    return readText(from: surface) { ghostty_surface_read_text(surface, selection, &$0) } ?? ""
+  }
+
+  /// `nil` with nothing selected, or once freed.
+  func selectionText() -> String? {
+    guard let surface else { return nil }
+    return readText(from: surface) { ghostty_surface_read_selection(surface, &$0) }
+  }
+
+  /// `nil` where libghostty read nothing.
+  private func readText(
+    from surface: ghostty_surface_t,
+    _ fill: (inout ghostty_text_s) -> Bool,
+  ) -> String? {
+    var text = ghostty_text_s()
+    guard fill(&text) else { return nil }
     defer { ghostty_surface_free_text(surface, &text) }
-    guard let bytes = text.text else { return "" }
+    guard let bytes = text.text else { return nil }
     return String(
       decoding: UnsafeRawBufferPointer(start: bytes, count: Int(text.text_len)),
       as: UTF8.self,

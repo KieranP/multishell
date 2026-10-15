@@ -27,6 +27,7 @@ final class FakeEngine: TerminalSurfaceHost {
   var terminalMemories: [TerminalSession.ID: UInt64] = [:]
   /// What each pane reads as, its screen and its scrollback.
   var screens: [TerminalSession.ID: (screen: String, scrollback: String)] = [:]
+  var selectionTexts: [TerminalSession.ID: String] = [:]
   var screenshots: [TerminalSession.ID: Data] = [:]
   var frames: [TerminalSession.ID: CGRect] = [:]
 
@@ -67,6 +68,9 @@ final class FakeEngine: TerminalSurfaceHost {
     guard liveSessionIDs.contains(id) else { return nil }
     let text = screens[id] ?? ("", "")
     return includingScrollback ? text.scrollback + text.screen : text.screen
+  }
+  func selectionText(of id: TerminalSession.ID) -> String? {
+    liveSessionIDs.contains(id) ? selectionTexts[id] : nil
   }
   func screenshot(of id: TerminalSession.ID) -> Data? { screenshots[id] }
   func frame(of id: TerminalSession.ID) -> CGRect? { frames[id] }

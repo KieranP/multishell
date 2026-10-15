@@ -150,6 +150,8 @@
 "error.worktree-missing-title" = "Worktree directory is missing";
 "error.worktree-unanswered-message" = "%@ did not answer within a second. Its volume may be disconnected or still waking; try again once it is back.";
 "error.worktree-unanswered-title" = "Worktree directory is not answering";
+"find.count" = "%1$d/%2$d";
+"find.count-unselected" = "-/%d";
 "hook-variable.branch" = "Its branch";
 "hook-variable.project-name" = "Repository folder name";
 "hook-variable.project-path" = "Repository root";
@@ -269,6 +271,7 @@
 "spoken.elapsed" = "for %@";
 "spoken.expanded" = "expanded";
 "spoken.fetching" = "fetching";
+"spoken.find-match" = "match %1$d of %2$d";
 "spoken.focused" = "focused";
 "spoken.lane-count" = "%1$d %2$@";
 "spoken.locked" = "locked";

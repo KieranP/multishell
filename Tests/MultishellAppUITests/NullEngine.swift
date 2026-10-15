@@ -17,6 +17,7 @@ final class NullEngine: TerminalSurfaceHost {
   func processHint(of id: TerminalSession.ID) -> TerminalProcessHint? { nil }
   func terminalMemory(of id: TerminalSession.ID) -> UInt64? { nil }
   func text(of id: TerminalSession.ID, includingScrollback: Bool) -> String? { nil }
+  func selectionText(of id: TerminalSession.ID) -> String? { nil }
   func screenshot(of id: TerminalSession.ID) -> Data? { nil }
   func frame(of id: TerminalSession.ID) -> CGRect? { nil }
   func apply(_ theme: Theme, appearance: Appearance) {}

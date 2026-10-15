@@ -121,6 +121,10 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     views[id]?.text(includingScrollback: includingScrollback)
   }
 
+  func selectionText(of id: TerminalSession.ID) -> String? {
+    views[id]?.selectionText()
+  }
+
   /// From the content view's top left, as `window size` measures the window.
   func frame(of id: TerminalSession.ID) -> CGRect? {
     guard let view = views[id], let content = view.window?.contentView else { return nil }

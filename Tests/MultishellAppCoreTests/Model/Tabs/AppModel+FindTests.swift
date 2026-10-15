@@ -454,6 +454,273 @@ struct AppModelFindTests {
     #expect(harness.model.searchCounts[pane]?.selected == 0)
   }
 
+  @Test func cmdFOverASelectionInThePaneSearchesForItsText() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let pane = focusedPane(of: harness.main, in: harness)
+    harness.engine.selectionTexts[pane] = "make test"
+
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "make test")
+    #expect(harness.engine.searched.map(\.step) == [.find("make test")])
+    #expect(harness.model.takeFindFieldRequest(pane))
+  }
+
+  @Test func cmdFOverASelectionReplacesTheFindTextOfABarAlreadyUp() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    engineReports(.total(3), in: pane, harness)
+    harness.engine.selectionTexts[pane] = "grep"
+
+    harness.model.showFind()
+    harness.model.findNext()
+
+    #expect(harness.model.findText(of: pane) == "grep")
+    #expect(harness.model.findMatchCount(of: pane) == nil, "a new find text drops the old count")
+    #expect(harness.engine.searched.suffix(2).map(\.step) == [.find("grep"), .nearest])
+  }
+
+  @Test func reopeningOverASelectionOfTheKeptFindTextSearchesItAgain() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    harness.model.closeFind(in: pane)
+    harness.engine.selectionTexts[pane] = "make"
+
+    harness.model.showFind()
+
+    #expect(harness.engine.searched.last?.step == .find("make"))
+  }
+
+  @Test func cmdFInTheFieldKeepsWhatWasTypedThereOverThePanesSelection() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    harness.model.noteFindField(focused: true, of: pane)
+    harness.engine.selectionTexts[pane] = "grep"
+
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "make")
+    #expect(harness.engine.searched.map(\.step) == [.find("make")])
+  }
+
+  @Test func aSelectionAlreadyTakenLeavesWhatWasTypedAfterIt() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let pane = focusedPane(of: harness.main, in: harness)
+    harness.engine.selectionTexts[pane] = "error"
+    harness.model.showFind()
+    harness.model.setFindText("warning", of: pane)
+    harness.model.closeFind(in: pane)
+
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "warning")
+    #expect(harness.engine.searched.last?.step == .find("warning"))
+  }
+
+  @Test func aSelectionMatchingTheFindTextIsTakenSoItCannotLaterReplaceWhatWasTyped() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    harness.engine.selectionTexts[pane] = "make"
+    harness.model.showFind()
+    harness.model.setFindText("warning", of: pane)
+    harness.model.closeFind(in: pane)
+
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "warning")
+  }
+
+  @Test func aSelectionClearedBeforeACmdFCanBeTakenAgain() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let pane = focusedPane(of: harness.main, in: harness)
+    harness.engine.selectionTexts[pane] = "error"
+    harness.model.showFind()
+    harness.model.setFindText("warning", of: pane)
+    harness.model.closeFind(in: pane)
+    harness.engine.selectionTexts[pane] = nil
+    harness.model.showFind()
+    harness.model.closeFind(in: pane)
+
+    harness.engine.selectionTexts[pane] = "error"
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "error")
+  }
+
+  @Test func aSelectionDraggedPastItsLastLetterIsFoundWithoutTheTrailingSpaces() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let pane = focusedPane(of: harness.main, in: harness)
+    harness.engine.selectionTexts[pane] = "main   "
+
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "main")
+  }
+
+  @Test(arguments: ["make\ntest", "   "])
+  func aSelectionOverSeveralLinesOrOfOnlySpacesIsNotTaken(selection: String) {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    harness.model.closeFind(in: pane)
+    harness.engine.selectionTexts[pane] = selection
+
+    harness.model.showFind()
+
+    #expect(harness.model.findText(of: pane) == "make")
+  }
+
+  @Test func theCountNumbersMatchesDownTheScrollbackAsNextWalksTowardsThePrompt() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    #expect(harness.model.findMatchCount(of: pane) == nil)
+
+    engineReports(.total(5), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 5))
+
+    harness.model.findNext(in: pane)
+    engineReports(.selected(0), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane)?.position == 5, "nearest the prompt is last")
+
+    harness.model.findNext(in: pane)
+    engineReports(.selected(4), in: pane, harness)
+    #expect(
+      harness.model.findMatchCount(of: pane)?.position == 1,
+      "past the prompt wraps to the top",
+    )
+
+    harness.model.findNext(in: pane)
+    engineReports(.selected(3), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane)?.position == 2)
+  }
+
+  @Test func aStepKeepsShowingTheMatchItLeftUntilTheEngineNamesTheNext() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("x", of: pane)
+    engineReports(.total(5), in: pane, harness)
+    harness.model.findNext(in: pane)
+    engineReports(.selected(0), in: pane, harness)
+
+    harness.model.findNext(in: pane)
+    #expect(harness.model.findMatchCount(of: pane)?.position == 5)
+
+    engineReports(.selected(4), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane)?.position == 1)
+  }
+
+  /// The engine posts a total of 0 for the search a new find text replaces,
+  /// then counts afresh from nothing.
+  @Test func theEngineEndingTheReplacedSearchIsNotCountedAsNoMatches() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    engineReports(.total(3), in: pane, harness)
+
+    harness.model.setFindText("zzz", of: pane)
+    engineReports(.total(0), in: pane, harness)
+    engineReports(.selected(nil), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == nil)
+
+    engineReports(.total(0), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 0))
+  }
+
+  /// A closed bar's search thread is gone, so a fresh one ends nothing.
+  @Test func reopeningOverANewSelectionCountsItsFirstTotalEvenWhenNone() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    harness.model.closeFind(in: pane)
+    harness.engine.selectionTexts[pane] = "zzz"
+
+    harness.model.showFind()
+    engineReports(.total(0), in: pane, harness)
+
+    #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 0))
+  }
+
+  /// Typing ahead of the engine queues the counts of each find text passed
+  /// through, and a 0 ending each, before the counts of the last.
+  @Test func countsForFindTextsTypedPastAreDroppedUntilTheLastSearchStarts() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("m", of: pane)
+    harness.model.setFindText("ma", of: pane)
+    harness.model.setFindText("mak", of: pane)
+
+    engineReports(.total(5), in: pane, harness)
+    engineReports(.total(0), in: pane, harness)
+    engineReports(.total(2), in: pane, harness)
+    engineReports(.total(0), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == nil)
+
+    engineReports(.total(1), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 1))
+  }
+
+  /// An empty find text stops the engine's search thread, which posts no total
+  /// as it quits; the next find text starts a thread of its own.
+  @Test func emptyingTheFieldShowsNoCountAndTheNextFindTextCountsAfresh() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    engineReports(.total(3), in: pane, harness)
+
+    harness.model.setFindText("", of: pane)
+    engineReports(.total(nil), in: pane, harness)
+    engineReports(.selected(nil), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == nil)
+
+    harness.model.setFindText("grep", of: pane)
+    engineReports(.total(5), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 5))
+  }
+
+  /// Switching to the alternate screen posts that screen's total, but no
+  /// selected match where the engine's notice of it was already none.
+  @Test func aSelectedMatchPastANewTotalIsShownAsNoneSelected() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("make", of: pane)
+    engineReports(.total(34), in: pane, harness)
+    harness.model.findNext(in: pane)
+    engineReports(.selected(20), in: pane, harness)
+    #expect(harness.model.findMatchCount(of: pane)?.position == 14)
+
+    engineReports(.total(3), in: pane, harness)
+
+    #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 3))
+  }
+
+  @Test func aClosedBarCountsNothing() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    harness.model.setFindText("x", of: pane)
+    engineReports(.total(5), in: pane, harness)
+
+    harness.model.closeFind(in: pane)
+
+    #expect(harness.model.findMatchCount(of: pane) == nil)
+  }
+
+  private func engineReports(
+    _ count: TerminalSearchCount,
+    in pane: TerminalSession.ID,
+    _ harness: Harness,
+  ) {
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: count, in: pane)
+  }
+
   private func paneWithFindOpen(_ harness: Harness) -> TerminalSession.ID {
     if harness.model.workspace.selectedWorktreeID == nil { harness.model.select(harness.main) }
     harness.model.showFind()
