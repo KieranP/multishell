@@ -8,43 +8,41 @@ command line's requests on the same socket. Newest at the bottom.
   quoting, a stable protocol and one place for each agent's mapping.
 - **Fields are only ever added.** A report naming an unknown session is dropped,
   not matched by directory.
-- **Every string off the channel is bounded**, any process of the user's being
-  able to write a line. An id, an agent or a command word past 128 characters is
-  dropped rather than cut, a cut one naming something else, and a worker's id
-  past it counts as an unnamed worker; a path past 1024 bytes is dropped; a
-  worker's kind and name are cut to 64, its description to 200 and the message
-  to 500, all being display only; a Stop names at most 64 shells. A duration
-  outside zero to a week is dropped, being a writer's number rather than a
-  clock's.
+- **Every string off the channel is bounded**, since any process of the user's
+  can write a line. An id, agent or command word past 128 characters is dropped,
+  not cut, as a cut one could name something else; a worker's id past it counts
+  as an unnamed worker. A path past 1024 bytes is dropped. A worker's kind and
+  name are cut to 64, its description to 200 and the message to 500, all display
+  only. A Stop names at most 64 shells. A duration outside zero to a week is
+  dropped, being a writer's number, not a clock's.
 - **One naming only a directory marks the deepest worktree containing it**, so
-  an agent started in a subfolder says that folder, and a worktree nested in
-  another is the one meant.
-- **Each worktree's resolved path is kept, missing or not**: walked per report,
-  a mount answering only after its timeout stalled the window each time.
-  Foundation leaves a missing path's links unresolved, so one kept then is made
-  again once a status read, the directory check or the next report's look off
-  the main actor sees the directory.
+  an agent started in a subfolder says that folder, and a nested worktree is the
+  one meant.
+- **Each worktree's resolved path is kept, missing or not**: resolved per
+  report, a mount answering only after its timeout stalled the window each time.
+  Foundation leaves a missing path's links unresolved, so one kept then is
+  resolved again once a status read, the directory check or the next report's
+  look off the main actor sees the directory.
 - **The pid a report names is what the app polls** to clear a Working the agent
   never took back.
 - **The app hands each session its own pid**, or the helper's walk past the
-  shells reaches the app itself, whose pid never goes while it looks. A report
-  naming it anyway, from an older helper, is taken as naming none.
-- **A report carries only what the app cannot see itself**: state, pid, message,
-  a duration so a fast command posts no banner, and the agent, a pane's agent
-  usually being started by hand.
+  shells reaches the app itself, whose pid never goes. A report naming the app's
+  pid, from an older helper, is taken as naming none.
+- **A report carries only what the app cannot see**: state, pid, message, a
+  duration so a fast command posts no banner, and the agent, since a pane's
+  agent is usually started by hand.
 - **A report moves a dot, raises a notification and decides how a dropped file
-  is written.** It opens no tab, runs no command and puts no text at a prompt; a
-  request from the command line may do all three (below).
+  is written.** It opens no tab, runs no command and types nothing at a prompt;
+  a command-line request may do all three (below).
 - **Shell reports never go in the background**, or a fast command's finished
-  overtakes its started: zsh sends each inline, bash down one pipe to its relay,
-  fish through a helper launched for each (terminals.md).
+  overtakes its started (terminals.md).
 - **Four agents share one hook line and one parser**, each running a command at
   every lifecycle event with the same three fields. What differs is the file,
-  what each calls an event and how that file spells a hook.
+  the event names and how the file spells a hook.
 - **The app knows no agent by name anywhere else.**
 - **Only the last month of each agent's releases is supported.** A feature every
-  release of that month has is relied on outright, with no branch for older
-  ones; this is the agents' releases, not the helper's own protocol.
+  release of that month has is relied on with no branch for older ones. This
+  limits the agents' releases, not the helper's own protocol.
 - **Each is asked in its own spelling**: one has a permission request where
   another has a notification, one has both and is asked for both, and one is
   asked in the spelling whose payload names its event.
@@ -60,24 +58,23 @@ command line's requests on the same socket. Newest at the bottom.
   those who press Update.
 - **A settings file of the user's holding any hook of ours counts as
   installed**, so one an older build wrote, short an event added since, reads as
-  needing Update rather than as not installed.
-- **The first builds' `claude-hook` line is still known as ours**, and the
-  helper exits 0 on it and reports nothing until Update replaces it. An unknown
-  command exits 2, which Claude takes as blocking a tool, a prompt or a stop,
-  and only a line known as ours is one Remove and Update take out
+  needing Update rather than not installed.
+- **The first builds' `claude-hook` line is still known as ours**: the helper
+  exits 0 on it and reports nothing until Update replaces it. An unknown command
+  exits 2, which Claude takes as blocking a tool, a prompt or a stop, and Remove
+  and Update take out only a line known as ours
   (`theLineTheFirstBuildsWroteIsStillOursToReplace`,
   `theFirstBuildsClaudeHookLineExitsZeroInSilenceAndReportsNothing`).
-- **A file of the user's is never rewritten unasked**, the write sorting its
-  keys and re-indenting it; the row offers Update instead, which takes ours out
-  and puts this build's in, a hook of theirs inside our group kept.
-- **One reports to no command at all**, only a plugin seeing a session go idle,
-  so it is given a plugin calling the helper as any script would.
-- **That one is also the only agent that says a permission was answered**,
-  allowed as well as denied, so it is the only pane whose Waiting clears on the
-  answer rather than at the next tool call.
+- **A file of the user's is never rewritten unasked**, since the write sorts its
+  keys and re-indents it. The row offers Update instead, which swaps ours for
+  this build's and keeps a hook of theirs inside our group.
+- **One reports to no command at all**, only to a plugin seeing a session go
+  idle, so it gets a plugin calling the helper as any script would.
+- **That one alone says a permission was answered**, allowed or denied, so its
+  pane alone clears Waiting on the answer rather than at the next tool call.
 - **Its permission-ask hook is deliberately not used**: uncalled since its
-  permissions rewrite, and the day it is called again it would report a prompt
-  the event bus already reported.
+  permissions rewrite, and if called again it would repeat a prompt the event
+  bus already reported.
 - **Cost of the plugin**: JavaScript in the user's agent, so it spawns, unrefs
   and swallows everything, and it is the one integration whose contract we do
   not control from a payload.
@@ -87,8 +84,8 @@ command line's requests on the same socket. Newest at the bottom.
   it needs an answer, so ours asks for the two types that are questions.
 - **One has no notification, only a permission request that fires before it
   decides whether anyone need answer**, so under a full-auto mode every tool
-  call would have posted a banner. It counts as waiting only in a mode that
-  stops for the user, and an unknown mode is taken to stop.
+  call would post a banner. It counts as waiting only in a mode that stops for
+  the user, and an unknown mode is taken to stop.
 - **Another's request is the same shape and narrowed the same way**, its
   classifier mode being one more that answers without the user.
 - **That agent's notification carries many types on one event**, most of which
@@ -100,10 +97,9 @@ command line's requests on the same socket. Newest at the bottom.
 - **The list is read from the agent's own**, plus two types it sends outside it.
   A type saying the task will not go on without the user, such as a usage limit
   reset waiting for Return, asks.
-- **Sorted from the payload's own type, not the matcher the event takes**: a
-  matcher is written into the settings file, so it would reach only installs
-  made after the build that adds it, and an agent old enough to send no type
-  would match none of them.
+- **Sorted from the payload's own type, not the event's matcher**: a matcher is
+  written into the settings file, so it would reach only installs made after the
+  build that adds it, and an agent old enough to send no type would match none.
 - **A main-loop stop is not the turn ending.** A subagent launched in the
   background outlives it and its tool calls keep reporting, so the pane went
   Done, Working, Done again, once per wave, each with a banner.
@@ -112,28 +108,27 @@ command line's requests on the same socket. Newest at the bottom.
   agent was owed.
 - **What is outstanding is a roster the app keeps**, a hook being a fresh
   process with nothing to remember. An agent that reports no workers never
-  enters that arm and keeps stop meaning Done outright.
-- **A worker left on the roster holds the pane Working in place of Done**, a
-  Stop saw it out surviving the next prompt too. Idle, Failed, the process
-  going, the shell's own command returning, the user's clear or a Stop's list
-  that leaves it out clears it.
+  enters that arm, and its stop means Done outright.
+- **What takes a worker off the roster**: Idle, Failed, the process going, the
+  shell's own command returning, the user's clear or a Stop's list that leaves
+  it out.
 - **A worker's start and end carry Working and are bookkeeping, not news**: they
   leave a Waiting or a Failed where it is, or a background worker ending while a
   prompt was up withdrew the banner with the prompt still on screen.
 - **Such a tick reports nothing back to the model.** It carries no message, so
-  letting it through would replace the prompt's words on the card and post the
-  banner again under the same key, which replaces the one already there.
+  letting it through would replace the prompt's words on the card and repost the
+  banner under the same key, replacing the one there.
 - **A tool call inside a worker is work, as the main thread's is.** The prompt a
-  worker's tool raised names the worker, and is cleared by that worker's next
-  call rather than held until the main thread moves.
+  worker's tool raised names the worker, and that worker's next call clears it,
+  not the main thread moving.
 - **One agent's request is asked for beside its notification, not instead**: the
   notification is slower and is dropped if the user answers first, so alone a
   quick prompt never moved the dot and a slow one moved it late.
-- **So a prompt reports twice and only the second is heard from**: the request
-  moves the dot with no banner, the notification raises it and carries the
-  wording, the request having no message.
-- **That delay is the agent's own rule for when a prompt is worth interrupting
-  someone for.** The general form is silent: move a dot where another report
+- **So a prompt reports twice**: the request moves the dot with no banner; the
+  notification raises the banner and carries the wording, the request having no
+  message.
+- **That delay is the agent's own rule for when a prompt is worth an
+  interruption.** The general rule: move a dot silently where another report
   about the same thing will do the talking.
 - **Nothing reports the answer**, so the dot stays until the next tool call or
   the end of the turn: an approved call taking minutes holds it that long.
@@ -147,11 +142,11 @@ command line's requests on the same socket. Newest at the bottom.
   question tool goes through the permission dialog, whose notification says
   "Claude needs your permission" and names no tool. The helper reads the
   transcript's last tool call and, where it is an unanswered `AskUserQuestion`,
-  marks the report a question, which the app words as needing input from its
-  catalogue, the helper having none; an older app shows the agent's own message.
+  marks the report a question. The app words that as needing input from its
+  catalogue, the helper having none; an older app shows the agent's message.
   Only Claude's transcript is read, though Copilot sends the same type.
 - **One error event is deliberately left**: it carries a recoverable flag, and a
-  red dot for something the agent recovers from is worse than no red dot.
+  red dot for something the agent recovers from is worse than none.
 - **The hook line runs the helper rather than exec'ing it, and exits zero
   whatever became of it.** Two agents block a tool call on a non-zero hook exit,
   so under exec a helper killed by Gatekeeper would stop the agent working.
@@ -159,11 +154,11 @@ command line's requests on the same socket. Newest at the bottom.
   shells either way.
 - **A settings file that is a symlink is written through, not over.** An atomic
   write would leave a regular file where a dotfiles repo's link was.
-- **The copy kept sits beside the link**, not in the repo it points into, which
-  would leave a file their next status has to explain.
+- **The copy kept sits beside the link**, not in the repo it points into, where
+  the user's next status would have to explain it.
 - **Nothing under an event is written over.** Absent means an empty list to add
-  ours to; a string, an object or a shape a later version takes is something of
-  the user's this cannot put back, so Add refuses and names the event.
+  ours to; a string, an object or a shape a later version takes is the user's
+  and could not be put back, so Add refuses and names the event.
 - **Remove takes back what Add put in and nothing else**, inside a group as well
   as between them: a group holding one of ours beside one of theirs was written
   by hand, so ours are stripped and the group stands. So too a group that is
@@ -175,33 +170,31 @@ command line's requests on the same socket. Newest at the bottom.
 - **Each literal is carried as a string behind a marker**, drawn once per
   process so a string of the user's cannot be taken for a number on the way out.
 - **Only a literal the grammar allows is marked**, the rest left for the parser
-  to refuse, and the bytes are decoded strictly first, a lossy decode having
-  written a replacement character over a byte of the user's.
+  to refuse. The bytes are decoded strictly first: a lossy decode wrote a
+  replacement character over a byte of the user's.
 - **A settings file that will not read back as plain JSON is refused**, not
   parsed loosely: one agent's takes comments and keeps them when it writes the
   file itself, and a re-serialisation here would take them out.
 - **Cost: those users add the entries by hand**, so the alert names the file and
   points at the JSON.
-- **One agent will run no hook it has not been told to trust**, so installing is
-  not the end of it and the row says so; nothing here can trust a hook for the
-  user.
+- **One agent will run no hook it has not been told to trust**, so the row says
+  installing is not the end of it; nothing here can trust a hook for the user.
 - **No agent is recommended** or has anything of its own outside the catalogue.
   An install prompt for one agent was an endorsement in a workspace built to run
   whichever agent the user already chose.
 - **Cost: a machine with none installed gets an empty picker and no help filling
   it.**
-- **An agent dropped from the catalogue is forgotten on load**: its tab comes
-  back a plain shell and a preference naming it is cleared. Kept, the id raised
-  an install alert at every run.
-- **The Agents board is a roster, not a queue.** Every open pane has a card
-  while it is open, moving between columns as its state moves, so nothing is
-  hidden by having been looked at.
+- **An agent dropped from the catalogue is forgotten on load**
+  (state-and-store.md).
+- **The Agents board is a roster, not a queue.** Every open pane has a card,
+  moving between columns as its state moves, so nothing is hidden by having been
+  looked at.
 - **A card goes when its pane closes**, and in one other case: an agent whose
   process has gone leaves a plain shell behind, which the filter hides.
 - **Failed waits with Waiting, not in Done**: a failure wants the user, which is
-  what that column means, and it leaves Done meaning one thing.
+  what that column means, and Done keeps one meaning.
 - **They part on a dead process**: a question was a claim about that process and
-  goes with it, a failure outlived the thing that failed and stays.
+  goes with it; a failure outlives the thing that failed and stays.
 - **The filter is the one control and decides membership alone.** A shell it
   lets in lands where its state says, the injected integration already reporting
   a command started and finished, so a build is Working and a failed test suite
@@ -211,14 +204,14 @@ command line's requests on the same socket. Newest at the bottom.
 - **The filter lives on the model, not the view**, because the Dock badge counts
   what the Waiting column shows and must read the same flag. Cost: off again
   after a relaunch.
-- **While the board is up, nothing acting on "the tab in front" acts at all**:
-  closing would end a shell nobody can see, opening would make a tab appearing
-  only once the board is left. One predicate answers for all of them.
+- **While the board is up, nothing acting on "the tab in front" acts**: closing
+  would end a shell nobody can see, opening would make a tab that appears only
+  once the board is left. One predicate answers for all of them.
 - **Showing the board also means no pane is shown**, or the selected worktree's
-  Done states clear as it opens and their cards reach Idle having never passed
+  Done states would clear as it opens and their cards reach Idle without passing
   through Done.
 - **An agent's pid is polled only while the board is up**, one sweep as it
-  opens: nowhere else shows a quit agent, and watching always would leave a
+  opens: nowhere else shows a quit agent, and always watching would leave a
   timer running for as long as any agent had ever reported.
 - **The shell's word that its foreground command returned drops the agent at
   that prompt too**, the agent having been that command, since the Dock badge is
@@ -230,10 +223,11 @@ command line's requests on the same socket. Newest at the bottom.
   being installed: one agent's being in place says nothing about the agent at
   the prompt.
 - **The board is built once and held until anything the build read changes**: it
-  reads nine pieces of state, so a title change in one pane rebuilt every card
-  on every render. The build runs under observation tracking rather than a
-  hand-kept list of inputs, which would drift from the sidebar the first time
-  someone added one. Cost: any store write drops it, a focus change included.
+  reads every pane's title, state, note and workers and every worktree's status,
+  so a title change in one pane rebuilt every card on every render. The build
+  runs under observation tracking rather than a hand-kept list of inputs, which
+  would drift from the sidebar the first time someone added one. Cost: any store
+  write drops it, a focus change included.
 - **Newest first everywhere**, so an arriving card pushes the rest down a place
   and nothing else about a card moves on its own.
 - **Columns share the room down to a floor and the board scrolls past it**, a
@@ -244,8 +238,7 @@ command line's requests on the same socket. Newest at the bottom.
   `panes read`, but each read takes the engine's renderer lock on the main
   thread, a cost paid per card every time a line would refresh.
 - **Flags are stored per agent id**, not as one line for whichever agent is
-  chosen: flags are written for a particular CLI, so a line kept across a change
-  of agent is one the other will reject.
+  chosen: flags are written for a particular CLI, and another will reject them.
 - **Cost: switching agent and back is two lines to fill in**, and the settings
   row shows only the chosen agent's.
 - **The line is split into words here**, not passed to the shell as text, so a
@@ -256,43 +249,41 @@ command line's requests on the same socket. Newest at the bottom.
 - **A quote left open takes the rest of the line**, there being nobody to ask,
   and an opener carrying nothing passes no argument rather than an empty one.
 - **The placeholders are one list**, and only the custom command's row names
-  one, as an example rather than all of them: a reference page in a tooltip is
-  what the documentation is for.
-- **So unlike the hook variables the list is drawn nowhere**, and a new case has
-  to reach the docs by hand.
+  one, as an example: a reference page in a tooltip is what the documentation is
+  for.
+- **So unlike the hook variables the list is drawn nowhere**, and a new case
+  reaches the docs by hand.
 - **An unknown placeholder is left as typed**, so the mistake shows in the tab
   rather than an argument going missing.
-- **One pass over what was typed**, so a value holding a token of its own is
-  text: a branch named after another placeholder used to have its own name
-  expanded again.
+- **One pass over what was typed**, so a token inside a value is text: a branch
+  named after another placeholder used to be expanded again.
 - **The branch placeholder on a detached worktree is the short SHA, never
   blank**: an empty value reads as an error the agent reports, where a wrong
   name does not.
 - **Flags are appended on resume too.** A tab that comes back continuing a
   session is the same tab, and the flags said how that tab is meant to run.
-- **A flag line is not shell text.** Splitting it and quoting each word means a
-  branch name someone else pushed cannot run anything: substitutions, backticks
-  and semicolons all arrive as literal characters.
+- **A flag line is not shell text.** Each word is split and quoted, so a branch
+  name someone else pushed cannot run anything: substitutions, backticks and
+  semicolons all arrive as literal characters.
 - **Checked against real sh, zsh, bash and tcsh** with a substitution, backticks
   and a semicolon in the branch: each arrived as the one argument meant and none
-  ran. An earlier check by random values ran against zsh under the old quoting.
+  ran.
 - **The values are not only branches**, which git keeps tame, but a worktree
   name the user typed and paths that are whatever the directories are called.
 - **Each word is quoted the one way every shell reads alike**, a `!` and a
   backslash outside the quotes: the login shell running the line may be tcsh or
   fish, which read either inside single quotes (terminals.md).
-- **The same quoting is why a home shortcut or a glob in a flag line is
-  literal**, which is the cost: a path there means a placeholder or the custom
-  command, which is raw shell by definition.
+- **The same quoting makes a home shortcut or a glob in a flag line literal**,
+  which is the cost: a path there means a placeholder or the custom command,
+  which is raw shell by definition.
 - **The custom command and the custom editor are shell text**, so a value
   written into them is shell text too: quoted where it landed, a `$(…)` in a
   branch ran anyway inside the user's own quotes, which close or ignore ours.
 - **So each placeholder there reads a variable** (`MULTISHELL_BRANCH` and the
   rest, named as the hook variables are where one means the same), set by `env`
   around the login shell so no shell parses a value on the way.
-- **The read is quoted for where the placeholder sits**: the user's quote is
-  closed, the variable read double-quoted, the quote reopened. That one spelling
-  is one word in sh, zsh, bash, dash, tcsh and fish, each checked with hostile
+- **The read is quoted for where the placeholder sits**, in one spelling that is
+  one word in sh, zsh, bash, dash, tcsh and fish, each checked with hostile
   values.
 - **Finding the user's quotes needs the login shell's name**: fish alone reads
   `\'` and `\\` inside single quotes, so `'it\'s {{task}}'` is one quoted string
@@ -301,21 +292,19 @@ command line's requests on the same socket. Newest at the bottom.
   placeholder inside `$(…)` inside double quotes reads unquoted, and bash splits
   it, but nothing in a value is ever run.
 - **Neither flags field carries prompt text.** A greyed example in an empty
-  field reads as what the agent is already being started with, and the field's
-  whole job is to say what is being passed.
+  field reads as what the agent is already started with, and the field's whole
+  job is to say what is passed.
 - **The custom command's own prompt stays**: there a greyed example cannot be
-  mistaken for a command that is running, an empty field meaning no agent starts
-  at all.
+  mistaken for a running command, an empty field meaning no agent starts at all.
 - **The project override is a line, not a table**: it overrides whatever agent
-  the project runs. Blank is the override to no flags, its only spelling for
-  that, which makes it a field where empty is an opinion (settings.md).
+  the project runs. Blank is the override to no flags (settings.md).
 - **Flags are not in the repository's file**: a flag is an argument to a
   program, and that file is trusted for what is drawn, not for what runs.
 - **Subagents are a roster by id.** The counting events name the worker, and so
   does every hook that fires inside it, so a start or a first tool call puts one
   on and its end takes it off.
-- **The count is how many workers those places stand for**, which is more than
-  the places only where an agent names two workers alike.
+- **The count is how many workers those places stand for**, which exceeds the
+  places only where an agent names two workers alike.
 - **The roster holds 64 places, and one more shared by every worker past them**,
   which keeps their ids and counts, so the count stays true, a tool call is not
   a new worker and a stray end takes nothing. Dropping the oldest paid a Done
@@ -326,15 +315,15 @@ command line's requests on the same socket. Newest at the bottom.
 - **Not the tool it is in, though the payload says**: shown, it changed with
   every call and made the list flash; carried, it re-rendered the sidebar per
   call.
-- **No task description from a worker's own hooks**: none of their payloads
-  carries one, for any agent. Claude's comes from a file beside its transcript
-  or from the result of the call that launched it, both below.
+- **No task description from a worker's own hooks**: no agent's payloads carry
+  one. Claude's comes from a file beside its transcript or from the result of
+  the call that launched it, both below.
 - **The wire field is an object naming the worker.** The older count field is
   still read, each increment as an unnamed worker, because the hooks' helper
   link is shared between builds and points at whichever launched last.
-- **The same link makes the reverse meeting happen**, so a start and an end also
-  write the count beside the object; a tool call writes none, or each would put
-  another unnamed worker on an older app's roster.
+- **For the same reason a start and an end also write the count beside the
+  object**, for an older app; a tool call writes none, or each would put another
+  unnamed worker on that app's roster.
 - **An interrupt fires no hook, Codex's aside, and the workers it killed send no
   stop**, so an interrupted fan-out left its chip standing. Codex's `Interrupt`
   reports Idle, which clears the pane and its roster.
@@ -344,13 +333,13 @@ command line's requests on the same socket. Newest at the bottom.
   foreground worker always ending before its agent's Stop. Emptied at the
   prompt, a Copilot or Codex pane went Done while one still ran, their Stops
   listing nothing, and Copilot's woke for a second.
-- **A Stop vouches only for a worker heard from since the last one**, by a hook,
+- **A Stop vouches only for a worker heard from since the last one**, by a hook
   or by the Stop finding it running: a worker whose end was lost falls silent,
   and kept on every Stop's word it held a Codex or Copilot pane Working for
   good.
 - **It drops any other**, which an interrupt could have killed without a word.
-  Cost: the chip stands from the interrupt to the next prompt, however long that
-  is; the pid poll cannot help, the agent being alive at its prompt.
+  Cost: the chip stands from the interrupt to the next prompt, however long; the
+  pid poll cannot help, the agent being alive at its prompt.
 - **A kept worker that was killed goes by what the agent says next**: Claude's
   Stop lists it no longer, OpenCode's Done leaves it out, Codex's `Interrupt`
   clears everything. Cost: where nothing says so, as for a Copilot worker
@@ -365,11 +354,11 @@ command line's requests on the same socket. Newest at the bottom.
   the Done was announced lifts it and announces it again, the app having no way
   to tell a late worker from a new one.
 - **A Failed comes back unannounced and as old as it was**, having been
-  announced when it happened, and only a worker's prompt displaces it, mere work
-  leaving it standing.
+  announced when it happened. Only a worker's prompt displaces it; mere work
+  leaves it standing.
 - **The agent's own Working takes the dot back for itself**, so the last worker
-  out leaves it, and it gives up that claim even where another thread's prompt
-  holds the dot, or a Done would fire in the middle of a turn.
+  out leaves it, and gives up that claim even where another thread's prompt
+  holds the dot, or a Done would fire mid-turn.
 - **Its own prompt claims a Working put over nothing, but not a Done it owes.**
 - **A Done the agent's stop owes is its own kind of displaced.** Hooks are
   separate processes over a socket, so a main-thread event can land after the
@@ -393,18 +382,17 @@ command line's requests on the same socket. Newest at the bottom.
   because an older helper names no worker and every unnamed one asked under the
   same empty id, so one end answered them all.
 - **An unnamed worker's end takes the last that is asking before the last that
-  is not**, that being the only way an interchangeable worker can answer its own
-  prompt.
+  is not**, the only way an interchangeable worker can answer its own prompt.
 - **With no unnamed place left it takes the oldest of any kind**: one worker did
   end, and a place left over holds the Done for the rest of the turn.
-- **A start or end naming nobody is read as an unnamed worker** rather than the
-  agent's own report, and its tool call takes the last unnamed place out rather
-  than minting one, which would have left the chip counting tool calls.
+- **A start or end naming nobody is read as an unnamed worker**, not the agent's
+  own report, and its tool call takes the last unnamed place rather than minting
+  one, which would leave the chip counting tool calls.
 - **Per agent, from what each says to a hook.** One spells the two events as the
   first does, behind its own feature flag.
-- **One runs a subagent as a conversation of its own**, which fires its own
-  prompt, tool calls and Stop under its own conversation id and no worker id.
-  Read as the agent's, its Stop put the pane at Done mid-turn, once per worker.
+- **One runs a subagent as a conversation of its own**, firing its own prompt,
+  tool calls and Stop under its own conversation id and no worker id. Read as
+  the agent's, its Stop put the pane at Done mid-turn, once per worker.
 - **So the pane keeps its own conversation's id**, taken from the first report,
   a session start or a Stop, and a report under any other id is a worker keyed
   by it. Its end names that same id as the worker's, so the two meet.
@@ -423,8 +411,8 @@ command line's requests on the same socket. Newest at the bottom.
   which names no id, and one keyed by name alone would never be ended. The
   worker goes on at its own first event instead, so the chip shows no kind.
 - **A new conversation of the pane's that sends no session start reads as a
-  worker until its Stop**, whose own transcript says it is the pane's; the place
-  it held goes then. Cost: Working all that turn, which it was anyway.
+  worker until its Stop**, whose transcript says it is the pane's; its place
+  goes then. Cost: Working all that turn, which it was anyway.
 - **A session start over Working or Waiting moves nothing**: one agent's prompt
   mode sends it after the first prompt, and its idle cleared Working until the
   first tool call. Over anything else it clears, as a fresh session should.
@@ -435,9 +423,9 @@ command line's requests on the same socket. Newest at the bottom.
 - **The shell's own Working is not one of those**: it stands from the moment the
   user types the agent's name, so a start held off by it left every agent
   launched from a prompt Working until its first turn ended.
-- **A start repeated under one id counts its starts and takes as many ends**,
-  the alternative being a Done paid while the second is still working; the chip
-  counts workers rather than places, so it says two where the list holds one.
+- **A start repeated under one id counts its starts and takes as many ends**, or
+  a Done is paid while the second is still working; the chip counts workers, not
+  places, so it says two where the list holds one.
 - **Nothing says which of them a later report came from**, so neither a tool
   call nor an end under a shared place answers a prompt raised there while
   another worker is on it. Cost: a prompt the asking worker answered stays until
@@ -449,26 +437,25 @@ command line's requests on the same socket. Newest at the bottom.
 - **One runs a subagent as a child session**, its plugin reading the child's
   creation as a start, its busy status and tool calls as work, and its idle or
   error as the end. A child's idle is not the pane's Done.
-- **Both the old and new spellings of that idle end a child**, the old one being
-  deprecated: reading only it in the parent would have left the pane Working for
-  good once it is dropped.
+- **Both the old and new spellings of that idle end a child**: reading only the
+  deprecated old one would leave the pane Working for good once it is dropped.
 - **The parent's idle comes in both spellings too, so the plugin sends its Done
-  once**: the model cannot drop a second Done, the shell's own report of a
-  finished command arriving after the terminal's in just that shape.
-- **The parent's busy status clears that**, reporting nothing: a turn that never
-  passed the message hook otherwise ended in no Done at all.
+  once**: the model cannot drop a second Done, since the shell's own report of a
+  finished command arrives after the terminal's in just that shape.
+- **The parent's busy status clears that**, reporting nothing: otherwise a turn
+  that never passed the message hook ended in no Done at all.
 - **An ended child's id is kept, marked rather than deleted**, so a second end
-  or a late permission of its own is not read as the parent's; a busy status is
-  the one thing that puts it back.
+  or a late permission of its own is not read as the parent's; only a busy
+  status puts it back.
 - **A child the plugin never saw created is asked about**: a task resumed by its
   id reuses its session and publishes no creation, so its first message read as
   the parent's prompt. The session's parent is looked up once per id, any
   failure leaving it the parent's. Every hook for that id shares the first one's
   one-second bound, so a lookup that never settles costs one hook a second, not
   every hook; an answer after the bound still puts the child back.
-- **Ended ids are kept in their own capped list, oldest first**, the cap being
-  on that list rather than on the map: gated on the map, a child cycling busy
-  and idle grew the list without bound.
+- **Ended ids are kept in their own capped list, oldest first**, capped on that
+  list rather than on the map: gated on the map, a child cycling busy and idle
+  grew the list without bound.
 - **One place per child there**, so those cycles neither grow the list nor push
   other children out, at the price of a short scan per end.
 - **Where the pieces disagree, the pane's dot is what they agree on**: a report
@@ -476,68 +463,65 @@ command line's requests on the same socket. Newest at the bottom.
   nothing, and the roster clears with everything else.
 - **The chip is the count behind a branch glyph in the Working colour**, on a
   pane's row and its board card while that pane has a worker out. With none out
-  it counts the failed workers still drawn, in the Failed colour, and with
-  neither it is gone: an empty chip would be one more badge on every row.
+  it counts the failed workers still drawn, in the Failed colour; with neither
+  it is gone, as an empty chip would be one more badge on every row.
 - **Not on the worktree row**, which was tried: the row already carries four
   badges, and the pane rows say which pane the swarm is in.
 - **A report naming only a directory keeps its workers under the worktree's
-  key**, which moves the worktree's dot and shows on no chip, there being no
-  pane to hang one on.
+  key**, moving the worktree's dot and showing on no chip, there being no pane
+  to hang one on.
 - **Hovering the chip lists them, name and time**, in a popover that ticks while
-  it is up; nothing else grows, so a large fan-out costs the sidebar no rows and
-  the board no height.
-- **Chosen over rows under the tab**, which a fan-out would have pushed the next
-  project off screen with, and over cards of their own, which broke one card per
+  up; nothing else grows, so a large fan-out costs the sidebar no rows and the
+  board no height.
+- **Chosen over rows under the tab**, with which a fan-out would push the next
+  project off screen, and over cards of their own, which broke one card per
   pane.
 - **Cost: the list is never on screen unless the pointer is on the chip**, and a
   screen reader gets it as the chip's label rather than as rows.
-- **The selected worktree lists its panes in the sidebar**, one row per pane
-  rather than one per tab, so a glance says which pane is working and which has
-  a swarm without reading the strip.
-- **A tab was the row first**, and a split's second pane, which has its own
-  agent and its own dot, was nowhere.
+- **The selected worktree lists its panes in the sidebar**, one row per pane,
+  not per tab, so a glance says which pane is working and which has a swarm
+  without reading the strip.
+- **A tab was the row first**, and a split's second pane, with its own agent and
+  dot, was nowhere.
 - **A split's panes carry a split glyph and their position**, since a renamed
   tab names every pane alike and two plain shells both read as the shell.
 - **The worktree row drops its terminal count**, the rows under it being the
   count.
 - **The active tab's focused pane is bold, one per worktree**: with two groups
   two tabs are on screen, and two bold rows read as two selections.
-- **A click shows another and hands it the keyboard**, the way a board card
-  does.
+- **A click shows another and hands it the keyboard**, as a board card does.
 - **Only the selected worktree's**, so one set takes room at a time and a
   project with many panes does not become that many rows. Cost: selecting a
   worktree shifts every row under it.
 - **Each pane row's height is what the sidebar's block height counts off**, or
   the drop indicator lands in the wrong half.
-- **An agent is drawn as its own mark**, wherever a pane says what it is
-  running: the five the app draws, two letters for everything else, the terminal
-  glyph for a shell.
-- **A mark is recognised without reading**, which is the whole of what a slot at
-  the smallest UI font can carry; letters at that size are pairs a glance has to
-  tell apart on shape alone.
-- **A stock symbol per agent is a mapping nobody can learn**, nothing about a
-  generic glyph saying which agent it is.
-- **One `.svg` per mark**, a single path in the square the test holds them to,
-  parsed once and scaled to whatever the caller asks for.
-- **Files rather than hundreds of lines of path calls**: the art is data, a mark
-  can be replaced without touching Swift, and a diff of a new mark is one line.
+- **An agent is drawn as its own mark** wherever a pane says what it is running:
+  the five the app draws, two letters for everything else, the terminal glyph
+  for a shell.
+- **A mark is recognised without reading**, which is all a slot at the smallest
+  UI font can carry; letters at that size are pairs a glance has to tell apart
+  on shape alone.
+- **A stock symbol per agent is a mapping nobody can learn**: nothing about a
+  generic glyph says which agent it is.
+- **One `.svg` per mark, not hundreds of lines of path calls**, each a single
+  path in the square the test holds them to: the art is data, a mark can be
+  replaced without touching Swift, and a diff of a new mark is one line.
 - **Only absolute move, line, curve and close commands are read**, which is all
-  those files hold, and anything else is refused rather than drawn half.
+  those files hold; anything else is refused rather than drawn half.
 - **A file that will not parse is left out of the table**, so the mark draws
-  nothing; the test walks every one, which turns that into a failing test rather
+  nothing; the test walks every file, turning that into a failing test rather
   than an empty tab.
-- **All five are traced from the projects' own art**, the shape being the
-  recognition, from their icon sets and their own icons.
+- **All five are traced from the projects' own icon sets and icons**, the shape
+  being what is recognised.
 - **One outline is sampled from the icon itself**, radii from its centroid
-  through a smooth curve: regular lobes were tried by hand and neither is what
-  that shape is, which is irregular.
+  through a smooth curve: regular lobes were tried by hand, and neither is that
+  irregular shape.
 - **Two marks run to the edges of their square** rather than sitting inset,
   those icons being the mark itself with no padding of their own.
 - **One prompt is cut out of its blob rather than drawn over it**, so one fill
   colour carries both; the cut is made when the file is generated.
-- **Two are alike at the size a tab draws them and are told apart by their
-  tint**, which is the projects' doing and not something to fix by drawing
-  either one wrong.
+- **Two are alike at tab size and told apart by their tint**, which is the
+  projects' doing and not something to fix by drawing either one wrong.
 - **A mark black or white upstream is drawn in the theme's text colour**; the
   rest carry the project's own.
 - **Cost: a mark redrawn upstream is wrong here until someone notices**, a trace
@@ -552,19 +536,17 @@ command line's requests on the same socket. Newest at the bottom.
   mark comes from the hook report that names it, then the command the shell said
   it was starting, then the tab's own id.
 - **The middle one is why typing an agent's name in a plain shell marks the
-  pane** with nobody having installed its hooks: the injected integration
-  carries the program's name, first word and no path, matched against each
-  agent's executable.
-- **That answer is held only while the command runs.** What takes it back is any
-  report from the shell itself that names no command: the prompt coming back,
-  the shell exiting, or the next command.
+  pane** with no hooks installed: the injected integration carries the program's
+  name, first word and no path, matched against each agent's executable.
+- **That answer is held only while the command runs.** Any report from the shell
+  itself that names no command takes it back: the prompt coming back, the shell
+  exiting, or the next command.
 - **Keyed on the report having no agent, not on its state**: an agent's own
   hooks report running all through a turn and name themselves, and clearing on
   those would drop the shell's answer the moment it started working.
 - **Which reports are the shell's is a field it sets**, not a guess: the helper
-  is documented for the user's own scripts, and one run from inside a turn
-  reports with no agent and no command, which read as the shell's would blank
-  the mark.
+  is documented for the user's own scripts, and one run inside a turn reports
+  with no agent and no command; read as the shell's, it would blank the mark.
 - **Matched on the executable alone**, so a wrapper invocation is nobody: the
   word is the command. A leading assignment, `command`, `env` or `exec` is
   stepped over first.
@@ -575,16 +557,16 @@ command line's requests on the same socket. Newest at the bottom.
 - **The state dot badges the mark instead of taking the slot.** A tab has one
   leading slot, which used to hold either the dot or the tab's kind.
 - **The dot sits on the mark's lower-right corner, ringed in what is behind
-  it**, so a row says what is running and how it is doing at once, and covers
-  the mark's edge rather than the middle that carries the shape.
-- **Covering part of the mark is the trade, and the right way round**: a state
-  is read down a whole strip, a mark only where the eye already is, and an idle
-  pane draws the mark whole.
+  it**, so a row says what is running and how it is doing at once, covering the
+  mark's edge rather than the middle that carries the shape.
+- **Covering part of the mark is the right trade**: a state is read down a whole
+  strip, a mark only where the eye already is, and an idle pane draws the mark
+  whole.
 - **The sizes were set by rendering the shapes from tab size up and looking**,
-  which is what threw out a hand-drawn mark that read as an animal at tab size.
-- **A mark that only works blown up is no mark**, and the box cannot grow to
-  help, the tab floor holding only what a tab already draws at the smallest UI
-  font and a short title.
+  which threw out a hand-drawn mark that read as an animal at tab size.
+- **A mark that only works blown up is no mark**, and the box cannot grow: the
+  tab floor holds only what a tab already draws at the smallest UI font and a
+  short title.
 - **The tab's dot keeps its click**, which clears a stale Working state, and the
   whole glyph is now that target.
 - **A split tab loses its split symbol where an agent is at the prompt**: one
@@ -594,13 +576,13 @@ command line's requests on the same socket. Newest at the bottom.
 - **A shell the agent backgrounded is a worker too**, the user's rule for
   subagents applied to the other thing a turn leaves running: a pane waiting on
   a build it started showed Done, then Idle once looked at.
-- **No hook says a background shell ended**, and none of the notification types
-  covers it, so its end is its exit: the pid goes on the roster and the pid poll
-  takes it off, paying the Done as the last worker out would.
-- **Where a Stop does not list them, the helper finds them for Gemini**, there
-  being no tool call in flight at a Stop, so any tool shell still alive under
-  the agent is one it backgrounded. It lists the agent's children and keeps
-  those whose command line holds the agent's shell marker.
+- **No hook or notification type says a background shell ended**, so its end is
+  its exit: the pid goes on the roster and the pid poll takes it off, paying the
+  Done as the last worker out would.
+- **Where a Stop does not list them, the helper finds them for Gemini**: no tool
+  call is in flight at a Stop, so any tool shell still alive under the agent is
+  one it backgrounded. It lists the agent's children and keeps those whose
+  command line holds the agent's shell marker.
 - **The marker, not "any child"**: MCP servers and the agent's other helpers are
   children for the whole session and would hold every Done forever.
 - **Gemini's marker is the wrapper every shell-tool command runs in**, its
@@ -643,15 +625,15 @@ command line's requests on the same socket. Newest at the bottom.
   Stop.
 - **Cost: a wake-up that never comes leaves the pane Working** until the next
   prompt, the agent exiting or the user's clear, as an interrupt does. In the
-  same transcripts 128 of 129 background launches woke the agent, and the last
-  was stopped by the agent itself mid-turn.
+  same transcripts 128 of 129 background launches woke the agent, and the agent
+  itself stopped the last mid-turn.
 - **A resuming agent's Stop with no list sweeps for gone processes first**: a
   shell's exit reaches the agent at once and the poll up to two seconds later,
   and a Stop held for a shell already gone would leave nothing to pay the Done.
 - **A worker heard after a resuming agent's Stop was out at it**, its start
-  landing late, the agent launching workers only inside a turn. The Done that
-  Stop announced goes back with the banner, and the turn the worker's end wakes
-  pays it: paid at the last one out, a late start meant three banners.
+  landing late, since the agent launches workers only inside a turn. The Done
+  that Stop announced goes back with the banner, and the turn the worker's end
+  wakes pays it: paid at the last one out, a late start meant three banners.
 - **Claude's Stop lists what is still out**, its `background_tasks`, and the
   roster is made that list: a worker it leaves out has ended whatever its hooks
   said, and one it names is out though its start has not landed.
@@ -699,14 +681,14 @@ command line's requests on the same socket. Newest at the bottom.
   two-second bound on a helper that never does. Started together they landed in
   either order, and a cancelled child's end landing after the Done that left it
   out put it back on the roster for good.
-- **A plain Working waiting behind another is dropped**, it saying nothing the
-  first will not: each helper that hangs holds the queue two seconds, and a
-  burst of tool calls queued minutes of reports. An app gone or with a full
-  backlog costs nothing here, macOS refusing the connect at once.
+- **A plain Working queued behind another is dropped**, saying nothing the first
+  will not: each helper that hangs holds the queue two seconds, and a burst of
+  tool calls queued minutes of reports. An app gone or with a full backlog costs
+  nothing here, macOS refusing the connect at once.
 - **OpenCode's woken turn is a prompt of synthetic parts only**, which the
-  plugin reads as the turn a child's end woke rather than the user's: read as a
-  new turn it emptied the roster of the children still out.
-- **Shells and subagents are counted apart** wherever the workers are counted, a
+  plugin reads as the turn a child's end woke, not the user's: read as a new
+  turn it emptied the roster of the children still out.
+- **Shells and subagents are counted apart** wherever workers are counted, a
   shell not being a subagent to anyone reading the label.
 - **A sweep takes every dead agent before any dead shell.** An agent gone with
   its shell takes the shell with it; checked in a set's order, the shell was
@@ -717,9 +699,9 @@ command line's requests on the same socket. Newest at the bottom.
   named it (`closingATabRunningAPlainCommandAsksNothing`,
   `anAgentTypedAtThePromptWithNoHooksCountsAsWorking`).
 - **Debug Info covers the panes as the board does, through the same predicate**,
-  so under it too no pane is in view. A Done is not seen and a banner is not
-  held back. An agent's pid is still polled only for the board, Debug Info
-  showing no agents (debug-tools.md).
+  so under it too no pane is in view, no Done is seen and no banner held back.
+  An agent's pid is still polled only for the board, Debug Info showing no
+  agents (debug-tools.md).
 - **A worker another worker launched is listed under it**, as Claude's own list
   draws a skill's workers under the skill. Flat, a review fanning out eight
   angles read as nine unrelated workers, each called `general-purpose`.
@@ -736,16 +718,15 @@ command line's requests on the same socket. Newest at the bottom.
   transcript line and 5 to 11 seconds before its first tool call, so a worker
   sits at the top until then.
 - **Not a contract, so a changed format lists every foreground worker at the
-  top**, named by its kind, which is what it did before; nothing about the state
-  moves.
+  top**, named by its kind, as before; nothing about the state moves.
 - **The id goes into a path, so only letters, digits, `-` and `_` are read**,
   and a parent naming anything else is no parent.
 - **OpenCode's plugin names a child's parent where that parent is itself a
   child**, the session's `parentID`, read at its creation or its lookup. Codex
   records its own in the child's rollout file, but whether a hook names that
   file inside a worker is unread, so its workers stay flat.
-- **A worker whose parent is no longer out is drawn at the top**, and so is one
-  in a loop of workers naming each other, so nothing out goes unlisted.
+- **A worker whose parent is no longer out is drawn at the top**, as is one in a
+  loop of workers naming each other, so nothing out goes unlisted.
 - **The count still counts every worker**, nested or not, the chip saying how
   much is out rather than how many the agent launched itself.
 - **A screen reader hears each nested worker as under its parent**, by name, the
@@ -785,11 +766,11 @@ command line's requests on the same socket. Newest at the bottom.
 - **A TaskStop names what it killed**: its result carries `task_id`, and Claude
   stops everything under that task with it, so the task and all it held turn
   failed. A stopped parent's child and both their shells went in one captured
-  run. A prompt one of them had up goes with it: Claude closes the dialog, and
-  the pane otherwise stayed Waiting.
+  run. A prompt one of them had up goes too: Claude closes the dialog, and the
+  pane otherwise stayed Waiting.
 - **Esc on a subagent sends nothing**, nor does a stop from Claude's task list,
   so it is read from the list. A worker that finishes always sends its own stop,
-  listing itself, before it leaves; so a launched worker that leaves the list
+  listing itself, before it leaves, so a launched worker that leaves the list
   with no stop of its own since its last report was killed or crashed. One
   killed while paused sent its stop first and goes unmarked.
 - **A worker's own stop never puts it back**: each hook is its own process, and
@@ -798,11 +779,11 @@ command line's requests on the same socket. Newest at the bottom.
   the worker as killed; the stop arriving after it ends the worker, rather than
   reviving it into a Working nothing would end.
 - **Only a worker a launch result named is judged so**: OpenCode lists its
-  workers too and sends no stop of the kind, and a shell sends none ever. One
-  Ctrl+B sent to the background has no launch result, so its kill goes unmarked.
+  workers too and sends no such stop, and a shell never sends one. One Ctrl+B
+  sent to the background has no launch result, so its kill goes unmarked.
 - **A paused worker leaves the list while its own work runs.** Claude ends its
   run as completed, noting it may resume, and starts it again when that work
-  reports; it is kept by the work launched under it, as Claude's panel keeps a
+  reports; the work launched under it keeps it, as Claude's panel keeps a
   finished agent whose work is alive. When the last of that work ends, which is
   what wakes it, it waits one list for its start; in a captured run that start
   came in the same second.
@@ -816,7 +797,7 @@ command line's requests on the same socket. Newest at the bottom.
   after it dropped every worker and shell, no Stop having seen them out.
 - **Five captured Claude runs replay every payload through the helper and the
   roster**, in the `claudesCaptured` tests of
-  `SessionStatesTests+ClaudeCapture.swift`.
+  `SessionStatesTests+ClaudeCapture.swift` (develop/tests.md).
 - **A start for a worker whose `meta.json` exists is a resume**, Claude starting
   a worker again under its id after a SendMessage, not a second worker under one
   place.
@@ -865,15 +846,15 @@ command line's requests on the same socket. Newest at the bottom.
   claim, and its name would eat into the `sun_path` budget a worktree's variant
   already spends (develop/state-on-disk.md).
 - **A request and a report tell themselves apart by shape**: a request has
-  `request` beside `v` and no `state`, so neither parses as the other, and a
-  request this app does not know gets no answer, which the helper reads as an
-  app older than itself. So does one whose `v` is newer than the app's, a case
-  of the same name possibly meaning something else by then.
+  `request` beside `v` and no `state`, so neither parses as the other. A request
+  this app does not know gets no answer, which the helper reads as an app older
+  than itself; so does one whose `v` is newer than the app's, since a case of
+  the same name may mean something else by then.
 - **Requests open tabs, run commands, type at a prompt, create and remove
   worktrees, and change settings, in both builds.** Reversed 2026-10-10, so a
   user can script their start-up over many projects and an agent can drive a
-  debug build. Cost: a process of the user's that can connect to the socket can
-  run a command in a pane, outside any sandbox an agent runs in that lets it
+  debug build. Cost: any process of the user's that can connect to the socket
+  can run a command in a pane, outside any sandbox an agent runs in that lets it
   reach a Unix socket. The socket stays mode 0600, which is all that separates
   users.
 - **Typing is keystrokes, not a paste**: libghostty brackets a paste for a
@@ -890,16 +871,17 @@ command line's requests on the same socket. Newest at the bottom.
   same model call, so a setting written from the command line repaints and
   refreshes as the Settings window's does. An alert the action raises comes back
   as the refusal, in the app's language, and is taken down, so it does not stand
-  in the app after the command line has had its words. An alert is the request's
-  only where it was made in the request's own task, which the alert records as
-  it is made: one waiting on git or a hook has the app going on around it, and a
-  guess from what was on screen after took a click's alert for its reason and
-  took it down. What goes back up is what the request's alert covered when it
-  went up, not what stood when the request began: a click or the model may have
-  raised or taken one down in between, and an alert the user dismissed meanwhile
-  is not brought back. One a click or an answered request raised between two of
-  the request's alerts is what goes back up instead, or the request's finish
-  wiped it unanswered
+  in the app after the command line has had its words.
+- **An alert is the request's only where it was made in the request's own
+  task**, which the alert records as it is made: one waiting on git or a hook
+  has the app going on around it, and a guess from what was on screen after took
+  a click's alert for its reason and took it down.
+- **What goes back up is what the request's alert covered when it went up**, not
+  what stood when the request began: a click or the model may have raised or
+  taken one down in between, and an alert the user dismissed meanwhile is not
+  brought back. One a click or an answered request raised between two of the
+  request's alerts goes back up instead, or the request's finish wiped it
+  unanswered
   (`aUsersAlertRaisedBetweenTwoOfARequestsAlertsComesBackWhenItFinishes`).
 - **A request whose alert another request covered still answers with it**, and
   the later one then takes down to what the earlier one's covered: answered
@@ -934,13 +916,12 @@ command line's requests on the same socket. Newest at the bottom.
   POLLHUP, which macOS sets only once both halves are shut, every 250 ms until
   it is sent. A cancelled task stops nothing else: nothing else a request awaits
   checks for it.
-- **The app answers in data and the helper words it**, its output staying
-  English (translation.md): ids and JSON on success, a typed refusal otherwise.
+- **The app answers in data and the helper words it** (translation.md): ids and
+  JSON on success, a typed refusal otherwise.
 - **Whatever a command prints is JSON**, indented and sorted as the app's
-  answers are, so a script reads every command one way: a screenshot's path, a
-  pane's text, a wait's line, the version, the hooks it installed. `panes read`
-  and `debug log` take `--plain` for text a person reads; a refusal stays words
-  on standard error with exit 1. `install-agent-hooks --print` is the one
+  answers are, so a script reads every command one way. `panes read` and
+  `debug log` take `--plain` for text a person reads; a refusal stays words on
+  standard error with exit 1. `install-agent-hooks --print` is the one
   exception: it prints the agent's file as a write makes it, as it did before
   the other commands came, so `> ~/.codex/hooks.json` writes a working file.
 - **A tab asked for in a worktree out of view opens there without switching to
@@ -964,7 +945,7 @@ command line's requests on the same socket. Newest at the bottom.
   clamped: a font family this Mac lacks, a size off its slider's range. A
   clamped write answered done and read back as another number.
 - **Waiting and following are polled from the helper.** `panes wait` and
-  `debug samples --follow` ask a short request every quarter or half second and
+  `debug samples --follow` send a short request every quarter or half second and
   the app answers each at once, so a long wait holds no connection open in the
   app and a helper killed mid-wait leaves nothing behind. Cost: a look every 250
   ms, a pane read or a describe, each a main-thread turn. A samples look asks
@@ -996,17 +977,15 @@ command line's requests on the same socket. Newest at the bottom.
   only closed: a create running may be a request's, not the sheet's.
 - **A menu item is chosen by its titles, as a click would**: the menu validates
   first, so a greyed-out item is refused rather than run, and every action a
-  shortcut reaches is reachable without one. Titles are the app's language.
-  Cost: AppKit inserts View > Enter Full Screen only as the menu first opens, so
-  the bar a request walks lacks it until a person has; `window full-screen`
-  calls the window's own toggle instead.
-- **The banners posted are logged in the app**, the newest fifty, since the
-  notification centre says nothing of one once shown; only a pane's newest can
-  still be up, the centre replacing the rest.
-- **What a row or a tab shows is listed from the calls its views make**:
-  `sidebar list` from the sidebar's entries, order and pane rows, `board list`
-  from the board as built, `tabs show` from the pane tree and the engine's view
-  frames. A test reads the same values the screen draws, not a copy of them.
+  shortcut reaches is reachable without one. Titles are in the app's language
+  (translation.md). Cost: AppKit inserts View > Enter Full Screen only as the
+  menu first opens, so the bar a request walks lacks it until a person has
+  opened it; `window full-screen` calls the window's own toggle instead.
+- **The banners posted are logged in the app**, the newest fifty
+  (debug-tools.md).
+- **What a row or a tab shows is listed from the calls its views make**
+  (`sidebar list`, `board list`, `tabs show`), so a test reads the values the
+  screen draws, not a copy.
 - **Every command naming a pane's agent names the one at its prompt**, as its
   mark does. Reading the agent the tab was opened as, `panes show` and
   `tabs list` missed a `claude` typed into a shell tab that `sidebar list` and

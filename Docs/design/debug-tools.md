@@ -3,10 +3,12 @@
 What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 
 - **For finding where sluggishness comes from**, in every build. The sidebar's
-  quick stats show FPS, CPU and memory; a click opens Debug Info in the detail
-  area, covering the panes as the Agents board does.
+  quick stats show FPS, CPU and memory; a click opens Debug Info over the panes,
+  as the Agents board does.
 - **The toggle is runtime state, not a preference.** Sampling costs a process
-  table read a second, so it never outlives the launch it was turned on in.
+  table read a second, and the display link wakes the main thread every refresh,
+  120 times a second on ProMotion, panel closed or not, since the sidebar shows
+  the frame rate. So it never outlives the launch it was turned on in.
 - **Frame rate is the main thread answering a display link**, not Ghostty's
   render rate, which runs on its own thread. A busy main thread answers late,
   which is what sluggish feels like. The link runs in the common run loop modes,
@@ -34,17 +36,17 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The engine names the tty and foreground pid**, and a pane whose shell has no
   pty yet has neither. Where it cannot, every pane's processes land under Other
   processes and the totals stay right: they read every child of the app.
-- **An expanded tab is a tree of who started whom**, each process under its
-  parent. Siblings go by what their whole tree holds, so a small shell running a
-  large agent comes first. The parent is the one the scan walked down from, so
-  the tree costs no syscall beyond the walk.
+- **An expanded tab is a tree of who started whom.** Siblings go by what their
+  whole tree holds, so a small shell running a large agent comes first. The
+  parent is the one the scan walked down from, so the tree costs no syscall
+  beyond the walk.
 - **Self and Total both, so the gap is what a shell started.** A tab's Self is
   its terminals and its panes' shells. A tab the engine could not place shows
   its terminal alone: its processes are under Other processes meanwhile, so the
   rows still add up, and a sample or two places it. With no terminal reading
   either it shows neither, rather than a zero that reads as measured.
 - **Child processes means everything the app started**, git and hooks as well as
-  panes, so a burst of git runs shows in the totals rather than nowhere.
+  panes, so a burst of git runs shows in the totals.
 - **One sample a second, fifteen minutes kept**, the spans a load average is
   taken over. A point of a longer range is several seconds: the worst frame
   rate, the mean rates, the latest memory. Slots are counted from the first
@@ -75,9 +77,6 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **A sample begun before a stop lands nowhere.** Every start and stop bumps a
   generation the sample checks after its scan, so turning the tools off, or off
   and on, never lets the last run's numbers into the next.
-- **The display link wakes the main thread every refresh while the tools are
-  on**, 120 times a second on ProMotion, with the panel closed too: the sidebar
-  shows the frame rate as well. Another reason the toggle is not kept.
 - **A tab's terminal counts in the tab's row, taken out of the app's.** Ghostty
   runs in the app's process, so its screens and scrollback sit in the app's
   footprint. Our patch 0006 reads each surface's page and image bytes, the
@@ -92,35 +91,26 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The app's row stops at zero.** Ghostty counts a page at its full allocated
   size, an estimate, so the terminals can read more than the footprint holds.
   The Total row stays the footprint and children as measured.
-- **Freed memory stays in the footprint until macOS wants it.** On macOS 27
-  `malloc_zone_pressure_relief` releases nothing, and freed blocks of 16 KB and
-  up held for three minutes in a probe, so closing a tab leaves its terminal's
-  pages counted. Five tabs opened and closed left 26 MB freed but held, and a
-  second round reused it, adding 2 MB: the next tab takes it, not a leak.
+- **Freed memory stays in the footprint until macOS wants it**, so closing a tab
+  leaves its terminal's pages counted until the next tab reuses them. Not a leak
+  (develop/memory.md).
 - **A process that leaves the app's tree leaves the totals.** The scan walks
   down from the app, so a daemon that double-forks, or anything reparented to
   launchd, stops counting though the app started it.
 - **The scan reads the whole process table once a tick.** Asking per pid cost a
   `proc_listchildpids` per process, and each call walks the whole table. An
   interpreter's arguments are read only to name its script, at two sysctls each.
-- **Most of an idle app's footprint is the terminal's render buffers.** Measured
-  on macOS 27 with one shell open and the debug tools off: 193 MB, of which 95
-  MB is the three IOSurfaces Ghostty's Metal renderer draws in turn, each the
-  pane's size in pixels, 3554×2326 there. An empty window that size holds 17 MB.
-  They scale with the panes on screen; Ghostty frees a pane's when it leaves the
-  window or is covered.
+- **Most of an idle app's footprint is Ghostty's three render targets**, which
+  scale with the panes on screen (develop/memory.md).
 - **Memory is RAM and GPU together, and the caption says so.** On Apple silicon
   the GPU draws from the same RAM, and the footprint counts both. Only Ghostty
-  could report its own GPU part, through a patch: the kernel's graphics count
-  filed the same render targets as graphics in one run and as plain IOSurface in
-  the next, and gives no figure for the app's own drawing or any child. A split
-  for one source of many was not worth the patch.
+  could report its own GPU part, through a patch, and nothing gives a figure for
+  the app's own drawing or any child, so a split for one source of many was not
+  worth the patch (develop/memory.md).
 - **The strips are shapes, not a `Canvas`.** On macOS 27 one `Canvas` makes
-  SwiftUI draw its whole hosting view through Metal, into three buffers that
-  size: 105 MB with Debug Info open, and as much under `.drawingGroup()`. The
-  same strips as shapes held 23 MB in a probe, at the same CPU at one update a
-  second, and about 2 points more of WindowServer at 60. A colour is a shape of
-  its own.
+  SwiftUI draw its whole hosting view through Metal into three window-sized
+  buffers, 105 MB with Debug Info open, `.drawingGroup()` or not; shapes held 23
+  MB at the same CPU (develop/memory.md). A colour is a shape of its own.
 - **The command line reads the live history, not the paused panel**, so a
   script's samples run on while someone holds Debug Info still. With the tools
   off a reading is refused rather than answered empty

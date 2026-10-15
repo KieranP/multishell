@@ -20,8 +20,8 @@ enum GhosttySurfaceEvent: Equatable {
   /// libghostty saw a password prompt start or end, or a keybind toggled it.
   case secureInput(ghostty_action_secure_input_e)
 
-  /// Declined, a link goes to libghostty's own `open`, unchecked, so one is
-  /// answered even when its view has gone.
+  /// Answered even when its view has gone. Declined, a pane's link reaches
+  /// libghostty's `open`, which logs a warning and refuses it.
   var isLinkClick: Bool {
     switch self {
     case .hyperlinkClicked, .linkClicked: true
@@ -46,7 +46,7 @@ enum GhosttySurfaceEvent: Equatable {
     case GHOSTTY_ACTION_OPEN_URL:
       let link = action.action.open_url
       // Ghostty's own text and HTML files stay libghostty's. A kind it adds
-      // later is judged here, libghostty opening unchecked what is declined.
+      // later is judged here rather than left to libghostty.
       guard
         link.kind != GHOSTTY_ACTION_OPEN_URL_KIND_TEXT,
         link.kind != GHOSTTY_ACTION_OPEN_URL_KIND_HTML,

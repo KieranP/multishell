@@ -1,8 +1,5 @@
 # Settings
 
-Layering of user, project and repository settings, and the trust that guards a
-shipped hook. Newest at the bottom.
-
 - **Project over global; `nil` follows the global.** Blank means absent, since
   "none" and "no opinion" come to the same thing and a second sentinel would
   lose the distinction next load.
@@ -12,10 +9,9 @@ shipped hook. Newest at the bottom.
 - **A repo's `.multishell.json` fills only gaps the user left.** A team default
   must never override a made choice. Of those four, agent flags are the one it
   cannot carry (agents.md).
-- **What it draws needs no trust; what it names on disk does.**
-  `worktreeDirectory`, `linkedPaths` and `copiedPaths` are paths on the reader's
-  machine, not pixels.
-- **"Runs nothing, so needs no trust" was wrong.** A repo could commit
+- **What it names on disk needs trust; what it draws does not.** "Runs nothing,
+  so needs no trust" was wrong: `worktreeDirectory`, `linkedPaths` and
+  `copiedPaths` are paths on the reader's machine. A repo could commit
   `worktreeDirectory: ~/.claude/skills` with a `SKILL.md` and install a global
   agent skill on any create, or link `~/.ssh/id_ed25519` into a tree an agent
   reads.
@@ -40,11 +36,11 @@ shipped hook. Newest at the bottom.
   to do in settings, not the repository's. Cost: a repo can no longer ship
   `../{project}-worktrees`, and the drop is silent.
 - **Refusal reaches only what the file ships.** `place` takes
-  `isRepositoryList`, false for a user's list: an entry of theirs spelled to
-  leave the root is skipped and named rather than failing the create (hooks.md),
-  and its symlinked sources may lead anywhere. Both lists take an entry as a
-  path inside the repository and mirror it into the worktree; `~` and variables
-  are never expanded.
+  `isRepositoryList`, false for a user's list, whose entry spelled to leave the
+  root is skipped and named rather than failing the create (hooks.md), and whose
+  symlinked sources may lead anywhere. Both lists take an entry as a path inside
+  the repository and mirror it into the worktree; `~` and variables are never
+  expanded.
 - **A list is wholly one or the other.** `layered` takes the repo's only where
   the user's is blank, so a create decides it once and carries it on the value
   as `WorktreeFileList`.
@@ -70,8 +66,8 @@ shipped hook. Newest at the bottom.
   the dialog names, then puts the user's over the rest, rather than each field
   asking.
 - **The forms read that same view through `inherited`**, or a caption saying
-  "from .multishell.json" names a value the layering left out, which it did for
-  an untrusted `worktreeDirectory`.
+  "from .multishell.json" names a value the layering left out, as it did for an
+  untrusted `worktreeDirectory`.
 - **An `InheritableSettingKeys` pairs the project field with the file's once.**
   Reading the layering with the override cleared answered only for a field
   merged as `own ?? shared`; any other quietly showed the global.
@@ -84,7 +80,7 @@ shipped hook. Newest at the bottom.
   revoke the yes.
 - **`carryingOver(from:)` covers every gated field, not the hooks alone.**
   Gating the directory and the lists on trust blanked them for an untrusted
-  file, and export then wrote the file without those keys at all.
+  file, and export then wrote the file without those keys.
 - **Grey in a hook editor means inherited, nothing else.**
 - **Odd shapes, each from a bug**: no prefix on an existing branch; blank
   worktree directory is the default; `.`, `..` and an empty slug become `_`; a
@@ -95,8 +91,8 @@ shipped hook. Newest at the bottom.
   can read it changes it.
 - **Help goes behind an (i).** Captions doubled every form's height and were
   read once. A caption is left only for a value computed live.
-- **An (i) holds at most 200 characters once filled in.** What another row's (i)
-  says is left to it. The translation tests and AgentHooksRowTests hold the
+- **An (i) holds at most 200 characters once filled in**, leaving what another
+  row's (i) says to it. The translation tests and AgentHooksRowTests hold the
   count.
 - **A page taller than its window is split, not scrolled.** A grouped form's
   scroller is an overlay, so what is below the fold says nothing, and forcing
@@ -106,7 +102,7 @@ shipped hook. Newest at the bottom.
 - **A hook file opens in a popover**, which inline added 166 pt a row.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something
-  failed", which is the whole of what some people want.
+  failed", which is all some people want.
 - **Cost of that**: a state file written by this build reads as off on a build
   with the picker. One caption at the foot says what holds for every toggle,
   where three (i) buttons said it three times.
@@ -114,8 +110,7 @@ shipped hook. Newest at the bottom.
   dialog arrives while the user is looking at the thing it is about and a
   refusal can be answered where it is read.
 - **The answer is runtime state**, re-read as the page opens and as the app
-  returns to the front, that being the way back from the settings the caption
-  points at.
+  returns to the front, the way back from the settings the caption points at.
 - **Export stores its trust answer before the write**, the digest being known
   from the bytes. Stored after, a poll reading the file in between asked the
   user to trust hooks they had just exported, and nothing withdrew it.

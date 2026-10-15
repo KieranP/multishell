@@ -5,40 +5,40 @@
   its licence text verbatim in `Licenses/`. Adding a dependency means deciding
   which.
 - **Most of what ships comes inside `libghostty.a`**: Ghostty's Zig packages,
-  its C libraries and two fonts. The debug build's executable is not stripped,
-  so `nm --defined-only` on it says which libraries the linker kept, and a
-  font's name table, in UTF-16, which fonts. Moving the Ghostty pin or a patch
-  means redoing that.
+  its C libraries and two fonts. The debug executable is not stripped, so
+  `nm --defined-only` on it says which libraries the linker kept, and a font's
+  name table, in UTF-16, which fonts. Moving the Ghostty pin or a patch means
+  redoing that.
 - **The archive also holds FreeType, libpng and zlib, which the linker drops**:
   at `ad97d33` the debug executable defines none of `FT_Init_FreeType`,
   `png_create_read_struct`, `inflate` or `deflate`, while it keeps `onig_new`.
   So the notices leave them out.
-- **libghostty is built here from Ghostty itself**, the `ThirdParty/ghostty`
-  submodule, by `Scripts/build-ghostty.sh`. The submodule's commit is the pin,
-  the embedding API not being stable.
+- **libghostty is built here from the `ThirdParty/ghostty` submodule** by
+  `Scripts/build-ghostty.sh`. The submodule's commit is the pin, the embedding
+  API not being stable.
 - **`Lakr233/libghostty-spm` was dropped for it.** Its libghostty came prebuilt
-  by a third party, with GNU libintl, LGPL, inside, which left open how a user
+  by a third party with GNU libintl, LGPL, inside, which left open how a user
   would relink it; its Swift wrapper also dropped the search counts and kept the
   selection to itself (design/terminals.md). `Lakr233/DisplayLink`, which only
   it depended on, went with it, and so did the bash-preexec it shipped.
 - **The patches in `ThirdParty/ghostty-patches/` came from libghostty-spm**,
   MIT, cut as plain diffs against the pin, each with its reasons in its own
   header: scroll remainder, synchronized output kept across a resize, and the
-  frame held while a prompt redraws. The last two are what stop the prompt line
-  blinking on a resize.
+  frame held while a prompt redraws. The last two are what stop a pane blinking
+  on a resize, the whole pane while a program repaints and the prompt line while
+  the shell redraws it.
 - **Its Xcode 27 libtool patch was dropped at `befcdfd`**: upstream's
   `a83a82b3f` normalises the archives before the merge itself, and a build
   without it gave the same archive, member for member.
 - **Two more leave out what the app never uses**: custom shaders and the
   inspector. Built with them, the executable keeps glslang, SPIRV-Cross and Dear
   ImGui, and the inspector's calls make the linker keep FreeType, libpng and
-  zlib too. Built without, the notices stay as short as they are. A user's
-  `custom-shader` line is dropped with them, having nothing to run.
+  zlib too. A user's `custom-shader` line is dropped, having nothing to run.
 - **0006 is ours**: `ghostty_surface_memory_usage`, a surface's terminal bytes
   for the debug tools (design/debug-tools.md), asked for upstream in
   ghostty-org/ghostty discussion #14524. Delete it once the pin has a
   surface-level call.
-- **i18n is off**, which is what keeps GNU libintl, LGPL, out of the executable:
+- **i18n is off**, which keeps GNU libintl, LGPL, out of the executable:
   Ghostty's Zig object then calls no gettext function, and the linker drops the
   archive's copy. The app's words are its own anyway.
 - **A patch that no longer applies stops the build** and names itself. Moving
@@ -49,9 +49,9 @@
   refuses it.
 - **The build itself applies them strictly**, never three-way: a merge it made
   unseen could build code nobody read.
-- **The build moves the submodule to the pin** when it is empty or behind, as
-  after a plain clone or a pull that moved the pin, where it would otherwise
-  build the old Ghostty and fail later as Swift that no longer compiles.
+- **The build moves the submodule to the pin when it is empty or behind**, as
+  after a plain clone or a pull that moved the pin; otherwise it would build the
+  old Ghostty and fail later as Swift that no longer compiles.
 - **A checkout past the pin stops the build** instead, since it may be a bump in
   progress that an update would throw away. A branch pinned earlier, or a pull
   that moves the pin back, stops it too:
@@ -61,9 +61,8 @@
 - **The build leaves the submodule clean**: it writes there only where Ghostty's
   `.gitignore` covers, and takes its patches back out.
 - **It also installs `libghostty-vt` under `lib/` and editor and shell files
-  under `share/`**, none of which the app uses. Ghostty's build installs them
-  whatever the options, leaving them out would take another patch, and none
-  reaches the bundle.
+  under `share/`**, none of which reaches the bundle. Ghostty's build installs
+  them whatever the options, and leaving them out would take another patch.
 - **One build at a time per worktree**, under `lockf`: two at once reverted the
   patches under each other and deleted each other's output.
 - **Ghostty's bash and zsh integration scripts are GPLv3 and are not shipped**;
@@ -79,21 +78,20 @@
   terminal: an interactive shell on one, outside its foreground group, stops
   itself on SIGTTIN. The session is a `POSIX_SPAWN_SETSID` flag, not
   `createSession`, which forks the whole app before each spawn and retries no
-  refused fork. Four parts stay ours. Its teardown stops once the direct child
-  exits, which let a grandchild trapping SIGHUP live on, so `ProcessStopper`
-  signals the group itself. It offers no hook between a child's exit and its
-  reap, so the runner watches for the exit and marks it first, or a stop could
-  signal a reused pid. Its answer to a cancelled task is SIGKILL, so each run is
-  shielded from cancellation (design/architecture.md). The runner opens its own
-  pipes: at the descriptor limit Subprocess traps on a pipe it opened when the
-  next open fails (its `Configuration.swift:1115`), where ours throw. Owning
-  them, it reads them too, and gives up a second after exit on an EOF a
-  background grandchild withholds. Subprocess's collectors have stopped at the
-  exit since 0.5, so the trap is the whole reason; DescriptorExhaustionTests
-  shows it.
-- **swift-system comes with it**, not named here but linked all the same;
-  Subprocess's paths are Apple's own `System` types, which is what this code
-  imports.
+  refused fork.
+- **Four parts stay ours.** Its teardown stops once the direct child exits,
+  which let a grandchild trapping SIGHUP live on, so `ProcessStopper` signals
+  the group itself. It offers no hook between a child's exit and its reap, so
+  the runner marks the exit first, or a stop could signal a reused pid. It
+  answers a cancelled task with SIGKILL, so each run is shielded from
+  cancellation (design/architecture.md). The runner opens its own pipes: at the
+  descriptor limit Subprocess traps on a pipe it opened when the next open fails
+  (its `Configuration.swift:1115`), where ours throw. Owning them, it reads them
+  too (design/architecture.md). Subprocess's collectors have stopped at the exit
+  since 0.5, so the trap is the whole reason; DescriptorExhaustionTests shows
+  it.
+- **swift-system comes with it**, linked though not named here; Subprocess's
+  paths are Apple's own `System` types, which is what this code imports.
 - **CryptoKit hashes the shared-settings files**, not swift-crypto: on the Mac
   that package only re-exports CryptoKit, and would add a notice to ship.
 - **libproc and the kernel's process sysctls read the process table**, from
@@ -111,9 +109,9 @@
   echoes `--path-format=absolute` back and answers relative, and `WorktreeGit`
   resolves the answer
   (`aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat`).
-- **prettier**, for the Markdown in `make format` and the Claude Code hook, not
-  in CI. From Homebrew rather than a `package.json`: there is no Node toolchain
-  here and a `node_modules` for one formatter is more than the docs are worth.
+- **prettier formats the Markdown** for `make format` and the Claude Code hook.
+  From Homebrew rather than a `package.json`: there is no Node toolchain here,
+  and a `node_modules` for one formatter is more than the docs are worth.
 - **`proseWrap: always` is what reflows to 80 columns.** Prettier pads a table
   row to its widest cell whatever `printWidth` says, and refuses a symlink, so
   the hook skips one and `CLAUDE.md` is formatted through `AGENTS.md`.

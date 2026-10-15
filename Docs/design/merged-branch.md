@@ -1,9 +1,7 @@
 # The merged-branch badge
 
-How "this branch landed" is decided without ever writing to the repository.
-Newest at the bottom.
+"This branch landed" is decided without ever writing to the repository.
 
-- **Deciding it is the whole feature**; the green glyph is the easy half.
 - **Ancestry alone cannot tell "landed" from "never began"**, a branch being cut
   at its start commit, nor from "was carried up", a pull in a worktree cut
   before the trunk moved fast-forwarding it.
@@ -78,7 +76,7 @@ Newest at the bottom.
   paced, a project of forty took five rounds at launch to badge them all. Cost:
   the first round asks every branch, held to the shared width below. Each counts
   as 250 ms against the round, so re-asks beside them get what is left of the
-  budget rather than all of it.
+  budget.
 - **A failed read is logged at its cost like an answer**, or it stayed never
   read and went unpaced every round.
 - **Nothing observable is written unless it changed**, or the sidebar redraws on
@@ -100,9 +98,8 @@ Newest at the bottom.
   poll's reads discard.
 - **The short print form is wrong the other way**, answering a `heads/`-prefixed
   name where a tag ties, which matches no worktree's branch.
-- **Either direction is wrong and neither is silent about nothing**: the tie
-  loses a badge the branch earned, or hands a certain "merged" to a branch
-  holding work nobody has landed.
+- **Either direction costs something**: the tie loses a badge the branch earned,
+  or hands a certain "merged" to a branch holding work nobody has landed.
 - **The base goes by refname too**: a tag ties with a local trunk and with a
   remote-tracking one alike, a tag named `origin/main` included. The short form
   stays for what a badge says it was merged into.

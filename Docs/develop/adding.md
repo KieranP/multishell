@@ -10,7 +10,7 @@ What each addition needs beyond the code itself.
   pane looks broken. Both are drawn per pane.
 - **A terminal engine.** There is one, named outright where the Mac half builds
   the model (design/terminals.md). A replacement implements the surface-host
-  protocol and is passed to the model in the Mac half.
+  protocol and is passed to the model there.
 - **What a host owes**: the session environment to the child, a finished command
   reported if the engine can tell, paste framed as a bracketed paste, typed text
   sent unbracketed as keystrokes so a shell runs the line, and each session's
@@ -23,6 +23,10 @@ What each addition needs beyond the code itself.
   them, so `panes find` prints what it has at its two-second limit. A host that
   cannot say a session's terminal memory returns `nil`, and Debug Info leaves
   that screen and scrollback in the app's row.
+- **A host judges a clicked link itself** before anything opens it, and hands a
+  text file to the delegate's `didAskToEdit` for the user's editor. Nothing
+  forces either. Left to libghostty, a link once ran whatever a program printed,
+  and from `ad97d33` one from a pane's text opens nothing (design/terminals.md).
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
@@ -62,24 +66,24 @@ What each addition needs beyond the code itself.
   standing for one thing is silent, which two are a subagent's start and end,
   which is the prompt that starts a turn, and which is its session starting.
 - **An event's timeout goes below five seconds where the agent caps it**, as
-  Codex does its two exit events at three, warning at every start otherwise.
+  Codex does its two exit events at three, or it warns at every start.
 - **Every agent with events needs the turn-starting one.** Most agents fire no
   hook on an interrupt, and the workers it killed send no stop, so the next
-  prompt is the only thing that clears them, dropping every worker no Stop saw
-  out and no list names as background work.
-- **A payload names a worker by id and type**, or that agent's own spelling,
+  prompt alone clears them, dropping every worker no Stop saw out and no list
+  names as background work.
+- **A payload names a worker by id and type**, or in that agent's own spelling,
   which needs a line in the payload reader. A start or end naming no worker
   still counts as one, taking an unnamed place.
 - **Whether the agent takes a turn when work it left out ends goes on the
   integration too**, beside whether a worker is a conversation of its own and
   which listed kinds wake it. All default to no, so nothing forces them: a
   resuming agent left at the default pays Done at its last worker out and again
-  at the woken turn's Stop (design/agents.md). Four more, whether its transcript
-  shows a notice still queued at a Stop, whether it shows a question a
-  permission prompt stands for, whether a file beside it names each worker's
-  parent and whether a tool call's result names the background work it launched
-  or stopped, are read only in Claude's format, so another agent needs a reader
-  of its own before it can say yes to any of them.
+  at the woken turn's Stop (design/agents.md). Four more are read only in
+  Claude's format, so another agent needs a reader of its own before it can say
+  yes to any: whether its transcript shows a notice still queued at a Stop or a
+  question a permission prompt stands for, whether a file beside it names each
+  worker's parent, and whether a tool call's result names the background work it
+  launched or stopped.
 - **An agent whose Stop does not list the shells it backgrounded names a shell
   marker on the integration**, text only such a shell's command line holds.
   Nothing forces it either: without one a pane waiting on the shell goes Done
@@ -103,10 +107,9 @@ What each addition needs beyond the code itself.
   strip layout divides the rest. `UIMetricsTests` checks across the font-size
   range that the floor leaves room for what a tab always draws.
 - **The split buttons' threshold is written out in that test** rather than
-  recomputed, and is the only place the widths are written down.
+  recomputed, the only place the widths are written down.
 - **The buttons and both gutters come off the room first**, so nothing measures
-  itself. A scroll wheel is not counted in tabs at all, the strip being handed
-  the turn sideways.
+  itself.
 - **A field on a sidebar row** also goes in that row's hand-written `==`, which
   leaves the closures out; a field missing there never redraws the row, and no
   test catches it (design/appearance.md). A row of a new height goes into
@@ -203,9 +206,11 @@ What each addition needs beyond the code itself.
   its panes also read git on every retitle, the fallback for shells that report
   nothing.
 - **The engine's own shell integration is off** (design/terminals.md), so prompt
-  marks, the cursor's shape and the `sudo` and `ssh` wrappers are the new
-  shell's scripts to write, or its panes go without click-to-move, the shape and
-  the wrappers.
+  marks, the directory report, the cursor's shape and the `sudo` and `ssh`
+  wrappers are the new shell's scripts to write, bar what it writes itself, as
+  fish 4 does its marks and directory. Without them its panes go without
+  click-to-move, a clicked relative path resolves from where the pane started,
+  and the shape and the wrappers are gone.
 - **The refresh's new parameter takes a default**, so the test callers that pass
   it every path, `GeneratedIntegration`, `ShellTab` and ShellIntegrationTests,
   still compile without the new one and write that shell's file into the debug
@@ -238,9 +243,9 @@ What each addition needs beyond the code itself.
   copy may return and leave the alert standing, a platform with no display link
   may never call back and leave the frame rate blank, and a notifier that needs
   no permission answers unavailable to both questions, which keeps the settings
-  page from promising a dialog. A platform with no windows or menu bar to offer
-  lists none, and refuses `window size`, `window full-screen`, choosing a menu
-  item and `debug screenshot`.
+  page from promising a dialog. A platform with no windows or menu bar lists
+  none, and refuses `window size`, `window full-screen`, choosing a menu item
+  and `debug screenshot`.
 - **A command-line request.** A case in `ControlRequest`, its answer in the
   model's `reply(to:)`, which the compiler holds total, its parsing in its
   group's file under the helper's `Control/`, its arguments in the group's file
@@ -300,7 +305,8 @@ What each addition needs beyond the code itself.
   seeded random tests find it if not, printing the seed and step to replay.
 - **Runtime state.** On the model, never the workspace. Keyed by worktree it
   also goes in the forget, or it outlives its row and the next worktree at that
-  path inherits it; keyed by project, in the project's removal.
+  path inherits it (design/worktrees.md); keyed by project, in the project's
+  removal.
 - **A value a poll or timer writes goes through `setIfChanged`**, or every view
   reading it redraws on each tick (design/merged-branch.md).
 - **The session states own who clears what**: change it there and in their

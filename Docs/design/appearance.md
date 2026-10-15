@@ -1,7 +1,5 @@
 # Appearance and window chrome
 
-Themes, the focused pane, the window the app draws itself. Newest at the bottom.
-
 - **Themes are hex strings**, so the core imports no UI framework and user theme
   files come free. Cost: a light terminal means a light sidebar whatever the OS
   mode.
@@ -26,9 +24,8 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **A settings window opens centred on the workspace's screen**, first tab,
   scrolled to the top. SwiftUI reshows the same window, so the close places it
   while nothing is on screen to jump.
-- **The focus ring and the fade are the theme's.** A hairline in the selection
-  colour was the wrong answer at a glance once groups made the question sharper,
-  so both are theme keys.
+- **The focus ring and the fade are theme keys.** A hairline in the selection
+  colour was the wrong answer at a glance once groups made the question sharper.
 - **The ring may be any colour, or empty for no line**; the fade dims every
   other pane towards the theme's background. The built-ins ring in their own
   blue, the selection colour being mixed to sit under text and reading as a
@@ -53,10 +50,9 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   hairline's to give.
 - **Not a strip across the pane.** A strip takes a row from every pane it is up
   in; a bar floating over the corner costs the terminal nothing.
-- **No match count beside the field yet**, which Ghostty has. The app decodes
-  libghostty's total and selected match and keeps them for `panes find`
-  (terminals.md), but the bar does not show them (TODO.md); an empty slot would
-  read as broken meanwhile.
+- **No match count beside the field yet**, which Ghostty has. The app keeps the
+  engine's counts for `panes find` (terminals.md) but the bar does not show them
+  (TODO.md); an empty slot would read as broken meanwhile.
 - **The theme sets the engine's search colours**, or it paints matches in its
   own defaults: matches in the theme's yellow, the selected one in the ring's
   colour, both with whichever of background and foreground is darker as their
@@ -64,9 +60,8 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **That layer sits over the user's Ghostty config**, so a search colour in
   their file is read and then overridden, as their background is. The family
   stays allowed because it carries nothing else a surface reads.
-- **A board card reads top down the way the sidebar does**, in a fixed two
-  lines: the mark with its state dot, project and branch with the git badge
-  right, then the tab title with the elapsed time on the same rail.
+- **A board card has two fixed lines, read top down as the sidebar is**: mark,
+  project, branch and git badge, then the tab title and elapsed time.
 - **The agent's name came off the card.** The tab title almost always repeated
   it, and the mark says what is at the prompt however the tab is named.
 - **The tab title is one line, truncated, and the badge shares the branch
@@ -83,8 +78,8 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **A project icon is tinted from a theme slot, not a hex**, so a theme change
   keeps it in step with the terminal.
 - **The icon comes from a grouped palette read by shape**, not a menu of names
-  read line by line: the menu is what held the list to a few dozen where the
-  palette carries hundreds. Still keyboard-drivable.
+  read line by line: the menu held the list to a few dozen where the palette
+  carries hundreds. Still keyboard-drivable.
 - **Emoji are gone**, having looked out of place. A glyph is a symbol name or
   nothing, one rule read the same way everywhere, so a leftover neither masks
   the icon a repo's file names nor is written back into it. Cost: a project that
@@ -92,7 +87,7 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **Sidebar rows compare everything but their closures**, so SwiftUI skips a row
   whose state has not moved. The closures are rebuilt on every render and never
   compare equal. Without the comparison each rebuild re-ran every row's tooltips
-  and accessibility label, measured at about half a millisecond at 40 rows.
+  and accessibility label, about half a millisecond at 40 rows.
 - **Cost of that**: a field added to a row and left out of its `==` never
   redraws the row, and a closure that comes to capture more than the row's own
   project or worktree goes stale. No test catches either.
@@ -110,8 +105,8 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   dot is. One fill for both drew a patch of sidebar on the header:
   WorktreeHeaderTests.
 - **The debug tools split the app from its children in the theme's blue and
-  yellow**, a pair every kind of colour blindness still tells apart, and taken
-  from the theme so a user theme recolours them. Cost: a theme whose blue and
-  yellow sit close loses the split. The terminals' memory is the same blue
-  paler, being inside the app's process, and the legend names it, so no colour
-  has to carry it alone.
+  yellow**, a pair every kind of colour blindness still tells apart, taken from
+  the theme so a user theme recolours them. Cost: a theme whose blue and yellow
+  sit close loses the split. The terminals' memory is the same blue paler, being
+  inside the app's process, and the legend names it, so no colour carries it
+  alone.

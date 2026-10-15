@@ -1,8 +1,7 @@
 # Memory
 
-Where the app's footprint goes, how to measure it, and what was tried. Measured
-on macOS 27, Apple silicon, the debug build, in October 2026. The decisions that
-came out of it are in design/debug-tools.md.
+Measured on macOS 27, Apple silicon, the debug build, in October 2026. The
+decisions that came out of it are in design/debug-tools.md.
 
 ## Measuring
 
@@ -33,11 +32,10 @@ came out of it are in design/debug-tools.md.
   loop inside a test never drains the main queue, so a test of what a deferred
   free releases awaits instead (`GhosttyTerminalHostTests`
   `closedSessionsLetTheirSurfaceViewsGo`).
-- **An agent opens a tab or the panel through the debug build's helper**,
-  `build/Multishell.app/Contents/Helpers/multishell`: `tabs open`,
+- **Drive the app with the debug build's helper** (build.md): `tabs open`,
   `debug tools on`, `debug info show`, then `debug samples` and `debug memory`
   for the readings, and `info` for the pid to hand `footprint`. `debug mark`
-  before a step prints the sample it lands in, to find the step in the readings.
+  before a step prints the sample it lands in.
 
 ## Where it goes
 
@@ -63,7 +61,7 @@ One shell tab, idle, debug tools off: 193 MB.
 - **A terminal reserves about 6 MB of screen pages as it opens.** Five tabs
   added 31 MB of live heap.
 - **Opening a tab briefly charges about 217 MB of GPU memory** before it settles
-  near 117 MB; four 32 MB surfaces were made, not three. Not traced further.
+  near 117 MB; four 32 MB surfaces were made, not three.
 - **Debug Info added 105 to 117 MB while open**, from its `Canvas` strips, now
   shapes (design/debug-tools.md).
 
@@ -97,9 +95,8 @@ update, the same either way.
 ## Tried and not kept
 
 - **A GPU column in Memory by tab.** A patch reporting each surface's renderer
-  bytes worked, but only Ghostty can say: nothing reports the app's own drawing
-  or any child's GPU memory, so one split source among many was dropped, and the
-  caption says the two are counted together.
+  bytes worked, but nothing reports the app's own drawing or any child's GPU
+  memory, so a split for one source among many was dropped.
 - **Shrinking Ghostty's render targets needs a patch**, and none is to be added
   for it. What a patch could do, for an idle pane:
 

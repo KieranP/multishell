@@ -2,97 +2,88 @@
 
 ## Layout
 
-- **One package: four libraries, the helper and the app.** MultishellCore:
-  model, with what a user sets under `Model/Settings/`, a repository's
-  `.multishell.json` under `Model/Settings/Shared/`, and a worktree's tabs and
-  panes under `Model/Tabs/`; store; theme; ports; the sessions and the reports
-  about them; the decoding every persisted type leans on; the libraries' word
-  lookup; where the app keeps its state on disk, under `StateOnDisk/`; the
-  command line's requests and the app's answers, under `Control/`; and, under
-  `Support/`, the small extensions and helpers every other library reaches for.
+- **One package: four libraries, the helper and the app.** MultishellCore holds
+  the model, with user settings under `Model/Settings/`, a repository's
+  `.multishell.json` under `Model/Settings/Shared/` and a worktree's tabs and
+  panes under `Model/Tabs/`; the store, theme and ports; sessions and their
+  reports; the decoding every persisted type leans on; the libraries' word
+  lookup; state on disk under `StateOnDisk/`; the command line's requests and
+  the app's answers under `Control/`; and under `Support/` the small helpers
+  every other library reaches for.
 - **MultishellProcess**: the children it starts, how a shell is started and
-  quoted, sockets, what the kernel answers about a process, a descriptor or a
-  terminal, under `Kernel/`, and, under `Support/`, what belongs to no concern.
-  **MultishellGitKit**: worktree operations, a create's and a removal's each
-  under its own folder of `Worktrees/`, a project's hooks and file lists, the
-  output readers, what a branch is, where it points and whether it landed, a
-  worktree's status, the runner above them all, and, under `Support/`, what
-  belongs to no concern. WorktreeGit and WorktreeCoordinator sit at its root
+  quoted, sockets, what the kernel answers about a process, descriptor or
+  terminal under `Kernel/`, and under `Support/` what belongs to no concern.
+  **MultishellGitKit**: worktree operations, a create's and a removal's each in
+  its own folder of `Worktrees/`; a project's hooks and file lists; the output
+  readers; what a branch is, where it points and whether it landed; status; the
+  runner; and `Support/`. WorktreeGit and WorktreeCoordinator sit at its root
   with their extensions under each concern, since five concerns extend them and
   none owns them, beside the state every WorktreeGit a launch builds shares.
-- **MultishellAppCore**: AppModel, detections, dialogs, error mapping, settings
-  as inherited, what a tab runs, what each session is doing, when to read git,
-  when to notify, the worktree creates and removals under way, every decision a
-  view makes; what a screen reader is told; what it needs from the app, and its
-  own implementations of Core's ports, under `Ports/`; what Debug Info measures
-  and shows, under `Debug/`; the JSON the command line prints, the settings keys
-  it takes and what a request keeps while it runs, under `Control/`; and, under
-  `Support/`, the pieces that belong to no concern.
-- **AppModel's extensions sit under `Model/` by concern**: agents, the board,
-  what each session is doing, tabs, worktrees, git reads, projects, the
-  sidebar's rows, the detail area, the debug tools' sampling and tables, the
-  tools it drives, and the command line's requests. What spans them all stays at
-  the root beside the type, since the concerns are too many for one alphabetical
+- **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited
+  settings, what a tab runs, what each session is doing, when to read git and to
+  notify, creates and removals under way, every decision a view makes, and what
+  a screen reader is told. What it needs from the app and its own
+  implementations of Core's ports go under `Ports/`, what Debug Info measures
+  and shows under `Debug/`, the JSON the command line prints, its settings keys
+  and what a request keeps while it runs under `Control/`, the rest under
+  `Support/`.
+- **AppModel's extensions sit under `Model/` by concern**, what spans them all
+  at the root beside the type: the concerns are too many for one alphabetical
   listing to keep a concern's files together.
 - **AppCore's `Integrations/` is the app's own side of them**: the helper and
   shell-integration files it installs, each agent's hooks as installed, and what
   the app's executable hands the helper when started with a command.
 - **Everything about a program someone else wrote is in Core's
-  `Integrations/`**, one folder per kind: agents, editors, shells, and the files
-  every agent's hooks are written into, under `AgentHookFiles/`. Another agent
-  touches the agents folder and no other, until someone draws its mark. Its
-  hooks, from the catalogue and the files they write to what a payload or
-  transcript reports, sit under `Agents/Hooks/`, and what reads or writes one
-  agent's own files under `Agents/Hooks/AgentOwnFiles/`.
-- **MultishellCLI is the helper**, built as `multishell-helper` and installed in
-  the bundle as `multishell`, since it and the app would share one products path
-  on a case-insensitive disk. Its commands that drive the app sit under
-  `Control/` by command group, beside the parsing, polling and errors they
-  share; every command's usage text, the reports' included, under `Usage/`; and
-  the reports hooks and shells send under `Reports/`. **MultishellAppUI is the
-  app**, built as `Multishell`: views, the engine host, the Mac platform port,
-  and a word lookup of its own.
-- **Its views sit under the part of the window they draw**: the sidebar, the
-  detail area, a group of tabs or a pane in it, the board, Debug Info, a
-  settings window, a dialog. The rest draw no part of one: reused small views
-  under `Shared/`, or `Settings/Controls/` where only the settings windows use
-  them, the agent marks, the AppKit modifiers and representables that reach
-  under SwiftUI for an event it has no gesture for or the window a view sits in,
-  the scene and menus. The engine host and the platform port each have a folder,
-  the host's split by what each part is to libghostty: config, runtime, surface,
-  input, clipboard, links. What draws nothing sits under `Support/`, the in-app
-  drag's pieces under `Support/Drag/`, unless it is by nature a piece of one
-  part: the mark parser sits with the marks, a dialog's AppKit alert with the
-  dialogs, and what both settings windows share at `Settings/`'s root. Every
-  `Theme+` and `UIMetrics+` extension sits under `Support/Appearance/`,
-  whichever part reads it: placed beside their parts, they moved back and forth
-  between reviews.
+  `Integrations/`**, one folder per kind: agents, editors, shells, and
+  `AgentHookFiles/` for the files hooks are written into. A new agent touches
+  the agents folder alone, until someone draws its mark. Its hooks sit under
+  `Agents/Hooks/`, and what reads or writes one agent's own files under
+  `Agents/Hooks/AgentOwnFiles/`.
+- **MultishellCLI is the helper**, built as `multishell-helper` and installed as
+  `multishell`, since it and the app would share one products path on a
+  case-insensitive disk. Commands that drive the app sit under `Control/` by
+  command group with the parsing, polling and errors they share, every usage
+  text under `Usage/`, and the reports hooks and shells send under `Reports/`.
+  **MultishellAppUI is the app**, built as `Multishell`: views, the engine host,
+  the Mac platform port and its own word lookup.
+- **Views sit under the part of the window they draw**: sidebar, detail area, a
+  group of tabs or a pane, board, Debug Info, a settings window, a dialog. Views
+  that draw no part of one go under `Shared/`, or `Settings/Controls/` where
+  only the settings windows use them, beside the agent marks, the AppKit
+  modifiers and representables reaching under SwiftUI, and the scene and menus.
+  The engine host and the platform port each have a folder, the host split by
+  what each part is to libghostty: config, runtime, surface, input, clipboard,
+  links.
+- **What draws nothing sits under `Support/`**, the in-app drag under
+  `Support/Drag/`, unless it is by nature a piece of one part: the mark parser
+  with the marks, a dialog's AppKit alert with the dialogs, what both settings
+  windows share at `Settings/`'s root. Every `Theme+` and `UIMetrics+` extension
+  sits under `Support/Appearance/`, whichever part reads it: placed beside their
+  parts, they moved back and forth between reviews.
 - **AppCore's values for a part of the window sit under the folder its views
-  use**: `Sidebar/`, `Board/`, `Detail/`, `Terminals/Panes/`, `Debug/` and the
-  rest, so a view and the decision it reads share one path in two targets.
-- **A file's folder follows what it is, never how many places call it.** A
-  generic extension stays in `Support/` when one concern alone calls it; a file
-  moves only when the folder it is in is wrong for what it holds.
+  use**, `Sidebar/` or `Terminals/Panes/` for instance, so a view and the
+  decision it reads share one path in two targets.
+- **A generic extension stays in `Support/` when one concern alone calls it**
+  (CLAUDE.md's folder rule); a file moves only when its folder is wrong for what
+  it holds.
 - **Each half's words live in the target that says them.** The libraries' also
-  carry the shell-integration scripts; the app's also carries the agent marks. A
-  second frontend is a third of these.
-- **`Resources/` at the root is not one of those**: the icon, the Info.plist
+  carry the shell-integration scripts, the app's the agent marks. A second
+  frontend is a third.
+- **`Resources/` at the root is none of those**: the icon, the Info.plist
   template, the entitlements and the stand-ins under `ghostty/`, which the
   bundling script reads and SwiftPM never sees, and a smaller icon for the
   README.
 - **`ThirdParty/` holds what is built rather than written here**: Ghostty as a
-  submodule, and the patches the build lays over it for the build alone.
-  `Scripts/build-ghostty.sh` builds it into the GhosttyKit binary target under
-  `.build/ghostty/`, which only the app links.
-- **Each suite's folders mirror the target it tests**, so a file and its tests
-  sit at the same place in two trees. A suite's harnesses and fakes stay at its
-  root, and a file covering several concerns goes by the one it spends most of
-  its lines on.
+  submodule, and the patches the build lays over it. `Scripts/build-ghostty.sh`
+  builds it into the GhosttyKit binary target under `.build/ghostty/`, which
+  only the app links.
+- **A suite's harnesses and fakes stay at its root**, and a file covering
+  several concerns is mirrored by the one it spends most of its lines on.
 - **What the suites share sits in plain targets**, a test target not being
-  dependable on. Two of them, split by what they drag in: TestScratch, needing
-  only Process and Subprocess, that every suite reaches, and TestSupport,
-  needing GitKit, for the suites that touch a real repository, so a Core or
-  Process suite does not link GitKit for a temporary path.
+  dependable on, split by what they drag in: TestScratch, needing only Process
+  and Subprocess, which every suite reaches, and TestSupport, needing GitKit,
+  for the suites that touch a real repository, so a Core or Process suite does
+  not link GitKit for a temporary path.
 - **TestScratch starts a child with the runner's own spawn options**, reached
   with `@testable`, so a test's shell and the app's cannot start differently.
 - **The app's suite, MultishellAppUITests, reaches TestScratch alone**; its
@@ -101,26 +92,21 @@
 ## Style
 
 - **`swift-format` from the toolchain and SwiftLint, each with its root
-  config**; build.md says which rules are off and why. Every top-level type gets
-  a file named for it, an error type, a null object and a test's helper
-  included; an extension of another type goes in `<Type>+<Concern>.swift`.
-- **A helper that would be `private` goes internal in a file of its own**,
-  beside the type it serves, or at the suite's root for a test's, so a file
-  never holds two. A type nested inside another stays with it. A dialog is a
-  `View` extension in `View+<Dialog>.swift`, attached by the scene that asked.
+  config**; build.md says which rules are off and why.
+- **CLAUDE.md's file per type covers an error type, a null object and a test's
+  helper too**, a test's helper at the suite's root. A dialog is a `View`
+  extension in `View+<Dialog>.swift`, attached by the scene that asked.
 - **A call or declaration that wraps puts each argument on its own line, with a
   trailing comma**, so adding or removing one changes one line. Chained calls
   are not split one to a line: that moved `.flatMap {` off its receiver.
-- **No `MARK` banners**: a file is the grouping. Tests are swift-testing, named
-  as sentences about behaviour, one suite to a file named for it.
+- **Tests are swift-testing, one suite to a file named for it.**
 
 ## Layering rules
 
-- **The four libraries import Foundation, Darwin, Dispatch, System, Observation,
-  Synchronization, CryptoKit and CoreGraphics, which Apple ships, and one
-  package, nothing else**: swift-subprocess in the process layer
-  (dependencies.md). CoreGraphics is there for the `CGRect` a pane's frame comes
-  back as.
+- **The four libraries import only what Apple ships, Foundation, Darwin,
+  Dispatch, System, Observation, Synchronization, CryptoKit and CoreGraphics,
+  and one package**, swift-subprocess in the process layer (dependencies.md).
+  CoreGraphics is there for the `CGRect` a pane's frame comes back as.
 - **MultishellAppUI is views, AppKit and the engine host.** Everything else
   lives in MultishellAppCore, including a plain value beside a view unless it
   names SwiftUI, AppKit, a Mac measurement or the engine.
@@ -130,15 +116,11 @@
   process layer or a port implementation, never a model or a view.
 - **Views call AppModel**, never the store, a host or git. A terminal's view
   comes from the model.
-- **A decision a view makes is a plain value in MultishellAppCore**, tested
-  there. Views measure nothing, and a test lays one out only to hold its size or
+- **Views measure nothing**, and a test lays one out only to hold its size or
   its pixels, in a window never ordered in.
-- **Small single-purpose files.** Comments only for why, a non-local
-  consequence, or a fact the code cannot show.
-- **`public` only where another target reads it.** The split costs a `public` on
-  every type a frontend or another library names, or meets in a signature it
-  calls, and nothing beyond that; the tests reach the rest with `@testable`, and
-  an internal type's members carry no `public` either.
+- **The split costs a `public` on every type a frontend or another library
+  names, or meets in a signature it calls**, and nothing beyond that; CLAUDE.md
+  has the rule.
 - **No user-visible literal outside a catalogue**, wherever it is written, and
   in the catalogue of the half that says it. A view never reads the libraries'
   words; one they both say is written in both (design/translation.md).

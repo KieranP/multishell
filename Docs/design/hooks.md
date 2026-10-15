@@ -1,8 +1,5 @@
 # Hooks and file lists
 
-What runs when a worktree is created or removed, and what is copied in. Newest
-at the bottom.
-
 - **A hook is a shell script, context in env vars**, so nothing needs quoting.
   Only a pre hook can refuse.
 - **Login and interactive**, or interactive alone for csh and tcsh, which refuse
@@ -26,11 +23,11 @@ at the bottom.
   with it empty, and an rc file naming the shell's own still names it.
 - **It runs in the pane, not a modal**, which would hold the window. A failed
   one holds its worktree until Dismiss. Pre-create has no worktree yet, so it
-  runs under the sheet, whose Cancel stops it. A create asked for over the
-  control socket has no sheet, so the `multishell` command that asked stands in
-  for Cancel: its exit, Ctrl-C included, stops the pre-create, as does the hook
-  timeout. With a timeout of zero, no limit, and the command left waiting, it
-  runs until it exits.
+  runs under the sheet, whose Cancel stops it.
+- **A create asked for over the control socket has no sheet**, so the
+  `multishell` command that asked stands in for Cancel: its exit, Ctrl-C
+  included, stops the pre-create, as does the hook timeout. With a timeout of
+  zero, no limit, and the command left waiting, it runs until it exits.
 - **Stopped through ProcessStopper**: SIGHUP to the process group then SIGKILL.
   Interactive shells ignore SIGTERM, and a shell with no terminal does not pass
   SIGHUP on. The SIGKILL is held back only where the group's leader started
@@ -55,7 +52,7 @@ at the bottom.
   `$HOME/x`, a leading `/` and a `..` that climbs out are refused rather than
   skipped for not existing; then against the disk, every folder on the way and
   the path's end. A user's list gets the lexical check and the destination's,
-  and is named, not refused (below).
+  and is named, not refused.
 - **A symlink a repo's list names is judged by where it leads**, since
   `copyItem` copies the link rather than following it: one leading out is
   refused, one staying inside is placed. One inside a listed directory is kept,
@@ -81,7 +78,6 @@ at the bottom.
   one reader serves both. Cost: a name starting with `#` is reached only by a
   pattern, `?` in place of the `#`.
 - **A failure shows stderr only from a marker line on**, which the script prints
-  after its `cd`. An interactive shell's rc files write to stderr too, and their
-  noise would lead the message. A script that ends at its `cd` shows all of it.
-  Cost: stdout comes first, the two streams being read apart, so their order
-  against each other is lost.
+  after its `cd`, or the rc files' noise on stderr would lead the message. A
+  script that ends at its `cd` shows all of it. Cost: stdout comes first, the
+  two streams being read apart, so their order against each other is lost.

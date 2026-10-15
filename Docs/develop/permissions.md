@@ -12,7 +12,7 @@
   where the hardened runtime has one. Extend both when a pane reaches somewhere
   new.
 - **TCC reads this app's entitlements for what a pane asks**, not only the
-  asking process's; design/signing.md records the test.
+  asking process's (design/signing.md).
 - **What a missing string costs depends on the service.** A folder is denied
   with no reason named; the device services kill the process that asked, with a
   privacy-violation abort and nothing shown.
@@ -26,12 +26,10 @@
   the `com.apple.TCC` subsystem in the unified log says which command actually
   asked.
 - **`AUTHREQ_ATTRIBUTION` names the accessing process** beside the responsible
-  one, which is always this app. Service names are the log's less the
-  `kTCCService` prefix.
+  one. Service names are the log's less the `kTCCService` prefix.
 - **App Management, Full Disk Access, Accessibility, Input Monitoring and Screen
-  Recording are granted only in System Settings**, so they are added by hand.
-  The last three can raise an alert when a program asks for one, but the alert
-  only opens Settings. The first two are only denied.
+  Recording are granted only by hand in System Settings.** The last three can
+  raise an alert, which only opens Settings; the first two are only denied.
 - **App Management is the one working on this app needs**: anything a pane runs
   that writes inside an app bundle wants it, a `make install` of this app
   included. Its service name is `SystemPolicyAppBundles`.

@@ -1,7 +1,5 @@
 # Smaller decisions
 
-What has no other file to go in. Newest at the bottom.
-
 - **Install Command Line Tool is the one thing run as root.** The two paths go
   in as Apple event parameters to a handler in a constant script, never
   interpolated into it, and the script quotes them with AppleScript's own form.
@@ -15,14 +13,13 @@ What has no other file to go in. Newest at the bottom.
 - **A confirmation that removes something is an `NSAlert`, not a SwiftUI
   dialog.** `.defaultAction` answers Return and repaints the button as the blue
   default, losing the red that says what it does, and no styling brings it back.
-  AppKit is stricter still: `layout()` takes Return off any button with
-  `hasDestructiveAction`, which is how the platform keeps a destructive action
-  from being the default. `DestructiveAlert` builds the alert and puts the key
-  back after presenting, the last layout there is. AppKit draws a default button
-  in the accent colour whatever its role, so `DestructiveAlert` paints the bezel
-  `.systemRed` there too, and again a turn later. The sheet lays out once more
-  on its way up, and until it does the button opens blue and only flashes red as
-  it is pressed.
+- **AppKit's `layout()` takes Return off any button with
+  `hasDestructiveAction`**, its way of keeping a destructive action from being
+  the default, so `DestructiveAlert` puts the key back after presenting, the
+  last layout there is. AppKit also draws a default button in the accent colour
+  whatever its role, so `DestructiveAlert` paints the bezel `.systemRed` there
+  and again a turn later: the sheet lays out once more on its way up, and until
+  then the button opens blue and only flashes red as it is pressed.
 - **macOS 27's alert button keeps no bezel colour**, and draws a destructive one
   red itself, the one taking Return solid in a key window and the rest pale; so
   `theLeadChoiceIsPaintedRedOverTheDefaultButtonsAccent` reads the drawing
@@ -30,8 +27,8 @@ What has no other file to go in. Newest at the bottom.
 - **Clearing the pending value takes the sheet down with it.** A worktree
   removed outside the app clears `pendingWorktreeRemoval`, and a sheet left
   standing would confirm a removal on a path git no longer knows (worktrees.md).
-  The `destructiveAlert` modifier drops the answer when that happens, rather
-  than reading it as a Cancel.
+  The `destructiveAlert` modifier drops the answer then, rather than reading it
+  as a Cancel.
 - **The shared-settings question stays a SwiftUI dialog.** Nothing it offers is
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a

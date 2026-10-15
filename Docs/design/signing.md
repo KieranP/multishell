@@ -1,8 +1,5 @@
 # Signing a local build
 
-Why a dev certificate, a hardened runtime and this entitlement set. Newest at
-the bottom.
-
 - **A local build is signed by a certificate, not ad hoc.** A grant is keyed to
   the designated requirement, and an ad-hoc one is a bare cdhash, so every build
   asked again for everything and a ticked box denied in silence.
@@ -13,8 +10,8 @@ the bottom.
   still having to build. Where signing with it fails it says why first, a silent
   fall back being what the certificate exists to avoid.
 - **The hardened runtime is on a local build, not saved for release.**
-  Notarisation requires it, and turning it on now means a local build runs under
-  what a notarised one will rather than meeting it at release.
+  Notarisation requires it, and with it on now a local build runs under what a
+  notarised one will rather than meeting it at release.
 - **It costs the build nothing.** The app links no third-party dylib, libghostty
   being static, so library validation has nothing to refuse, and the designated
   requirement is unchanged, so existing grants survive.
@@ -23,11 +20,10 @@ the bottom.
 - **The rest are for a pane**: audio input, Bluetooth, camera, USB, contacts,
   calendars, location, photo library. A coding agent takes dictation, a CLI
   reads a calendar or flashes a board, and macOS holds this app responsible.
-- **On the documented reading none of those is needed**, an entitlement being
-  checked against the process making the call. That reading is wrong.
-- **The test that settled it**: two copies of the bundle with different
-  identifiers, one holding the pane set and one not, each reading the Photos
-  library from a pane. The first prompted, naming itself; the second was refused
+- **The documented reading, that an entitlement is checked against the process
+  making the call, is wrong.** Two copies of the bundle with different
+  identifiers, one holding the pane set and one not, each read the Photos
+  library from a pane: the first prompted, naming itself; the second was refused
   and never asked.
 - **So TCC consults the responsible app's entitlements**, and a terminal holding
   none of these quietly denies its panes a service the user was never asked
@@ -50,7 +46,8 @@ the bottom.
   linked against either SDK.
 - **The two mechanisms do not substitute.** An entitlement is in the signature
   and says what may be asked for; a usage string is data in the bundle and is
-  the sentence in the alert. The missing string is the one that kills the asker.
+  the sentence in the alert. What a missing string costs is in
+  develop/permissions.md.
 - **A debug build is signed with `get-task-allow` as well**, added to a copy of
   the file rather than kept in the tree, because a release carrying it is
   refused notarisation.

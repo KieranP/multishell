@@ -34,8 +34,8 @@ Most pressing first within each heading. A decision that gets made moves to
 - Use Selection for Find: Cmd+F with text highlighted puts that text in the
   search field, read with `ghostty_surface_read_selection`. The engine's own
   binding for it stays bound and does nothing here until then.
-- The find bar's match count, "3 of 12": decode libghostty's search total and
-  selected actions in `GhosttySurfaceEvent` and show them beside the field.
+- The find bar's match count, "3 of 12": show the search total and selected
+  match, which `GhosttySurfaceEvent` already decodes, beside the field.
 
 ## Packaging
 

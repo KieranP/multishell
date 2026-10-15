@@ -22,10 +22,10 @@
 
 - **The Makefile is the entry point**: `signing-identity` once per machine, then
   `test`, `compile-app`, `build`, `release`, `run`, `install`, `format` and
-  `lint`. Each carries a comment line above it in the Makefile saying what it
-  does.
-- **`make-app.sh` builds the app and the CLI with `xcodebuild`** and wraps them
-  in a bundle, the CLI among its helpers.
+  `lint`.
+- **macOS needs a bundle** for a Dock icon, activation and the menu bar, and
+  SwiftPM emits a bare executable, so `make-app.sh` builds the app and the CLI
+  with `xcodebuild` and wraps them in one, the CLI among its helpers.
 - **libghostty finds its terminfo through `GHOSTTY_RESOURCES_DIR`**, which the
   app sets to `Contents/Resources/ghostty` at launch: a release libghostty reads
   the variable before its own walk up from the executable, so one inherited from
@@ -47,16 +47,14 @@
   submodule's `.zig-cache/` and `zig-pkg/`, which neither touches. A bare
   `swift build` needs it built already, the package naming the xcframework by
   path; `make libghostty` does it.
-- **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs (and
-  `build-ghostty.sh` its `die`). What stays in `make-app.sh` is the paths and
-  the order of the steps.
+- **`make-app.sh` keeps only the paths and the order of the steps**; its
+  functions are in `build-lib.sh`, which it sources (and `build-ghostty.sh` its
+  `die`).
 - **The Info.plist is a template filled in by placeholder**, and
   InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
   replacement is quoted because bash 5.2 and later read an unquoted `&` as the
   placeholder, and the assignment is not, because 3.2 then keeps the quotes.
-- **macOS needs a bundle** for a Dock icon, activation and the menu bar, and
-  SwiftPM emits a bare executable.
 - **A worktree's name is spelled down to safe characters** before it reaches the
   Info.plist: an unescaped ampersand in a branch name makes the file
   unparseable, and a bundle whose Info.plist will not parse does not launch.
@@ -64,19 +62,19 @@
   what makes a language pickable in System Settings. The libraries' half has to
   keep pace, or the app draws its windows translated and says the model's words
   in English.
-- **`make signing-identity` creates the self-signed certificate**; without it
-  the build signs ad hoc and says so. Not for distribution: it is so the user's
-  permission grants survive a rebuild.
-- **`MULTISHELL_SIGN_IDENTITY` picks another certificate**, and `-` forces ad
-  hoc. Only a `Developer ID` identity asks Apple's server for a timestamp, so
-  every other build signs offline.
+- **`make signing-identity` creates the self-signed certificate** that keeps
+  permission grants across rebuilds; it is not for distribution
+  (design/signing.md). `MULTISHELL_SIGN_IDENTITY` picks another certificate, and
+  `-` forces ad hoc.
 - **Every target works the same from a git worktree**, and two can build at
   once: the scratch directories are per-worktree and the shared caches lock only
   briefly. Each worktree has its own clone of the submodule, so a new one's
-  first libghostty build starts with no `.zig-cache/` or `zig-pkg/`.
-- **Running the tests is the exception**, several bounds being wall-clock. So
+  first libghostty build starts with no `.zig-cache/` or `zig-pkg/`. A debug
+  bundle built in one names it in its state file and socket, so two can run at
+  once (state-on-disk.md).
+- **Running the tests is the exception**, several bounds being wall-clock.
   `make test` compiles unguarded, then runs under a lock file: a second worktree
-  compiles alongside the first and waits, silently, only for its turn to run.
+  compiles alongside the first and waits silently for its turn to run.
 - **`lockf -k` keeps the lock file**, which is what gives the queue its order.
   Where there is no `lockf`, the suites run unguarded.
 - **A bare `swift test` takes no lock**, and nothing caps the compiler's own
@@ -84,27 +82,24 @@
 - **`make test` runs the suites in a write sandbox**, `Scripts/test-sandbox.sb`
   through `sandbox-exec`: the build tree, SwiftPM's caches and the temporary
   directories only. A bare `swift test` has none, so run the tests through make.
-  Where there is no `sandbox-exec`, `make test` runs the suites unconfined.
+  Without `sandbox-exec`, `make test` runs the suites unconfined.
 - **SwiftPM sandboxes its manifest compile**, and one sandbox cannot be applied
   inside another, so the sandboxed run passes `--disable-sandbox`, which lifts
   only SwiftPM's.
-- **A debug bundle built in a worktree names it** in its state file and socket
-  (state-on-disk.md), so two can run at once.
 
 ## Why the app is built through xcodebuild
 
 - **`swift build` wrote the tree's own build path into the binary** as the place
   the resource accessor looks after the app root, and codesign refuses anything
   at the app root.
-- **So an installed app read its resources from the build directory**, the
-  engine's terminfo then among them, and the next build there took it away:
-  every shell started with a TERM it had no entry for, drew doubled letters and
-  lost key combinations.
+- **So an installed app read its resources, terminfo among them, from the build
+  directory**, and the next build there took them away: every shell started with
+  a TERM it had no entry for, drew doubled letters and lost key combinations.
 - **Xcode's own build of the same package writes no path** and looks in the
   bundle's resources first, so the script runs `xcodebuild` and refuses a binary
   that carries a build path.
-- **The CLI comes the same way**, linking the same libraries, so it could carry
-  the same path. Both go through the same checks.
+- **The CLI is built the same way and checked the same**, linking the same
+  libraries and so able to carry the same path.
 - **The checks pipe into a counting grep, not a quiet one**: under `pipefail` a
   quiet grep quits at its first match, `strings` writes into a closed pipe, and
   the pipeline's SIGPIPE status reads a match as a miss.
@@ -121,9 +116,9 @@
 - **`-quiet` prints a failure for a compile that only warned**, so each run is
   logged, shown whole on failure and reduced to its warning and error lines on
   success.
-- **Cost**: xcodebuild keeps a derived directory of its own, so everything
-  compiles twice for anyone running the tests and the build. The app's and the
-  helper's schemes share it.
+- **Cost**: xcodebuild keeps a derived directory of its own, shared by the app's
+  and the helper's schemes, so everything compiles twice for anyone running the
+  tests and the build.
 - **CI runs two jobs in parallel**: build and test, and the lint. It calls
   `swift test` directly, so it takes no lock and has no write sandbox: a test
   writing outside the temporary directories passes there. It shares only the
@@ -156,12 +151,12 @@
   Sources), `AllPublicDeclarationsHaveDocumentation` (615 undocumented), and
   `BeginDocumentationCommentWithOneLineSummary`, 878 doc comments written as
   prose.
-- **Every SwiftLint rule runs but those in `disabled_rules`**, each listed in
-  `.swiftlint.yml` with its reason. Layout rules run beside swift-format where
-  the two agree; where they disagree, as on brace placement after a full header,
-  import order and a lone wrapped element's trailing comma, swift-format's
-  answer stands. They cost about 0.3 s of SwiftLint's 1.1 s uncached;
-  swift-format takes 4 s.
+- **Every SwiftLint rule runs but those in `disabled_rules`**, each with its
+  reason in `.swiftlint.yml`. Layout rules run beside swift-format where the two
+  agree; where they disagree, as on brace placement after a full header, import
+  order and a lone wrapped element's trailing comma, swift-format's answer
+  stands. They cost about 0.3 s of SwiftLint's 1.1 s uncached; swift-format
+  takes 4 s.
 - **SwiftLint is pinned by `swiftlint_version`**, and any other version refuses
   to run. With every rule on, a newer SwiftLint would switch its new rules on
   unasked, so a bump is when they are reviewed. CI downloads that release;
@@ -209,14 +204,11 @@
 
 ## Driving a debug build
 
-- **The command line drives a running copy without a click**: open tabs, type
-  and run a line in a pane, read a pane's text and wait on it, report a state,
-  open the board and the settings windows, size the window, clear a dialog,
-  change settings, read Debug Info, mark and follow its samples, and write the
-  window or a pane to a PNG. `multishell help` lists it, and each helper drives
-  only its own build's app, a worktree's debug build its own. So call
-  `build/Multishell.app/Contents/Helpers/multishell`, not the `multishell` on
-  PATH, which belongs to whichever build installed it (state-on-disk.md).
+- **The command line drives a running copy without a click**, from opening tabs
+  and typing in a pane to reading Debug Info and writing a screenshot;
+  `multishell help` lists it. Each helper drives only its own build's app, so
+  call `build/Multishell.app/Contents/Helpers/multishell`, not the `multishell`
+  on PATH, which belongs to whichever build installed it (state-on-disk.md).
 - **`multishell info` lists what is up**: an alert or dialog stalls a script
   that cannot click, and `multishell ui dismiss` cancels the topmost.
 - **Look with `multishell debug screenshot`**, which writes a new PNG under
@@ -263,5 +255,3 @@
 - **Otherwise a view change stops at the checks above**: say what is unverified
   and leave the looking to the user. BUGS.md takes no entry for it, since
   whether a feature draws and works is checked by hand as it is built.
-- **Anything decidable without a screen belongs in a plain value** in
-  MultishellAppCore, tested there.

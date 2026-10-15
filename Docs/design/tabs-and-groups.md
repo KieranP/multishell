@@ -25,9 +25,9 @@ bottom.
 - **A group is a record of its own**, not a field on the tab, because it
   outlives the tabs passing through it: its width and which tab it shows survive
   a tab moving out.
-- **It holds the tab it shows**, where that was once a dictionary on the
-  workspace: git hands back worktree records every refresh, and nothing
-  rediscovers a group.
+- **It holds the tab it shows**, which was once a dictionary on the workspace:
+  git hands back worktree records every refresh, and nothing rediscovers a
+  group.
 - **A group never stands empty.** Its last tab leaving takes it with it and
   hands focus to the group that slid into its place, as a strip does when the
   tab it shows closes.
@@ -47,8 +47,8 @@ bottom.
 - **A dragged tab closed mid-drag ends the drag with it.** One whose button is
   rebuilt, as when the strip starts or stops scrolling, keeps it: the session's
   end reaches only the button that began the drag, so this one ends once the
-  mouse button is seen up, polled every 100 ms, and 250 ms after that so a drop
-  that landed reads it first.
+  mouse button is seen up, polled every 100 ms, plus 250 ms so a drop that
+  landed reads it first.
 - **A drag nothing takes, Escape included, puts the tab back**, as does a drop
   refusing it, at the drop or when the move runs a turn later: a sidebar row, a
   band, a tab that closed in between, or its own group's terminal area, which
@@ -87,12 +87,12 @@ bottom.
   Nothing is drawn from a flag set when the drag began, only from what the
   pointer is over.
 - **What shows the drag is the tab.** Along its own strip it moves as the
-  pointer passes each neighbour, which is what a tab strip does everywhere.
+  pointer passes each neighbour, as a tab strip does everywhere.
 - **The arithmetic deciding that has to agree with the store's exactly**, or the
   tab moves on every mouse event and never settles. It is a tested value, held
   to the same index sum.
 - **The tab that just slid under the pointer is not an anchor to move itself
-  past**, which is what keeps it from oscillating.
+  past**, which keeps it from oscillating.
 - **Elsewhere the tab stays where it is and fades**, and the place it would land
   lights up: a line in another group's strip, a band over a terminal, a row in
   the sidebar.
@@ -117,8 +117,8 @@ bottom.
   tab almost no title at UI sizes 10 to 12
   (`aTabStripsMeasuresHoldWhatTheyDrawAtEverySize`).
 - **A group minimum is not the answer**, which is where this started: it would
-  have to grow with the number of tabs, and a worktree with eight would stop
-  being something you can put beside another. The floor belongs to the tab.
+  have to grow with the number of tabs, and a worktree with eight could no
+  longer sit beside another. The floor belongs to the tab.
 - **The end with tabs past it carries an arrow, in a gutter outside the
   scroller.** Over the tabs it would take the click meant for the tab under it,
   or sit there looking like a button and doing nothing.
@@ -126,7 +126,7 @@ bottom.
   whole tab past it. Counting in whole tabs left it dead over a half-shown tab,
   the arrow being drawn from the same half point.
 - **It was a fade first**, on the argument that a fade cannot be mistaken for a
-  control, and the fade turned out too quiet to read as anything at all.
+  control, and the fade was too quiet to read as anything at all.
 - **Both gutters keep their room whether an arrow is drawn or not**, so tabs do
   not shift under the pointer as one end runs out, and the reserved room is what
   the viewport is measured as.
@@ -146,25 +146,23 @@ bottom.
   three buttons take, so the splits are shown only above a threshold.
 - **That threshold asks for the buttons, both gutters and a whole tab besides.**
   Counting only a tab buys the splits by leaving a scrolling strip with no
-  arrows, which is the one thing arrows are there to prevent. `UIMetricsTests`
-  writes the widths out.
+  arrows, the one thing arrows are there to prevent. `UIMetricsTests` writes the
+  widths out.
 - **Asked of the width unconditionally**, not of whether the strip scrolls,
   which is decided from the room this leaves: the two would chase each other.
 - **Costs**: three buttons of gutter rather than one, so a strip shows a whole
-  tab later; and a group under the threshold offers the splits on its menu and
-  keystrokes alone.
-- **More costs**: no auto-scroll while a tab is dragged near an end, so a
+  tab later; a group under the threshold offers the splits on its menu and
+  keystrokes alone; no auto-scroll while a tab is dragged near an end, so a
   reorder reaches only the tabs on screen; and a strip whose tabs differ widely
   in width is the one shape where the shuffle could cross a boundary twice.
 - **A wheel over the strip scrolls it sideways.** A horizontal scroll already
   reached the scroller, so a trackpad worked from the start and a mouse, which
   turns one way, did nothing.
-- **The turn is turned rather than counted.** A catcher answers hit-testing only
-  for a scroll whose vertical beats its horizontal, copies the event, moves its
-  vertical deltas into the horizontal fields and hands it to the strip's
-  scroller.
-- **So clicks, drags and a sideways scroll reach the tabs untouched**, and the
-  pixels, the momentum and the rubber band stay AppKit's.
+- **The turn is redirected rather than counted.** A catcher answers hit-testing
+  only for a scroll whose vertical beats its horizontal, and hands the strip's
+  scroller a copy with the vertical deltas moved into the horizontal fields. So
+  clicks, drags and a sideways scroll reach the tabs untouched, and the pixels,
+  the momentum and the rubber band stay AppKit's.
 - **Copied rather than built**, so the phase, momentum and precision it arrived
   with are kept. A turn that goes sideways partway through is passed on
   unchanged, a scroll being routed by its first event.
@@ -176,11 +174,10 @@ bottom.
   being the smaller on that branch and dropped rather than mixed in.
 - **Two halves, because neither placement can do the job alone.** Inside the
   scroller the catcher is hit-tested and never called, a scroller taking every
-  scroll over its own content first.
-- **Outside it cannot find the scroller either**, SwiftUI flattening the tree,
-  and climbing from there took the sidebar's, so the wheel scrolled the sidebar.
-- **So a marker inside the content hands the scroller over**, that being the one
-  place the enclosing-scroller lookup is exact.
+  scroll over its own content first. Outside, it cannot find the scroller
+  either, SwiftUI flattening the tree, and climbing from there took the
+  sidebar's, so the wheel scrolled the sidebar. So a marker inside the content
+  hands the scroller over, the one place the enclosing-scroller lookup is exact.
 - **Stepping whole tabs came first** and read as jumpy: an arrow is a click and
   can move a tab at a time, a wheel is continuous and cannot.
 - **A tab dropped in another group takes the keyboard with it.** The drop
@@ -210,8 +207,8 @@ bottom.
   and every group has one.
 - **Before the login shell has answered it offers the shell alone**, rather than
   a catalogue of agents the machine may not have, and fills in when the scan
-  lands. A typed custom command is the exception, listed from launch: it has no
-  scan to wait for.
+  lands. A typed custom command is listed from launch, having no scan to wait
+  for.
 - **The plus draws its own chevron**, small enough to read as a mark on it
   rather than a second glyph, which makes the button wider than the splits
   beside it.

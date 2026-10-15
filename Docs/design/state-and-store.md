@@ -1,7 +1,5 @@
 # Persisted state
 
-What is written, what is repaired, how it is tested. Newest at the bottom.
-
 - **Persisted state is repaired, never trusted.** Starting empty and then saving
   deletes the user's sidebar to fix a bug of ours.
 - **Projects are strict where other collections are lossy.** A project is the
@@ -22,10 +20,9 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   the directory's permission, not the file's, so without the move the first
   autosave replaces the user's projects with an empty workspace.
 - **Where even the move fails, saving is off until the file is gone**, silently,
-  the failed load having already said it. Each save asks whether it is still
+  the failed load having already said so. Each save asks whether it is still
   there, so one the user moves away lets this session save again. Cost: a file
-  made readable mid-run is not read until relaunch, this session having started
-  without it.
+  made readable mid-run is not read until relaunch.
 - **Duplicates are dropped after the prune, not before.** First entry wins, so a
   tab id written twice, once naming a worktree that has gone, kept the dead copy
   and lost the live one to the dangling prune.
@@ -35,11 +32,11 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
 - **So resolve per render and never store one.** The settings window looks its
   project up each body; the model accessors trust what they are handed rather
   than paying a lookup per row.
-- **Whatever holds one past its render cannot**: settings bindings whose
-  closures outlive it, a button action run after it, the worktree order whose
-  rule the settings window changes from its own scene, a fetch holding a project
-  across the network, an export, and the write-back of a read taken before
-  awaiting git. Each looks the record up by id.
+- **Whatever holds one past its render looks the record up by id**: settings
+  bindings whose closures outlive it, a button action run after it, the worktree
+  order whose rule the settings window changes from its own scene, a fetch
+  holding a project across the network, an export, and the write-back of a read
+  taken before awaiting git.
 - **`ProjectTests` is the guard.** `Project` hand-writes its coding keys, `==`
   and `hash` to keep this run's read of a repo's file out of all three, so a
   field added later would be silently unsaved.
@@ -48,9 +45,9 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   a failed save is reported a moment after the change.
 - **And in order.** The store hands out a snapshot with a ticket; a ticket older
   than the last landed is dropped rather than written over newer state. The
-  encode is outside the lock, and so are taking a ticket and asking whether one
-  landed. The main actor does both, and a write stalled on a volume would hold
-  the window.
+  encode, taking a ticket and asking whether one landed are all outside the
+  lock: the main actor does the last two, and a write stalled on a volume would
+  hold the window.
 - **Quit still writes on the calling thread**, through the same lock, so it
   lands after whatever was in flight.
 - **One copy of a build runs at a time.** Two copies both autosaved, and
@@ -62,10 +59,8 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   build beside the installed app is not a second copy.
 - **A copy that failed to quit starts no shell.** Its tabs' reports would reach
   the running copy's socket.
-- **Debug builds keep their own state file, socket, integration and drops
-  directories, and their own helper link**, so a debug run beside the installed
-  app touches none of them. Themes and the hooks' helper link are shared
-  (develop/state-on-disk.md).
+- **A debug build keeps its own files** (develop/state-on-disk.md), so a debug
+  run beside the installed app touches none of the app's.
 - **`WorkspaceStore` only grows**: `private(set) var workspace` keeps every
   writer inside it, so each new mutation is another method there. Lookups it
   repeats belong on `Workspace`, where the store's methods share them.
@@ -77,11 +72,12 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   preference falls back. Kept, it raised an install alert at every run for an
   agent the app no longer offers. Cost: the next save drops the id, so an older
   build that still has the agent opens those tabs as shells.
+  `WorkspaceRetiredAgentsTests` holds it.
 - **A renamed field keeps the key it was saved under**, as the preferred shell
   keeps `defaultShell` and the failed notification toggle `error`: a new key
   reads every earlier file as missing it, and the default replaces the user's
   choice. `WorkspaceTests` counts `Workspace`'s keys against its fields, so a
   field left out of the coding keys fails there rather than going unsaved.
 - **Debug tools keep nothing in the workspace**, the toggle included. A sample a
-  second in the store would schedule a save a second, and debug-tools.md says
-  why the toggle ends with its launch.
+  second in the store would schedule a save a second; debug-tools.md says why
+  the toggle ends with its launch.
