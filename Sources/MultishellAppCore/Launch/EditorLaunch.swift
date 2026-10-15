@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// What Open in Editor does for the editor in force, decided apart from the
-/// view and the model so it can be tested.
+/// What Open in Editor, or a text file's link clicked in a pane, does for the
+/// editor in force, decided apart from the view and the model so it can be tested.
 enum EditorLaunch {
   enum Action: Equatable {
     case openApplication(URL)
@@ -13,6 +13,10 @@ enum EditorLaunch {
     /// Run the editor's command line shim through the login shell, in the
     /// background: the application it starts is what the user sees.
     case runInBackground(String)
+
+    var startsAShell: Bool {
+      if case .openApplication = self { false } else { true }
+    }
   }
 
   /// `nil` when the editor is in the catalogue but not installed.
@@ -20,7 +24,7 @@ enum EditorLaunch {
     editorID: String,
     found: EditorDetection.Found?,
     customTemplate: String,
-    directory: URL,
+    target: EditorTarget,
     shell: ShellInvocation,
     handOver: String,
   ) -> Action? {
@@ -28,7 +32,7 @@ enum EditorLaunch {
       guard
         let line = EditorCatalogue.customCommandLine(
           customTemplate,
-          path: directory,
+          target: target,
           forShellNamed: shell.executable.lastPathComponent,
         ),
         let command = TabCommand.running(customLine: line, shell: shell, handOver: handOver)
@@ -41,15 +45,27 @@ enum EditorLaunch {
       if let application = found?.application { return .openApplication(application) }
       guard let executable = found?.executable else { return nil }
       return .runInBackground(
-        AnyShellQuoting.commandLine([executable.path, directory.path])
+        AnyShellQuoting.commandLine([executable.path, target.path.path])
       )
 
     case .terminal:
       guard let executable = found?.executable else { return nil }
       return .openTab(
         title: editor.name,
-        command: TabCommand.running([executable.path, "."], shell: shell, handOver: handOver),
+        command: TabCommand.running(
+          [executable.path, argument(for: target)],
+          shell: shell,
+          handOver: handOver,
+        ),
       )
+    }
+  }
+
+  /// The tab runs in the worktree, so a worktree is `.` to its editor.
+  private static func argument(for target: EditorTarget) -> String {
+    switch target {
+    case .file(let file): file.path
+    case .worktree: "."
     }
   }
 

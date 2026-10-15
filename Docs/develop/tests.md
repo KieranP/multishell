@@ -414,6 +414,12 @@ says why these are the rules.
   (GhosttyPasteConfirmationTests). Secure keyboard entry's balance against a
   fake system switch is GhosttySecureInputTests. Focus kept in step with the
   window is not: libghostty's own idea of it shows only on a live surface.
+- **Under `make test` a surface's command never runs**: libghostty starts it
+  through `/usr/bin/login`, setuid, which the sandbox refuses with `EPERM`. So a
+  link clicked in a pane is tested from the event on (GhosttySurfaceEventTests,
+  GhosttyLinkRuleTests, GhosttyLinkPathTests, GhosttyLinkClicksTests,
+  GhosttyTerminalHostTests); that libghostty sends the event for a Cmd+click was
+  seen by hand at `ad97d33`.
 - **A config file outliving its load, and the line a diagnostic names**:
   GhosttyLoadedConfigTests, against the real libghostty in a scratch directory.
 - **What a zsh prompt tells the terminal now the engine's integration is off**,

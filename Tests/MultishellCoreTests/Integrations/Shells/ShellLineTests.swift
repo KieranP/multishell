@@ -64,7 +64,7 @@ struct ShellLineTests {
       let line = try #require(
         EditorCatalogue.customCommandLine(
           template,
-          path: path,
+          target: .worktree(path),
           forShellNamed: shell.executableName,
         )
       )

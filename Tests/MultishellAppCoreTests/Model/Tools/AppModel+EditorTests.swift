@@ -66,7 +66,7 @@ struct AppModelEditorTests {
     harness.model.openInEditor(harness.main)
 
     try await waitUntil { !harness.platform.opened.isEmpty }
-    #expect(harness.platform.opened.map { $0.directory } == [harness.main.path])
+    #expect(harness.platform.opened.map { $0.item } == [harness.main.path])
     #expect(harness.platform.opened.map { $0.application } == [vscode])
     #expect(harness.model.workspace.tabs.isEmpty, "the application opens it, not a tab")
   }
@@ -122,6 +122,91 @@ struct AppModelEditorTests {
     harness.model.setPreferredEditor("vscode")
     harness.model.openInEditor(harness.main)
     #expect(harness.model.presentedError?.title == "Visual Studio Code is not installed")
+  }
+
+  @Test func aTextFileClickedInAPaneGoesToTheChosenApplication() async throws {
+    let (harness, session) = Harness.withOnePane()
+    let vscode = URL(fileURLWithPath: "/Applications/Visual Studio Code.app", isDirectory: true)
+    harness.platform.applications["com.microsoft.VSCode"] = vscode
+    await harness.model.refreshLoginEnvironment()
+    harness.model.setPreferredEditor("vscode")
+    let file = harness.main.path.appendingPathComponent("run.py")
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToEdit: file, in: session.id)
+
+    try await waitUntil { !harness.platform.opened.isEmpty }
+    #expect(harness.platform.opened.map { $0.item } == [file])
+    #expect(harness.platform.opened.map { $0.application } == [vscode])
+  }
+
+  @Test func aTextFileClickedInAPaneOpensATerminalEditorAsATabInThatPanesWorktree() throws {
+    let (harness, session) = Harness.withOnePane()
+    let nvim = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
+    harness.model.editorDetection = EditorDetection(
+      found: ["nvim": .init(application: nil, executable: nvim)])
+    harness.model.setPreferredEditor("nvim")
+    let file = harness.main.path.appendingPathComponent("run.py")
+    harness.model.select(harness.feature)
+    let tabCount = harness.model.workspace.tabs.count
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToEdit: file, in: session.id)
+
+    #expect(harness.model.workspace.tabs.count == tabCount + 1)
+    let opened = try #require(harness.engine.opened.last)
+    #expect(opened.worktreeID == harness.main.id)
+    #expect(opened.command?.last?.contains("\(nvim.path) \(file.path)") == true)
+  }
+
+  @Test func aTextFileClickedInAPaneWithNoEditorChosenOpensInThePlainTextEditor() async throws {
+    let (harness, session) = Harness.withOnePane()
+    let textEdit = URL(fileURLWithPath: "/System/Applications/TextEdit.app", isDirectory: true)
+    harness.platform.plainTextEditor = textEdit
+    harness.model.presentedError = nil
+    let file = harness.main.path.appendingPathComponent("run.py")
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToEdit: file, in: session.id)
+
+    try await waitUntil { !harness.platform.opened.isEmpty }
+    #expect(harness.platform.opened.map { $0.item } == [file])
+    #expect(harness.platform.opened.map { $0.application } == [textEdit])
+    #expect(harness.model.presentedError == nil, "a click asks for no setting first")
+  }
+
+  @Test func aTextFileClickedInABusyWorktreeOpensInThePlainTextEditorNotATab() async throws {
+    let (harness, session) = Harness.withOnePane()
+    let textEdit = URL(fileURLWithPath: "/System/Applications/TextEdit.app", isDirectory: true)
+    harness.platform.plainTextEditor = textEdit
+    harness.model.setPreferredEditor(EditorCatalogue.customID)
+    harness.model.setCustomEditorCommand("my-editor {path}")
+    harness.model.worktreeOperations.begin(.preDeleteHook, on: harness.main.id)
+    let tabCount = harness.model.workspace.tabs.count
+    let file = harness.main.path.appendingPathComponent("run.py")
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToEdit: file, in: session.id)
+
+    try await waitUntil { !harness.platform.opened.isEmpty }
+    #expect(harness.platform.opened.map { $0.item } == [file])
+    #expect(harness.platform.opened.map { $0.application } == [textEdit])
+    #expect(harness.model.workspace.tabs.count == tabCount, "its directory is about to be trashed")
+  }
+
+  @Test func anApplicationEditorTakesAClickedFileWhateverStateTheWorktreeIsIn() async throws {
+    let (harness, session) = Harness.withOnePane()
+    let vscode = URL(fileURLWithPath: "/Applications/Visual Studio Code.app", isDirectory: true)
+    harness.platform.applications["com.microsoft.VSCode"] = vscode
+    await harness.model.refreshLoginEnvironment()
+    harness.model.setPreferredEditor("vscode")
+    harness.model.worktreeOperations.begin(.preDeleteHook, on: harness.main.id)
+    harness.model.directoryProbe = DirectoryProbe(exists: { _ in false })
+    harness.model.presentedError = nil
+    let file = URL(fileURLWithPath: "/etc/hosts")
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToEdit: file, in: session.id)
+
+    try await waitUntil { !harness.platform.opened.isEmpty }
+    #expect(harness.platform.opened.map { $0.item } == [file])
+    #expect(harness.platform.opened.map { $0.application } == [vscode])
+    #expect(harness.model.presentedError == nil, "no shell starts, so its folder is no question")
   }
 
   @Test func theCustomCommandFieldShowsOnlyForTheCustomEditor() {

@@ -39,10 +39,12 @@ enum GhosttyRuntimeCallbacks {
   /// Surface actions decoded on the thread they arrive on, the payload's
   /// pointers living only that long; `false` lets libghostty act itself.
   private static func perform(_ action: ghostty_action_s, on target: ghostty_target_s) -> Bool {
-    guard target.tag == GHOSTTY_TARGET_SURFACE,
-      let event = GhosttySurfaceEvent(action),
-      let userdata = ghostty_surface_userdata(target.target.surface)
-    else { return false }
+    guard target.tag == GHOSTTY_TARGET_SURFACE, let event = GhosttySurfaceEvent(action) else {
+      return false
+    }
+    guard let userdata = ghostty_surface_userdata(target.target.surface) else {
+      return event.isLinkClick
+    }
     withView(userdata) { $0.receive(event) }
     return true
   }

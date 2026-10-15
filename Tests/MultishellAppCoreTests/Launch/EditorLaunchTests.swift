@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 import TestScratch
 import Testing
 
@@ -13,12 +14,13 @@ struct EditorLaunchTests {
     _ id: String,
     found: EditorDetection.Found? = nil,
     custom: String = "",
+    file: URL? = nil,
   ) -> EditorLaunch.Action? {
     EditorLaunch.action(
       editorID: id,
       found: found,
       customTemplate: custom,
-      directory: directory,
+      target: file.map(EditorTarget.file) ?? .worktree(directory),
       shell: .loginZsh,
       handOver: "exec /bin/zsh -l",
     )
@@ -50,7 +52,7 @@ struct EditorLaunchTests {
         editorID: "vscode",
         found: .init(application: nil, executable: shim),
         customTemplate: "",
-        directory: worktree,
+        target: .worktree(worktree),
         shell: .loginZsh,
         handOver: "exit",
       )
@@ -98,6 +100,27 @@ struct EditorLaunchTests {
     )
     #expect(openTabTitle(action("custom", custom: "/usr/local/bin/micro")) == "micro")
     #expect(action("custom", custom: "   ") == nil, "nothing typed")
+  }
+
+  @Test func aFileIsHandedToTheEditorInPlaceOfTheWorktree() {
+    let file = directory.appendingPathComponent("run.py")
+    let nvim = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
+    let shim = URL(fileURLWithPath: "/opt/homebrew/bin/code")
+    #expect(
+      action("nvim", found: .init(application: nil, executable: nvim), file: file)
+        == .openTab(
+          title: "Neovim",
+          command: [
+            "/bin/zsh", "-l", "-i", "-c",
+            LeadingPathStatement.line(for: .loginZsh)
+              + "/opt/homebrew/bin/nvim '/Users/me/Work/repo trees/feat/run.py'; exec /bin/zsh -l",
+          ],
+        )
+    )
+    #expect(
+      action("vscode", found: .init(application: nil, executable: shim), file: file)
+        == .runInBackground("/opt/homebrew/bin/code '/Users/me/Work/repo trees/feat/run.py'")
+    )
   }
 
   private func openTabTitle(_ action: EditorLaunch.Action?) -> String? {

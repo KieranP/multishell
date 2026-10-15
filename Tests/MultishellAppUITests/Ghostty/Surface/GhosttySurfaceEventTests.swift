@@ -80,6 +80,65 @@ struct GhosttySurfaceEventTests {
   }
 
   @Test func anActionTheAppLeavesToLibghosttyIsNoEvent() {
-    #expect(GhosttySurfaceEvent(action(GHOSTTY_ACTION_OPEN_URL)) == nil)
+    #expect(GhosttySurfaceEvent(action(GHOSTTY_ACTION_NEW_WINDOW)) == nil)
+  }
+
+  private func openURLEvent(
+    _ text: String,
+    kind: ghostty_action_open_url_kind_e,
+  ) -> GhosttySurfaceEvent? {
+    text.withCString { url in
+      var payload = ghostty_action_u()
+      payload.open_url = ghostty_action_open_url_s(kind: kind, url: url, len: UInt(strlen(url)))
+      return GhosttySurfaceEvent(action(GHOSTTY_ACTION_OPEN_URL, payload))
+    }
+  }
+
+  @Test func aLinkInTerminalOutputIsTheAppsToOpen() {
+    #expect(
+      openURLEvent("https://example.com/a", kind: GHOSTTY_ACTION_OPEN_URL_KIND_UNKNOWN)
+        == .linkClicked("https://example.com/a")
+    )
+  }
+
+  @Test func anOsc8HyperlinkIsAnEventOfItsOwnCarryingItsTarget() {
+    #expect(
+      openURLEvent("file:///tmp/x.txt", kind: GHOSTTY_ACTION_OPEN_URL_KIND_OSC8)
+        == .hyperlinkClicked("file:///tmp/x.txt")
+    )
+  }
+
+  /// libghostty opens what the app declines itself, so a kind it adds later
+  /// would skip the app's rules.
+  @Test func aLinkOfAKindNotYetKnownIsJudgedByTheAppNotLibghostty() {
+    #expect(
+      openURLEvent("/tmp/x", kind: ghostty_action_open_url_kind_e(rawValue: 99))
+        == .linkClicked("/tmp/x")
+    )
+  }
+
+  @Test func aReportedDirectoryIsCopiedOutAndAnEmptyOneIsUnknown() {
+    func reported(_ path: String) -> GhosttySurfaceEvent? {
+      path.withCString { pwd in
+        var payload = ghostty_action_u()
+        payload.pwd = ghostty_action_pwd_s(pwd: pwd)
+        return GhosttySurfaceEvent(action(GHOSTTY_ACTION_PWD, payload))
+      }
+    }
+    #expect(reported("/Users/me/code") == .directoryReported("/Users/me/code"))
+    #expect(reported("") == .directoryReported(nil))
+  }
+
+  @Test func aLinkGhosttyNamesItselfIsLeftToLibghostty() {
+    #expect(openURLEvent("file:///tmp/config", kind: GHOSTTY_ACTION_OPEN_URL_KIND_TEXT) == nil)
+    #expect(openURLEvent("file:///tmp/page.html", kind: GHOSTTY_ACTION_OPEN_URL_KIND_HTML) == nil)
+  }
+
+  /// Declined, a link goes to libghostty's own `open`, unchecked.
+  @Test func bothKindsOfLinkClickAndNothingElseAreLinkClicks() {
+    #expect(GhosttySurfaceEvent.linkClicked("/x").isLinkClick)
+    #expect(GhosttySurfaceEvent.hyperlinkClicked("file:///x").isLinkClick)
+    #expect(GhosttySurfaceEvent.bell.isLinkClick == false)
+    #expect(GhosttySurfaceEvent.retitled("t").isLinkClick == false)
   }
 }

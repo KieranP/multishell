@@ -184,6 +184,21 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("\u{1B}") == false)
   }
 
+  /// bash runs the DEBUG trap inside a block's redirect, which put the output
+  /// mark at the top of the file.
+  @Test(arguments: InstalledBashes.all)
+  func aBashBlockRedirectedToAFileGetsNoMarkInIt(bash: String) async throws {
+    let output = try await bashOutput(
+      bash,
+      features: nil,
+      input: "{ echo hi; } > ~/out.txt; printf '<%s>' \"$(cat ~/out.txt)\"\nexit\n",
+      usersRC: "",
+    )
+    #expect(output.contains("hi>"), "\(output)")
+    #expect(output.contains("<" + PromptMarks.output) == false, "not at the top of the file")
+    #expect(output.contains(PromptMarks.output), "still marked, on the terminal")
+  }
+
   @Test func aRealZshTellsTheTerminalACommandEndedAndWithWhatStatus() async throws {
     let output = try await zshOutput(features: nil, input: "false\ntrue\nexit\n")
     #expect(output.contains(PromptMarks.commandEnd(1)))

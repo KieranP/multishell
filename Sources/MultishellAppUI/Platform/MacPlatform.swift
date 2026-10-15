@@ -1,5 +1,6 @@
 import AppKit
 import MultishellAppCore
+import UniformTypeIdentifiers
 import os
 
 /// `Platform` on AppKit: the one place the model's needs meet the Mac.
@@ -76,12 +77,16 @@ final class MacPlatform: Platform {
     NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
   }
 
-  func open(_ directory: URL, withApplication application: URL) async throws {
+  func open(_ item: URL, withApplication application: URL) async throws {
     _ = try await NSWorkspace.shared.open(
-      [directory],
+      [item],
       withApplicationAt: application,
       configuration: .init(),
     )
+  }
+
+  func plainTextEditorURL() -> URL? {
+    NSWorkspace.shared.urlForApplication(toOpen: .plainText)
   }
 
   /// The Dock tile's badge. An empty label is not the same as none, so a

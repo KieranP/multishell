@@ -23,7 +23,8 @@ public final class NullPlatform: Platform {
     try FileManager.default.removeItem(at: url)
   }
   public func applicationURL(forIdentifier identifier: String) -> URL? { nil }
-  public func open(_ directory: URL, withApplication application: URL) async throws {}
+  public func open(_ item: URL, withApplication application: URL) async throws {}
+  public func plainTextEditorURL() -> URL? { nil }
   public func installCommandLineTool() throws {}
   public func setBadgeCount(_ count: Int?) {}
   public func log(_ message: String) {}

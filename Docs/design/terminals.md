@@ -137,8 +137,8 @@ at the bottom.
   the directory at a prompt and the command while it runs, a bar to edit in, a
   block in vi command mode and the configured shape back for a program. Each
   only where the user's `shell-integration-features` ask, which Ghostty exports
-  whatever the integration setting, `cursor:steady` and all. bash has never had
-  either.
+  whatever the integration setting, `cursor:steady` and all. bash titles its
+  pane by directory at a prompt, not by the command, and shapes no cursor.
 - **zsh and bash wrap `sudo` and `ssh` where those features ask**, which
   Ghostty's own zsh integration did before ours replaced it: `sudo` keeps the
   bundled `TERMINFO`, root's terminfo having no `xterm-ghostty`, and `ssh` sends
@@ -155,10 +155,28 @@ at the bottom.
 - **zsh reports its directory at each prompt and on every `cd`**, a command
   after `cd x &&` resolving paths from the new one. Raw, in Ghostty's
   `kitty-shell-cwd://` form: percent-encoding tripled a long path past the 2 KB
-  Ghostty reads it into. A directory holding a control character goes
-  unreported, the character able to end the sequence early.
+  Ghostty reads it into. A directory holding a control character, able to end
+  the sequence early, is reported as unknown, an empty report; unreported, the
+  pane resolved links from the directory before it.
 - **Only after a first prompt**, so a `zsh -c` a hook runs in prints nothing
-  into the output the hook is judged by. bash reports no directory.
+  into the output the hook is judged by.
+- **bash reports its directory at each prompt and at the first command after a
+  `cd`**, from the DEBUG trap, bash having no `cd` hook: one builtin test per
+  command, so `cd x && make` resolves `make`'s paths from `x`. fish 4 reports
+  its own. Cost: a function that does both waits for the prompt, bash running
+  the trap inside a function only under `set -T`, which would change the user's
+  own traps.
+- **bash titles its pane `…/` and the last three parts at a prompt**, as zsh,
+  where the `title` feature asks: a pane with no title takes libghostty's from
+  each directory report, the raw full path.
+- **bash writes to the terminal on a descriptor of its own**, 61, opened on
+  `/dev/tty`: the DEBUG trap runs inside a redirected block's redirect, and the
+  output mark it printed there landed at the top of the file
+  (`aBashBlockRedirectedToAFileGetsNoMarkInIt`). Not 63: a process substitution
+  takes the highest free descriptor under 64, and with 63 held the relay's own
+  pipe landed on 62 and every report fell back to a helper (HelperRelayTests).
+  Opened only once a write to `/dev/tty` succeeds, a failed `exec` ending a
+  script's shell.
 - **Cost: no continuation-prompt marks**, which Ghostty's integration writes on
   PS2. A deep directory is titled `…/` and its last three parts, as Ghostty
   titles it, a tab having room for the end of a path rather than the start.
@@ -352,9 +370,9 @@ at the bottom.
   the helper inherits that. A Ctrl-C at the prompt left the loop running under
   bash 3.2 and 5.3; one with interrupt reset to default lost every later line.
 - **The relay ends at EOF or when the shell's pid exits**, whichever is first.
-  bash has no close-on-exec, so every command inherits descriptor 62, and an
-  editor or server started in the tab held the pipe open long after the tab
-  closed.
+  bash has no close-on-exec, so every command inherits descriptor 62, and 61 the
+  terminal reports go out on, and an editor or server started in the tab held
+  the pipe open long after the tab closed.
 - **Find is the engine's search under a bar of ours**, driven by its three
   search actions. The bar is the app's, the engine's own being a GUI the
   embedding never shows.
@@ -610,3 +628,68 @@ at the bottom.
   `execv`, for a shell whose own files rebuild PATH and for `Multishell help`
   typed against the bundle. AppKit's are a single dash and a name, as `-psn_`
   and `-AppleLanguages` are, `-h` excepted (`HelperHandOffTests`).
+- **A link clicked in a pane opens only for the web, mail, a text file in the
+  editor, or a folder, image, PDF, audio, video, archive or Office file in its
+  default app**, judged by what its path resolves to, refused with a beep
+  otherwise. Left to libghostty, `open` ran whatever target a program printed,
+  `file:///System/Applications/Calculator.app` among them, and from `ad97d33` it
+  opens no link from a pane's text at all (`GhosttyLinkRuleTests`).
+- **It is judged through `runOnDispatch` and acted on after the click**: its
+  stats can hang on a share that stopped answering, and libghostty reports the
+  click holding the pane's renderer lock, which a tab opened or focus moved
+  takes again. One answered after a later click, or after its pane closed, opens
+  nothing, so a slow one neither holds back nor overtakes the next. A link
+  clicked again while still judged is not judged again, each try parking a
+  thread, and its answer goes to the latest click. Cost: a click on such a share
+  does nothing, not even beep.
+- **An OSC 8 hyperlink opens only a file on this Mac**, judged as any other, and
+  beeps for a web or mail target. Its target is not the text the pane shows, and
+  nothing here shows it before the click, as Ghostty's app does in a banner on
+  hover; a local file cannot be someone else's site. Agents, `ls --hyperlink`
+  and gcc print their paths this way.
+- **A `file:` URL opens only for this Mac**: no host, `localhost` or the Mac's
+  own name, which `ls --hyperlink` and `rg` write. A relative one names no file.
+- **What a default app may open is a list of kinds, not a list of refusals**:
+  the refusals missed a Finder alias and a `.fileloc`, whose target Launch
+  Services opens, Calculator for one pointing at it, a `.shortcut` Shortcuts
+  imports, a `.dmg` it mounts and a `.prefPane` System Settings installs. A
+  bundle is not a folder here. Archives and Office files open, but not a kind
+  macOS counts as runnable, a `.jar` or a macro-enabled `.docm`. Cost: those, an
+  `.xcodeproj` and an unnamed kind beep.
+- **A relative path is looked for in the pane's directory, then under the
+  repository root**, the nearest folder up holding `.git`, and there without a
+  leading `a/` or `b/`, the sides `git diff` names files by. libghostty joins a
+  relative path to the shell's reported directory only where the file is there.
+  A shell that reports none, sh or nu, leaves where the pane started. One the
+  pane's directory holds wins, a folder named `a` included.
+- **A compiler's `Sources/A.swift:12:5` opens the file**, a `file:` URL's too,
+  when no file has that name, libghostty's pattern taking `:` as part of a path.
+  The line is not passed on, and neither is what follows it, `rg`'s
+  `src/main.rs:12:fn`. A bare `A.swift:12:5` is no link, libghostty's pattern
+  wanting a `/`.
+- **`$HOME/…` and `$PWD/…` expand**, libghostty marking any `$VAR/` path; the
+  app knows only these two as the pane's shell has them.
+- **A file is text if its type says so or its first 8 KB are UTF-8 with no zero
+  byte**: macOS has no text type for a `.rs`, a `.go` or a `Dockerfile`, and
+  calls a `.ts` an MPEG-2 video. So a location file written as XML opens as
+  text, in the editor, never through Launch Services.
+- **A text file opens in the editor Open in Editor uses**, whatever its mode: an
+  application is handed the file, a terminal editor opens it in a tab in the
+  pane's worktree, and a custom command reads `{path}` from
+  `MULTISHELL_FILE_PATH`, the worktree's variable naming a directory. With no
+  editor chosen, the app plain text opens in, as it does in a worktree being
+  created or removed, which takes no new tab, unless the editor is an
+  application, which starts no shell there. Never the file's own type's handler,
+  which can run it, Python Launcher for a `.py`; refused outright, every `.py`,
+  `.js` or `.sh` a developer clicked beeped. Ghostty's app refuses them. Cost: a
+  custom command is trusted as an editor, so `open {path}` hands a script on to
+  whatever runs it.
+- **The editor is handed the name the pane printed**, which keeps it inside a
+  workspace opened through a symlink; a default app gets the resolved target,
+  since Launch Services could judge a symlink by its own name. A path with `..`
+  goes resolved to both: after a symlink it names another file than on disk.
+- **The setting, not `$EDITOR`**: one choice of editor across the app, and
+  `$EDITOR` is often a waiting line such as `code -w`, which would hold a tab
+  open until the file closed.
+- **Cost: another app's scheme, `vscode://` or `slack://`, opens nothing.**
+  Ghostty's app asks before handing a scheme on.

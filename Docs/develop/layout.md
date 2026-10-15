@@ -60,12 +60,13 @@
   under SwiftUI for an event it has no gesture for or the window a view sits in,
   the scene and menus. The engine host and the platform port each have a folder,
   the host's split by what each part is to libghostty: config, runtime, surface,
-  input, clipboard. What draws nothing sits under `Support/`, the in-app drag's
-  pieces under `Support/Drag/`, unless it is by nature a piece of one part: the
-  mark parser sits with the marks, a dialog's AppKit alert with the dialogs, and
-  what both settings windows share at `Settings/`'s root. Every `Theme+` and
-  `UIMetrics+` extension sits under `Support/Appearance/`, whichever part reads
-  it: placed beside their parts, they moved back and forth between reviews.
+  input, clipboard, links. What draws nothing sits under `Support/`, the in-app
+  drag's pieces under `Support/Drag/`, unless it is by nature a piece of one
+  part: the mark parser sits with the marks, a dialog's AppKit alert with the
+  dialogs, and what both settings windows share at `Settings/`'s root. Every
+  `Theme+` and `UIMetrics+` extension sits under `Support/Appearance/`,
+  whichever part reads it: placed beside their parts, they moved back and forth
+  between reviews.
 - **AppCore's values for a part of the window sit under the folder its views
   use**: `Sidebar/`, `Board/`, `Detail/`, `Terminals/Panes/`, `Debug/` and the
   rest, so a view and the decision it reads share one path in two targets.

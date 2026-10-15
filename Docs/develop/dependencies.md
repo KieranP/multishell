@@ -10,7 +10,7 @@
   font's name table, in UTF-16, which fonts. Moving the Ghostty pin or a patch
   means redoing that.
 - **The archive also holds FreeType, libpng and zlib, which the linker drops**:
-  at `24da727` the debug executable defines none of `FT_Init_FreeType`,
+  at `ad97d33` the debug executable defines none of `FT_Init_FreeType`,
   `png_create_read_struct`, `inflate` or `deflate`, while it keeps `onig_new`.
   So the notices leave them out.
 - **libghostty is built here from Ghostty itself**, the `ThirdParty/ghostty`

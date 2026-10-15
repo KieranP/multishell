@@ -3,7 +3,7 @@ import GhosttyKit
 
 extension GhosttySurfaceView {
   /// Dropped once freed: a report queued from another thread can land after.
-  /// The pointer and secure input are the view's own to answer; the rest go to the host.
+  /// The pointer, secure input and directory are the view's own; the rest go to the host.
   func receive(_ event: GhosttySurfaceEvent) {
     guard surface != nil else { return }
     switch event {
@@ -15,6 +15,15 @@ extension GhosttySurfaceView {
 
     case .commandFinished(let exitCode):
       onCommandFinish?(exitCode)
+
+    case .directoryReported(let path):
+      currentDirectory = path.map { URL(filePath: $0) } ?? startingDirectory
+
+    case .hyperlinkClicked(let target):
+      onLinkClick?(.init(text: target, directory: currentDirectory, isHyperlink: true))
+
+    case .linkClicked(let text):
+      onLinkClick?(.init(text: text, directory: currentDirectory, isHyperlink: false))
 
     case .searchCount(let count):
       onSearchCount?(count)

@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 import MultishellProcess
 
@@ -31,33 +32,76 @@ extension AppModel {
     }
     guard requireShellReady(worktree) else { return }
     let shellPath = shellPath(for: worktree)
+    let target = EditorTarget.worktree(worktree.path)
+    runEditorAction(
+      editorAction(target, editorID: editorID, shellPath: shellPath),
+      opening: target,
+      editorID: editorID,
+      in: worktree,
+      shellPath: shellPath,
+    )
+  }
+
+  /// A link clicked in a pane named a text file; terminals.md says where it goes.
+  func openInEditor(file: URL, clickedIn sessionID: TerminalSession.ID) {
+    guard
+      let tab = workspace.tab(owning: sessionID),
+      let worktree = workspace.worktree(tab.worktreeID)
+    else { return }
+    guard let editorID = workspace.effectiveEditorID else {
+      openInPlainTextEditor(file)
+      return
+    }
+    let shellPath = shellPath(for: worktree)
+    let target = EditorTarget.file(file)
+    let action = editorAction(target, editorID: editorID, shellPath: shellPath)
+    if action?.startsAShell == true {
+      // A worktree being created or removed takes no new tab or shell.
+      guard !isBusy(worktree.id) else {
+        openInPlainTextEditor(file)
+        return
+      }
+      guard requireDirectory(of: worktree) else { return }
+    }
+    runEditorAction(
+      action,
+      opening: target,
+      editorID: editorID,
+      in: worktree,
+      shellPath: shellPath,
+    )
+  }
+
+  private func editorAction(
+    _ target: EditorTarget,
+    editorID: String,
+    shellPath: String,
+  ) -> EditorLaunch.Action? {
     let (shell, handOver) = TabCommand.loginShell(handingOverTo: shellPath)
-    let action = EditorLaunch.action(
+    return EditorLaunch.action(
       editorID: editorID,
       found: editorDetection.found[editorID],
       customTemplate: workspace.customEditorCommand,
-      directory: worktree.path,
+      target: target,
       shell: shell,
       handOver: handOver,
     )
-    runEditorAction(action, editorID: editorID, in: worktree, shellPath: shellPath)
+  }
+
+  private func openInPlainTextEditor(_ file: URL) {
+    if let editor = platform.plainTextEditorURL() { open(file, inApplication: editor) }
   }
 
   private func runEditorAction(
     _ action: EditorLaunch.Action?,
+    opening target: EditorTarget,
     editorID: String,
     in worktree: Worktree,
     shellPath: String,
   ) {
     switch action {
     case .openApplication(let application):
-      Task { [weak self] in
-        do {
-          try await self?.platform.open(worktree.path, withApplication: application)
-        } catch {
-          self?.present(error)
-        }
-      }
+      open(target.path, inApplication: application)
 
     case .runInBackground(let line):
       Task { [weak self] in
@@ -76,6 +120,16 @@ extension AppModel {
       presentedError =
         editorID == EditorCatalogue.customID
         ? .noEditorCommand : .editorNotInstalled(EditorCatalogue.displayName(editorID))
+    }
+  }
+
+  private func open(_ item: URL, inApplication application: URL) {
+    Task { [weak self] in
+      do {
+        try await self?.platform.open(item, withApplication: application)
+      } catch {
+        self?.present(error)
+      }
     }
   }
 }

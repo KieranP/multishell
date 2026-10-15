@@ -5,6 +5,8 @@ enum TerminalReports {
 
   /// A directory report up to its host and path.
   static let directoryPrefix = "\u{1B}]7;kitty-shell-cwd://"
+  /// An empty report, which tells libghostty the directory is no longer known.
+  static let directoryUnknown = "\u{1B}]7;\u{7}"
 
   static func title(_ text: String) -> String { "\u{1B}]2;\(text)\u{7}" }
 

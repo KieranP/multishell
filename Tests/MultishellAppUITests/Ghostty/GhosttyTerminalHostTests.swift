@@ -8,18 +8,39 @@ import Testing
 @Suite
 @MainActor
 struct GhosttyTerminalHostTests {
-  @Test func aSessionReportsNothingOnceClosed() throws {
+  private func hostWithDelegate() -> (GhosttyTerminalHost, FakeTerminalHostDelegate) {
     let host = GhosttyTerminalHost(lazyRuntime: LazyGhosttyRuntime(readBase: { "" }))
     let delegate = FakeTerminalHostDelegate()
     host.delegate = delegate
+    return (host, delegate)
+  }
+
+  private func openSleepingSession(
+    in host: GhosttyTerminalHost,
+    at directory: URL,
+  ) throws -> (TerminalSession, GhosttySurfaceView) {
     let session = TerminalSession(
       worktreeID: "/w",
-      workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()),
+      workingDirectory: directory,
       title: "Sleep",
       command: ["/bin/sleep", "60"],
     )
     try host.open(session)
-    let view = try #require(host.view(for: session.id) as? GhosttySurfaceView)
+    return (session, try #require(host.view(for: session.id) as? GhosttySurfaceView))
+  }
+
+  private func textFile(named name: String, in directory: URL) throws -> URL {
+    let file = directory.appendingPathComponent(name)
+    try "notes".write(to: file, atomically: true, encoding: .utf8)
+    return file
+  }
+
+  @Test func aSessionReportsNothingOnceClosed() throws {
+    let (host, delegate) = hostWithDelegate()
+    let (session, view) = try openSleepingSession(
+      in: host,
+      at: URL(fileURLWithPath: NSTemporaryDirectory()),
+    )
 
     host.close(session.id)
     view.receive(.retitled("late"))
@@ -58,5 +79,73 @@ struct GhosttyTerminalHostTests {
       let releasedCount = isReleased.filter { $0() }.count
       #expect(releasedCount == 5)
     }
+  }
+
+  @Test func aTextFilesLinkClickedInAPaneGoesToTheDelegateAfterLibghosttyReturns() async throws {
+    let directory = try Scratch.directory("link-click")
+    defer { Scratch.remove(directory) }
+    let file = try textFile(named: "notes.txt", in: directory)
+    let (host, delegate) = hostWithDelegate()
+    let (session, view) = try openSleepingSession(in: host, at: directory)
+    defer { host.close(session.id) }
+
+    view.receive(.linkClicked(file.absoluteString))
+    #expect(delegate.editedFiles.isEmpty, "inside libghostty's click, which holds the pane's lock")
+    try await waitUntil { !delegate.editedFiles.isEmpty }
+
+    #expect(delegate.editedFiles == [URL(filePath: file.path)])
+  }
+
+  @Test func anOsc8LinkToATextFileGoesToTheDelegateToEdit() async throws {
+    let directory = try Scratch.directory("hyperlink")
+    defer { Scratch.remove(directory) }
+    let file = try textFile(named: "notes.txt", in: directory)
+    let (host, delegate) = hostWithDelegate()
+    let (session, view) = try openSleepingSession(in: host, at: directory)
+    defer { host.close(session.id) }
+
+    view.receive(.hyperlinkClicked(file.absoluteString))
+    try await waitUntil { !delegate.editedFiles.isEmpty }
+
+    #expect(delegate.editedFiles == [URL(filePath: file.path)])
+  }
+
+  @Test func aRelativeLinkResolvesInTheDirectoryThePaneLastReported() async throws {
+    let started = try Scratch.directory("link-started")
+    defer { Scratch.remove(started) }
+    let moved = try Scratch.directory("link-moved")
+    defer { Scratch.remove(moved) }
+    let inStarted = try textFile(named: "notes.txt", in: started)
+    let inMoved = try textFile(named: "notes.txt", in: moved)
+    let (host, delegate) = hostWithDelegate()
+    let (session, view) = try openSleepingSession(in: host, at: started)
+    defer { host.close(session.id) }
+
+    view.receive(.directoryReported(moved.path))
+    view.receive(.linkClicked("notes.txt"))
+    try await waitUntil { delegate.editedFiles.count == 1 }
+    view.receive(.directoryReported(nil))
+    view.receive(.linkClicked("notes.txt"))
+    try await waitUntil { delegate.editedFiles.count == 2 }
+
+    #expect(delegate.editedFiles.map(\.path) == [inMoved.path, inStarted.path])
+  }
+
+  @Test func aLinkJudgedAfterItsPaneClosedOpensNothingAndLaterClicksStillDo() async throws {
+    let directory = try Scratch.directory("link-closed")
+    defer { Scratch.remove(directory) }
+    let first = try textFile(named: "first.txt", in: directory)
+    let second = try textFile(named: "second.txt", in: directory)
+    let (host, delegate) = hostWithDelegate()
+    let (closing, closingView) = try openSleepingSession(in: host, at: directory)
+    let (staying, stayingView) = try openSleepingSession(in: host, at: directory)
+    defer { host.close(staying.id) }
+
+    closingView.receive(.linkClicked(first.path))
+    host.close(closing.id)
+    stayingView.receive(.linkClicked(second.path))
+    try await waitUntil { !delegate.editedFiles.isEmpty }
+
+    #expect(delegate.editedFiles == [URL(filePath: second.path)])
   }
 }

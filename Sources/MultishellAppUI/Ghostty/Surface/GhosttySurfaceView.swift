@@ -18,6 +18,8 @@ final class GhosttySurfaceView: NSView {
   var onCloseRequest: (() -> Void)?
   /// The keyboard reached this pane; whether it stays is the caller's question.
   var onFocus: (() -> Void)?
+  /// A link Cmd+clicked in the pane, with the directory a relative one resolves in.
+  var onLinkClick: ((GhosttyClickedLink) -> Void)?
 
   /// The input method's uncommitted text, empty when nothing is composing.
   var markedText = ""
@@ -35,11 +37,16 @@ final class GhosttySurfaceView: NSView {
   /// libghostty saw this pane's program turn echo off, as at a password
   /// prompt, or the `toggle_secure_input` keybind asked for it.
   var wantsSecureInput = false
+  let startingDirectory: URL
+  /// The shell's last report, else where the pane started; links resolve here.
+  var currentDirectory: URL
 
   override var acceptsFirstResponder: Bool { true }
 
   init(runtime: GhosttyRuntime, launch: GhosttySurfaceLaunch) {
     self.runtime = runtime
+    startingDirectory = URL(filePath: launch.workingDirectory)
+    currentDirectory = startingDirectory
     super.init(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
     let scale = NSScreen.mainBackingScale
     surface = launch.withCConfig(view: self, scale: scale) { config in

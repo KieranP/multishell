@@ -110,6 +110,9 @@ _multishell_debug() {
   # functions: without us it would not have.
   case "$BASH_COMMAND" in _multishell_*) return 0 ;; esac
   if [ -n "$_multishell_prior_debug" ]; then eval "$_multishell_prior_debug"; fi
+  # bash has no cd hook, so the next command finds the change; only once a
+  # prompt has reported, which it does only in a Ghostty pane.
+  case "${_multishell_last_reported_directory-$PWD}" in "$PWD") ;; *) _multishell_report_directory ;; esac
 
   [ "$_multishell_armed" = 1 ] || return 0
   [ -n "${COMP_LINE-}" ] && return 0

@@ -12,10 +12,10 @@ From libghostty-spm's Patches/ghostty/0015-hold-frame-for-prompt-redraw.sh (MIT,
 cut as a `git diff` against the ThirdParty/ghostty pin.
 
 diff --git a/src/renderer/generic.zig b/src/renderer/generic.zig
-index 54d6a4773..fa1b522cc 100644
+index 5a021b087..964c42bd6 100644
 --- a/src/renderer/generic.zig
 +++ b/src/renderer/generic.zig
-@@ -84,6 +84,296 @@ const log = std.log.scoped(.generic_renderer);
+@@ -87,6 +87,296 @@ const log = std.log.scoped(.generic_renderer);
  ///                     in case that the frame needs to be composited with
  ///                     UI elements by the graphical toolkit manually.
  ///
@@ -312,7 +312,7 @@ index 54d6a4773..fa1b522cc 100644
  pub fn Renderer(comptime GraphicsAPI: type) type {
      return struct {
          const Self = @This();
-@@ -280,6 +570,10 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+@@ -289,6 +579,10 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
          /// wakeup.
          kitty_animation_next_ms: ?u64 = null,
  
@@ -323,7 +323,7 @@ index 54d6a4773..fa1b522cc 100644
          const HighlightTag = enum(u8) {
              search_match,
              search_match_selected,
-@@ -1129,10 +1423,26 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+@@ -1156,10 +1450,26 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                  break :kitty @max(next -| now_ms, draw_interval_ms);
              };
  
@@ -353,7 +353,7 @@ index 54d6a4773..fa1b522cc 100644
                  }
              }
  
-@@ -1141,6 +1451,21 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+@@ -1168,6 +1478,21 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
              return null;
          }
  
@@ -372,10 +372,10 @@ index 54d6a4773..fa1b522cc 100644
 +            return false;
 +        }
 +
-         /// True if our renderer is using vsync. If true, the renderer or apprt
-         /// is responsible for triggering draw_now calls to the render thread.
-         /// That is the only way to trigger a drawFrame.
-@@ -1393,6 +1718,16 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+         /// Returns true if the display link is running, meaning frames
+         /// are paced by display refresh. In that case the render thread
+         /// must only draw when the display link wakes it through
+@@ -1418,6 +1743,16 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                      return;
                  }
  
@@ -393,7 +393,7 @@ index 54d6a4773..fa1b522cc 100644
                  // changed by comparing the bottom-right pin. If the node pointer or
                  // y offset changed, new content was added to the screen.
 diff --git a/src/terminal/Screen.zig b/src/terminal/Screen.zig
-index 1f0ac2d33..ad68e155d 100644
+index 820455e64..414f5648d 100644
 --- a/src/terminal/Screen.zig
 +++ b/src/terminal/Screen.zig
 @@ -83,6 +83,15 @@ else
@@ -422,7 +422,7 @@ index 1f0ac2d33..ad68e155d 100644
      // Reset our pages
      self.pages.reset();
  
-@@ -2272,6 +2284,22 @@ fn clearPromptForRedraw(
+@@ -2302,6 +2314,22 @@ fn clearPromptForRedraw(
      if (redraw != .false and
          self.cursor.semantic_content != .output)
      prompt: {
@@ -445,7 +445,7 @@ index 1f0ac2d33..ad68e155d 100644
          switch (redraw) {
              .false => unreachable,
  
-@@ -2281,7 +2309,7 @@ fn clearPromptForRedraw(
+@@ -2311,7 +2339,7 @@ fn clearPromptForRedraw(
                  const page = self.cursor.page_pin.node.page();
                  const row = self.cursor.page_row;
                  const cells = page.getCells(row);
@@ -454,7 +454,7 @@ index 1f0ac2d33..ad68e155d 100644
              },
  
              .true => {
-@@ -2307,13 +2335,93 @@ fn clearPromptForRedraw(
+@@ -2337,13 +2365,93 @@ fn clearPromptForRedraw(
                      const page = pin.node.page();
                      const row = pin.rowAndCell().row;
                      const cells = page.getCells(row);
@@ -550,10 +550,10 @@ index 1f0ac2d33..ad68e155d 100644
  ///
  /// If the style can't be set due to any internal errors (memory-related),
 diff --git a/src/terminal/Terminal.zig b/src/terminal/Terminal.zig
-index 8a61cc30c..0d7349cf6 100644
+index 508e615ea..b3cb74ff4 100644
 --- a/src/terminal/Terminal.zig
 +++ b/src/terminal/Terminal.zig
-@@ -2181,6 +2181,9 @@ pub fn semanticPrompt(
+@@ -2201,6 +2201,9 @@ pub fn semanticPrompt(
              self.screens.active.cursorSetSemanticContent(.{
                  .input = .clear_explicit,
              });
@@ -563,7 +563,7 @@ index 8a61cc30c..0d7349cf6 100644
          },
  
          .end_prompt_start_input_terminate_eol => {
-@@ -2194,6 +2197,9 @@ pub fn semanticPrompt(
+@@ -2214,6 +2217,9 @@ pub fn semanticPrompt(
              // "End of input, and start of output."
              self.screens.active.cursorSetSemanticContent(.output);
  
@@ -573,9 +573,9 @@ index 8a61cc30c..0d7349cf6 100644
              // If our current row is marked as a prompt and we're
              // at column zero then we assume we're un-prompting. This
              // is a heuristic to deal with fish, mostly. The issue that
-@@ -16754,3 +16760,146 @@ test "Terminal: eraseDisplay complete ignores stale prompt on recycled row" {
+@@ -17269,3 +17275,146 @@ test "Terminal: eraseDisplay complete at prompt not on last row scrolls" {
  
-     try testing.expectEqual(t.screens.active.pages.rows, t.screens.active.pages.total_rows);
+     try testing.expect(t.screens.active.pages.total_rows > t.screens.active.pages.rows);
  }
 +
 +test "Terminal: semantic prompt redraw after resize" {

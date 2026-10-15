@@ -1,3 +1,5 @@
+import Foundation
+
 /// Drives a `TerminalHost` from the store, so no view ever opens a terminal
 /// directly. Call `reconcile()` after any change to the session list.
 @MainActor
@@ -33,6 +35,8 @@ public final class SessionReconciler: TerminalHostDelegate {
   /// The engine was asked to close a pane whose process still runs. Left to
   /// the GUI, whose close asks first where an agent is working.
   public var onCloseRequest: (@MainActor (TerminalSession.ID) -> Void)?
+  /// A link clicked in a session named a text file, for the GUI's editor.
+  public var onEditRequest: (@MainActor (URL, TerminalSession.ID) -> Void)?
   /// The engine's search counted in a session, for its find bar.
   public var onSearchCount: (@MainActor (TerminalSession.ID, TerminalSearchCount) -> Void)?
 
@@ -106,6 +110,14 @@ public final class SessionReconciler: TerminalHostDelegate {
 
   public func terminalHost(_ host: any TerminalHost, didAskToClose id: TerminalSession.ID) {
     onCloseRequest?(id)
+  }
+
+  public func terminalHost(
+    _ host: any TerminalHost,
+    didAskToEdit file: URL,
+    in id: TerminalSession.ID,
+  ) {
+    onEditRequest?(file, id)
   }
 
   public func terminalHost(

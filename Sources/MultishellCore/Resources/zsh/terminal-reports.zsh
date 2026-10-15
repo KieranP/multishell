@@ -26,13 +26,16 @@ _multishell_keymap_cursor() {
 }
 
 # Raw, as percent-encoding overran Ghostty's 2 KB buffer; a control
-# character could end the sequence early, so that path goes unreported.
+# character could end the sequence early, so that path is reported unknown.
 _multishell_report_directory() {
   emulate -L zsh
   # Not from a subshell, whose output `$(cd x; pwd)` would capture.
   (( _multishell_prompted && ! ZSH_SUBSHELL )) || return 0
-  [[ "$PWD" == *[[:cntrl:]]* ]] && return 0
-  print -rn -u $_multishell_tty_fd -- $'\e]7;kitty-shell-cwd://'"${HOST-}$PWD"$'\a'
+  if [[ "$PWD" == *[[:cntrl:]]* ]]; then
+    print -rn -u $_multishell_tty_fd -- $'\e]7;\a'
+  else
+    print -rn -u $_multishell_tty_fd -- $'\e]7;kitty-shell-cwd://'"${HOST-}$PWD"$'\a'
+  fi
   return 0
 }
 

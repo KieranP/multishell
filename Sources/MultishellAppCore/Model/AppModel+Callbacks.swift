@@ -24,6 +24,9 @@ extension AppModel {
     reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
     reconciler.onLiveSessionsChanged = { [weak self] in self?.noteLiveSessionsChanged() }
     reconciler.onCloseRequest = { [weak self] id in self?.closePane(id) }
+    reconciler.onEditRequest = { [weak self] file, id in
+      self?.openInEditor(file: file, clickedIn: id)
+    }
     reconciler.onSearchCount = { [weak self] id, count in self?.noteSearchCount(count, in: id) }
     messageSource.onReport = { [weak self] report in self?.receive(report) }
     messageSource.onRequest = { [weak self] request in await self?.answer(request) }

@@ -12,6 +12,7 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
   weak var delegate: (any TerminalHostDelegate)?
 
   private let lazyRuntime: LazyGhosttyRuntime
+  private let linkClicks = GhosttyLinkClicks()
   private var views: [TerminalSession.ID: GhosttySurfaceView] = [:]
 
   var liveSessionIDs: Set<TerminalSession.ID> { Set(views.keys) }
@@ -62,6 +63,24 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
       self.map { $0.delegate?.terminalHost($0, didAskToClose: id) }
     }
     view.onFocus = { [weak self] in self?.surfaceFocused(id) }
+    view.onLinkClick = { [weak self] click in
+      self?.linkClicks.judge(click) { opening in self?.open(opening, clickedIn: id) }
+    }
+  }
+
+  /// A text file goes to the delegate, whose editor setting decides where.
+  private func open(_ opening: GhosttyLinkRule.Opening?, clickedIn id: TerminalSession.ID) {
+    guard views[id] != nil else { return }
+    switch opening {
+    case .inDefaultApplication(let url):
+      NSWorkspace.shared.open(url)
+
+    case .inEditor(let file):
+      delegate?.terminalHost(self, didAskToEdit: file, in: id)
+
+    case nil:
+      NSSound.beep()
+    }
   }
 
   /// The surface lives on until the next turn, and a report queued for it
@@ -74,6 +93,7 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     view.onExit = nil
     view.onCloseRequest = nil
     view.onFocus = nil
+    view.onLinkClick = nil
   }
 
   func close(_ id: TerminalSession.ID) {

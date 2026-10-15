@@ -5,7 +5,7 @@ extension EditorCatalogue {
   /// without the placeholder gets the path appended.
   public static func customCommandLine(
     _ template: String,
-    path: URL,
+    target: EditorTarget,
     forShellNamed shellName: String,
   ) -> ShellLine? {
     let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -14,7 +14,7 @@ extension EditorCatalogue {
     let line = trimmed.contains(token) ? trimmed : "\(trimmed) \(token)"
     return ShellLine(
       line,
-      substituting: [token: (WorktreePlaceholder.worktreePath.variable, path.path)],
+      substituting: [token: (target.pathVariable, target.path.path)],
       forShellNamed: shellName,
     )
   }

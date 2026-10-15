@@ -13,7 +13,8 @@ final class FakePlatform: Platform {
   var revealed: [URL] = []
   var clipboard: [String] = []
   var applications: [String: URL] = [:]
-  var opened: [(directory: URL, application: URL)] = []
+  var opened: [(item: URL, application: URL)] = []
+  var plainTextEditor: URL?
   var bundledHelper: URL?
   var installedCommandLineTool = false
   var handedOverToRunningInstance = false
@@ -66,9 +67,10 @@ final class FakePlatform: Platform {
     fakeTrash.trashed.append(url)
   }
   func applicationURL(forIdentifier identifier: String) -> URL? { applications[identifier] }
-  func open(_ directory: URL, withApplication application: URL) async throws {
-    opened.append((directory, application))
+  func open(_ item: URL, withApplication application: URL) async throws {
+    opened.append((item, application))
   }
+  func plainTextEditorURL() -> URL? { plainTextEditor }
   func installCommandLineTool() throws { installedCommandLineTool = true }
   func handOverToRunningInstance() { handedOverToRunningInstance = true }
   func quit() {

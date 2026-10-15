@@ -7,12 +7,27 @@ enum GhosttySurfaceEvent: Equatable {
   case bell
   /// `nil` where the shell's integration reported no status.
   case commandFinished(exitCode: Int?)
+  /// `nil` where the shell said it no longer knows.
+  case directoryReported(String?)
+  /// An OSC 8 link, whose target the pane never shows.
+  case hyperlinkClicked(String)
+  /// A link clicked in the pane's text.
+  case linkClicked(String)
   case pointerShape(ghostty_action_mouse_shape_e)
   case pointerVisible(Bool)
   case retitled(String)
   case searchCount(TerminalSearchCount)
   /// libghostty saw a password prompt start or end, or a keybind toggled it.
   case secureInput(ghostty_action_secure_input_e)
+
+  /// Declined, a link goes to libghostty's own `open`, unchecked, so one is
+  /// answered even when its view has gone.
+  var isLinkClick: Bool {
+    switch self {
+    case .hyperlinkClicked, .linkClicked: true
+    default: false
+    }
+  }
 
   /// `nil` for an action this app leaves to libghostty or ignores.
   init?(_ action: ghostty_action_s) {
@@ -27,6 +42,28 @@ enum GhosttySurfaceEvent: Equatable {
     case GHOSTTY_ACTION_COMMAND_FINISHED:
       let code = action.action.command_finished.exit_code
       self = .commandFinished(exitCode: code < 0 ? nil : Int(code))
+
+    case GHOSTTY_ACTION_OPEN_URL:
+      let link = action.action.open_url
+      // Ghostty's own text and HTML files stay libghostty's. A kind it adds
+      // later is judged here, libghostty opening unchecked what is declined.
+      guard
+        link.kind != GHOSTTY_ACTION_OPEN_URL_KIND_TEXT,
+        link.kind != GHOSTTY_ACTION_OPEN_URL_KIND_HTML,
+        let url = link.url
+      else { return nil }
+      let target = String(
+        decoding: UnsafeRawBufferPointer(start: url, count: Int(link.len)),
+        as: UTF8.self,
+      )
+      self =
+        link.kind == GHOSTTY_ACTION_OPEN_URL_KIND_OSC8
+        ? .hyperlinkClicked(target) : .linkClicked(target)
+
+    case GHOSTTY_ACTION_PWD:
+      guard let pwd = action.action.pwd.pwd else { return nil }
+      let path = String(cString: pwd)
+      self = .directoryReported(path.isEmpty ? nil : path)
 
     case GHOSTTY_ACTION_MOUSE_SHAPE:
       self = .pointerShape(action.action.mouse_shape)

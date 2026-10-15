@@ -41,8 +41,11 @@ public protocol Platform: AnyObject, Sendable {
   /// Where an installed application lives, by bundle identifier, or `nil`
   /// where the platform has no such lookup.
   func applicationURL(forIdentifier identifier: String) -> URL?
-  /// Hands a directory to an application found by `applicationURL`.
-  func open(_ directory: URL, withApplication application: URL) async throws
+  /// Hands a directory or file to an application found by `applicationURL`.
+  func open(_ item: URL, withApplication application: URL) async throws
+  /// The app plain text opens in, for a file whose own type's app, a script's,
+  /// could run it; `nil` where none takes text.
+  func plainTextEditorURL() -> URL?
   /// Links the helper somewhere on the default PATH, behind whatever
   /// privilege prompt the platform needs.
   func installCommandLineTool() throws
