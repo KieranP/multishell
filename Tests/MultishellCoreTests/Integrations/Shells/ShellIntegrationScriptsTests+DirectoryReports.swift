@@ -61,8 +61,10 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains(TerminalReports.directoryPrefix), "still reported, to the terminal")
   }
 
+  /// `/etc/bashrc`'s PS1 holds the host name, which on a CI runner fills
+  /// 80 columns, and readline then drops the input mark on its end.
   private func bashOutput(_ bash: String, input: String) async throws -> String {
-    try await bashOutput(bash, features: nil, input: input, usersRC: "")
+    try await bashOutput(bash, features: nil, input: input, usersRC: "PS1='> '\n")
   }
 
   @Test(arguments: InstalledBashes.all)
