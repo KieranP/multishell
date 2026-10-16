@@ -37,5 +37,6 @@
   three**, under this app's name.
 - **`multishell debug screenshot` and `panes type` or `panes key` want none of
   them**: the app draws its own views and hands the keys to libghostty, never
-  capturing the screen or posting an event; design/agents.md.
+  capturing the screen or posting an event; design/agents.md for the screenshot,
+  design/terminals.md for the keys.
 - **`tccutil reset <service> <bundle id>` is for a remembered no.**

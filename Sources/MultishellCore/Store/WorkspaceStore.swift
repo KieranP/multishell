@@ -616,5 +616,9 @@ extension WorkspaceStore {
   public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
     workspace.gitStatusIndicator = indicator
   }
+
+  public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
+    workspace.diffAlgorithm = algorithm
+  }
 }
 // swiftlint:enable no_grouping_extension

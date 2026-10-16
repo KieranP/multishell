@@ -148,8 +148,8 @@
   and takes no comments: `NoLeadingUnderscores` (a persisted `_0` coding key),
   `UseWhereClausesInForLoops` (a `guard … continue` reads as the rest do),
   `NeverForceUnwrap` and `NeverUseForceTry` (SwiftLint's own rules cover
-  Sources), `AllPublicDeclarationsHaveDocumentation` (615 undocumented), and
-  `BeginDocumentationCommentWithOneLineSummary`, 878 doc comments written as
+  Sources), `AllPublicDeclarationsHaveDocumentation` (672 undocumented), and
+  `BeginDocumentationCommentWithOneLineSummary`, 915 doc comments written as
   prose.
 - **Every SwiftLint rule runs but those in `disabled_rules`**, each with its
   reason in `.swiftlint.yml`. Layout rules run beside swift-format where the two

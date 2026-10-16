@@ -43,12 +43,6 @@ public enum ShellLaunch {
     }
   }
 
-  /// zsh and bash are given the marks that say a command finished, and fish
-  /// 4 writes its own; see COMPAT.md.
-  public static func reportsFinishedCommands(_ shellPath: String) -> Bool {
-    ["zsh", "bash", "fish"].contains(shellPath.executableName)
-  }
-
   /// Points a zsh session's `ZDOTDIR` at the generated directory, and says
   /// where the user's was so ours can chain to it; see terminals.md.
   static func zshEnvironment(

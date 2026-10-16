@@ -9,7 +9,7 @@ struct StatusReadLog: Sendable {
     fileprivate let ids: [Worktree.ID]
   }
 
-  var pace = StatusPollPace.standard
+  var pace = StatusReadPace.standard
 
   private var reads = LastReads()
   private var generation = 0
@@ -25,7 +25,13 @@ struct StatusReadLog: Sendable {
     pace.isDue(lastRead: reads[id]?.at, duration: reads[id]?.duration, at: now)
   }
 
-  /// A read's cost, kept so the poll can leave a slow checkout alone for a
+  /// When this worktree may next be read, which may have passed; nil where it
+  /// was never read.
+  func nextDue(_ id: Worktree.ID) -> ContinuousClock.Instant? {
+    pace.nextDue(lastRead: reads[id]?.at, duration: reads[id]?.duration)
+  }
+
+  /// A read's cost, kept so the next read can leave a slow checkout alone for a
   /// while. Only pass what badged a row: a reading thrown away paces nothing.
   mutating func remember(_ costs: [Worktree.ID: Duration]) {
     reads.remember(costs)

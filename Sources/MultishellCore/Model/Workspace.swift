@@ -17,7 +17,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
-    case gitStatusIndicator
+    case gitStatusIndicator, diffAlgorithm
   }
 
   /// Keys no property answers to any more, read only to carry what an older
@@ -96,6 +96,8 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var projectHookTimeoutSeconds = Self.defaultProjectHookTimeoutSeconds
   /// What the git badge on a row and a card counts.
   public internal(set) var gitStatusIndicator = GitStatusIndicator.default
+  /// How that badge's line counts match old lines to new.
+  public internal(set) var diffAlgorithm = DiffAlgorithm.default
 
   /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var projectHookTimeout: Duration? {
@@ -203,6 +205,11 @@ public struct Workspace: Codable, Hashable, Sendable {
     gitStatusIndicator = container.decodeTolerantly(
       GitStatusIndicator.self,
       forKey: .gitStatusIndicator,
+      or: .default,
+    )
+    diffAlgorithm = container.decodeTolerantly(
+      DiffAlgorithm.self,
+      forKey: .diffAlgorithm,
       or: .default,
     )
 

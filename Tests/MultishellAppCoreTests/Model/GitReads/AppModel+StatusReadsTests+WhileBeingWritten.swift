@@ -80,7 +80,7 @@ extension AppModelStatusReadsTests {
     )
 
     await harness.model.refreshStatus(of: main.id)
-    #expect(harness.model.statuses[main.id] == nil, "a prompt's refresh reads no earlier")
+    #expect(harness.model.statuses[main.id] == nil, "a single row's refresh reads no earlier")
   }
 
   @Test func aWorktreeAddedOutsideTheAppIsNotReadUntilGitHasMadeIt() async throws {

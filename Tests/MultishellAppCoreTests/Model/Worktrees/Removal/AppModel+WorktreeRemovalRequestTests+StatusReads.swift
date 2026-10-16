@@ -128,6 +128,28 @@ extension AppModelWorktreeRemovalRequestTests {
     #expect(harness.statusRunCount() == 1)
   }
 
+  @Test func theRemovalWarningCountsEachFileInANewFolder() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let doomed = try await harness.createWorktree(onBranch: "doomed")
+    let folder = doomed.path.appending(path: "new", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    for name in ["a", "b", "c"] {
+      try "x\n".write(to: folder.appending(path: name), atomically: true, encoding: .utf8)
+    }
+
+    await harness.model.requestWorktreeRemoval(of: doomed)?.value
+
+    let pending = try #require(harness.model.pendingWorktreeRemoval)
+    #expect(
+      harness.model.worktreeRemovalWarning(for: pending)
+        == pending.warning(
+          changedFiles: 3,
+          liveTerminals: harness.model.liveTerminalCount(in: doomed.id),
+        )
+    )
+  }
+
   @Test func aRemovalWhoseStatusReadHangsStillOpensItsDialog() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

@@ -2,8 +2,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// Paced like the poll; `forced` must start after its cause, see worktrees.md.
-  /// `true` where a status landed, which a failed git or a skipped read is not.
+  /// `forced` is a read someone asked for, past the pace and counting every new
+  /// file; see worktrees.md. `true` where a status landed.
   @discardableResult
   func refreshStatus(of worktreeID: Worktree.ID, forced: Bool = false) async -> Bool {
     guard let coordinator, let worktree = workspace.worktree(worktreeID),
@@ -14,7 +14,11 @@ extension AppModel {
       return false
     }
     guard forced || statusReadLog.isDue(worktreeID, at: .now) else { return false }
-    let readings = await readStatuses(of: [worktree], with: coordinator)
+    let readings = await readStatuses(
+      of: [worktree],
+      with: coordinator,
+      countsEveryNewFile: forced,
+    )
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
     guard let still = workspace.worktree(worktreeID), mayReadStatus(of: still) else {
@@ -24,6 +28,7 @@ extension AppModel {
     guard let reading = readings[worktreeID] else { return false }
     noteDirectoryPresent(of: worktreeID)
     setIfChanged(\.statuses[worktreeID], reading.status)
+    await refreshWorktreesWhoseBranchMoved([worktreeID: reading.status])
     return true
   }
 
@@ -38,14 +43,21 @@ extension AppModel {
     }
   }
 
-  /// One command at a prompt raises several events in a row, each of which
-  /// would spawn a `git status`. The burst becomes one run.
+  /// A burst becomes one read once it settles and the pace allows, never pushed
+  /// back by the next change, or a build writing on would hold the badge.
   func scheduleStatusRefresh(of worktreeID: Worktree.ID) {
-    pendingStatusRefreshes[worktreeID]?.cancel()
+    guard pendingStatusRefreshes[worktreeID] == nil else { return }
     pendingStatusRefreshes[worktreeID] = Task { @MainActor [weak self] in
-      try? await Task.sleep(for: .milliseconds(250))
+      try? await Task.sleep(for: Self.changeSettleDelay)
+      // Looped: a forced read begun before the change can land meanwhile and
+      // move the pace on, and the read it would then refuse is this change's.
+      while !Task.isCancelled, let due = self?.statusReadLog.nextDue(worktreeID), due > .now {
+        try? await Task.sleep(until: due)
+      }
       guard !Task.isCancelled, let self else { return }
       pendingStatusRefreshes[worktreeID] = nil
+      // Left to the read a return to the front makes.
+      guard platform.isActive else { return }
       await refreshStatus(of: worktreeID)
     }
   }

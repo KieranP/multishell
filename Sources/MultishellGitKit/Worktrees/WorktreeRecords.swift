@@ -26,17 +26,6 @@ public struct WorktreeRecords: Hashable, Sendable {
     return Self(files: files)
   }
 
-  /// Directories that change when worktrees do. Never the common `.git` once
-  /// `worktrees/` exists; see Docs/design/worktrees.md.
-  public static func directoriesToWatch(in common: URL) -> [URL] {
-    let worktrees = worktreesDirectory(in: common)
-    guard FileManager.default.fileExists(atPath: worktrees.path) else { return [common] }
-    let entries =
-      (try? FileManager.default.contentsOfDirectory(at: worktrees, includingPropertiesForKeys: nil))
-      ?? []
-    return [worktrees] + entries.filter { FileManager.default.fileExists(atPath: $0.path) }
-  }
-
   /// `<common>/worktrees`, which holds one record directory per linked checkout.
   static func worktreesDirectory(in common: URL) -> URL {
     common.appendingPathComponent("worktrees", isDirectory: true)

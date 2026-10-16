@@ -79,6 +79,18 @@ struct WorkspaceTests {
     #expect(split.opensTerminalOnCreate, "once said separately, it is its own setting")
   }
 
+  @Test func anUnreadableDiffAlgorithmFallsBackToHistogram() throws {
+    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).diffAlgorithm == .histogram)
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "diffAlgorithm": "myers" }"#).diffAlgorithm == .myers
+    )
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "diffAlgorithm": "whateverIsNext" }"#).diffAlgorithm
+        == .histogram,
+      "an algorithm a newer build named costs that value alone",
+    )
+  }
+
   @Test func anUnreadableGitStatusIndicatorFallsBackToCountingEverything() throws {
     #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).gitStatusIndicator == .default)
     #expect(

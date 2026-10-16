@@ -8,9 +8,9 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelWorktreeStatusRefreshTests {
-  /// A prompt's refresh is unpaced no more than the poll is: before this it
-  /// ran on every burst of terminal output, three git calls a time.
-  @Test func aPromptsRefreshOfASlowWorktreeWaitsForThePaceToo() async throws {
+  /// A single row's read is unpaced no more than a full read is: unpaced, each
+  /// burst of file events would run it, three git calls a time.
+  @Test func aSingleRowsReadOfASlowWorktreeWaitsForThePaceToo() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let fake = try harness.modelWithSlowStatus()
@@ -75,7 +75,7 @@ struct AppModelWorktreeStatusRefreshTests {
     )
   }
 
-  @Test func aPromptsRefreshWhileThePollReadsItsRowIsReadOnceThePollLands() async throws {
+  @Test func aSingleRowsReadAskedWhileThePollReadsItRunsOnceThePollLands() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let gate = harness.root.appendingPathComponent("go")
@@ -93,6 +93,18 @@ struct AppModelWorktreeStatusRefreshTests {
     #expect(harness.statusRunCount() == 2, "the refresh asked for mid-read was dropped")
   }
 
+  @Test func aSingleRowsReadThatFindsANewBranchInTheMainWorktreeMovesItsRow() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    _ = try await harness.git.run(["checkout", "-q", "-b", "elsewhere"], in: harness.project.path)
+
+    await harness.model.refreshStatus(of: main.id)
+
+    #expect(harness.worktree(onBranch: "elsewhere") != nil)
+    #expect(harness.worktree(onBranch: "main") == nil)
+  }
+
   @Test func aPanesReadAsksNothingOfAWorktreeInAMissingProject() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -105,7 +117,31 @@ struct AppModelWorktreeStatusRefreshTests {
     #expect(harness.statusRunCount() == 0)
   }
 
-  /// A prompt's status refresh is in flight when the worktree goes. Paths are
+  /// The forced read began before the change and lands while the queued one
+  /// waits for the pace, moving the pace on under it.
+  @Test func aQueuedReadIsStillMadeWhenAForcedReadLandsWhileItWaits() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    try Data().write(to: gate)
+    let fake = try harness.modelWithStatusHeld(until: gate, answering: "main")
+    fake.statusReadLog.pace = StatusReadPace(minimumGap: .seconds(1), costMultiple: 0)
+    let main = try #require(fake.workspace.worktrees.first)
+    await fake.refreshStatus(of: main.id)
+    try FileManager.default.removeItem(at: gate)
+
+    let forced = Task { await fake.refreshStatus(of: main.id, forced: true) }
+    try await waitUntil { harness.statusRunCount() == 2 }
+    fake.scheduleStatusRefresh(of: main.id)
+    try await Task.sleep(for: .milliseconds(450))
+    try Data().write(to: gate)
+    _ = await forced.value
+
+    try await waitUntil { harness.statusRunCount() == 3 }
+    #expect(harness.statusRunCount() == 3)
+  }
+
+  /// A single row's read is in flight when the worktree goes. Paths are
   /// ids, so its answer could badge a row re-made at the same path.
   @Test func aStatusThatArrivesAfterTheWorktreeWentBadgesNothing() async throws {
     let harness = try await GitHarness()

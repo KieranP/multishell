@@ -72,6 +72,10 @@
 "debug.subtitle-count-and-self" = "%1$@ · %2$@ · %3$@ self";
 "debug.terminal-row" = "Terminal";
 "debug.total-row" = "Total, app and child processes";
+"diff-algorithm.histogram" = "Histogram";
+"diff-algorithm.minimal" = "Minimal";
+"diff-algorithm.myers" = "Myers (git's default)";
+"diff-algorithm.patience" = "Patience";
 "elapsed.hours" = "%1$dh %2$02dm";
 "elapsed.minutes" = "%dm";
 "elapsed.minutes-seconds" = "%1$dm %2$ds";

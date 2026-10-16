@@ -59,9 +59,5 @@ extension WorktreeGitTests {
     defer { fixture.tearDown() }
     let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
     #expect(common.standardizedFileURL.path == fixture.project.path.path)
-    #expect(
-      WorktreeRecords.directoriesToWatch(in: common).map(\.lastPathComponent).sorted()
-        == ["main", "worktrees"]
-    )
   }
 }

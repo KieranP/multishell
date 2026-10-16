@@ -131,6 +131,21 @@ struct AppModelStatusReadsTests {
     #expect(harness.model.workspace.gitStatusIndicator == .stagedOnly)
   }
 
+  @Test func changingTheDiffAlgorithmReadsEveryBadgeAtOnce() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.model.statusReadLog.pace = .standard
+    await harness.model.refreshStatuses()
+    #expect(!harness.model.statusReadLog.hasNoReadings)
+
+    harness.model.setDiffAlgorithm(.myers)
+
+    #expect(harness.model.workspace.diffAlgorithm == .myers)
+    #expect(harness.model.statusReadLog.hasNoReadings, "the old algorithm's counts pace nothing")
+    try await waitUntil { !harness.model.statusReadLog.hasNoReadings }
+    #expect(!harness.model.statusReadLog.hasNoReadings, "and the read it asked for has landed")
+  }
+
   /// The reads run while the app carries on, so a worktree can be removed
   /// between asking git and hearing back.
   @Test func aWorktreeRemovedWhileGitRanGetsNoBadgeFromThatRound() async throws {

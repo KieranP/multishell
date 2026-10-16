@@ -86,9 +86,10 @@ Under `~/Library/Application Support/Multishell`.
   every build shares, debug ones included.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
   with the same keys as a project's settings less the agent, its flags and the
-  shell. Read at launch, when a project's worktree records change, and on any
-  tick where its modification date moved. What it said is never saved in the
-  state file, where a restored copy would trust a file nobody looked at.
+  shell. Read at launch, when a project's worktree records change, and when its
+  modification date has moved, which an event on the file or the project's
+  `.git` and each minute's round check. What it said is never saved in the state
+  file, where a restored copy would trust a file nobody looked at.
 - **A field it ships needs a line in the layering**, a decode that costs the key
   and not the file, and an override section on the page (design/settings.md).
 - **A field naming a path on the reader's disk needs more**: confinement, the

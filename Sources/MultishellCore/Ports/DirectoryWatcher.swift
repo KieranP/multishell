@@ -1,11 +1,11 @@
 import Foundation
 
-/// Tells the core when a set of directories changes. A port so the tests can
-/// fake it; implementations coalesce bursts.
+/// Tells the core when anything under a set of directories changes. A port so
+/// the tests can fake it; implementations coalesce bursts.
 @MainActor
 public protocol DirectoryWatcher: AnyObject {
-  /// The directories that fired since the last call, so the core can read
-  /// only the project they belong to; empty where the watcher cannot say.
+  /// What changed since the last call: the directory holding each change, or the
+  /// entry at the top of a watched one; WatchedDirectories names those kept whole.
   var onChange: (@MainActor ([URL]) -> Void)? { get set }
 
   /// Replaces the watched set on return, unless a later call began meanwhile.

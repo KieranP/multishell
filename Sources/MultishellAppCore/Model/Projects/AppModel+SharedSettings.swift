@@ -2,16 +2,16 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Every project's file, re-read where its date moved. On the status poll,
-  /// the watcher watching only `.git`; an unreachable repository is skipped.
+  /// Every project's file, re-read where its date moved: the round's backstop to
+  /// the file event. An unreachable repository is skipped.
   func refreshSharedSettingsIfChanged() async {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshSharedSettingsIfChanged(project)
     }
   }
 
-  /// A tick's check for a file edited while the app is up, `refreshWorktrees` running
-  /// only when the records change. One stat per project per tick.
+  /// The check for a file edited while the app is up, `refreshWorktrees` running
+  /// only when the records change. One stat per call.
   func refreshSharedSettingsIfChanged(_ project: Project) async {
     let path = project.path
     let stamp = await runOnDispatch {

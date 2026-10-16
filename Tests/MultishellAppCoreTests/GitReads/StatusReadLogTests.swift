@@ -3,7 +3,7 @@ import Testing
 @testable import MultishellAppCore
 
 /// What paces a worktree's `git status`, on the plain value the model keeps
-/// the readings in. The rule itself is `StatusPollPaceTests`.
+/// the readings in. The rule itself is `StatusReadPaceTests`.
 @Suite
 struct StatusReadLogTests {
   private let firstTree = "/trees/a"

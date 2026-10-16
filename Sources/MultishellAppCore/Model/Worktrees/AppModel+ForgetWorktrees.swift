@@ -24,6 +24,7 @@ extension AppModel {
       worktreeOperations.clear(id)
       pendingStatusRefreshes[id]?.cancel()
       pendingStatusRefreshes[id] = nil
+      ignoreVerdicts[id] = nil
     }
     if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
     if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {

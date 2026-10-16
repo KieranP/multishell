@@ -25,7 +25,9 @@ rule holds is in `Docs/design/`.
 - **Descriptor exhaustion** lowers the process-wide limit, so
   DescriptorExhaustionTests runs only with `MULTISHELL_EXHAUST_DESCRIPTORS` set
   and a filter.
-- **Git on a timer reads only**: WorktreeGitStatusTests.
+- **The app's own git reads write nothing under `.git`**:
+  WorktreeGitTests+ReadsWriteNothing, AppModel+FileChangesTests+RealWatcher
+  under a real watcher, and WorktreeGitStatusTests for the index lock.
 - **A tree still being built wears no badge, and a stage on a listed worktree
   keeps the one it earned**: AppModel+StatusReadsTests+WhileBeingWritten and the
   merged-badge test in AppModelBranchScansTests.
@@ -307,8 +309,8 @@ rule holds is in `Docs/design/`.
 - **A removal whose status read hangs or fails still asks, saying the changes
   went unread**, and a second ask while the read hangs starts no other:
   AppModel+WorktreeRemovalRequestTests+StatusReads.
-- **A row the poll is reading is not read again, but a prompt's refresh asked
-  for meanwhile is read once it lands**: AppModelStatusReadsTests and
+- **A row the poll is reading is not read again, but a change seen meanwhile is
+  read again once it lands**: AppModelStatusReadsTests and
   AppModelWorktreeStatusRefreshTests.
 - **A confirmed removal trashes or deletes as its dialog said**, though the
   setting changed while it was up: AppModelWorktreeRemovalRequestTests.
@@ -413,12 +415,12 @@ rule holds is in `Docs/design/`.
   AppModelStatusReadsTests. A read started before the change badges nothing:
   AppModelWorktreeStatusRefreshTests.
 - **The status poll asking a missing project or a slow checkout**:
-  AppModelStatusReadsTests, and AppModelWorktreeStatusRefreshTests for a
-  prompt's own refresh of that slow worktree and for a read discarded
-  mid-flight, which must leave the next read due.
-- **The pacing rule itself**: StatusPollPaceTests, and StatusReadLogTests for
-  the readings it is applied to. Every other model test runs unpaced, or a read
-  right after a change would be skipped.
+  AppModelStatusReadsTests, and AppModelWorktreeStatusRefreshTests for a single
+  row's read of that slow worktree and for a read discarded mid-flight, which
+  must leave the next read due.
+- **The pacing rule itself**: StatusReadPaceTests, and StatusReadLogTests for
+  the readings it is applied to. The harness runs unpaced, or a read right after
+  a change would be skipped; a test of what the pace holds back sets its own.
 - **A find bar is its pane's own and ends with its pane**: AppModelFindTests.
 - **The steps' engine spellings**: GhosttySearchActionsTests, the crossed next
   included; their shortcuts being taken from the surface and every unbind line

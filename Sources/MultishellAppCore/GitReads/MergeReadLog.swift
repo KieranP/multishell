@@ -12,11 +12,14 @@ struct MergeReadLog: Sendable {
 
   private var reads = LastReads()
   private var spent = Duration.zero
+  /// Whether an admit since the round began left a read out for the budget.
+  private(set) var hasReadsLeftOver = false
 
   /// The poll's round asks every project; each project's re-asks draw on what
   /// the ones before left, and a lone refresh meanwhile leaves it alone.
   mutating func beginRound() {
     spent = .zero
+    hasReadsLeftOver = false
   }
 
   /// The worktrees whose reads fit: every one never read, having no badge to
@@ -35,6 +38,7 @@ struct MergeReadLog: Sendable {
       used += read.duration
     }
     if sharingRound { spent = used }
+    if admitted.count < Set(ids).count { hasReadsLeftOver = true }
     return admitted
   }
 

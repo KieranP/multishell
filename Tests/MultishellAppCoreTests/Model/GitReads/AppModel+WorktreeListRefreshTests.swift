@@ -19,7 +19,9 @@ struct AppModelWorktreeListRefreshTests {
     await harness.model.refreshProjectsIfChanged()
 
     #expect(harness.worktree(onBranch: "outside") != nil)
-    #expect(harness.watcher.watched.map(\.lastPathComponent).sorted() == ["outside", "worktrees"])
+    #expect(
+      harness.watcher.watched.map(\.lastPathComponent).sorted() == [".git", "demo", "outside"]
+    )
   }
 
   @Test func aRefreshLandingAfterTheProjectWasRemovedLeavesNoTrace() async throws {
@@ -212,5 +214,20 @@ struct AppModelWorktreeListRefreshTests {
     await harness.model.refreshProjectsIfChanged()
     #expect(harness.model.workspace.worktrees(of: other.id).count == 2)
     #expect(!harness.watcher.watched.isEmpty)
+  }
+
+  @Test func aProjectWhoseDirectoryReturnsIsUndimmedByTheNextRound() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
+    let away = harness.root.appendingPathComponent("away", isDirectory: true)
+    try FileManager.default.moveItem(at: project.path, to: away)
+    await harness.model.pollRound()
+    #expect(harness.model.missingProjects == [project.id])
+
+    try FileManager.default.moveItem(at: away, to: project.path)
+    await harness.model.pollRound()
+
+    #expect(harness.model.missingProjects.isEmpty)
   }
 }

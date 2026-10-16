@@ -53,9 +53,9 @@
 - **Fetching on a timer is out**, being network, credentials and the one git
   call here that can hang. So a badge is only as fresh as the last fetch, and
   Fetch is a menu item with a timeout and a spinner.
-- **The check rides the status poll, not the watcher**: a commit moves a ref no
-  watched file mentions. Four projects are scanned at once, one after another
-  having been the tick's longest wait at ten projects.
+- **The check runs when a ref, the index, `HEAD` or the config in the project's
+  `.git` changes**, and on the backstop poll. Four projects are scanned at once
+  there, one after another having been the tick's longest wait at ten projects.
 - **Each verdict is memoised on base, base tip, branch, branch tip and whether
   the upstream was gone.** The branch because two may sit on one commit with
   only one gone upstream; the upstream because a first push puts one back
@@ -70,8 +70,9 @@
   since answered first, so every branch is reached in turn. A budget per project
   let a round of four start four budgets' worth. A lone project's refresh, a
   fetch's or a new worktree's, has a budget of its own and leaves the round's as
-  it found it. Cost: after a fetch the last of thirty such branches changes
-  about 75 s later.
+  it found it. Re-asks a round leaves over run on the five-second ticks between
+  rounds, not the minute's round. Cost: after a fetch the last of thirty such
+  branches changes about 75 s later.
 - **A branch never read is not paced**, having no badge to show meanwhile:
   paced, a project of forty took five rounds at launch to badge them all. Cost:
   the first round asks every branch, held to the shared width below. Each counts

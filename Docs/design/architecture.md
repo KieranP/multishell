@@ -57,8 +57,8 @@
   directory per catalogue entry, each blocking for the mount's timeout where a
   PATH directory sits on a mount that has gone.
 - **Cancelling the task that awaits a child does not end the child.** A
-  superseded status refresh cancels its task mid-read, and Subprocess answers a
-  cancel with SIGKILL, so a slow `git status` would never land. Only a
+  superseded status refresh cancelled its task mid-read, and Subprocess answers
+  a cancel with SIGKILL, so a slow `git status` never landed. Only a
   `ProcessStopper` ends a child.
 - **A timeout whose child exits 0 is withdrawn.** A child that begins its exit
   between the stopper's check and its SIGHUP takes the signal to no effect, and

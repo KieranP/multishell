@@ -115,4 +115,24 @@ extension AppModelStatusReadsTests {
 
     #expect(harness.model.statuses[side.id] == nil)
   }
+
+  @Test func openingTheBoardReadsTheRowsItShowsThatTheSidebarHid() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let side = try await harness.createWorktree(onBranch: "side")
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(side)
+    harness.model.select(main)
+    harness.model.setExpanded(false, for: harness.project)
+    harness.clearStatuses()
+    await harness.model.refreshStatus(of: side.id, forced: true)
+    try harness.dirty(side)
+    await harness.model.noteFileChanges([side.path])
+    #expect(harness.model.pendingStatusRefreshes.isEmpty, "hidden, so not queued")
+
+    harness.model.showAgentBoard()
+
+    try await waitUntil { harness.model.statuses[side.id]?.changedFiles == 1 }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
+  }
 }

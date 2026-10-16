@@ -96,6 +96,7 @@ extension AppModel {
         setProjectHookTimeoutSeconds,
       ),
       .choice("gitStatusIndicator", { self.workspace.gitStatusIndicator }, setGitStatusIndicator),
+      .choice("diffAlgorithm", { self.workspace.diffAlgorithm }, setDiffAlgorithm),
     ]
   }
 

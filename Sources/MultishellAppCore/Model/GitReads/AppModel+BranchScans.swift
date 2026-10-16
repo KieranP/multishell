@@ -10,8 +10,21 @@ extension AppModel {
     mergeStates[worktree.id] ?? .unknown
   }
 
+  /// A burst of changes under a project's `.git` becomes one scan, once the
+  /// burst settles; a change during that scan queues the next.
+  func scheduleBranchScan(of id: Project.ID) {
+    guard pendingBranchScans[id] == nil else { return }
+    pendingBranchScans[id] = Task { @MainActor [weak self] in
+      try? await Task.sleep(for: Self.changeSettleDelay)
+      guard !Task.isCancelled, let self else { return }
+      pendingBranchScans[id] = nil
+      guard let project = workspace.project(id), !missingProjects.contains(id) else { return }
+      await refreshBranchScan(of: project)
+    }
+  }
+
   /// Each branch's last commit, the default branch and whether each worktree's
-  /// branch has landed. On the poll: a commit moves a ref nothing watched names.
+  /// branch has landed, for every project at once.
   func refreshBranchScans() async {
     let projects = workspace.projects.filter { !missingProjects.contains($0.id) }
     mergeReadLog.beginRound()

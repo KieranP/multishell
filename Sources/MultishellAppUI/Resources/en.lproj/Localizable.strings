@@ -279,6 +279,8 @@
 "worktrees.confirm-removal-info" = "Asks before a removal, counting uncommitted changes and open terminals. Off, a removal still asks about the branch unless the branch toggle settles it.";
 "worktrees.delete-branch" = "Always delete the branch with its worktree";
 "worktrees.delete-branch-info" = "Runs git branch -d once the post-delete hook has run. Off, removing a worktree asks whether the branch goes too. A branch with commits nothing else has is offered again forced.";
+"worktrees.diff-algorithm" = "Diff algorithm:";
+"worktrees.diff-algorithm-info" = "How the badge's line counts match old lines to new; one edit can count differently under each. Your own git config is not read, so a setting counts the same for everyone.";
 "worktrees.hook-timeout" = "Hook timeout:";
 "worktrees.hook-timeout-info" = "How long a project hook may run before it is stopped and reported, in seconds. Cancel on the pane ends one sooner; 0 is no limit.";
 "worktrees.indicator" = "Git status indicator:";

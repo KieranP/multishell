@@ -990,8 +990,8 @@ command line's requests on the same socket. Newest at the bottom.
   mark does. Reading the agent the tab was opened as, `panes show` and
   `tabs list` missed a `claude` typed into a shell tab that `sidebar list` and
   `board list` showed (`aPaneNamesTheAgentAtItsPromptAsTheSidebarAndBoardDo`).
-- **`worktrees show` reads git before it answers**, since the status poll pauses
-  while the app is in the background, as a scripted copy usually is.
+- **`worktrees show` reads git before it answers**, since status is read only
+  while the app is frontmost, and a scripted copy usually is not.
 - **The settings windows open through SwiftUI's own openers**, which only a view
   can reach, so the root view hands them to the platform. AppKit cannot open a
   SwiftUI scene, and closing one goes by the window's identifier.

@@ -40,6 +40,15 @@ public enum Scratch {
     return String(cString: resolved)
   }
 
+  /// Moves a file's modification date a minute on, as `touch` does, leaving
+  /// what it holds: git then has stale stat data to refresh.
+  public static func touch(_ url: URL) throws {
+    try FileManager.default.setAttributes(
+      [.modificationDate: Date().addingTimeInterval(60)],
+      ofItemAtPath: url.path,
+    )
+  }
+
   /// Removes a path if it is there, for a `defer` or a `tearDown`.
   public static func remove(_ url: URL) {
     try? FileManager.default.removeItem(at: url)

@@ -1,11 +1,20 @@
 import Foundation
 import MultishellCore
+import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
 
 @Suite(.serialized)
 struct WorktreeGitStatusTests {
+  /// Myers, git's default, reads this edit as +1 −6; `histogram` and
+  /// `patience` read the same edit as +8 −13.
+  private static let editBefore =
+    "c\nc\na\nc\n\nc\n\nx\nc\nc\na\na\nb\nc\ny\n}\n}\na\n{\n}\n{\n}\nx\n{\ny\nc\na\nx\n\ny\n"
+  private static let editAfter =
+    "c\nc\na\nc\n\nx\nc\nc\na\na\nc\ny\n}\na\n{\n}\n{\n}\nb\nx\n{\ny\nc\nx\ny\n"
+
   /// A stale index makes a plain `git status` rewrite it under `index.lock`, which trips a
   /// commit typed at that moment; see Docs/design/worktrees.md.
   @Test func aStatusPollNeverWritesTheIndex() async throws {
@@ -35,6 +44,158 @@ struct WorktreeGitStatusTests {
         atPath: fixture.project.path.appendingPathComponent(".git/index.lock").path
       )
     )
+  }
+
+  /// `diff --numstat` refreshes stale stat data into a new index whatever
+  /// `--no-optional-locks` says, and the watcher sees `.git` change.
+  @Test func aLineCountBesideATouchedFileNeverWritesTheIndex() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    let touched = path.appendingPathComponent("touched.txt")
+    try "same\n".write(to: touched, atomically: true, encoding: .utf8)
+    _ = try await fixture.runner.run(["add", "touched.txt"], in: path)
+    _ = try await fixture.runner.run(["commit", "-qm", "touched"], in: path)
+    let index = path.appendingPathComponent(".git/index").path
+    func indexInode() throws -> Int {
+      try #require(FileManager.default.attributesOfItem(atPath: index)[.systemFileNumber] as? Int)
+    }
+    let before = try indexInode()
+    try Scratch.touch(touched)
+    try "changed\n".write(
+      to: path.appendingPathComponent("README.md"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    let main = try await fixture.coordinator.git.list(fixture.project)[0]
+
+    for indicator in GitStatusIndicator.allCases {
+      let status = try await WorktreeGit(runner: fixture.runner).status(
+        of: main,
+        counting: indicator,
+      )
+      #expect(status.unstaged == 1)
+    }
+
+    #expect(try indexInode() == before, "the index was replaced")
+  }
+
+  @Test func beforeTheFirstCommitUnstagedLinesCountAsWellAsStagedOnes() async throws {
+    let fixture = try await RepositoryFixture.make(commit: false)
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    let file = path.appendingPathComponent("a.txt")
+    try "one\n".write(to: file, atomically: true, encoding: .utf8)
+    _ = try await fixture.runner.run(["add", "a.txt"], in: path)
+    try "one\ntwo\nthree\n".write(to: file, atomically: true, encoding: .utf8)
+    let git = WorktreeGit(runner: fixture.runner)
+    let main = try #require(try await git.list(fixture.project).first)
+
+    #expect(try await git.status(of: main, counting: .stagedAndUnstaged).insertions == 3)
+    #expect(try await git.status(of: main, counting: .stagedOnly).insertions == 1)
+  }
+
+  @Test func aFailedCountSinceTheLastCommitNeverCountsFromTheEmptyTree() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *status*) printf '## main\\n M a.txt\\n' ;;
+        *diff-index*) exit 128 ;;
+        *rev-parse*) exit 0 ;;
+      esac
+      """,
+      loggingCalls: true,
+    )
+    defer { fake.tearDown() }
+    let worktree = Worktree(path: fake.directory, projectID: fake.directory.path, head: "abc")
+
+    _ = try await WorktreeGit(runner: fake.runner).status(of: worktree)
+
+    #expect(!FakeGit.calls(in: fake.directory).contains { $0.contains("hash-object") })
+  }
+
+  @Test func aReadAskedForCountsEveryNewFileWhereTheBadgeCountsTheirFolder() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let folder = fixture.project.path.appendingPathComponent("new", isDirectory: true)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    for name in ["a", "b", "c"] {
+      try "x\n".write(to: folder.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+    let git = WorktreeGit(runner: fixture.runner)
+    let main = try #require(try await git.list(fixture.project).first)
+
+    let badge = try await git.status(of: main, countsEveryNewFile: false)
+    let asked = try await git.status(of: main, countsEveryNewFile: true)
+
+    #expect(badge.changedFiles == 1)
+    #expect(asked.changedFiles == 3)
+    #expect(asked.untracked == badge.untracked, "the tooltip keeps one entry per new folder")
+    #expect(asked.insertions == badge.insertions)
+  }
+
+  @Test func theChosenDiffAlgorithmDecidesTheCountsForBothIndicators() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try await fixture.commit("base", files: ["edited.txt": Self.editBefore])
+    try Self.editAfter.write(
+      to: path.appendingPathComponent("edited.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    _ = try await fixture.runner.run(["add", "edited.txt"], in: path)
+    let git = WorktreeGit(runner: fixture.runner)
+    let main = try #require(try await git.list(fixture.project).first)
+
+    for indicator in GitStatusIndicator.allCases {
+      let myers = try await git.status(of: main, counting: indicator, diffAlgorithm: .myers)
+      let histogram = try await git.status(
+        of: main,
+        counting: indicator,
+        diffAlgorithm: .histogram,
+      )
+      #expect((myers.insertions, myers.deletions) == (1, 6))
+      #expect((histogram.insertions, histogram.deletions) == (8, 13))
+    }
+  }
+
+  @Test func twoPeopleWithDifferentGitSettingsSeeTheSameCounts() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try await fixture.commit(
+      "base",
+      files: ["edited.txt": Self.editBefore, "moved.txt": "one\ntwo\n"],
+    )
+    try Self.editAfter.write(
+      to: path.appendingPathComponent("edited.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    _ = try await fixture.runner.run(["add", "edited.txt"], in: path)
+    _ = try await fixture.runner.run(["mv", "moved.txt", "renamed.txt"], in: path)
+    let git = WorktreeGit(runner: fixture.runner)
+    let main = try #require(try await git.list(fixture.project).first)
+    var plain: [GitStatusIndicator: WorktreeStatus] = [:]
+    for indicator in GitStatusIndicator.allCases {
+      plain[indicator] = try await git.status(of: main, counting: indicator)
+    }
+
+    for (key, value) in [
+      ("diff.algorithm", "myers"), ("diff.renames", "copies"), ("status.renames", "copies"),
+    ] {
+      _ = try await fixture.runner.run(["config", key, value], in: path)
+    }
+
+    for indicator in GitStatusIndicator.allCases {
+      let counted = try #require(plain[indicator])
+      #expect(try await git.status(of: main, counting: indicator) == counted)
+      #expect(counted.changedFiles == 3, "a move is a file gone and a file added")
+      #expect(counted.insertions == 10, "histogram's +8 and the move's +2")
+      #expect(counted.deletions == 15)
+      #expect(counted.unscoredFiles == 0)
+    }
   }
 
   @Test func aChangedFileAndANewOneAreCountedApartAndTheStatusNamesTheBranch() async throws {

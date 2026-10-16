@@ -4,8 +4,8 @@ extension AppModel {
   /// What the platform, the reconciler, the socket, the notifier and the
   /// watcher report back or ask, each routed to the model.
   func wireCallbacks() {
-    // Statuses poll only while frontmost, so a return would show badges five
-    // seconds stale. The permission is read back for the same reason.
+    // Badges are read only while frontmost, so a return would show them as
+    // stale as the last change. The permission is read back for the same reason.
     platform.onDidBecomeActive = { [weak self] in
       Task { await self?.refreshAll() }
       self?.refreshNotificationAuthorization()
@@ -32,7 +32,7 @@ extension AppModel {
     messageSource.onRequest = { [weak self] request in await self?.answer(request) }
     notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in
-      Task { await self?.refreshProjectsIfChanged(under: changed) }
+      Task { await self?.noteFileChanges(changed) }
     }
   }
 }

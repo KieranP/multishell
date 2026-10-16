@@ -1,7 +1,9 @@
 import MultishellCore
 
 extension AppModel {
-  private func polledRowIDs(
+  /// The rows whose status is read: those in view, the main and selected ones,
+  /// and those on the board.
+  func polledRowIDs(
     filteredBy text: String? = nil,
     collapsing collapsed: Set<Project.ID>? = nil,
   ) -> Set<Worktree.ID> {

@@ -1,4 +1,3 @@
-import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -25,96 +24,21 @@ struct AppModelTerminalEventsTests {
     #expect(harness.model.state(of: first) == nil)
   }
 
-  @Test func aBurstOfActivityCoalescesIntoOneStatusRefresh() async {
+  @Test func terminalActivityReadsNoGitAsTheWatcherReportsWhatChanged() {
     let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-
-    // Title before the command, command finished, title after: what one
-    // prompt produces. Each used to spawn its own `git status`.
-    for _ in 0..<3 {
-      harness.engine.delegate?.terminalHost(
-        harness.engine,
-        didRetitle: tab.focusedSessionID,
-        to: "make",
-      )
-      harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: tab.focusedSessionID)
-    }
-
-    #expect(harness.model.pendingStatusRefreshes.count == 1)
-    #expect(harness.model.pendingStatusRefreshes[harness.main.id] != nil)
-
-    // The debounce is 250 ms; polled with headroom for a busy CI runner.
-    try? await waitUntil { harness.model.pendingStatusRefreshes.isEmpty }
-    #expect(harness.model.pendingStatusRefreshes.isEmpty, "the one refresh ran and cleared itself")
-  }
-
-  @Test func aRetitleInAShellThatReportsFinishedCommandsSchedulesNoStatusRead() {
-    let harness = Harness()
-    harness.model.setSettings(ProjectSettings(preferredShellID: "/bin/zsh"), for: harness.project)
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
 
     harness.engine.delegate?.terminalHost(
       harness.engine,
       didRetitle: tab.focusedSessionID,
-      to: "◐ claude",
+      to: "make",
     )
-
-    #expect(harness.model.title(of: tab) == "◐ claude")
-    #expect(harness.model.pendingStatusRefreshes.isEmpty)
-  }
-
-  @Test func aRetitleInNuSchedulesAStatusReadAsItsPromptIsTheOnlySign() {
-    let harness = Harness()
-    harness.model.setSettings(
-      ProjectSettings(preferredShellID: "/opt/homebrew/bin/nu"),
-      for: harness.project,
-    )
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-
+    harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: tab.focusedSessionID)
     harness.engine.delegate?.terminalHost(
       harness.engine,
-      didRetitle: tab.focusedSessionID,
-      to: "~/demo",
-    )
-
-    #expect(harness.model.pendingStatusRefreshes[harness.main.id] != nil)
-  }
-
-  @Test func aRetitleInFishSchedulesNoStatusReadAsFishMarksEachCommandsEnd() {
-    let harness = Harness()
-    harness.model.setSettings(
-      ProjectSettings(preferredShellID: "/opt/homebrew/bin/fish"),
-      for: harness.project,
-    )
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-
-    harness.engine.delegate?.terminalHost(
-      harness.engine,
-      didRetitle: tab.focusedSessionID,
-      to: "claude ~/demo",
-    )
-
-    #expect(harness.model.pendingStatusRefreshes.isEmpty)
-  }
-
-  @Test func aRetitleInNuFromAnAgentsTabSchedulesNoStatusRead() {
-    let harness = Harness()
-    harness.model.setSettings(
-      ProjectSettings(preferredShellID: "/opt/homebrew/bin/nu"),
-      for: harness.project,
-    )
-    harness.model.select(harness.main)
-    harness.model.newAgentTab("claude")
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-
-    harness.engine.delegate?.terminalHost(
-      harness.engine,
-      didRetitle: tab.focusedSessionID,
-      to: "◐ claude",
+      didFinishCommandIn: tab.focusedSessionID,
+      exitCode: 0,
     )
 
     #expect(harness.model.pendingStatusRefreshes.isEmpty)

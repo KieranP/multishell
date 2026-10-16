@@ -2,7 +2,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// Missing projects and slow worktrees are skipped, see `StatusPollPace`; nil is every project.
+  /// A missing project is skipped and a row the pace holds back is queued, see
+  /// `StatusReadPace`; nil is every project.
   func refreshStatuses(inProject id: Project.ID? = nil) async {
     await refreshStatuses { id == nil || $0.projectID == id }
   }
@@ -15,18 +16,29 @@ extension AppModel {
     Task { await refreshStatuses() }
   }
 
-  /// A failed read keeps its badge rather than blinking off; a gone worktree's
-  /// goes. A row already being read is left to that read.
+  /// Read again at once for the reason `setGitStatusIndicator` gives.
+  public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
+    store.setDiffAlgorithm(algorithm)
+    statusReadLog.invalidate()
+    Task { await refreshStatuses() }
+  }
+
+  /// A failed read keeps its badge; a gone worktree's goes. A row being read is
+  /// left to that read, and one the pace holds back is queued, not dropped.
   func refreshStatuses(where included: (Worktree) -> Bool) async {
     guard let coordinator else { return }
     let now = ContinuousClock.now
     let onSidebar = sidebarRowIDs()
+    let wanted = workspace.worktrees.filter { worktree in
+      included(worktree) && mayReadStatus(of: worktree)
+        && isStatusWanted(worktree, onSidebar: onSidebar)
+        && !statusReadLog.isReading(worktree.id)
+    }
+    for worktree in wanted where !statusReadLog.isDue(worktree.id, at: now) {
+      scheduleStatusRefresh(of: worktree.id)
+    }
     let readings = await readStatuses(
-      of: workspace.worktrees.filter { worktree in
-        included(worktree) && mayReadStatus(of: worktree)
-          && isStatusWanted(worktree, onSidebar: onSidebar)
-          && statusReadLog.isDue(worktree.id, at: now) && !statusReadLog.isReading(worktree.id)
-      },
+      of: wanted.filter { statusReadLog.isDue($0.id, at: now) },
       with: coordinator,
     )
     // After the await: a removed row keeps no badge, and one a stage began on
@@ -61,27 +73,25 @@ extension AppModel {
   func readStatuses(
     of worktrees: [Worktree],
     with coordinator: WorktreeCoordinator,
+    countsEveryNewFile: Bool = false,
   ) async -> [Worktree.ID: StatusReading] {
     let ticket = statusReadLog.begin(worktrees.map(\.id))
     let readings = await coordinator.readStatuses(
       of: worktrees,
       counting: workspace.gitStatusIndicator,
+      diffAlgorithm: workspace.diffAlgorithm,
+      countsEveryNewFile: countsEveryNewFile,
     )
     let stillCounts = statusReadLog.finish(ticket)
     let again = statusReadLog.takeAskedAgain(of: ticket)
-    if !again.isEmpty {
-      // Past the pace, which the read just landed would otherwise hold them to.
-      Task { [weak self] in
-        for id in again { await self?.refreshStatus(of: id, forced: true) }
-      }
-    }
+    for id in again { scheduleStatusRefresh(of: id) }
     guard stillCounts else { return [:] }
     return readings
   }
 
-  /// A `git checkout` in the main worktree touches `.git/HEAD`, which is not
-  /// watched. Where the poll's branch disagrees, re-read that project.
-  private func refreshWorktreesWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
+  /// Where a status read's branch disagrees with the row, re-read that project:
+  /// a share whose changes no file event reports is caught here.
+  func refreshWorktreesWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
     var drifted: Set<Project.ID> = []
     for worktree in workspace.worktrees {
       if let status = fresh[worktree.id], status.branch != worktree.branch {

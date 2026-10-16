@@ -57,6 +57,16 @@ struct AppWorktreesPage: View {
           }
           .fixedSize()
         }
+        InfoLabeledContent(t("worktrees.diff-algorithm"), info: t("worktrees.diff-algorithm-info"))
+        {
+          Picker(
+            t("worktrees.diff-algorithm"),
+            selection: model.settingBinding(\.diffAlgorithm, write: model.setDiffAlgorithm),
+          ) {
+            ForEach(DiffAlgorithm.allCases, id: \.self) { Text($0.displayName).tag($0) }
+          }
+          .fixedSize()
+        }
       }
 
       Section {

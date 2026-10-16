@@ -55,26 +55,4 @@ struct WorktreeRecordsTests {
     )
     #expect(WorktreeRecords.read(in: common) != locked, "the main HEAD counts too")
   }
-
-  @Test func watchPathsMoveFromDotGitToWorktreesOnceOneExists() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    let project = fixture.project
-    let coordinator = fixture.coordinator
-
-    // Asked the way the app asks: the common directory once, then the
-    // directories read off it without spawning git for each watcher tick.
-    let common = try await coordinator.git.commonGitDirectory(project)
-
-    let before = WorktreeRecords.directoriesToWatch(in: common)
-    #expect(before.map(\.lastPathComponent) == [".git"])
-
-    try await coordinator.createThenRunPostCreateHook(
-      branch: "one",
-      in: project,
-      settings: fixture.worktreeSettings,
-    )
-    let after = WorktreeRecords.directoriesToWatch(in: common)
-    #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])
-  }
 }

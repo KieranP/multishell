@@ -240,6 +240,15 @@ public final class AppModel<Surface> {
   /// `git rev-parse --git-common-dir` per project, asked once. The watcher
   /// and the records check run from it without spawning git.
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
+  /// What the watcher was last asked to watch, so a list that changed none
+  /// of it starts no new stream; nil where no list may count as unchanged.
+  @ObservationIgnored var armedDirectories: [URL]?
+  /// Counts re-arms begun, so one overtaken while it awaited arms nothing.
+  @ObservationIgnored var watcherRearms = 0
+  /// Read on the short poll, file events missing what another machine writes.
+  @ObservationIgnored var worktreesOnNetworkVolumes: Set<Worktree.ID> = []
+  /// A seam: no test machine has a share to put a worktree on.
+  @ObservationIgnored var isOnLocalVolume: @Sendable (URL) -> Bool = \.isOnLocalVolume
   /// Written from the sidebar's body, so not observed: a write there would
   /// invalidate the body writing it.
   @ObservationIgnored var worktreeSortCache = WorktreeSortCache()
@@ -252,6 +261,10 @@ public final class AppModel<Surface> {
   @ObservationIgnored var statusReadLog = StatusReadLog()
   /// One coalesced status refresh per worktree; see `scheduleStatusRefresh`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
+  /// One coalesced branch scan per project; see `scheduleBranchScan`.
+  @ObservationIgnored var pendingBranchScans: [Project.ID: Task<Void, Never>] = [:]
+  /// What git ignores in each worktree, as far as file changes have asked it.
+  @ObservationIgnored var ignoreVerdicts: [Worktree.ID: IgnoreVerdicts] = [:]
   /// The read after the filter text changes, one per pause in typing, and
   /// the rows the poll kept reading through every keystroke of that burst.
   @ObservationIgnored var pendingRevealedRowsRead:

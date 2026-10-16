@@ -167,9 +167,9 @@ at the bottom.
   output mark it printed there landed at the top of the file
   (`aBashBlockRedirectedToAFileGetsNoMarkInIt`). Not 63: a process substitution
   takes the highest free descriptor under 64, and with 63 held the relay's pipe
-  landed on 62 and every report fell back to a helper (HelperRelayTests). Opened
-  only once a write to `/dev/tty` succeeds, a failed `exec` ending a script's
-  shell.
+  landed on 62 and every report fell back to a helper (HelperRelayTests). It
+  goes to `/dev/tty` only once a write there succeeds, and to stdout otherwise,
+  a failed `exec` ending a script's shell.
 - **Cost: no continuation-prompt marks**, which Ghostty's integration writes on
   PS2.
 - **bash's start mark is printed rather than embedded**, because it moves to a

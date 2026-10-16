@@ -104,9 +104,10 @@
 ## Layering rules
 
 - **The four libraries import only what Apple ships, Foundation, Darwin,
-  Dispatch, System, Observation, Synchronization, CryptoKit and CoreGraphics,
-  and one package**, swift-subprocess in the process layer (dependencies.md).
-  CoreGraphics is there for the `CGRect` a pane's frame comes back as.
+  Dispatch, System, Observation, Synchronization, CryptoKit, CoreGraphics and
+  CoreServices, and one package**, swift-subprocess in the process layer
+  (dependencies.md). CoreGraphics is there for the `CGRect` a pane's frame comes
+  back as, CoreServices for the FSEvents stream the directory watcher runs on.
 - **MultishellAppUI is views, AppKit and the engine host.** Everything else
   lives in MultishellAppCore, including a plain value beside a view unless it
   names SwiftUI, AppKit, a Mac measurement or the engine.

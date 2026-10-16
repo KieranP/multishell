@@ -25,6 +25,22 @@ struct AppModelControlWorktreeDescriptionTests {
     #expect(reply.outputFields["operation"] == nil)
   }
 
+  @Test func aWorktreeShownCountsEachFileInANewFolder() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.model.workspace.worktrees.first)
+    let folder = main.path.appending(path: "new", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    for name in ["a", "b", "c"] {
+      try "x\n".write(to: folder.appending(path: name), atomically: true, encoding: .utf8)
+    }
+
+    let reply = await harness.model.answer(.describeWorktree(id: ControlID.worktree(main.id)))
+
+    let status = try #require(reply.outputFields["status"] as? [String: Any])
+    #expect(status["changedFiles"] as? Int == 3)
+  }
+
   @Test func aWorktreeRemovedWhileItsGitIsReadIsRefusedAsGone() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

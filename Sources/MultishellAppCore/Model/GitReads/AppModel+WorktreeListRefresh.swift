@@ -3,14 +3,20 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// A watcher tick or a return to the front: the worktree list where git's
+  /// A watcher tick, the round or a return to the front: the worktree list where git's
   /// records changed, else the shared settings file. `changed` empty is all.
   func refreshProjectsIfChanged(under changed: [URL] = []) async {
-    var refreshed = false
+    let changedComponents = changed.map(\.standardizedFileURL.pathComponents)
     for project in workspace.projects {
-      let common = await commonGitDirectory(of: project)
+      // A change names a watched folder, and only a known git directory is
+      // watched; asking git here spawned it on every save for a broken project.
+      let common =
+        changed.isEmpty
+        ? await commonGitDirectory(of: project) : commonGitDirectories[project.id]
       if !changed.isEmpty {
-        guard let common, changed.contains(where: { $0.pathComponents(under: common) != nil })
+        guard let common else { continue }
+        let gitDirectory = StandardizedPath(id: project.id, url: common)
+        guard changedComponents.contains(where: { gitDirectory.subpath(to: $0) != nil })
         else { continue }
       }
       if let common, let known = worktreeRecords[project.id],
@@ -20,9 +26,7 @@ extension AppModel {
         continue
       }
       await refreshWorktrees(of: project)
-      refreshed = true
     }
-    if refreshed { await rearmWatcher() }
   }
 
   /// Refresh chosen by the user. A failure already shown for this project is
@@ -30,6 +34,7 @@ extension AppModel {
   public func refreshWorktreesOnRequest(of project: Project) async {
     missingProjects.remove(project.id)
     await refreshWorktrees(of: project)
+    await rearmWatcher(evenIfUnchanged: true)
   }
 
   func refreshWorktrees(of project: Project) async {
@@ -37,6 +42,8 @@ extension AppModel {
     let path = project.path
     guard await runOnDispatch({ FileManager.default.fileExists(atPath: path.path) }) else {
       if workspace.project(project.id) != nil { missingProjects.insert(project.id) }
+      // Back again, its records would read as unchanged and leave it dimmed.
+      worktreeRecords[project.id] = nil
       return
     }
     // Read before the list so a change landing in between is caught by the
@@ -51,11 +58,13 @@ extension AppModel {
       guard forgetCacheUnlessListed(project.id) else { return }
       forgetWorktrees(store.replaceWorktrees(discovered, forProject: project.id))
       worktreeRecords[project.id] = records
-      missingProjects.remove(project.id)
+      let wasMissing = missingProjects.remove(project.id) != nil
       applySharedSettingsReading(shared, for: project)
       // A worktree removed outside the app loses its tabs and sessions here,
       // and without this the host keeps their surfaces and the shells run on.
       reconcileSessions(takingFocus: false)
+      // A folder that was away when last armed was skipped by the watcher.
+      await rearmWatcher(evenIfUnchanged: wasMissing)
     } catch {
       // Nothing to dim for a project removed meanwhile.
       guard forgetCacheUnlessListed(project.id) else { return }

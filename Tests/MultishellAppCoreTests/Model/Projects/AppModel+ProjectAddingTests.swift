@@ -17,7 +17,7 @@ struct AppModelProjectAddingTests {
     let worktrees = harness.model.workspace.worktrees(of: harness.project.id)
     #expect(worktrees.map(\.branch) == ["main"])
     #expect(worktrees[0].isPrimary)
-    #expect(harness.watcher.watched.map(\.lastPathComponent) == [".git"])
+    #expect(harness.watcher.watched.map(\.lastPathComponent) == [".git", "demo"])
   }
 
   @Test func addingASubdirectoryIsTheSameProject() async throws {

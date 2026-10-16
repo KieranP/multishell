@@ -13,6 +13,19 @@ struct MergeReadLogTests {
     #expect(log.admit(["a", "b", "c"], sharingRound: false).count == 2)
   }
 
+  @Test func aRoundThatLeavesReadsUnaskedSaysSoUntilTheNextBegins() {
+    var log = MergeReadLog()
+    log.budget = .seconds(1)
+    log.remember(["a": .seconds(1), "b": .seconds(1)])
+    log.beginRound()
+
+    _ = log.admit(["a", "b"], sharingRound: true)
+    #expect(log.hasReadsLeftOver)
+
+    log.beginRound()
+    #expect(!log.hasReadsLeftOver)
+  }
+
   @Test func everyWorktreeNeverReadIsAdmittedWhateverTheBudget() {
     var log = MergeReadLog()
     log.budget = .zero

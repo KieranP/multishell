@@ -26,8 +26,8 @@ struct AppModelWorktreeCreationTests {
         == Set(harness.model.workspace.sessions(in: created.id).map(\.id))
     )
     #expect(
-      harness.watcher.watched.map(\.lastPathComponent).sorted() == ["feat-tabs", "worktrees"],
-      "the linked worktree's own record directory is watched for branch switches",
+      harness.watcher.watched.map(\.lastPathComponent).sorted() == [".git", "demo", "feat-tabs"],
+      "the new worktree's folder is watched for its edits",
     )
   }
 

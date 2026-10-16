@@ -96,7 +96,7 @@ struct GitRunner: Sendable {
   }
 
   /// The whole outcome, `nil` where the child could not be started.
-  private func capture(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
+  func capture(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
     await logged(arguments, in: directory) { exitUsageProbe in
       try? await processRunner.capture(
         executable,

@@ -8,12 +8,19 @@ extension WorktreeCoordinator {
   public func readStatuses(
     of worktrees: [Worktree],
     counting indicator: GitStatusIndicator = .default,
+    diffAlgorithm: DiffAlgorithm = .default,
+    countsEveryNewFile: Bool = false,
   ) async -> [Worktree.ID: StatusReading] {
     let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
       width: SharedReadState.maximumConcurrentReads
     ) { worktree in
       let started = ContinuousClock.now
-      let status = try? await git.status(of: worktree, counting: indicator)
+      let status = try? await git.status(
+        of: worktree,
+        counting: indicator,
+        diffAlgorithm: diffAlgorithm,
+        countsEveryNewFile: countsEveryNewFile,
+      )
       return (
         worktree.id,
         status.map { StatusReading(status: $0, duration: started.duration(to: .now)) },

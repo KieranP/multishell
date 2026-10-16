@@ -6,9 +6,15 @@ extension AppModel {
   /// The board fills the detail area, the selection left alone so its shells
   /// stay live. The sweep makes the first frame honest; see `watchedPIDs`.
   public func showAgentBoard() {
+    let polledBefore = polledRowIDs()
     detailCover = .agentBoard
     sweepGonePIDs()
     updatePIDWatch()
+    // Rows only the board shows went unread while it was closed, as a
+    // collapsed project's do.
+    let revealed = polledRowIDs().subtracting(polledBefore)
+    guard !revealed.isEmpty else { return }
+    Task { await refreshStatuses { revealed.contains($0.id) } }
   }
 
   /// `uncoverDetail`, where it is the board that covers the panes.

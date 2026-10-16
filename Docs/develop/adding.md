@@ -202,9 +202,7 @@ What each addition needs beyond the code itself.
   without it drops those tests' cases.
 - **It reports a command started and finished through the helper**, naming the
   program where it is one of the agents, and does nothing when the session
-  variable is unset. Name it in `ShellLaunch.reportsFinishedCommands` too, or
-  its panes also read git on every retitle, the fallback for shells that report
-  nothing.
+  variable is unset.
 - **The engine's own shell integration is off** (design/terminals.md), so prompt
   marks, the directory report, the cursor's shape and the `sudo` and `ssh`
   wrappers are the new shell's scripts to write, bar what it writes itself, as
@@ -237,8 +235,8 @@ What each addition needs beyond the code itself.
   ShellIntegrationScriptsTests+CommandWrappers runs beside Homebrew's.
 - **A second frontend.** A target in this package depending on the four
   libraries, the package exporting no library product; fix the model to its view
-  type once, and implement the platform, surface host, directory watcher and
-  notifier ports.
+  type once, and implement the platform, surface host and notifier ports. The
+  directory watcher and the socket are AppCore's already.
 - **A port may do less.** Trash may delete outright, handing over to a running
   copy may return and leave the alert standing, a platform with no display link
   may never call back and leave the frame rate blank, and a notifier that needs

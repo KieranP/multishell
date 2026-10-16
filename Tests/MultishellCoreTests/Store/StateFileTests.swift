@@ -183,6 +183,7 @@ struct StateFileTests {
     workspace.trashesRemovedWorktrees = false
     workspace.projectHookTimeoutSeconds = 5
     workspace.gitStatusIndicator = .stagedOnly
+    workspace.diffAlgorithm = .patience
 
     let stateFile = StateFile(fileURL: file)
     try stateFile.save(workspace)
