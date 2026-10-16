@@ -14,7 +14,7 @@ struct AppModelFindTests {
 
     harness.model.showFind()
 
-    #expect(harness.model.findBarSessionIDs == [pane])
+    #expect(harness.model.findBarTargetIDs == [pane])
     #expect(harness.engine.searched.isEmpty, "nothing typed, nothing searched")
   }
 
@@ -110,7 +110,7 @@ struct AppModelFindTests {
 
     harness.model.closeFind()
     #expect(
-      harness.model.findBarSessionIDs == [second],
+      harness.model.findBarTargetIDs == [second],
       "the field's own bar closed, not the focused pane's",
     )
     #expect(harness.engine.focused.last == first)
@@ -145,7 +145,7 @@ struct AppModelFindTests {
 
     harness.model.closeFind(in: pane)
 
-    #expect(harness.model.findBarSessionIDs.isEmpty)
+    #expect(harness.model.findBarTargetIDs.isEmpty)
     #expect(harness.engine.searched.last?.step == .end)
     #expect(harness.engine.focused.count == focusedBefore + 1)
     #expect(harness.model.findText(of: pane) == "make", "the find text waits for the next open")
@@ -185,7 +185,7 @@ struct AppModelFindTests {
     harness.model.findNext()
     harness.model.findPrevious()
 
-    #expect(harness.model.findBarSessionIDs.isEmpty)
+    #expect(harness.model.findBarTargetIDs.isEmpty)
     #expect(harness.engine.searched.last?.step == .end)
   }
 
@@ -200,14 +200,14 @@ struct AppModelFindTests {
 
     harness.model.closeFind()
 
-    #expect(harness.model.findBarSessionIDs == [first])
+    #expect(harness.model.findBarTargetIDs == [first])
     #expect(harness.engine.searched.last?.id == second)
     #expect(harness.engine.searched.last?.step == .end)
     #expect(harness.engine.focused.count == focusedBefore + 1)
 
     harness.model.closeFind()
     #expect(
-      harness.model.findBarSessionIDs == [first],
+      harness.model.findBarTargetIDs == [first],
       "no bar on the pane in view, nothing to close",
     )
   }
@@ -233,7 +233,7 @@ struct AppModelFindTests {
     harness.model.select(harness.feature)
     harness.model.select(harness.main)
 
-    #expect(harness.model.findBarSessionIDs.contains(pane), "the bar is still up")
+    #expect(harness.model.findBarTargetIDs.contains(pane), "the bar is still up")
     #expect(!harness.model.takeFindFieldRequest(pane), "and nothing asked for its field")
   }
 
@@ -260,7 +260,7 @@ struct AppModelFindTests {
     harness.model.showFind()
     harness.model.setFindText("grep", of: second)
 
-    #expect(harness.model.findBarSessionIDs == [first, second])
+    #expect(harness.model.findBarTargetIDs == [first, second])
     #expect(harness.model.findText(of: first) == "make")
     #expect(harness.model.findText(of: second) == "grep")
     #expect(harness.engine.searched.map(\.id) == [first, second])
@@ -280,7 +280,7 @@ struct AppModelFindTests {
 
     #expect(harness.engine.searched.map(\.id) == [first, first, first])
     #expect(harness.engine.searched.map(\.step) == [.find("make"), .nearest, .previous])
-    #expect(harness.model.findBarSessionIDs == [first], "the second pane has no bar and gets none")
+    #expect(harness.model.findBarTargetIDs == [first], "the second pane has no bar and gets none")
   }
 
   @Test func findNextInAnotherWorktreeIsDisabledAndLeavesTheFirstPanesSearchAlone() {
@@ -292,14 +292,14 @@ struct AppModelFindTests {
 
     #expect(!harness.model.findIsOpenInView)
     harness.model.findNext()
-    #expect(harness.model.findBarSessionIDs == [first])
+    #expect(harness.model.findBarTargetIDs == [first])
     #expect(
       harness.engine.searched.map(\.id) == [first],
       "the first pane's search was neither moved nor ended",
     )
 
     harness.model.showFind()
-    #expect(harness.model.findBarSessionIDs == [first, other])
+    #expect(harness.model.findBarTargetIDs == [first, other])
     #expect(
       harness.model.findText(of: other) == "",
       "a new bar starts empty, not with another pane's find text",
@@ -314,7 +314,7 @@ struct AppModelFindTests {
 
     harness.model.closeActivePane()
 
-    #expect(harness.model.findBarSessionIDs.isEmpty)
+    #expect(harness.model.findBarTargetIDs.isEmpty)
     #expect(harness.model.findText(of: pane) == "")
     #expect(harness.engine.searched.isEmpty, "a gone pane is told nothing")
   }
@@ -328,12 +328,12 @@ struct AppModelFindTests {
 
     harness.engine.delegate?.terminalHost(harness.engine, didExit: gone)
 
-    #expect(harness.model.findBarSessionIDs.isEmpty)
+    #expect(harness.model.findBarTargetIDs.isEmpty)
     #expect(!harness.model.findIsOpenInView)
     harness.model.showFind()
     let live = focusedPane(of: harness.main, in: harness)
     #expect(live != gone)
-    #expect(harness.model.findBarSessionIDs == [live])
+    #expect(harness.model.findBarTargetIDs == [live])
   }
 
   @Test func findIsOfferedOnlyWhileATerminalTabIsInView() {
@@ -366,7 +366,7 @@ struct AppModelFindTests {
 
     harness.model.closeFind(in: first)
 
-    #expect(harness.model.findFieldSessionID == nil)
+    #expect(harness.model.findFieldTargetID == nil)
     #expect(harness.model.findIsOpenInView, "the focused pane's bar is still up")
     harness.model.findNext()
     #expect(harness.engine.searched.last?.id == second)
@@ -381,7 +381,7 @@ struct AppModelFindTests {
 
     harness.model.select(harness.feature)
 
-    #expect(harness.model.findFieldSessionID == nil)
+    #expect(harness.model.findFieldTargetID == nil)
   }
 
   @Test func cmdFInAFieldAsksForThatFieldAgainRatherThanOpeningTheFocusedPanesBar() {
@@ -394,9 +394,9 @@ struct AppModelFindTests {
 
     harness.model.showFind()
 
-    #expect(harness.model.findBarSessionIDs == [first], "no bar opened on the focused pane")
+    #expect(harness.model.findBarTargetIDs == [first], "no bar opened on the focused pane")
     #expect(harness.model.takeFindFieldRequest(first))
-    #expect(!harness.model.findBarSessionIDs.contains(second))
+    #expect(!harness.model.findBarTargetIDs.contains(second))
   }
 
   @Test func findDoesNothingUnderTheBoardOrFromAnotherWindow() {
@@ -406,14 +406,14 @@ struct AppModelFindTests {
     harness.model.showAgentBoard()
     harness.model.showFind()
     harness.model.findNext()
-    #expect(harness.model.findBarSessionIDs.isEmpty)
+    #expect(harness.model.findBarTargetIDs.isEmpty)
     #expect(!harness.model.findIsOpenInView)
 
     harness.model.hideAgentBoard()
     harness.platform.isWorkspaceWindowKey = false
     harness.model.showFind()
     harness.model.findNext()
-    #expect(harness.model.findBarSessionIDs.isEmpty)
+    #expect(harness.model.findBarTargetIDs.isEmpty)
   }
 
   @Test func aFindTextInAnotherCaseKeepsTheCountAndANewOneDropsIt() {

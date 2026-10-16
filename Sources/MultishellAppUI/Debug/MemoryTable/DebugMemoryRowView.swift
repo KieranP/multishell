@@ -15,7 +15,7 @@ struct DebugMemoryRowView: View {
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
       Image(systemName: disclosure == .expanded ? "chevron.down" : "chevron.right")
-        .font(.system(size: metrics.debugTableGlyphSize, weight: .semibold))
+        .font(metrics.font(size: metrics.debugTableGlyphSize, weight: .semibold))
         .foregroundStyle(theme.textTertiary)
         .opacity(disclosure.isExpandable ? 1 : 0)
         .frame(width: UIMetrics.debugTableChevronWidth)
@@ -34,7 +34,7 @@ struct DebugMemoryRowView: View {
         }
       }
     }
-    .font(.system(size: metrics.secondary, weight: row.isTotal ? .semibold : .regular))
+    .font(metrics.font(size: metrics.secondary, weight: row.isTotal ? .semibold : .regular))
     .fixedSize(horizontal: false, vertical: true)
     .debugTableRow(theme)
     .debugTableRowHighlight(theme)

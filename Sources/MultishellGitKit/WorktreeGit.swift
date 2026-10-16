@@ -31,10 +31,31 @@ public struct WorktreeGit: Sendable {
     await runner.succeeds(["rev-parse", "--git-dir"], in: url)
   }
 
+  /// The folder of an initialised repository: a submodule nobody has
+  /// initialised, as every new worktree's is, runs `git -C` against its parent.
+  public func isRepositoryTop(_ directory: URL) async -> Bool {
+    guard
+      let top = await runner.output(["rev-parse", "--show-toplevel"], in: directory)?
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    else { return false }
+    return URL(fileURLWithPath: top).resolvingSymlinksInPath().path
+      == directory.resolvingSymlinksInPath().path
+  }
+
   /// False for a freshly initialised repository. `HEAD` is unborn there, so
   /// nothing can be branched from it until the first commit.
   public func hasCommits(_ project: Project) async -> Bool {
-    await runner.succeeds(["rev-parse", "--verify", "--quiet", "HEAD"], in: project.path)
+    await hasCommits(in: project.path)
+  }
+
+  func hasCommits(in directory: URL) async -> Bool {
+    await runner.succeeds(["rev-parse", "--verify", "--quiet", "HEAD"], in: directory)
+  }
+
+  /// What a diff starts from where `HEAD` is unborn.
+  func emptyTreeID(in directory: URL) async -> String? {
+    await runner.output(["hash-object", "-t", "tree", "/dev/null"], in: directory)?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// The `.git` directory every worktree shares, where git records them. Stable

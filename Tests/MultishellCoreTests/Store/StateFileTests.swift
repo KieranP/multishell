@@ -109,6 +109,7 @@ struct StateFileTests {
           )
         }
         group.shownTabID = workspace.tabs.last?.id
+        group.tabOrder = workspace.tabs.filter { $0.groupID == group.id }.map(\.id)
         workspace.tabGroups.append(group)
         workspace.focusedGroupByWorktree[worktree.id] = group.id
       }
@@ -184,6 +185,8 @@ struct StateFileTests {
     workspace.projectHookTimeoutSeconds = 5
     workspace.gitStatusIndicator = .stagedOnly
     workspace.diffAlgorithm = .patience
+    workspace.fileTabLayout = .split
+    workspace.filesPanelMode = .modified
 
     let stateFile = StateFile(fileURL: file)
     try stateFile.save(workspace)

@@ -11,9 +11,13 @@ struct FileChangeTargets {
     "refs", "worktrees",
   ]
 
+  /// The path of the worktree itself, which a dropped batch reports: it says
+  /// nothing of which file changed.
+  static let wholeWorktree = ""
+
   private(set) var projectsWithGitChanges: Set<Project.ID> = []
-  /// The changes in each worktree's own files, to ask git which it ignores.
-  private(set) var fileChangesByWorktree: [Worktree.ID: [URL]] = [:]
+  /// The changes in each worktree's own files, as paths within it.
+  private(set) var fileChangesByWorktree: [Worktree.ID: [String]] = [:]
   private(set) var projectsWithSharedSettingsChanges: Set<Project.ID> = []
   /// Worktrees one of whose `.gitignore` files changed.
   private(set) var worktreesWithIgnoreRuleChanges: Set<Worktree.ID> = []
@@ -49,7 +53,9 @@ struct FileChangeTargets {
         continue
       }
       if let worktree {
-        fileChangesByWorktree[worktree.id, default: []].append(url)
+        fileChangesByWorktree[worktree.id, default: []].append(
+          worktree.subpath.joined(separator: "/")
+        )
         if worktree.subpath.last == ".gitignore" {
           worktreesWithIgnoreRuleChanges.insert(worktree.id)
         }

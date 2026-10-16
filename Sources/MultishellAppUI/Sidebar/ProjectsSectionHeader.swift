@@ -12,7 +12,7 @@ struct ProjectsSectionHeader: View {
   var body: some View {
     HStack(spacing: 6) {
       Text(t("sidebar.projects"))
-        .font(.system(size: metrics.caption, weight: .semibold))
+        .font(metrics.font(size: metrics.caption, weight: .semibold))
         .foregroundStyle(theme.textTertiary)
       Spacer(minLength: 4)
       SidebarSortMenu(model: model, theme: theme, metrics: metrics)

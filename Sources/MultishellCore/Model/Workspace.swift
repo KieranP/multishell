@@ -4,7 +4,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// A renamed field keeps the key it was written under, as each `= "…"` case
   /// below does.
   private enum CodingKeys: String, CodingKey {
-    case projects, worktrees, sessions, tabs, tabGroups
+    case projects, worktrees, sessions, tabs, fileTabs, tabGroups
     case selectedWorktreeID, focusedGroupByWorktree
     case customWorktreeNames = "worktreeNames"
     case appearance, worktreeDefaults
@@ -17,7 +17,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
-    case gitStatusIndicator, diffAlgorithm
+    case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode
   }
 
   /// Keys no property answers to any more, read only to carry what an older
@@ -32,6 +32,9 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var worktrees: [Worktree] = []
   public internal(set) var sessions: [TerminalSession] = []
   public internal(set) var tabs: [TerminalTab] = []
+  /// Saved under a key an older build ignores, so it drops them and keeps the
+  /// rest; see Docs/design/files.md.
+  public internal(set) var fileTabs: [FileTab] = []
   /// The groups of tabs each worktree is divided into, in display order
   /// left to right; see `TabGroup`. A worktree with tabs has at least one.
   var tabGroups: [TabGroup] = []
@@ -98,6 +101,10 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var gitStatusIndicator = GitStatusIndicator.default
   /// How that badge's line counts match old lines to new.
   public internal(set) var diffAlgorithm = DiffAlgorithm.default
+  /// Unified or Split, chosen in any file tab's bar and kept for the next.
+  public internal(set) var fileTabLayout = FileTabLayout.default
+  /// All or Modified, chosen in any worktree's panel and kept for the next.
+  public internal(set) var filesPanelMode = FilesPanelMode.default
 
   /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var projectHookTimeout: Duration? {
@@ -116,6 +123,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     worktrees = container.decodeLossy(Worktree.self, forKey: .worktrees)
     sessions = container.decodeLossy(TerminalSession.self, forKey: .sessions)
     tabs = container.decodeLossy(TerminalTab.self, forKey: .tabs)
+    fileTabs = container.decodeLossy(FileTab.self, forKey: .fileTabs)
     tabGroups = container.decodeLossy(TabGroup.self, forKey: .tabGroups)
     selectedWorktreeID = try container.decodeIfPresent(
       Worktree.ID.self,
@@ -210,6 +218,16 @@ public struct Workspace: Codable, Hashable, Sendable {
     diffAlgorithm = container.decodeTolerantly(
       DiffAlgorithm.self,
       forKey: .diffAlgorithm,
+      or: .default,
+    )
+    fileTabLayout = container.decodeTolerantly(
+      FileTabLayout.self,
+      forKey: .fileTabLayout,
+      or: .default,
+    )
+    filesPanelMode = container.decodeTolerantly(
+      FilesPanelMode.self,
+      forKey: .filesPanelMode,
       or: .default,
     )
 

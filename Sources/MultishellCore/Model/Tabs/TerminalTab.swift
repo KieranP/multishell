@@ -3,13 +3,6 @@ import Foundation
 /// One tab in a worktree's terminal area, owning a pane tree and naming its
 /// group. The worktree sits beside it, deciding where its shells start.
 public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
-  /// Where a dragged tab lands beside the tab or group it was dropped on.
-  /// Nested because SwiftUI has a `TabPlacement` a view would disambiguate.
-  public enum Placement: Codable, Equatable, Sendable {
-    case before
-    case after
-  }
-
   public let id: UUID
   public internal(set) var worktreeID: Worktree.ID
   /// The group this tab's strip is part of; see `TabGroup`.

@@ -27,8 +27,8 @@ struct PaneTreeView: View {
       .overlay { fade(isFocusedPane: isFocusedPane) }
       .overlay { ring(isFocusedPane: isFocusedPane) }
       .overlay(alignment: .topTrailing) {
-        if model.findBarSessionIDs.contains(id) {
-          FindBar(model: model, sessionID: id, theme: theme)
+        if model.findBarTargetIDs.contains(id) {
+          FindBar(model: model, targetID: id, theme: theme)
         }
       }
 

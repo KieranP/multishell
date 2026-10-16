@@ -95,6 +95,13 @@ struct GitRunner: Sendable {
     return output.standardOutput
   }
 
+  /// `output`'s bytes undecoded, for text that may be in another encoding.
+  func outputBytes(_ arguments: [String], in directory: URL) async -> Data? {
+    let output = await capture(arguments, in: directory)
+    guard let output, output.succeeded else { return nil }
+    return output.standardOutputBytes
+  }
+
   /// The whole outcome, `nil` where the child could not be started.
   func capture(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
     await logged(arguments, in: directory) { exitUsageProbe in

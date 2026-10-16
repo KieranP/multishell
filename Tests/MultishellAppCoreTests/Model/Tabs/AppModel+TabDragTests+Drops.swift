@@ -86,8 +86,8 @@ extension AppModelTabDragTests {
     _ = threeTabs(harness)
     harness.model.moveActiveTabToNewGroup()
     let groupIDs = harness.model.workspace.groups(in: harness.main.id).map(\.id)
-    let first = harness.model.workspace.tabs(inGroup: groupIDs[0]).map(\.id)
-    let anchor = harness.model.workspace.tabs(inGroup: groupIDs[1]).map(\.id)[0]
+    let first = harness.model.workspace.workspaceTabs(inGroup: groupIDs[0]).map(\.id)
+    let anchor = harness.model.workspace.workspaceTabs(inGroup: groupIDs[1]).map(\.id)[0]
     harness.model.beginTabDrag(first[0])
     harness.model.shuffleTab(first[0], .after, past: first[1])
 
@@ -95,7 +95,7 @@ extension AppModelTabDragTests {
     harness.model.closeTab(anchor)
     await harness.settled()
 
-    #expect(harness.model.workspace.tabs(inGroup: groupIDs[0]).map(\.id) == first)
+    #expect(harness.model.workspace.workspaceTabs(inGroup: groupIDs[0]).map(\.id) == first)
   }
 
   @Test func aTabDroppedOnItsOwnGroupsTerminalAreaGoesBackWhereTheDragFoundIt() async throws {

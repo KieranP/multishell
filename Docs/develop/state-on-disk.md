@@ -17,16 +17,21 @@ Under `~/Library/Application Support/Multishell`.
   the first to launch takes.
 - **Settings prints the state file**, and `multishell info` the state file and
   socket of the copy that answered.
-- **`state.json`**: sidebar, tabs, the groups they sit in with their widths and
-  shown tab, pane trees, worktree names and creation dates, every setting.
+- **`state.json`**: sidebar, terminal tabs and file tabs by path, the groups
+  they sit in with their widths, order and shown tab, pane trees, worktree names
+  and creation dates, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
-  or anything about the Agents board or the debug tools. Those are runtime
-  state, so Show all terminals is off after a relaunch, and the debug tools
-  start off at every launch and write nothing to disk or defaults.
+  a file tab's text and scroll, whether the Files panel is open and what it
+  shows, or anything about the Agents board or the debug tools. Those are
+  runtime state, so Show all terminals is off after a relaunch, the Files panel
+  starts shut, and the debug tools start off at every launch and write nothing
+  to disk or defaults.
 - **A file written before groups existed names no group**, and carries a key for
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.
+- **A file written before file tabs gives no group an order**, so the repair
+  takes each group's from the order of its tabs (design/files.md).
 - **An agent id the catalogue retired is forgotten on load**
   (design/state-and-store.md).
 - **A broken state file is moved aside with a timestamp**
@@ -82,8 +87,8 @@ Under `~/Library/Application Support/Multishell`.
 - **Gemini's own settings are read where Gemini reads them** (design/agents.md);
   the hook file does not follow them to the temporary directory under an empty
   `HOME`.
-- **Sidebar width lives in user defaults**, in the `io.multishell.app` domain
-  every build shares, debug ones included.
+- **The sidebar's and the Files panel's widths live in user defaults**, in the
+  `io.multishell.app` domain every build shares, debug ones included.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
   with the same keys as a project's settings less the agent, its flags and the
   shell. Read at launch, when a project's worktree records change, and when its

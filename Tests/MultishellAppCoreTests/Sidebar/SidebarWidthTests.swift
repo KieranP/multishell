@@ -4,14 +4,18 @@ import Testing
 
 @Suite
 struct SidebarWidthTests {
-  @Test func theSidebarLeavesTheDetailItsMinimum() {
-    let range = SidebarWidth.range(inWindowOfWidth: 1000)
+  @Test func theSidebarLeavesTheTabAreaItsMinimumBesideAnOpenPanel() {
+    let range = SidebarWidth.range(inWindowOfWidth: 1000, besidePanelOf: 300)
     #expect(range.lowerBound == SidebarWidth.minimum)
-    #expect(range.upperBound == 1000 - SidebarWidth.minimumDetail)
+    #expect(range.upperBound == 1000 - 300 - TabAreaWidth.minimum)
+    #expect(
+      SidebarWidth.range(inWindowOfWidth: 1000, besidePanelOf: 0).upperBound
+        == 1000 - TabAreaWidth.minimum
+    )
   }
 
   @Test func aWindowTooNarrowForBothKeepsTheSidebarsMinimum() {
-    let range = SidebarWidth.range(inWindowOfWidth: SidebarWidth.minimum)
+    let range = SidebarWidth.range(inWindowOfWidth: SidebarWidth.minimum, besidePanelOf: 0)
     #expect(range == SidebarWidth.minimum...SidebarWidth.minimum)
   }
 

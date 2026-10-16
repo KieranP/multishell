@@ -13,7 +13,7 @@ struct AppModelTabMovesTests {
     let a = harness.openBackgroundTab()
     let b = try #require(harness.model.workspace.activeTab(in: harness.main.id))
     harness.model.moveActiveTabToNewGroup()
-    harness.model.activate(try #require(harness.model.workspace.tab(a.id)))
+    harness.model.activateTab(a.id)
     #expect(
       harness.model.workspace.tab(a.id)?.groupID != harness.model.workspace.tab(b.id)?.groupID
     )
@@ -135,11 +135,11 @@ struct AppModelTabMovesTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let only = try #require(harness.model.workspace.activeTab(in: harness.main.id))
-    #expect(!harness.model.canMoveTabToNewGroup(only))
+    #expect(!harness.model.canMoveTabToNewGroup(from: only.groupID))
 
     harness.model.newTab()
 
     let first = try #require(harness.model.workspace.tab(only.id))
-    #expect(harness.model.canMoveTabToNewGroup(first))
+    #expect(harness.model.canMoveTabToNewGroup(from: first.groupID))
   }
 }

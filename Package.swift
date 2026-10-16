@@ -12,7 +12,41 @@ let package = Package(
     .executable(name: "multishell-helper", targets: ["MultishellCLI"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0")
+    .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
+    // Highlighting; see Docs/develop/dependencies.md. The runtime is named as
+    // well, its C types living in its own `TreeSitter` module.
+    .package(url: "https://github.com/tree-sitter/swift-tree-sitter", exact: "0.25.0"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter", exact: "0.25.10"),
+    // Each grammar at a tag that commits its generated parser; their queries ship
+    // in each package's resource bundle. See Docs/develop/dependencies.md.
+    .package(
+      url: "https://github.com/alex-pinkus/tree-sitter-swift",
+      exact: "0.7.4-with-generated-files",
+    ),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-bash", exact: "0.25.1"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-c", exact: "0.24.2"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-c-sharp", exact: "0.23.5"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-cpp", exact: "0.23.4"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-go", exact: "0.25.0"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-java", exact: "0.23.5"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-javascript", exact: "0.25.0"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-json", exact: "0.24.8"),
+    .package(url: "https://github.com/fwcd/tree-sitter-kotlin", exact: "0.3.8"),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-make", exact: "1.1.1"),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown", exact: "0.5.3"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-php", exact: "0.25.1"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-python", exact: "0.25.0"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-ruby", exact: "0.23.1"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-rust", exact: "0.24.2"),
+    // SQL commits its generated parser to `gh-pages` alone; see dependencies.md.
+    .package(
+      url: "https://github.com/DerekStride/tree-sitter-sql",
+      revision: "39fdb006403747241244326e8af3b3e96b85381c",
+    ),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-toml", exact: "0.7.0"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-typescript", exact: "0.23.2"),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-yaml", exact: "0.7.2"),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-zig", exact: "1.1.2"),
   ],
   targets: [
     // libghostty, built from the ThirdParty/ghostty submodule by
@@ -37,6 +71,45 @@ let package = Package(
       name: "MultishellAppCore",
       dependencies: ["MultishellCore", "MultishellProcess", "MultishellGitKit"],
     ),
+    // A file tab's highlighting, apart from the four libraries, which import
+    // Apple's frameworks and swift-subprocess alone; see Docs/develop/layout.md.
+    .target(
+      name: "MultishellHighlight",
+      dependencies: [
+        "MultishellAppCore", "TreeSitterScanners",
+        .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
+        .product(name: "TreeSitterBash", package: "tree-sitter-bash"),
+        .product(name: "TreeSitterC", package: "tree-sitter-c"),
+        .product(name: "TreeSitterCPP", package: "tree-sitter-cpp"),
+        .product(name: "TreeSitterCSharp", package: "tree-sitter-c-sharp"),
+        .product(name: "TreeSitterGo", package: "tree-sitter-go"),
+        .product(name: "TreeSitterJava", package: "tree-sitter-java"),
+        .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
+        .product(name: "TreeSitterJSON", package: "tree-sitter-json"),
+        .product(name: "TreeSitterKotlin", package: "tree-sitter-kotlin"),
+        .product(name: "TreeSitterMake", package: "tree-sitter-make"),
+        .product(name: "TreeSitterMarkdown", package: "tree-sitter-markdown"),
+        .product(name: "TreeSitterPHP", package: "tree-sitter-php"),
+        .product(name: "TreeSitterPython", package: "tree-sitter-python"),
+        .product(name: "TreeSitterRuby", package: "tree-sitter-ruby"),
+        .product(name: "TreeSitterRust", package: "tree-sitter-rust"),
+        .product(name: "TreeSitterSql", package: "tree-sitter-sql"),
+        .product(name: "TreeSitterTOML", package: "tree-sitter-toml"),
+        .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
+        .product(name: "TreeSitterYAML", package: "tree-sitter-yaml"),
+        .product(name: "TreeSitterZig", package: "tree-sitter-zig"),
+        .product(name: "SwiftTreeSitter", package: "swift-tree-sitter"),
+        .product(name: "TreeSitter", package: "tree-sitter"),
+      ],
+    ),
+    // The scanners JavaScript's, Python's and YAML's packages leave out; see
+    // Docs/develop/dependencies.md for why and for the warning.
+    .target(
+      name: "TreeSitterScanners",
+      path: "ThirdParty/tree-sitter",
+      sources: ["javascript/src/scanner.c", "python/src/scanner.c", "yaml/src/scanner.c"],
+      cSettings: [.treatAllWarnings(as: .error), .disableWarning("shorten-64-to-32")],
+    ),
     .executableTarget(
       name: "MultishellCLI",
       dependencies: ["MultishellCore", "MultishellProcess"],
@@ -47,7 +120,7 @@ let package = Package(
       name: "MultishellAppUI",
       dependencies: [
         "MultishellCore", "MultishellProcess", "MultishellGitKit", "MultishellAppCore",
-        "GhosttyKit",
+        "MultishellHighlight", "GhosttyKit",
       ],
       resources: [.process("Resources/en.lproj"), .process("Resources/Marks")],
       // libghostty's own link needs, which its static archive cannot declare.
@@ -95,6 +168,10 @@ let package = Package(
     // The app's own values, its AppKit pieces, and views laid out in a window
     // never shown; see Docs/develop/tests.md.
     .testTarget(name: "MultishellAppUITests", dependencies: ["MultishellAppUI", "TestScratch"]),
+    .testTarget(
+      name: "MultishellHighlightTests",
+      dependencies: ["MultishellHighlight", "MultishellAppCore"],
+    ),
   ],
 )
 

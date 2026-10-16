@@ -28,7 +28,7 @@ struct AgentBoardHeader: View {
     Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsBinding)
       .toggleStyle(.switch)
       .controlSize(.mini)
-      .font(.system(size: metrics.caption))
+      .font(metrics.font(size: metrics.caption))
       .foregroundStyle(theme.textSecondary)
       .help(t("board.show-all-terminals-info"))
   }

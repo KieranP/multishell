@@ -5,6 +5,7 @@ import SwiftUI
 struct NoSelectionPlaceholder: View {
   let hasProjects: Bool
   let theme: Theme
+  let metrics: UIMetrics
   let addProject: () -> Void
 
   var body: some View {
@@ -12,6 +13,7 @@ struct NoSelectionPlaceholder: View {
       title: NoSelectionText.title(hasProjects: hasProjects),
       caption: NoSelectionText.caption(hasProjects: hasProjects),
       theme: theme,
+      metrics: metrics,
     ) {
       Image(systemName: "arrow.trianglehead.branch")
         .font(.system(size: 40, weight: .light))

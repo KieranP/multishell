@@ -16,10 +16,12 @@ extension AppModel {
     Task { await refreshStatuses() }
   }
 
-  /// Read again at once for the reason `setGitStatusIndicator` gives.
+  /// Read again at once for the reason `setGitStatusIndicator` gives, and
+  /// every file tab with them, a tab counting as its row does.
   public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
     store.setDiffAlgorithm(algorithm)
     statusReadLog.invalidate()
+    noteEveryFileTabChanged()
     Task { await refreshStatuses() }
   }
 
@@ -73,14 +75,12 @@ extension AppModel {
   func readStatuses(
     of worktrees: [Worktree],
     with coordinator: WorktreeCoordinator,
-    countsEveryNewFile: Bool = false,
   ) async -> [Worktree.ID: StatusReading] {
     let ticket = statusReadLog.begin(worktrees.map(\.id))
     let readings = await coordinator.readStatuses(
       of: worktrees,
       counting: workspace.gitStatusIndicator,
       diffAlgorithm: workspace.diffAlgorithm,
-      countsEveryNewFile: countsEveryNewFile,
     )
     let stillCounts = statusReadLog.finish(ticket)
     let again = statusReadLog.takeAskedAgain(of: ticket)

@@ -27,7 +27,7 @@ struct AppModelTests {
     for step in 0..<300 {
       let workspace = harness.model.workspace
       let live = Array(harness.engine.liveSessionIDs)
-      switch Int.random(in: 0..<22, using: &generator) {
+      switch Int.random(in: 0..<24, using: &generator) {
       case 0, 1: harness.model.select(worktrees.randomElement(using: &generator)!)
       case 2: harness.model.newTab()
       case 3: harness.model.closeActivePane()
@@ -37,7 +37,9 @@ struct AppModelTests {
         harness.model.splitActivePane(Bool.random(using: &generator) ? .horizontal : .vertical)
 
       case 6:
-        if let tab = workspace.tabs.randomElement(using: &generator) { harness.model.activate(tab) }
+        if let tab = workspace.tabs.randomElement(using: &generator) {
+          harness.model.activateTab(tab.id)
+        }
 
       case 7:
         Bool.random(using: &generator)
@@ -153,6 +155,18 @@ struct AppModelTests {
             )
         }
 
+      case 22:
+        let worktree = worktrees.randomElement(using: &generator)!
+        let path = ["README.md", "Sources/App.swift", "lib/App.swift"]
+          .randomElement(using: &generator)!
+        harness.store.openFileTab(path: path, in: worktree.id)
+        harness.model.reconcileSessions(takingFocus: true)
+
+      case 23:
+        if let tab = workspace.fileTabs.randomElement(using: &generator) {
+          harness.model.closeTab(tab.id)
+        }
+
       default:
         // A refresh that lost or found a worktree, then the reconcile every
         // model action ends with.
@@ -231,10 +245,23 @@ struct AppModelTests {
         "\(context): a tab in another worktree's group, or in none",
       )
     }
-    for group in workspace.tabGroups {
-      #expect(!workspace.tabs(inGroup: group.id).isEmpty, "\(context): a group with no tabs")
+    for tab in workspace.fileTabs {
       #expect(
-        workspace.shownTab(ofGroup: group) != nil,
+        workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
+        "\(context): a file tab in another worktree's group, or in none",
+      )
+    }
+    #expect(
+      Set(harness.model.fileTabReadings.keys).isSubset(of: Set(workspace.fileTabs.map(\.id))),
+      "\(context): a reading for a closed file tab",
+    )
+    for group in workspace.tabGroups {
+      #expect(
+        !workspace.workspaceTabs(inGroup: group.id).isEmpty,
+        "\(context): a group with no tabs",
+      )
+      #expect(
+        workspace.shownWorkspaceTab(ofGroup: group) != nil,
         "\(context): a group showing nothing",
       )
       #expect(group.weight.isFinite && group.weight > 0, "\(context): a group with no width")

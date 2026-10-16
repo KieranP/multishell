@@ -41,12 +41,12 @@ struct AgentBoardColumnView: View {
     HStack(spacing: 7) {
       StateDot(state: column.lane.headerState, theme: theme)
       Text(column.lane.title())
-        .font(.system(size: metrics.badge, weight: .semibold))
+        .font(metrics.font(size: metrics.badge, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
       Spacer(minLength: 4)
       Text("\(column.count)")
-        .font(.system(size: metrics.badge))
+        .font(metrics.font(size: metrics.badge))
         .monospacedDigit()
         .foregroundStyle(theme.textTertiary)
     }

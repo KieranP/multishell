@@ -38,10 +38,10 @@ extension AppModel {
     updatePIDWatch()
   }
 
-  /// `uncoverDetail`, where it is the panel that covers the panes.
+  /// `uncoverDetailAndReadItsTabs`, where it is the panel that covers the panes.
   func hideDebugInfo() {
     guard showsDebugInfo else { return }
-    uncoverDetail()
+    uncoverDetailAndReadItsTabs()
   }
 
   /// Holds the panel still for reading; the sidebar and the sampling go on.

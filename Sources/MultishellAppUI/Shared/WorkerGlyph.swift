@@ -7,7 +7,7 @@ struct WorkerGlyph: View {
 
   var body: some View {
     Image(systemName: "arrow.triangle.branch")
-      .font(.system(size: metrics.small, weight: .semibold))
+      .font(metrics.font(size: metrics.small, weight: .semibold))
       .accessibilityHidden(true)
   }
 }

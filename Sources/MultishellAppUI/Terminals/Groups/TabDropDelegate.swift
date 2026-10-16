@@ -5,13 +5,13 @@ import SwiftUI
 /// Tracks the pointer over a tab for the insertion line, and moves on release.
 /// The sidebar's `ProjectBlockDropDelegate` is this same shape stood upright.
 struct TabDropDelegate: DropDelegate {
-  let tabID: TerminalTab.ID
+  let tabID: WorkspaceTab.ID
   let width: CGFloat
   @Binding var drag: TabDragState
-  let drop: (TerminalTab.Placement) -> Bool
+  let drop: (WorkspaceTab.Placement) -> Bool
   /// Called as the pointer passes this tab, to move the dragged tab past it
   /// there and then; see `AppModel.shuffleTab`.
-  let shuffle: (TerminalTab.ID, TerminalTab.Placement) -> Void
+  let shuffle: (WorkspaceTab.ID, WorkspaceTab.Placement) -> Void
 
   func validateDrop(info: DropInfo) -> Bool { info.carriesATab }
 
@@ -38,7 +38,7 @@ struct TabDropDelegate: DropDelegate {
     drag.band = nil
   }
 
-  private func placement(for info: DropInfo) -> TerminalTab.Placement {
+  private func placement(for info: DropInfo) -> WorkspaceTab.Placement {
     DropHalf(at: info.location.x, along: width) == .trailing ? .after : .before
   }
 }

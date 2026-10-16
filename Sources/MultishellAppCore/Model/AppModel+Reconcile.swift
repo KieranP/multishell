@@ -7,8 +7,9 @@ extension AppModel {
     reconcile()
     guard takingFocus else { return }
     // The keyboard is a pane's now, whatever field held it.
-    findFieldSessionID = nil
+    findFieldTargetID = nil
     reconciler.focusActiveSession()
+    requestFocusForFileTabInView()
     markInViewSeen()
   }
 
@@ -17,6 +18,7 @@ extension AppModel {
   func focusActivePane() {
     guard detailCover == nil else { return }
     reconciler.focusActiveSession()
+    requestFocusForFileTabInView()
   }
 
   /// Surfaces brought in line with the workspace, the keyboard left alone: a
@@ -43,5 +45,8 @@ extension AppModel {
     prunePendingClose()
     pruneTabRename()
     pruneFind()
+    pruneFileTabs()
+    releaseHiddenFileTabs()
+    readShownFileTabs()
   }
 }

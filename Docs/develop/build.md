@@ -139,7 +139,9 @@
   three imports removed on that evidence were needed, and 56 files used a module
   they never imported.
 - **`any` is written on every existential** (`ExistentialAny`), and **a warning
-  fails the build**.
+  fails the build**, bar the one the copied tree-sitter scanners turn off and
+  the grammar packages' own, which a remote package keeps hidden
+  (dependencies.md).
 - **StrictMemorySafety is off**: 427 sites, nearly all libghostty's C API and
   Darwin's, each wanting an `unsafe` that says nothing a reader can act on.
   `InternalImportsByDefault` and `ImmutableWeakCaptures` found nothing here, so
@@ -148,8 +150,8 @@
   and takes no comments: `NoLeadingUnderscores` (a persisted `_0` coding key),
   `UseWhereClausesInForLoops` (a `guard … continue` reads as the rest do),
   `NeverForceUnwrap` and `NeverUseForceTry` (SwiftLint's own rules cover
-  Sources), `AllPublicDeclarationsHaveDocumentation` (672 undocumented), and
-  `BeginDocumentationCommentWithOneLineSummary`, 915 doc comments written as
+  Sources), `AllPublicDeclarationsHaveDocumentation` (733 undocumented), and
+  `BeginDocumentationCommentWithOneLineSummary`, 965 doc comments written as
   prose.
 - **Every SwiftLint rule runs but those in `disabled_rules`**, each with its
   reason in `.swiftlint.yml`. Layout rules run beside swift-format where the two

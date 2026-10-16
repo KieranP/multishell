@@ -6,10 +6,10 @@ enum TabShuffle {
   /// Whether that move changes the order of `order`, one group's tabs as
   /// drawn. `false` over its own tab, which is how a shuffle oscillates.
   static func reorders(
-    _ moving: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
-    of anchor: TerminalTab.ID,
-    in order: [TerminalTab.ID],
+    _ moving: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
+    of anchor: WorkspaceTab.ID,
+    in order: [WorkspaceTab.ID],
   ) -> Bool {
     guard moving != anchor else { return false }
     guard let from = order.firstIndex(of: moving), let to = order.firstIndex(of: anchor) else {

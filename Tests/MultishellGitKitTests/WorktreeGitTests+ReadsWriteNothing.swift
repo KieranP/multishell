@@ -65,7 +65,21 @@ extension WorktreeGitTests {
       for indicator in GitStatusIndicator.allCases {
         #expect(try await git.status(of: worktree, counting: indicator).isDirty)
       }
-      #expect(try await git.status(of: worktree, countsEveryNewFile: true).isDirty)
+      #expect(await git.trackedFiles(in: worktree.path)?.paths.contains("kept.txt") == true)
+      #expect(await git.isRepositoryTop(worktree.path))
+      #expect(await git.ignoredEntries(in: worktree.path) != nil)
+      for path in ["kept.txt", "README.md", "new.txt"] {
+        _ = try await git.committedSize(of: path, in: worktree.path)
+        #expect(await git.patches(of: path, in: worktree.path, diffAlgorithm: .histogram) != nil)
+      }
+      #expect(
+        await git.storedCopyStart(
+          of: "README.md",
+          in: worktree.path,
+          byteCount: 8192,
+          sizeLimit: 1 << 20,
+        ) != nil
+      )
     }
 
     #expect(try DirectorySnapshot(of: common) == before)

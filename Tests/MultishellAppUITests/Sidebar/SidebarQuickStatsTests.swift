@@ -34,7 +34,7 @@ struct SidebarQuickStatsTests {
       of: SidebarQuickStats(
         model: harness.model,
         theme: Theme.builtins[0],
-        metrics: UIMetrics(fontSize: 13),
+        metrics: UIMetrics(fontSize: 13, fontFamily: nil),
       ),
       windowSize: CGSize(width: 400, height: 100),
     )

@@ -115,3 +115,40 @@
 - **`proseWrap: always` is what reflows to 80 columns.** Prettier pads a table
   row to its widest cell whatever `printWidth` says, and refuses a symlink, so
   the hook skips one and `CLAUDE.md` is formatted through `AGENTS.md`.
+- **Highlighting is SwiftTreeSitter 0.25.0 over the tree-sitter runtime
+  0.25.10**, both pinned exactly, the runtime named too for its `TreeSitter`
+  module. SwiftTreeSitter's last tag is from June 2025 and its main branch still
+  pins 0.25.x, which bounds a grammar's language ABI to 13 to 15.
+- **Each grammar is its own Swift package, pinned to a tag that commits its
+  generated parser**, its highlights query read from that package's resource
+  bundle, which the bundling script copies with every other. Most repositories
+  commit no `parser.c` on their main branch; tree-sitter-swift's tags it
+  `<version>-with-generated-files`.
+- **JavaScript's, Python's and YAML's scanners are copied under
+  `ThirdParty/tree-sitter/`**, into one `TreeSitterScanners` target: their
+  packages test for `src/scanner.c` against the build's working directory, so as
+  a dependency they build without it and fail to link. Only the scanner and the
+  files it includes are copied, 150 KB against 7.5 MB for the whole grammars.
+  Each folder names its tag and commit, which must match the package's pin, and
+  the open fixes
+  ([javascript#383](https://github.com/tree-sitter/tree-sitter-javascript/pull/383),
+  [yaml#46](https://github.com/tree-sitter-grammars/tree-sitter-yaml/pull/46))
+  would let a folder go. tree-sitter's own template already tests against
+  `Context.packageDirectory`.
+- **The scanner target fails its build on a warning**, `treatAllWarnings`
+  reaching clang as `-Werror`, the manifest's settings loop not reaching a C
+  target; the Python and YAML scanners narrow a `size_t` length to `uint32_t`,
+  so the target disables that warning alone. The packaged grammars' warnings are
+  theirs, a remote package's being hidden from the build.
+- **The maintained repository, not the most-starred**: the tree-sitter-grammars
+  YAML, TOML, Zig and Make, whose originals are stale or archived. Kotlin is
+  fwcd's, the most-starred and maintained; SQL is DerekStride's.
+- **SQL is pinned by revision on its `gh-pages` branch**, the only place it
+  commits a generated parser; its tags hold the grammar alone. A bump is the
+  newest deploy commit there.
+- **C#, C++, Kotlin and SQL are the heavy grammars**, their generated parsers 17
+  to 41 MB of C. Those four with Java, PHP and Make took the release binary from
+  32.0 MB to 58.6 MB (2026-10-16).
+- **Each grammar costs binary size and build time**, Swift's about 4.2 MB, most
+  of it parse tables, so the list grows on request; the notices name each with
+  the ICU headers the runtime compiles.

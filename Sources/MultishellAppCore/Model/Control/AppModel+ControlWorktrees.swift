@@ -34,7 +34,7 @@ extension AppModel {
       isInView: isInView(worktree),
       isBusy: isBusy(worktree.id),
       state: state(ofWorktree: worktree.id, sessions: sessions),
-      tabCount: workspace.tabs(in: worktree.id).count,
+      tabCount: workspace.workspaceTabCount(in: worktree.id),
     )
   }
 

@@ -8,7 +8,7 @@ struct DraggableTab: View, @MainActor Equatable {
   let model: AppModel
   /// The group this tab sits in, which its own moves are measured against.
   let group: TabGroup
-  let tab: TerminalTab
+  let tab: WorkspaceTab
   /// Whether this group takes the keystrokes. Only its active tab reads at
   /// full strength; another group's still fills, being on screen.
   let isFocusedGroup: Bool
@@ -73,7 +73,7 @@ struct DraggableTab: View, @MainActor Equatable {
     }
   }
 
-  private var insertionPlacement: TerminalTab.Placement? {
+  private var insertionPlacement: WorkspaceTab.Placement? {
     drag.insertionPlacement(on: tab.id, isShuffling: isShuffling)
   }
 

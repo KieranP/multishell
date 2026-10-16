@@ -30,11 +30,29 @@ extension AppModel {
         in: Appearance.terminalFontSizes,
         setTerminalFontSize,
       ),
+      .optionalText(
+        "uiFontName",
+        { self.workspace.appearance.uiFontName },
+        accepts: platform.hasFontFamily,
+        setUIFontName,
+      ),
       .number(
         "uiFontSize",
         { self.workspace.appearance.uiFontSize },
         in: Appearance.uiFontSizes,
         setUIFontSize,
+      ),
+      .optionalText(
+        "fileFontName",
+        { self.workspace.appearance.fileFontName },
+        accepts: platform.hasFontFamily,
+        { name in self.setFileFont(name: name, size: self.workspace.appearance.fileFontSize) },
+      ),
+      .number(
+        "fileFontSize",
+        { self.workspace.appearance.fileFontSize },
+        in: Appearance.fileFontSizes,
+        setFileFontSize,
       ),
     ]
   }
@@ -97,6 +115,8 @@ extension AppModel {
       ),
       .choice("gitStatusIndicator", { self.workspace.gitStatusIndicator }, setGitStatusIndicator),
       .choice("diffAlgorithm", { self.workspace.diffAlgorithm }, setDiffAlgorithm),
+      .choice("fileTabLayout", { self.workspace.fileTabLayout }, setFileTabLayout),
+      .choice("filesPanelMode", { self.workspace.filesPanelMode }, setFilesPanelMode),
     ]
   }
 

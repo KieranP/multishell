@@ -14,6 +14,10 @@ extension AppModel {
       self?.markInViewSeen()
     }
 
+    platform.onWorkspaceWindowDidBecomeVisible = { [weak self] in
+      self?.readWhatTheWindowShowsOnceVisible()
+    }
+
     reconciler.onActivity = { [weak self] id in self?.noteActivity(in: id) }
     reconciler.onCommandFinished = { [weak self] id, code in
       self?.noteCommandFinished(in: id, exitCode: code)

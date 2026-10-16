@@ -16,7 +16,7 @@ struct DetailViewTests {
     harness.store.selectWorktree(worktree.id)
     try #require(harness.model.workspace.selectedWorktree != nil)
 
-    let width = SidebarWidth.minimumDetail
+    let width = TabAreaWidth.minimum
     let margin = 100.0
     let box = NSView(frame: NSRect(x: 0, y: 0, width: width + 2 * margin, height: 60))
     let window = OffscreenWindow.holding(box, deferred: false)

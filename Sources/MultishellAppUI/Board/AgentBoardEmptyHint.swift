@@ -10,7 +10,7 @@ struct AgentBoardEmptyHint: View {
 
   var body: some View {
     Text(AgentBoard.emptyHint)
-      .font(.system(size: metrics.caption))
+      .font(metrics.font(size: metrics.caption))
       .foregroundStyle(theme.textTertiary)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, UIMetrics.panelSideInset)

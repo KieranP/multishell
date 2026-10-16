@@ -1,30 +1,39 @@
 import MultishellCore
 import MultishellProcess
 
-/// The Memory by tab table: the app itself, each tab with a live shell, and
-/// what the app started that no tab runs.
+/// The Memory by tab table: the app itself, each tab with a live shell, the
+/// file tabs' text, and what the app started that no tab runs.
 public struct DebugMemoryTable: Sendable, Equatable {
   /// The app's whole footprint, its tabs' terminals included.
   let appMemory: UInt64
   /// Heaviest first.
   let tabs: [DebugTabMemory]
   let unattributed: DebugProcessList
+  let fileTabs: DebugFileTabMemory
   /// The footprint and every child, as measured; the rows' own sum can
   /// exceed it where a terminal's estimate reads more than it occupies.
   let totalMemory: UInt64
 
-  /// The footprint less what the tabs' terminals hold, which their rows
-  /// show. Never below zero: Ghostty's figure is an estimate.
-  var appMemoryOutsideTerminals: UInt64 {
-    appMemory.subtractingFlooredAtZero(tabs.reduce(0) { $0 + ($1.terminalMemory ?? 0) })
+  /// The footprint less what the tabs' terminals and the file tabs' text
+  /// hold, which their rows show. Never below zero: both are estimates.
+  var appMemoryOutsideTabs: UInt64 {
+    appMemory.subtractingFlooredAtZero(
+      tabs.reduce(fileTabs.textMemory) { $0 + ($1.terminalMemory ?? 0) }
+    )
   }
 
   /// The app, the tabs, Other processes where there are any, and the total,
   /// each bar against the heaviest row.
   public var rows: [DebugMemoryRow] {
-    let appRowMemory = appMemoryOutsideTerminals
+    let appRowMemory = appMemoryOutsideTabs
     let heaviest = Double(
-      max(appRowMemory, unattributed.totalMemory, tabs.compactMap(\.totalMemory).max() ?? 0, 1)
+      max(
+        appRowMemory,
+        unattributed.totalMemory,
+        fileTabs.textMemory,
+        tabs.compactMap(\.totalMemory).max() ?? 0,
+        1,
+      )
     )
     let fraction = { (memory: UInt64?) in Double(memory ?? 0) / heaviest }
     var rows = [
@@ -52,6 +61,21 @@ public struct DebugMemoryTable: Sendable, Equatable {
           barFraction: fraction(tab.totalMemory),
           terminalRow: tab.terminalRow,
           processRows: tab.processList.rows,
+        )
+      )
+    }
+    if fileTabs.tabCount > 0 {
+      rows.append(
+        DebugMemoryRow(
+          source: .fileTabs,
+          title: t("debug.file-tabs-row"),
+          subtitle: t("debug.file-tabs-row-subtitle", fileTabs.tabCount),
+          processCount: nil,
+          selfMemory: fileTabs.textMemory,
+          totalMemory: fileTabs.textMemory,
+          barFraction: fraction(fileTabs.textMemory),
+          terminalRow: nil,
+          processRows: [],
         )
       )
     }
@@ -86,9 +110,15 @@ public struct DebugMemoryTable: Sendable, Equatable {
     return rows
   }
 
-  init(appMemory: UInt64, tabs: [DebugTabMemory], unattributedProcesses: [ProcessUsage]) {
+  init(
+    appMemory: UInt64,
+    tabs: [DebugTabMemory],
+    unattributedProcesses: [ProcessUsage],
+    fileTabs: DebugFileTabMemory = .noTabs,
+  ) {
     self.appMemory = appMemory
     self.tabs = tabs
+    self.fileTabs = fileTabs
     unattributed = DebugProcessList(processes: unattributedProcesses)
     totalMemory = tabs.reduce(appMemory + unattributed.totalMemory) { total, tab in
       total + tab.processList.totalMemory

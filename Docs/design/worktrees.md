@@ -320,21 +320,24 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   pool, which is as wide as the cores: a probe of 64 blocking detached tasks
   peaked at 12 on 12 cores, and an unrelated task waited 5.15 s for a thread.
   Cost: a dead mount holds a GCD thread per read rather than queueing them.
-- **Past a cap the files are not counted at all**, and only those paths become
-  strings.
-- **The two numbers come from different git calls**: status collapses an
-  untracked directory to one entry where the file list names every file inside
-  it, so counting the overflow put a huge count on a worktree whose tooltip said
-  one entry.
-- **Making them agree would mean listing every untracked file on every poll**,
-  several times the pipe and the time per worktree, and the same list in the
-  removal dialog's count.
-- **So the entries stay git's and the lines stay a floor**: a new directory of
-  source shows its lines, and one nobody gitignored shows the first files' worth
-  and no yellow count.
-- **The file list runs only where status counted an untracked file**, and the
-  runner's forced untracked-files setting keeps a repository's own config from
-  talking it out of counting one.
+- **Past 50,000 new files the paths are not kept as strings**, though every one
+  is still counted.
+- **Every count comes from one list of changed files**, for every worktree read,
+  shown or not: the badge, its tooltip, the removal dialog, `worktrees show` and
+  the Files panel. Counted in two reads, a new folder was one entry in the
+  tooltip and every file in the removal dialog.
+- **Status collapses a new folder to one entry**, and the `ls-files --others`
+  list the line count already ran names every file inside it, so its entries are
+  what is counted, in full; only the first 500 are read for lines, so the lines
+  stay a floor and a folder nobody gitignored shows the first files' worth.
+- **The list, not `status --untracked-files=all`**: that mode loses git's
+  untracked cache, 294 ms on a large clean tree where the default mode reads in
+  115 ms, and the list holds the same files at no new cost. A real-git test
+  holds the two to the same files, a nested repository as `dir/` in both.
+- **The file list runs only where status counted an untracked file**, under
+  either indicator, and the runner's forced untracked-files setting keeps a
+  repository's own config from talking it out of counting one. Where it fails
+  the folder stays one entry, so the tree never reads as clean.
 - **A file's count is kept by its path, size and date**, so an unchanged tree is
   stat'ed rather than read: 500 files of 16 KB took 51 ms a poll, every poll. A
   file that could not be read is not kept, since fixing its permission later
@@ -358,8 +361,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   badge changing shape as the index fills was read as the indicator being
   broken.
 - **Cost: two or three git calls a dirty worktree where there was one**, and the
-  yellow dot is gone, so which kind of change a file holds lives only in the
-  tooltip.
+  yellow dot is gone, so which kind of change a worktree holds lives only in the
+  tooltip; for one file, a file tab's dot and gutter say it.
 - **Changing the setting invalidates the read log**, and a read already in
   flight lands on nothing: it counted what the badge no longer means, and its
   cost would pace out the read that does.
@@ -482,8 +485,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   once a second for as long as the app is in front. The reads that run on an
   event or the poll are `rev-parse`, `worktree list`, `status`, `diff-index`,
   `diff --cached`, `hash-object` without `-w`, `ls-files`, `check-ignore`,
-  `for-each-ref`, `branch --merged`, `log -g`, `cherry`, `rev-list` and `diff`
-  between two commits; none writes.
+  `for-each-ref`, `branch --merged`, `log -g`, `cherry`, `rev-list`, `cat-file`
+  and `diff` between two commits; none writes.
   `everyReadTheAppRunsByItselfLeavesGitsDirectoryAsItWas` calls each on a
   repository with a touched, a changed, a staged and a new file and compares
   every file under `.git` before and after; a new read joins it.
@@ -513,13 +516,6 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   over git's own Myers. It is about the person reading the badge, not the
   repository, so no project overrides it, and a change re-reads every badge as
   the indicator's does.
-- **A read someone asks for counts every new file**: the removal dialog's and
-  `worktrees show`. Where status found anything untracked, one more
-  `status --untracked-files=all` counts each file in a new folder, so a removal
-  warns of every change it deletes. Only the file count takes it; the badge and
-  its tooltip keep the read the poll makes. Not on every read: the full walk
-  cost 294 ms on a large clean tree where the badge's 115 ms reuses git's
-  untracked cache.
 - **A change belongs to the deeper of the git directory and the worktree holding
   it**: `.git` sits in the main worktree, and a bare repository's worktrees can
   sit in its git directory, whose edits were read as git's scratch and dropped.
@@ -546,8 +542,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   `src/debug.log` or a nested `.DS_Store`, still reads, changes there being
   reported by the directory holding them.
 - **The watcher still reports those changes**, filtered only where a status read
-  is decided: a view of files will want to see an ignored file it shows change.
-  Cost: an install's events still reach the main actor, a dictionary lookup per
+  is decided: the Files panel and a file tab show an ignored file change. Cost:
+  an install's events still reach the main actor, a dictionary lookup per
   directory once git has answered.
 - **A directory holding a tracked file is not ignored**, as git says, however
   deep the file, so a force-added file under `node_modules` still reads. Any
@@ -560,3 +556,14 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   `node_modules/` against nothing while the directory is gone, as between
   `npm ci` removing it and the install, and that answer kept read the whole
   install.
+- **The Files panel's worktree is read on its events while the window shows**,
+  front or not, so coming back never shows a stale list; its listing re-reads on
+  its project's git changes, never because a count moved (files.md). Other rows
+  keep the frontmost-only reads.
+- **A tracked file forced in under an ignored folder still reads on an edit**,
+  the folder holding a tracked file not being ignored, as git says
+  (`anEditToAFileForcedInUnderAnIgnoredFolderIsRead`).
+- **Adding a project, or Refresh on one, reads its badges and branches at
+  once.** Its rows' files were written before the watcher armed, so no event
+  brings them, and the round is a minute off: an added project showed no badge
+  for up to a minute.

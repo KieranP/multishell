@@ -3,20 +3,42 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  func replyToDescribeTab(_ id: TerminalTab.ID) -> ControlReply {
-    guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
-    let shown = Set(workspace.shownTabs(in: tab.worktreeID).map(\.id))
-    return .json(
-      TabDescription(
-        id: tab.id,
-        worktree: ControlID.worktree(tab.worktreeID),
-        title: title(of: tab),
-        isShown: shown.contains(tab.id),
-        focusedPane: tab.focusedSessionID,
-        state: state(of: tab),
-        layout: layout(of: tab.root),
+  func replyToDescribeTab(_ id: WorkspaceTab.ID) -> ControlReply {
+    guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
+    let isShown = workspace.group(tab.groupID)?.shownTabID == id
+    switch tab {
+    case .file(let file):
+      return .json(
+        TabDescription(
+          id: file.id,
+          kind: .file,
+          worktree: ControlID.worktree(file.worktreeID),
+          title: title(of: file),
+          isShown: isShown,
+          path: file.path,
+          isDeleted: fileIsGone(of: file.id),
+          focusedPane: nil,
+          state: nil,
+          layout: nil,
+        )
       )
-    )
+
+    case .terminal(let terminal):
+      return .json(
+        TabDescription(
+          id: terminal.id,
+          kind: .terminal,
+          worktree: ControlID.worktree(terminal.worktreeID),
+          title: title(of: terminal),
+          isShown: isShown,
+          path: nil,
+          isDeleted: nil,
+          focusedPane: terminal.focusedSessionID,
+          state: state(of: terminal),
+          layout: layout(of: terminal.root),
+        )
+      )
+    }
   }
 
   private func layout(of node: PaneNode) -> TabDescription.Layout {

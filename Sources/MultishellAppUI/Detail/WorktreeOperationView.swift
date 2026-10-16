@@ -7,11 +7,17 @@ import SwiftUI
 struct WorktreeOperationView: View {
   let operation: WorktreeOperation
   let theme: Theme
+  let metrics: UIMetrics
   let cancel: () -> Void
   let dismiss: () -> Void
 
   var body: some View {
-    DetailPlaceholder(title: operation.title, caption: operation.detail, theme: theme) {
+    DetailPlaceholder(
+      title: operation.title,
+      caption: operation.detail,
+      theme: theme,
+      metrics: metrics,
+    ) {
       if operation.isRunning {
         ProgressView()
           .controlSize(.large)

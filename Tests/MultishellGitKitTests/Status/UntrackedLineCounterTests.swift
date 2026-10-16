@@ -16,7 +16,9 @@ struct UntrackedLineCounterTests {
     )
     try "d\ne".write(to: root.appendingPathComponent("two.txt"), atomically: true, encoding: .utf8)
 
-    let counted = UntrackedLineCounter.count(paths: ["one.txt", "two.txt"], in: root)
+    let counted = LineCounts(
+      summing: UntrackedLineCounter.count(paths: ["one.txt", "two.txt"], in: root)
+    )
     #expect(counted.insertions == 5)
     #expect(counted.unscoredFiles == 0)
   }
@@ -36,7 +38,9 @@ struct UntrackedLineCounterTests {
     _ = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
 
-    let counted = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
+    let counted = LineCounts(
+      summing: UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
+    )
 
     #expect(counted.insertions == 2, "the unreadable file was not read")
     #expect(counted.unscoredFiles == 0)
@@ -51,7 +55,11 @@ struct UntrackedLineCounterTests {
     _ = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
     try "a\nb\nc\n".write(to: file, atomically: true, encoding: .utf8)
 
-    #expect(UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo).insertions == 3)
+    #expect(
+      LineCounts(summing: UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo))
+        .insertions
+        == 3
+    )
   }
 
   @Test func aBinaryFileAndAMissingOneCountAsFilesWithNoLines() throws {
@@ -59,7 +67,9 @@ struct UntrackedLineCounterTests {
     defer { Scratch.remove(root) }
     try Data([0x89, 0x50, 0x00, 0x0A, 0x0A]).write(to: root.appendingPathComponent("icon.png"))
 
-    let counted = UntrackedLineCounter.count(paths: ["icon.png", "gone.txt"], in: root)
+    let counted = LineCounts(
+      summing: UntrackedLineCounter.count(paths: ["icon.png", "gone.txt"], in: root)
+    )
     #expect(counted.insertions == 0)
     #expect(counted.unscoredFiles == 2, "a new png and a path that went away both still changed")
   }
@@ -76,7 +86,10 @@ struct UntrackedLineCounterTests {
     )
     let unmarked = URL(fileURLWithPath: root.path, isDirectory: false)
 
-    #expect(UntrackedLineCounter.count(paths: ["one.txt"], in: unmarked).insertions == 2)
+    #expect(
+      LineCounts(summing: UntrackedLineCounter.count(paths: ["one.txt"], in: unmarked)).insertions
+        == 2
+    )
   }
 
   @Test func anEmptyFileCountsNoLine() throws {
@@ -84,7 +97,7 @@ struct UntrackedLineCounterTests {
     defer { Scratch.remove(root) }
     try Data().write(to: root.appendingPathComponent("empty.txt"))
 
-    let counted = UntrackedLineCounter.count(paths: ["empty.txt"], in: root)
+    let counted = LineCounts(summing: UntrackedLineCounter.count(paths: ["empty.txt"], in: root))
     #expect(counted.insertions == 0 && counted.unscoredFiles == 1)
   }
 
@@ -100,7 +113,7 @@ struct UntrackedLineCounterTests {
       withDestinationURL: target,
     )
 
-    let counted = UntrackedLineCounter.count(paths: ["link.txt"], in: root)
+    let counted = LineCounts(summing: UntrackedLineCounter.count(paths: ["link.txt"], in: root))
     #expect(counted.insertions == 0, "git stores the link, not the lines it points at")
     #expect(counted.unscoredFiles == 1)
   }
@@ -125,9 +138,12 @@ struct UntrackedLineCounterTests {
     try write("crosses.txt", bytes: 4096)
     try write("after.txt", bytes: 4)
 
-    let counted = UntrackedLineCounter.count(
-      paths: (0..<full).map { "\($0).txt" } + ["nearly-full.txt", "crosses.txt", "after.txt"],
-      in: root,
+    let counted = LineCounts(
+      summing:
+        UntrackedLineCounter.count(
+          paths: (0..<full).map { "\($0).txt" } + ["nearly-full.txt", "crosses.txt", "after.txt"],
+          in: root,
+        )
     )
 
     let counting = full * UntrackedLineCounter.perFileByteLimit + headroom - 2048 + 4
@@ -162,9 +178,12 @@ struct UntrackedLineCounterTests {
       encoding: .utf8,
     )
 
-    let counted = UntrackedLineCounter.count(
-      paths: unreadable.map(\.lastPathComponent) + ["after.txt"],
-      in: root,
+    let counted = LineCounts(
+      summing:
+        UntrackedLineCounter.count(
+          paths: unreadable.map(\.lastPathComponent) + ["after.txt"],
+          in: root,
+        )
     )
 
     #expect(counted.insertions == 2)
@@ -184,12 +203,39 @@ struct UntrackedLineCounterTests {
       )
     }
 
-    let counted = UntrackedLineCounter.count(
-      paths: (0..<(UntrackedLineCounter.fileLimit + 20)).map { "\($0).txt" },
-      in: root,
+    let counted = LineCounts(
+      summing:
+        UntrackedLineCounter.count(
+          paths: (0..<(UntrackedLineCounter.fileLimit + 20)).map { "\($0).txt" },
+          in: root,
+        )
     )
 
     #expect(counted.insertions == UntrackedLineCounter.fileLimit)
     #expect(counted.unscoredFiles == 0)
+  }
+
+  @Test func eachPathGetsItsOwnLinesInTheOrderGiven() throws {
+    let root = try Scratch.directory("untracked")
+    defer { Scratch.remove(root) }
+    try "a\nb\n".write(
+      to: root.appendingPathComponent("two.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    try Data([0x00, 0x01]).write(to: root.appendingPathComponent("blob.bin"))
+
+    let lines = UntrackedLineCounter.count(paths: ["two.txt", "blob.bin", "gone.txt"], in: root)
+
+    #expect(lines == [.counted(insertions: 2, deletions: 0), .unscored, .unscored])
+  }
+
+  @Test func aPathPastTheFileCapIsListedAsNotCounted() {
+    let paths = (0...UntrackedLineCounter.fileLimit).map { "\($0).txt" }
+
+    let lines = UntrackedLineCounter.count(paths: paths, in: URL(fileURLWithPath: "/nonexistent"))
+
+    #expect(lines.count == paths.count)
+    #expect(lines.last == .notCounted)
   }
 }

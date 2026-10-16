@@ -140,7 +140,7 @@ public struct ProcessRunner: Sendable {
     if status == 0 { stopper.withdrawTimeout(from: child) }
     await Self.awaitDrained(standardOutput, standardError, group: drained)
     return ProcessOutput(
-      standardOutput: String(decoding: standardOutput.collected, as: UTF8.self),
+      standardOutputBytes: standardOutput.collected,
       standardError: String(decoding: standardError.collected, as: UTF8.self),
       status: status,
       stopReason: stopper.appliedStop,

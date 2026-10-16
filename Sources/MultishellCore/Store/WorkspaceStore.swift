@@ -171,6 +171,7 @@ extension WorkspaceStore {
     workspace.worktrees.removeAll { $0.id == id }
     workspace.customWorktreeNames[id] = nil
     workspace.tabs.removeAll { $0.worktreeID == id }
+    workspace.fileTabs.removeAll { $0.worktreeID == id }
     workspace.tabGroups.removeAll { $0.worktreeID == id }
     workspace.sessions.removeAll { $0.worktreeID == id }
     workspace.focusedGroupByWorktree[id] = nil
@@ -182,7 +183,7 @@ extension WorkspaceStore {
 
 extension WorkspaceStore {
   /// Opens a tab in one group: the one named, else the worktree's focused
-  /// group, else a first group made for it.
+  /// group, else a first group made for it. It lands last in that strip.
   @discardableResult
   public func openTab(
     in worktreeID: Worktree.ID,
@@ -196,61 +197,81 @@ extension WorkspaceStore {
       let groupID = findOrMakeGroup(group, in: worktreeID)
     else { return nil }
     workspace.sessions.append(session)
-    // `tabs(inGroup:)` filters in array order, so appending is landing last
-    // in this group's strip whichever group it is.
     let tab = TerminalTab(worktreeID: worktreeID, groupID: groupID, session: session.id)
     workspace.tabs.append(tab)
+    place(tab.id, inGroup: groupID)
     setShownTab(tab.id, ofGroup: groupID)
     workspace.focusedGroupByWorktree[worktreeID] = groupID
     return tab
   }
 
-  public func closeTab(_ id: TerminalTab.ID) {
-    guard let index = workspace.tabIndex(id) else { return }
-    removeTab(at: index)
+  /// Opens a file of the worktree in a tab last in its focused group, or turns
+  /// to the tab already showing it. No session: a file tab runs nothing.
+  @discardableResult
+  public func openFileTab(path: String, in worktreeID: Worktree.ID) -> FileTab? {
+    guard FileTab.isContained(path) else { return nil }
+    if let open = workspace.fileTab(showing: path, in: worktreeID) {
+      activateTab(open.id)
+      return open
+    }
+    guard let groupID = findOrMakeGroup(nil, in: worktreeID) else { return nil }
+    let tab = FileTab(worktreeID: worktreeID, groupID: groupID, path: path)
+    workspace.fileTabs.append(tab)
+    place(tab.id, inGroup: groupID)
+    setShownTab(tab.id, ofGroup: groupID)
+    workspace.focusedGroupByWorktree[worktreeID] = groupID
+    return tab
   }
 
-  /// Moves a tab beside `anchor`, possibly in another group of the same
-  /// worktree; see Docs/design/tabs-and-groups.md.
+  /// A tab of either kind, its group settling on a neighbour.
+  public func closeTab(_ id: WorkspaceTab.ID) {
+    if let index = workspace.tabIndex(id) {
+      removeTab(at: index)
+    } else if let index = workspace.fileTabIndex(id) {
+      removeFileTab(at: index)
+    }
+  }
+
+  /// Moves a tab of either kind beside `anchor`, possibly in another group of
+  /// the same worktree; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
-    anchor: TerminalTab.ID,
+    _ id: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
+    anchor: WorkspaceTab.ID,
   ) -> Bool {
     guard
-      let movingIndex = workspace.tabIndex(id),
-      let anchorIndex = workspace.tabIndex(anchor),
-      workspace.tabs[movingIndex].worktreeID == workspace.tabs[anchorIndex].worktreeID,
-      id != anchor
+      let moving = workspace.workspaceTab(id),
+      let anchorTab = workspace.workspaceTab(anchor),
+      moving.worktreeID == anchorTab.worktreeID,
+      id != anchor,
+      let movingSlot = slot(of: id),
+      let anchorSlot = slot(of: anchor)
     else { return false }
 
     // Taking the tab out shifts the anchor down by one where it sat after it.
-    let landing = anchorIndex > movingIndex ? anchorIndex - 1 : anchorIndex
-    relocate(
-      id,
-      into: workspace.tabs[anchorIndex].groupID,
-      at: placement == .before ? landing : landing + 1,
-    )
+    let landing =
+      moving.groupID == anchorTab.groupID && anchorSlot > movingSlot ? anchorSlot - 1 : anchorSlot
+    relocate(id, into: anchorTab.groupID, at: placement == .before ? landing : landing + 1)
     return true
   }
 
   /// A tab dropped on a strip past its last tab, or on its New Tab button:
   /// it lands last there. A drop on a tab answers with a placement instead.
   @discardableResult
-  public func moveTab(_ id: TerminalTab.ID, toEndOf groupID: TabGroup.ID) -> Bool {
+  public func moveTab(_ id: WorkspaceTab.ID, toEndOf groupID: TabGroup.ID) -> Bool {
     guard
-      let index = workspace.tabIndex(id),
+      let moving = workspace.workspaceTab(id),
       let destination = workspace.group(groupID),
-      workspace.tabs[index].worktreeID == destination.worktreeID,
-      workspace.tabs[index].groupID != groupID
+      moving.worktreeID == destination.worktreeID,
+      moving.groupID != groupID
     else { return false }
     relocate(id, into: groupID)
     return true
   }
 
-  /// Moves a tab, panes and all, to another worktree. The shells keep
-  /// running; see Docs/design/tabs-and-groups.md.
+  /// Moves a terminal tab, panes and all, to another worktree, refusing a file
+  /// tab; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard
@@ -269,21 +290,37 @@ extension WorkspaceStore {
   }
 
   /// What the three moves share: the tab retagged for `groupID` and put back
-  /// at `index`, else last; a tab leaving its group settles it and is shown.
-  private func relocate(_ id: TerminalTab.ID, into groupID: TabGroup.ID, at index: Int? = nil) {
-    guard let movingIndex = workspace.tabIndex(id),
+  /// at `position`, else last; a tab leaving its group settles it and is shown.
+  private func relocate(
+    _ id: WorkspaceTab.ID,
+    into groupID: TabGroup.ID,
+    at position: Int? = nil,
+  ) {
+    guard let moving = workspace.workspaceTab(id),
       let destination = workspace.group(groupID)
     else { return }
     let vacated = slot(of: id)
-    var tab = workspace.tabs.remove(at: movingIndex)
-    let source = tab.groupID
-    tab.worktreeID = destination.worktreeID
-    tab.groupID = groupID
-    // `tabs(inGroup:)` filters in array order, so appending is landing last.
-    workspace.tabs.insert(tab, at: index ?? workspace.tabs.endIndex)
+    let source = moving.groupID
+    removeFromOrder(id, ofGroup: source)
+    retag(id, intoGroup: groupID, of: destination.worktreeID)
+    place(id, inGroup: groupID, at: position)
     guard source != groupID else { return }
     settle(group: source, vacating: vacated)
     activateTab(id)
+  }
+
+  /// A file tab keeps its worktree, the only moves offered it staying inside.
+  private func retag(
+    _ id: WorkspaceTab.ID,
+    intoGroup groupID: TabGroup.ID,
+    of worktreeID: Worktree.ID,
+  ) {
+    if let index = workspace.tabIndex(id) {
+      workspace.tabs[index].worktreeID = worktreeID
+      workspace.tabs[index].groupID = groupID
+    } else if let index = workspace.fileTabIndex(id) {
+      workspace.fileTabs[index].groupID = groupID
+    }
   }
 
   /// Empty or whitespace clears the custom title, so the shell's takes over
@@ -293,10 +330,10 @@ extension WorkspaceStore {
     workspace.tabs[index].customTitle = title?.trimmedOrNil
   }
 
-  /// Shows a tab in its own group and hands that group the focus: the tab
-  /// the user just clicked is the one they are working in.
-  public func activateTab(_ id: TerminalTab.ID) {
-    guard let tab = workspace.tab(id) else { return }
+  /// Shows a tab of either kind in its own group and hands that group the
+  /// focus: the tab the user just clicked is the one they are working in.
+  public func activateTab(_ id: WorkspaceTab.ID) {
+    guard let tab = workspace.workspaceTab(id) else { return }
     setShownTab(id, ofGroup: tab.groupID)
     if workspace.focusedGroupByWorktree[tab.worktreeID] != tab.groupID {
       workspace.focusedGroupByWorktree[tab.worktreeID] = tab.groupID
@@ -309,36 +346,56 @@ extension WorkspaceStore {
     let closing = Set(tab.sessionIDs)
     workspace.sessions.removeAll { closing.contains($0.id) }
     workspace.tabs.remove(at: index)
+    removeFromOrder(tab.id, ofGroup: tab.groupID)
+    settle(group: tab.groupID, vacating: vacated)
+  }
+
+  /// Each open tab's scroll as the views last left it.
+  public func setFileTabScrolls(_ scrolls: [FileTab.ID: FileTabScroll]) {
+    for index in workspace.fileTabs.indices {
+      let tab = workspace.fileTabs[index]
+      guard let scroll = scrolls[tab.id], tab.scroll != scroll else { continue }
+      workspace.fileTabs[index].scroll = scroll
+    }
+  }
+
+  private func removeFileTab(at index: Int) {
+    let tab = workspace.fileTabs[index]
+    let vacated = slot(of: tab.id)
+    workspace.fileTabs.remove(at: index)
+    removeFromOrder(tab.id, ofGroup: tab.groupID)
     settle(group: tab.groupID, vacating: vacated)
   }
 }
 
 extension WorkspaceStore {
-  /// Moves a tab into a group of its own beside `neighbour`, which gives up
-  /// half its width. `nil` when nothing moved, so the drag springs back.
+  /// Moves a tab of either kind into a group of its own beside `neighbour`, which
+  /// gives up half its width; `nil` when nothing moved.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
+    _ id: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
     toNewGroupOf neighbour: TabGroup.ID,
   ) -> TabGroup? {
     guard
-      let tabIndex = workspace.tabIndex(id),
+      let moving = workspace.workspaceTab(id),
       let groupIndex = workspace.groupIndex(neighbour),
-      workspace.tabGroups[groupIndex].worktreeID == workspace.tabs[tabIndex].worktreeID,
-      workspace.tabs[tabIndex].groupID != neighbour || workspace.tabs(inGroup: neighbour).count > 1
+      workspace.tabGroups[groupIndex].worktreeID == moving.worktreeID,
+      moving.groupID != neighbour || workspace.workspaceTabs(inGroup: neighbour).count > 1
     else { return nil }
 
-    let source = workspace.tabs[tabIndex].groupID
+    let source = moving.groupID
     let vacated = slot(of: id)
     let worktreeID = workspace.tabGroups[groupIndex].worktreeID
     let share = LayoutWeight.usable(workspace.tabGroups[groupIndex].weight / 2)
     workspace.tabGroups[groupIndex].weight = share
-    let group = TabGroup(worktreeID: worktreeID, weight: share, shownTabID: id)
+    var group = TabGroup(worktreeID: worktreeID, weight: share, shownTabID: id)
+    group.tabOrder = [id]
     // Beside the neighbour in the flat array, which is what puts it beside
     // it on screen; a group of another worktree in between changes nothing.
     workspace.tabGroups.insert(group, at: placement == .before ? groupIndex : groupIndex + 1)
-    workspace.tabs[tabIndex].groupID = group.id
+    removeFromOrder(id, ofGroup: source)
+    retag(id, intoGroup: group.id, of: worktreeID)
     settle(group: source, vacating: vacated)
     workspace.focusedGroupByWorktree[worktreeID] = group.id
     return group
@@ -378,25 +435,42 @@ extension WorkspaceStore {
     return group.id
   }
 
-  private func setShownTab(_ id: TerminalTab.ID, ofGroup groupID: TabGroup.ID) {
+  private func setShownTab(_ id: WorkspaceTab.ID, ofGroup groupID: TabGroup.ID) {
     guard let index = workspace.groupIndex(groupID),
       workspace.tabGroups[index].shownTabID != id
     else { return }
     workspace.tabGroups[index].shownTabID = id
   }
 
+  /// Puts a tab into its group's order at `position`, else last, and keeps
+  /// `Workspace.tabs` in step for an older build.
+  private func place(_ id: WorkspaceTab.ID, inGroup groupID: TabGroup.ID, at position: Int? = nil) {
+    guard let index = workspace.groupIndex(groupID) else { return }
+    let order = workspace.tabGroups[index].tabOrder
+    workspace.tabGroups[index].tabOrder.insert(
+      id,
+      at: min(position ?? order.endIndex, order.endIndex),
+    )
+    workspace.alignTabsToGroupOrder()
+  }
+
+  private func removeFromOrder(_ id: WorkspaceTab.ID, ofGroup groupID: TabGroup.ID) {
+    guard let index = workspace.groupIndex(groupID) else { return }
+    workspace.tabGroups[index].tabOrder.removeAll { $0 == id }
+  }
+
   /// Where in its group a tab sits, read before it is taken out so `settle`
   /// knows which tab slid into its place.
-  private func slot(of id: TerminalTab.ID) -> Int? {
-    guard let tab = workspace.tab(id) else { return nil }
-    return workspace.tabs(inGroup: tab.groupID).firstIndex { $0.id == id }
+  private func slot(of id: WorkspaceTab.ID) -> Int? {
+    guard let tab = workspace.workspaceTab(id) else { return nil }
+    return workspace.group(tab.groupID)?.tabOrder.firstIndex(of: id)
   }
 
   /// A group after a tab left it: another showing, or the group gone, with
   /// `vacating` the place it held, read first. See Docs/design/tabs-and-groups.md.
   private func settle(group groupID: TabGroup.ID, vacating slot: Int?) {
     guard let index = workspace.groupIndex(groupID) else { return }
-    let remaining = workspace.tabs(inGroup: groupID)
+    let remaining = workspace.workspaceTabs(inGroup: groupID).map(\.id)
     if remaining.isEmpty {
       removeEmptiedGroup(at: index)
     } else {
@@ -406,18 +480,14 @@ extension WorkspaceStore {
 
   private func reselectShownTab(
     ofGroupAt index: Int,
-    among remaining: [TerminalTab],
+    among remaining: [WorkspaceTab.ID],
     vacating slot: Int?,
   ) {
-    if let shown = workspace.tabGroups[index].shownTabID,
-      remaining.contains(where: { $0.id == shown })
-    {
-      return
-    }
+    if let shown = workspace.tabGroups[index].shownTabID, remaining.contains(shown) { return }
     // The tab that slid into the vacated place, which is the one to its
     // right; the last where the tab that left was itself last.
     workspace.tabGroups[index].shownTabID =
-      remaining[min(slot ?? remaining.count - 1, remaining.count - 1)].id
+      remaining[min(slot ?? remaining.count - 1, remaining.count - 1)]
   }
 
   private func removeEmptiedGroup(at index: Int) {
@@ -526,6 +596,15 @@ extension WorkspaceStore {
     workspace.appearance.uiFontSize = size
   }
 
+  public func setUIFontName(_ name: String?) {
+    workspace.appearance.uiFontName = name
+  }
+
+  public func setFileFont(name: String?, size: Double) {
+    workspace.appearance.fileFontName = name
+    workspace.appearance.fileFontSize = size
+  }
+
   public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     workspace.worktreeDefaults = defaults
   }
@@ -619,6 +698,14 @@ extension WorkspaceStore {
 
   public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
     workspace.diffAlgorithm = algorithm
+  }
+
+  public func setFileTabLayout(_ layout: FileTabLayout) {
+    workspace.fileTabLayout = layout
+  }
+
+  public func setFilesPanelMode(_ mode: FilesPanelMode) {
+    workspace.filesPanelMode = mode
   }
 }
 // swiftlint:enable no_grouping_extension

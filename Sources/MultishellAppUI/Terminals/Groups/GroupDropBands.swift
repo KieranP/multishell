@@ -43,7 +43,7 @@ struct GroupDropBands: View {
     }
   }
 
-  private func band(_ placement: TerminalTab.Placement) -> some View {
+  private func band(_ placement: WorkspaceTab.Placement) -> some View {
     let target = TabGroupBand(groupID: group.id, placement: placement)
     let isLit = drag.band == target
     return Color.accentColor

@@ -5,4 +5,15 @@ enum NulPathListParser {
     output.split(separator: "\0", omittingEmptySubsequences: true)
       .prefix(limit).map(String.init)
   }
+
+  /// Every path in the list, counted without making a string of any.
+  static func count(_ output: String) -> Int {
+    var count = 0
+    var previous: UInt8 = 0
+    for byte in output.utf8 {
+      if byte == 0, previous != 0 { count += 1 }
+      previous = byte
+    }
+    return previous == 0 ? count : count + 1
+  }
 }

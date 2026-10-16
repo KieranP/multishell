@@ -20,6 +20,39 @@ struct AppModelProjectAddingTests {
     #expect(harness.watcher.watched.map(\.lastPathComponent) == [".git", "demo"])
   }
 
+  @Test func addingAProjectReadsItsBadgesAndBranchesAtOnce() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let other = harness.root.appendingPathComponent("other", isDirectory: true)
+    try await TestRepository.initialise(at: other, withFirstCommit: true, using: harness.git)
+    try "new\n".write(
+      to: other.appendingPathComponent("new.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+
+    await harness.model.addProject(at: other)
+
+    let added = try #require(harness.model.workspace.projects.first { $0.id != harness.project.id })
+    let main = try #require(harness.model.workspace.worktrees(of: added.id).first)
+    #expect(harness.model.statuses[main.id]?.changedFiles == 1)
+    #expect(harness.model.lastCommitDates[main.id] != nil)
+  }
+
+  @Test func refreshingAProjectOnRequestReadsItsBadgesAndBranches() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try harness.dirty(main)
+    harness.clearStatuses()
+    harness.model.lastCommitDates = [:]
+
+    await harness.model.refreshWorktreesOnRequest(of: harness.project)
+
+    #expect(harness.model.statuses[main.id]?.changedFiles == 1)
+    #expect(harness.model.lastCommitDates[main.id] != nil)
+  }
+
   @Test func addingASubdirectoryIsTheSameProject() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

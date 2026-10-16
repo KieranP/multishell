@@ -77,7 +77,7 @@ struct SidebarView: View {
       .overlay {
         if let message = model.sidebarEmptyMessage(showing: entries) {
           Text(message)
-            .font(.system(size: metrics.secondary))
+            .font(metrics.font(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
         }
       }
@@ -87,7 +87,7 @@ struct SidebarView: View {
         endProjectDrag()
         return false
       }
-      SidebarFooter(countsText: model.sidebarCountsText, theme: theme, metrics: metrics)
+      PanelFooter(text: model.sidebarCountsText, theme: theme, metrics: metrics)
       if model.areDebugToolsEnabled {
         SidebarQuickStats(model: model, theme: theme, metrics: metrics)
       }

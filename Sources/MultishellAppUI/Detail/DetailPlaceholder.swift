@@ -7,6 +7,8 @@ struct DetailPlaceholder<Icon: View, Footer: View>: View {
   let title: String
   let caption: String
   let theme: Theme
+  /// For the UI font's family; the placeholder's sizes are its own.
+  let metrics: UIMetrics
   @ViewBuilder let icon: () -> Icon
   @ViewBuilder let footer: () -> Footer
 
@@ -14,11 +16,11 @@ struct DetailPlaceholder<Icon: View, Footer: View>: View {
     VStack(spacing: 0) {
       icon()
       Text(title)
-        .font(.system(size: 18, weight: .semibold))
+        .font(metrics.font(size: 18, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
         .padding(.top, 20)
       Text(caption)
-        .font(.system(size: 13))
+        .font(metrics.font(size: 13))
         .foregroundStyle(theme.textSecondary)
         .multilineTextAlignment(.center)
         .frame(maxWidth: 380)

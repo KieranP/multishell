@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Appearance: the theme, the terminal font and the UI size
-/// every chrome measurement is derived from.
+/// Settings > Appearance: the theme, the terminal and file fonts, and the UI
+/// font, whose size every chrome measurement is derived from.
 struct AppAppearancePage: View {
   let model: AppModel
 
@@ -42,6 +42,29 @@ struct AppAppearancePage: View {
       }
 
       Section {
+        DetectionPicker(
+          label: t("appearance.file-font"),
+          selection: model.fileFontBinding,
+          options: fonts.options(selected:),
+          refresh: { fonts = InstalledFonts.refresh() },
+          info: t("appearance.file-font-info"),
+        )
+        sizeRow(
+          t("appearance.file-size"),
+          value: model.settingBinding(\.appearance.fileFontSize, write: model.setFileFontSize),
+          range: Appearance.fileFontSizes,
+          info: t("appearance.file-size-info"),
+        )
+      }
+
+      Section {
+        DetectionPicker(
+          label: t("appearance.ui-font"),
+          selection: model.uiFontBinding,
+          options: fonts.uiFontOptions(selected:),
+          refresh: { fonts = InstalledFonts.refresh() },
+          info: t("appearance.ui-font-info"),
+        )
         sizeRow(
           t("appearance.ui-size"),
           value: model.settingBinding(\.appearance.uiFontSize, write: model.setUIFontSize),

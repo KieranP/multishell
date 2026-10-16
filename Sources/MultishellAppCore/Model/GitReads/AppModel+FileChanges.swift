@@ -10,14 +10,13 @@ extension AppModel {
   /// A watcher tick. git's records are compared frontmost or not, as a new
   /// worktree is a row; badges are read frontmost only, as the poll's are.
   func noteFileChanges(_ changed: [URL]) async {
+    let heardFirst = fileChangeTargets(changed)
+    noteFileTabChanges(heardFirst)
+    noteFilesPanelChanges(heardFirst)
     await refreshProjectsIfChanged(under: changed)
     guard platform.isActive else { return }
-    let targets = FileChangeTargets(
-      changed: changed,
-      projects: workspace.projects,
-      gitDirectories: commonGitDirectories,
-      worktrees: workspace.worktrees,
-    )
+    // Again after the await, which a refresh may have changed the rows across.
+    let targets = fileChangeTargets(changed)
     forgetIgnoreVerdicts(changedBy: targets)
     let onSidebar = sidebarRowIDs()
     for worktree in workspace.worktrees
@@ -37,16 +36,20 @@ extension AppModel {
     }
   }
 
+  private func fileChangeTargets(_ changed: [URL]) -> FileChangeTargets {
+    FileChangeTargets(
+      changed: changed,
+      projects: workspace.projects,
+      gitDirectories: commonGitDirectories,
+      worktrees: workspace.worktrees,
+    )
+  }
+
   /// Whether any change lies outside what git ignores, so `npm install` filling
   /// `node_modules` reads no status. git is asked once per directory.
-  private func hasChangesGitDoesNotIgnore(_ changes: [URL], in worktree: Worktree) async -> Bool {
+  private func hasChangesGitDoesNotIgnore(_ paths: [String], in worktree: Worktree) async -> Bool {
     guard let coordinator else { return true }
-    let root = StandardizedPath(id: worktree.id, url: worktree.path)
-    let paths = changes.map { change in
-      root.subpath(to: change.standardizedFileURL.pathComponents)?.joined(separator: "/") ?? ""
-    }
-    // The worktree itself reported says nothing about which file changed.
-    guard !paths.contains("") else { return true }
+    guard !paths.contains(FileChangeTargets.wholeWorktree) else { return true }
     var verdicts = ignoreVerdicts[worktree.id] ?? IgnoreVerdicts()
     while true {
       let notIgnored = paths.filter { verdicts.isIgnored($0) == false }

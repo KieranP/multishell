@@ -42,7 +42,7 @@ struct DebugStripLabelTests {
 
   @Test(arguments: [Appearance.uiFontSizes.lowerBound, 13, Appearance.uiFontSizes.upperBound])
   func everyStripsLabelFitsItsColumnUncut(fontSize: Double) {
-    let metrics = UIMetrics(fontSize: fontSize)
+    let metrics = UIMetrics(fontSize: fontSize, fontFamily: nil)
     for metric in DebugMetric.allCases {
       let width = naturalWidth(of: metric, metrics: metrics)
       #expect(

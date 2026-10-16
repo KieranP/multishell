@@ -26,6 +26,17 @@ extension AppModel {
         (lhs.totalMemory ?? 0, rhs.title) > (rhs.totalMemory ?? 0, lhs.title)
       },
       unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst(),
+      fileTabs: debugFileTabMemory,
     )
+  }
+
+  /// UTF-16 kept for each line, twice over for the rows' joined text: the
+  /// model's copy, not the layout a shown tab adds on top.
+  private var debugFileTabMemory: DebugFileTabMemory {
+    let bytes = fileTabReadings.values.reduce(UInt64(0)) { total, reading in
+      guard case .text(let rows) = reading.content else { return total }
+      return total + UInt64(rows.displayText.string.utf16.count) * 4
+    }
+    return DebugFileTabMemory(tabCount: workspace.fileTabs.count, textMemory: bytes)
   }
 }

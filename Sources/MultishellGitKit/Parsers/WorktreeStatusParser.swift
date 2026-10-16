@@ -1,41 +1,49 @@
 import Foundation
 
-/// Parses `git status --porcelain=v1 --branch`: a `## <branch>...` line,
-/// then `XY <path>` for the index state and the working tree state.
+/// Parses `git status --porcelain=v1 -z --branch`: `## <branch>...`, then
+/// `XY <path>`, the path unquoted and able to hold a newline.
 enum WorktreeStatusParser {
   /// How git says a branch has no commits yet; the second is its wording
   /// before 2.19. English in `--porcelain` whatever the locale, checked on 2.55.
   private static let unbornPrefixes = ["No commits yet on ", "Initial commit on "]
 
-  static func parse(_ output: String) -> WorktreeStatus {
+  static func parse(_ output: String) -> (status: WorktreeStatus, entries: [StatusEntry]) {
     var status = WorktreeStatus()
+    var entries: [StatusEntry] = []
 
-    for line in output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline) {
-      if line.hasPrefix("## ") {
-        parseBranchLine(line, into: &status)
+    for record in output.split(separator: "\0", omittingEmptySubsequences: true) {
+      if record.hasPrefix("## ") {
+        parseBranchLine(record, into: &status)
         continue
       }
-      guard line.count >= 2 else { continue }
-      let indexState = line[line.startIndex]
-      let workTreeState = line[line.index(after: line.startIndex)]
-
-      switch (indexState, workTreeState) {
-      case ("!", "!"):
-        continue
-
-      case ("?", "?"):
+      guard let entry = entry(from: record) else { continue }
+      if entry.isUntracked {
         status.untracked += 1
-
-      case ("U", _), (_, "U"), ("A", "A"), ("D", "D"):
+      } else if entry.isUnmerged {
         status.conflicted += 1
-
-      default:
-        if indexState != " " { status.staged += 1 }
-        if workTreeState != " " { status.unstaged += 1 }
+      } else {
+        if entry.indexState != " " { status.staged += 1 }
+        if entry.workTreeState != " " { status.unstaged += 1 }
       }
       status.changedFiles += 1
+      entries.append(entry)
     }
-    return status
+    return (status, entries)
+  }
+
+  /// Sliced by byte: a path starting with a combining mark joins the space
+  /// before it into one `Character`.
+  private static func entry(from record: Substring) -> StatusEntry? {
+    let bytes = record.utf8
+    guard bytes.count > 3, bytes[bytes.index(bytes.startIndex, offsetBy: 2)] == UInt8(ascii: " ")
+    else { return nil }
+    let states = Array(bytes.prefix(2))
+    guard states.allSatisfy({ $0 < 0x80 }), states != Array("!!".utf8) else { return nil }
+    return StatusEntry(
+      indexState: Character(UnicodeScalar(states[0])),
+      workTreeState: Character(UnicodeScalar(states[1])),
+      path: String(Substring(bytes.dropFirst(3))),
+    )
   }
 
   /// `## main...origin/main [ahead 1]`, `## main`, `## HEAD (no branch)`,

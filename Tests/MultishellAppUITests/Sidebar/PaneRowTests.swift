@@ -25,7 +25,7 @@ struct PaneRowTests {
         agentName: nil,
       ),
       theme: .multishellDark,
-      metrics: UIMetrics(fontSize: 13),
+      metrics: UIMetrics(fontSize: 13, fontFamily: nil),
       select: select,
     )
   }

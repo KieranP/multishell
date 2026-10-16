@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One line: project › name, the branch under a renamed one, the path, the
-/// actions menu. The path gives way first; the names never do.
+/// Project › name, a renamed one's branch, the path, the actions menu and the
+/// Files toggle. The path gives way first; the names never do.
 struct WorktreeHeader: View {
   let model: AppModel
   let worktree: Worktree
@@ -45,24 +45,36 @@ struct WorktreeHeader: View {
         .padding(.leading, 6)
       Spacer(minLength: 8)
       actionsMenu
+      filesToggle
     }
     .windowHeader(fill: theme.chromeColor)
+  }
+
+  /// Shows the Files panel on the window's right, in the focus ring's colour
+  /// while it is open. Drawn only where the panel can be.
+  @ViewBuilder
+  private var filesToggle: some View {
+    if model.filesPanelWorktree != nil {
+      PlainGlyphButton(help: t("files-panel.toggle-help")) {
+        model.toggleFilesPanel()
+      } glyph: {
+        HeaderGlyph(symbol: "sidebar.right")
+          .contentShape(.rect)
+      }
+      .foregroundStyle(
+        model.showsFilesPanel
+          ? theme.toggledGlyphColor : theme.textSecondary
+      )
+      .accessibilityLabel(t("files-panel.toggle"))
+      .accessibilityAddTraits(model.showsFilesPanel ? .isSelected : [])
+    }
   }
 
   /// Everything that acts on the selected worktree, in one place a new user
   /// can find; the sidebar's context menu has the same items.
   private var actionsMenu: some View {
-    Menu {
+    HeaderActionsMenu(help: t("action.worktree-actions"), theme: theme) {
       WorktreeActions(model: model, worktree: worktree)
-    } label: {
-      HeaderGlyph(symbol: "ellipsis.circle")
-        .contentShape(.rect)
     }
-    .menuStyle(.borderlessButton)
-    .menuIndicator(.hidden)
-    .fixedSize()
-    .foregroundStyle(theme.textSecondary)
-    .help(t("action.worktree-actions"))
-    .accessibilityLabel(t("action.worktree-actions"))
   }
 }

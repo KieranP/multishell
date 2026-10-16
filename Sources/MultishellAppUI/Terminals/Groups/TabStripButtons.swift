@@ -28,12 +28,13 @@ struct TabStripButtons: View {
       model.splitActivePane(axis, in: groupID)
     } label: {
       Image(systemName: symbol)
-        .font(.system(size: model.metrics.glyph, weight: .medium))
+        .font(model.metrics.font(size: model.metrics.glyph, weight: .medium))
         .foregroundStyle(theme.textSecondary)
         .frame(width: model.metrics.splitButtonWidth, height: model.metrics.tabHeight)
         .contentShape(.rect)
     }
     .buttonStyle(.plain)
+    .disabled(!model.canSplitShownTab(in: groupID))
     .help(TabStripButtonText.splitHelp(axis, isFocusedGroup: isFocusedGroup))
     .accessibilityLabel(TabStripButtonText.splitLabel(axis))
   }

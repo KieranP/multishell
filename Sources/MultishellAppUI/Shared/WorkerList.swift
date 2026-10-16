@@ -23,7 +23,7 @@ struct WorkerList: View {
         WorkerGlyph(metrics: metrics)
           .foregroundStyle(theme.color(for: .running))
         Text(workers.countText)
-          .font(.system(size: metrics.badge, weight: .semibold))
+          .font(metrics.font(size: metrics.badge, weight: .semibold))
           .foregroundStyle(theme.textPrimary)
       }
       .padding(.bottom, 2)
@@ -37,19 +37,19 @@ struct WorkerList: View {
           )
           .padding(.leading, CGFloat(nested.depth) * Self.nestingIndent)
           Text(worker.displayName)
-            .font(.system(size: metrics.badge, weight: .medium))
+            .font(metrics.font(size: metrics.badge, weight: .medium))
             .foregroundStyle(theme.textPrimary)
             .lineLimit(1)
           if let description = worker.description {
             Text(description)
-              .font(.system(size: metrics.badge))
+              .font(metrics.font(size: metrics.badge))
               .foregroundStyle(theme.textSecondary)
               .lineLimit(1)
               .truncationMode(.tail)
           }
           if let occurrences = worker.occurrenceText {
             Text(occurrences)
-              .font(.system(size: metrics.small, weight: .medium))
+              .font(metrics.font(size: metrics.small, weight: .medium))
               .monospacedDigit()
               .foregroundStyle(theme.textSecondary)
           }

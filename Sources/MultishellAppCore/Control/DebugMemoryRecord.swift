@@ -14,6 +14,12 @@ struct DebugMemoryRecord: Encodable, Equatable {
     let processes: [ProcessRecord]
   }
 
+  struct FileTabsRecord: Encodable, Equatable {
+    let count: Int
+    /// Estimated from the text the app keeps, as the row is.
+    let textMemory: UInt64
+  }
+
   struct ProcessRecord: Encodable, Equatable {
     let pid: Int32
     let parentPID: Int32
@@ -29,14 +35,19 @@ struct DebugMemoryRecord: Encodable, Equatable {
   }
 
   let appMemory: UInt64
-  let appMemoryOutsideTerminals: UInt64
+  let appMemoryOutsideTabs: UInt64
   let totalMemory: UInt64
   let tabs: [TabRecord]
+  let fileTabs: FileTabsRecord
   let otherProcesses: [ProcessRecord]
 
   init(_ table: DebugMemoryTable) {
     appMemory = table.appMemory
-    appMemoryOutsideTerminals = table.appMemoryOutsideTerminals
+    appMemoryOutsideTabs = table.appMemoryOutsideTabs
+    fileTabs = FileTabsRecord(
+      count: table.fileTabs.tabCount,
+      textMemory: table.fileTabs.textMemory,
+    )
     totalMemory = table.totalMemory
     tabs = table.tabs.map { tab in
       TabRecord(

@@ -12,23 +12,23 @@ public struct TabDragState: Equatable, Sendable {
   /// The tabs either side of the dragged one as the drag began, nearest first.
   /// A shuffle moves only the dragged tab, so the rest still say where it was.
   struct Home: Equatable, Sendable {
-    let earlier: [TerminalTab.ID]
-    let later: [TerminalTab.ID]
+    let earlier: [WorkspaceTab.ID]
+    let later: [WorkspaceTab.ID]
   }
 
   /// Where a dragged tab would land in a strip: on a tab, and which side.
   public struct Insertion: Equatable, Sendable {
-    public let tabID: TerminalTab.ID
-    let placement: TerminalTab.Placement
+    public let tabID: WorkspaceTab.ID
+    let placement: WorkspaceTab.Placement
 
-    public init(tabID: TerminalTab.ID, placement: TerminalTab.Placement) {
+    public init(tabID: WorkspaceTab.ID, placement: WorkspaceTab.Placement) {
       self.tabID = tabID
       self.placement = placement
     }
   }
 
   /// The tab in the air, which the drop that lands has to name.
-  public internal(set) var tabID: TerminalTab.ID?
+  public internal(set) var tabID: WorkspaceTab.ID?
   /// The tab the pointer is over and which side of it, for the insertion
   /// line a strip draws.
   public var insertion: Insertion?
@@ -54,34 +54,34 @@ public struct TabDragState: Equatable, Sendable {
 
   /// Whether the tab in the air is one of this strip's, which moves as the
   /// pointer goes rather than being marked by a line.
-  public func isShuffling(within tabIDs: [TerminalTab.ID]) -> Bool {
+  public func isShuffling(within tabIDs: [WorkspaceTab.ID]) -> Bool {
     guard let tabID else { return false }
     return tabIDs.contains(tabID)
   }
 
   /// Read from the drop targets rather than the drag beginning, so a tab let
   /// go where no target saw it is not marked for good.
-  func isHeldOverTarget(_ id: TerminalTab.ID) -> Bool {
+  func isHeldOverTarget(_ id: WorkspaceTab.ID) -> Bool {
     tabID == id && isEngaged
   }
 
   /// How a strip draws this tab: marked while held over a target, less so
   /// in its own strip, where it moves as the pointer goes.
-  public func look(of id: TerminalTab.ID, isShuffling: Bool) -> TabLook {
+  public func look(of id: WorkspaceTab.ID, isShuffling: Bool) -> TabLook {
     guard isHeldOverTarget(id) else { return .resting }
     return isShuffling ? .shuffling : .lifted
   }
 
   /// The side of this tab the insertion line goes, `nil` for none.
   public func insertionPlacement(
-    on id: TerminalTab.ID,
+    on id: WorkspaceTab.ID,
     isShuffling: Bool,
-  ) -> TerminalTab.Placement? {
+  ) -> WorkspaceTab.Placement? {
     guard isDragging, !isShuffling, let insertion, insertion.tabID == id else { return nil }
     return insertion.placement
   }
 
-  mutating func begin(_ id: TerminalTab.ID, home: Home? = nil) {
+  mutating func begin(_ id: WorkspaceTab.ID, home: Home? = nil) {
     self = Self()
     tabID = id
     self.home = home

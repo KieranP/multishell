@@ -10,7 +10,7 @@ struct AgentBoardCardMessage: View {
 
   var body: some View {
     Text(text)
-      .font(.system(size: metrics.badge))
+      .font(metrics.font(size: metrics.badge))
       .foregroundStyle(theme.textSecondary)
       .lineLimit(3)
       .fixedSize(horizontal: false, vertical: true)

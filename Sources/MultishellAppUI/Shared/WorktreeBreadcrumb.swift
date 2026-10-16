@@ -34,8 +34,8 @@ struct WorktreeBreadcrumb: View {
 
   private var projectFont: Font {
     switch style {
-    case .header: .system(size: metrics.bodySize, weight: .semibold)
-    case .card: .system(size: metrics.badge)
+    case .header: metrics.font(size: metrics.bodySize, weight: .semibold)
+    case .card: metrics.font(size: metrics.badge)
     }
   }
 

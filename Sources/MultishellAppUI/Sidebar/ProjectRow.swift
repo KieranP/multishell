@@ -42,7 +42,7 @@ struct ProjectRow: View, @MainActor Equatable {
   private var toggleArea: some View {
     HStack(spacing: 6) {
       Image(systemName: "chevron.right")
-        .font(.system(size: metrics.small, weight: .bold))
+        .font(metrics.font(size: metrics.small, weight: .bold))
         .rotationEffect(.degrees(isExpanded ? 90 : 0))
         .foregroundStyle(theme.textTertiary)
         .frame(width: 10)
@@ -75,7 +75,7 @@ struct ProjectRow: View, @MainActor Equatable {
       }
 
       Text(project.name)
-        .font(.system(size: metrics.bodySize, weight: .medium))
+        .font(metrics.font(size: metrics.bodySize, weight: .medium))
         .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
         .opacity(isMissing ? 0.5 : 1)
@@ -106,7 +106,7 @@ struct ProjectRow: View, @MainActor Equatable {
   private var newWorktreeButton: some View {
     PlainGlyphButton(help: t("sidebar.new-worktree"), action: requestNewWorktree) {
       Image(systemName: "plus")
-        .font(.system(size: metrics.glyph))
+        .font(metrics.font(size: metrics.glyph))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sidebarRowButtonWidth)
         .accessibilityHidden(true)

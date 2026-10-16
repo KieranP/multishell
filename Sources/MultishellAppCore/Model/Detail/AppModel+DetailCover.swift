@@ -9,4 +9,11 @@ extension AppModel {
     updatePIDWatch()
     if marksSeen { markInViewSeen() }
   }
+
+  /// A reconcile under the cover let go of the tabs in front too; `select`
+  /// uncovers without, its own reconcile reading the worktree it goes to.
+  func uncoverDetailAndReadItsTabs() {
+    uncoverDetail()
+    readShownFileTabs()
+  }
 }

@@ -37,7 +37,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case listWorktrees(project: String?)
   /// A name put into the next debug sample and the signpost log.
   case markDebugSample(name: String)
-  case moveTab(id: UUID, placement: TerminalTab.Placement, anchor: UUID)
+  case moveTab(id: UUID, placement: WorkspaceTab.Placement, anchor: UUID)
   case newTab(NewTabOrder)
   case newWorktree(NewWorktreeOrder)
   /// Text put in as a paste, bracketed where the program asked.

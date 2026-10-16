@@ -53,7 +53,7 @@ extension WorkspaceStoreTests {
     #expect(workspace.groups(in: "/repos/demo").count == 1)
     #expect(workspace.groups(in: "/repos/demo-feat").count == 1)
     let group = workspace.groups(in: "/repos/demo")[0]
-    #expect(workspace.tabs(inGroup: group.id).map(\.id) == [shellTab, agentTab, splitTab])
+    #expect(workspace.workspaceTabs(inGroup: group.id).map(\.id) == [shellTab, agentTab, splitTab])
 
     // What the user was looking at, which is the whole reason the old key is
     // still read.

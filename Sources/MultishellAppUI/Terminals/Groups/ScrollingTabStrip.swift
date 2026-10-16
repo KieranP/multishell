@@ -16,9 +16,9 @@ struct ScrollingTabStrip<Tabs: View>: View {
   /// The room the strip has, the buttons at its end already taken off.
   let available: Double
   /// In strip order, for the arrows to scroll by one and for the count.
-  let tabIDs: [TerminalTab.ID]
+  let tabIDs: [WorkspaceTab.ID]
   /// The tab showing, brought into view as it changes.
-  let shownTabID: TerminalTab.ID?
+  let shownTabID: WorkspaceTab.ID?
   @ViewBuilder let tabs: () -> Tabs
 
   /// How far it has been scrolled, deciding which end carries an arrow and
@@ -60,7 +60,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
       }
       .wheelScrollsSideways(scrollerReference)
       // Unwrapped, both: `scrollTo` takes anything hashable, so a
-      // `TerminalTab.ID?` compiles and matches nothing.
+      // `WorkspaceTab.ID?` compiles and matches nothing.
       .onAppear {
         if let shownTabID { proxy.scrollTo(shownTabID, anchor: .center) }
       }
@@ -85,7 +85,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
         step(towards: end, proxy: proxy)
       } label: {
         Image(systemName: isLeading ? "chevron.compact.left" : "chevron.compact.right")
-          .font(.system(size: model.metrics.bodySize, weight: .semibold))
+          .font(model.metrics.font(size: model.metrics.bodySize, weight: .semibold))
           .foregroundStyle(theme.textSecondary)
           .frame(width: gutter, height: model.metrics.tabHeight)
           .background(theme.chromeColor)

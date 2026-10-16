@@ -5,7 +5,7 @@ import Foundation
 public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   /// `shownTabID` keeps the key it was saved under; see state-and-store.md.
   enum CodingKeys: String, CodingKey {
-    case id, worktreeID, weight
+    case id, worktreeID, weight, tabOrder
     case shownTabID = "activeTabID"
   }
 
@@ -18,19 +18,23 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   /// Share of the worktree's width, relative to the other groups' rather
   /// than a fraction, so a removal needs no renormalising.
   public internal(set) var weight: Double
-  /// The tab this group shows. Never `nil` for a group the store kept: a
-  /// group whose last tab left is removed rather than left standing empty.
-  public internal(set) var shownTabID: TerminalTab.ID?
+  /// The tab this group shows, of either kind. Never `nil` for a group the
+  /// store kept: a group whose last tab left is removed rather than left empty.
+  public internal(set) var shownTabID: WorkspaceTab.ID?
+  /// Every tab in the group, terminal and file, left to right. An older build
+  /// reads strip order from `Workspace.tabs`, which the store keeps in step.
+  var tabOrder: [WorkspaceTab.ID]
 
   init(
     worktreeID: Worktree.ID,
     weight: Double = 1,
-    shownTabID: TerminalTab.ID? = nil,
+    shownTabID: WorkspaceTab.ID? = nil,
   ) {
     self.id = UUID()
     self.worktreeID = worktreeID
     self.weight = LayoutWeight.usable(weight)
     self.shownTabID = shownTabID
+    self.tabOrder = []
   }
 
   /// Weight and shown tab default; id and worktree do not, a group
@@ -42,6 +46,8 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
     self.weight = LayoutWeight.usable(
       container.decodeTolerantly(Double.self, forKey: .weight, or: 1)
     )
-    self.shownTabID = container.decodeTolerantly(TerminalTab.ID.self, forKey: .shownTabID)
+    self.shownTabID = container.decodeTolerantly(WorkspaceTab.ID.self, forKey: .shownTabID)
+    // Missing from a file an older build wrote; `repair` fills it from the tabs.
+    self.tabOrder = container.decodeTolerantly([WorkspaceTab.ID].self, forKey: .tabOrder, or: [])
   }
 }

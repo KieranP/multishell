@@ -35,6 +35,7 @@ extension AppModel {
     missingProjects.remove(project.id)
     await refreshWorktrees(of: project)
     await rearmWatcher(evenIfUnchanged: true)
+    await refreshBadges(ofProject: project.id)
   }
 
   func refreshWorktrees(of project: Project) async {

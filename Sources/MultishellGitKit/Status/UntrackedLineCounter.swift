@@ -9,16 +9,16 @@ enum UntrackedLineCounter {
   static let perFileByteLimit = 1 << 20
   static let totalByteLimit = 8 << 20
 
-  /// Every line an insertion; a binary, empty or unread file unscored. Never one
-  /// past `fileLimit`; see worktrees.md.
+  /// Each path's lines in order, every line an insertion; a binary, empty or
+  /// unread file unscored, and every path past `fileLimit` not counted.
   static func count(
     paths: [String],
     in directory: URL,
     memo: UntrackedLineMemo? = nil,
-  ) -> LineCounts {
+  ) -> [StatusChange.Lines] {
     let known = memo?.entries(in: directory) ?? [:]
     var seen: [String: UntrackedLineMemo.Entry] = [:]
-    var counts = LineCounts()
+    var counts: [StatusChange.Lines] = []
     var bytesCharged = 0
     for path in paths.prefix(fileLimit) {
       let url = directory.appending(path: path)
@@ -30,7 +30,7 @@ enum UntrackedLineCounter {
         values.isRegularFile == true, let size = values.fileSize, size <= perFileByteLimit,
         bytesCharged + size <= totalByteLimit
       else {
-        counts.unscoredFiles += 1
+        counts.append(.unscored)
         continue
       }
       let modified = values.contentModificationDate ?? .distantPast
@@ -41,16 +41,16 @@ enum UntrackedLineCounter {
         counted = Self.lines(in: data)
       } else {
         // Unread is not remembered: a file made readable keeps its date.
-        counts.unscoredFiles += 1
+        counts.append(.unscored)
         continue
       }
       // Charged whether read or remembered, so the budget skips what it did.
       bytesCharged += size
       seen[path] = UntrackedLineMemo.Entry(size: size, modified: modified, lines: counted)
-      if let counted { counts.insertions += counted } else { counts.unscoredFiles += 1 }
+      counts.append(counted.map { .counted(insertions: $0, deletions: 0) } ?? .unscored)
     }
     memo?.replace(seen, in: directory)
-    return counts
+    return counts + Array(repeating: .notCounted, count: paths.count - counts.count)
   }
 
   /// `nil` for a binary or empty file. `memchr`, where a Swift loop over the
@@ -58,7 +58,9 @@ enum UntrackedLineCounter {
   private static func lines(in data: Data) -> Int? {
     data.withUnsafeBytes { buffer in
       guard let base = buffer.baseAddress, !buffer.isEmpty else { return nil }
-      guard memchr(base, 0, min(buffer.count, 8000)) == nil else { return nil }
+      guard memchr(base, 0, min(buffer.count, GitBinaryRule.checkedByteCount)) == nil else {
+        return nil
+      }
       let newline = Int32(UInt8(ascii: "\n"))
       var count = 0
       var offset = 0

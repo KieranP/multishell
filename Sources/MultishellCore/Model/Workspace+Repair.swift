@@ -23,6 +23,7 @@ extension Workspace {
 
     repairPanes()
     pruneAndReassignSessions()
+    repairFileTabs(worktreeIDs: worktreeIDs)
 
     // A name outliving its worktree returns if one is made at that path
     // again; a blank one draws an empty line over the branch.
@@ -78,6 +79,19 @@ extension Workspace {
     }
   }
 
+  /// Drops a file tab whose worktree went, whose path leaves its worktree, or
+  /// whose id another tab holds; one tab a path, the first kept.
+  private mutating func repairFileTabs(worktreeIDs: Set<Worktree.ID>) {
+    let terminalIDs = Set(tabs.map(\.id))
+    fileTabs.removeAll { tab in
+      !worktreeIDs.contains(tab.worktreeID) || !FileTab.isContained(tab.path)
+        || terminalIDs.contains(tab.id)
+    }
+    fileTabs = fileTabs.uniqued(by: \.id)
+    var seen: Set<[String]> = []
+    fileTabs.removeAll { !seen.insert([$0.worktreeID, $0.path]).inserted }
+  }
+
   /// Puts the groups right once the passes above have settled the tabs. A
   /// missing group loses the group, not the tab: one is a layout.
   private mutating func repairGroups() {
@@ -85,21 +99,26 @@ extension Workspace {
 
     // An empty group draws a strip with no tabs over a pane with no
     // terminal, and nothing else here would take it away.
-    let occupied = Set(tabs.map(\.groupID))
+    let occupied = Set(tabs.map(\.groupID) + fileTabs.map(\.groupID))
     tabGroups.removeAll { !occupied.contains($0.id) }
 
     for index in tabGroups.indices {
       // A width of zero is a group nothing can be laid out in. Decoding
       // makes the same substitution; a half-written save can leave one.
       tabGroups[index].weight = LayoutWeight.usable(tabGroups[index].weight)
-      let tabsHere = tabs(inGroup: tabGroups[index].id)
-      if let shown = tabGroups[index].shownTabID, tabsHere.contains(where: { $0.id == shown }) {
-        continue
-      }
+      let groupID = tabGroups[index].id
+      // An older build's file has no order, so its tabs keep the array's.
+      let live =
+        tabs.filter { $0.groupID == groupID }.map(\.id)
+        + fileTabs.filter { $0.groupID == groupID }.map(\.id)
+      let kept = tabGroups[index].tabOrder.filter(Set(live).contains).uniqued(by: \.self)
+      tabGroups[index].tabOrder = kept + live.filter { !kept.contains($0) }
+      if let shown = tabGroups[index].shownTabID, live.contains(shown) { continue }
       // Any of them will do, nothing on disk saying which the group showed:
       // unlike `settle`, there is no vacated place to hand on.
-      tabGroups[index].shownTabID = tabsHere.last?.id
+      tabGroups[index].shownTabID = tabGroups[index].tabOrder.last
     }
+    alignTabsToGroupOrder()
 
     // An entry with no groups left, or naming another worktree's, hides
     // the strip of the worktree it names.
@@ -117,24 +136,24 @@ extension Workspace {
     let known = tabGroups.keyedByID().mapValues(\.worktreeID)
     var minted: [Worktree.ID: TabGroup.ID] = [:]
 
-    for index in tabs.indices {
-      let tab = tabs[index]
-      guard known[tab.groupID] != tab.worktreeID else { continue }
-
-      if let existing = minted[tab.worktreeID] ?? groups(in: tab.worktreeID).first?.id {
-        tabs[index].groupID = existing
-        continue
-      }
+    func home(forTab id: WorkspaceTab.ID, in worktreeID: Worktree.ID) -> TabGroup.ID {
+      if let existing = minted[worktreeID] ?? groups(in: worktreeID).first?.id { return existing }
       let group = TabGroup(
-        worktreeID: tab.worktreeID,
-        shownTabID: shownTabByWorktree[tab.worktreeID] ?? tab.id,
+        worktreeID: worktreeID,
+        shownTabID: shownTabByWorktree[worktreeID] ?? id,
       )
       tabGroups.append(group)
-      minted[tab.worktreeID] = group.id
-      tabs[index].groupID = group.id
-      if focusedGroupByWorktree[tab.worktreeID] == nil {
-        focusedGroupByWorktree[tab.worktreeID] = group.id
-      }
+      minted[worktreeID] = group.id
+      if focusedGroupByWorktree[worktreeID] == nil { focusedGroupByWorktree[worktreeID] = group.id }
+      return group.id
+    }
+
+    for index in tabs.indices where known[tabs[index].groupID] != tabs[index].worktreeID {
+      tabs[index].groupID = home(forTab: tabs[index].id, in: tabs[index].worktreeID)
+    }
+    for index in fileTabs.indices where known[fileTabs[index].groupID] != fileTabs[index].worktreeID
+    {
+      fileTabs[index].groupID = home(forTab: fileTabs[index].id, in: fileTabs[index].worktreeID)
     }
   }
 }

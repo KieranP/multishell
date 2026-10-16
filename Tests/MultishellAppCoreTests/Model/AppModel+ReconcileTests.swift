@@ -37,6 +37,16 @@ struct AppModelReconcileTests {
     #expect(harness.engine.focused == [tab.focusedSessionID])
   }
 
+  @Test func focusingTheActivePaneHandsTheKeyboardToAFileTabInFront() {
+    let harness = Harness()
+    let file = harness.openFileTab()
+    _ = harness.model.takeFileTabFocusRequest(file.id)
+
+    harness.model.focusActivePane()
+
+    #expect(harness.model.fileTabFocusRequest == file.id)
+  }
+
   @Test func focusingTheActivePaneDoesNothingWhileTheBoardCoversThePanes() {
     let harness = Harness()
     harness.model.select(harness.main)

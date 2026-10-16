@@ -89,10 +89,10 @@ extension AppModel {
     return (id, "")
   }
 
-  /// Nothing running there, no tab yet, and the setting for this reason says
-  /// open one.
+  /// Nothing running there, no tab of either kind yet, and the setting for
+  /// this reason says open one: a worktree holding only file tabs gets no shell.
   func wantsFirstTab(in worktree: Worktree, for reason: TabOpeningReason) -> Bool {
-    !isBusy(worktree.id) && workspace.tabs(in: worktree.id).isEmpty
+    !isBusy(worktree.id) && workspace.workspaceTabCount(in: worktree.id) == 0
       && opensTab(in: worktree, for: reason)
   }
 

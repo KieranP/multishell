@@ -207,7 +207,7 @@ struct AppModelControlTabsTests {
         == .done
     )
 
-    #expect(harness.model.findFieldSessionID == field)
+    #expect(harness.model.findFieldTargetID == field)
     #expect(harness.engine.focused == focusedBefore)
   }
 }

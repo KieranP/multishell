@@ -5,9 +5,9 @@ extension AppModel {
   /// has gone or they sit in different worktrees. A no-op move writes nothing.
   @discardableResult
   func moveTab(
-    _ id: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
-    anchor: TerminalTab.ID,
+    _ id: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
+    anchor: WorkspaceTab.ID,
     takingFocus: Bool = true,
   ) -> Bool {
     guard changesTheStrip(id, placement, anchor) else { return true }
@@ -21,21 +21,21 @@ extension AppModel {
   /// A tab landing in another group always changes something, if only
   /// which group it is in. Inside one group it is a question of order.
   private func changesTheStrip(
-    _ id: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
-    _ anchor: TerminalTab.ID,
+    _ id: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
+    _ anchor: WorkspaceTab.ID,
   ) -> Bool {
     guard let group = workspace.sharedGroup(of: id, and: anchor) else { return true }
     return TabShuffle.reorders(
       id,
       placement,
       of: anchor,
-      in: workspace.tabs(inGroup: group).map(\.id),
+      in: workspace.workspaceTabs(inGroup: group).map(\.id),
     )
   }
 
-  /// A tab dragged onto a worktree's row, shells and all, the destination
-  /// turned to. `false` where the move cannot happen; see tabs-and-groups.md.
+  /// A terminal tab dragged onto a worktree's row, shells and all; `false` where
+  /// it cannot move, a file tab's always. See tabs-and-groups.md.
   @discardableResult
   func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard
@@ -53,22 +53,23 @@ extension AppModel {
   /// Move Tab to New Group: the tab in front of the user gets a group of
   /// its own, to the right of the group it was in.
   public func moveActiveTabToNewGroup() {
-    guard let group = focusedGroup, let tab = workspace.shownTab(ofGroup: group) else { return }
+    guard let group = focusedGroup, let tab = workspace.shownWorkspaceTab(ofGroup: group)
+    else { return }
     moveTab(tab.id, .after, toNewGroupOf: group.id)
   }
 
-  /// Whether Move Tab to New Group can take this tab: a group's only tab
-  /// has no group to leave, and the store refuses it.
-  public func canMoveTabToNewGroup(_ tab: TerminalTab) -> Bool {
-    workspace.tabs(inGroup: tab.groupID).count > 1
+  /// Whether Move Tab to New Group can take a tab in this group: a group's
+  /// only tab, of either kind, has no group to leave, and the store refuses it.
+  public func canMoveTabToNewGroup(from group: TabGroup.ID) -> Bool {
+    workspace.workspaceTabs(inGroup: group).count > 1
   }
 
   /// A tab dropped on the band down a group's edge, or the menu item above.
   /// `false` when nothing moved, so the drag springs back.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
+    _ id: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
     toNewGroupOf group: TabGroup.ID,
   ) -> Bool {
     guard store.moveTab(id, placement, toNewGroupOf: group) != nil else { return false }
@@ -79,7 +80,7 @@ extension AppModel {
   /// A tab dropped on a group's strip clear of its tabs: it lands last
   /// there. A drop on a tab goes through `moveTab(_:_:anchor:)` instead.
   @discardableResult
-  func moveTab(_ id: TerminalTab.ID, toEndOf group: TabGroup.ID) -> Bool {
+  func moveTab(_ id: WorkspaceTab.ID, toEndOf group: TabGroup.ID) -> Bool {
     guard store.moveTab(id, toEndOf: group) else { return false }
     reconcileSessions(takingFocus: true)
     return true

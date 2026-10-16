@@ -20,5 +20,6 @@ extension AppModel {
     let project = store.addProject(at: root)
     await refreshWorktrees(of: project)
     await rearmWatcher()
+    await refreshBadges(ofProject: project.id)
   }
 }

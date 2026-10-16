@@ -21,7 +21,7 @@ struct WorkerChip: View {
     HStack(spacing: 3) {
       WorkerGlyph(metrics: metrics)
       Text("\(workers.chipCount)")
-        .font(.system(size: metrics.badge, weight: .semibold))
+        .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()
     }
     .foregroundStyle(theme.color(for: workers.chipState))

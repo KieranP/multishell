@@ -8,7 +8,10 @@ final class FakePlatform: Platform {
   var isActive = true
   var onDidBecomeActive: (@MainActor () -> Void)?
   var isWorkspaceWindowKey = true
+  var isWorkspaceWindowVisible = true
+  var onWorkspaceWindowDidBecomeVisible: (@MainActor () -> Void)?
   var closedKeyWindows = 0
+  var beeps = 0
   var directoryToChoose: URL?
   var revealed: [URL] = []
   var clipboard: [String] = []
@@ -56,6 +59,14 @@ final class FakePlatform: Platform {
   func chooseDirectory(prompt: String) async -> URL? { directoryToChoose }
   func revealInFileBrowser(_ url: URL) { revealed.append(url) }
   func copyToClipboard(_ text: String) { clipboard.append(text) }
+  func beep() { beeps += 1 }
+  /// A stand-in for the type check: a zero byte anywhere makes it binary.
+  nonisolated func opensAsText(_ file: URL) -> Bool {
+    (try? Data(contentsOf: file)).map { !$0.contains(0) } ?? false
+  }
+  nonisolated func opensAsText(named name: String, startingWith bytes: Data) -> Bool {
+    !bytes.contains(0)
+  }
   nonisolated func moveToTrash(_ url: URL) throws {
     fakeTrash.onMainThread.append(Thread.isMainThread)
     guard let trash = fakeTrash.destination else { throw TrashRefused() }

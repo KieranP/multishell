@@ -16,8 +16,8 @@ settle it; it is ranked by what it would cost if the reasoning is wrong. Whether
 a feature draws and works in ordinary use is checked by hand as it is built, so
 it gets no entry here.
 
-Code references last checked on 2026-10-02 against the uncommitted tree on
-6e6eff2. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
+Code references last checked on 2026-10-16 against the uncommitted tree on
+54276a17. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
 0.155.1, gemini 0.46.0, copilot 1.0.87 and opencode 1.18.30.
 
 | #   | Effect | What                                                                                  |
@@ -26,6 +26,7 @@ Code references last checked on 2026-10-02 against the uncommitted tree on
 | 002 | Medium | [Unconfirmed] A tab started with a command waits for a key after the command exits    |
 | 003 | Low    | [Unconfirmed] A drop landing 250 ms after the button comes up can be refused          |
 | 004 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
+| 005 | UI/UX  | The Files panel has no keyboard route                                                 |
 
 ## Medium
 
@@ -60,7 +61,7 @@ config, once it is decided whether an agent tab should keep its last screen.
 A tab or project drag whose source view was rebuilt or recycled mid-drag never
 hears its drag session end, so `DragRelease.wait` (`DragRelease.swift:8`) polls
 `NSEvent.pressedMouseButtons` every 100 ms and ends the drag 250 ms after the
-button is seen up (`AppModel+TabDrag.swift:30`,
+button is seen up (`AppModel+TabDrag.swift:45`,
 `AppModel+ProjectDrag.swift:35`). A `performDrop` that arrives later than that,
 on a loaded machine, finds no drag in the air: the tab drop is refused and the
 tab springs back, and a project drop reorders nothing. Nobody has timed how late
@@ -79,3 +80,12 @@ rests on its accessor having looked in the bundle's resources since packages
 could carry them, not on a run; the helper comes the same way. Step: run
 `make build` under `DEVELOPER_DIR=/Applications/Xcode_26.0.1.app` on a macos-26
 runner and see `verify_binary` pass for both. Fallback = the newer Xcode.
+
+## UI/UX
+
+### 005. The Files panel has no keyboard route
+
+Nothing moves the keyboard into the panel, so its filter, rows and switch are
+mouse-only, as the sidebar filter is (TODO.md, Keyboard focus). VoiceOver
+reaches each row, which takes its default action. Fix = the keyboard focus
+refinement, with an `AppShortcut` for the panel itself.

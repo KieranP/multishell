@@ -1,7 +1,21 @@
-/// A worktree's changed lines, and the changed files with no line to show:
-/// a binary file, a mode change, a pure rename, an unreadable file.
+/// Changed lines summed over files, and the changed files with no line to
+/// show: a binary file, a mode change, an unreadable file.
 struct LineCounts: Equatable, Sendable {
-  var insertions = 0
-  var deletions = 0
-  var unscoredFiles = 0
+  private(set) var insertions = 0
+  private(set) var deletions = 0
+  private(set) var unscoredFiles = 0
+
+  init(summing lines: some Sequence<StatusChange.Lines>) {
+    for line in lines {
+      switch line {
+      case .counted(let lineInsertions, let lineDeletions):
+        insertions += lineInsertions
+        deletions += lineDeletions
+
+      case .notCounted: break
+
+      case .unscored: unscoredFiles += 1
+      }
+    }
+  }
 }

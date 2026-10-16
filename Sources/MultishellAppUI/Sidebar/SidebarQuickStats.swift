@@ -56,10 +56,10 @@ struct SidebarQuickStats: View {
   ) -> some View {
     VStack(alignment: .leading, spacing: 1) {
       Text(title)
-        .font(.system(size: metrics.small, weight: .semibold))
+        .font(metrics.font(size: metrics.small, weight: .semibold))
         .foregroundStyle(theme.textTertiary)
       Text(value)
-        .font(.system(size: metrics.badge, weight: .semibold))
+        .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()
         .foregroundStyle(valueColor)
         .lineLimit(1)

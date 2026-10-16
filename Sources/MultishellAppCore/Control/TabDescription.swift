@@ -21,13 +21,18 @@ struct TabDescription: Encodable, Equatable {
     let height: Double
   }
 
-  let id: TerminalTab.ID
+  let id: WorkspaceTab.ID
+  let kind: TabKind
   /// Its worktree's `ControlID`.
   let worktree: String
   let title: String
   /// On screen in its group.
   let isShown: Bool
-  let focusedPane: TerminalSession.ID
+  /// A file tab's, relative to its worktree; it has no panes or layout.
+  let path: String?
+  /// A file tab whose file has gone, its title struck through.
+  let isDeleted: Bool?
+  let focusedPane: TerminalSession.ID?
   let state: SessionState?
-  let layout: Layout
+  let layout: Layout?
 }

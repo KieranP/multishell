@@ -164,4 +164,41 @@ struct AppModelControlGlobalSettingsTests {
     #expect(reply == .refused(.invalidValue(key: "themeID", value: "")))
     #expect(harness.model.workspace.appearance.themeID == before)
   }
+
+  @Test func theFileFontIsWrittenFromTheCommandLineAsTheTerminalsIs() async {
+    let harness = Harness()
+
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fileFontName", value: "Menloo"))
+        == .refused(.invalidValue(key: "fileFontName", value: "Menloo"))
+    )
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fileFontName", value: "Menlo"))
+        == .done
+    )
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fileFontSize", value: "40"))
+        == .refused(.invalidValue(key: "fileFontSize", value: "40"))
+    )
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "fileFontSize", value: "16"))
+        == .done
+    )
+    #expect(harness.model.workspace.appearance.fileFontName == "Menlo")
+    #expect(harness.model.workspace.appearance.fileFontSize == 16)
+  }
+
+  @Test func theUIFontFamilyIsWrittenFromTheCommandLine() async {
+    let harness = Harness()
+
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "uiFontName", value: "Menloo"))
+        == .refused(.invalidValue(key: "uiFontName", value: "Menloo"))
+    )
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "uiFontName", value: "Menlo"))
+        == .done
+    )
+    #expect(harness.model.workspace.appearance.uiFontName == "Menlo")
+  }
 }

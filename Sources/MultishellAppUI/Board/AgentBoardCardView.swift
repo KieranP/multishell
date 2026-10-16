@@ -52,7 +52,7 @@ struct AgentBoardCardView: View {
         PanePositionBadge(number: position.number, metrics: metrics, theme: theme)
       }
       Text(card.title)
-        .font(.system(size: metrics.secondary))
+        .font(metrics.font(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
       Spacer(minLength: 6)
@@ -89,9 +89,9 @@ struct AgentBoardCardView: View {
       )
       if let status = WorktreeStatus.badged(card.status) {
         Spacer(minLength: 6)
-        GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textTertiary)
+        GitStatusBadge(status: status, theme: theme, metrics: metrics, tint: theme.textTertiary)
       }
     }
-    .font(.system(size: metrics.badge))
+    .font(metrics.font(size: metrics.badge))
   }
 }

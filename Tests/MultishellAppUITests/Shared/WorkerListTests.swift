@@ -12,7 +12,7 @@ struct WorkerListTests {
     let list = WorkerList(
       workers: [worker],
       theme: .multishellDark,
-      metrics: UIMetrics(fontSize: 13),
+      metrics: UIMetrics(fontSize: 13, fontFamily: nil),
     )
     return NSHostingView(rootView: list).fittingSize.width
   }

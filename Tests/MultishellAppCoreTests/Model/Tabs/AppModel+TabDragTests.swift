@@ -237,7 +237,7 @@ struct AppModelTabDragTests {
 
     #expect(harness.model.workspace.tab(moving.id)?.groupID == groups[1].id)
     #expect(
-      !harness.model.workspace.tabs(inGroup: groups[0].id).contains { $0.id == moving.id },
+      !harness.model.workspace.workspaceTabs(inGroup: groups[0].id).contains { $0.id == moving.id },
       "it stays out of the group it was dragged over",
     )
   }

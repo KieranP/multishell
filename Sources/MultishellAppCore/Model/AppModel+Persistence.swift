@@ -8,6 +8,7 @@ extension AppModel {
     pendingSave?.cancel()
     pendingSave = nil
     guard !isYieldingToRunningInstance else { return }
+    store.setFileTabScrolls(fileTabScrolls)
     recordSaveOutcome(Result { try store.save() })
   }
 
