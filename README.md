@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="Docs/screenshot-light.png" width="48%" alt="Multishell in light mode: projects with their own icons and worktrees in the sidebar, and two groups of tabs side by side, Claude Code split above a shell on the left and a second Claude Code on the right">
+  <img src="Docs/screenshot-light.png" width="48%" alt="Multishell in light mode: projects with their own icons and worktrees in the sidebar, and two groups of tabs side by side, Claude Code split above a shell on the left, a second Claude Code on the right, and the Files panel listing the worktree's changes">
   &nbsp;&nbsp;
   <img src="Docs/screenshot-dark.png" width="48%" alt="The same workspace in dark mode">
 </p>
