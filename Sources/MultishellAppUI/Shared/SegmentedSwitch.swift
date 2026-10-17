@@ -8,8 +8,7 @@ struct SegmentedSwitch<Value: Hashable>: View {
   let label: String
   let options: [(title: String, value: Value)]
   @Binding var selection: Value
-  let theme: Theme
-  let section: InterfaceSection
+  let palette: AreaPalette
   let metrics: UIMetrics
 
   var body: some View {
@@ -20,7 +19,7 @@ struct SegmentedSwitch<Value: Hashable>: View {
         Button {
           selection = option.value
         } label: {
-          SegmentFace(isSelected: isSelected, theme: theme, section: section, metrics: metrics) {
+          SegmentFace(isSelected: isSelected, palette: palette, metrics: metrics) {
             Text(option.title)
           }
         }
@@ -28,7 +27,7 @@ struct SegmentedSwitch<Value: Hashable>: View {
         .selectableButtonTraits(isSelected: isSelected)
       }
     }
-    .segmentWell(AreaPalette(theme, section))
+    .segmentWell(palette)
     .accessibilityElement(children: .contain)
     .accessibilityLabel(label)
   }

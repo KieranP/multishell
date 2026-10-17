@@ -15,9 +15,6 @@ public struct PresentedError: Identifiable {
   public internal(set) var retry: Retry?
   /// Asked as a destructive choice beside Cancel, where any other is dismissed.
   var isRetryable: Bool { retry != nil }
-  /// The launch alert about a missing git, which finding git on the login
-  /// shell's PATH takes down; nothing else is dismissed by the model.
-  let saysGitIsMissing: Bool
   /// Read from the task it is made in: an alert another's click raised meanwhile
   /// is not a command line request's to answer with or take down.
   let raisingRequestID = ControlRequestScope.id
@@ -25,7 +22,6 @@ public struct PresentedError: Identifiable {
   init(title: String, message: String) {
     self.title = title
     self.message = message
-    saysGitIsMissing = false
   }
 
   init(_ error: any Error) {
@@ -35,7 +31,6 @@ public struct PresentedError: Identifiable {
       ?? (t("error.something-went-wrong"), Self.describe(error))
     title = alert.title
     message = alert.message
-    saysGitIsMissing = error is GitUnavailable
   }
 
   /// What the cause said, a hook's startup noise cut away, then how it ended.

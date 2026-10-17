@@ -26,7 +26,7 @@ struct FileTabFace: View {
         .font(
           model.metrics.font(size: model.metrics.secondary, weight: isShown ? .medium : .regular)
         )
-        .strikethrough(model.fileIsGone(of: tab.id))
+        .strikethrough(model.isFileGone(of: tab.id))
         .foregroundStyle(textColor)
         .lineLimit(1)
         .truncationMode(.head)

@@ -10,11 +10,6 @@ import Testing
 struct DiffDocumentRepresentableTests {
   private static let text = DiffDocumentFixture.contextLines((1...400).map { "line \($0)" })
 
-  private static func documentView(in view: NSView) -> DiffDocumentView? {
-    if let document = view as? DiffDocumentView { return document }
-    return view.subviews.lazy.compactMap(documentView(in:)).first
-  }
-
   @Test func aViewRebuiltWithItsFindBarUpReturnsToItsScrollWithItsMatchStillSelected() throws {
     let harness = ModelHarness()
     let tabID = UUID()
@@ -41,11 +36,11 @@ struct DiffDocumentRepresentableTests {
     defer { withExtendedLifetime(window) {} }
     host.layoutSubtreeIfNeeded()
     host.display()
-    let topRow = Self.documentView(in: host)?.topRow
+    let topRow = host.descendants(of: DiffDocumentView.self).first?.topRow
 
     let row = try #require(topRow)
     #expect(row.rounded() == 119, "top row \(row)")
-    let textView = try #require(Self.documentView(in: host)?.textView)
+    let textView = try #require(host.descendants(of: DiffDocumentView.self).first?.textView)
     #expect(textView.selectedRange() == NSRange(location: match.lowerBound, length: match.count))
   }
 
@@ -76,7 +71,7 @@ struct DiffDocumentRepresentableTests {
     host.layoutSubtreeIfNeeded()
     host.display()
 
-    let row = try #require(Self.documentView(in: host)?.topRow)
+    let row = try #require(host.descendants(of: DiffDocumentView.self).first?.topRow)
     #expect(row > 250, "top row \(row)")
   }
 }

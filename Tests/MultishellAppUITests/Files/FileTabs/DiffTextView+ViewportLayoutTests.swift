@@ -34,7 +34,7 @@ struct DiffTextViewViewportLayoutTests {
     let rowDelegate = try #require(layoutManager.delegate as? FixedRowLayoutDelegate)
     view.scroll(to: NSPoint(x: 0, y: view.textView.frame.height))
     view.layoutSubtreeIfNeeded()
-    let counter = CountingLayoutDelegate(wrapping: rowDelegate)
+    let counter = FakeTextLayoutManagerDelegate(wrapping: rowDelegate)
     layoutManager.delegate = counter
     defer { layoutManager.delegate = rowDelegate }
 

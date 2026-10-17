@@ -6,7 +6,7 @@ import Testing
 @Suite
 struct DiffDisplayTextSameLineTests {
   @Test func aMatchOnALineSplitsRightSideLacksCarriesToTheNextLineItHas() throws {
-    let rows = ReplacedBlockFixture.rows(before: 50, removed: 1, added: 1, after: 49)
+    let rows = FileTabRows.replacedBlock(before: 50, removed: 1, added: 1, after: 49)
     let unified = rows.displayText
     let split = try #require(rows.split)
     let removedRow = try #require(unified.lines.firstIndex { $0.kind == .removed })

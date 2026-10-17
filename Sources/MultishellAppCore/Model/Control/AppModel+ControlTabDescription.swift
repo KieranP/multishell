@@ -16,7 +16,7 @@ extension AppModel {
           title: title(of: file),
           isShown: isShown,
           path: file.path,
-          isDeleted: fileIsGone(of: file.id),
+          isDeleted: isFileGone(of: file.id),
           focusedPane: nil,
           state: nil,
           layout: nil,

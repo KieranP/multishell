@@ -22,7 +22,7 @@ extension AppModel {
   }
 
   /// Struck through in the strip, the bar and the command line.
-  public func fileIsGone(of id: FileTab.ID) -> Bool {
+  public func isFileGone(of id: FileTab.ID) -> Bool {
     fileTabReadings[id]?.isFileGone == true
   }
 

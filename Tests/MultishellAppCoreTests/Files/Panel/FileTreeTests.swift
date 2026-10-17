@@ -169,10 +169,12 @@ struct FileTreeTests {
   }
 
   @Test func anIgnoredOrUnopenableNameIsFaintAnUnchangedFileQuietAndAChangeStrong() {
-    let rows = FileTree(FileTreeSources(tracked: Self.tracked, status: Self.status(Self.changes)))
-      .rows(state: FilesPanelState())
+    var sources = FileTreeSources(tracked: Self.tracked, status: Self.status(Self.changes))
+    sources.ignoredEntries = ["debug.log"]
+    let rows = FileTree(sources).rows(state: FilesPanelState())
     let byName = Dictionary(rows.map { ($0.name, $0.emphasis) }, uniquingKeysWith: { a, _ in a })
 
+    #expect(byName["debug.log"] == .faint)
     #expect(byName["README.md"] == .quiet)
     #expect(byName["new.txt"] == .strong)
     #expect(byName["Sources"] == .strong)

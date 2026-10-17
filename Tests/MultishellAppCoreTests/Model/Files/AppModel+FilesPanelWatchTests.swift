@@ -15,18 +15,15 @@ struct AppModelFilesPanelWatchTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
     harness.model.setShowsFilesPanel(true)
-    try await waitUntil { harness.model.pendingIgnoredEntriesReads[main.id] == nil }
+    try await waitUntil { !harness.model.ignoredEntriesReads.isRunning(main.id) }
     let gitDirectory = try #require(harness.model.commonGitDirectories[main.projectID])
-    let targets = FileChangeTargets(
-      changed: [gitDirectory.appending(path: "index"), main.path.appending(path: "build")],
-      projects: harness.model.workspace.projects,
-      gitDirectories: harness.model.commonGitDirectories,
-      worktrees: harness.model.workspace.worktrees,
-    )
+    let targets = harness.model.fileChangeTargets([
+      gitDirectory.appending(path: "index"), main.path.appending(path: "build"),
+    ])
 
     harness.model.noteFilesPanelChanges(targets)
 
-    #expect(harness.model.pendingIgnoredEntriesReads[main.id] != nil)
+    #expect(harness.model.ignoredEntriesReads.isRunning(main.id))
   }
 
   @Test func aBatchNamingTheWholeWorktreeRereadsItsOpenIgnoredFolder() async throws {
@@ -35,12 +32,7 @@ struct AppModelFilesPanelWatchTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     let leftPad = try await harness.openIgnoredFolder(in: main)
     try FileManager.default.removeItem(at: leftPad)
-    let targets = FileChangeTargets(
-      changed: [main.path],
-      projects: harness.model.workspace.projects,
-      gitDirectories: harness.model.commonGitDirectories,
-      worktrees: harness.model.workspace.worktrees,
-    )
+    let targets = harness.model.fileChangeTargets([main.path])
     #expect(targets.fileChangesByWorktree[main.id] == [""])
 
     harness.model.noteFilesPanelChanges(targets)
@@ -65,12 +57,7 @@ struct AppModelFilesPanelWatchTests {
     }
     #expect(lists())
     try FileManager.default.removeItem(at: lock)
-    let targets = FileChangeTargets(
-      changed: [lock],
-      projects: harness.model.workspace.projects,
-      gitDirectories: harness.model.commonGitDirectories,
-      worktrees: harness.model.workspace.worktrees,
-    )
+    let targets = harness.model.fileChangeTargets([lock])
     #expect(targets.fileChangesByWorktree[main.id] == ["node_modules/yarn.lock"])
 
     harness.model.noteFilesPanelChanges(targets)

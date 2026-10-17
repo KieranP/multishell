@@ -28,12 +28,8 @@ struct WorktreeGitStatusTests {
     }
     let before = try indexModified()
     try await Task.sleep(for: .milliseconds(50))
-    try "changed\n".write(
-      to: fixture.project.path.appendingPathComponent("README.md"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    let main = try await fixture.coordinator.git.list(fixture.project)[0]
+    try fixture.write("changed\n", to: "README.md")
+    let main = try await fixture.worktree(onBranch: "main")
 
     let status = try await WorktreeGit(runner: fixture.runner).status(of: main)
 
@@ -62,12 +58,8 @@ struct WorktreeGitStatusTests {
     }
     let before = try indexInode()
     try Scratch.touch(touched)
-    try "changed\n".write(
-      to: path.appendingPathComponent("README.md"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    let main = try await fixture.coordinator.git.list(fixture.project)[0]
+    try fixture.write("changed\n", to: "README.md")
+    let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
       let status = try await WorktreeGit(runner: fixture.runner).status(
@@ -89,7 +81,7 @@ struct WorktreeGitStatusTests {
     _ = try await fixture.runner.run(["add", "a.txt"], in: path)
     try "one\ntwo\nthree\n".write(to: file, atomically: true, encoding: .utf8)
     let git = WorktreeGit(runner: fixture.runner)
-    let main = try #require(try await git.list(fixture.project).first)
+    let main = try await fixture.worktree(onBranch: "main")
 
     #expect(try await git.status(of: main, counting: .stagedAndUnstaged).insertions == 3)
     #expect(try await git.status(of: main, counting: .stagedOnly).insertions == 1)
@@ -119,14 +111,10 @@ struct WorktreeGitStatusTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     try await fixture.commit("base", files: ["edited.txt": Self.editBefore])
-    try Self.editAfter.write(
-      to: path.appendingPathComponent("edited.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write(Self.editAfter, to: "edited.txt")
     _ = try await fixture.runner.run(["add", "edited.txt"], in: path)
     let git = WorktreeGit(runner: fixture.runner)
-    let main = try #require(try await git.list(fixture.project).first)
+    let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
       let myers = try await git.status(of: main, counting: indicator, diffAlgorithm: .myers)
@@ -148,15 +136,11 @@ struct WorktreeGitStatusTests {
       "base",
       files: ["edited.txt": Self.editBefore, "moved.txt": "one\ntwo\n"],
     )
-    try Self.editAfter.write(
-      to: path.appendingPathComponent("edited.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write(Self.editAfter, to: "edited.txt")
     _ = try await fixture.runner.run(["add", "edited.txt"], in: path)
     _ = try await fixture.runner.run(["mv", "moved.txt", "renamed.txt"], in: path)
     let git = WorktreeGit(runner: fixture.runner)
-    let main = try #require(try await git.list(fixture.project).first)
+    let main = try await fixture.worktree(onBranch: "main")
     var plain: [GitStatusIndicator: WorktreeStatus] = [:]
     for indicator in GitStatusIndicator.allCases {
       plain[indicator] = try await git.status(of: main, counting: indicator)
@@ -181,22 +165,13 @@ struct WorktreeGitStatusTests {
   @Test func aChangedFileAndANewOneAreCountedApartAndTheStatusNamesTheBranch() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let project = fixture.project
     let worktreeGit = WorktreeGit(runner: fixture.runner)
-    let main = try await worktreeGit.list(project)[0]
+    let main = try await fixture.worktree(onBranch: "main")
 
     #expect(try await worktreeGit.status(of: main).isCleanAndInSync)
 
-    try "changed\n".write(
-      to: project.path.appendingPathComponent("README.md"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    try "new\n".write(
-      to: project.path.appendingPathComponent("scratch.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("changed\n", to: "README.md")
+    try fixture.write("new\n", to: "scratch.txt")
     let dirty = try await worktreeGit.status(of: main)
 
     #expect(dirty.unstaged == 1)
@@ -210,21 +185,13 @@ struct WorktreeGitStatusTests {
     defer { fixture.tearDown() }
     let worktreeGit = WorktreeGit(runner: fixture.runner)
     try await fixture.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
-    let main = try await worktreeGit.list(fixture.project)[0]
+    let main = try await fixture.worktree(onBranch: "main")
 
     let clean = try await worktreeGit.status(of: main)
     #expect(clean.insertions == 0 && clean.deletions == 0)
 
-    try "a\nx\ny\nz\n".write(
-      to: fixture.project.path.appendingPathComponent("counted.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    try "untracked\n".write(
-      to: fixture.project.path.appendingPathComponent("loose.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("a\nx\ny\nz\n", to: "counted.txt")
+    try fixture.write("untracked\n", to: "loose.txt")
     let dirty = try await worktreeGit.status(of: main)
 
     #expect(dirty.insertions == 4)
@@ -238,7 +205,7 @@ struct WorktreeGitStatusTests {
     let worktreeGit = WorktreeGit(runner: fixture.runner)
     let script = fixture.project.path.appendingPathComponent("run.sh")
     try await fixture.commit("seed", file: "run.sh", content: "echo hi\n")
-    let main = try await worktreeGit.list(fixture.project)[0]
+    let main = try await fixture.worktree(onBranch: "main")
 
     try FileManager.default.setAttributes(
       [.posixPermissions: 0o755],
@@ -261,19 +228,9 @@ struct WorktreeGitStatusTests {
     defer { fixture.tearDown() }
     let worktreeGit = WorktreeGit(runner: fixture.runner)
     try await fixture.commit("seed", file: "counted.txt", content: "a\n")
-    let main = try await worktreeGit.list(fixture.project)[0]
-    let fresh = fixture.project.path.appendingPathComponent("fresh", isDirectory: true)
-    try FileManager.default.createDirectory(at: fresh, withIntermediateDirectories: true)
-    try "a\nb\n".write(
-      to: fresh.appendingPathComponent("one.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    try "c\nd\n".write(
-      to: fresh.appendingPathComponent("two.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    let main = try await fixture.worktree(onBranch: "main")
+    try fixture.write("a\nb\n", to: "fresh/one.txt")
+    try fixture.write("c\nd\n", to: "fresh/two.txt")
 
     let status = try await worktreeGit.status(of: main)
 
@@ -293,7 +250,7 @@ struct WorktreeGitStatusTests {
     try await fixture.commitOnBranch("other", file: "f.txt", content: "x\nb\n", message: "theirs")
     try await fixture.commit("mine", file: "f.txt", content: "y\nb\n")
     _ = try? await fixture.runner.run(["merge", "other"], in: fixture.project.path)
-    let main = try await worktreeGit.list(fixture.project)[0]
+    let main = try await fixture.worktree(onBranch: "main")
 
     let staged = try await worktreeGit.status(of: main, counting: .stagedOnly)
 
@@ -306,18 +263,10 @@ struct WorktreeGitStatusTests {
     defer { fixture.tearDown() }
     let worktreeGit = WorktreeGit(runner: fixture.runner)
     try await fixture.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
-    let main = try await worktreeGit.list(fixture.project)[0]
+    let main = try await fixture.worktree(onBranch: "main")
 
-    try "a\nx\ny\nz\n".write(
-      to: fixture.project.path.appendingPathComponent("counted.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    try "untracked\n".write(
-      to: fixture.project.path.appendingPathComponent("loose.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("a\nx\ny\nz\n", to: "counted.txt")
+    try fixture.write("untracked\n", to: "loose.txt")
 
     let beforeStaging = try await worktreeGit.status(of: main, counting: .stagedOnly)
     #expect(

@@ -13,8 +13,7 @@ extension WorktreeCoordinator {
     return BranchScan(refs: refs, defaultBranchOverride: override)
   }
 
-  public func deleteBranch(_ branch: String, in project: Project, force: Bool = false) async throws
-  {
+  public func deleteBranch(_ branch: String, in project: Project, force: Bool) async throws {
     do {
       try await git.deleteBranch(branch, in: project, force: force)
     } catch {

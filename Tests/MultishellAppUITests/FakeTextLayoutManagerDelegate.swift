@@ -4,7 +4,7 @@ import AppKit
 
 /// Stands in for a text view's layout delegate, counting the rows TextKit lays out.
 @MainActor
-final class CountingLayoutDelegate: NSObject, @MainActor NSTextLayoutManagerDelegate {
+final class FakeTextLayoutManagerDelegate: NSObject, @MainActor NSTextLayoutManagerDelegate {
   private(set) var rowsMade = 0
   private let wrapped: FixedRowLayoutDelegate
 

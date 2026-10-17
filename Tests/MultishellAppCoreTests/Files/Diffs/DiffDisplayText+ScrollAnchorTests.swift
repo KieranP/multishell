@@ -5,7 +5,7 @@ import Testing
 
 @Suite
 struct DiffDisplayTextScrollAnchorTests {
-  private static let rows = ReplacedBlockFixture.rows(
+  private static let rows = FileTabRows.replacedBlock(
     before: 0,
     removed: 100,
     added: 100,
@@ -47,7 +47,7 @@ struct DiffDisplayTextScrollAnchorTests {
   }
 
   @Test func aTopRowOnlyHEADHasIsHeldByHEADsLineAndFoundOnSplitsLeft() throws {
-    let rows = ReplacedBlockFixture.rows(before: 200, removed: 100, added: 100, after: 0)
+    let rows = FileTabRows.replacedBlock(before: 200, removed: 100, added: 100, after: 0)
     let unified = rows.displayText
     let split = try #require(rows.split).committed
 

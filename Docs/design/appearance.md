@@ -8,9 +8,9 @@
   likes and exposes nothing.
 - **Cost of that**: sidebar keyboard navigation has to be built, and each
   hand-drawn row needs an accessibility label reading its glyphs in order.
-- **Both headers stand in for the title bar at the metric's height**, the band a
-  hidden title bar keeps. Anything shorter, or anything but a header reaching
-  into that band, and AppKit paints over it.
+- **Every header along the top stands in for the title bar at the metric's
+  height**, the band a hidden title bar keeps. Anything shorter, or anything but
+  a header reaching into that band, and AppKit paints over it.
 - **Nothing collapses the sidebar**, the traffic lights needing something under
   them.
 - **Row heights are asked of one place**, by the row that draws it and by the

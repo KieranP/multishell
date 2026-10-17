@@ -1,6 +1,6 @@
 import Testing
 
-@testable import MultishellAppUI
+@testable import MultishellAppCore
 
 @Suite
 struct FindMatchesShownTests {

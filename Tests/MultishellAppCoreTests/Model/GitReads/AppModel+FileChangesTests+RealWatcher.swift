@@ -14,6 +14,7 @@ extension AppModelFileChangesTests {
       projects: harness.model.workspace.projects,
       gitDirectories: [harness.project.id: try common(of: harness)],
       worktrees: harness.model.workspace.worktrees,
+      themesDirectory: harness.model.themesDirectory,
     )
   }
 

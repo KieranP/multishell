@@ -22,8 +22,7 @@ struct FilesPanelHeader: View {
           get: { model.filesPanelState(of: worktreeID).mode },
           set: { model.setFilesPanelMode($0) },
         ),
-        theme: theme,
-        section: .header,
+        palette: theme.header,
         metrics: metrics,
       )
     }

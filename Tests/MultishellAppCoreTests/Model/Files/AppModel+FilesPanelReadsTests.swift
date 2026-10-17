@@ -78,6 +78,59 @@ struct AppModelFilesPanelReadsTests {
     #expect(!harness.listsLeftPad(in: main))
   }
 
+  @Test func submoduleReadsAskedForWhileOneRunsWaitForIt() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let git = try #require(harness.model.coordinator?.git)
+    git.runLog.setRecording(true)
+    defer { git.runLog.setRecording(false) }
+    _ = git.runLog.drain()
+
+    for _ in 0..<5 { harness.model.scheduleSubmoduleRead("src", in: main.id) }
+
+    try await waitUntil { harness.model.submoduleReadings[main.id]?["src"] != nil }
+    #expect(git.runLog.drain().startedCount == 1)
+  }
+
+  @Test func aFolderOpenedJustBeforeThePanelShutIsReadWhenItOpensAgain() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let row = try await harness.ignoredFolderRow(in: main)
+
+    harness.model.toggleFolder(row, in: main.id)
+    harness.model.setShowsFilesPanel(false)
+    harness.model.setShowsFilesPanel(true)
+
+    try await waitUntil { harness.listsLeftPad(in: main) }
+    #expect(harness.listsLeftPad(in: main))
+  }
+
+  @Test func aFolderReadQueuedBeforeGitStopsIgnoringItLeavesItUngreyed() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    _ = try await harness.openIgnoredFolder(in: main)
+    try await waitUntil { !harness.model.ignoredEntriesReads.isRunning(main.id) }
+    let read = PanelFolderRead(kind: .ignoredFolder, path: "node_modules", worktreeID: main.id)
+    harness.model.scheduleIgnoredFolderRead("node_modules", in: main.id)
+    harness.model.scheduleIgnoredFolderRead("node_modules", in: main.id)
+
+    try "".write(
+      to: main.path.appending(path: ".git/info/exclude"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    harness.model.scheduleIgnoredEntriesRead(of: main.id)
+    try await waitUntil {
+      harness.model.ignoredEntries[main.id]?.contains("node_modules/") == false
+    }
+    try await waitUntil { !harness.model.panelFolderReads.isRunning(read) }
+
+    #expect(harness.model.ignoredFolderEntries[main.id]?["node_modules"] == nil)
+  }
+
   @Test func aFolderGitStopsIgnoringListsItsFilesUngreyed() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

@@ -26,7 +26,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public internal(set) var insertions = 0
   public internal(set) var deletions = 0
   /// Files that changed with no line to show for it: a binary file, a mode
-  /// change, a rename, an untracked file too big or too odd to read.
+  /// change, an untracked file too big or too odd to read.
   public internal(set) var unscoredFiles = 0
 
   /// The branch git reports, or nil when detached. Compared against the

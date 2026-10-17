@@ -796,8 +796,8 @@ command line's requests on the same socket. Newest at the bottom.
   work is background work, which no interrupt ends. Esc on the agent sends no
   hook and ends none of its background work; without this rule, the first prompt
   after it dropped every worker and shell, no Stop having seen them out.
-- **Five captured Claude runs replay every payload through the helper and the
-  roster**, in the `claudesCaptured` tests of
+- **Five captured Claude runs replay every payload through Claude's hook
+  integration and the roster**, in the `claudesCaptured` tests of
   `SessionStatesTests+ClaudeCapture.swift` (develop/tests.md).
 - **A start for a worker whose `meta.json` exists is a resume**, Claude starting
   a worker again under its id after a SendMessage, not a second worker under one

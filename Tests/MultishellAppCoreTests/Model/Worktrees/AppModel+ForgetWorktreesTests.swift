@@ -11,14 +11,18 @@ struct AppModelForgetWorktreesTests {
     let id = harness.main.id
     harness.model.trackedFiles[id] = .empty
     harness.model.ignoredEntries[id] = ["node_modules/"]
-    harness.model.ignoredEntriesAskedAgain.insert(id)
+    harness.model.ignoredEntriesReads.start(id) { Task {} }
+    harness.model.ignoredEntriesReads.start(id) { Task {} }
     harness.model.setFilesPanelFilterText("src", in: id)
 
     harness.model.forgetWorktrees([id])
 
     #expect(harness.model.trackedFiles[id] == nil)
     #expect(harness.model.ignoredEntries[id] == nil)
-    #expect(!harness.model.ignoredEntriesAskedAgain.contains(id))
+    #expect(!harness.model.ignoredEntriesReads.isRunning(id))
+    harness.model.ignoredEntriesReads.start(id) { Task {} }
+    let isAskedAgain = harness.model.ignoredEntriesReads.finish(id)
+    #expect(!isAskedAgain)
     #expect(harness.model.filesPanelState(of: id).filterText.isEmpty)
   }
 }

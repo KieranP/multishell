@@ -8,6 +8,7 @@ import Testing
 struct FileChangeTargetsTests {
   private let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
   private var common: URL { URL(fileURLWithPath: "/repos/demo/.git") }
+  private var themes: URL { URL(fileURLWithPath: "/support/themes") }
   private var main: Worktree {
     Worktree(
       path: project.path,
@@ -32,6 +33,7 @@ struct FileChangeTargetsTests {
       projects: [project],
       gitDirectories: [project.id: common],
       worktrees: [main, nested],
+      themesDirectory: themes,
     )
   }
 
@@ -99,6 +101,7 @@ struct FileChangeTargetsTests {
           outer.id: URL(fileURLWithPath: "/repos/outer\(index)/.git"), inner.id: innerCommon,
         ],
         worktrees: [],
+        themesDirectory: themes,
       )
 
       #expect(found.projectsWithGitChanges == [inner.id])
@@ -127,10 +130,27 @@ struct FileChangeTargetsTests {
       projects: [bareProject],
       gitDirectories: [bareProject.id: bareProject.path],
       worktrees: [bare, inside],
+      themesDirectory: themes,
     )
 
     #expect(Set(found.fileChangesByWorktree.keys) == [inside.id])
     #expect(found.projectsWithGitChanges.isEmpty)
+  }
+
+  @Test func aChangeUnderTheThemesFolderIsAThemeChangeAndNoProjects() {
+    let found = targets(["/support/themes/dusk.json"])
+
+    #expect(found.hasThemeChanges)
+    #expect(found.projectsWithGitDirectoryChanges.isEmpty)
+    #expect(!targets(["/repos/demo/README.md"]).hasThemeChanges)
+  }
+
+  @Test func anyChangeInTheGitDirectoryScratchIncludedMayMoveItsRecords() {
+    let found = targets(["/repos/demo/.git/objects/ab", "/repos/demo/.git/index.lock"])
+
+    #expect(found.projectsWithGitChanges.isEmpty)
+    #expect(found.projectsWithGitDirectoryChanges == [project.id])
+    #expect(targets(["/repos/demo/README.md"]).projectsWithGitDirectoryChanges.isEmpty)
   }
 
   @Test func theMainWorktreesOwnConfigIsTheWholeProjects() {

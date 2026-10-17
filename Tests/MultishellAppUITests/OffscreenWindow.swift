@@ -40,6 +40,29 @@ enum OffscreenWindow {
     return bitmap
   }
 
+  /// The background a text view draws, at one pixel a point, or `nil` where AppKit gives no bitmap.
+  static func backgroundPixels(of view: NSTextView) -> NSBitmapImageRep? {
+    guard
+      let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: Int(view.bounds.width),
+        pixelsHigh: Int(view.bounds.height),
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0,
+      )
+    else { return nil }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+    view.drawBackground(in: view.bounds)
+    NSGraphicsContext.restoreGraphicsState()
+    return bitmap
+  }
+
   /// What `content` draws hosted at `size`, in a window held for the read.
   static func pixels(ofHosted content: some View, size: CGSize) -> NSBitmapImageRep? {
     let host = NSHostingView(rootView: content)

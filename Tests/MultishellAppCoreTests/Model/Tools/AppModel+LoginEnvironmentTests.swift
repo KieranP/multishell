@@ -9,6 +9,30 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelLoginEnvironmentTests {
+  @Test func aGitMissingFromLaunchsPathRaisesNoAlertBeforeTheLoginShellIsAsked() {
+    let harness = Harness()
+
+    #expect(harness.model.presentedError == nil)
+  }
+
+  @Test func aGitMissingFromTheLoginShellsPathTooIsSaidOnceThatPathIsSearched() async {
+    let harness = Harness()
+
+    await harness.model.refreshLoginEnvironment()
+
+    #expect(harness.model.presentedError?.title == PresentedError(GitUnavailable()).title)
+  }
+
+  @Test func aGitFoundOnTheLoginShellsPathSaysNothingOfGitMissing() async throws {
+    let harness = Harness()
+    try harness.installOnLoginPath("git")
+
+    await harness.model.refreshLoginEnvironment()
+
+    #expect(harness.model.coordinator != nil)
+    #expect(harness.model.presentedError?.title != PresentedError(GitUnavailable()).title)
+  }
+
   @Test func theAgentPathNoteNamesWhereThePathCameFrom() {
     let harness = Harness()
     #expect(harness.model.agentPathInfo == t("agents.path-asking"))

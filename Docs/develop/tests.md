@@ -452,8 +452,8 @@ rule holds is in `Docs/design/`.
   ProcessStopperTests stages the race rather than timing it, with a perl child
   that blocks SIGHUP.
 - **A row TextKit 2 lays out away from where its number says**:
-  DiffDocumentViewTests and SplitDiffDocumentViewTests, 10,750 rows jumped to
-  from the end, the only check on an override Apple does not document
+  DiffDocumentViewTests and SplitDiffDocumentViewTests, over 10,000 rows jumped
+  to from the end, the only check on an override Apple does not document
   (design/files.md). **A file tab painting outside its frame**:
   DiffDocumentViewTests+Clipping, by pixels.
 - **A state file with file tabs read by the build before them keeps this build's

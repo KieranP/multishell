@@ -8,13 +8,13 @@ struct FileTreeListing: Sendable {
   struct Key: Equatable, Sendable {
     let tracked: TrackedFiles
     let untrackedPaths: [String]
-    let submodules: [String: TrackedFiles]
-    let submoduleUntrackedPaths: [String: [String]]
+    private let submodules: [String: TrackedFiles]
+    private let submoduleUntrackedPaths: [String: [String]]
     let ignoredEntries: [String]
-    let ignoredFolderEntries: [String: [IgnoredFolderEntry]]
+    private let ignoredFolderEntries: [String: [IgnoredFolderEntry]]
     /// A deleted file is listed by its change once the index no longer has it;
     /// a modified one is in the tracked list unless past its cap.
-    let changedPathsTrackedMayLack: Set<String>
+    fileprivate let changedPathsTrackedMayLack: Set<String>
 
     init(_ sources: FileTreeSources) {
       tracked = sources.tracked

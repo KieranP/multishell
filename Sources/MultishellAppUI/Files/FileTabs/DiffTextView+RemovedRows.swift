@@ -12,11 +12,12 @@ extension DiffTextView {
     theme: Theme,
   ) {
     guard !units.isEmpty, !text.lines.isEmpty else { return }
+    let removedText = theme.removedFileText
     for row in text.rows(touching: units) where text.lines[row].kind == .removed {
       let range = text.range(ofRow: row).clamped(to: units)
       string.addAttribute(
         .foregroundColor,
-        value: theme.removedFileText,
+        value: removedText,
         range: NSRange(location: range.lowerBound - base, length: range.count),
       )
     }

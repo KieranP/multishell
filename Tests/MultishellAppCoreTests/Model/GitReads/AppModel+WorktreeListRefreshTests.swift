@@ -203,8 +203,10 @@ struct AppModelWorktreeListRefreshTests {
     )
     harness.watcher.watched = []
 
+    let targets = harness.model.fileChangeTargets([common.appendingPathComponent("worktrees")])
     await harness.model.refreshProjectsIfChanged(
-      under: [common.appendingPathComponent("worktrees")])
+      withGitDirectoryChanges: targets.projectsWithGitDirectoryChanges
+    )
     #expect(
       harness.model.workspace.worktrees(of: other.id).count == 1,
       "the other's records were not read",

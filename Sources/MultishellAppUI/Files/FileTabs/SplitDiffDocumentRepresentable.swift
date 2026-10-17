@@ -12,9 +12,12 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
   final class Coordinator {
     var split: SplitDiff?
     var theme: Theme?
-    var findMatchesShown: FindMatchesShown?
-    var hasPaintedFind = false
+    let paintedFindMatches: PaintedFindMatches
     var highlighting: Task<Void, Never>?
+
+    init(paintedFindMatches: PaintedFindMatches) {
+      self.paintedFindMatches = paintedFindMatches
+    }
   }
 
   let model: AppModel
@@ -42,10 +45,6 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     }
     view.onScrolledTo = { [weak model] scroll in model?.noteFileTabScrolled(tabID, to: scroll) }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
-    // What the dropped view drew, so only a search or step since moves the selection.
-    if let shown = model.fileFindShown(of: tabID) {
-      context.coordinator.findMatchesShown = FindMatchesShown(shown)
-    }
     return view
   }
 
@@ -71,20 +70,18 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
         model?.noteFileTabHighlighted(tabID, cost: cost)
       }
     }
-    if textChanged || coordinator.findMatchesShown != find {
-      let previous = coordinator.findMatchesShown
-      coordinator.findMatchesShown = find
-      view.onDisk.textView.showFindMatches(
-        find,
-        after: previous,
-        isFirstPaint: !coordinator.hasPaintedFind,
-        tint: theme.findMatchTint,
-      )
-      coordinator.hasPaintedFind = true
-      model.noteFileFindShown(find.shown, of: tabID)
+    if let shown = coordinator.paintedFindMatches.paint(
+      find,
+      on: view.onDisk.textView,
+      textChanged: textChanged,
+      tint: theme.findMatchTint,
+    ) {
+      model.noteFileFindShown(shown, of: tabID)
     }
     view.onDisk.textView.takeKeyboard(ifAskedBy: model, for: tabID)
   }
 
-  func makeCoordinator() -> Coordinator { Coordinator() }
+  func makeCoordinator() -> Coordinator {
+    Coordinator(paintedFindMatches: PaintedFindMatches(resuming: model.fileFindShown(of: tabID)))
+  }
 }

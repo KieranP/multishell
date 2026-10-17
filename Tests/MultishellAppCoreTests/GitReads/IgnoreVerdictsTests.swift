@@ -22,4 +22,26 @@ struct IgnoreVerdictsTests {
     #expect(verdicts.isIgnored("src/deep") == false)
     #expect(verdicts.isIgnored("src/other") == nil, "not asked yet")
   }
+
+  @Test func forgettingBelowSomePathsKeepsTheirOwnAnswersAndTheirSiblings() {
+    var verdicts = IgnoreVerdicts()
+    verdicts.record(asked: ["a", "b", "c", "ab"], ignored: [])
+    verdicts.record(asked: ["a/x", "b/y", "c/z", "ab/w"], ignored: [])
+    verdicts.record(asked: ["a/x/deep"], ignored: [])
+
+    verdicts.forget(below: ["a", "b/y"])
+
+    #expect(verdicts.isIgnored("a") == false)
+    #expect(verdicts.isIgnored("a/x") == nil)
+    #expect(verdicts.isIgnored("a/x/deep") == nil)
+    #expect(verdicts.isIgnored("b/y") == false)
+    #expect(verdicts.isIgnored("c/z") == false)
+    #expect(verdicts.isIgnored("ab/w") == false)
+  }
+
+  @Test func eachUnaskedDirectoryIsListedOnceInTheOrderFirstMet() {
+    let verdicts = IgnoreVerdicts()
+
+    #expect(verdicts.unasked(on: ["b/1", "a/2", "b/3", "a/4"]) == ["b", "a"])
+  }
 }

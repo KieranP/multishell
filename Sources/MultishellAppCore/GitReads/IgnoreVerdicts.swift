@@ -13,10 +13,11 @@ struct IgnoreVerdicts {
   /// way still unasked; a path under a known ignored directory needs none.
   func unasked(on paths: [String]) -> [String] {
     var unasked: [String] = []
+    var listed: Set<String> = []
     for path in paths {
       for prefix in Self.directories(leadingTo: path) {
         guard let ignored = isIgnoredByPath[prefix] else {
-          if !unasked.contains(prefix) { unasked.append(prefix) }
+          if listed.insert(prefix).inserted { unasked.append(prefix) }
           break
         }
         if ignored { break }
@@ -35,9 +36,13 @@ struct IgnoreVerdicts {
     return false
   }
 
-  /// Drops every answer for a path under `path`, keeping `path`'s own.
-  mutating func forget(below path: String) {
-    isIgnoredByPath = isIgnoredByPath.filter { !$0.key.hasPrefix(path + "/") }
+  /// Drops every answer for a path under any of `paths`, keeping their own,
+  /// in one pass: an unpacked archive names thousands of sibling directories.
+  mutating func forget(below paths: Set<String>) {
+    guard !paths.isEmpty else { return }
+    isIgnoredByPath = isIgnoredByPath.filter { path, _ in
+      !Self.directories(leadingTo: path).dropLast().contains(where: paths.contains)
+    }
   }
 
   mutating func record(asked: [String], ignored: Set<String>) {

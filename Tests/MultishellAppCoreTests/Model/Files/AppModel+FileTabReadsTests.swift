@@ -36,8 +36,8 @@ struct AppModelFileTabReadsTests {
     try FileManager.default.removeItem(at: main.path.appending(path: "README.md"))
     harness.model.noteFileTabChanged(tab.id)
 
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
-    #expect(harness.model.fileIsGone(of: tab.id))
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
+    #expect(harness.model.isFileGone(of: tab.id))
     #expect(harness.model.fileTabReadLog.owed.contains(tab.id))
   }
 
@@ -51,13 +51,13 @@ struct AppModelFileTabReadsTests {
     let text = try String(contentsOf: readme, encoding: .utf8)
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
 
     try text.write(to: readme, atomically: true, encoding: .utf8)
     harness.model.noteFileTabChanged(tab.id)
 
-    try await waitUntil { !harness.model.fileIsGone(of: tab.id) }
-    #expect(!harness.model.fileIsGone(of: tab.id))
+    try await waitUntil { !harness.model.isFileGone(of: tab.id) }
+    #expect(!harness.model.isFileGone(of: tab.id))
   }
 
   @Test func aTabNeverShownSinceLaunchIsStruckWhenItsFileGoes() async throws {
@@ -70,8 +70,8 @@ struct AppModelFileTabReadsTests {
     try FileManager.default.removeItem(at: other.path.appending(path: "README.md"))
     harness.model.noteFileTabChanged(tab.id)
 
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
-    #expect(harness.model.fileIsGone(of: tab.id))
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
+    #expect(harness.model.isFileGone(of: tab.id))
   }
 
   @Test func everythingKeptForAClosedTabGoesWithIt() async throws {
@@ -135,15 +135,16 @@ struct AppModelFileTabReadsTests {
     harness.model.newShellTab()
     try text.write(to: readme, atomically: true, encoding: .utf8)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { !harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { !harness.model.isFileGone(of: tab.id) }
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
 
     harness.model.activateTab(tab.id)
 
     let rows = try #require(await harness.rowsArrive(in: tab.id))
-    #expect(!rows.lines.isEmpty)
+    #expect(rows.lines.map(\.text) == text.split(separator: "\n").map(String.init))
+    #expect(rows.lines.allSatisfy { $0.kind == .removed })
   }
 
   @Test func aTabShownAgainWhileItsReadRunsGetsTheReadItWasOwed() async throws {
@@ -189,8 +190,8 @@ struct AppModelFileTabReadsTests {
 
     harness.model.noteFileTabChanged(tab.id)
 
-    try await waitUntil { !log().isReading(tab.id) && harness.model.fileIsGone(of: tab.id) }
-    #expect(harness.model.fileIsGone(of: tab.id))
+    try await waitUntil { !log().isReading(tab.id) && harness.model.isFileGone(of: tab.id) }
+    #expect(harness.model.isFileGone(of: tab.id))
   }
 
   @Test func aHiddenTabLetsGoOfItsRowsAndKeepsItsDot() async throws {
@@ -256,7 +257,7 @@ struct AppModelFileTabReadsTests {
     try await waitUntil { harness.model.changeKind(of: tab) == .modified }
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
 
     harness.model.newShellTab()
     harness.model.activateTab(tab.id)
@@ -328,13 +329,13 @@ struct AppModelFileTabReadsTests {
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
     harness.model.newShellTab()
     try text.write(to: readme, atomically: true, encoding: .utf8)
 
     harness.model.noteFileTabChanged(tab.id)
 
-    try await waitUntil { !harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { !harness.model.isFileGone(of: tab.id) }
     #expect(harness.model.fileTabReadings[tab.id]?.content == .releasedFollowingStatus)
   }
 
@@ -346,14 +347,14 @@ struct AppModelFileTabReadsTests {
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
     harness.model.newShellTab()
     try "edited\n".write(to: readme, atomically: true, encoding: .utf8)
     _ = await harness.model.refreshStatus(of: main.id, forced: true)
 
     harness.model.noteFileTabChanged(tab.id)
 
-    try await waitUntil { !harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { !harness.model.isFileGone(of: tab.id) }
     #expect(harness.model.changeKind(of: tab) == .modified)
   }
 
@@ -365,13 +366,13 @@ struct AppModelFileTabReadsTests {
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
     _ = await harness.model.refreshStatus(of: main.id, forced: true)
     harness.model.newShellTab()
     try "edited\n".write(to: readme, atomically: true, encoding: .utf8)
 
     harness.model.noteFileTabChanged(tab.id)
-    try await waitUntil { !harness.model.fileIsGone(of: tab.id) }
+    try await waitUntil { !harness.model.isFileGone(of: tab.id) }
     _ = await harness.model.refreshStatus(of: main.id, forced: true)
 
     #expect(harness.model.changeKind(of: tab) == .modified)

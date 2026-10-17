@@ -6,7 +6,7 @@ import Testing
 @Suite
 struct SplitDiffScrollAnchorTests {
   @Test func aSplitScrollOverPaddingIsHeldByTheLineHEADHasThere() throws {
-    let rows = ReplacedBlockFixture.rows(before: 50, removed: 100, added: 20, after: 200)
+    let rows = FileTabRows.replacedBlock(before: 50, removed: 100, added: 20, after: 200)
     let split = try #require(rows.split)
 
     let scroll = split.scroll(atRow: 100, x: 0)
@@ -16,7 +16,7 @@ struct SplitDiffScrollAnchorTests {
   }
 
   @Test func unifiedToSplitAndBackReturnsToTheSameRow() throws {
-    let rows = ReplacedBlockFixture.rows(before: 50, removed: 100, added: 100, after: 200)
+    let rows = FileTabRows.replacedBlock(before: 50, removed: 100, added: 100, after: 200)
     let split = try #require(rows.split)
     let unified = rows.displayText
 

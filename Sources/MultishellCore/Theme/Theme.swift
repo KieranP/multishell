@@ -32,12 +32,12 @@ public struct Theme: Identifiable, Decodable, Hashable, Sendable {
 
   var terminalColors: [TerminalColorKey: String]
   /// Keyed by palette slot.
-  var ansiColors: [Int: String]
-  var ownInactivePaneOpacity: Double?
-  var fileColors: [FileColorKey: String]
-  var interfaceColors: [InterfaceSection: [InterfaceColorKey: String]]
+  let ansiColors: [Int: String]
+  let ownInactivePaneOpacity: Double?
+  let fileColors: [FileColorKey: String]
+  let interfaceColors: [InterfaceSection: [InterfaceColorKey: String]]
   /// Keyed by palette slot, the number a project's tint is saved as.
-  var projectIconColors: [Int: String]
+  let projectIconColors: [Int: String]
   /// Keyed by agent id; `""` draws the mark in the text around it.
   var agentMarkColors: [String: String]
 

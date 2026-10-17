@@ -3,9 +3,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// Every project's git directory and every worktree's directory, armed
-  /// again wherever a list changes them, whatever read the list. The themes
-  /// folder rides on the same stream, so a saved theme is drawn at once.
+  /// Every project's git directory, every worktree's and the themes folder,
+  /// armed again wherever a list changes them, so a saved theme draws at once.
   func rearmWatcher(evenIfUnchanged: Bool = false) async {
     watcherRearms += 1
     let rearm = watcherRearms

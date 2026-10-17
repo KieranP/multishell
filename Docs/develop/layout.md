@@ -17,9 +17,11 @@
   **MultishellGitKit**: worktree operations, a create's and a removal's each in
   its own folder of `Worktrees/`; a project's hooks and file lists; the output
   readers; what a branch is, where it points and whether it landed; status; the
-  runner; and `Support/`. WorktreeGit and WorktreeCoordinator sit at its root
-  with their extensions under each concern, since five concerns extend them and
-  none owns them, beside the state every WorktreeGit a launch builds shares.
+  paths an index tracks and one file's patches and stored copies, for the Files
+  panel and a file tab; the runner; and `Support/`. WorktreeGit and
+  WorktreeCoordinator sit at its root with their extensions under each concern,
+  since seven concerns extend them and none owns them, beside the state every
+  WorktreeGit a launch builds shares.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited
   settings, what a tab runs, what each session is doing, when to read git and to
   notify, creates and removals under way, every decision a view makes, and what
@@ -73,8 +75,8 @@
   (CLAUDE.md's folder rule); a file moves only when its folder is wrong for what
   it holds.
 - **Each half's words live in the target that says them.** The libraries' also
-  carry the shell-integration scripts, the app's the agent marks. A second
-  frontend is a third.
+  carry the shell-integration scripts and the built-in themes, the app's the
+  agent marks. A second frontend is a third.
 - **`Resources/` at the root is none of those**: the icon, the Info.plist
   template, the entitlements and the stand-ins under `ghostty/`, which the
   bundling script reads and SwiftPM never sees, and a smaller icon for the

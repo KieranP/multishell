@@ -29,12 +29,9 @@ extension AppModel {
     if !changed.isEmpty { scheduleIgnoredEntriesRead(of: worktree.id) }
     let readIgnoredFolders = (ignoredFolderEntries[worktree.id] ?? [:]).keys
     // A lock file or `.gitignore` is reported by its own path, not its folder's.
-    for path in readIgnoredFolders
-    where changedEverything || changed.contains(path)
-      || changed.contains(where: { changedPath in
-        (changedPath as NSString).deletingLastPathComponent == path
-      })
-    {
+    let parents = changed.map { ($0 as NSString).deletingLastPathComponent }
+    let changedFolders = Set(changed).union(parents)
+    for path in readIgnoredFolders where changedEverything || changedFolders.contains(path) {
       scheduleIgnoredFolderRead(path, in: worktree.id)
     }
     guard !platform.isActive, platform.isWorkspaceWindowVisible,

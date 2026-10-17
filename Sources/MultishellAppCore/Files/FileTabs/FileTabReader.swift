@@ -57,6 +57,7 @@ enum FileTabReader {
       let content = await deletedContent(
         path: path,
         in: repository.directory,
+        committedSize: committedSize,
         git: git,
         diffAlgorithm,
       )
@@ -79,6 +80,7 @@ enum FileTabReader {
   private static func deletedContent(
     path: String,
     in repository: URL,
+    committedSize: Int?,
     git: WorktreeGit,
     _ diffAlgorithm: DiffAlgorithm,
   ) async -> FileTabContent {
@@ -87,7 +89,7 @@ enum FileTabReader {
     // The patch holds the committed bytes, so it is guessed as the file would be.
     let encoding = TextDecoding.decode(patches.onDisk)?.encoding ?? .utf8
     switch UnifiedPatchParser.parse(patches.onDisk, encoding: encoding) {
-    case .binary: return .binary(bytes: 0)
+    case .binary: return .binary(bytes: committedSize ?? 0)
     case .lines(let lines): return .text(FileTabRows(lines: lines))
     case .modeOnly, .unchanged: return .missing
     }

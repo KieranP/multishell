@@ -38,8 +38,7 @@ public struct WorktreeGit: Sendable {
       let top = await runner.output(["rev-parse", "--show-toplevel"], in: directory)?
         .trimmingCharacters(in: .whitespacesAndNewlines)
     else { return false }
-    return URL(fileURLWithPath: top).resolvingSymlinksInPath().path
-      == directory.resolvingSymlinksInPath().path
+    return await runOnDispatch { Self.sameComparablePath(URL(fileURLWithPath: top), directory) }
   }
 
   /// False for a freshly initialised repository. `HEAD` is unborn there, so

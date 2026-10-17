@@ -7,20 +7,18 @@ struct SegmentFace<Content: View>: View {
   private static var height: Double { 18 }
 
   let isSelected: Bool
-  let theme: Theme
-  let section: InterfaceSection
+  let palette: AreaPalette
   let metrics: UIMetrics
   @ViewBuilder let content: () -> Content
 
   var body: some View {
-    let palette = AreaPalette(theme, section)
     content()
       .font(metrics.font(size: metrics.caption, weight: isSelected ? .semibold : .regular))
       .foregroundStyle(isSelected ? palette.text : palette.textSecondary)
       .padding(.horizontal, 8)
       .frame(height: Self.height)
       .background(
-        isSelected ? theme.color(.selectionBackground, in: section) : .clear,
+        isSelected ? palette.color(.selectionBackground) : .clear,
         in: RoundedRectangle(cornerRadius: 4),
       )
       .contentShape(.rect)

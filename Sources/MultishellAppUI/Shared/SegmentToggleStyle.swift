@@ -4,8 +4,7 @@ import SwiftUI
 /// A toggle drawn as one segment in its well, on its pill while on: the
 /// system's button-style toggle draws in its own colours.
 struct SegmentToggleStyle: ToggleStyle {
-  let theme: Theme
-  let section: InterfaceSection
+  let palette: AreaPalette
   let metrics: UIMetrics
 
   func makeBody(configuration: Configuration) -> some View {
@@ -14,14 +13,13 @@ struct SegmentToggleStyle: ToggleStyle {
     } label: {
       SegmentFace(
         isSelected: configuration.isOn,
-        theme: theme,
-        section: section,
+        palette: palette,
         metrics: metrics,
         content: { configuration.label },
       )
     }
     .buttonStyle(.plain)
-    .segmentWell(AreaPalette(theme, section))
+    .segmentWell(palette)
     .selectableButtonTraits(isSelected: configuration.isOn)
   }
 }

@@ -20,7 +20,9 @@ Newest at the bottom.
   one's cost and the listing rebuild it set off**, a second at least: an install
   or a build writes there constantly, and rebuilding after every read held half
   a core for a whole build. Capped at 50,000 entries, with no footer saying so
-  past it.
+  past it. An opened ignored folder and an expanded submodule are each paced the
+  same way, and a listing too large for a render builds one at a time, since a
+  started build cannot be stopped.
 - **The index, not `ls-files --cached --others`.** The second walks the tree
   again, 198 ms on Linux's 96,000 files against 27 ms, and prints untracked
   paths first, so a cap would let `node_modules` push tracked files out. Capped
@@ -211,8 +213,8 @@ Newest at the bottom.
   that package's resource bundle.** JavaScript's, Python's and YAML's packages
   build without their scanners, so those three scanners, with what they include,
   are copied under `ThirdParty/tree-sitter/`.
-- **The maintained repository over the most-starred one**, for YAML, TOML and
-  Zig, whose originals are archived or years stale.
+- **The maintained repository over the most-starred one**, for YAML, TOML, Zig
+  and Make, whose originals are archived or years stale.
 - **A language is picked by extension, then by name where the extension says
   nothing, then by shebang.** `Rakefile` and `Gemfile` are Ruby by name, and
   `Cargo.lock` TOML, `Package.resolved`, `.prettierrc` and `.swift-format` JSON.

@@ -11,27 +11,6 @@ import Testing
 struct DiffDocumentViewTests {
   private static let rowCount = 10_750
 
-  /// The rows TextKit 2 laid out in the viewport, each against where its
-  /// number says it sits.
-  private static func misplacedRows(in textView: DiffTextView) -> [Int] {
-    guard let layoutManager = textView.textLayoutManager,
-      let viewport = layoutManager.textViewportLayoutController.viewportRange
-    else { return [-1] }
-    layoutManager.ensureLayout(for: viewport)
-    var misplaced: [Int] = []
-    layoutManager.enumerateTextLayoutFragments(from: viewport.location, options: []) { fragment in
-      let offset = layoutManager.offset(
-        from: layoutManager.documentRange.location,
-        to: fragment.rangeInElement.location,
-      )
-      let row = textView.displayText.row(atOffset: offset)
-      let expected = CGFloat(row) * textView.geometry.rowHeight
-      if abs(fragment.layoutFragmentFrame.minY - expected) > 0.5 { misplaced.append(row) }
-      return fragment.rangeInElement.location.compare(viewport.endLocation) == .orderedAscending
-    }
-    return misplaced
-  }
-
   @Test func everyRowSitsWhereItsNumberSaysAfterJumpsStartingAtTheEnd() throws {
     let (view, window) = DiffDocumentFixture.shown(rows: Self.rowCount)
     defer { withExtendedLifetime(window) {} }
@@ -50,7 +29,7 @@ struct DiffDocumentViewTests {
         height: geometry.rowHeight,
       )
       #expect(textView.visibleRect.intersects(rowRect), "row \(target) scrolled to but not shown")
-      #expect(Self.misplacedRows(in: textView) == [], "at row \(target)")
+      #expect(textView.misplacedRows == [], "at row \(target)")
     }
   }
 }

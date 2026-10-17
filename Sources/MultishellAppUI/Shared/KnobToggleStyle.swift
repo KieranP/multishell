@@ -6,8 +6,7 @@ import SwiftUI
 struct KnobToggleStyle: ToggleStyle {
   private static let trackSize = CGSize(width: 26, height: 15)
 
-  let theme: Theme
-  let section: InterfaceSection
+  let palette: AreaPalette
 
   func makeBody(configuration: Configuration) -> some View {
     let isOn = configuration.isOn
@@ -18,11 +17,11 @@ struct KnobToggleStyle: ToggleStyle {
       HStack(spacing: 6) {
         configuration.label
         Capsule()
-          .fill(isOn ? theme.color(.accent, in: section) : AreaPalette(theme, section).fill)
+          .fill(isOn ? palette.color(.accent) : palette.fill)
           .frame(width: Self.trackSize.width, height: Self.trackSize.height)
           .overlay(alignment: isOn ? .trailing : .leading) {
             Circle()
-              .fill(theme.color(.knob, in: section))
+              .fill(palette.color(.knob))
               .frame(width: knobDiameter, height: knobDiameter)
               .padding(2)
           }

@@ -10,16 +10,21 @@ extension AppModel {
   /// A watcher tick. git's records are compared frontmost or not, as a new
   /// worktree is a row; badges are read frontmost only, as the poll's are.
   func noteFileChanges(_ changed: [URL]) async {
-    if changed.contains(where: { $0.pathComponents(under: themesDirectory) != nil }) {
-      await reloadThemes()
-    }
-    let heardFirst = fileChangeTargets(changed)
-    noteFileTabChanges(heardFirst)
-    noteFilesPanelChanges(heardFirst)
-    await refreshProjectsIfChanged(under: changed)
+    let (projects, worktrees, gitDirectories) =
+      (workspace.projects, workspace.worktrees, commonGitDirectories)
+    var targets = fileChangeTargets(changed)
+    if targets.hasThemeChanges { await reloadThemes() }
+    noteFileTabChanges(targets)
+    noteFilesPanelChanges(targets)
+    await refreshProjectsIfChanged(withGitDirectoryChanges: targets.projectsWithGitDirectoryChanges)
     guard platform.isActive else { return }
-    // Again after the await, which a refresh may have changed the rows across.
-    let targets = fileChangeTargets(changed)
+    // Again only where the awaits changed what a change is matched against;
+    // see worktrees.md for its cost.
+    if workspace.projects != projects || workspace.worktrees != worktrees
+      || commonGitDirectories != gitDirectories
+    {
+      targets = fileChangeTargets(changed)
+    }
     forgetIgnoreVerdicts(changedBy: targets)
     let onSidebar = sidebarRowIDs()
     for worktree in workspace.worktrees
@@ -39,12 +44,13 @@ extension AppModel {
     }
   }
 
-  private func fileChangeTargets(_ changed: [URL]) -> FileChangeTargets {
+  func fileChangeTargets(_ changed: [URL]) -> FileChangeTargets {
     FileChangeTargets(
       changed: changed,
       projects: workspace.projects,
       gitDirectories: commonGitDirectories,
       worktrees: workspace.worktrees,
+      themesDirectory: themesDirectory,
     )
   }
 
@@ -59,7 +65,7 @@ extension AppModel {
       if !notIgnored.isEmpty {
         // A directory swapped in arrives as its parent alone, with no word of
         // the `.gitignore` it brought, so what lies under it is asked afresh.
-        for path in notIgnored { ignoreVerdicts[worktree.id]?.forget(below: path) }
+        ignoreVerdicts[worktree.id]?.forget(below: Set(notIgnored))
         return true
       }
       let unasked = verdicts.unasked(on: paths)

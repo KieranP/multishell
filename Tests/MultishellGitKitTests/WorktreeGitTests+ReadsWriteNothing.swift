@@ -36,11 +36,7 @@ extension WorktreeGitTests {
         encoding: .utf8,
       )
     }
-    try "staged\n".write(
-      to: project.path.appendingPathComponent("staged.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("staged\n", to: "staged.txt")
     _ = try await fixture.runner.run(["add", "staged.txt"], in: project.path)
     let common = try await git.commonGitDirectory(project)
     let before = try DirectorySnapshot(of: common)
@@ -90,16 +86,12 @@ extension WorktreeGitTests {
     defer { fixture.tearDown() }
     let git = WorktreeGit(runner: fixture.runner)
     let path = fixture.project.path
-    try "staged\n".write(
-      to: path.appendingPathComponent("staged.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("staged\n", to: "staged.txt")
     _ = try await fixture.runner.run(["add", "staged.txt"], in: path)
     try Scratch.touch(path.appendingPathComponent("staged.txt"))
     let common = try await git.commonGitDirectory(fixture.project)
     let before = try DirectorySnapshot(of: common)
-    let main = try #require(try await git.list(fixture.project).first)
+    let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
       #expect(try await git.status(of: main, counting: indicator).insertions == 1)

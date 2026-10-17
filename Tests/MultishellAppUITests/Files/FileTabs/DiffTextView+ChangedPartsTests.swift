@@ -19,24 +19,7 @@ struct DiffTextViewChangedPartsTests {
     view.show(rows.displayText, theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
     let textView = view.textView
-    let bitmap = try #require(
-      NSBitmapImageRep(
-        bitmapDataPlanes: nil,
-        pixelsWide: Int(textView.bounds.width),
-        pixelsHigh: Int(textView.bounds.height),
-        bitsPerSample: 8,
-        samplesPerPixel: 4,
-        hasAlpha: true,
-        isPlanar: false,
-        colorSpaceName: .deviceRGB,
-        bytesPerRow: 0,
-        bitsPerPixel: 0,
-      )
-    )
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
-    textView.drawBackground(in: textView.bounds)
-    NSGraphicsContext.restoreGraphicsState()
+    let bitmap = try #require(OffscreenWindow.backgroundPixels(of: textView))
 
     for row in 0..<2 {
       let middle = textView.geometry.top(ofRow: row) + textView.geometry.rowHeight / 2

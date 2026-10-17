@@ -103,18 +103,16 @@ public final class AppModel<Surface> {
   var ignoredEntries: [Worktree.ID: [String]] = [:]
   /// Each worktree's read ignored folders, open or shut, listed from disk.
   var ignoredFolderEntries: [Worktree.ID: [String: [IgnoredFolderEntry]]] = [:]
-  /// One coalesced read of what git ignores per worktree, paced after it.
-  @ObservationIgnored var pendingIgnoredEntriesReads: [Worktree.ID: Task<Void, Never>] = [:]
-  /// A change while that read ran or waited, read once it is due.
-  @ObservationIgnored var ignoredEntriesAskedAgain: Set<Worktree.ID> = []
+  /// One read of what git ignores per worktree, paced after it.
+  @ObservationIgnored var ignoredEntriesReads = CoalescedReads<Worktree.ID>()
   /// Each worktree's opened submodules, read as repositories of their own.
   var submoduleReadings: [Worktree.ID: [String: SubmoduleReading]] = [:]
+  @ObservationIgnored var panelFolderReads = CoalescedReads<PanelFolderRead>()
   /// The tree each panel last drew, rebuilt only when what it was built from changed.
   @ObservationIgnored var fileTreeCache: [Worktree.ID: FileTreeCacheEntry] = [:]
   /// Listings too large to build in a render, built off the main actor.
   var fileTreeListings: [Worktree.ID: FileTreeListing] = [:]
-  @ObservationIgnored var pendingFileTreeListings:
-    [Worktree.ID: (key: FileTreeListing.Key, task: Task<Void, Never>)] = [:]
+  @ObservationIgnored var pendingFileTreeListings: [Worktree.ID: Task<Void, Never>] = [:]
   /// One coalesced listing read per worktree; see `scheduleTrackedFilesRead`.
   @ObservationIgnored var pendingTrackedFilesReads: [Worktree.ID: Task<Void, Never>] = [:]
 
@@ -360,13 +358,8 @@ public final class AppModel<Surface> {
     take(loadThemeCatalogue(themesDirectory))
     rebuildNewTabAgents()
     host.apply(currentTheme, appearance: store.workspace.appearance)
-    // Said on the process's PATH alone. `refreshLoginEnvironment` looks again
-    // on the login shell's and takes this back if it finds git there.
-    if let loadError {
-      present(loadError)
-    } else if coordinator == nil {
-      present(GitUnavailable())
-    }
+    // A git missing here is said once the login shell's PATH lacks it too.
+    if let loadError { present(loadError) }
 
     // Nothing is selected at launch, so no shell starts until the user picks
     // a worktree. Saved tabs stay saved and open with that first click.

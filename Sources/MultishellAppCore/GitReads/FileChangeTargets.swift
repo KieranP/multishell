@@ -16,25 +16,38 @@ struct FileChangeTargets {
   static let wholeWorktree = ""
 
   private(set) var projectsWithGitChanges: Set<Project.ID> = []
+  /// Any change under a project's git directory, scratch included, where its
+  /// worktree records may have moved.
+  private(set) var projectsWithGitDirectoryChanges: Set<Project.ID> = []
   /// The changes in each worktree's own files, as paths within it.
   private(set) var fileChangesByWorktree: [Worktree.ID: [String]] = [:]
   private(set) var projectsWithSharedSettingsChanges: Set<Project.ID> = []
   /// Worktrees one of whose `.gitignore` files changed.
   private(set) var worktreesWithIgnoreRuleChanges: Set<Worktree.ID> = []
+  private(set) var hasThemeChanges = false
 
   init(
     changed: [URL],
     projects: [Project],
     gitDirectories: [Project.ID: URL],
     worktrees: [Worktree],
+    themesDirectory: URL,
   ) {
     // Each path standardized once: an install reports thousands of directories,
     // and comparing URLs restandardized both sides of every pair.
     let gitBases = gitDirectories.map { StandardizedPath(id: $0.key, url: $0.value) }
     let worktreeBases = worktrees.map { StandardizedPath(id: $0.id, url: $0.path) }
     let projectBases = projects.map { StandardizedPath(id: $0.id, url: $0.path) }
+    let themes = StandardizedPath(id: (), url: themesDirectory)
     for url in changed {
       let components = url.standardizedFileURL.pathComponents
+      if themes.subpath(to: components) != nil {
+        hasThemeChanges = true
+        continue
+      }
+      for base in gitBases where base.subpath(to: components) != nil {
+        projectsWithGitDirectoryChanges.insert(base.id)
+      }
       let git = Self.deepest(holding: components, in: gitBases)
       // The deeper of the two holds it: `.git` sits in the main worktree, and a
       // bare repository's worktrees can sit in its git directory.

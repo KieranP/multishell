@@ -27,14 +27,13 @@ extension AppModel {
       ignoreVerdicts[id] = nil
       filesPanelStates[id] = nil
       fileTreeCache[id] = nil
-      pendingFileTreeListings[id]?.task.cancel()
+      pendingFileTreeListings[id]?.cancel()
       pendingFileTreeListings[id] = nil
       pendingTrackedFilesReads[id]?.cancel()
       pendingTrackedFilesReads[id] = nil
-      pendingIgnoredEntriesReads[id]?.cancel()
-      pendingIgnoredEntriesReads[id] = nil
     }
-    ignoredEntriesAskedAgain.subtract(gone)
+    ignoredEntriesReads.cancel(where: gone.contains)
+    panelFolderReads.cancel { gone.contains($0.worktreeID) }
     setIfChanged(\.trackedFiles, trackedFiles.filter { !gone.contains($0.key) })
     fileTreeListings = fileTreeListings.filter { !gone.contains($0.key) }
     setIfChanged(\.submoduleReadings, submoduleReadings.filter { !gone.contains($0.key) })

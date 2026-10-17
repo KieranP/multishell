@@ -23,11 +23,6 @@ struct FileTree: Sendable {
   /// from the index and left on disk being one row.
   var changedFileCount: Int { changes.sortedPaths.count }
 
-  init(_ sources: FileTreeSources) {
-    let key = FileTreeListing.Key(sources)
-    self.init(sources, listing: FileTreeListing(sources, key: key), reusingChangesOf: nil)
-  }
-
   /// An opened submodule's files count in no Modified of the worktree's, and
   /// what git ignores lists greyed, in All alone; see Docs/design/files.md.
   init(

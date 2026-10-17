@@ -17,13 +17,13 @@ Under `~/Library/Application Support/Multishell`.
   the first to launch takes.
 - **Settings prints the state file**, and `multishell info` the state file and
   socket of the copy that answered.
-- **`state.json`**: sidebar, terminal tabs and file tabs by path, the groups
-  they sit in with their widths, order and shown tab, pane trees, worktree names
-  and creation dates, every setting.
+- **`state.json`**: sidebar, terminal tabs and file tabs by path with their
+  scroll, the groups they sit in with their widths, order and shown tab, pane
+  trees, worktree names and creation dates, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
-  a file tab's text and scroll, whether the Files panel is open and what it
-  shows, or anything about the Agents board or the debug tools. Those are
+  a file tab's text, whether the Files panel is open, its filter and the folders
+  opened in it, or anything about the Agents board or the debug tools. Those are
   runtime state, so Show all terminals is off after a relaunch, the Files panel
   starts shut, and the debug tools start off at every launch and write nothing
   to disk or defaults.

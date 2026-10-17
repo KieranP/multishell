@@ -64,12 +64,16 @@ extension AppModel {
         searchPath: searchPath,
         replacing: coordinator,
       )
-    else { return }
+    else {
+      // Not said at launch and taken back here: macOS 27 crashed taking a
+      // SwiftUI alert down from code as its sheet closed.
+      if !hadGit, presentedError == nil { present(GitUnavailable()) }
+      return
+    }
     coordinator = found
     // A git found for the first time has a log of its own to switch on.
     found.git.runLog.setRecording(areDebugToolsEnabled)
     guard !hadGit else { return }
-    if presentedError?.saysGitIsMissing == true { presentedError = nil }
     // `start` refreshed before this ran and found no git, so every project
     // listed nothing; the sidebar stays empty until something asks again.
     await refreshAll()

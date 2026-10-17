@@ -4,20 +4,18 @@ import MultishellGitKit
 
 extension AppModel {
   /// A watcher tick, the round or a return to the front: the worktree list where git's
-  /// records changed, else the shared settings file. `changed` empty is all.
-  func refreshProjectsIfChanged(under changed: [URL] = []) async {
-    let changedComponents = changed.map(\.standardizedFileURL.pathComponents)
+  /// records changed, else the shared settings file. `nil` is every project.
+  func refreshProjectsIfChanged(withGitDirectoryChanges changed: Set<Project.ID>? = nil) async {
     for project in workspace.projects {
       // A change names a watched folder, and only a known git directory is
       // watched; asking git here spawned it on every save for a broken project.
-      let common =
-        changed.isEmpty
-        ? await commonGitDirectory(of: project) : commonGitDirectories[project.id]
-      if !changed.isEmpty {
-        guard let common else { continue }
-        let gitDirectory = StandardizedPath(id: project.id, url: common)
-        guard changedComponents.contains(where: { gitDirectory.subpath(to: $0) != nil })
+      let common: URL?
+      if let changed {
+        guard changed.contains(project.id), let known = commonGitDirectories[project.id]
         else { continue }
+        common = known
+      } else {
+        common = await commonGitDirectory(of: project)
       }
       if let common, let known = worktreeRecords[project.id],
         await runOnDispatch({ WorktreeRecords.read(in: common) }) == known

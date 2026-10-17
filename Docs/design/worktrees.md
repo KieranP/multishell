@@ -342,9 +342,9 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   stat'ed rather than read: 500 files of 16 KB took 51 ms a poll, every poll. A
   file that could not be read is not kept, since fixing its permission later
   leaves its date alone.
-- **A binary file, a mode change and a pure rename have no line for either
-  column**, and a zero badge on a plainly changed worktree read as broken. They
-  are counted as files instead, in the theme's `ui.git` `changed` colour.
+- **A binary file and a mode change have no line for either column**, and a zero
+  badge on a plainly changed worktree read as broken. They are counted as files
+  instead, in the theme's `ui.git` `changed` colour.
 - **An untracked file skipped for being binary, empty, too big or gone joins
   them.**
 - **An unmerged path is not one of them**: it prints zeroes from the cached
@@ -449,7 +449,9 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   `.gitignore` keeps its whole path too, so a nested one changing is seen.
 - **Routing standardizes each path once.** Comparing URLs restandardized both
   sides of every pair: 5,000 directories against 10 projects of 3 worktrees took
-  0.71 s of the main actor in a debug build, 0.18 s once each was kept.
+  0.71 s of the main actor in a debug build, 0.18 s once each was kept. The
+  themes check and the worktree records' check read the same match, built once a
+  batch and again only where the awaits between changed the rows.
 - **A change in a worktree's files reads that worktree alone**, the deepest one
   holding it, since linked worktrees can sit inside the main one.
 - **No status read is closer than a second to the last**, and a slow one sets
@@ -552,10 +554,10 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   or a file forced into the index changes what git ignores. A return to the
   front and the round forget them all, the global excludes file raising no
   event.
-- **"Not ignored" is kept only for a path that exists.** git matches
-  `node_modules/` against nothing while the directory is gone, as between
-  `npm ci` removing it and the install, and that answer kept read the whole
-  install.
+- **An answer is kept only for a path that exists.** git matches `node_modules/`
+  against nothing while the directory is gone, as between `npm ci` removing it
+  and the install, and that answer kept read the whole install. A negated
+  `!/gen/` goes wrong the other way, reading ignored.
 - **The Files panel's worktree is read on its events while the window shows**,
   front or not, so coming back never shows a stale list; its listing re-reads on
   its project's git changes, never because a count moved (files.md). Other rows

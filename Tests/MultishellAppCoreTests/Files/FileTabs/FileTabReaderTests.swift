@@ -104,6 +104,21 @@ struct FileTabReaderTests {
     #expect(Self.text(reading)?.lines.map(\.text) == ["café"])
   }
 
+  @Test func aDeletedBinaryFileSaysItsCommittedSize() async throws {
+    let repository = try await Repository.make()
+    defer { repository.tearDown() }
+    let file = repository.path.appending(path: "icon.png")
+    try Data([0x89, 0x50, 0x00, 0x01]).write(to: file)
+    _ = try await repository.runner.run(["add", "icon.png"], in: repository.path)
+    _ = try await repository.runner.run(["commit", "-q", "-m", "icon"], in: repository.path)
+    try FileManager.default.removeItem(at: file)
+
+    let reading = await repository.read("icon.png")
+
+    #expect(reading.content == .binary(bytes: 4))
+    #expect(reading.isFileGone)
+  }
+
   @Test func aFileDeletedUnderAnOpenTabKeepsItsLastTextUnmarked() async throws {
     let repository = try await Repository.make()
     defer { repository.tearDown() }

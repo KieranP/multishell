@@ -59,8 +59,10 @@
   build beside the installed app is not a second copy.
 - **A copy that failed to quit starts no shell.** Its tabs' reports would reach
   the running copy's socket.
-- **A debug build keeps its own files** (develop/state-on-disk.md), so a debug
-  run beside the installed app touches none of the app's.
+- **A debug build keeps its own state file and socket**
+  (develop/state-on-disk.md), so a debug run beside the installed app never
+  writes over its workspace. The themes folder and the hooks' helper link are
+  shared, a debug launch pointing that link at its own helper.
 - **`WorkspaceStore` only grows**: `private(set) var workspace` keeps every
   writer inside it, so each new mutation is another method there. Lookups it
   repeats belong on `Workspace`, where the store's methods share them.

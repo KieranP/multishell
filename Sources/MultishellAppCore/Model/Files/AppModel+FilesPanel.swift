@@ -132,7 +132,7 @@ extension AppModel {
       ?? smallListing(sources, key: key)
     {
       // A build for other paths would only land a listing nothing shows.
-      pendingFileTreeListings.removeValue(forKey: id)?.task.cancel()
+      pendingFileTreeListings.removeValue(forKey: id)?.cancel()
       let tree = FileTree(sources, listing: listing, reusingChangesOf: cached?.tree)
       fileTreeCache[id] = FileTreeCacheEntry(sources: sources, tree: tree)
       return (tree, true)
@@ -153,16 +153,15 @@ extension AppModel {
     return FileTreeListing(sources, key: key)
   }
 
-  /// The previous listing is drawn until this one lands; one build at a time
-  /// per worktree, a newer key replacing an older.
+  /// A started build cannot be stopped, so another waits for it to land; the
+  /// redraw its landing sets off asks for the newest key.
   private func buildListingInTheBackground(
     _ sources: FileTreeSources,
     key: FileTreeListing.Key,
     for id: Worktree.ID,
   ) {
-    guard pendingFileTreeListings[id]?.key != key else { return }
-    pendingFileTreeListings[id]?.task.cancel()
-    let task = Task { @MainActor [weak self] in
+    guard pendingFileTreeListings[id] == nil else { return }
+    pendingFileTreeListings[id] = Task { @MainActor [weak self] in
       let listing = await runOnDispatch {
         let started = ContinuousClock.now
         var listing = FileTreeListing(sources, key: key)
@@ -173,6 +172,5 @@ extension AppModel {
       pendingFileTreeListings[id] = nil
       fileTreeListings[id] = listing
     }
-    pendingFileTreeListings[id] = (key, task)
   }
 }

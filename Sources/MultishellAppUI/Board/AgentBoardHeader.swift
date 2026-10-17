@@ -26,7 +26,7 @@ struct AgentBoardHeader: View {
   /// it lets in lands where its state says, as an agent does.
   private var allTerminalsToggle: some View {
     Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsBinding)
-      .toggleStyle(KnobToggleStyle(theme: theme, section: .header))
+      .toggleStyle(KnobToggleStyle(palette: theme.header))
       .font(metrics.font(size: metrics.caption))
       .foregroundStyle(theme.header.textSecondary)
       .help(t("board.show-all-terminals-info"))

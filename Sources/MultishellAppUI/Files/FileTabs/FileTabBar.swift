@@ -59,8 +59,7 @@ struct FileTabBar: View {
       label: t("file.layout"),
       options: [(t("file.unified"), .unified), (t("file.split"), .split)],
       selection: Binding(get: { model.layout(of: tab) }, set: { model.setFileTabLayout($0) }),
-      theme: theme,
-      section: .fileTab,
+      palette: theme.fileTab,
       metrics: model.metrics,
     )
   }

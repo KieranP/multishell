@@ -23,7 +23,7 @@ struct PaneTreeView: View {
         sessionID: id,
         isFocused: isFocusedPane,
         isLive: model.liveSessionIDs.contains(id),
-        dropHighlight: theme.interfaceRGB(.selection, in: .terminalTab),
+        dropHighlightColor: theme.interfaceRGB(.selection, in: .terminalTab),
       )
       .overlay { fade(isFocusedPane: isFocusedPane) }
       .overlay { ring(isFocusedPane: isFocusedPane) }

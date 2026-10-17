@@ -3,11 +3,11 @@ import MultishellCore
 import MultishellGitKit
 
 /// The git and disk reads behind the Files panel, each one at a time per
-/// worktree; see Docs/design/files.md.
+/// worktree or folder; see Docs/design/files.md.
 extension AppModel {
   /// Ten times what the last read and rebuild cost, so a build's churn takes
   /// about a tenth of a core.
-  private static var ignoredReadCostMultiple: Int { 10 }
+  private static var readCostMultiple: Int { 10 }
 
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, and a status read.
@@ -33,15 +33,12 @@ extension AppModel {
       task.cancel()
       pendingTrackedFilesReads[id] = nil
     }
-    for (id, task) in pendingIgnoredEntriesReads where !isKept(id) {
-      task.cancel()
-      pendingIgnoredEntriesReads[id] = nil
-    }
+    ignoredEntriesReads.cancel { !isKept($0) }
     setIfChanged(\.trackedFiles, trackedFiles.filter { isKept($0.key) })
     setIfChanged(\.ignoredEntries, ignoredEntries.filter { isKept($0.key) })
     fileTreeCache = fileTreeCache.filter { isKept($0.key) }
-    for (id, pending) in pendingFileTreeListings where !isKept(id) {
-      pending.task.cancel()
+    for (id, task) in pendingFileTreeListings where !isKept(id) {
+      task.cancel()
       pendingFileTreeListings[id] = nil
     }
     fileTreeListings = fileTreeListings.filter { isKept($0.key) }
@@ -65,27 +62,27 @@ extension AppModel {
   /// An install or a build writes what git ignores constantly, so one read runs
   /// at a time, the next waiting on its cost and the listing rebuild it set off.
   func scheduleIgnoredEntriesRead(of id: Worktree.ID) {
-    guard pendingIgnoredEntriesReads[id] == nil else {
-      ignoredEntriesAskedAgain.insert(id)
-      return
-    }
     guard let coordinator, let worktree = workspace.worktree(id) else { return }
-    pendingIgnoredEntriesReads[id] = Task { @MainActor [weak self] in
-      let started = ContinuousClock.now
-      let entries = await coordinator.git.ignoredEntries(in: worktree.path)
-      let cost = started.duration(to: .now)
-      if let entries, let self, !Task.isCancelled, workspace.worktree(id) != nil {
-        setIfChanged(\.ignoredEntries[id], entries)
-        forgetFoldersNoLongerIgnored(in: id)
+    ignoredEntriesReads.start(id) {
+      Task { @MainActor [weak self] in
+        let started = ContinuousClock.now
+        let entries = await coordinator.git.ignoredEntries(in: worktree.path)
+        let cost = started.duration(to: .now)
+        if let entries, let self, !Task.isCancelled, workspace.worktree(id) != nil {
+          setIfChanged(\.ignoredEntries[id], entries)
+          forgetFoldersNoLongerIgnored(in: id)
+        }
+        guard let pause = self?.pause(afterReadCosting: cost, in: id) else { return }
+        try? await Task.sleep(for: pause)
+        guard let self, !Task.isCancelled else { return }
+        if ignoredEntriesReads.finish(id) { scheduleIgnoredEntriesRead(of: id) }
       }
-      let rebuildCost = self?.fileTreeListings[id]?.buildCost ?? .zero
-      try? await Task.sleep(
-        for: max(.seconds(1), (cost + rebuildCost) * Self.ignoredReadCostMultiple)
-      )
-      guard let self, !Task.isCancelled else { return }
-      pendingIgnoredEntriesReads[id] = nil
-      if ignoredEntriesAskedAgain.remove(id) != nil { scheduleIgnoredEntriesRead(of: id) }
     }
+  }
+
+  private func pause(afterReadCosting cost: Duration, in id: Worktree.ID) -> Duration {
+    let rebuildCost = fileTreeListings[id]?.buildCost ?? .zero
+    return max(.seconds(1), (cost + rebuildCost) * Self.readCostMultiple)
   }
 
   /// A folder git stopped ignoring is listed by git again, its files no longer greyed.
@@ -93,7 +90,14 @@ extension AppModel {
     guard let read = ignoredFolderEntries[id] else { return }
     let ignoredFolders = (ignoredEntries[id] ?? []).filter { $0.hasSuffix("/") }
     let kept = read.filter { path, _ in ignoredFolders.contains { (path + "/").hasPrefix($0) } }
-    if kept.count != read.count { ignoredFolderEntries[id] = kept }
+    guard kept.count != read.count else { return }
+    ignoredFolderEntries[id] = kept
+    // A read already asked for would put the folder back, greyed again.
+    let forgotten = Set(read.keys).subtracting(kept.keys)
+    panelFolderReads.cancel { folderRead in
+      folderRead.worktreeID == id && folderRead.kind == .ignoredFolder
+        && forgotten.contains(folderRead.path)
+    }
   }
 
   /// git lists nothing below a folder it ignores, so the disk is read, one
@@ -101,38 +105,66 @@ extension AppModel {
   func scheduleIgnoredFolderRead(_ path: String, in id: Worktree.ID) {
     guard let worktree = workspace.worktree(id) else { return }
     let folder = worktree.path.appending(path: path)
-    Task { @MainActor [weak self] in
-      let entries = await runOnDispatch { IgnoredFolderReader.entries(of: folder) }
-      guard let self, workspace.worktree(id) != nil,
-        ignoredFolderEntries[id]?[path] != entries
-      else { return }
-      ignoredFolderEntries[id, default: [:]][path] = entries
-    }
+    schedulePanelFolderRead(
+      PanelFolderRead(kind: .ignoredFolder, path: path, worktreeID: id),
+      reading: { await runOnDispatch { IgnoredFolderReader.entries(of: folder) } },
+      landing: { model, entries in
+        guard model.ignoredFolderEntries[id]?[path] != entries else { return }
+        model.ignoredFolderEntries[id, default: [:]][path] = entries
+      },
+    )
   }
 
   /// `rev-parse --show-toplevel` must name the folder: in one nobody has
   /// initialised, `git -C` runs against the parent.
   func scheduleSubmoduleRead(_ path: String, in id: Worktree.ID) {
     guard let coordinator, let worktree = workspace.worktree(id) else { return }
+    let git = coordinator.git
     let directory = worktree.path.appending(path: path)
     let indicator = workspace.gitStatusIndicator
     let algorithm = workspace.diffAlgorithm
-    Task { @MainActor [weak self] in
-      let git = coordinator.git
-      let reading: SubmoduleReading
-      if await git.isRepositoryTop(directory), let tracked = await git.trackedFiles(in: directory) {
+    schedulePanelFolderRead(
+      PanelFolderRead(kind: .submodule, path: path, worktreeID: id),
+      reading: {
+        guard await git.isRepositoryTop(directory),
+          let tracked = await git.trackedFiles(in: directory)
+        else { return SubmoduleReading.uninitialised }
         let status = try? await git.status(
           inRepositoryAt: directory,
           counting: indicator,
           diffAlgorithm: algorithm,
         )
-        reading = SubmoduleReading(tracked: tracked, status: status)
-      } else {
-        reading = .uninitialised
+        return SubmoduleReading(tracked: tracked, status: status)
+      },
+      landing: { model, reading in
+        guard model.submoduleReadings[id]?[path] != reading else { return }
+        model.submoduleReadings[id, default: [:]][path] = reading
+      },
+    )
+  }
+
+  /// A build writes into an opened folder constantly, so one read per folder
+  /// runs at a time, one asked for meanwhile running once it is due.
+  private func schedulePanelFolderRead<Value: Sendable>(
+    _ read: PanelFolderRead,
+    reading: @escaping @Sendable () async -> Value,
+    landing: @escaping @MainActor (AppModel, Value) -> Void,
+  ) {
+    let id = read.worktreeID
+    panelFolderReads.start(read) {
+      Task { @MainActor [weak self] in
+        let started = ContinuousClock.now
+        let value = await reading()
+        let cost = started.duration(to: .now)
+        if let self, !Task.isCancelled, workspace.worktree(id) != nil { landing(self, value) }
+        guard let pause = self?.pause(afterReadCosting: cost, in: id) else { return }
+        try? await Task.sleep(for: pause)
+        guard let self, !Task.isCancelled, panelFolderReads.finish(read) else { return }
+        switch read.kind {
+        case .ignoredFolder: scheduleIgnoredFolderRead(read.path, in: id)
+        case .submodule: scheduleSubmoduleRead(read.path, in: id)
+        }
       }
-      guard let self, workspace.worktree(id) != nil else { return }
-      guard submoduleReadings[id]?[path] != reading else { return }
-      submoduleReadings[id, default: [:]][path] = reading
     }
   }
 

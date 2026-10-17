@@ -12,10 +12,6 @@ struct AppModelLifecycleTests {
     let harness = Harness(savedSelection: true)
     #expect(harness.model.workspace.selectedWorktreeID == nil)
     #expect(harness.model.liveTerminalCount == 0)
-    #expect(
-      harness.model.presentedError?.title == "git not found",
-      "no git was injected, and that is reported",
-    )
   }
 
   @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {

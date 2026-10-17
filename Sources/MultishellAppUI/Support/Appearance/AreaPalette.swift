@@ -21,7 +21,7 @@ struct AreaPalette {
     self.section = section
   }
 
-  private func color(_ key: InterfaceColorKey) -> Color {
+  func color(_ key: InterfaceColorKey) -> Color {
     theme.color(key, in: section)
   }
 }

@@ -10,22 +10,14 @@ struct WorktreeGitIgnoredPathsTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = fixture.project.path
-    try "node_modules/\ndist\n".write(
-      to: path.appendingPathComponent(".gitignore"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("node_modules/\ndist\n", to: ".gitignore")
     for directory in ["node_modules/a", "packages/p/node_modules", "src", "dist"] {
       try FileManager.default.createDirectory(
         at: path.appendingPathComponent(directory),
         withIntermediateDirectories: true,
       )
     }
-    try "x\n".write(
-      to: path.appendingPathComponent("dist/forced.js"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("x\n", to: "dist/forced.js")
     _ = try await fixture.runner.run(["add", "-f", "dist/forced.js"], in: path)
     let git = WorktreeGit(runner: fixture.runner)
 

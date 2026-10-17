@@ -2,8 +2,8 @@
 
 /// A file with one block replaced: context, `HEAD`'s lines removed, the lines
 /// added in their place, then context, numbered as git would.
-enum ReplacedBlockFixture {
-  static func rows(before: Int, removed: Int, added: Int, after: Int) -> FileTabRows {
+extension FileTabRows {
+  static func replacedBlock(before: Int, removed: Int, added: Int, after: Int) -> FileTabRows {
     let leading = (0..<before).map { index in
       DiffLine(kind: .context, oldNumber: index + 1, newNumber: index + 1, text: "before \(index)")
     }

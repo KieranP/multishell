@@ -23,12 +23,11 @@ struct DebugInfoHeader: View {
         label: t("debug.range"),
         options: DebugRange.allCases.map { ($0.title, $0) },
         selection: $range,
-        theme: theme,
-        section: .header,
+        palette: theme.header,
         metrics: metrics,
       )
       Toggle(t("debug.pause"), isOn: model.debugPausedBinding)
-        .toggleStyle(SegmentToggleStyle(theme: theme, section: .header, metrics: metrics))
+        .toggleStyle(SegmentToggleStyle(palette: theme.header, metrics: metrics))
     }
   }
 }
