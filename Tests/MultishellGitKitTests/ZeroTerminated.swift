@@ -1,7 +1,7 @@
 import Foundation
 
-/// The fixtures read as `git worktree list --porcelain` prints them, one
-/// attribute per line; `-z` is the same with NUL where the newline was.
+/// A fixture written a record per line, as git prints it with `-z`: the
+/// same with NUL where each newline was.
 func zeroTerminated(_ text: String) -> String {
   text.replacingOccurrences(of: "\n", with: "\u{0}")
 }

@@ -84,7 +84,7 @@ struct AppModelDebugMemoryTableTests {
 
   @Test func eachTabIsGivenWhatItsPanesTerminalsHold() async throws {
     let (harness, first, second) = try harnessWithTwoTabs()
-    harness.model.activate(first)
+    harness.model.activateTab(first.id)
     harness.model.splitActivePane(.vertical)
     let panes = try #require(harness.model.workspace.tabs.first { $0.id == first.id }).sessionIDs
     try #require(panes.count == 2)

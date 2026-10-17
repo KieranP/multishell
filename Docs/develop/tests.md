@@ -406,9 +406,10 @@ rule holds is in `Docs/design/`.
 - **What the git badge counts**: NumstatParserTests, NulPathListParserTests and
   UntrackedLineCounterTests, including a symlink that is never followed, a file
   that would cross the budget and the files past the cap. **The three together
-  on real git**: WorktreeGitStatusTests, once per indicator setting, an
-  untracked directory being one entry whose lines are still counted and a merge
-  conflict no file with no lines.
+  on real git**: WorktreeGitStatusTests, once per indicator setting, each file
+  in an untracked directory counted with its lines and a merge conflict no file
+  with no lines. Its +Changes extension holds the per-file list the badge, its
+  tooltip, the removal dialog and the Files panel share.
 - **A repository whose own config says not to look at untracked files**:
   GitRunnerTests, where the lines are counted anyway.
 - **Changing the indicator reads every badge at once**:
@@ -450,6 +451,16 @@ rule holds is in `Docs/design/`.
 - **A timeout whose child exits 0 is withdrawn and frees its stopper**:
   ProcessStopperTests stages the race rather than timing it, with a perl child
   that blocks SIGHUP.
+- **A row TextKit 2 lays out away from where its number says**:
+  DiffDocumentViewTests and SplitDiffDocumentViewTests, 10,750 rows jumped to
+  from the end, the only check on an override Apple does not document
+  (design/files.md). **A file tab painting outside its frame**:
+  DiffDocumentViewTests+Clipping, by pixels.
+- **A state file with file tabs read by the build before them keeps this build's
+  terminal order, and one that build wrote takes its order from `tabs`**:
+  WorkspaceStoreTests+FileTabs and Workspace+RepairTests+FileTabs.
+- **A grammar bump whose query no longer compiles, or whose bundle is not
+  found**: HighlightGrammarsTests, every grammar against its query.
 - **A drag nothing takes or a drop refuses goes back between the neighbours it
   left, and one a drop took stays**: AppModelTabDragTests.
 - **A segmented picker drawn only as wide as its labels**:

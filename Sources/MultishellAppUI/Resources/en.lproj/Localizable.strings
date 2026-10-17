@@ -23,6 +23,7 @@
 "action.rename" = "Rename…";
 "action.rename-spoken" = "Rename";
 "action.reveal-in-finder" = "Reveal in Finder";
+"action.show-modified-files" = "Show Modified Files";
 "action.update" = "Update";
 "action.use-branch-name" = "Use Branch Name";
 "action.worktree-actions" = "Worktree actions";
@@ -43,6 +44,10 @@
 "agents.preferred-agent" = "Preferred agent:";
 "agents.row-label" = "%@:";
 "agents.show" = "Show %@";
+"appearance.file-font" = "File font:";
+"appearance.file-font-info" = "Monospaced families first, then the rest. Applies to every open file tab.";
+"appearance.file-size" = "File size:";
+"appearance.file-size-info" = "A file tab's text, apart from the UI size. Applies to every open file tab.";
 "appearance.font-info" = "Monospaced families first, then the rest, since some programming fonts are not marked fixed-pitch. Applies to every open terminal.";
 "appearance.open-folder" = "Open Folder";
 "appearance.points" = "%d pt";
@@ -53,6 +58,8 @@
 "appearance.theme" = "Theme:";
 "appearance.theme-files" = "Theme files:";
 "appearance.theme-files-info" = "Any .json in the folder appears in the list. The examples/ subfolder holds the built-ins to copy from; nothing in there is loaded.";
+"appearance.ui-font" = "UI font:";
+"appearance.ui-font-info" = "The sidebar's, the tabs', the headers' and the panels'. Code, paths and the settings windows keep their own.";
 "appearance.ui-size" = "UI size:";
 "appearance.ui-size-info" = "Sidebar, tabs and header. Row heights follow it.";
 "board.lane-count" = "%1$@, %2$d";
@@ -91,6 +98,19 @@
 "dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "dialog.decide-later" = "Decide Later";
 "dialog.remove-project" = "Remove Project";
+"file.actions" = "File Actions";
+"file.layout" = "How changes are shown";
+"file.mode-changed" = "Mode changed";
+"file.split" = "Split";
+"file.unified" = "Unified";
+"files-panel.all" = "All";
+"files-panel.clear-filter" = "Clear Filter";
+"files-panel.filter" = "Filter files";
+"files-panel.modified" = "Modified";
+"files-panel.title" = "Files";
+"files-panel.toggle" = "Files";
+"files-panel.toggle-help" = "Show or hide the Files panel";
+"files-panel.which" = "Which files to list";
 "find.close" = "Close Find";
 "find.next" = "Next Match";
 "find.previous" = "Previous Match";
@@ -133,6 +153,7 @@
 "menu.close-tab" = "Close Tab";
 "menu.cut" = "Cut";
 "menu.enable-debug-tools" = "Enable Debug Tools";
+"menu.files-panel" = "Files Panel";
 "menu.find" = "Find";
 "menu.find-item" = "Find…";
 "menu.find-next" = "Find Next";
@@ -203,6 +224,7 @@
 "project.worktrees-discovered" = "%d discovered";
 "project.worktrees-label" = "Worktrees:";
 "quit.title" = "Quit Multishell?";
+"rotor.changes" = "Changes";
 "settings.appearance" = "Appearance";
 "settings.general" = "General";
 "settings.hooks" = "Hooks";

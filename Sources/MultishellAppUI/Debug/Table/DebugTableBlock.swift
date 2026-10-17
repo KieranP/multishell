@@ -18,10 +18,10 @@ struct DebugTableBlock<Content: View>: View {
     VStack(alignment: .leading, spacing: 0) {
       HStack(alignment: .firstTextBaseline, spacing: 8) {
         Text(title)
-          .font(.system(size: metrics.secondary, weight: .semibold))
+          .font(metrics.font(size: metrics.secondary, weight: .semibold))
           .foregroundStyle(theme.textPrimary)
         Text(caption)
-          .font(.system(size: metrics.caption))
+          .font(metrics.font(size: metrics.caption))
           .foregroundStyle(theme.textTertiary)
       }
       .padding(.horizontal, UIMetrics.debugTableInset)

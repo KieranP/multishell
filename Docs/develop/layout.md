@@ -2,14 +2,15 @@
 
 ## Layout
 
-- **One package: four libraries, the helper and the app.** MultishellCore holds
-  the model, with user settings under `Model/Settings/`, a repository's
-  `.multishell.json` under `Model/Settings/Shared/` and a worktree's tabs and
-  panes under `Model/Tabs/`; the store, theme and ports; sessions and their
-  reports; the decoding every persisted type leans on; the libraries' word
-  lookup; state on disk under `StateOnDisk/`; the command line's requests and
-  the app's answers under `Control/`; and under `Support/` the small helpers
-  every other library reaches for.
+- **One package: four libraries, a highlighting library, the helper and the
+  app.** MultishellCore holds the model, with user settings under
+  `Model/Settings/`, a repository's `.multishell.json` under
+  `Model/Settings/Shared/` and a worktree's tabs and panes under `Model/Tabs/`;
+  the store, theme and ports; sessions and their reports; the decoding every
+  persisted type leans on; the libraries' word lookup; state on disk under
+  `StateOnDisk/`; the command line's requests and the app's answers under
+  `Control/`; and under `Support/` the small helpers every other library reaches
+  for.
 - **MultishellProcess**: the children it starts, how a shell is started and
   quoted, sockets, what the kernel answers about a process, descriptor or
   terminal under `Kernel/`, and under `Support/` what belongs to no concern.
@@ -46,14 +47,19 @@
   text under `Usage/`, and the reports hooks and shells send under `Reports/`.
   **MultishellAppUI is the app**, built as `Multishell`: views, the engine host,
   the Mac platform port and its own word lookup.
+- **MultishellHighlight is a file tab's colouring**: the tree-sitter parse and
+  query over each grammar package, and the spans laid onto a diff's rows. Its
+  own target keeps the grammars out of the four libraries (Layering rules).
+  **TreeSitterScanners** compiles the three scanners copied under
+  `ThirdParty/tree-sitter/` and gives Swift nothing (dependencies.md).
 - **Views sit under the part of the window they draw**: sidebar, detail area, a
-  group of tabs or a pane, board, Debug Info, a settings window, a dialog. Views
-  that draw no part of one go under `Shared/`, or `Settings/Controls/` where
-  only the settings windows use them, beside the agent marks, the AppKit
-  modifiers and representables reaching under SwiftUI, and the scene and menus.
-  The engine host and the platform port each have a folder, the host split by
-  what each part is to libghostty: config, runtime, surface, input, clipboard,
-  links.
+  group of tabs or a pane, the Files panel, a file tab, board, Debug Info, a
+  settings window, a dialog. Views that draw no part of one go under `Shared/`,
+  or `Settings/Controls/` where only the settings windows use them, beside the
+  agent marks, the AppKit modifiers and representables reaching under SwiftUI,
+  and the scene and menus. The engine host and the platform port each have a
+  folder, the host split by what each part is to libghostty: config, runtime,
+  surface, input, clipboard, links.
 - **What draws nothing sits under `Support/`**, the in-app drag under
   `Support/Drag/`, unless it is by nature a piece of one part: the mark parser
   with the marks, a dialog's AppKit alert with the dialogs, what both settings
@@ -74,16 +80,17 @@
   bundling script reads and SwiftPM never sees, and a smaller icon for the
   README.
 - **`ThirdParty/` holds what is built rather than written here**: Ghostty as a
-  submodule, and the patches the build lays over it. `Scripts/build-ghostty.sh`
-  builds it into the GhosttyKit binary target under `.build/ghostty/`, which
-  only the app links.
+  submodule, the patches the build lays over it, and the tree-sitter scanners
+  three grammar packages leave out. `Scripts/build-ghostty.sh` builds Ghostty
+  into the GhosttyKit binary target under `.build/ghostty/`, which only the app
+  links.
 - **A suite's harnesses and fakes stay at its root**, and a file covering
   several concerns is mirrored by the one it spends most of its lines on.
 - **What the suites share sits in plain targets**, a test target not being
   dependable on, split by what they drag in: TestScratch, needing only Process
-  and Subprocess, which every suite reaches, and TestSupport, needing GitKit,
-  for the suites that touch a real repository, so a Core or Process suite does
-  not link GitKit for a temporary path.
+  and Subprocess, which every suite but MultishellHighlightTests reaches, and
+  TestSupport, needing GitKit, for the suites that touch a real repository, so a
+  Core or Process suite does not link GitKit for a temporary path.
 - **TestScratch starts a child with the runner's own spawn options**, reached
   with `@testable`, so a test's shell and the app's cannot start differently.
 - **The app's suite, MultishellAppUITests, reaches TestScratch alone**; its
@@ -108,6 +115,9 @@
   CoreServices, and one package**, swift-subprocess in the process layer
   (dependencies.md). CoreGraphics is there for the `CGRect` a pane's frame comes
   back as, CoreServices for the FSEvents stream the directory watcher runs on.
+- **MultishellHighlight is the one library outside that rule**, importing
+  SwiftTreeSitter and the grammars, and only the app imports it; the language
+  pick and the capture roles stay plain values in MultishellAppCore.
 - **MultishellAppUI is views, AppKit and the engine host.** Everything else
   lives in MultishellAppCore, including a plain value beside a view unless it
   names SwiftUI, AppKit, a Mac measurement or the engine.

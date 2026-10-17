@@ -924,6 +924,9 @@ command line's requests on the same socket. Newest at the bottom.
   standard error with exit 1. `install-agent-hooks --print` is the one
   exception: it prints the agent's file as a write makes it, as it did before
   the other commands came, so `> ~/.codex/hooks.json` writes a working file.
+- **`tabs list` and `tabs show` include file tabs**, `kind` saying which. A file
+  tab carries `path` and `isDeleted` and no `focusedPane`, `panes` or `layout`.
+  Cost: a script reading panes off every tab filters on `kind` first.
 - **A tab asked for in a worktree out of view opens there without switching to
   it**, so a script does not move the user's view. A worktree with no shells yet
   starts its saved tabs with it.
@@ -991,7 +994,8 @@ command line's requests on the same socket. Newest at the bottom.
   `tabs list` missed a `claude` typed into a shell tab that `sidebar list` and
   `board list` showed (`aPaneNamesTheAgentAtItsPromptAsTheSidebarAndBoardDo`).
 - **`worktrees show` reads git before it answers**, since status is read only
-  while the app is frontmost, and a scripted copy usually is not.
+  while the app is frontmost, the Files panel's worktree aside (worktrees.md),
+  and a scripted copy usually is not.
 - **The settings windows open through SwiftUI's own openers**, which only a view
   can reach, so the root view hands them to the platform. AppKit cannot open a
   SwiftUI scene, and closing one goes by the window's identifier.

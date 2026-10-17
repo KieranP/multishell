@@ -91,7 +91,7 @@ struct AppModelNotificationsTests {
     harness.messageSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(harness.notifier.posted.count == 1)
 
-    harness.model.activate(tab)
+    harness.model.activateTab(tab.id)
     #expect(harness.notifier.withdrawn == [.session(session)])
     #expect(
       harness.model.sessionStates[.session(session)] == .attention,

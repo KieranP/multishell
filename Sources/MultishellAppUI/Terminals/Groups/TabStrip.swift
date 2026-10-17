@@ -7,7 +7,7 @@ import SwiftUI
 struct TabStrip: View {
   let model: AppModel
   let group: TabGroup
-  let tabs: [TerminalTab]
+  let tabs: [WorkspaceTab]
   let isFocusedGroup: Bool
   /// What a screen reader says before this strip's tabs; empty for a
   /// worktree with one group. See `AccessibilityText.tabGroup`.

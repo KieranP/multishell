@@ -1,8 +1,9 @@
 import MultishellCore
 
 extension AppModel {
-  public func activate(_ tab: TerminalTab) {
-    store.activateTab(tab.id)
+  /// A click on a tab of either kind.
+  public func activateTab(_ id: WorkspaceTab.ID) {
+    store.activateTab(id)
     reconcileSessions(takingFocus: true)
   }
 
@@ -24,10 +25,11 @@ extension AppModel {
   public func activateNextTab() { activateAdjacentTab(.next) }
   public func activatePreviousTab() { activateAdjacentTab(.previous) }
 
-  /// The tab one place along the strip, wrapping at either end.
+  /// The tab one place along the strip, of either kind, wrapping at either end.
   private func activateAdjacentTab(_ direction: CycleDirection) {
-    guard let current = tabInView, let next = workspace.neighbour(ofTab: current.id, direction)
+    guard let current = workspaceTabInView,
+      let next = workspace.neighbour(ofTab: current.id, direction)
     else { return }
-    activate(next)
+    activateTab(next.id)
   }
 }

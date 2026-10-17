@@ -8,7 +8,7 @@ import SwiftUI
 struct GitStatusBadge: View {
   let status: WorktreeStatus
   let theme: Theme
-  let size: Double
+  let metrics: UIMetrics
   let tint: Color
 
   var body: some View {
@@ -19,7 +19,7 @@ struct GitStatusBadge: View {
       counts(.withoutFiles)
       counts(.essentials)
     }
-    .font(.system(size: size, weight: .medium))
+    .font(metrics.font(size: metrics.badge, weight: .medium))
     .monospacedDigit()
     .foregroundStyle(tint)
     // A row out of room truncates the name before it narrows the numbers.

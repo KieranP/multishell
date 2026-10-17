@@ -6,6 +6,6 @@ public enum TabDrop: Equatable, Sendable {
   case area(TabGroup.ID)
   case band(TabGroupBand)
   case strip(TabGroup.ID)
-  case tab(TerminalTab.ID, TerminalTab.Placement)
+  case tab(WorkspaceTab.ID, WorkspaceTab.Placement)
   case worktree(Worktree.ID)
 }

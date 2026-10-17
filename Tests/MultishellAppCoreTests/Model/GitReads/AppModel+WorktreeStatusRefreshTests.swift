@@ -33,7 +33,7 @@ struct AppModelWorktreeStatusRefreshTests {
     let fake = try harness.modelOnFakeGit(
       """
       case "$*" in
-        *status*) printf '## main\\n M README.md\\n';;
+        *status*) printf '## main\\0 M README.md\\0';;
         *--cached*) ;;
         *numstat*) sleep 0.5; printf '3\\t0\\tREADME.md\\n';;
       esac
@@ -148,6 +148,7 @@ struct AppModelWorktreeStatusRefreshTests {
     defer { harness.tearDown() }
     let main = harness.model.workspace.worktrees(of: harness.project.id)[0]
     try harness.dirty(main)
+    harness.clearStatuses()
 
     let refresh = Task { await harness.model.refreshStatus(of: main.id) }
     // One turn: the refresh has asked git and is waiting on the answer.

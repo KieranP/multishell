@@ -8,7 +8,7 @@ import Testing
 @Suite @MainActor
 struct WorktreeRowTests {
   private let project = Project(path: URL(fileURLWithPath: "/w/acme"))
-  private let metrics = UIMetrics(fontSize: 13)
+  private let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
 
   private func row(
     status: WorktreeStatus? = nil,
@@ -35,6 +35,7 @@ struct WorktreeRowTests {
       beginRename: beginRename,
       commitRename: { _ in },
       cancelRename: {},
+      showModifiedFiles: {},
     )
   }
 

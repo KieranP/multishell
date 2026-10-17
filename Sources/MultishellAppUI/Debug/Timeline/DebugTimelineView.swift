@@ -56,7 +56,7 @@ struct DebugTimelineView: View {
       }
       .padding(.trailing, UIMetrics.debugChartTrailingInset)
     }
-    .font(.system(size: metrics.small))
+    .font(metrics.font(size: metrics.small))
     .monospacedDigit()
     .foregroundStyle(theme.textTertiary)
     .padding(.top, 4)

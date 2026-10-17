@@ -2,8 +2,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// `forced` is a read someone asked for, past the pace and counting every new
-  /// file; see worktrees.md. `true` where a status landed.
+  /// `forced` is a read someone asked for, past the pace; see worktrees.md.
+  /// `true` where a status landed.
   @discardableResult
   func refreshStatus(of worktreeID: Worktree.ID, forced: Bool = false) async -> Bool {
     guard let coordinator, let worktree = workspace.worktree(worktreeID),
@@ -14,11 +14,7 @@ extension AppModel {
       return false
     }
     guard forced || statusReadLog.isDue(worktreeID, at: .now) else { return false }
-    let readings = await readStatuses(
-      of: [worktree],
-      with: coordinator,
-      countsEveryNewFile: forced,
-    )
+    let readings = await readStatuses(of: [worktree], with: coordinator)
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
     guard let still = workspace.worktree(worktreeID), mayReadStatus(of: still) else {
@@ -43,6 +39,15 @@ extension AppModel {
     }
   }
 
+  /// A project just listed, added or refreshed on request: no file event brings
+  /// its rows' badges, and the round is a minute off.
+  func refreshBadges(ofProject id: Project.ID) async {
+    await refreshStatuses(inProject: id)
+    if let project = workspace.project(id), !missingProjects.contains(id) {
+      await refreshBranchScan(of: project)
+    }
+  }
+
   /// A burst becomes one read once it settles and the pace allows, never pushed
   /// back by the next change, or a build writing on would hold the badge.
   func scheduleStatusRefresh(of worktreeID: Worktree.ID) {
@@ -56,8 +61,8 @@ extension AppModel {
       }
       guard !Task.isCancelled, let self else { return }
       pendingStatusRefreshes[worktreeID] = nil
-      // Left to the read a return to the front makes.
-      guard platform.isActive else { return }
+      // Left to the read a return to the front makes, bar the panel's.
+      guard platform.isActive || readsStatusInTheBackground(worktreeID) else { return }
       await refreshStatus(of: worktreeID)
     }
   }

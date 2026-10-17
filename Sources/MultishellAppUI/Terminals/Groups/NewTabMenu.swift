@@ -38,10 +38,10 @@ struct NewTabMenu: View {
   private var newTabLabel: some View {
     HStack(spacing: UIMetrics.menuChevronGap) {
       Image(systemName: "plus")
-        .font(.system(size: model.metrics.glyph, weight: .medium))
+        .font(model.metrics.font(size: model.metrics.glyph, weight: .medium))
         .accessibilityHidden(true)
       Image(systemName: "chevron.down")
-        .font(.system(size: model.metrics.menuChevronSize, weight: .bold))
+        .font(model.metrics.font(size: model.metrics.menuChevronSize, weight: .bold))
         .accessibilityHidden(true)
     }
     .foregroundStyle(theme.textSecondary)

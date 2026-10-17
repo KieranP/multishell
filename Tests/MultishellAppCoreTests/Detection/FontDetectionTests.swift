@@ -1,3 +1,4 @@
+import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
@@ -35,5 +36,18 @@ struct FontDetectionTests {
   @Test func withNoOtherFamiliesThereIsNoDivider() {
     let only = FontDetection(monospaced: ["Menlo"], otherFamilies: [])
     #expect(!only.options(selected: nil).map(\.id).contains(DetectionOption.dividerID))
+  }
+
+  @Test func theUIFontListsTheSystemFontThenProportionalFamiliesFirst() {
+    let detection = FontDetection(monospaced: ["Menlo"], otherFamilies: ["Avenir Next"])
+
+    let options = detection.uiFontOptions(selected: nil)
+
+    #expect(options.first?.label == t("option.system-font"))
+    #expect(
+      options.map(\.id) == [
+        FontDetection.systemID, "Avenir Next", DetectionOption.dividerID, "Menlo",
+      ]
+    )
   }
 }

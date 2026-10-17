@@ -119,6 +119,19 @@ struct DebugMemoryTableTests {
     #expect(table.rows.first?.totalMemory == 400)
   }
 
+  @Test func fileTabsTextShowsInARowOfItsOwnTakenOutOfTheApps() throws {
+    let table = DebugMemoryTable(
+      appMemory: 400,
+      tabs: [],
+      unattributedProcesses: [],
+      fileTabs: DebugFileTabMemory(tabCount: 2, textMemory: 150),
+    )
+
+    #expect(table.rows.map(\.source) == [.app, .fileTabs, .total])
+    #expect(table.rows.map(\.totalMemory) == [250, 150, 400])
+    #expect(table.rows[1].subtitle == "The text of 2 open files, estimated")
+  }
+
   @Test func theAppRowStopsAtZeroWhereItsTerminalsReadMoreThanItsFootprint() {
     let table = DebugMemoryTable(
       appMemory: 400,
@@ -144,5 +157,17 @@ struct DebugMemoryTableTests {
     #expect(table.totalMemory == 400)
     #expect(row.terminalRow == DebugTerminalRow(selfMemory: 150, totalMemory: 150))
     #expect(row.disclosure(isExpanded: false) == .collapsed)
+  }
+
+  @Test func theFileTabsBarNeverPassesTheHeaviestRow() throws {
+    let table = DebugMemoryTable(
+      appMemory: 100,
+      tabs: [],
+      unattributedProcesses: [],
+      fileTabs: DebugFileTabMemory(tabCount: 1, textMemory: 80),
+    )
+
+    let row = try #require(table.rows.first { $0.source == .fileTabs })
+    #expect(row.barFraction <= 1)
   }
 }

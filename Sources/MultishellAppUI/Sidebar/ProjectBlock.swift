@@ -101,6 +101,7 @@ struct ProjectBlock: View {
       beginRename: { model.beginRenamingWorktree(worktree) },
       commitRename: { model.commitWorktreeRename(of: worktree.id, to: $0) },
       cancelRename: { model.cancelRenamingWorktree() },
+      showModifiedFiles: { model.showModifiedFiles(of: worktree) },
     )
     .equatable()
     .onTapGesture { model.select(worktree) }

@@ -9,7 +9,6 @@ extension WorktreeCoordinator {
     of worktrees: [Worktree],
     counting indicator: GitStatusIndicator = .default,
     diffAlgorithm: DiffAlgorithm = .default,
-    countsEveryNewFile: Bool = false,
   ) async -> [Worktree.ID: StatusReading] {
     let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
       width: SharedReadState.maximumConcurrentReads
@@ -19,7 +18,6 @@ extension WorktreeCoordinator {
         of: worktree,
         counting: indicator,
         diffAlgorithm: diffAlgorithm,
-        countsEveryNewFile: countsEveryNewFile,
       )
       return (
         worktree.id,

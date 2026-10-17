@@ -17,7 +17,7 @@ extension AppModel {
         agent: agentIDAtThePrompt(of: session),
         state: state(ofPane: id),
         workers: workers(ofPane: id).map(PaneDescription.WorkerRecord.init),
-        find: findBarSessionIDs.contains(id)
+        find: findBarTargetIDs.contains(id)
           ? PaneDescription.Find(
             text: findText(of: id),
             total: searchCounts[id]?.total,

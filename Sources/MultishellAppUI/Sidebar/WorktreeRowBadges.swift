@@ -14,6 +14,7 @@ struct WorktreeRowBadges: View {
   let terminalCount: Int
   let theme: Theme
   let metrics: UIMetrics
+  let showModifiedFiles: () -> Void
 
   var body: some View {
     if let operation {
@@ -23,7 +24,7 @@ struct WorktreeRowBadges: View {
           .help(operation.title)
       } else {
         Image(systemName: "exclamationmark.triangle.fill")
-          .font(.system(size: metrics.badge))
+          .font(metrics.font(size: metrics.badge))
           .foregroundStyle(theme.failureColor)
           .help(operation.title)
           .accessibilityLabel(operation.title)
@@ -31,7 +32,7 @@ struct WorktreeRowBadges: View {
     }
     if isLocked {
       Image(systemName: "lock.fill")
-        .font(.system(size: metrics.small))
+        .font(metrics.font(size: metrics.small))
         .foregroundStyle(theme.textTertiary)
         .help(t("sidebar.locked"))
         .accessibilityLabel(t("sidebar.locked"))
@@ -40,7 +41,7 @@ struct WorktreeRowBadges: View {
     // here hides the badge. See `WorktreeMergeState.showsBadge`.
     if mergeState.showsBadge(with: status) {
       Image(systemName: "arrow.triangle.merge")
-        .font(.system(size: metrics.badge))
+        .font(metrics.font(size: metrics.badge))
         .foregroundStyle(theme.mergedColor)
         .help(mergeState.tooltip)
         .accessibilityLabel(mergeState.tooltip)
@@ -48,11 +49,20 @@ struct WorktreeRowBadges: View {
     // Git changes sit left of the terminal count, so the count stays at
     // the row's right edge and lines up with rows that have no changes.
     if let status = WorktreeStatus.badged(status) {
-      GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
+      Button(action: showModifiedFiles) {
+        GitStatusBadge(
+          status: status,
+          theme: theme,
+          metrics: metrics,
+          tint: theme.textSecondary,
+        )
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
     }
     if terminalCount > 0 {
       Text("\(terminalCount)")
-        .font(.system(size: metrics.badge, weight: .semibold))
+        .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()
         .foregroundStyle(theme.textSecondary)
         .padding(.horizontal, 6)

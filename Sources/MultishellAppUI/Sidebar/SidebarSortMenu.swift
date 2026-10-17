@@ -30,7 +30,7 @@ struct SidebarSortMenu: View {
       )
     } label: {
       Image(systemName: "arrow.up.arrow.down")
-        .font(.system(size: metrics.badge))
+        .font(metrics.font(size: metrics.badge))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sectionHeaderHeight)
         // Painted: a menu is hit-tested by its label's ink, and the glyph

@@ -350,3 +350,12 @@ What each addition needs beyond the code itself.
   also needs a case in the preference's hand-written coding keys, which keep
   Failed under `error`, and a line in its decode; one left out of the keys is
   never saved.
+- **A highlighted language.** A case in `HighlightLanguage` with its extensions,
+  file names and interpreters; the grammar's package pinned exactly in
+  `Package.swift` at a tag committing its parser, or at a revision where no tag
+  does (dependencies.md); where the package drops its scanner, the scanner and
+  what it includes copied under `ThirdParty/tree-sitter/`, with a README naming
+  the tag and commit, and listed in `TreeSitterScanners`' `sources`; its entry
+  in `HighlightGrammars.sources`; any capture name whose first component
+  misleads in `HighlightCaptureRoles`; a case in
+  `eachGrammarColoursAWordOfItsLanguage`; and its notice and licence text.

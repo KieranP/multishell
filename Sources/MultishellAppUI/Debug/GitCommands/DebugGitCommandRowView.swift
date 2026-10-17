@@ -29,7 +29,7 @@ struct DebugGitCommandRowView: View {
         }
       }
     }
-    .font(.system(size: metrics.secondary))
+    .font(metrics.font(size: metrics.secondary))
     .fixedSize(horizontal: false, vertical: true)
     .debugTableRow(theme)
     .debugTableRowHighlight(theme)

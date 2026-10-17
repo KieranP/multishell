@@ -56,7 +56,7 @@ struct AppModelControlDebugTests {
     let reply = try #require(await harness.messageSource.ask(.debugMemory))
 
     #expect(reply.outputFields["appMemory"] as? Int == 400)
-    #expect(reply.outputFields["appMemoryOutsideTerminals"] as? Int == 350)
+    #expect(reply.outputFields["appMemoryOutsideTabs"] as? Int == 350)
     let tabs = try #require(reply.outputFields["tabs"] as? [[String: Any]])
     #expect(tabs.compactMap { $0["id"] as? String } == [tab.id.uuidString])
     #expect(tabs.first?["terminalMemory"] as? Int == 50)

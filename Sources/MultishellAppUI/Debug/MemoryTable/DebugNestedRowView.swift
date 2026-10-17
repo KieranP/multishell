@@ -39,7 +39,7 @@ struct DebugNestedRowView: View {
         Text(memory.memorySummary).monospacedDigit()
       }
     }
-    .font(.system(size: metrics.caption))
+    .font(metrics.font(size: metrics.caption))
     .foregroundStyle(theme.textSecondary)
     .fixedSize(horizontal: false, vertical: true)
     .padding(.leading, UIMetrics.debugTableTitleInset)
@@ -54,12 +54,16 @@ struct DebugNestedRowView: View {
     HStack(alignment: .firstTextBaseline, spacing: 4) {
       if indentLevel > 0 {
         Image(systemName: "arrow.turn.down.right")
-          .font(.system(size: metrics.debugTableGlyphSize))
+          .font(metrics.font(size: metrics.debugTableGlyphSize))
           .foregroundStyle(theme.textTertiary)
           .accessibilityHidden(true)
       }
       Text(name)
-        .font(.system(size: metrics.caption, design: namesAProcess ? .monospaced : .default))
+        .font(
+          namesAProcess
+            ? .system(size: metrics.caption, design: .monospaced)
+            : metrics.font(size: metrics.caption)
+        )
     }
     .padding(.leading, Self.indent + Double(indentLevel) * Self.indentPerLevel)
     .frame(maxWidth: .infinity, alignment: .leading)

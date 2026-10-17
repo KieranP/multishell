@@ -47,4 +47,35 @@ struct AppModelAppearanceTests {
 
     #expect(harness.model.workspace.appearance.terminalFontName == "Menlo")
   }
+
+  @Test func theFileFontAndSizeAreSetApartFromTheTerminalsAndClamped() {
+    let harness = Harness()
+    harness.model.setTerminalFont(name: "Menlo", size: 15)
+
+    harness.model.setFileFontPickerID("Courier")
+    harness.model.setFileFontSize(Appearance.fileFontSizes.upperBound + 10)
+    harness.model.setFileFontPickerID(DetectionOption.dividerID)
+
+    #expect(harness.model.workspace.appearance.fileFontName == "Courier")
+    #expect(harness.model.fileFontPickerID == "Courier")
+    #expect(harness.model.workspace.appearance.fileFontSize == Appearance.fileFontSizes.upperBound)
+    #expect(harness.model.workspace.appearance.terminalFontName == "Menlo")
+    #expect(harness.model.workspace.appearance.terminalFontSize == 15)
+    harness.model.setFileFontPickerID(FontDetection.systemID)
+    #expect(harness.model.workspace.appearance.fileFontName == nil)
+  }
+
+  @Test func theUIFontFamilyIsSetApartFromItsSize() {
+    let harness = Harness()
+    harness.model.setUIFontSize(15)
+
+    harness.model.setUIFontPickerID("Avenir Next")
+    harness.model.setUIFontPickerID(DetectionOption.dividerID)
+
+    #expect(harness.model.workspace.appearance.uiFontName == "Avenir Next")
+    #expect(harness.model.uiFontPickerID == "Avenir Next")
+    #expect(harness.model.workspace.appearance.uiFontSize == 15)
+    harness.model.setUIFontPickerID(FontDetection.systemID)
+    #expect(harness.model.workspace.appearance.uiFontName == nil)
+  }
 }

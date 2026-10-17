@@ -6,7 +6,7 @@ import Testing
 
 @Suite @MainActor
 struct SidebarAgentsRowTests {
-  private let metrics = UIMetrics(fontSize: 13)
+  private let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
 
   private func row(waiting: Int, select: @escaping () -> Void = {}) -> SidebarAgentsRow {
     SidebarAgentsRow(

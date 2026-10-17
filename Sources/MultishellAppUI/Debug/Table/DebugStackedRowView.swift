@@ -18,7 +18,7 @@ struct DebugStackedRowView<Title: View, Headline: View>: View {
       }
       ForEach(captions, id: \.self) { caption in
         Text(caption)
-          .font(.system(size: metrics.caption))
+          .font(metrics.font(size: metrics.caption))
           .monospacedDigit()
           .foregroundStyle(theme.textSecondary)
       }

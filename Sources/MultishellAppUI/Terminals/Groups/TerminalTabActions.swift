@@ -4,7 +4,7 @@ import SwiftUI
 
 /// A tab's context menu. A view of its own, so its lookups run when the menu
 /// does rather than on every render of the strip.
-struct TabActions: View {
+struct TerminalTabActions: View {
   let model: AppModel
   let tab: TerminalTab
 
@@ -18,15 +18,6 @@ struct TabActions: View {
       Button(t("action.clear-status")) { model.clearState(of: tab) }
     }
     Divider()
-    // The keyboard-only way to the layout the edge bands offer a drag, and
-    // only where it would do something.
-    Button(t("tab.move-to-new-group")) {
-      model.moveTab(tab.id, .after, toNewGroupOf: tab.groupID)
-    }
-    .disabled(!model.canMoveTabToNewGroup(tab))
-    Divider()
-    // The one way to close an inactive tab without a mouse, the X being
-    // drawn on the active one alone. Not destructive-red.
-    Button(t("tab.close")) { model.closeTab(tab.id) }
+    TabMoveAndCloseActions(model: model, tabID: tab.id, groupID: tab.groupID)
   }
 }

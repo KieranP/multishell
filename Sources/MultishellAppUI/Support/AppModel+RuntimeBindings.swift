@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Bindings for what the model holds for this run, which the workspace does
-/// not save: the board's filter, the debug tools' toggles and a find bar's text.
+/// Bindings for what the model holds this run and never saves: the board's
+/// filter, the Files panel, the debug toggles, a find bar's text.
 extension AppModel {
   var showsAllTerminalsBinding: Binding<Bool> {
     Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
@@ -13,11 +13,15 @@ extension AppModel {
     Binding(get: { self.areDebugToolsEnabled }, set: { self.setDebugToolsEnabled($0) })
   }
 
+  var showsFilesPanelBinding: Binding<Bool> {
+    Binding(get: { self.showsFilesPanel }, set: { self.setShowsFilesPanel($0) })
+  }
+
   var debugPausedBinding: Binding<Bool> {
     Binding(get: { self.isDebugPaused }, set: { self.setDebugPaused($0) })
   }
 
-  func findTextBinding(of sessionID: TerminalSession.ID) -> Binding<String> {
-    Binding(get: { self.findText(of: sessionID) }, set: { self.setFindText($0, of: sessionID) })
+  func findTextBinding(of targetID: FindTargetID) -> Binding<String> {
+    Binding(get: { self.findText(of: targetID) }, set: { self.setFindText($0, of: targetID) })
   }
 }

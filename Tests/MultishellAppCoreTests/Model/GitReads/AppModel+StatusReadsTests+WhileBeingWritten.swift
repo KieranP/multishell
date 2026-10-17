@@ -16,6 +16,7 @@ extension AppModelStatusReadsTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     try harness.dirty(main)
+    harness.clearStatuses()
     harness.model.worktreeOperations.begin(.copyingFiles, on: main.id)
 
     await harness.model.refreshStatuses()
@@ -199,8 +200,8 @@ extension AppModelStatusReadsTests {
     await harness.model.refreshStatuses()
 
     #expect(
-      harness.model.statuses[created.id]?.changedFiles == 1,
-      "the one untracked directory, after",
+      harness.model.statuses[created.id]?.changedFiles == 2,
+      "each file the hook wrote, after",
     )
   }
 }

@@ -48,6 +48,12 @@ extension AppModel {
       let tab = workspace.tab(owning: sessionID),
       let worktree = workspace.worktree(tab.worktreeID)
     else { return }
+    openInEditor(file: file, in: worktree)
+  }
+
+  /// A file of `worktree` in the editor: from a clicked link, the Files panel
+  /// or a file tab. A terminal editor opens its tab in that worktree.
+  func openInEditor(file: URL, in worktree: Worktree) {
     guard let editorID = workspace.effectiveEditorID else {
       openInPlainTextEditor(file)
       return

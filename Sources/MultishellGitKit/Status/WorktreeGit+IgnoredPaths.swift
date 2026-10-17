@@ -16,4 +16,19 @@ extension WorktreeGit {
     else { return nil }
     return Set(outcome.standardOutput.split(whereSeparator: \.isNewline).map(String.init))
   }
+
+  /// What git ignores, a wholly ignored folder one entry ending in `/`, so its
+  /// walk stops there; at most `listedPathLimit` entries.
+  public func ignoredEntries(in directory: URL) async -> [String]? {
+    guard
+      let output = await runner.output(
+        [
+          "--no-optional-locks", "ls-files", "-z", "--others", "--ignored", "--exclude-standard",
+          "--directory",
+        ],
+        in: directory,
+      )
+    else { return nil }
+    return NulPathListParser.parse(output, limit: Self.listedPathLimit)
+  }
 }

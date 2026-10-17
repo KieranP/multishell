@@ -16,19 +16,19 @@ struct DebugStripLabel: View {
     VStack(alignment: .leading, spacing: 1) {
       HStack(spacing: 6) {
         Text(metric.title)
-          .font(.system(size: metrics.caption))
+          .font(metrics.font(size: metrics.caption))
           .foregroundStyle(theme.textSecondary)
         if metric.isSplitByOwner {
           DebugSeriesLegend(metric: metric, theme: theme, metrics: metrics)
         }
       }
       Text(metric.valueText(of: slot))
-        .font(.system(size: metrics.debugStripValueSize, weight: .semibold))
+        .font(metrics.font(size: metrics.debugStripValueSize, weight: .semibold))
         .monospacedDigit()
         .foregroundStyle(valueColor)
       if let detail = slot.flatMap(metric.detailText(of:)) {
         Text(detail)
-          .font(.system(size: metrics.small))
+          .font(metrics.font(size: metrics.small))
           .monospacedDigit()
           .foregroundStyle(theme.textTertiary)
       }

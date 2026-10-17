@@ -13,7 +13,7 @@ struct DebugGitCommandsTableView: View {
     VStack(spacing: 0) {
       if gitCommands.isEmpty {
         Text(t("debug.no-git"))
-          .font(.system(size: metrics.secondary))
+          .font(metrics.font(size: metrics.secondary))
           .foregroundStyle(theme.textTertiary)
           .frame(maxWidth: .infinity, alignment: .leading)
           .debugTableRow(theme, verticalPadding: 6)

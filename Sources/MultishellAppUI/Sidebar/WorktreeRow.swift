@@ -27,6 +27,9 @@ struct WorktreeRow: View, @MainActor Equatable {
   let beginRename: () -> Void
   let commitRename: (String) -> Void
   let cancelRename: () -> Void
+  /// A click on the git badge, or the row's named action: the Files panel
+  /// opened on what changed here.
+  let showModifiedFiles: () -> Void
 
   private var kind: String { worktree.kindText() }
 
@@ -58,6 +61,7 @@ struct WorktreeRow: View, @MainActor Equatable {
         terminalCount: terminalCount,
         theme: theme,
         metrics: metrics,
+        showModifiedFiles: showModifiedFiles,
       )
     }
     .padding(.leading, metrics.worktreeRowIndent)
@@ -82,6 +86,8 @@ struct WorktreeRow: View, @MainActor Equatable {
     )
     .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
+    // The row ignores its children, so the badge's button is reached here.
+    .accessibilityAction(named: t("action.show-modified-files"), showModifiedFiles)
   }
 
   /// The user's name over the branch, or the branch alone. The branch never
@@ -91,7 +97,7 @@ struct WorktreeRow: View, @MainActor Equatable {
     if let customName {
       VStack(alignment: .leading, spacing: 0) {
         Text(customName)
-          .font(.system(size: metrics.secondary, weight: .medium))
+          .font(metrics.font(size: metrics.secondary, weight: .medium))
           .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
           .lineLimit(1)
           .truncationMode(.tail)
@@ -114,7 +120,7 @@ struct WorktreeRow: View, @MainActor Equatable {
       InlineNameField(
         initial: customName ?? "",
         prompt: t("sidebar.name-prompt"),
-        font: .system(size: metrics.secondary, weight: .medium),
+        font: metrics.font(size: metrics.secondary, weight: .medium),
         color: theme.textPrimary,
         commit: commitRename,
         cancel: cancelRename,

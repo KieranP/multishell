@@ -98,6 +98,14 @@ every file it touches and how far each shell and agent goes.
 - Open the worktree in your editor.
 - Your shell rc files are never edited.
 
+**Files**
+
+- A Files panel beside the tabs lists every file in the worktree, ignored ones
+  greyed, or only what changed. Open it from View > Files Panel, or click a
+  row's line-count badge.
+- Files open read-only in tabs beside the terminals, with uncommitted changes
+  against `HEAD` shown unified or side by side, syntax highlighting and Cmd+F.
+
 **Agents**
 
 - Claude Code, Codex, Gemini CLI, Copilot CLI and OpenCode, each with its own

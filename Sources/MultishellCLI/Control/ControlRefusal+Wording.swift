@@ -46,6 +46,7 @@ extension ControlRefusal {
     case .replyNotEncoded: "Multishell could not write its answer"
     case .screenshotFailed: "nothing was drawn to capture; the window or pane is off screen"
     case .tabInAnotherWorktree(let id): "tab \(id) is in another worktree"
+    case .tabShowsAFile(let id): "tab \(id) shows a file, which keeps its name and has no panes"
 
     case .windowInFullScreen:
       "the main window is in full screen; `multishell window full-screen off` takes it out"

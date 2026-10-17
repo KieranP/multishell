@@ -24,7 +24,7 @@ struct AppModelSessionReportsTests {
     harness.messageSource.send(
       SessionStateReport(state: .attention, sessionID: first.focusedSessionID)
     )
-    harness.model.activate(first)
+    harness.model.activateTab(first.id)
     #expect(harness.model.state(of: first) == .attention, "looking is not answering")
 
     harness.messageSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))

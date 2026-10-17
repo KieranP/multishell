@@ -6,6 +6,10 @@ import SwiftUI
 extension Theme {
   /// How far a sidebar row's name is held back until the row is selected.
   private static let unselectedRowNameOpacity: Double = 0.85
+  /// Shared with a file tab's AppKit colours, which cannot take a `Color`.
+  static let primaryTextOpacity = 0.92
+  static let secondaryTextOpacity = 0.6
+  static let tertiaryTextOpacity = 0.38
 
   var backgroundColor: Color { backgroundRGB.color }
   private var foregroundColor: Color { foregroundRGB.color }
@@ -24,9 +28,12 @@ extension Theme {
   var findBarColor: Color { isDark ? sidebarColor : columnColor }
   var findWellBorderColor: Color { isDark ? .clear : hairline }
 
-  var textPrimary: Color { foregroundColor.opacity(0.92) }
-  var textSecondary: Color { foregroundColor.opacity(0.6) }
-  var textTertiary: Color { foregroundColor.opacity(0.38) }
+  /// A header glyph whose panel is open, in the focus ring's colour.
+  var toggledGlyphColor: Color { focusRingRGB?.color ?? .accentColor }
+
+  var textPrimary: Color { foregroundColor.opacity(Self.primaryTextOpacity) }
+  var textSecondary: Color { foregroundColor.opacity(Self.secondaryTextOpacity) }
+  var textTertiary: Color { foregroundColor.opacity(Self.tertiaryTextOpacity) }
   var hairline: Color { foregroundColor.opacity(0.09) }
   var faintFill: Color { foregroundColor.opacity(0.06) }
 

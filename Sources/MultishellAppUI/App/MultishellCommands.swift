@@ -117,6 +117,8 @@ struct MultishellCommands: Commands {
     CommandGroup(after: .toolbar) {
       Button(t("label.agents")) { model.toggleAgentBoard() }
         .keyboardShortcut(AppShortcutCatalogue.toggleAgentBoard)
+      // No key yet; one is an `AppShortcut` in the catalogue (adding.md).
+      Toggle(t("menu.files-panel"), isOn: model.showsFilesPanelBinding)
       Divider()
       Toggle(t("menu.enable-debug-tools"), isOn: model.debugToolsEnabledBinding)
     }

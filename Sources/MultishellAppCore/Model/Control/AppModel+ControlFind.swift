@@ -23,7 +23,7 @@ extension AppModel {
     if case .open(let text) = action {
       return text.isEmpty ? .noFindText(id: id) : nil
     }
-    guard findBarSessionIDs.contains(id) else { return .noFindBar(id: id) }
+    guard findBarTargetIDs.contains(id) else { return .noFindBar(id: id) }
     if action != .close, findText(of: id).isEmpty { return .noFindText(id: id) }
     return nil
   }

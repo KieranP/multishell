@@ -15,7 +15,7 @@ struct AppModelControlFindTests {
     harness.engine.delegate?.terminalHost(harness.engine, didCount: .selected(0), in: pane)
     let reply = try #require(await harness.messageSource.ask(.describePane(id: pane)))
 
-    #expect(harness.model.findBarSessionIDs.contains(pane))
+    #expect(harness.model.findBarTargetIDs.contains(pane))
     #expect(harness.engine.searched.last?.step == .find("error"))
     let find = try #require(reply.outputFields["find"] as? [String: Any])
     #expect(find["text"] as? String == "error")
@@ -51,7 +51,7 @@ struct AppModelControlFindTests {
 
     _ = await harness.messageSource.ask(.findInPane(id: pane, action: .close))
 
-    #expect(!harness.model.findBarSessionIDs.contains(pane))
+    #expect(!harness.model.findBarTargetIDs.contains(pane))
     #expect(harness.engine.focused == focusedBefore)
   }
 

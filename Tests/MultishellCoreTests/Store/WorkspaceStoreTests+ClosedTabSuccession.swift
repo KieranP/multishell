@@ -55,7 +55,7 @@ extension WorkspaceStoreTests {
     store.moveTab(tabs[1].id, .before, anchor: tabs[3].id)
 
     #expect(store.workspace.group(first.id)?.shownTabID == tabs[2].id)
-    #expect(store.workspace.tabs(inGroup: made.id).map(\.id) == [tabs[1].id, tabs[3].id])
+    #expect(store.workspace.workspaceTabs(inGroup: made.id).map(\.id) == [tabs[1].id, tabs[3].id])
     WorkspaceInvariants.check(store.workspace, "moved shown tab across groups")
   }
 

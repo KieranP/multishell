@@ -14,10 +14,10 @@ struct PanelHeader<Controls: View>: View {
   var body: some View {
     HStack(spacing: 8) {
       Text(title)
-        .font(.system(size: metrics.bodySize, weight: .semibold))
+        .font(metrics.font(size: metrics.bodySize, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
       Text(summary)
-        .font(.system(size: metrics.caption))
+        .font(metrics.font(size: metrics.caption))
         .foregroundStyle(summaryColor)
         .lineLimit(1)
         .truncationMode(.tail)

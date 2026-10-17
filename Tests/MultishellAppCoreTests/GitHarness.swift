@@ -130,7 +130,7 @@ struct GitHarness {
             touch "$SCRATCH/first"
             while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
           fi
-          printf '## main\\n' ;;
+          printf '## main\\0' ;;
       esac
       """
     )
@@ -148,7 +148,7 @@ struct GitHarness {
       """
       case "$*" in
         *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(root.path)" ]; do sleep 0.02; done
-          printf '## \(branch)\\n' ;;
+          printf '## \(branch)\\0' ;;
       esac
       """
     )

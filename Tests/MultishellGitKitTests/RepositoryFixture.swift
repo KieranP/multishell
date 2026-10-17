@@ -41,6 +41,16 @@ struct RepositoryFixture {
     return (fixture, checkout)
   }
 
+  /// Writes `text` into the project's checkout, its folders made as needed.
+  func write(_ text: String, to path: String) throws {
+    let url = project.path.appending(path: path)
+    try FileManager.default.createDirectory(
+      at: url.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
+    try text.write(to: url, atomically: true, encoding: .utf8)
+  }
+
   func commit(_ message: String, file: String, content: String) async throws {
     try await commit(message, files: [file: content])
   }

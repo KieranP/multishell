@@ -76,7 +76,7 @@ struct AppModelStatusReadsTests {
       while [ "${1#--}" != "$1" ]; do shift; done
       case "$1" in
         status) if [ -e "$SCRATCH/fail" ]; then exit 128; fi
-                printf '## main\\n M a.txt\\n' ;;
+                printf '## main\\0 M a.txt\\0' ;;
       esac
       """
     )
@@ -96,7 +96,7 @@ struct AppModelStatusReadsTests {
     let model = try harness.modelOnFakeGit(
       """
       while [ "${1#--}" != "$1" ]; do shift; done
-      case "$1" in status) printf '## main\\n M a.txt\\n' ;; esac
+      case "$1" in status) printf '## main\\0 M a.txt\\0' ;; esac
       """
     )
     let main = try #require(harness.worktree(onBranch: "main"))
@@ -161,7 +161,7 @@ struct AppModelStatusReadsTests {
       """
       while [ "${1#--}" != "$1" ]; do shift; done
       case "$1" in
-        status) sleep 1; printf '## main\\n M a.txt\\n' ;;
+        status) sleep 1; printf '## main\\0 M a.txt\\0' ;;
       esac
       """
     )

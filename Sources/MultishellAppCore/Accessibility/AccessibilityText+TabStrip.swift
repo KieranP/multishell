@@ -1,9 +1,10 @@
 import MultishellCore
+import MultishellGitKit
 
 extension AccessibilityText {
   /// A tab in the strip: its title, the agent its mark names, whether it is
   /// the one shown, its state and whether it is split.
-  public static func tab(
+  public static func terminalTab(
     title: String,
     isShown: Bool,
     isSplit: Bool,
@@ -20,6 +21,14 @@ extension AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
+  /// A file tab: its title, whether it is shown, and what happened to its file.
+  public static func fileTab(title: String, isShown: Bool, change: StatusChange.Kind?) -> String {
+    var parts = [t("spoken.file-tab", title)]
+    if isShown { parts.append(t("spoken.selected")) }
+    if let change { parts.append(statusChange(change)) }
+    return parts.joined(separator: ", ")
+  }
+
   /// One group of tabs, said before its tabs are. Empty for a worktree with
   /// one group, "group 1 of 1" before every tab being noise.
   public static func tabGroup(position: Int, of count: Int, isFocused: Bool) -> String {
@@ -31,7 +40,7 @@ extension AccessibilityText {
 
   /// The band down the edge of a group's terminal area, which a dragged
   /// tab lands on to get a group of its own.
-  public static func newTabGroupBand(_ placement: TerminalTab.Placement) -> String {
+  public static func newTabGroupBand(_ placement: WorkspaceTab.Placement) -> String {
     placement == .before
       ? t("spoken.new-tab-group-left") : t("spoken.new-tab-group-right")
   }

@@ -21,7 +21,7 @@ struct TabGroupView: View {
       TabStrip(
         model: model,
         group: group,
-        tabs: model.workspace.tabs(inGroup: group.id),
+        tabs: model.workspace.workspaceTabs(inGroup: group.id),
         isFocusedGroup: isFocusedGroup,
         groupLabel: AccessibilityText.tabGroup(
           position: position,
@@ -31,16 +31,21 @@ struct TabGroupView: View {
         theme: theme,
         drag: $drag,
       )
-      if let tab = model.workspace.shownTab(ofGroup: group) {
-        panes(of: tab)
-      } else {
-        Spacer()
+      switch model.workspace.shownWorkspaceTab(ofGroup: group) {
+      case .terminal(let tab): withDropBands(panes(of: tab))
+
+      // A hidden file tab's view goes, its layout with it; the model lets go of
+      // its rows, see files.md.
+      case .file(let tab):
+        withDropBands(FileTabView(model: model, tab: tab, theme: theme).id(tab.id))
+
+      case nil: Spacer()
       }
     }
   }
 
-  /// The tab's panes, with the drop bands over them. `.id(tab.id)` so a
-  /// switch builds a fresh tree rather than rebinding these surfaces.
+  /// `.id(tab.id)` so a switch builds a fresh tree rather than rebinding
+  /// these surfaces.
   private func panes(of tab: TerminalTab) -> some View {
     PaneTreeView(
       model: model,
@@ -50,7 +55,11 @@ struct TabGroupView: View {
       theme: theme,
     )
     .id(tab.id)
-    .overlay {
+  }
+
+  /// The bands down the edges while a tab is dragged, over either kind.
+  private func withDropBands(_ content: some View) -> some View {
+    content.overlay {
       if drag.isDragging {
         GroupDropBands(model: model, group: group, drag: $drag)
       }

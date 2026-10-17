@@ -19,4 +19,10 @@ struct NulPathListParserTests {
 
     #expect(NulPathListParser.parse(listing, limit: limit).count == limit)
   }
+
+  @Test func everyPathIsCountedHoweverManyAreDecoded() {
+    #expect(NulPathListParser.count("") == 0)
+    #expect(NulPathListParser.count("a\0b c\0") == 2)
+    #expect(NulPathListParser.count("a\0\0odd\nname") == 2, "as the split counts them")
+  }
 }

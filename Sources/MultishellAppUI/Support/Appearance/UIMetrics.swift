@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// Every chrome size, derived from one number so the UI font slider scales
 /// the sidebar, tabs and header together and rows never clip their text.
@@ -44,6 +44,8 @@ struct UIMetrics: Equatable {
   static let newWorktreeSheetWidth: Double = 520
 
   let bodySize: Double
+  /// Settings > Appearance's UI font; `nil` is the system font.
+  let fontFamily: String?
 
   var secondary: Double { bodySize - 1 }
   var caption: Double { bodySize - 2 }
@@ -66,8 +68,9 @@ struct UIMetrics: Equatable {
   /// The find bar's well height, and each of its glyph buttons' side.
   var findControlSize: Double { (bodySize * 2.2).rounded() }
 
-  init(fontSize: Double) {
+  init(fontSize: Double, fontFamily: String?) {
     bodySize = fontSize
+    self.fontFamily = fontFamily
   }
 
   /// The square a project's glyph is drawn in, which the row's spinner and
@@ -78,5 +81,12 @@ struct UIMetrics: Equatable {
   /// mark: 0.6 of the glyph in whole points, and never below a legible seven.
   static func cornerBadgeSize(onGlyphOf size: Double) -> Double {
     max(7, (size * 0.6).rounded())
+  }
+
+  /// Chrome text and its glyphs in the UI font; code and paths keep the system
+  /// monospace.
+  func font(size: Double, weight: Font.Weight = .regular) -> Font {
+    guard let fontFamily else { return .system(size: size, weight: weight) }
+    return .custom(fontFamily, fixedSize: size).weight(weight)
   }
 }

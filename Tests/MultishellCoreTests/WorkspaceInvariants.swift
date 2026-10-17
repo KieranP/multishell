@@ -24,6 +24,7 @@ enum WorkspaceInvariants {
       workspace.tabs.allSatisfy { worktreeIDs.contains($0.worktreeID) },
       "\(context): orphan tab",
     )
+    checkFileTabs(workspace, context, worktreeIDs: worktreeIDs)
     checkGroups(workspace, context, worktreeIDs: worktreeIDs)
 
     var owned: [TerminalSession.ID: Int] = [:]
@@ -59,6 +60,21 @@ enum WorkspaceInvariants {
     }
   }
 
+  private static func checkFileTabs(
+    _ workspace: Workspace,
+    _ context: String,
+    worktreeIDs: Set<Worktree.ID>,
+  ) {
+    let ids = workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
+    #expect(Set(ids).count == ids.count, "\(context): a tab id held twice, by either kind")
+    let places = workspace.fileTabs.map { [$0.worktreeID, $0.path] }
+    #expect(Set(places).count == places.count, "\(context): a file open in two tabs")
+    for tab in workspace.fileTabs {
+      #expect(worktreeIDs.contains(tab.worktreeID), "\(context): orphan file tab")
+      #expect(FileTab.isContained(tab.path), "\(context): a file tab outside its worktree")
+    }
+  }
+
   private static func checkGroups(
     _ workspace: Workspace,
     _ context: String,
@@ -66,11 +82,22 @@ enum WorkspaceInvariants {
   ) {
     for group in workspace.tabGroups {
       #expect(worktreeIDs.contains(group.worktreeID), "\(context): orphan tab group")
-      let tabsHere = workspace.tabs(inGroup: group.id)
+      let tabsHere =
+        workspace.tabs.filter { $0.groupID == group.id }.map(\.id)
+        + workspace.fileTabs.filter { $0.groupID == group.id }.map(\.id)
       #expect(!tabsHere.isEmpty, "\(context): a tab group with no tabs")
       #expect(
-        group.shownTabID != nil && tabsHere.contains { $0.id == group.shownTabID },
+        group.tabOrder.count == tabsHere.count && Set(group.tabOrder) == Set(tabsHere),
+        "\(context): a group's order not naming exactly its tabs",
+      )
+      #expect(
+        group.shownTabID != nil && tabsHere.contains { $0 == group.shownTabID },
         "\(context): a tab group showing a tab that is not its own",
+      )
+      #expect(
+        workspace.tabs.filter { $0.groupID == group.id }.map(\.id)
+          == group.tabOrder.filter { workspace.tab($0) != nil },
+        "\(context): the tabs array out of step with the group's order",
       )
       #expect(group.weight.isFinite && group.weight > 0, "\(context): a tab group with no width")
     }
@@ -78,6 +105,12 @@ enum WorkspaceInvariants {
       #expect(
         workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
         "\(context): a tab in another worktree's group, or in none",
+      )
+    }
+    for tab in workspace.fileTabs {
+      #expect(
+        workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
+        "\(context): a file tab in another worktree's group, or in none",
       )
     }
     for (worktreeID, groupID) in workspace.focusedGroupByWorktree {

@@ -4,47 +4,40 @@ import Testing
 
 @Suite
 struct NumstatParserTests {
-  @Test func insertionsAndDeletionsAreEachSummedOverEveryFile() {
-    let output = "12\t3\tSources/App.swift\n0\t7\tREADME.md\n"
-    let stat = NumstatParser.parse(output)
-    #expect(stat.insertions == 12)
-    #expect(stat.deletions == 10)
+  @Test func eachPathKeepsItsOwnInsertionsAndDeletions() {
+    let output = "12\t3\tSources/App.swift\u{0}0\t7\tREADME.md\u{0}"
+
+    #expect(
+      NumstatParser.parse(output) == [
+        "Sources/App.swift": .counted(insertions: 12, deletions: 3),
+        "README.md": .counted(insertions: 0, deletions: 7),
+      ]
+    )
   }
 
-  @Test func aBinaryFileCountsNoLinesAndIsCountedAsAFileInstead() {
-    let stat = NumstatParser.parse("-\t-\ticon.png\n4\t0\ta.txt\n")
-    #expect(stat.insertions == 4)
-    #expect(stat.deletions == 0)
-    #expect(stat.unscoredFiles == 1)
+  @Test func aBinaryFileIsAFileWithNoLines() {
+    let lines = NumstatParser.parse("-\t-\ticon.png\u{0}4\t0\ta.txt\u{0}")
+
+    #expect(lines["icon.png"] == .unscored)
+    #expect(lines["a.txt"] == .counted(insertions: 4, deletions: 0))
   }
 
-  /// What a mode change and a pure rename both print.
-  @Test func aChangeWithZeroOnBothSidesIsCountedAsAFile() {
-    #expect(NumstatParser.parse("0\t0\tScripts/run.sh\n").unscoredFiles == 1)
-    #expect(NumstatParser.parse("12\t3\ta.swift\n").unscoredFiles == 0)
+  /// What a mode change prints.
+  @Test func aChangeWithZeroOnBothSidesIsAFileWithNoLines() {
+    #expect(NumstatParser.parse("0\t0\tScripts/run.sh\u{0}") == ["Scripts/run.sh": .unscored])
   }
 
-  /// A rename with `-z` off still puts the arrow in the path field.
-  @Test func aRenamedPathDoesNotBreakTheColumns() {
-    let stat = NumstatParser.parse("1\t1\told.swift => new.swift\n")
-    #expect(stat.insertions == 1 && stat.deletions == 1)
-  }
+  @Test func aPathKeepsItsTabsAndNewlines() {
+    let lines = NumstatParser.parse("1\t2\todd\tname\nhere.txt\u{0}")
 
-  @Test func aRowWithNoPathIsNotCountedAsAFile() {
-    let stat = NumstatParser.parse("1\t2\t\n3\t4\ta.txt\n")
-    #expect(stat.insertions == 3 && stat.deletions == 4)
-    #expect(stat.unscoredFiles == 0)
+    #expect(lines == ["odd\tname\nhere.txt": .counted(insertions: 1, deletions: 2)])
   }
 
   /// A count that is neither a number nor `-` is not git's output, and
   /// taking it as zero put a file with no lines to count on the badge.
-  @Test func anOddLineCountsNothingAtAll() {
-    for line in ["", "  ", "x\ty\tz", "1", "1\t2", "\t\t", "1\t2\t", "1\t-\ta.txt"] {
-      let stat = NumstatParser.parse(line + "\n")
-      #expect(
-        stat.insertions == 0 && stat.deletions == 0 && stat.unscoredFiles == 0,
-        "\(line) counted \(stat)",
-      )
+  @Test func anOddRecordCountsNothingAtAll() {
+    for record in ["", "  ", "x\ty\tz", "1", "1\t2", "\t\t", "1\t2\t", "1\t-\ta.txt"] {
+      #expect(NumstatParser.parse(record + "\u{0}") == [:], "\(record)")
     }
   }
 }

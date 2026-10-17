@@ -4,11 +4,14 @@ import MultishellCore
 extension AppModel {
   /// The split menu item's on the tab named, or the tab in view. Answers the
   /// new pane, which the split hands the focus.
-  func replyToSplitPane(_ axis: SplitAxis, inTab id: TerminalTab.ID?) -> ControlReply {
+  func replyToSplitPane(_ axis: SplitAxis, inTab id: WorkspaceTab.ID?) -> ControlReply {
     if let id {
+      // Refused before it is brought into view, which would switch to it.
+      if workspace.fileTab(id) != nil { return .refused(.tabShowsAFile(id: id)) }
       let selected = replyToSelectTab(id)
       guard selected == .done else { return selected }
     }
+    if case .file(let file) = workspaceTabInView { return .refused(.tabShowsAFile(id: file.id)) }
     guard let before = tabInView else { return .refused(.nothingInView) }
     // The split looks for the directory itself, raising the alert this answers with.
     guard let worktree = worktreeInView, !isBusy(worktree.id) else {
@@ -22,7 +25,7 @@ extension AppModel {
 
   func replyToSelectPane(_ id: TerminalSession.ID) -> ControlReply {
     guard let tab = workspace.tab(owning: id) else { return .refused(.noPane(id: id)) }
-    if let refusal = bringIntoView(tab) { return .refused(refusal) }
+    if let refusal = bringIntoView(.terminal(tab)) { return .refused(refusal) }
     show(pane: id, in: tab)
     return .done
   }

@@ -46,6 +46,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case screenshotFailed
   /// A tab moves only beside another of its own worktree's.
   case tabInAnotherWorktree(id: UUID)
+  /// A file tab, which keeps its file's name and has no panes.
+  case tabShowsAFile(id: UUID)
   /// Sized there, the window shrinks inside the full-screen space.
   case windowInFullScreen
   /// The create ended with no worktree and no alert, as a Cancel does.

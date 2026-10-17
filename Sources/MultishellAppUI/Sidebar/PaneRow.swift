@@ -25,7 +25,7 @@ struct PaneRow: View, @MainActor Equatable {
         PanePositionBadge(number: position.number, metrics: metrics, theme: theme)
       }
       Text(pane.title)
-        .font(.system(size: metrics.badge, weight: pane.isFocused ? .semibold : .regular))
+        .font(metrics.font(size: metrics.badge, weight: pane.isFocused ? .semibold : .regular))
         .foregroundStyle(pane.isFocused ? theme.textPrimary : theme.textSecondary)
         .lineLimit(1)
         .truncationMode(.tail)

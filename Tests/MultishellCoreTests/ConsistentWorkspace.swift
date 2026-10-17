@@ -22,6 +22,7 @@ func consistentWorkspace() -> (workspace: Workspace, tab: TerminalTab) {
   var group = TabGroup(worktreeID: worktree.id)
   let tab = TerminalTab(worktreeID: worktree.id, groupID: group.id, session: session.id)
   group.shownTabID = tab.id
+  group.tabOrder = [tab.id]
   workspace.projects = [project]
   workspace.worktrees = [worktree]
   workspace.sessions = [session]

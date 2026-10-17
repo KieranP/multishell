@@ -28,7 +28,7 @@ struct AppModelTabGroupsTests {
 
     let groups = harness.model.workspace.groups(in: harness.main.id)
     #expect(groups.count == 2)
-    #expect(harness.model.workspace.tabs(inGroup: groups[1].id).map(\.id) == [moving.id])
+    #expect(harness.model.workspace.workspaceTabs(inGroup: groups[1].id).map(\.id) == [moving.id])
     #expect(harness.model.focusedGroup?.id == groups[1].id)
     #expect(harness.engine.liveSessionIDs == live, "the shells kept running")
     #expect(harness.engine.closed.isEmpty)
@@ -83,13 +83,13 @@ struct AppModelTabGroupsTests {
   @Test func aNewTabOpensInTheGroupThatAskedForIt() {
     let harness = Harness()
     let groups = twoGroups(harness)
-    let before = harness.model.workspace.tabs(inGroup: groups.first.id).count
+    let before = harness.model.workspace.workspaceTabs(inGroup: groups.first.id).count
 
     harness.model.newTab(in: groups.first.id)
 
-    #expect(harness.model.workspace.tabs(inGroup: groups.first.id).count == before + 1)
+    #expect(harness.model.workspace.workspaceTabs(inGroup: groups.first.id).count == before + 1)
     #expect(
-      harness.model.workspace.tabs(inGroup: groups.second.id).count == 1,
+      harness.model.workspace.workspaceTabs(inGroup: groups.second.id).count == 1,
       "the other group stands",
     )
     #expect(
@@ -99,7 +99,7 @@ struct AppModelTabGroupsTests {
 
     harness.model.newTab()
     #expect(
-      harness.model.workspace.tabs(inGroup: groups.first.id).count == before + 2,
+      harness.model.workspace.workspaceTabs(inGroup: groups.first.id).count == before + 2,
       "the keystroke names no group and opens in the focused one",
     )
   }
@@ -108,7 +108,7 @@ struct AppModelTabGroupsTests {
     let harness = Harness()
     let groups = twoGroups(harness)
     harness.model.newTab(in: groups.second.id)
-    #expect(harness.model.workspace.tabs(inGroup: groups.second.id).count == 2)
+    #expect(harness.model.workspace.workspaceTabs(inGroup: groups.second.id).count == 2)
 
     harness.model.closeActiveTab()
     #expect(harness.model.workspace.groups(in: harness.main.id).count == 2, "one tab left in it")

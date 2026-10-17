@@ -17,10 +17,10 @@ extension AppModel {
     Task { await refreshStatuses { revealed.contains($0.id) } }
   }
 
-  /// `uncoverDetail`, where it is the board that covers the panes.
+  /// `uncoverDetailAndReadItsTabs`, where it is the board that covers the panes.
   func hideAgentBoard() {
     guard showsAgentBoard else { return }
-    uncoverDetail()
+    uncoverDetailAndReadItsTabs()
   }
 
   /// The menu item and its keystroke, which go back to the worktree the

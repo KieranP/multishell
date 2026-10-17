@@ -58,7 +58,7 @@ extension AppModel {
       // A worktree whose directory has gone is not selected, and activating
       // a tab in it would rewrite what the selected worktree shows.
       guard select(worktree) else { return }
-      activate(tab)
+      activateTab(tab.id)
 
     case .worktree(let id):
       if let worktree = workspace.worktree(id) { select(worktree) }

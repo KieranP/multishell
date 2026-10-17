@@ -11,9 +11,9 @@ extension AppModel {
     workspace.tab(owning: id) == nil ? .noPane(id: id) : nil
   }
 
-  /// Selects its worktree where it is not in view, as a click on the row, and
-  /// answers the refusal when that cannot be done.
-  func bringIntoView(_ tab: TerminalTab) -> ControlRefusal? {
+  /// Selects a tab's worktree where it is not in view, as a click on the row,
+  /// and answers the refusal when that cannot be done.
+  func bringIntoView(_ tab: WorkspaceTab) -> ControlRefusal? {
     guard let worktree = workspace.worktree(tab.worktreeID),
       isInView(worktree) || select(worktree, openingFirstTab: .never)
     else { return .worktreeNotReady(id: ControlID.worktree(tab.worktreeID)) }

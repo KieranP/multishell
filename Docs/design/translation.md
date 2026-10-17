@@ -112,10 +112,11 @@ Newest at the bottom.
 - **The literal scan reads the frontend alone.** A word a library holds as a
   bare string reaches the screen in English and no test sees it; the trust
   question named its fields that way.
-- **Memory sizes do follow the region.** `ByteCountFormatter` takes no locale,
-  so in a region that writes a comma Debug Info's sizes use one and the rates
-  and durations beside them do not. The clock time under the timeline's pointer
-  follows the region too, being `Date.formatted`.
+- **Memory and file sizes do follow the region.** `ByteCountFormatter` takes no
+  locale, so in a region that writes a comma Debug Info's sizes and a file tab's
+  binary or too-large notice use one, and the rates and durations beside them do
+  not. The clock time under the timeline's pointer follows the region too, being
+  `Date.formatted`.
 - **The app answers the command line in data and the helper words it.** A
   refusal crosses the socket as a case and its fields, so neither catalogue
   holds the helper's sentences (`ControlRefusal+Wording`).

@@ -20,7 +20,7 @@ struct AppModelTerminalEventsTests {
     #expect(harness.model.state(of: second) == nil, "the focused tab is being watched")
     #expect(harness.model.state(ofWorktree: harness.main.id) == .done)
 
-    harness.model.activate(first)
+    harness.model.activateTab(first.id)
     #expect(harness.model.state(of: first) == nil)
   }
 
@@ -124,7 +124,7 @@ struct AppModelTerminalEventsTests {
       "a failure is not covered by an unseen Done",
     )
     #expect(harness.model.state(ofWorktree: harness.main.id) == .failed)
-    harness.model.activate(first)
+    harness.model.activateTab(first.id)
     #expect(harness.model.state(of: first) == .failed, "a look is not dealing with a failure")
     harness.model.clearState(of: first)
     #expect(harness.model.state(of: first) == nil, "the pane's own Clear Status is")

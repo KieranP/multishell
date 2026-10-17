@@ -22,7 +22,7 @@ struct DebugSeriesLegend: View {
     HStack(spacing: 3) {
       RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 7)
       Text(name)
-        .font(.system(size: metrics.small))
+        .font(metrics.font(size: metrics.small))
         .foregroundStyle(theme.textSecondary)
     }
   }

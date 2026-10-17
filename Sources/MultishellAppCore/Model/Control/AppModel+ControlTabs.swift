@@ -16,33 +16,57 @@ extension AppModel {
     TabListing(
       worktreeInView: worktreeInView.map { ControlID.worktree($0.id) },
       worktrees: worktrees.map { worktree in
-        let shown = Set(workspace.shownTabs(in: worktree.id).map(\.id))
+        let groups = workspace.groups(in: worktree.id)
+        let shown = Set(groups.compactMap(\.shownTabID))
         return TabListing.WorktreeTabs(
           id: ControlID.worktree(worktree.id),
           name: displayName(of: worktree),
           isInView: isInView(worktree),
-          activeTab: workspace.activeTab(in: worktree.id)?.id,
-          tabs: workspace.tabs(in: worktree.id).map { tab in
-            TabListing.Tab(
-              id: tab.id,
-              title: title(of: tab),
-              isShown: shown.contains(tab.id),
-              focusedPane: tab.focusedSessionID,
-              state: state(of: tab),
-              panes: tab.sessionIDs.compactMap(workspace.session).map { session in
-                TabListing.Pane(
-                  id: session.id,
-                  title: title(ofPane: session, in: tab),
-                  isLive: liveSessionIDs.contains(session.id),
-                  agent: agentIDAtThePrompt(of: session),
-                  state: state(ofPane: session.id),
-                )
-              },
-            )
+          activeTab: workspace.activeWorkspaceTab(in: worktree.id)?.id,
+          tabs: groups.flatMap { workspace.workspaceTabs(inGroup: $0.id) }.map { tab in
+            listing(of: tab, isShown: shown.contains(tab.id))
           },
         )
       },
     )
+  }
+
+  private func listing(of tab: WorkspaceTab, isShown: Bool) -> TabListing.Tab {
+    switch tab {
+    case .file(let file):
+      return TabListing.Tab(
+        id: file.id,
+        kind: .file,
+        title: title(of: file),
+        isShown: isShown,
+        path: file.path,
+        isDeleted: fileIsGone(of: file.id),
+        focusedPane: nil,
+        state: nil,
+        panes: nil,
+      )
+
+    case .terminal(let terminal):
+      return TabListing.Tab(
+        id: terminal.id,
+        kind: .terminal,
+        title: title(of: terminal),
+        isShown: isShown,
+        path: nil,
+        isDeleted: nil,
+        focusedPane: terminal.focusedSessionID,
+        state: state(of: terminal),
+        panes: terminal.sessionIDs.compactMap(workspace.session).map { session in
+          TabListing.Pane(
+            id: session.id,
+            title: title(ofPane: session, in: terminal),
+            isLive: liveSessionIDs.contains(session.id),
+            agent: agentIDAtThePrompt(of: session),
+            state: state(ofPane: session.id),
+          )
+        },
+      )
+    }
   }
 
   /// In the background unless its worktree is in view; a worktree with no
@@ -76,39 +100,46 @@ extension AppModel {
     return .json(["tab": opened.id, "pane": opened.focusedSessionID])
   }
 
-  func replyToSelectTab(_ id: TerminalTab.ID) -> ControlReply {
-    guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
+  func replyToSelectTab(_ id: WorkspaceTab.ID) -> ControlReply {
+    guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
     if let refusal = bringIntoView(tab) { return .refused(refusal) }
-    activate(tab)
+    activateTab(tab.id)
     return .done
   }
 
-  func replyToCloseTab(_ id: TerminalTab.ID, force: Bool) -> ControlReply {
-    guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
-    if refusesOverWorkingAgent(in: tab.sessionIDs, force: force) { return .refused(.agentWorking) }
-    closeWithoutAsking(.tab(id), takingFocus: isWorktreeInView(of: tab))
+  /// A file tab runs nothing, so `force` never comes into it.
+  func replyToCloseTab(_ id: WorkspaceTab.ID, force: Bool) -> ControlReply {
+    guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
+    if case .terminal(let terminal) = tab,
+      refusesOverWorkingAgent(in: terminal.sessionIDs, force: force)
+    {
+      return .refused(.agentWorking)
+    }
+    closeWithoutAsking(.tab(id), takingFocus: worktreeIDInView == tab.worktreeID)
     return .done
   }
 
   /// A drag onto another tab's edge, which may be in another group of the
   /// same worktree.
   func replyToMoveTab(
-    _ id: TerminalTab.ID,
-    _ placement: TerminalTab.Placement,
-    anchor: TerminalTab.ID,
+    _ id: WorkspaceTab.ID,
+    _ placement: WorkspaceTab.Placement,
+    anchor: WorkspaceTab.ID,
   ) -> ControlReply {
-    guard let tab = workspace.tab(id) else { return .refused(.noTab(id: id)) }
-    guard let other = workspace.tab(anchor) else { return .refused(.noTab(id: anchor)) }
+    guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
+    guard let other = workspace.workspaceTab(anchor) else { return .refused(.noTab(id: anchor)) }
     guard tab.worktreeID == other.worktreeID else {
       return .refused(.tabInAnotherWorktree(id: anchor))
     }
-    guard moveTab(id, placement, anchor: anchor, takingFocus: isWorktreeInView(of: tab)) else {
+    let takingFocus = worktreeIDInView == tab.worktreeID
+    guard moveTab(id, placement, anchor: anchor, takingFocus: takingFocus) else {
       return .refused(.noTab(id: anchor))
     }
     return .done
   }
 
-  func replyToRenameTab(_ id: TerminalTab.ID, to title: String?) -> ControlReply {
+  func replyToRenameTab(_ id: WorkspaceTab.ID, to title: String?) -> ControlReply {
+    if workspace.fileTab(id) != nil { return .refused(.tabShowsAFile(id: id)) }
     guard workspace.tab(id) != nil else { return .refused(.noTab(id: id)) }
     renameTab(id, to: title)
     return .done

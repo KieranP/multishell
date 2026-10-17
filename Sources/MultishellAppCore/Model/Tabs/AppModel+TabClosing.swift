@@ -11,11 +11,20 @@ extension AppModel {
     closeInTabInView { .tab($0.id) }
   }
 
-  /// A middle click on a tab, closing it active or not. No key-window dance:
-  /// the click landed here, so this window is the one being acted in.
-  public func closeTab(_ id: TerminalTab.ID) {
-    guard let tab = workspace.tab(id) else { return }
-    requestClose(.tab(id), in: tab)
+  /// A middle click on a tab of either kind, closing it active or not. No
+  /// key-window dance: the click landed here, so this window is the one acted in.
+  public func closeTab(_ id: WorkspaceTab.ID) {
+    switch workspace.workspaceTab(id) {
+    case .terminal(let tab): requestClose(.tab(id), in: tab)
+    case .file: closeFileTab(id)
+    case nil: break
+    }
+  }
+
+  /// A file tab runs nothing, so it never asks.
+  private func closeFileTab(_ id: FileTab.ID) {
+    store.closeTab(id)
+    reconcileSessions(takingFocus: true)
   }
 
   /// A close the engine was asked for, as by a keybind in the user's Ghostty
@@ -43,15 +52,18 @@ extension AppModel {
     }
   }
 
-  /// Both keystrokes. One issued in a settings window closes that window
-  /// instead, and nothing happens with no tab on screen.
+  /// Both keystrokes, which close a file tab whole. One issued in a settings
+  /// window closes that window instead, and nothing happens with no tab.
   private func closeInTabInView(_ closing: (TerminalTab) -> PendingClose) {
     guard platform.isWorkspaceWindowKey else {
       platform.closeKeyWindow()
       return
     }
-    guard let tab = tabInView else { return }
-    requestClose(closing(tab), in: tab)
+    switch workspaceTabInView {
+    case .terminal(let tab): requestClose(closing(tab), in: tab)
+    case .file(let tab): closeFileTab(tab.id)
+    case nil: break
+    }
   }
 
   /// A close whose panes hold a working agent is asked about rather than

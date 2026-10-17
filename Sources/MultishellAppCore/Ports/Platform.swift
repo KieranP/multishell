@@ -12,6 +12,12 @@ public protocol Platform: AnyObject, Sendable {
   /// Whether a keyboard command should act on the workspace: in any other
   /// window Cmd+W closes that window, not a pane nobody can see.
   var isWorkspaceWindowKey: Bool { get }
+  /// Whether any of the workspace window is on screen, frontmost or not: file
+  /// tabs and the Files panel stay current while it is; see files.md.
+  var isWorkspaceWindowVisible: Bool { get }
+  /// Called when the workspace window comes back on screen, for the reads
+  /// held back while it was covered.
+  var onWorkspaceWindowDidBecomeVisible: (@MainActor () -> Void)? { get set }
 
   /// The helper binary shipped with this build, or `nil` outside a bundle.
   /// `HelperLink` points the stable link at it on launch.
@@ -33,6 +39,14 @@ public protocol Platform: AnyObject, Sendable {
   func chooseDirectory(prompt: String) async -> URL?
   func revealInFileBrowser(_ url: URL)
   func copyToClipboard(_ text: String)
+  /// The alert sound, for a click that does nothing, as a refused link's does.
+  func beep()
+
+  /// Whether a file opens as text, by a clicked link's rule; blocking, so run
+  /// through `runOnDispatch`. See Docs/design/files.md.
+  nonisolated func opensAsText(_ file: URL) -> Bool
+  /// The same rule for a copy git holds, by its name's type or its first bytes.
+  nonisolated func opensAsText(named name: String, startingWith bytes: Data) -> Bool
 
   /// Moves a removed worktree's directory to the Trash, throwing where it
   /// will not take it. Off the main actor: a large tree is walked here.

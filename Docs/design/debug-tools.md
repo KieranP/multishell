@@ -91,6 +91,10 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The app's row stops at zero.** Ghostty counts a page at its full allocated
   size, an estimate, so the terminals can read more than the footprint holds.
   The Total row stays the footprint and children as measured.
+- **File tabs share one row, estimated from the text the model keeps**, and
+  taken out of the app's row as a terminal is (files.md). The layout a shown tab
+  adds, up to 186 MB at the 1 MiB cap, stays in the app's row, and the estimate
+  is a second reason that row stops at zero.
 - **Freed memory stays in the footprint until macOS wants it**, so closing a tab
   leaves its terminal's pages counted until the next tab reuses them. Not a leak
   (develop/memory.md).

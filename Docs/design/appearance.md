@@ -76,6 +76,10 @@
   that window, or the dialog would be behind it.
 - **The terminal font is picked, not typed**, some programming fonts not being
   marked fixed-pitch.
+- **The UI font's family is a setting of its own beside its size**, so the
+  chrome can match the terminal or editor font someone reads all day. Code,
+  paths and commands keep the system monospace, and the settings windows and
+  dialogs keep the system font, their forms being AppKit's grouped style.
 - **A project icon is tinted from a theme slot, not a hex**, so a theme change
   keeps it in step with the terminal.
 - **The icon comes from a grouped palette read by shape**, not a menu of names

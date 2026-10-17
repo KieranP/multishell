@@ -7,7 +7,7 @@ import Testing
 struct AccessibilityTextTabStripTests {
   @Test func aTabSaysWhetherItIsShownAndSplitAndWhichAgentItRuns() {
     #expect(
-      AccessibilityText.tab(
+      AccessibilityText.terminalTab(
         title: "zsh",
         isShown: true,
         isSplit: true,
@@ -17,7 +17,7 @@ struct AccessibilityTextTabStripTests {
         == "zsh, tab, selected, split, Done"
     )
     #expect(
-      AccessibilityText.tab(
+      AccessibilityText.terminalTab(
         title: "claude",
         isShown: false,
         isSplit: false,
@@ -28,7 +28,7 @@ struct AccessibilityTextTabStripTests {
       "the mark is drawn, so it is said",
     )
     #expect(
-      AccessibilityText.tab(
+      AccessibilityText.terminalTab(
         title: "Claude Code",
         isShown: false,
         isSplit: false,

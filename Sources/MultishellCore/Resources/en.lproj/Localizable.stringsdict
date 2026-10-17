@@ -148,6 +148,42 @@
       <key>other</key><string>%d worktrees</string>
     </dict>
   </dict>
+  <key>debug.file-tabs-row-subtitle</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>The text of %d open file, estimated</string>
+      <key>other</key><string>The text of %d open files, estimated</string>
+    </dict>
+  </dict>
+  <key>files-panel.footer-modified</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d modified file,</string>
+      <key>other</key><string>%d modified files,</string>
+    </dict>
+  </dict>
+  <key>files-panel.unlisted-new</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d more new file not listed.</string>
+      <key>other</key><string>%d more new files not listed.</string>
+    </dict>
+  </dict>
   <key>hook.stopped-after-seconds</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -218,6 +254,30 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d open terminal will be closed.</string>
       <key>other</key><string>%d open terminals will be closed.</string>
+    </dict>
+  </dict>
+  <key>spoken.lines-added</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d line added</string>
+      <key>other</key><string>%d lines added</string>
+    </dict>
+  </dict>
+  <key>spoken.lines-removed</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d line removed</string>
+      <key>other</key><string>%d lines removed</string>
     </dict>
   </dict>
   <key>status.unscored</key>

@@ -12,9 +12,15 @@ extension AppModel {
     detailCover == nil ? workspace.selectedWorktreeID : nil
   }
 
-  /// The focused group's tab in `worktreeInView`, which Cmd+W, find and seen act on.
+  /// The focused group's terminal tab in `worktreeInView`, which find and seen
+  /// act on; `nil` where that group shows a file.
   var tabInView: TerminalTab? {
     worktreeInView.flatMap { workspace.activeTab(in: $0.id) }
+  }
+
+  /// The focused group's tab of either kind, which closing and cycling act on.
+  var workspaceTabInView: WorkspaceTab? {
+    worktreeInView.flatMap { workspace.activeWorkspaceTab(in: $0.id) }
   }
 
   /// The active tab's focused pane, with nothing covering it. One per window,

@@ -26,15 +26,10 @@ struct PaneGlyph: View {
       plainTint: plainTint,
       size: size,
     )
-    .overlay(alignment: .bottomTrailing) {
-      if let state {
-        StateDot(state: state, theme: theme, diameter: dotSize)
-          .padding(1.2)
-          .background(ringFill, in: Circle())
-          // Pushed out to the corner, so what it covers is the mark's edge
-          // rather than the middle that carries the shape.
-          .offset(x: size * 0.26, y: size * 0.2)
-      }
-    }
+    .cornerBadge(
+      onGlyphOf: size,
+      ringFill: ringFill,
+      state.map { StateDot(state: $0, theme: theme, diameter: dotSize) },
+    )
   }
 }

@@ -237,3 +237,13 @@ bottom.
 - **A rename from the command line leaves a name field open on another tab**, so
   a script naming one tab does not throw away what the user is typing into
   another's (`renamingATabLeavesTheFieldOpenOnAnotherAlone`).
+- **A file tab sits in the strip beside terminal tabs**, the same width rules,
+  drag and reorder, its order and theirs one order per group. files.md has why
+  it never leaves its worktree and why the splits disable on it.
+- **The active tab is still the focused group's**, of either kind: Cmd+W and
+  Cmd+Shift+W close a file tab whole, Next and Previous Tab step through both
+  kinds, and the menu's splits do nothing on one. A file tab offers no rename.
+  `tabs rename` and `panes split` refuse it in words.
+- **A file view reports its own focus**, a surface's report reaching the store
+  only for a pane, so a click into one in another group moves Cmd+W and the
+  menus there; the reconcile hands it the keyboard as it would a pane.

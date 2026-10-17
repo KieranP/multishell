@@ -3,14 +3,17 @@ import MultishellCore
 /// How wide the sidebar may be dragged in a window of a given width.
 public enum SidebarWidth {
   static let minimum = 180.0
-  /// What the sidebar leaves of the window, so the divider stays in reach.
-  static let minimumDetail = 50.0
-  /// Where a machine that has never moved the divider starts.
+  /// Where a machine that has never moved the divider starts, and where a
+  /// double-click on it puts it back.
   public static let initial = 248.0
 
-  /// A window too narrow for both minimums keeps the sidebar's.
-  public static func range(inWindowOfWidth width: Double) -> ClosedRange<Double> {
-    minimum...max(minimum, width - minimumDetail)
+  /// A window too narrow for both minimums keeps the sidebar's. `panelWidth`
+  /// is the open Files panel's, zero while it is shut.
+  public static func range(
+    inWindowOfWidth width: Double,
+    besidePanelOf panelWidth: Double,
+  ) -> ClosedRange<Double> {
+    minimum...max(minimum, width - panelWidth - TabAreaWidth.minimum)
   }
 
   /// Where a drag leaves the sidebar, `start` being its width as the drag

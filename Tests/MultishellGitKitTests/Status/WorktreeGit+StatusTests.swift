@@ -99,7 +99,7 @@ struct WorktreeGitStatusTests {
     let fake = try FakeGit.make(
       """
       case "$*" in
-        *status*) printf '## main\\n M a.txt\\n' ;;
+        *status*) printf '## main\\0 M a.txt\\0' ;;
         *diff-index*) exit 128 ;;
         *rev-parse*) exit 0 ;;
       esac
@@ -112,26 +112,6 @@ struct WorktreeGitStatusTests {
     _ = try await WorktreeGit(runner: fake.runner).status(of: worktree)
 
     #expect(!FakeGit.calls(in: fake.directory).contains { $0.contains("hash-object") })
-  }
-
-  @Test func aReadAskedForCountsEveryNewFileWhereTheBadgeCountsTheirFolder() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    let folder = fixture.project.path.appendingPathComponent("new", isDirectory: true)
-    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-    for name in ["a", "b", "c"] {
-      try "x\n".write(to: folder.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
-    let git = WorktreeGit(runner: fixture.runner)
-    let main = try #require(try await git.list(fixture.project).first)
-
-    let badge = try await git.status(of: main, countsEveryNewFile: false)
-    let asked = try await git.status(of: main, countsEveryNewFile: true)
-
-    #expect(badge.changedFiles == 1)
-    #expect(asked.changedFiles == 3)
-    #expect(asked.untracked == badge.untracked, "the tooltip keeps one entry per new folder")
-    #expect(asked.insertions == badge.insertions)
   }
 
   @Test func theChosenDiffAlgorithmDecidesTheCountsForBothIndicators() async throws {
@@ -276,7 +256,7 @@ struct WorktreeGitStatusTests {
 
   /// `git status` collapses an untracked directory to one entry while
   /// `ls-files --others` lists every file in it; see Docs/design/worktrees.md.
-  @Test func anUntrackedDirectoryIsOneEntryWhoseLinesAreStillCounted() async throws {
+  @Test func eachFileInAnUntrackedDirectoryIsCountedWithItsLines() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let worktreeGit = WorktreeGit(runner: fixture.runner)
@@ -297,8 +277,8 @@ struct WorktreeGitStatusTests {
 
     let status = try await worktreeGit.status(of: main)
 
-    #expect(status.untracked == 1, "the directory, which is what git reports")
-    #expect(status.changedFiles == 1)
+    #expect(status.untracked == 2, "each file, not the one entry git status reports")
+    #expect(status.changedFiles == 2)
     #expect(status.insertions == 4, "both files inside it, read through ls-files")
     #expect(status.unscoredFiles == 0)
   }

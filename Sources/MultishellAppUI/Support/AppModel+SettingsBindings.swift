@@ -21,6 +21,14 @@ extension AppModel {
     Binding(get: { self.terminalFontPickerID }, set: { self.setTerminalFontPickerID($0) })
   }
 
+  var uiFontBinding: Binding<String> {
+    Binding(get: { self.uiFontPickerID }, set: { self.setUIFontPickerID($0) })
+  }
+
+  var fileFontBinding: Binding<String> {
+    Binding(get: { self.fileFontPickerID }, set: { self.setFileFontPickerID($0) })
+  }
+
   /// A workspace value and the method that sets it, as one binding. The read
   /// goes through `workspace`, so the row follows a change made elsewhere.
   func settingBinding<Value>(

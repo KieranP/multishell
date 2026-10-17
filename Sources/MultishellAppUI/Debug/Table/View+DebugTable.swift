@@ -27,7 +27,7 @@ extension View {
     _ metrics: UIMetrics,
     leadingInset: Double = UIMetrics.debugTableInset,
   ) -> some View {
-    font(.system(size: metrics.caption))
+    font(metrics.font(size: metrics.caption))
       .foregroundStyle(theme.textTertiary)
       .padding(.leading, leadingInset)
       .padding(.trailing, UIMetrics.debugTableInset)

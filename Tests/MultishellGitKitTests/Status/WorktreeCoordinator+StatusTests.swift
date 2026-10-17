@@ -18,7 +18,7 @@ struct WorktreeCoordinatorStatusTests {
       ls "$SCRATCH/running" | wc -l > "$SCRATCH/peaks/$$"
       sleep 1
       rm "$SCRATCH/running/$$"
-      printf '## main\\n'
+      printf '## main\\0'
       """
     )
     defer { fake.tearDown() }

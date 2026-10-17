@@ -63,25 +63,69 @@ public final class AppModel<Surface> {
   /// The tab whose strip shows a name field; a commit arriving after the edit
   /// ended is ignored.
   public internal(set) var renamingTabID: TerminalTab.ID?
-  /// The panes with a find bar up, each pane's its own; see `showFind`.
-  /// Runtime state, dropped with the session.
-  public internal(set) var findBarSessionIDs: Set<TerminalSession.ID> = []
-  /// Each pane's find text, kept across closes so Cmd+F then Return repeats the
-  /// last search there; read through `findText(of:)`.
-  var findTexts: [TerminalSession.ID: String] = [:]
-  /// Panes whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
+  /// The panes and file tabs with a find bar up, each its own; see `showFind`.
+  /// Runtime state, dropped with the session or the tab.
+  public internal(set) var findBarTargetIDs: Set<FindTargetID> = []
+  /// Each target's find text, kept across closes so Cmd+F then Return repeats
+  /// the last search there; read through `findText(of:)`.
+  var findTexts: [FindTargetID: String] = [:]
+  /// Targets whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
   /// a bar a worktree switch brings back has none. See terminals.md.
-  public internal(set) var findFieldRequests: Set<TerminalSession.ID> = []
-  /// Panes whose search has a selected match: a step has gone since the find text
-  /// was set. See `step(_:in:)`.
-  var steppedFindSessionIDs: Set<TerminalSession.ID> = []
-  /// The pane whose bar's field has the keyboard, which the menu's find items
-  /// act on ahead of the focused pane, a field taking no store focus.
-  var findFieldSessionID: TerminalSession.ID?
-  /// The selection each pane's Cmd+F last took as its find text; see `showFind`.
-  var takenFindSelections: [TerminalSession.ID: String] = [:]
+  public internal(set) var findFieldRequests: Set<FindTargetID> = []
+  /// Targets whose search has a selected match: a step has gone since the find
+  /// text was set. See `step(_:in:)`.
+  var steppedFindTargetIDs: Set<FindTargetID> = []
+  /// The target whose bar's field has the keyboard, which the menu's find items
+  /// act on ahead of the focused one, a field taking no store focus.
+  var findFieldTargetID: FindTargetID?
+  /// The selection each target's Cmd+F last took as its find text; see `showFind`.
+  var takenFindSelections: [FindTargetID: String] = [:]
   /// What the engine's search last counted in each pane with a bar up.
   var searchCounts: [TerminalSession.ID: PaneSearchCount] = [:]
+  /// What each file tab's search found, here and not by the engine.
+  var fileFindResults: [FileTab.ID: FileFindResult] = [:]
+  /// Each file tab's selected text, which a Cmd+F there finds.
+  @ObservationIgnored var fileTabSelections: [FileTab.ID: String] = [:]
+  /// Written on every scroll, which nothing redraws for.
+  @ObservationIgnored var fileTabScrolls: [FileTab.ID: FileTabScroll] = [:]
+  @ObservationIgnored var fileFindsShown: [FileTab.ID: FileFindShown] = [:]
+
+  /// Whether the Files panel is open: one switch for the window, which the
+  /// view keeps per machine as it keeps the sidebar's width.
+  public internal(set) var showsFilesPanel = false
+  /// What the panel shows of each worktree. Runtime state.
+  var filesPanelStates: [Worktree.ID: FilesPanelState] = [:]
+  /// What each worktree's index tracks, read while its panel is shown.
+  var trackedFiles: [Worktree.ID: TrackedFiles] = [:]
+  /// What git ignores in each worktree, a whole folder as one entry, read
+  /// while its panel is shown.
+  var ignoredEntries: [Worktree.ID: [String]] = [:]
+  /// Each worktree's read ignored folders, open or shut, listed from disk.
+  var ignoredFolderEntries: [Worktree.ID: [String: [IgnoredFolderEntry]]] = [:]
+  /// One coalesced read of what git ignores per worktree, paced after it.
+  @ObservationIgnored var pendingIgnoredEntriesReads: [Worktree.ID: Task<Void, Never>] = [:]
+  /// A change while that read ran or waited, read once it is due.
+  @ObservationIgnored var ignoredEntriesAskedAgain: Set<Worktree.ID> = []
+  /// Each worktree's opened submodules, read as repositories of their own.
+  var submoduleReadings: [Worktree.ID: [String: SubmoduleReading]] = [:]
+  /// The tree each panel last drew, rebuilt only when what it was built from changed.
+  @ObservationIgnored var fileTreeCache: [Worktree.ID: FileTreeCacheEntry] = [:]
+  /// Listings too large to build in a render, built off the main actor.
+  var fileTreeListings: [Worktree.ID: FileTreeListing] = [:]
+  @ObservationIgnored var pendingFileTreeListings:
+    [Worktree.ID: (key: FileTreeListing.Key, task: Task<Void, Never>)] = [:]
+  /// One coalesced listing read per worktree; see `scheduleTrackedFilesRead`.
+  @ObservationIgnored var pendingTrackedFilesReads: [Worktree.ID: Task<Void, Never>] = [:]
+
+  /// Each file tab's last read. Runtime only: contents never reach the file,
+  /// so after a relaunch a deleted file's tab shows `HEAD`'s text removed.
+  public internal(set) var fileTabReadings: [FileTab.ID: FileTabReading] = [:]
+  /// The file tab a reconcile handed the keyboard to, taken by its view
+  /// through `takeFileTabFocusRequest`, as a find field takes its request.
+  var fileTabFocusRequest: FileTab.ID?
+  @ObservationIgnored var fileTabReadLog = FileTabReadLog()
+  /// One coalesced read per file tab; see `scheduleFileTabRead`.
+  @ObservationIgnored var pendingFileTabReads: [FileTab.ID: Task<Void, Never>] = [:]
 
   /// What a tab drag is doing. Here, not in the group tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.

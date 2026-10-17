@@ -87,9 +87,7 @@ enum GhosttyLinkRule {
     guard let values, values.isDirectory == true || values.isRegularFile == true else {
       return nil
     }
-    if values.isRegularFile == true,
-      values.contentType?.conforms(to: .text) == true || target.readsAsText()
-    {
+    if TextFileRule.opensAsText(target) {
       return .inEditor(nameForEditor(printed: path, resolving: target))
     }
     return opensInDefaultApplication(values) ? .inDefaultApplication(target) : nil

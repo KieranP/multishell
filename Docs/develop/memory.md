@@ -62,6 +62,9 @@ One shell tab, idle, debug tools off: 193 MB.
   added 31 MB of live heap.
 - **Opening a tab briefly charges about 217 MB of GPU memory** before it settles
   near 117 MB; four 32 MB surfaces were made, not three.
+- **A file tab's row counts its text, not its layout.** A shown tab's TextKit 2
+  layout, up to 186 MB at the 1 MiB cap (design/files.md), stays in the app's
+  row.
 - **Debug Info added 105 to 117 MB while open**, from its `Canvas` strips, now
   shapes (design/debug-tools.md).
 

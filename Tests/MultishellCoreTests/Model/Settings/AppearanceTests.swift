@@ -30,4 +30,29 @@ struct AppearanceTests {
     appearance.themeID = "gone"
     #expect(appearance.theme() == .multishellDark)
   }
+
+  @Test func theFileFontIsItsOwnSettingApartFromTheUISize() throws {
+    let older = try decodeJSON(Appearance.self, #"{ "uiFontSize": 16 }"#)
+    #expect(older.fileFontName == nil)
+    #expect(older.fileFontSize == Appearance.defaultFileFontSize)
+
+    let saved = try decodeJSON(
+      Appearance.self,
+      #"{ "fileFontName": "Menlo", "fileFontSize": 15 }"#,
+    )
+    #expect(saved.fileFontName == "Menlo")
+    #expect(saved.fileFontSize == 15)
+    let written = try JSONSerialization.jsonObject(with: JSONEncoder().encode(saved))
+    #expect((written as? [String: Any])?["fileFontName"] as? String == "Menlo")
+  }
+
+  @Test func theUIFontFamilyIsKeptAndAnOlderFileHasNone() throws {
+    #expect(try decodeJSON(Appearance.self, #"{ "uiFontSize": 16 }"#).uiFontName == nil)
+
+    let saved = try decodeJSON(Appearance.self, #"{ "uiFontName": "Avenir Next" }"#)
+
+    #expect(saved.uiFontName == "Avenir Next")
+    let written = try JSONSerialization.jsonObject(with: JSONEncoder().encode(saved))
+    #expect((written as? [String: Any])?["uiFontName"] as? String == "Avenir Next")
+  }
 }

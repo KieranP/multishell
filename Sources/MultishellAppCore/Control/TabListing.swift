@@ -9,19 +9,24 @@ struct TabListing: Encodable, Equatable {
     let id: String
     let name: String
     let isInView: Bool
-    let activeTab: TerminalTab.ID?
+    let activeTab: WorkspaceTab.ID?
     let tabs: [Tab]
   }
 
+  /// A file tab has a path where a terminal tab has panes.
   struct Tab: Encodable, Equatable {
-    let id: TerminalTab.ID
+    let id: WorkspaceTab.ID
+    let kind: TabKind
     let title: String
     /// On screen in its group, which a worktree with several groups has
     /// more than one of.
     let isShown: Bool
-    let focusedPane: TerminalSession.ID
+    let path: String?
+    /// A file tab whose file has gone, its title struck through.
+    let isDeleted: Bool?
+    let focusedPane: TerminalSession.ID?
     let state: SessionState?
-    let panes: [Pane]
+    let panes: [Pane]?
   }
 
   struct Pane: Encodable, Equatable {

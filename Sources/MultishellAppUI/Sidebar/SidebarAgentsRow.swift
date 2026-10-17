@@ -14,11 +14,11 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
   var body: some View {
     HStack(spacing: 7) {
       Image(systemName: "square.grid.2x2")
-        .font(.system(size: metrics.glyph, weight: .medium))
+        .font(metrics.font(size: metrics.glyph, weight: .medium))
         .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
         .frame(width: metrics.sidebarGlyphColumn)
       Text(t("label.agents"))
-        .font(.system(size: metrics.secondary, weight: .medium))
+        .font(metrics.font(size: metrics.secondary, weight: .medium))
         .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
         .lineLimit(1)
       Spacer(minLength: 4)
@@ -30,7 +30,7 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
             diameter: UIMetrics.inlineStateDotDiameter,
           )
           Text("\(entry.count)")
-            .font(.system(size: metrics.badge, weight: .medium))
+            .font(metrics.font(size: metrics.badge, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(theme.textSecondary)
         }

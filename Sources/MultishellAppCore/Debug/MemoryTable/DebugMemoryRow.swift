@@ -6,6 +6,7 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public enum Source: Sendable, Hashable {
     case app
     case tab(TerminalTab.ID)
+    case fileTabs
     case unattributed
     case total
   }

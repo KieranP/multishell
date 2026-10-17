@@ -14,6 +14,7 @@ final class MacPlatform: Platform {
   /// were issued there or in a settings window. Set by `WindowAccessor`.
   weak var workspaceWindow: NSWindow?
   var onDidBecomeActive: (@MainActor () -> Void)?
+  var onWorkspaceWindowDidBecomeVisible: (@MainActor () -> Void)?
   /// The scenes' own window openers, which only a view can reach; set by
   /// `registeringWindowOpeners` for the command line's `ui show`.
   var openAuxiliaryWindow: ((AuxiliaryWindow) -> Void)?
@@ -32,6 +33,11 @@ final class MacPlatform: Platform {
     return key === workspaceWindow
   }
 
+  /// No window, as under `swift test`, counts as shown.
+  var isWorkspaceWindowVisible: Bool {
+    workspaceWindow.map { $0.occlusionState.contains(.visible) } ?? true
+  }
+
   /// Where macOS keeps the permission, spelled as the Settings app's own
   /// path to it.
   var notificationSettingsLocation: String? { t("platform.notification-settings") }
@@ -41,14 +47,31 @@ final class MacPlatform: Platform {
     let becameActive: @MainActor @Sendable (MacPlatform) -> Void = { platform in
       Task { @MainActor [weak platform] in platform?.onDidBecomeActive?() }
     }
+    let occlusionChanged: @MainActor @Sendable (MacPlatform) -> Void = { platform in
+      guard platform.isWorkspaceWindowVisible else { return }
+      platform.onWorkspaceWindowDidBecomeVisible?()
+    }
     let changes: [(NSNotification.Name, @MainActor @Sendable (MacPlatform) -> Void)] = [
-      (NSApplication.didBecomeActiveNotification, becameActive)
+      (NSApplication.didBecomeActiveNotification, becameActive),
+      (NSWindow.didChangeOcclusionStateNotification, occlusionChanged),
     ]
     observers = NotificationCenter.default.observe(changes, for: self)
   }
 
   func closeKeyWindow() {
     NSApp.keyWindow?.performClose(nil)
+  }
+
+  func beep() {
+    NSSound.beep()
+  }
+
+  nonisolated func opensAsText(_ file: URL) -> Bool {
+    TextFileRule.opensAsText(file)
+  }
+
+  nonisolated func opensAsText(named name: String, startingWith bytes: Data) -> Bool {
+    TextFileRule.opensAsText(named: name, startingWith: bytes)
   }
 
   func chooseDirectory(prompt: String) async -> URL? {

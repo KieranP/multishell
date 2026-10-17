@@ -23,7 +23,7 @@ struct GitStatusBadgeTests {
     let badge = GitStatusBadge(
       status: status,
       theme: .multishellDark,
-      size: 13,
+      metrics: UIMetrics(fontSize: 16, fontFamily: nil),
       tint: .secondary,
     )
     return NSHostingController(rootView: badge)

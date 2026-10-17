@@ -32,7 +32,9 @@ extension WorkspaceStoreTests {
 
     for step in 0..<400 {
       let workspace = store.workspace
-      switch Int.random(in: 0..<17, using: &rng) {
+      let tabIDs = workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
+      let anyTabID = tabIDs.randomElement(using: &rng)
+      switch Int.random(in: 0..<20, using: &rng) {
       case 0, 1:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
@@ -60,10 +62,9 @@ extension WorkspaceStoreTests {
         }
 
       case 7:
-        if let a = workspace.tabs.randomElement(using: &rng),
-          let b = workspace.tabs.randomElement(using: &rng)
-        {
-          store.moveTab(a.id, Bool.random(using: &rng) ? .before : .after, anchor: b.id)
+        let anchor = tabIDs.randomElement(using: &rng)
+        if let anyTabID, let anchor {
+          store.moveTab(anyTabID, Bool.random(using: &rng) ? .before : .after, anchor: anchor)
         }
 
       case 8:
@@ -106,21 +107,17 @@ extension WorkspaceStoreTests {
         store.setSettings(settings, forProject: project.id)
 
       case 12:
-        if let tab = workspace.tabs.randomElement(using: &rng),
-          let group = workspace.tabGroups.randomElement(using: &rng)
-        {
+        if let anyTabID, let group = workspace.tabGroups.randomElement(using: &rng) {
           store.moveTab(
-            tab.id,
+            anyTabID,
             Bool.random(using: &rng) ? .before : .after,
             toNewGroupOf: group.id,
           )
         }
 
       case 13:
-        if let tab = workspace.tabs.randomElement(using: &rng),
-          let group = workspace.tabGroups.randomElement(using: &rng)
-        {
-          store.moveTab(tab.id, toEndOf: group.id)
+        if let anyTabID, let group = workspace.tabGroups.randomElement(using: &rng) {
+          store.moveTab(anyTabID, toEndOf: group.id)
         }
 
       case 14:
@@ -136,6 +133,21 @@ extension WorkspaceStoreTests {
             },
             in: worktree.id,
           )
+        }
+
+      case 16, 17:
+        if let worktree = worktrees.randomElement(using: &rng) {
+          store.openFileTab(
+            path: ["README.md", "src/a.swift", "lib/a.swift", "../out", ""].randomElement(
+              using: &rng
+            )!,
+            in: worktree.id,
+          )
+        }
+
+      case 18:
+        if let anyTabID {
+          Bool.random(using: &rng) ? store.closeTab(anyTabID) : store.activateTab(anyTabID)
         }
 
       default:

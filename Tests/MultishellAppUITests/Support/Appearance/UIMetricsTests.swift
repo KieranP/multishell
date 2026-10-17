@@ -8,15 +8,15 @@ import Testing
 @Suite
 struct UIMetricsTests {
   @Test func theBoardScrollsOnlyOnceItsGapsAndPaddingLeaveAColumnUnderItsFloor() {
-    let metrics = UIMetrics(fontSize: 13)
+    let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
     let fits = 4 * metrics.boardColumnMinWidth + 3 * metrics.boardGap + 2 * metrics.boardPadding
     #expect(!metrics.boardLayout(forWidth: fits, count: 4).scrolls)
     #expect(metrics.boardLayout(forWidth: fits - 1, count: 4).scrolls)
   }
 
   @Test func everySizeGrowsWithTheBase() {
-    let small = UIMetrics(fontSize: 11)
-    let large = UIMetrics(fontSize: 16)
+    let small = UIMetrics(fontSize: 11, fontFamily: nil)
+    let large = UIMetrics(fontSize: 16, fontFamily: nil)
     for keyPath in [
       \UIMetrics.bodySize, \.secondary, \.caption, \.badge, \.monospaced, \.glyph, \.rowHeight,
       \.customNameRowHeight, \.tabHeight, \.tabCloseButtonSide, \.worktreeRowIndent,
@@ -30,7 +30,7 @@ struct UIMetricsTests {
   /// expression on both sides the test cannot see the widths change.
   @Test func theSplitsShowAtTheThresholdAndNotAPointEarlier() {
     for (size, threshold) in [(10.0, 202.0), (13.0, 252.0), (18.0, 351.0)] {
-      let metrics = UIMetrics(fontSize: size)
+      let metrics = UIMetrics(fontSize: size, fontFamily: nil)
       #expect(
         metrics.tabStripWidths.showsSplits(in: threshold),
         "the splits never show at \(size)",
@@ -43,7 +43,7 @@ struct UIMetricsTests {
   }
 
   @Test func aStripsTabsHaveWhatItsButtonsLeave() {
-    let metrics = UIMetrics(fontSize: 13)
+    let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
     #expect(
       metrics.tabStripWidths.tabsAvailable(in: 252) == 145,
       "the menu and both splits come off",
@@ -55,19 +55,19 @@ struct UIMetricsTests {
   }
 
   @Test func aScrollingStripHasGuttersOnlyWithRoomForBothAndATab() {
-    let metrics = UIMetrics(fontSize: 13)
+    let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
     #expect(metrics.tabStripWidths.arrowGutter(forAvailable: 145) == 22)
     #expect(metrics.tabStripWidths.arrowGutter(forAvailable: 144) == 0)
   }
 
   @Test func aScrollingStripsViewportIsWhatItsTwoGuttersLeave() {
-    let metrics = UIMetrics(fontSize: 13)
+    let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
     #expect(metrics.tabStripWidths.scrollingViewport(forAvailable: 145) == 101)
     #expect(metrics.tabStripWidths.scrollingViewport(forAvailable: 144) == 144)
   }
 
   @Test func aProjectsBlockIsItsRowAndEachWorktreesWithTheSelectedOnesPanes() {
-    let metrics = UIMetrics(fontSize: 13)
+    let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
 
     let plain = Worktree(path: URL(fileURLWithPath: "/repo"), projectID: "/repo", head: "a")
     let named = Worktree(path: URL(fileURLWithPath: "/repo/b"), projectID: "/repo", head: "b")
@@ -102,7 +102,7 @@ struct UIMetricsTests {
       through: Appearance.uiFontSizes.upperBound,
       by: 1,
     ) {
-      let metrics = UIMetrics(fontSize: size)
+      let metrics = UIMetrics(fontSize: size, fontFamily: nil)
       #expect(metrics.rowHeight >= metrics.bodySize * 1.8, "size \(size)")
       #expect(
         metrics.customNameRowHeight >= metrics.rowHeight + metrics.badge,
@@ -124,7 +124,7 @@ struct UIMetricsTests {
       through: Appearance.uiFontSizes.upperBound,
       by: 1,
     ) {
-      let metrics = UIMetrics(fontSize: size)
+      let metrics = UIMetrics(fontSize: size, fontFamily: nil)
       let furniture =
         UIMetrics.tabSideInset * 2 + metrics.paneGlyphSize + UIMetrics.tabItemGap * 3
         + metrics.tabCloseButtonSide

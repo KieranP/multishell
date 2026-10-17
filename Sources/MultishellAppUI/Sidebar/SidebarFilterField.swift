@@ -16,7 +16,7 @@ struct SidebarFilterField: View {
     HStack(spacing: 6) {
       TextField(t("sidebar.filter"), text: $text)
         .textFieldStyle(.plain)
-        .font(.system(size: metrics.secondary))
+        .font(metrics.font(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
         .focused($isFocused)
         // A turn later: focus does not take on a field the hierarchy has not
@@ -24,20 +24,12 @@ struct SidebarFilterField: View {
         .task { isFocused = true }
         .onExitCommand(perform: close)
       if isFiltering {
-        PlainGlyphButton(help: t("sidebar.clear-filter")) {
+        ClearFilterButton(help: t("sidebar.clear-filter"), theme: theme, metrics: metrics) {
           text = ""
           isFocused = true
-        } glyph: {
-          Image(systemName: "xmark.circle.fill")
-            .font(.system(size: metrics.glyph))
-            .foregroundStyle(theme.textTertiary)
-            .accessibilityHidden(true)
         }
       }
     }
-    .padding(.horizontal, UIMetrics.sidebarRowSideInset)
-    .frame(height: metrics.sidebarFilterHeight)
-    .background(theme.faintFill, in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius))
-    .padding(.horizontal, UIMetrics.sidebarListSideInset)
+    .filterWell(theme: theme, metrics: metrics)
   }
 }
