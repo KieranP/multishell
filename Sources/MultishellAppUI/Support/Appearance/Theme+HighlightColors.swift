@@ -2,19 +2,19 @@ import AppKit
 import MultishellAppCore
 import MultishellCore
 
-/// A highlight role's colour, from the theme's own palette, so a user theme
-/// recolours highlighting with nothing new to write.
+/// A highlight role's colour, from the theme's `file` section.
 extension Theme {
   func color(for role: HighlightRole) -> NSColor {
     switch role {
-    case .attribute, .function: ansiRGB(.blue).nsColor()
-    case .comment: foregroundRGB.nsColor(alpha: Self.tertiaryTextOpacity)
-    case .keyword: ansiRGB(.magenta).nsColor()
-    case .number: ansiRGB(.yellow).nsColor()
+    case .attribute: fileRGB(.attribute).nsColor
+    case .comment: fileRGB(.comment).nsColor
+    case .function: fileRGB(.function).nsColor
+    case .keyword: fileRGB(.keyword).nsColor
+    case .number: fileRGB(.number).nsColor
     case .plain: fileText
-    case .punctuation: foregroundRGB.nsColor(alpha: Self.secondaryTextOpacity)
-    case .string: ansiRGB(.green).nsColor()
-    case .type: ansiRGB(.cyan).nsColor()
+    case .punctuation: fileRGB(.punctuation).nsColor
+    case .string: fileRGB(.string).nsColor
+    case .type: fileRGB(.type).nsColor
     }
   }
 }

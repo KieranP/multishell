@@ -31,6 +31,7 @@ final class ModelHarness {
       host: NullEngine(),
       coordinator: nil,
       watcher: NullWatcher(),
+      themesDirectory: directory.appendingPathComponent("themes", isDirectory: true),
     )
   }
 

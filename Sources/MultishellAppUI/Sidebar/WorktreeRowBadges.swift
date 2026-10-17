@@ -33,7 +33,7 @@ struct WorktreeRowBadges: View {
     if isLocked {
       Image(systemName: "lock.fill")
         .font(metrics.font(size: metrics.small))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.projectsPanel.textTertiary)
         .help(t("sidebar.locked"))
         .accessibilityLabel(t("sidebar.locked"))
     }
@@ -54,7 +54,7 @@ struct WorktreeRowBadges: View {
           status: status,
           theme: theme,
           metrics: metrics,
-          tint: theme.textSecondary,
+          tint: theme.projectsPanel.textSecondary,
         )
         .contentShape(.rect)
       }
@@ -64,10 +64,10 @@ struct WorktreeRowBadges: View {
       Text("\(terminalCount)")
         .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()
-        .foregroundStyle(theme.textSecondary)
+        .foregroundStyle(theme.projectsPanel.textSecondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 1)
-        .background(theme.faintFill, in: Capsule())
+        .background(theme.projectsPanel.fill, in: Capsule())
         .help(t("count.terminals", terminalCount))
     }
   }

@@ -26,13 +26,6 @@ Most pressing first within each heading. A decision that gets made moves to
 
 ## Refinements
 
-- Theme files in sections, each editable on its own: `terminal` (such as
-  `terminal.background`), `file` with a colour per highlight role (such as
-  `file.function`), and `ui` per area (such as `ui.projects_panel.background`,
-  `ui.files_panel.background`, `ui.files_panel.text`). `ansi` becomes a map
-  keyed by colour name, not a 16-entry array. Existing theme files need not
-  load. Today `Theme+HighlightColors` maps each role onto an ANSI slot, and the
-  chrome derives from the terminal's background and foreground.
 - Keyboard focus. Nothing moves focus inside a tab, so a split pane is
   mouse-only and the terminal takes every keystroke. The sidebar filter, hidden
   behind the header's glass, is mouse-only too. Each new binding is an

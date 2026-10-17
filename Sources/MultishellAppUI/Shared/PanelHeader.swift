@@ -15,7 +15,7 @@ struct PanelHeader<Controls: View>: View {
     HStack(spacing: 8) {
       Text(title)
         .font(metrics.font(size: metrics.bodySize, weight: .semibold))
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.header.text)
       Text(summary)
         .font(metrics.font(size: metrics.caption))
         .foregroundStyle(summaryColor)
@@ -24,6 +24,6 @@ struct PanelHeader<Controls: View>: View {
       Spacer(minLength: 8)
       controls()
     }
-    .windowHeader(fill: theme.chromeColor)
+    .windowHeader(fill: theme.header.background)
   }
 }

@@ -61,7 +61,7 @@ struct TabGroupView: View {
   private func withDropBands(_ content: some View) -> some View {
     content.overlay {
       if drag.isDragging {
-        GroupDropBands(model: model, group: group, drag: $drag)
+        GroupDropBands(model: model, group: group, theme: theme, drag: $drag)
       }
     }
   }

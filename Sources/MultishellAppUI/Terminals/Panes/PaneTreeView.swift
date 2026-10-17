@@ -23,6 +23,7 @@ struct PaneTreeView: View {
         sessionID: id,
         isFocused: isFocusedPane,
         isLive: model.liveSessionIDs.contains(id),
+        dropHighlight: theme.interfaceRGB(.selection, in: .terminalTab),
       )
       .overlay { fade(isFocusedPane: isFocusedPane) }
       .overlay { ring(isFocusedPane: isFocusedPane) }
@@ -58,7 +59,7 @@ struct PaneTreeView: View {
   /// empty for no ring at all.
   @ViewBuilder
   private func ring(isFocusedPane: Bool) -> some View {
-    if showsFocusRing, isFocusedPane, let ringColor = theme.focusRingRGB {
+    if showsFocusRing, isFocusedPane, let ringColor = theme.terminalRGB(.focusRing) {
       Rectangle().strokeBorder(ringColor.color, lineWidth: 1)
     }
   }
@@ -69,7 +70,7 @@ struct PaneTreeView: View {
   private func fade(isFocusedPane: Bool) -> some View {
     let opacity = theme.inactivePaneOpacity
     if !isFocusedPane, opacity < 1 {
-      theme.backgroundColor
+      theme.terminalBackground
         .opacity(1 - opacity)
         .allowsHitTesting(false)
     }

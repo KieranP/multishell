@@ -49,7 +49,7 @@ struct DetailView: View {
     // leading side, so the actions menu is what stays in view.
     .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
     .clipped()
-    .background(theme.backgroundColor)
+    .background(theme.detail.background)
   }
 
   /// The worktree's tab area with the Files panel at its right while open,
@@ -70,7 +70,7 @@ struct DetailView: View {
             range: range,
             initial: FilesPanelWidth.initial,
             dragged: FilesPanelWidth.dragged,
-            theme: theme,
+            palette: theme.filesPanel,
           )
           FilesPanel(model: model, worktree: worktree, theme: theme)
             .frame(width: filesPanelWidth.clamped(to: range))

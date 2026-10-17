@@ -8,6 +8,7 @@ import SwiftUI
 enum AgentMarkImage {
   private struct Key: Hashable {
     let agentID: String?
+    let tint: RGB?
     let scale: CGFloat
   }
 
@@ -21,18 +22,17 @@ enum AgentMarkImage {
 
   /// A mark with a colour of its own keeps it; the rest are templates, which
   /// the menu tints itself. `nil` is the shell's terminal glyph.
-  static func image(for agentID: String?) -> Image? {
-    let key = Key(agentID: agentID, scale: NSScreen.mainBackingScale)
+  static func image(for agentID: String?, tint: RGB?) -> Image? {
+    let key = Key(agentID: agentID, tint: tint, scale: NSScreen.mainBackingScale)
     if let cached = rendered[key] { return cached }
-    guard let nsImage = nsImage(for: agentID, scale: key.scale) else { return nil }
+    guard let nsImage = nsImage(for: agentID, tint: tint, scale: key.scale) else { return nil }
     let image = Image(nsImage: nsImage)
     rendered[key] = image
     return image
   }
 
-  static func nsImage(for agentID: String?, scale: CGFloat) -> NSImage? {
-    let tint = agentID.flatMap(AgentCatalogue.markTintRGB)
-    let renderer = ImageRenderer(content: content(for: agentID))
+  static func nsImage(for agentID: String?, tint: RGB?, scale: CGFloat) -> NSImage? {
+    let renderer = ImageRenderer(content: content(for: agentID, tint: tint))
     renderer.scale = scale
     guard let nsImage = renderer.nsImage else { return nil }
     nsImage.isTemplate = tint == nil
@@ -42,9 +42,9 @@ enum AgentMarkImage {
   /// The terminal glyph is wider than the square, which a tab lets it spill
   /// past but the renderer clips to, so here it is scaled to fit.
   @ViewBuilder
-  private static func content(for agentID: String?) -> some View {
+  private static func content(for agentID: String?, tint: RGB?) -> some View {
     if let agentID {
-      AgentMarkView(agentID: agentID, plainTint: .black, size: size)
+      AgentMarkView(agentID: agentID, markTint: tint, plainTint: .black, size: size)
     } else {
       Image(systemName: PaneSymbol.terminal)
         .resizable()

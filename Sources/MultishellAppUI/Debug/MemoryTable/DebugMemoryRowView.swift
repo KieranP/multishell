@@ -16,7 +16,7 @@ struct DebugMemoryRowView: View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
       Image(systemName: disclosure == .expanded ? "chevron.down" : "chevron.right")
         .font(metrics.font(size: metrics.debugTableGlyphSize, weight: .semibold))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.debugInfo.textTertiary)
         .opacity(disclosure.isExpandable ? 1 : 0)
         .frame(width: UIMetrics.debugTableChevronWidth)
       switch layout {
@@ -47,24 +47,24 @@ struct DebugMemoryRowView: View {
   }
 
   private var title: some View {
-    Text(row.title).foregroundStyle(theme.textPrimary)
+    Text(row.title).foregroundStyle(theme.debugInfo.text)
   }
 
   private var columns: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
       title.frame(maxWidth: .infinity, alignment: .leading)
       Text(row.subtitle)
-        .foregroundStyle(theme.textSecondary)
+        .foregroundStyle(theme.debugInfo.textSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
       DebugNumberCell(
         text: row.processCountText,
         width: metrics.debugCountColumnWidth,
-        color: theme.textPrimary,
+        color: theme.debugInfo.text,
       )
       DebugNumberCell(
         text: row.selfMemoryText,
         width: metrics.debugMemoryValueColumnWidth,
-        color: theme.textPrimary,
+        color: theme.debugInfo.text,
       )
       totalCell
         .frame(width: metrics.debugMemoryBarColumnWidth, alignment: .trailing)
@@ -80,7 +80,7 @@ struct DebugMemoryRowView: View {
       }
       Text(row.totalMemoryText)
         .monospacedDigit()
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.debugInfo.text)
     }
   }
 }

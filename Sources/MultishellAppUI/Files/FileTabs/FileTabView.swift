@@ -34,10 +34,10 @@ struct FileTabView: View {
         FileTabNotice(model: model, tab: tab, content: content, theme: theme)
 
       case .some, nil:
-        theme.backgroundColor
+        theme.fileTab.background
       }
     }
-    .background(theme.backgroundColor)
+    .background(theme.fileTab.background)
   }
 
   @ViewBuilder

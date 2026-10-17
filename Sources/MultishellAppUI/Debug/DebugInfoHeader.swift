@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The panel's own header, as tall as the title-bar band: its name, the
-/// range's stalls, the range picker and Pause.
+/// range's stalls, the range switch and Pause.
 struct DebugInfoHeader: View {
   let model: AppModel
   let timeline: DebugTimeline
@@ -15,22 +15,20 @@ struct DebugInfoHeader: View {
     PanelHeader(
       title: t("debug.title"),
       summary: timeline.stallSummary,
-      summaryColor: timeline.hasStalls ? theme.failureColor : theme.textTertiary,
+      summaryColor: timeline.hasStalls ? theme.debugStallColor : theme.header.textTertiary,
       theme: theme,
       metrics: metrics,
     ) {
-      Picker(t("debug.range"), selection: $range) {
-        ForEach(DebugRange.allCases, id: \.self) { range in
-          Text(range.title).tag(range)
-        }
-      }
-      .pickerStyle(.segmented)
-      .labelsHidden()
-      .controlSize(.small)
-      .fixedSize()
+      SegmentedSwitch(
+        label: t("debug.range"),
+        options: DebugRange.allCases.map { ($0.title, $0) },
+        selection: $range,
+        theme: theme,
+        section: .header,
+        metrics: metrics,
+      )
       Toggle(t("debug.pause"), isOn: model.debugPausedBinding)
-        .toggleStyle(.button)
-        .controlSize(.small)
+        .toggleStyle(SegmentToggleStyle(theme: theme, section: .header, metrics: metrics))
     }
   }
 }

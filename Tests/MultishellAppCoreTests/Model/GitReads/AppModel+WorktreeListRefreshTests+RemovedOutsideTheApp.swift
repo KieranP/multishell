@@ -134,4 +134,17 @@ extension AppModelWorktreeListRefreshTests {
       "a worktree that is not there has nothing to report",
     )
   }
+
+  @Test func aStageThatFailsOnceItsWorktreeIsGoneReportsNothing() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let created = try await harness.createWorktree(onBranch: "gone")
+    try await harness.removeOutsideTheApp(created.path)
+    await harness.model.refreshWorktrees(of: harness.project)
+
+    harness.model.failStage(.postCreateHook, of: created, CocoaError(.fileNoSuchFile))
+
+    #expect(harness.model.presentedError == nil)
+    #expect(harness.model.worktreeOperations[created.id] == nil)
+  }
 }

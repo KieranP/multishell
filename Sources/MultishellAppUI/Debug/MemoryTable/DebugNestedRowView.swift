@@ -27,12 +27,12 @@ struct DebugNestedRowView: View {
         DebugNumberCell(
           text: memory.selfMemoryText,
           width: metrics.debugMemoryValueColumnWidth,
-          color: theme.textSecondary,
+          color: theme.debugInfo.textSecondary,
         )
         DebugNumberCell(
           text: memory.totalMemoryText,
           width: metrics.debugMemoryBarColumnWidth,
-          color: theme.textSecondary,
+          color: theme.debugInfo.textSecondary,
         )
 
       case .stacked:
@@ -40,7 +40,7 @@ struct DebugNestedRowView: View {
       }
     }
     .font(metrics.font(size: metrics.caption))
-    .foregroundStyle(theme.textSecondary)
+    .foregroundStyle(theme.debugInfo.textSecondary)
     .fixedSize(horizontal: false, vertical: true)
     .padding(.leading, UIMetrics.debugTableTitleInset)
     .padding(.trailing, UIMetrics.debugTableInset)
@@ -55,7 +55,7 @@ struct DebugNestedRowView: View {
       if indentLevel > 0 {
         Image(systemName: "arrow.turn.down.right")
           .font(metrics.font(size: metrics.debugTableGlyphSize))
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.debugInfo.textTertiary)
           .accessibilityHidden(true)
       }
       Text(name)

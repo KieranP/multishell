@@ -20,7 +20,7 @@ struct AppModelWorktreeListRefreshTests {
 
     #expect(harness.worktree(onBranch: "outside") != nil)
     #expect(
-      harness.watcher.watched.map(\.lastPathComponent).sorted() == [".git", "demo", "outside"]
+      harness.watchedRepositoryNames.sorted() == [".git", "demo", "outside"]
     )
   }
 
@@ -213,7 +213,7 @@ struct AppModelWorktreeListRefreshTests {
 
     await harness.model.refreshProjectsIfChanged()
     #expect(harness.model.workspace.worktrees(of: other.id).count == 2)
-    #expect(!harness.watcher.watched.isEmpty)
+    #expect(!harness.watchedRepositoryNames.isEmpty)
   }
 
   @Test func aProjectWhoseDirectoryReturnsIsUndimmedByTheNextRound() async throws {

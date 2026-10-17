@@ -37,7 +37,11 @@ struct ProjectBlock: View {
     }
     .overlay(alignment: insertion == .below ? .bottom : .top) {
       if let insertion {
-        InsertionLine(axis: .horizontal, isAfter: insertion == .below)
+        InsertionLine(
+          axis: .horizontal,
+          isAfter: insertion == .below,
+          color: theme.color(.selection, in: .projectsPanel),
+        )
       }
     }
     .onDrop(

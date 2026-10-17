@@ -11,17 +11,17 @@ struct AgentBoardCardMessage: View {
   var body: some View {
     Text(text)
       .font(metrics.font(size: metrics.badge))
-      .foregroundStyle(theme.textSecondary)
+      .foregroundStyle(theme.agentsCard.textSecondary)
       .lineLimit(3)
       .fixedSize(horizontal: false, vertical: true)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.leading, 6)
       .padding(.vertical, 4)
       .padding(.trailing, 4)
-      .background(theme.faintFill, in: RoundedRectangle(cornerRadius: 4))
+      .background(theme.agentsCard.fill, in: RoundedRectangle(cornerRadius: 4))
       .overlay(alignment: .leading) {
         Rectangle()
-          .fill(theme.hairline)
+          .fill(theme.agentsCard.border)
           .frame(width: 2)
       }
   }

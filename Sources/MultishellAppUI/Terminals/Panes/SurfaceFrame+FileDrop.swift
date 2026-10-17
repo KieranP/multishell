@@ -86,7 +86,7 @@ extension SurfaceFrame {
     view.autoresizingMask = [.width, .height]
     view.wantsLayer = true
     view.layer?.borderWidth = 2
-    view.layer?.borderColor = NSColor.keyboardFocusIndicatorColor.cgColor
+    view.layer?.borderColor = dropHighlightColor.cgColor
     addSubview(view)
     dropHighlight = view
   }

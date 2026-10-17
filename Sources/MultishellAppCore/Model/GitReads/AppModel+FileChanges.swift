@@ -10,6 +10,9 @@ extension AppModel {
   /// A watcher tick. git's records are compared frontmost or not, as a new
   /// worktree is a row; badges are read frontmost only, as the poll's are.
   func noteFileChanges(_ changed: [URL]) async {
+    if changed.contains(where: { $0.pathComponents(under: themesDirectory) != nil }) {
+      await reloadThemes()
+    }
     let heardFirst = fileChangeTargets(changed)
     noteFileTabChanges(heardFirst)
     noteFilesPanelChanges(heardFirst)

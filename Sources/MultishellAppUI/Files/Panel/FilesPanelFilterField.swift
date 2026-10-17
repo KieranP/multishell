@@ -17,20 +17,29 @@ struct FilesPanelFilterField: View {
     HStack(spacing: 6) {
       Image(systemName: "magnifyingglass")
         .font(metrics.font(size: metrics.small))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.filesPanel.textTertiary)
         .accessibilityHidden(true)
-      TextField(t("files-panel.filter"), text: text)
+      TextField("", text: text)
         .textFieldStyle(.plain)
+        .fieldPrompt(
+          t("files-panel.filter"),
+          isShown: text.wrappedValue.isEmpty,
+          color: theme.filesPanel.textTertiary,
+        )
         .font(metrics.font(size: metrics.secondary))
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.filesPanel.text)
         .onExitCommand { text.wrappedValue = "" }
       if !text.wrappedValue.isEmpty {
-        ClearFilterButton(help: t("files-panel.clear-filter"), theme: theme, metrics: metrics) {
+        ClearFilterButton(
+          help: t("files-panel.clear-filter"),
+          palette: theme.filesPanel,
+          metrics: metrics,
+        ) {
           text.wrappedValue = ""
         }
       }
     }
-    .filterWell(theme: theme, metrics: metrics)
+    .filterWell(palette: theme.filesPanel, metrics: metrics)
     .padding(.top, 8)
     .padding(.bottom, 6)
   }

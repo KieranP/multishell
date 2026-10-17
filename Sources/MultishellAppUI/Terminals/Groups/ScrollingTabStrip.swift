@@ -86,9 +86,9 @@ struct ScrollingTabStrip<Tabs: View>: View {
       } label: {
         Image(systemName: isLeading ? "chevron.compact.left" : "chevron.compact.right")
           .font(model.metrics.font(size: model.metrics.bodySize, weight: .semibold))
-          .foregroundStyle(theme.textSecondary)
+          .foregroundStyle(theme.tabBar.textSecondary)
           .frame(width: gutter, height: model.metrics.tabHeight)
-          .background(theme.chromeColor)
+          .background(theme.tabBar.background)
           .contentShape(.rect)
       }
       .buttonStyle(.plain)

@@ -13,6 +13,7 @@ struct PaneGlyph: View {
   let ringFill: Color
   let plainTint: Color
   let theme: Theme
+  let palette: AreaPalette
   let size: Double
 
   /// The state dot on the mark's corner; what it covers is the trade, see
@@ -23,13 +24,14 @@ struct PaneGlyph: View {
     AgentMarkView(
       agentID: agentID,
       unmarkedSymbol: unmarkedSymbol,
+      markTint: agentID.flatMap(theme.agentMarkRGB),
       plainTint: plainTint,
       size: size,
     )
     .cornerBadge(
       onGlyphOf: size,
       ringFill: ringFill,
-      state.map { StateDot(state: $0, theme: theme, diameter: dotSize) },
+      state.map { StateDot(state: $0, theme: theme, palette: palette, diameter: dotSize) },
     )
   }
 }

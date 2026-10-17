@@ -2,12 +2,18 @@
 
 What each addition needs beyond the code itself.
 
-- **A theme.** A `.json` in the themes folder in `Theme`'s shape. The examples
-  folder is not loaded, and an example already written is not rewritten, so a
-  key added since appears only in a folder seeded after it.
-- **Two theme keys are not colours the terminal draws**: the focus ring, a
-  colour or empty for no line, and the inactive-pane fade, which clamps before a
-  pane looks broken. Both are drawn per pane.
+- **A theme.** A `.json` in the themes folder; the examples beside it list every
+  key, and anything a theme leaves out is its base theme's.
+- **A built-in theme** is a complete JSON file in Core's `Resources/themes`,
+  named in `Theme.builtins`; ThemeBuiltinsTests holds it to every key. A port of
+  someone's palette also takes a row in `THIRD-PARTY-NOTICES.md` and its licence
+  in `Licenses/Themes/`.
+- **A new colour** is a key in its section's enum, in
+  `InterfaceSection.colorKeys` for a `ui` one, and in every built-in theme under
+  `Resources/themes`, which ThemeBuiltinsTests checks. The examples follow,
+  being copies.
+- **A new `ui` area** is a case of `InterfaceSection` with its keys, a palette
+  in `Theme+ChromeColors`, and every view in it reading that palette.
 - **A terminal engine.** There is one, named outright where the Mac half builds
   the model (design/terminals.md). A replacement implements the surface-host
   protocol and is passed to the model there.
@@ -30,8 +36,8 @@ What each addition needs beyond the code itself.
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
-  follow. An agent's row names its mark, and a tint where the project's mark has
-  a colour of its own.
+  follow. An agent's row names its mark; its colour is a `ui.agent_marks` key in
+  every built-in theme, empty where the project's mark has no colour of its own.
 - **Removing an agent adds its id to `AgentCatalogue.retiredIDs`**, or a state
   file naming it raises an install alert for it at every run:
   WorkspaceRetiredAgentsTests.
@@ -139,9 +145,9 @@ What each addition needs beyond the code itself.
   builder `DebugSample.sample` takes it with a default, and the widest slot in
   `DebugStripLabelTests` its widest figure, so the label is held to its column.
   A series in a split strip also needs an edge in `DebugStripPoint` and in
-  `DebugStripBoundary`, a band in `DebugStripChart`, a colour in
-  `Theme+DebugColors` and an entry in `DebugSeriesLegend`, and its name in the
-  detail line widens the label.
+  `DebugStripBoundary`, a band in `DebugStripChart`, a key in `debug_info`'s
+  `colorKeys` and every built-in theme, read in `Theme+DebugColors` and an entry
+  in `DebugSeriesLegend`, and its name in the detail line widens the label.
 - **A new reading also goes in `DebugSampleRecord`** for `debug samples`, and in
   `DebugSummaryRecord` for `--summary`. Nothing forces either: left out, the
   command line never sees it.

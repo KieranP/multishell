@@ -19,10 +19,10 @@ struct DebugTableBlock<Content: View>: View {
       HStack(alignment: .firstTextBaseline, spacing: 8) {
         Text(title)
           .font(metrics.font(size: metrics.secondary, weight: .semibold))
-          .foregroundStyle(theme.textPrimary)
+          .foregroundStyle(theme.debugInfo.text)
         Text(caption)
           .font(metrics.font(size: metrics.caption))
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.debugInfo.textTertiary)
       }
       .padding(.horizontal, UIMetrics.debugTableInset)
       .padding(.top, 8)
@@ -37,7 +37,7 @@ struct DebugTableBlock<Content: View>: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.bottom, 4)
-    .columnBackground(theme)
+    .columnBackground(theme.color(.blockBackground, in: .debugInfo))
     .onGeometryChange(for: Double.self) { geometry in
       geometry.size.width
     } action: { newWidth in

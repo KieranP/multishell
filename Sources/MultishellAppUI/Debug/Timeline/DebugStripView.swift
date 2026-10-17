@@ -26,7 +26,7 @@ struct DebugStripView: View {
           DebugStripPointer(
             slotIndex: hoveredSlotIndex,
             timeline: timeline,
-            color: theme.textSecondary,
+            color: theme.debugInfo.textSecondary,
           )
         }
         .padding(.vertical, 5)

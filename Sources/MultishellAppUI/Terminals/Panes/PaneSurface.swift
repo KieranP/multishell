@@ -11,10 +11,13 @@ struct PaneSurface: NSViewRepresentable {
   /// Read so that a session opened after this view first drew, which
   /// changes nothing in the workspace, still triggers `updateNSView`.
   let isLive: Bool
+  /// The border a pane draws while files are dragged over it.
+  let dropHighlight: RGB
 
   func makeNSView(context: Context) -> SurfaceFrame { SurfaceFrame() }
 
   func updateNSView(_ frame: SurfaceFrame, context: Context) {
+    frame.dropHighlightColor = dropHighlight.nsColor
     frame.acceptsDrop = { [model] in model.acceptsFileDrop(into: sessionID) }
     frame.receiveDrop = { [model] urls, focus in
       model.dropFiles(urls, into: sessionID, takingFocus: focus)

@@ -25,7 +25,6 @@ public enum AgentCatalogue {
       mark: .claude,
       resumeArguments: ["--continue"],
       fileMentionPrefix: "@",
-      markTint: "#d97757",
     ),
     AgentDescriptor(
       id: codexID,
@@ -42,7 +41,6 @@ public enum AgentCatalogue {
       taskArgument: .option("--prompt-interactive"),
       mark: .gemini,
       resumeArguments: ["--resume", "latest"],
-      markTint: "#8ab4f8",
     ),
     AgentDescriptor(
       id: copilotID,
@@ -59,7 +57,6 @@ public enum AgentCatalogue {
       taskArgument: .option("--prompt"),
       mark: .openCode,
       resumeArguments: ["--continue"],
-      markTint: "#fab283",
     ),
   ]
 
@@ -79,11 +76,6 @@ public enum AgentCatalogue {
   public static func agent(runningCommand command: String) -> AgentDescriptor? {
     let name = command.lowercased()
     return agents.first { $0.executable.lowercased() == name }
-  }
-
-  /// What the mark is drawn in, `nil` for the theme's own text colour.
-  public static func markTintRGB(_ id: String) -> RGB? {
-    agent(id)?.markTint.flatMap(HexColor.parse)
   }
 
   /// The id in force for a project: its override when it has one, else the

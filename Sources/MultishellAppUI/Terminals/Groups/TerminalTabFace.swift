@@ -12,10 +12,11 @@ struct TerminalTabFace: View {
 
   private var isShown: Bool { tab.id == group.shownTabID }
   private var isRenaming: Bool { model.renamingTabID == tab.id }
+  private var palette: AreaPalette { isShown ? theme.terminalTab : theme.tabBar }
 
   var body: some View {
     let isActive = isShown && isFocusedGroup
-    let textColor = isActive ? theme.textPrimary : theme.textSecondary
+    let textColor = isActive ? palette.text : palette.textSecondary
     let state = model.state(of: tab)
     let agentID = model.agentIDAtThePrompt(of: tab)
     let title = model.title(of: tab)
@@ -36,10 +37,11 @@ struct TerminalTabFace: View {
 
       Spacer(minLength: 0)
 
-      if isActive, !isRenaming { TabCloseButton(model: model, tabID: tab.id, theme: theme) }
+      if isActive, !isRenaming { TabCloseButton(model: model, tabID: tab.id, palette: palette) }
     }
     .tabFace(
       isShown: isShown,
+      shownFill: theme.terminalTab.background,
       theme: theme,
       activate: { model.activateTab(tab.id) },
       close: { model.closeTab(tab.id) },
@@ -78,9 +80,10 @@ struct TerminalTabFace: View {
       agentID: agentID,
       unmarkedSymbol: tab.isSplit ? PaneSymbol.split : PaneSymbol.terminal,
       state: state,
-      ringFill: isShown ? theme.backgroundColor : theme.chromeColor,
+      ringFill: palette.background,
       plainTint: textColor,
       theme: theme,
+      palette: palette,
       size: model.metrics.paneGlyphSize,
     )
     if let state {
@@ -106,7 +109,7 @@ struct TerminalTabFace: View {
       initial: initial,
       prompt: t("tab.name-prompt"),
       font: model.metrics.font(size: model.metrics.secondary, weight: .medium),
-      color: theme.textPrimary,
+      palette: palette,
       commit: { model.commitTabRename(of: tab.id, to: $0) },
       cancel: { model.cancelRenamingTab() },
     )

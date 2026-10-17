@@ -6,7 +6,7 @@ import Testing
 @Suite @MainActor
 struct AgentMarkImageTests {
   @Test func theShellGlyphKeepsBothSidesOfItsWindow() throws {
-    let image = try #require(AgentMarkImage.nsImage(for: nil, scale: 4))
+    let image = try #require(AgentMarkImage.nsImage(for: nil, tint: nil, scale: 4))
     let bitmap = try #require(image.tiffRepresentation.flatMap(NSBitmapImageRep.init(data:)))
     let ink = InkedPixels(bitmap)
     let glyph = try #require(ink.box)

@@ -11,6 +11,8 @@ struct WorkerChip: View {
 
   let workers: [Worker]
   let theme: Theme
+  /// What the chip sits on, for an idle worker's grey.
+  let palette: AreaPalette
   let metrics: UIMetrics
 
   @State private var isHovered = false
@@ -24,11 +26,11 @@ struct WorkerChip: View {
         .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()
     }
-    .foregroundStyle(theme.color(for: workers.chipState))
+    .foregroundStyle(theme.color(for: workers.chipState, on: palette))
     .padding(.horizontal, 5)
     .padding(.vertical, 1)
     .background(
-      theme.color(for: workers.chipState).opacity(isHovered ? 0.26 : 0.14),
+      theme.color(for: workers.chipState, on: palette).opacity(isHovered ? 0.26 : 0.14),
       in: Capsule(),
     )
     .contentShape(.rect)

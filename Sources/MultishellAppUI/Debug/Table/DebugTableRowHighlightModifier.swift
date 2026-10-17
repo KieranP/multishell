@@ -10,7 +10,7 @@ struct DebugTableRowHighlightModifier: ViewModifier {
 
   func body(content: Content) -> some View {
     content
-      .background(isHovered ? theme.faintFill : .clear)
+      .background(isHovered ? theme.debugInfo.fill : .clear)
       .onHover { isHovered = $0 }
   }
 }

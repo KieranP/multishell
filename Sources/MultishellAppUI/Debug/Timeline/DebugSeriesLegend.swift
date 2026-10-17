@@ -23,7 +23,7 @@ struct DebugSeriesLegend: View {
       RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 7)
       Text(name)
         .font(metrics.font(size: metrics.small))
-        .foregroundStyle(theme.textSecondary)
+        .foregroundStyle(theme.debugInfo.textSecondary)
     }
   }
 }

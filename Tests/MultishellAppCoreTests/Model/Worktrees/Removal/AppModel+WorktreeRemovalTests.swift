@@ -79,7 +79,7 @@ struct AppModelWorktreeRemovalTests {
     #expect(harness.model.workspace.selectedWorktreeID == nil)
     #expect(!FileManager.default.fileExists(atPath: worktree.path.path))
     #expect(
-      harness.watcher.watched.map(\.lastPathComponent) == [".git", "demo"],
+      harness.watchedRepositoryNames == [".git", "demo"],
       "the removed worktree's folder is watched no longer",
     )
   }

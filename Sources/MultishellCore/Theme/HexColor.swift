@@ -3,41 +3,59 @@ import Foundation
 /// Parses the hex strings themes are written in. In the core so the app and
 /// the terminal engine read a theme file the same way.
 enum HexColor {
-  /// Accepts `#rgb`, `#rrggbb`, and either without the `#`. A trailing alpha
-  /// is read and ignored: a terminal cell has none.
-  static func parse(_ text: String) -> RGB? {
-    // Hand-edited theme files pick up stray spaces; grey for the whole
-    // palette would be a harsh price for one.
-    var digits = Substring(text.trimmingCharacters(in: .whitespaces))
-    if digits.hasPrefix("#") { digits = digits.dropFirst() }
+  private static let space = UInt8(ascii: " ")
+  private static let tab = UInt8(ascii: "\t")
+  private static let hash = UInt8(ascii: "#")
 
-    switch digits.count {
+  /// `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa`, the `#` optional. Read on every
+  /// render, so it scans the bytes in place; see appearance.md.
+  static func parse(_ text: String) -> RGB? {
+    var utf8 = Substring(text).utf8[...]
+    // Hand-edited theme files pick up stray spaces; the base theme's colour
+    // in place of the one written would be a harsh price for one.
+    while let first = utf8.first, first == space || first == tab { utf8 = utf8.dropFirst() }
+    while let last = utf8.last, last == space || last == tab { utf8 = utf8.dropLast() }
+    if utf8.first == hash { utf8 = utf8.dropFirst() }
+
+    var digits: UInt32 = 0
+    var count = 0
+    for byte in utf8 {
+      guard count < 8, let nibble = nibble(byte) else { return nil }
+      digits = digits << 4 | UInt32(nibble)
+      count += 1
+    }
+    switch count {
     case 3, 4:
-      let expanded = digits.prefix(3).flatMap { [$0, $0] }
-      return parseSixDigits(String(expanded), ignoringAlpha: digits.dropFirst(3))
+      // The nth digit from the left, written twice: `f` reads as `ff`.
+      func doubled(_ index: Int) -> UInt8 {
+        let digit = UInt8(truncatingIfNeeded: digits >> (4 * (count - 1 - index)) & 0xF)
+        return digit << 4 | digit
+      }
+      return RGB(
+        red: doubled(0),
+        green: doubled(1),
+        blue: doubled(2),
+        alpha: count == 4 ? doubled(3) : 255,
+      )
 
     case 6, 8:
-      return parseSixDigits(String(digits.prefix(6)), ignoringAlpha: digits.dropFirst(6))
+      func pair(_ index: Int) -> UInt8 {
+        UInt8(truncatingIfNeeded: digits >> (8 * (count / 2 - 1 - index)))
+      }
+      return RGB(red: pair(0), green: pair(1), blue: pair(2), alpha: count == 8 ? pair(3) : 255)
 
     default:
       return nil
     }
   }
 
-  private static func parseSixDigits(_ digits: String, ignoringAlpha alpha: Substring) -> RGB? {
-    guard alpha.allSatisfy(\.isHexDigit) else { return nil }
-    return parseSixDigits(digits)
-  }
-
-  private static func parseSixDigits(_ digits: String) -> RGB? {
-    // `UInt32(_:radix:)` accepts a leading sign, which is not a colour.
-    guard digits.allSatisfy(\.isHexDigit), let value = UInt32(digits, radix: 16) else {
-      return nil
+  /// One hex digit's value; `nil` for anything else, a sign included.
+  private static func nibble(_ byte: UInt8) -> UInt8? {
+    switch byte {
+    case UInt8(ascii: "0")...UInt8(ascii: "9"): byte - UInt8(ascii: "0")
+    case UInt8(ascii: "a")...UInt8(ascii: "f"): byte - UInt8(ascii: "a") + 10
+    case UInt8(ascii: "A")...UInt8(ascii: "F"): byte - UInt8(ascii: "A") + 10
+    default: nil
     }
-    return RGB(
-      red: UInt8((value >> 16) & 0xFF),
-      green: UInt8((value >> 8) & 0xFF),
-      blue: UInt8(value & 0xFF),
-    )
   }
 }

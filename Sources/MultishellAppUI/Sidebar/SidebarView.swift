@@ -78,7 +78,7 @@ struct SidebarView: View {
         if let message = model.sidebarEmptyMessage(showing: entries) {
           Text(message)
             .font(metrics.font(size: metrics.secondary))
-            .foregroundStyle(theme.textTertiary)
+            .foregroundStyle(theme.projectsPanel.textTertiary)
         }
       }
       // A drop that misses every project block still ends the drag, so the
@@ -87,12 +87,12 @@ struct SidebarView: View {
         endProjectDrag()
         return false
       }
-      PanelFooter(text: model.sidebarCountsText, theme: theme, metrics: metrics)
+      PanelFooter(text: model.sidebarCountsText, palette: theme.projectsPanel, metrics: metrics)
       if model.areDebugToolsEnabled {
         SidebarQuickStats(model: model, theme: theme, metrics: metrics)
       }
     }
-    .background(theme.sidebarColor)
+    .background(theme.projectsPanel.background)
   }
 
   private func endProjectDrag() {

@@ -11,10 +11,10 @@ struct AgentBoardEmptyHint: View {
   var body: some View {
     Text(AgentBoard.emptyHint)
       .font(metrics.font(size: metrics.caption))
-      .foregroundStyle(theme.textTertiary)
+      .foregroundStyle(theme.agentsPanel.textTertiary)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, UIMetrics.panelSideInset)
       .padding(.vertical, 8)
-      .hairline(.top, theme)
+      .hairline(.top, theme.agentsPanel)
   }
 }

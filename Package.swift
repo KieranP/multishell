@@ -53,13 +53,13 @@ let package = Package(
     // Scripts/build-ghostty.sh; the submodule's commit is the pin.
     .binaryTarget(name: "GhosttyKit", path: ".build/ghostty/GhosttyKit.xcframework"),
     // Docs/develop/layout.md says what each target holds. Core's resources are the
-    // shell scripts and the libraries' catalogue; see Docs/design/translation.md.
+    // shell scripts, the base themes and the libraries' catalogue (translation.md).
     .target(
       name: "MultishellCore",
       dependencies: ["MultishellProcess"],
       resources: [
         .copy("Resources/zsh"), .copy("Resources/bash"), .copy("Resources/fish"),
-        .process("Resources/en.lproj"),
+        .copy("Resources/themes"), .process("Resources/en.lproj"),
       ],
     ),
     .target(

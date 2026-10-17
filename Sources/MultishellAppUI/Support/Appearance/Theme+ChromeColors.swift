@@ -1,76 +1,62 @@
 import MultishellCore
 import SwiftUI
 
-/// Every chrome colour derives from the theme, so the window follows it
-/// rather than the system appearance; see Docs/design/appearance.md.
+/// Every chrome colour is the theme's, so the window follows it rather than
+/// the system appearance; see Docs/design/appearance.md.
 extension Theme {
   /// How far a sidebar row's name is held back until the row is selected.
-  private static let unselectedRowNameOpacity: Double = 0.85
-  /// Shared with a file tab's AppKit colours, which cannot take a `Color`.
-  static let primaryTextOpacity = 0.92
-  static let secondaryTextOpacity = 0.6
-  static let tertiaryTextOpacity = 0.38
+  private static let unselectedRowNameOpacity = 0.85
 
-  var backgroundColor: Color { backgroundRGB.color }
-  private var foregroundColor: Color { foregroundRGB.color }
-
-  /// Sidebar sits furthest from the terminal, toolbar and tab strip between.
-  var sidebarColor: Color { lifted(0.09) }
-  var chromeColor: Color { lifted(0.045) }
-
-  /// A board column and a card on it: two more steps from the terminal,
-  /// drawn from the same lift the sidebar and toolbar are.
-  var columnColor: Color { lifted(0.03) }
-  var cardColor: Color { lifted(0.07) }
-
-  /// The find bar: the sidebar's lift on a dark theme, a third of it on a
-  /// light one, whose well then needs a line of its own; see appearance.md.
-  var findBarColor: Color { isDark ? sidebarColor : columnColor }
-  var findWellBorderColor: Color { isDark ? .clear : hairline }
-
-  /// A header glyph whose panel is open, in the focus ring's colour.
-  var toggledGlyphColor: Color { focusRingRGB?.color ?? .accentColor }
-
-  var textPrimary: Color { foregroundColor.opacity(Self.primaryTextOpacity) }
-  var textSecondary: Color { foregroundColor.opacity(Self.secondaryTextOpacity) }
-  var textTertiary: Color { foregroundColor.opacity(Self.tertiaryTextOpacity) }
-  var hairline: Color { foregroundColor.opacity(0.09) }
-  var faintFill: Color { foregroundColor.opacity(0.06) }
+  var projectsPanel: AreaPalette { AreaPalette(self, .projectsPanel) }
+  var filesPanel: AreaPalette { AreaPalette(self, .filesPanel) }
+  var header: AreaPalette { AreaPalette(self, .header) }
+  var tabBar: AreaPalette { AreaPalette(self, .tabBar) }
+  /// The shown terminal tab's face, and the dividers between its panes.
+  var terminalTab: AreaPalette { AreaPalette(self, .terminalTab) }
+  /// The shown file tab's face, its bar and its notices.
+  var fileTab: AreaPalette { AreaPalette(self, .fileTab) }
+  var findBar: AreaPalette { AreaPalette(self, .findBar) }
+  var agentsPanel: AreaPalette { AreaPalette(self, .agentsPanel) }
+  var agentsColumn: AreaPalette { AreaPalette(self, .agentsColumn) }
+  var agentsCard: AreaPalette { AreaPalette(self, .agentsCard) }
+  var detail: AreaPalette { AreaPalette(self, .detail) }
+  var debugInfo: AreaPalette { AreaPalette(self, .debugInfo) }
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }
 
-  /// A worktree's name beside its project's, on the header and a card.
-  var worktreeNameColor: Color { ansiRGB(.cyan).color }
+  /// A pane's own background, which the fade dims every other pane towards;
+  /// opaque, as libghostty draws it.
+  var terminalBackground: Color { (terminalRGB(.background) ?? .black).opaque.color }
 
   /// The git badge's lines added and removed, and its files with no line.
-  var insertionsColor: Color { ansiRGB(.green).color }
-  var deletionsColor: Color { ansiRGB(.red).color }
-  var unscoredFilesColor: Color { ansiRGB(.yellow).color }
+  var insertionsColor: Color { color(.added, in: .git) }
+  var deletionsColor: Color { color(.removed, in: .git) }
+  var unscoredFilesColor: Color { color(.changed, in: .git) }
 
   /// A create or remove that failed, and a branch that landed.
-  var failureColor: Color { ansiRGB(.red).color }
-  var mergedColor: Color { ansiRGB(.green).color }
+  var failureColor: Color { color(.failed, in: .states) }
+  var mergedColor: Color { color(.merged, in: .git) }
+
+  func color(_ key: InterfaceColorKey, in section: InterfaceSection) -> Color {
+    interfaceRGB(key, in: section).color
+  }
 
   func rowNameColor(isSelected: Bool) -> Color {
-    textPrimary.opacity(isSelected ? 1 : Self.unselectedRowNameOpacity)
+    projectsPanel.text.opacity(isSelected ? 1 : Self.unselectedRowNameOpacity)
   }
 
   func iconTint(_ slot: Int?, untinted: Color) -> Color {
-    slot.map { ansiRGB($0).color } ?? untinted
+    slot.map { projectIconRGB($0).color } ?? untinted
   }
 
-  /// Working yellow, Waiting blue, Done green, Failed red, idle grey.
-  func color(for state: SessionState) -> Color {
+  /// Idle is the grey of the area the dot sits in.
+  func color(for state: SessionState, on palette: AreaPalette) -> Color {
     switch state {
-    case .running: ansiRGB(.yellow).color
-    case .attention: ansiRGB(.blue).color
-    case .done: ansiRGB(.green).color
-    case .failed: ansiRGB(.red).color
-    case .idle: textTertiary
+    case .running: color(.working, in: .states)
+    case .attention: color(.waiting, in: .states)
+    case .done: color(.done, in: .states)
+    case .failed: color(.failed, in: .states)
+    case .idle: palette.textTertiary
     }
-  }
-
-  private func lifted(_ amount: Double) -> Color {
-    backgroundRGB.blended(with: isDark ? .white : .black, amount: amount).color
   }
 }

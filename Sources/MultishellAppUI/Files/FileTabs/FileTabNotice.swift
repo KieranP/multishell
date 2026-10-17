@@ -13,7 +13,7 @@ struct FileTabNotice: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       Text(FileTabNoticeText.message(for: content) ?? "")
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.fileTab.textTertiary)
         .fixedSize(horizontal: false, vertical: true)
       if FileTabNoticeText.offersEditor(for: content) {
         Button(t("action.open-in-editor")) {

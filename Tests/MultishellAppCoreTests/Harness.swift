@@ -20,6 +20,7 @@ final class Harness {
   let main: Worktree
   let feature: Worktree
   let root: URL
+  var themes: URL { root.appendingPathComponent("themes", isDirectory: true) }
   private let stateFile: URL
 
   /// `socketSource` stands in for `messageSource`, for a test of the real socket.
@@ -49,6 +50,7 @@ final class Harness {
       host: engine,
       coordinator: nil,
       watcher: watcher,
+      themesDirectory: root.appendingPathComponent("themes", isDirectory: true),
       platform: platform,
       messageSource: socketSource ?? messageSource,
       notifier: notifier,
@@ -93,7 +95,13 @@ final class Harness {
     model.saveNow()
     let (store, loadError) = WorkspaceStore.restored(from: StateFile(fileURL: stateFile))
     let engine = FakeEngine()
-    let model = AppModel(store: store, host: engine, coordinator: nil, watcher: FakeWatcher())
+    let model = AppModel(
+      store: store,
+      host: engine,
+      coordinator: nil,
+      watcher: FakeWatcher(),
+      themesDirectory: themes,
+    )
     return (model, engine, store, loadError)
   }
 

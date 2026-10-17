@@ -17,7 +17,7 @@ struct NoSelectionPlaceholder: View {
     ) {
       Image(systemName: "arrow.trianglehead.branch")
         .font(.system(size: 40, weight: .light))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.detail.textTertiary)
         .accessibilityHidden(true)
     } footer: {
       if !hasProjects {

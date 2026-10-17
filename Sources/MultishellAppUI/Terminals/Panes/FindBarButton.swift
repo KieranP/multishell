@@ -15,9 +15,12 @@ struct FindBarButton: View {
     PlainGlyphButton(help: help, action: action) {
       Image(systemName: symbol)
         .font(metrics.font(size: metrics.bodySize, weight: .medium))
-        .foregroundStyle(isHovered ? theme.textPrimary : theme.textSecondary)
+        .foregroundStyle(isHovered ? theme.findBar.text : theme.findBar.textSecondary)
         .frame(width: metrics.findControlSize, height: metrics.findControlSize)
-        .background(isHovered ? theme.faintFill : .clear, in: RoundedRectangle(cornerRadius: 6))
+        .background(
+          isHovered ? theme.findBar.fill : .clear,
+          in: RoundedRectangle(cornerRadius: 6),
+        )
         .accessibilityHidden(true)
     }
     .onHover { isHovered = $0 }

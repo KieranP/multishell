@@ -31,11 +31,14 @@ struct SidebarSortMenu: View {
     } label: {
       Image(systemName: "arrow.up.arrow.down")
         .font(metrics.font(size: metrics.badge))
-        .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
+        .foregroundStyle(
+          isHovered
+            ? theme.projectsPanel.textSecondary : theme.projectsPanel.textTertiary.opacity(0.7)
+        )
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sectionHeaderHeight)
         // Painted: a menu is hit-tested by its label's ink, and the glyph
         // alone is a small target. As the strip's + does.
-        .background(theme.sidebarColor)
+        .background(theme.projectsPanel.background)
         .contentShape(.rect)
         .accessibilityHidden(true)
     }

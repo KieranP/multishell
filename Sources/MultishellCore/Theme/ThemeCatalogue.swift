@@ -1,68 +1,71 @@
 import Foundation
 
-/// The built-in themes plus any `*.json` in the themes folder. A user file
-/// with a built-in's id replaces it; unreadable ones are skipped.
+/// The built-in themes plus any `*.json` in the themes folder, listed by name. A
+/// user file with a built-in's id replaces it; unreadable ones are skipped.
 public struct ThemeCatalogue: Sendable {
-  public let themes: [Theme]
-  public let problems: [String]
+  public static let builtinsOnly = Self(themes: byName(Theme.builtins), problems: [])
 
-  /// Strays an earlier build left at the top level are moved first, or they
-  /// would load as duplicates.
-  public static func loadMovingStrayExamples(
-    from directory: URL = Paths.themesDirectory
-  ) -> Self {
-    moveStrayExamples(in: directory)
+  public let themes: [Theme]
+  public let problems: [ThemeFileProblem]
+
+  /// Examples an earlier build wrote under another name are removed first: they
+  /// are flat files no build now loads, and would read as broken themes.
+  public static func loadRemovingStrayExamples(from directory: URL) -> Self {
+    removeStrayExamples(in: directory)
     var byID = Theme.builtins.keyedByID()
-    var problems: [String] = []
+    var problems: [ThemeFileProblem] = []
 
     let files =
-      (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil))
-      ?? []
+      (try? FileManager.default.contentsOfDirectory(
+        at: directory,
+        includingPropertiesForKeys: nil,
+        // An editor's lock or swap file, such as Emacs's `.#mine.json`, is no theme.
+        options: .skipsHiddenFiles,
+      )) ?? []
     for file in files where file.pathExtension == "json" {
       do {
         let theme = try JSONDecoder().decode(Theme.self, from: Data(contentsOf: file))
         byID[theme.id] = theme
       } catch {
-        problems.append("\(file.lastPathComponent): \(error)")
+        problems.append(ThemeFileProblem(fileName: file.lastPathComponent, reason: "\(error)"))
       }
     }
 
-    let builtinOrder = Theme.builtins.map(\.id)
-    let themes = byID.values.sorted { lhs, rhs in
-      switch (builtinOrder.firstIndex(of: lhs.id), builtinOrder.firstIndex(of: rhs.id)) {
-      case (let lhsIndex?, let rhsIndex?): return lhsIndex < rhsIndex
-      case (.some, nil): return true
-      case (nil, .some): return false
-      case (nil, nil): return lhs.name < rhs.name
-      }
-    }
-    return Self(themes: themes, problems: problems)
+    return Self(themes: byName(byID.values), problems: problems)
   }
 
-  /// Writes the built-ins out as editable examples, into an `examples/`
-  /// subfolder so they are there to copy from but never loaded as themes.
-  public static func seedExamples(in directory: URL = Paths.themesDirectory) throws {
+  /// As Finder orders names: case aside, and `Theme 2` before `Theme 10`.
+  private static func byName(_ themes: some Sequence<Theme>) -> [Theme] {
+    themes.sorted { lhs, rhs in
+      switch lhs.name.localizedStandardCompare(rhs.name) {
+      case .orderedAscending: true
+      case .orderedDescending: false
+      case .orderedSame: lhs.id < rhs.id
+      }
+    }
+  }
+
+  /// Copies every built-in theme into `examples/`, to copy from but never loaded.
+  /// One that differs is rewritten, a stale example hiding keys.
+  public static func seedExamples(in directory: URL) throws {
     let examples = examplesDirectory(in: directory)
-    let encoder = JSONEncoder.forFile()
     for theme in Theme.builtins {
+      guard let source = Theme.builtinFile(named: theme.id) else { continue }
+      let contents = try Data(contentsOf: source)
       let file = examples.appendingPathComponent("\(theme.id).json")
-      if !FileManager.default.fileExists(atPath: file.path) {
-        try encoder.encode(theme).writeAtomicallyCreatingDirectory(to: file)
+      if (try? Data(contentsOf: file)) != contents {
+        try contents.writeAtomicallyCreatingDirectory(to: file)
       }
     }
   }
 
-  /// Replaces an example of the same name already in `examples/`; failures
-  /// let the load go on.
-  private static func moveStrayExamples(in directory: URL) {
-    let examples = examplesDirectory(in: directory)
-    for theme in Theme.builtins {
-      let stray = directory.appendingPathComponent("example.\(theme.id).json")
-      guard FileManager.default.fileExists(atPath: stray.path) else { continue }
-      try? FileManager.default.createDirectory(at: examples, withIntermediateDirectories: true)
-      let destination = examples.appendingPathComponent(stray.lastPathComponent)
-      try? FileManager.default.removeItem(at: destination)
-      try? FileManager.default.moveItem(at: stray, to: destination)
+  /// Both places an earlier build left them; failures let the load go on.
+  private static func removeStrayExamples(in directory: URL) {
+    for theme in [Theme.multishellDark, .multishellLight] {
+      let name = "example.\(theme.id).json"
+      for place in [directory, examplesDirectory(in: directory)] {
+        try? FileManager.default.removeItem(at: place.appendingPathComponent(name))
+      }
     }
   }
 

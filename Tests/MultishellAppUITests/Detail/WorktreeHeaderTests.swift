@@ -19,7 +19,9 @@ struct WorktreeHeaderTests {
         size: CGSize(width: 600, height: 40),
       )
     )
-    let sidebarColour = try #require(NSColor(theme.sidebarColor).usingColorSpace(bitmap.colorSpace))
+    let sidebarColour = try #require(
+      NSColor(theme.projectsPanel.background).usingColorSpace(bitmap.colorSpace)
+    )
     func isSidebarColour(_ x: Int, _ y: Int) -> Bool {
       guard let pixel = bitmap.colorAt(x: x, y: y) else { return false }
       return abs(pixel.redComponent - sidebarColour.redComponent) < 0.004

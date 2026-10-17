@@ -18,6 +18,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored let messageSource: any MessageSource
   @ObservationIgnored let notifier: any SessionNotifier
   @ObservationIgnored let watcher: any DirectoryWatcher
+  @ObservationIgnored let themesDirectory: URL
   /// `var`: git is looked up again once the login shell's PATH is known, which
   /// is after this is built. See `refreshLoginEnvironment`.
   @ObservationIgnored var coordinator: WorktreeCoordinator?
@@ -254,7 +255,7 @@ public final class AppModel<Surface> {
   /// What the notification centre has been told about this app. The system's
   /// answer, not the workspace's, and changeable while the app runs.
   var notificationAuthorization = NotificationAuthorization.notAsked
-  public internal(set) var themes: [Theme] = Theme.builtins
+  var themeCatalogue = ThemeCatalogue.builtinsOnly
   @ObservationIgnored var alertedMissingAgentIDs: Set<String> = []
 
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
@@ -293,6 +294,9 @@ public final class AppModel<Surface> {
   @ObservationIgnored var worktreesOnNetworkVolumes: Set<Worktree.ID> = []
   /// A seam: no test machine has a share to put a worktree on.
   @ObservationIgnored var isOnLocalVolume: @Sendable (URL) -> Bool = \.isOnLocalVolume
+  /// A seam, as `isOnLocalVolume` is: a test holds one read back to overtake it.
+  @ObservationIgnored var loadThemeCatalogue = ThemeCatalogue.loadRemovingStrayExamples(from:)
+  @ObservationIgnored var themeReloads = 0
   /// Written from the sidebar's body, so not observed: a write there would
   /// invalidate the body writing it.
   @ObservationIgnored var worktreeSortCache = WorktreeSortCache()
@@ -329,12 +333,6 @@ public final class AppModel<Surface> {
 
   public var workspace: Workspace { store.workspace }
 
-  /// Shells actually running, as opposed to saved tabs waiting to be opened.
-  public var liveTerminalCount: Int { liveSessionIDs.count }
-
-  /// Every live shell is a pty that quitting kills, unless `multishell quit` already asked.
-  public var asksBeforeQuitting: Bool { liveTerminalCount > 0 && !quitsWithoutAsking }
-
   /// Dependencies are passed in so tests run the whole model against fakes.
   /// The platform GUI passes its real ones.
   public init(
@@ -342,6 +340,7 @@ public final class AppModel<Surface> {
     host: any TerminalSurfaceHost<Surface>,
     coordinator: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
+    themesDirectory: URL,
     platform: any Platform = NullPlatform(),
     messageSource: any MessageSource = NullMessageSource(),
     notifier: any SessionNotifier = NullNotifier(),
@@ -353,11 +352,12 @@ public final class AppModel<Surface> {
     self.reconciler = SessionReconciler(store: store, host: host)
     self.coordinator = coordinator
     self.watcher = watcher
+    self.themesDirectory = themesDirectory
     self.messageSource = messageSource
     self.notifier = notifier
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 
-    reloadThemes()
+    take(loadThemeCatalogue(themesDirectory))
     rebuildNewTabAgents()
     host.apply(currentTheme, appearance: store.workspace.appearance)
     // Said on the process's PATH alone. `refreshLoginEnvironment` looks again

@@ -14,7 +14,7 @@ struct DebugGitCommandsTableView: View {
       if gitCommands.isEmpty {
         Text(t("debug.no-git"))
           .font(metrics.font(size: metrics.secondary))
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.debugInfo.textTertiary)
           .frame(maxWidth: .infinity, alignment: .leading)
           .debugTableRow(theme, verticalPadding: 6)
       } else {

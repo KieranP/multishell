@@ -34,25 +34,25 @@ struct AgentBoardColumnView: View {
     // would leave the cards half a column to live in.
     .padding(8)
     .frame(width: width)
-    .columnBackground(theme)
+    .columnBackground(theme.agentsColumn.background)
   }
 
   private var header: some View {
     HStack(spacing: 7) {
-      StateDot(state: column.lane.headerState, theme: theme)
+      StateDot(state: column.lane.headerState, theme: theme, palette: theme.agentsColumn)
       Text(column.lane.title())
         .font(metrics.font(size: metrics.badge, weight: .semibold))
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.agentsColumn.text)
         .lineLimit(1)
       Spacer(minLength: 4)
       Text("\(column.count)")
         .font(metrics.font(size: metrics.badge))
         .monospacedDigit()
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.agentsColumn.textTertiary)
     }
     .padding(.horizontal, 2)
     .padding(.bottom, 6)
-    .hairline(.bottom, theme)
+    .hairline(.bottom, theme.agentsColumn)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(t("board.lane-count", column.lane.title(), column.count))
   }

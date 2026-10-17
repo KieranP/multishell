@@ -522,8 +522,9 @@ command line's requests on the same socket. Newest at the bottom.
   colour carries both; the cut is made when the file is generated.
 - **Two are alike at tab size and told apart by their tint**, which is the
   projects' doing and not something to fix by drawing either one wrong.
-- **A mark black or white upstream is drawn in the theme's text colour**; the
-  rest carry the project's own.
+- **A mark black or white upstream is drawn in the text around it**; the rest
+  carry the project's own colour as the built-in themes' `ui.agent_marks`, which
+  a user theme may change or empty.
 - **Cost: a mark redrawn upstream is wrong here until someone notices**, a trace
   is only as good as its source, and the programs that traced these are not in
   the tree. The `.svg` is the artefact and the thing to edit.

@@ -15,7 +15,9 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
     HStack(spacing: 7) {
       Image(systemName: "square.grid.2x2")
         .font(metrics.font(size: metrics.glyph, weight: .medium))
-        .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
+        .foregroundStyle(
+          isSelected ? theme.projectsPanel.text : theme.projectsPanel.textSecondary
+        )
         .frame(width: metrics.sidebarGlyphColumn)
       Text(t("label.agents"))
         .font(metrics.font(size: metrics.secondary, weight: .medium))
@@ -27,18 +29,19 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
           StateDot(
             state: entry.lane.headerState,
             theme: theme,
+            palette: theme.projectsPanel,
             diameter: UIMetrics.inlineStateDotDiameter,
           )
           Text("\(entry.count)")
             .font(metrics.font(size: metrics.badge, weight: .medium))
             .monospacedDigit()
-            .foregroundStyle(theme.textSecondary)
+            .foregroundStyle(theme.projectsPanel.textSecondary)
         }
       }
     }
     .padding(.horizontal, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.rowHeight)
-    .rowSelection(isSelected: isSelected)
+    .rowSelection(theme, isSelected: isSelected)
     .contentShape(.rect)
     .onTapGesture(perform: select)
     .accessibilityElement(children: .ignore)

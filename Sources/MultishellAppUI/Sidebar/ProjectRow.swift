@@ -44,7 +44,7 @@ struct ProjectRow: View, @MainActor Equatable {
       Image(systemName: "chevron.right")
         .font(metrics.font(size: metrics.small, weight: .bold))
         .rotationEffect(.degrees(isExpanded ? 90 : 0))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.projectsPanel.textTertiary)
         .frame(width: 10)
         .help(expansionActionName)
 
@@ -59,7 +59,7 @@ struct ProjectRow: View, @MainActor Equatable {
           .help(t("sidebar.fetching"))
 
       case .state(let state):
-        StateDot(state: state, theme: theme)
+        StateDot(state: state, theme: theme, palette: theme.projectsPanel)
           .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.collapsed-state", state.displayName))
 
@@ -67,8 +67,8 @@ struct ProjectRow: View, @MainActor Equatable {
         ProjectIconView(
           settings: settings,
           isMissing: isMissing,
-          ringFill: theme.sidebarColor,
           theme: theme,
+          palette: theme.projectsPanel,
           size: metrics.glyph,
         )
         .help(project.path.path)
@@ -76,7 +76,7 @@ struct ProjectRow: View, @MainActor Equatable {
 
       Text(project.name)
         .font(metrics.font(size: metrics.bodySize, weight: .medium))
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.projectsPanel.text)
         .lineLimit(1)
         .opacity(isMissing ? 0.5 : 1)
         .help(isMissing ? t("sidebar.not-reachable", project.path.path) : "")
@@ -107,7 +107,9 @@ struct ProjectRow: View, @MainActor Equatable {
     PlainGlyphButton(help: t("sidebar.new-worktree"), action: requestNewWorktree) {
       Image(systemName: "plus")
         .font(metrics.font(size: metrics.glyph))
-        .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
+        .foregroundStyle(
+          isHovered ? theme.projectsPanel.textSecondary : theme.projectsPanel.textTertiary
+        )
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sidebarRowButtonWidth)
         .accessibilityHidden(true)
     }

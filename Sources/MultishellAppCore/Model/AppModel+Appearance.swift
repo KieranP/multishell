@@ -1,6 +1,8 @@
 import MultishellCore
 
 extension AppModel {
+  public var themes: [Theme] { themeCatalogue.themes }
+
   public var currentTheme: Theme {
     workspace.appearance.theme(from: themes)
   }
@@ -79,17 +81,35 @@ extension AppModel {
     store.setUIFontSize(size.clamped(to: Appearance.uiFontSizes))
   }
 
-  public func reloadThemes() {
-    let catalogue = ThemeCatalogue.loadMovingStrayExamples()
-    themes = catalogue.themes
-    if let problem = catalogue.problems.first {
-      presentedError = .themeUnreadable(problem)
+  /// Read off the main actor, the folder being read on every save in it. The
+  /// engine keeps its own copy, so it is sent the theme again if it changed.
+  public func reloadThemes() async {
+    themeReloads += 1
+    let reload = themeReloads
+    let directory = themesDirectory
+    let load = loadThemeCatalogue
+    let catalogue = await runOnDispatch { load(directory) }
+    // A reload begun after this one read the folder later; this would undo it.
+    guard reload == themeReloads else { return }
+    let shown = currentTheme
+    take(catalogue)
+    if currentTheme != shown { host.apply(currentTheme, appearance: workspace.appearance) }
+  }
+
+  /// Every newly broken file is named in one alert, and each only once, not
+  /// again on a later save while it stays broken.
+  func take(_ catalogue: ThemeCatalogue) {
+    let shownFiles = Set(themeCatalogue.problems.map(\.fileName))
+    themeCatalogue = catalogue
+    let fresh = catalogue.problems.filter { !shownFiles.contains($0.fileName) }
+    if !fresh.isEmpty {
+      presentedError = .themeUnreadable(fresh.map(\.message).joined(separator: "\n\n"))
     }
   }
 
   public func revealThemesFolder() {
-    presentingFailure { try ThemeCatalogue.seedExamples() }
-    reloadThemes()
-    platform.revealInFileBrowser(Paths.themesDirectory)
+    // The watcher reloads after the copies land, so this need not.
+    presentingFailure { try ThemeCatalogue.seedExamples(in: themesDirectory) }
+    platform.revealInFileBrowser(themesDirectory)
   }
 }

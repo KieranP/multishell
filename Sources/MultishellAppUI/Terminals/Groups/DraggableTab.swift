@@ -69,7 +69,11 @@ struct DraggableTab: View, @MainActor Equatable {
   @ViewBuilder
   private var insertionLine: some View {
     if let insertionPlacement {
-      InsertionLine(axis: .vertical, isAfter: insertionPlacement == .after)
+      InsertionLine(
+        axis: .vertical,
+        isAfter: insertionPlacement == .after,
+        color: theme.color(.selection, in: .tabBar),
+      )
     }
   }
 

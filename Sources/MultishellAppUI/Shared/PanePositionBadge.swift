@@ -6,7 +6,7 @@ import SwiftUI
 struct PanePositionBadge: View {
   let number: Int
   let metrics: UIMetrics
-  let theme: Theme
+  let palette: AreaPalette
 
   var body: some View {
     HStack(spacing: 2) {
@@ -16,6 +16,6 @@ struct PanePositionBadge: View {
       Text("\(number)")
         .font(.system(size: metrics.small, weight: .medium, design: .monospaced))
     }
-    .foregroundStyle(theme.textTertiary)
+    .foregroundStyle(palette.textTertiary)
   }
 }

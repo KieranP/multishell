@@ -20,14 +20,14 @@ struct FileTabBar: View {
     HStack(spacing: 6) {
       if let folder = tab.folderCrumb {
         Text(folder)
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.fileTab.textTertiary)
           .lineLimit(1)
           .truncationMode(.head)
       }
       Text(tab.fileName)
         .fontWeight(.semibold)
         .strikethrough(reading?.isFileGone == true)
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.fileTab.text)
         .lineLimit(1)
         .layoutPriority(1)
       if let rows, rows.hasLineChanges {
@@ -39,7 +39,7 @@ struct FileTabBar: View {
         )
       }
       if rows?.hasModeChange == true {
-        Text(t("file.mode-changed")).foregroundStyle(theme.textTertiary)
+        Text(t("file.mode-changed")).foregroundStyle(theme.fileTab.textTertiary)
       }
       Spacer(minLength: 8)
       if model.offersLayoutSwitch(for: tab) { layoutSwitch }
@@ -49,24 +49,24 @@ struct FileTabBar: View {
     .padding(.leading, 12)
     .padding(.trailing, 8)
     .frame(height: Self.height)
-    .background(theme.backgroundColor)
-    .hairline(.bottom, theme)
+    .background(theme.fileTab.background)
+    .hairline(.bottom, theme.fileTab)
   }
 
   /// Unified, the changes inline; Split, the last commit beside the file.
   private var layoutSwitch: some View {
-    Picker(
-      t("file.layout"),
+    SegmentedSwitch(
+      label: t("file.layout"),
+      options: [(t("file.unified"), .unified), (t("file.split"), .split)],
       selection: Binding(get: { model.layout(of: tab) }, set: { model.setFileTabLayout($0) }),
-    ) {
-      Text(t("file.unified")).tag(FileTabLayout.unified)
-      Text(t("file.split")).tag(FileTabLayout.split)
-    }
-    .compactSegmented()
+      theme: theme,
+      section: .fileTab,
+      metrics: model.metrics,
+    )
   }
 
   private var actionsMenu: some View {
-    HeaderActionsMenu(help: t("file.actions"), theme: theme) {
+    HeaderActionsMenu(help: t("file.actions"), palette: theme.fileTab) {
       FileActions(model: model, worktreeID: tab.worktreeID, path: tab.path)
     }
   }

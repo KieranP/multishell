@@ -15,18 +15,20 @@ struct WorktreeBreadcrumb: View {
   let metrics: UIMetrics
 
   var body: some View {
+    let section: InterfaceSection = style == .header ? .header : .agentsCard
+    let palette = AreaPalette(theme, section)
     Text(projectName)
       .font(projectFont)
-      .foregroundStyle(style == .header ? theme.textPrimary : theme.textSecondary)
+      .foregroundStyle(style == .header ? palette.text : palette.textSecondary)
       .lineLimit(1)
       .layoutPriority(namePriority)
     Image(systemName: "chevron.right")
       .font(.system(size: chevronSize, weight: .bold))
-      .foregroundStyle(theme.textTertiary)
+      .foregroundStyle(palette.textTertiary)
       .accessibilityHidden(true)
     Text(worktreeName)
       .font(worktreeFont)
-      .foregroundStyle(theme.worktreeNameColor)
+      .foregroundStyle(theme.color(.highlight, in: section))
       .lineLimit(1)
       .truncationMode(style == .header ? .tail : .middle)
       .layoutPriority(namePriority)

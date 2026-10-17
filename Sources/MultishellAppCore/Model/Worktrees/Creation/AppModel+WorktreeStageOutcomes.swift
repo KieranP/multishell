@@ -50,13 +50,12 @@ extension AppModel {
     _ error: any Error,
     didTimeOut: Bool = false,
   ) {
-    // Gone while the stage ran, and the entry goes with it: paths are ids, so
-    // the next worktree there would inherit an operation nothing can finish.
+    // Gone while the stage ran: the entry goes with it, as the next worktree at
+    // the path would inherit it, and a failure in a folder that is gone is moot.
     guard workspace.worktree(worktree.id) != nil else {
       // `finish`, not `clear`: a removal that has since taken the entry owns
       // it, and this stage's late result is not the one to throw it away.
       worktreeOperations.finish(stage, on: worktree.id)
-      present(error)
       return
     }
     let shownInPane = worktreeOperations.fail(

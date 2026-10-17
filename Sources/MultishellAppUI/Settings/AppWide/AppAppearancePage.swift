@@ -17,7 +17,9 @@ struct AppAppearancePage: View {
         ThemePicker(title: t("appearance.theme"), model: model)
         InfoLabeledContent(t("appearance.theme-files"), info: t("appearance.theme-files-info")) {
           Button(t("appearance.open-folder")) { model.revealThemesFolder() }
-          SettingsSymbolButton.refresh(help: t("appearance.reload-themes")) { model.reloadThemes() }
+          SettingsSymbolButton.refresh(help: t("appearance.reload-themes")) {
+            Task { await model.reloadThemes() }
+          }
         }
         .controlSize(.small)
       }

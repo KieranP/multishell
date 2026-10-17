@@ -16,8 +16,8 @@ struct WorktreeHeader: View {
         ProjectIconView(
           settings: model.effectiveSettings(for: project),
           isMissing: model.missingProjects.contains(project.id),
-          ringFill: theme.chromeColor,
           theme: theme,
+          palette: theme.header,
           size: model.metrics.glyph,
         )
       }
@@ -33,13 +33,13 @@ struct WorktreeHeader: View {
       if model.customName(of: worktree) != nil {
         Text(worktree.name)
           .font(.system(size: model.metrics.caption, design: .monospaced))
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.header.textTertiary)
           .lineLimit(1)
           .truncationMode(.middle)
       }
       Text(worktree.path.path.abbreviatingHomeDirectory())
         .font(.system(size: model.metrics.caption, design: .monospaced))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.header.textTertiary)
         .lineLimit(1)
         .truncationMode(.head)
         .padding(.leading, 6)
@@ -47,10 +47,10 @@ struct WorktreeHeader: View {
       actionsMenu
       filesToggle
     }
-    .windowHeader(fill: theme.chromeColor)
+    .windowHeader(fill: theme.header.background)
   }
 
-  /// Shows the Files panel on the window's right, in the focus ring's colour
+  /// Shows the Files panel on the window's right, in the header's accent
   /// while it is open. Drawn only where the panel can be.
   @ViewBuilder
   private var filesToggle: some View {
@@ -63,7 +63,7 @@ struct WorktreeHeader: View {
       }
       .foregroundStyle(
         model.showsFilesPanel
-          ? theme.toggledGlyphColor : theme.textSecondary
+          ? theme.color(.accent, in: .header) : theme.header.textSecondary
       )
       .accessibilityLabel(t("files-panel.toggle"))
       .accessibilityAddTraits(model.showsFilesPanel ? .isSelected : [])
@@ -73,7 +73,7 @@ struct WorktreeHeader: View {
   /// Everything that acts on the selected worktree, in one place a new user
   /// can find; the sidebar's context menu has the same items.
   private var actionsMenu: some View {
-    HeaderActionsMenu(help: t("action.worktree-actions"), theme: theme) {
+    HeaderActionsMenu(help: t("action.worktree-actions"), palette: theme.header) {
       WorktreeActions(model: model, worktree: worktree)
     }
   }

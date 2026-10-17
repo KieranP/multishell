@@ -25,7 +25,7 @@ struct DebugGitCommandRowView: View {
         } headline: {
           Text(row.totalDurationText)
             .monospacedDigit()
-            .foregroundStyle(theme.textPrimary)
+            .foregroundStyle(theme.debugInfo.text)
         }
       }
     }
@@ -45,7 +45,7 @@ struct DebugGitCommandRowView: View {
       number(row.meanPeakMemoryText, width: metrics.debugMemoryValueColumnWidth)
       number(row.peakMemoryText, width: metrics.debugMemoryValueColumnWidth)
       Text(row.slowestLocationText)
-        .foregroundStyle(theme.textSecondary)
+        .foregroundStyle(theme.debugInfo.textSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
   }
@@ -53,14 +53,14 @@ struct DebugGitCommandRowView: View {
   private var command: some View {
     Text(row.command)
       .font(.system(size: metrics.caption, design: .monospaced))
-      .foregroundStyle(theme.textPrimary)
+      .foregroundStyle(theme.debugInfo.text)
   }
 
   private func number(_ text: String, width: Double? = nil) -> some View {
     DebugNumberCell(
       text: text,
       width: width ?? metrics.debugDurationColumnWidth,
-      color: theme.textPrimary,
+      color: theme.debugInfo.text,
     )
   }
 }

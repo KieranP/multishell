@@ -83,6 +83,7 @@ final class DiffTextView: NSTextView {
     partTints = (theme.addedPartTint, theme.removedPartTint)
     paddingTint = theme.paddingRowTint
     backgroundColor = theme.fileBackground
+    selectedTextAttributes = [.backgroundColor: theme.fileSelection]
     let drawn = text.drawnString
     documentWidth = widestLine(of: text, drawn: drawn) + Self.trailingPadding
     textContainer?.size = CGSize(width: documentWidth, height: .greatestFiniteMagnitude)

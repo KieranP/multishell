@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 extension View {
-  func filterWell(theme: Theme, metrics: UIMetrics) -> some View {
-    modifier(FilterWellModifier(theme: theme, metrics: metrics))
+  func filterWell(palette: AreaPalette, metrics: UIMetrics) -> some View {
+    modifier(FilterWellModifier(palette: palette, metrics: metrics))
   }
 }

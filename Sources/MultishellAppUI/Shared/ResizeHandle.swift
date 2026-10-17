@@ -11,13 +11,14 @@ struct ResizeHandle: View {
   let initial: Double
   /// Where a drag that began at a width leaves it, for this edge's direction.
   let dragged: (_ start: Double, _ translation: Double, _ range: ClosedRange<Double>) -> Double
-  let theme: Theme
+  /// The column the edge belongs to.
+  let palette: AreaPalette
   /// Gesture state, not `@State`: a drag the system cancels never reaches
   /// `onEnded`, and this resets either way; see `SplitDivider`.
   @GestureState private var dragStartWidth: Double?
 
   var body: some View {
-    theme.hairline
+    palette.border
       .frame(width: UIMetrics.hairlineThickness)
       .overlay {
         Color.clear

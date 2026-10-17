@@ -2,6 +2,12 @@ import MultishellCore
 import MultishellProcess
 
 extension AppModel {
+  /// Shells actually running, as opposed to saved tabs waiting to be opened.
+  public var liveTerminalCount: Int { liveSessionIDs.count }
+
+  /// Every live shell is a pty that quitting kills, unless `multishell quit` already asked.
+  public var asksBeforeQuitting: Bool { liveTerminalCount > 0 && !quitsWithoutAsking }
+
   /// Opens the socket and asks git what each project actually has, over a
   /// workspace already read from disk. Terminals are not restored.
   public func start() async {
@@ -12,6 +18,8 @@ extension AppModel {
     let sweep = sweepPromisedDropCopies
     Task { await runOnDispatch(sweep) }
     await refreshAll()
+    // With no project nothing else arms the watcher, which the themes folder needs.
+    await rearmWatcher()
     reconcileSessions(takingFocus: true)
     startStatusPolling()
     await refreshLoginEnvironment()

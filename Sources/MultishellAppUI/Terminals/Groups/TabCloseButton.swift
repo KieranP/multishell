@@ -7,7 +7,7 @@ import SwiftUI
 struct TabCloseButton: View {
   let model: AppModel
   let tabID: WorkspaceTab.ID
-  let theme: Theme
+  let palette: AreaPalette
 
   var body: some View {
     PlainGlyphButton(help: t("tab.close")) {
@@ -18,6 +18,6 @@ struct TabCloseButton: View {
         .frame(width: model.metrics.tabCloseButtonSide, height: model.metrics.tabCloseButtonSide)
         .accessibilityHidden(true)
     }
-    .foregroundStyle(theme.textSecondary)
+    .foregroundStyle(palette.textSecondary)
   }
 }

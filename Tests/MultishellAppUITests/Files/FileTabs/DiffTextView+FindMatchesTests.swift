@@ -33,19 +33,6 @@ struct DiffTextViewFindMatchesTests {
     return bitmap
   }
 
-  private static func tintedPixels(in bitmap: NSBitmapImageRep) -> Int {
-    var count = 0
-    for x in 0..<bitmap.pixelsWide {
-      for y in 0..<bitmap.pixelsHigh {
-        guard let colour = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
-        if colour.redComponent > 0.7, colour.greenComponent < 0.45, colour.blueComponent > 0.7 {
-          count += 1
-        }
-      }
-    }
-    return count
-  }
-
   @Test func everyMatchIsPaintedByTheTextViewsOwnPassWithTheSelectionLeftWhereItWas() throws {
     let (view, window) = DiffDocumentFixture.shown(
       contextLines: ["aaa", "bbb xx", "ccc", "ddd xx"],
@@ -61,7 +48,7 @@ struct DiffTextViewFindMatchesTests {
 
     #expect(view.textView.selectedRange() == NSRange(location: 0, length: 0))
 
-    let painted = Self.tintedPixels(in: try Self.backgroundPixels(of: view.textView))
+    let painted = MagentaTheme.pixelCount(in: try Self.backgroundPixels(of: view.textView))
     #expect(painted > 40, "two matches of two glyphs, \(painted) pixels")
   }
 }

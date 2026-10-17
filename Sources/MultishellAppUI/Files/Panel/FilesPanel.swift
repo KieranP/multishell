@@ -32,7 +32,7 @@ struct FilesPanel: View {
       }
       PanelFooter(
         text: FilesPanelFooterText.changes(summary),
-        theme: theme,
+        palette: theme.filesPanel,
         metrics: model.metrics,
       ) {
         // Both sides, zeroes too, as the badge draws them: a footer changing
@@ -48,13 +48,13 @@ struct FilesPanel: View {
         if let omissions = FilesPanelFooterText.omissions(summary) {
           Text(omissions)
             .font(model.metrics.font(size: model.metrics.caption))
-            .foregroundStyle(theme.textTertiary)
+            .foregroundStyle(theme.filesPanel.textTertiary)
             .lineLimit(1)
             .help(omissions)
         }
       }
     }
-    .background(theme.sidebarColor)
+    .background(theme.filesPanel.background)
     .accessibilityElement(children: .contain)
     .accessibilityLabel(t("files-panel.title"))
     .task(id: worktree.id) { model.readFilesPanel(of: worktree.id) }

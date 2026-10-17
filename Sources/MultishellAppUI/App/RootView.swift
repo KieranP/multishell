@@ -27,7 +27,7 @@ struct RootView: View {
           range: range,
           initial: SidebarWidth.initial,
           dragged: SidebarWidth.dragged,
-          theme: theme,
+          palette: theme.projectsPanel,
         )
         DetailView(model: model)
       }

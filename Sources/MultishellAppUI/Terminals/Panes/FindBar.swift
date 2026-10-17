@@ -26,8 +26,8 @@ struct FindBar: View {
     }
     .padding(Self.padding)
     .frame(maxWidth: Self.width)
-    .background(theme.findBarColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius))
-    .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius).strokeBorder(theme.hairline))
+    .background(theme.findBar.background, in: RoundedRectangle(cornerRadius: Self.cornerRadius))
+    .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius).strokeBorder(theme.findBar.border))
     .padding(12)
     // A turn later, and only against a Cmd+F: a bar a worktree switch brings
     // back must not take the keyboard from the pane. See terminals.md.
@@ -40,10 +40,15 @@ struct FindBar: View {
   /// terminal's own colour sits behind its chrome, with the count at its end.
   private func well(_ metrics: UIMetrics) -> some View {
     HStack(spacing: 6) {
-      TextField(t("find.prompt"), text: model.findTextBinding(of: targetID))
+      TextField("", text: model.findTextBinding(of: targetID))
         .textFieldStyle(.plain)
+        .fieldPrompt(
+          t("find.prompt"),
+          isShown: model.findText(of: targetID).isEmpty,
+          color: theme.color(.fieldTextSecondary, in: .findBar),
+        )
         .font(metrics.font(size: metrics.bodySize))
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.color(.fieldText, in: .findBar))
         .focused($isFieldFocused)
         .onChange(of: isFieldFocused) { model.noteFindField(focused: $1, of: targetID) }
         .onSubmit(submit)
@@ -51,17 +56,20 @@ struct FindBar: View {
       if let count = model.findMatchCount(of: targetID) {
         Text(count.text)
           .font(metrics.font(size: metrics.secondary).monospacedDigit())
-          .foregroundStyle(theme.textSecondary)
+          .foregroundStyle(theme.color(.fieldTextSecondary, in: .findBar))
           .fixedSize()
           .accessibilityLabel(count.spokenText)
       }
     }
     .padding(.horizontal, 10)
     .frame(height: metrics.findControlSize)
-    .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3))
+    .background(
+      theme.color(.fieldBackground, in: .findBar),
+      in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3),
+    )
     .overlay(
       RoundedRectangle(cornerRadius: Self.cornerRadius - 3).strokeBorder(
-        theme.findWellBorderColor
+        theme.color(.fieldBorder, in: .findBar)
       )
     )
   }

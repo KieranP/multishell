@@ -13,10 +13,11 @@ struct FileTabFace: View {
   let theme: Theme
 
   private var isShown: Bool { tab.id == group.shownTabID }
+  private var palette: AreaPalette { isShown ? theme.fileTab : theme.tabBar }
 
   var body: some View {
     let isActive = isShown && isFocusedGroup
-    let textColor = isActive ? theme.textPrimary : theme.textSecondary
+    let textColor = isActive ? palette.text : palette.textSecondary
     let title = model.title(of: tab)
     let change = model.changeKind(of: tab)
     return HStack(spacing: UIMetrics.tabItemGap) {
@@ -30,10 +31,11 @@ struct FileTabFace: View {
         .lineLimit(1)
         .truncationMode(.head)
       Spacer(minLength: 0)
-      if isActive { TabCloseButton(model: model, tabID: tab.id, theme: theme) }
+      if isActive { TabCloseButton(model: model, tabID: tab.id, palette: palette) }
     }
     .tabFace(
       isShown: isShown,
+      shownFill: theme.fileTab.background,
       theme: theme,
       activate: { model.activateTab(tab.id) },
       close: { model.closeTab(tab.id) },
@@ -55,7 +57,7 @@ struct FileTabFace: View {
       .frame(width: size, height: size)
       .cornerBadge(
         onGlyphOf: size,
-        ringFill: isShown ? theme.backgroundColor : theme.chromeColor,
+        ringFill: palette.background,
         change.map { change in
           Circle()
             .fill(theme.color(for: change))

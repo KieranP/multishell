@@ -81,3 +81,6 @@
   after its `cd`, or the rc files' noise on stderr would lead the message. A
   script that ends at its `cd` shows all of it. Cost: stdout comes first, the
   two streams being read apart, so their order against each other is lost.
+- **A stage that fails once its worktree is gone says nothing.** Removed outside
+  the app before its hook started, the hook fails to enter the folder, and an
+  alert would arrive about a worktree the user removed on purpose.

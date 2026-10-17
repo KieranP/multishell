@@ -218,10 +218,9 @@ bottom.
 - **AppKit's own indicator is hidden**, sitting where this one's spacing cannot
   reach it, and the glyphs sit on a painted frame, a menu being hit-tested by
   what its label draws.
-- **It is the plain button style, not the borderless one** the header's menu
-  uses: that is an AppKit button, which takes a single image from its label and
-  draws it at the leading edge, so the chevron vanished and the plus sat in the
-  corner of a wide blank.
+- **It is the plain button style, not the borderless one**: that is an AppKit
+  button, which takes a single image from its label and draws it at the leading
+  edge, so the chevron vanished and the plus sat in the corner of a wide blank.
 - **A tab's own worktree row neither lights nor offers a move**, the drop there
   being refused. Lit, it promised a move the release would not make. Nor does
   any row while a create or remove runs, or has failed, on either worktree.

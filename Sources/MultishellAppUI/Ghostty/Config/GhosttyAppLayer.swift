@@ -5,21 +5,23 @@ import MultishellCore
 enum GhosttyAppLayer {
   static func configuration(_ theme: Theme, _ appearance: Appearance) -> GhosttyConfigText {
     GhosttyConfigText { config in
-      config.set("background", theme.background)
-      config.set("foreground", theme.foreground)
-      config.set("cursor-color", theme.cursor)
-      config.set("selection-background", theme.selectionBackground)
-      for (index, paletteColor) in theme.ansi.enumerated() {
-        config.set("palette", "\(index)=\(paletteColor)")
+      // libghostty takes no alpha, and drops a line it refuses without a word.
+      func set(_ name: String, _ key: TerminalColorKey) {
+        if let color = theme.terminalRGB(key) { config.set(name, color.opaqueHex) }
       }
-      // Find's matches in the theme's yellow, the selected one in the ring's
-      // colour, their text the darker of the theme's pair; see appearance.md.
-      let selected = theme.focusRingRGB ?? theme.selectionBackgroundRGB
-      let text = theme.isDark ? theme.backgroundRGB : theme.foregroundRGB
-      config.set("search-background", theme.ansiRGB(.yellow).hex)
-      config.set("search-foreground", text.hex)
-      config.set("search-selected-background", selected.hex)
-      config.set("search-selected-foreground", text.hex)
+      set("background", .background)
+      set("foreground", .foreground)
+      set("cursor-color", .cursor)
+      set("cursor-text", .cursorText)
+      set("selection-background", .selectionBackground)
+      set("selection-foreground", .selectionForeground)
+      for slot in 0..<Theme.ansiSlotCount {
+        config.set("palette", "\(slot)=\(theme.ansiRGB(slot).opaqueHex)")
+      }
+      set("search-background", .searchBackground)
+      set("search-foreground", .searchForeground)
+      set("search-selected-background", .searchSelectedBackground)
+      set("search-selected-foreground", .searchSelectedForeground)
       if let name = appearance.terminalFontName {
         // A list in Ghostty: emptied first, or ours trails the user's as a fallback.
         config.set("font-family", "\"\"")

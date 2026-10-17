@@ -24,12 +24,12 @@ struct DebugTimelineView: View {
           theme: theme,
           metrics: metrics,
         )
-        .hairline(.bottom, theme)
+        .hairline(.bottom, theme.debugInfo)
       }
       axis
     }
     .padding(.vertical, 6)
-    .columnBackground(theme)
+    .columnBackground(theme.color(.blockBackground, in: .debugInfo))
     .onContinuousHover { phase in
       hoveredSlotIndex = slotIndex(under: phase)
     }
@@ -44,7 +44,7 @@ struct DebugTimelineView: View {
         Spacer()
         if let slot = timeline.slot(at: hoveredSlotIndex) {
           Text(slot.startedAtText)
-            .foregroundStyle(theme.textSecondary)
+            .foregroundStyle(theme.debugInfo.textSecondary)
           Spacer()
         }
         Text(t("debug.axis-now"))
@@ -58,7 +58,7 @@ struct DebugTimelineView: View {
     }
     .font(metrics.font(size: metrics.small))
     .monospacedDigit()
-    .foregroundStyle(theme.textTertiary)
+    .foregroundStyle(theme.debugInfo.textTertiary)
     .padding(.top, 4)
   }
 

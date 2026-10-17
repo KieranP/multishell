@@ -21,9 +21,13 @@ struct ProjectIconSection: View {
       }
       InfoLabeledContent(t("project.tint-label"), info: t("project.tint-info")) {
         HStack(spacing: 5) {
-          swatch(nil, settings: settings, color: model.currentTheme.textSecondary)
+          swatch(nil, settings: settings, color: model.currentTheme.projectsPanel.textSecondary)
           ForEach(0..<Theme.ansiSlotCount, id: \.self) { slot in
-            swatch(slot, settings: settings, color: model.currentTheme.ansiRGB(slot).color)
+            swatch(
+              slot,
+              settings: settings,
+              color: model.currentTheme.projectIconRGB(slot).color,
+            )
           }
         }
       }

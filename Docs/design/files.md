@@ -152,9 +152,11 @@ Newest at the bottom.
   between there and the forced one: a jump to the middle of a 1 MiB file took
   170 ms, against 24 ms for stock TextKit 2, and takes 24 ms with this.
 - **No soft wrap**, split rows holding one height only where neither side wraps.
-- **The tints are painted behind the text, edge to edge**, and light: green
-  strings on green lost contrast, and the gutter's `+` and `−` say what the
-  colour does.
+- **The tints are painted behind the text, edge to edge.** The base themes take
+  Claude Code's diff colours, so a diff reads the same in a file tab as in the
+  agent beside it: its dark terminal theme's, and the light ones sampled from
+  its diff view. Cost: on the dark base, green strings on the added green lose
+  contrast, which lighter tints once avoided.
 - **The words a changed line differs in are painted darker over its tint.** A
   run of removed lines and the added run after it are diffed by word as one
   text, every run of spaces and newlines one token, so a rewrap's moved words
@@ -199,10 +201,10 @@ Newest at the bottom.
   the main thread. The spans become runs in text order there too: applied in
   pattern order, 202,607 of a 1 MiB file took 1.2 s on the main thread, the runs
   70 ms.
-- **Roles, not colours**: each capture is a role, each role a theme slot, so a
-  user's theme recolours highlighting with nothing new to write. `spell` is a
-  spell checker's mark and colours nothing, and `constructor` is Swift's `init`
-  but a class name elsewhere.
+- **Roles, not colours**: each capture is a role, each role a `file` key, so a
+  theme recolours highlighting without knowing the grammars. `spell` is a spell
+  checker's mark and colours nothing, and `constructor` is Swift's `init` but a
+  class name elsewhere.
 - **The later pattern wins where one range carries several captures**, which is
   how every query in the set is written.
 - **Each grammar is its own Swift package, pinned exactly; its query ships in

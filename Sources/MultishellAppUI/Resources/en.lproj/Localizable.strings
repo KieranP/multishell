@@ -216,7 +216,7 @@
 "project.shell-picker-info" = "The shells in /etc/shells and on the login shell's PATH. Refresh after installing one. Custom path is the one typed in Settings > Terminal.";
 "project.sort-worktrees" = "Sort worktrees";
 "project.sort-worktrees-info" = "The order this project's worktree rows are listed in, whatever the global says. The main worktree, and the one on the default branch, stay at the top.";
-"project.tint-info" = "One of the theme's sixteen colours, so a later theme change keeps the icon in step with the terminal.";
+"project.tint-info" = "One of the theme's sixteen project icon colours, so a later theme change recolours the icon with it.";
 "project.tint-label" = "Tint:";
 "project.using-global-value" = "Using the global value, %@.";
 "project.worktree-path" = "Worktree path";

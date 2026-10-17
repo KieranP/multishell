@@ -10,6 +10,7 @@ final class SurfaceFrame: NSView {
   private var wantsFocus = false
   private var surface: NSView?
   var dropHighlight: NSView?
+  var dropHighlightColor = NSColor.keyboardFocusIndicatorColor
   /// Whether this drag holds files, asked once per drag rather than once per
   /// mouse move: each ask reads the pasteboard.
   var lastDragFileCheck: (sequence: Int, hasFiles: Bool)?

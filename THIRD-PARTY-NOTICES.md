@@ -49,6 +49,14 @@ patches in `ThirdParty/ghostty-patches/`. Each licence text is in
 | tree-sitter-typescript 0.23.2     | 2017 Max Brunsfeld                                    | MIT                         | [tree-sitter-typescript.txt](Licenses/tree-sitter-typescript.txt)                    |
 | tree-sitter-yaml 0.7.2            | 2024 tree-sitter-grammars contributors; 2019-2021 Ika | MIT                         | [tree-sitter-yaml.txt](Licenses/tree-sitter-yaml.txt)                                |
 | tree-sitter-zig 1.1.2             | 2024 Amaan Qureshi                                    | MIT                         | [tree-sitter-zig.txt](Licenses/tree-sitter-zig.txt)                                  |
+| Dracula theme                     | 2016 Dracula Theme                                    | MIT                         | [Dracula.txt](Licenses/Themes/Dracula.txt)                                           |
+| One Dark syntax theme             | 2016 GitHub Inc.                                      | MIT                         | [One-Dark.txt](Licenses/Themes/One-Dark.txt)                                         |
+| One Dark UI theme                 | 2014 GitHub Inc.                                      | MIT                         | [One-Dark-UI.txt](Licenses/Themes/One-Dark-UI.txt)                                   |
+| Nord theme                        | 2017-present Arctic Ice Studio, Sven Greb             | MIT                         | [Nord.txt](Licenses/Themes/Nord.txt)                                                 |
+| Solarized                         | 2011 Ethan Schoonover                                 | MIT                         | [Solarized.txt](Licenses/Themes/Solarized.txt)                                       |
+| Solarized Light, VS Code's port   | 2015-present Microsoft Corporation                    | MIT                         | [VS-Code.txt](Licenses/Themes/VS-Code.txt)                                           |
+| GitHub VS Code theme              | 2020 Primer                                           | MIT                         | [GitHub-Theme.txt](Licenses/Themes/GitHub-Theme.txt)                                 |
+| Catppuccin                        | 2021 Catppuccin                                       | MIT                         | [Catppuccin.txt](Licenses/Themes/Catppuccin.txt)                                     |
 
 simdutf, Highway and Wuffs are each also offered under Apache-2.0; Multishell
 takes the licence named above. Each grammar comes as a Swift package pinned in
@@ -62,6 +70,12 @@ The Nerd Font's glyphs come from icon sets under their own licences, listed in
 <https://github.com/ryanoasis/nerd-fonts/blob/v3.4.0/license-audit.md>. Font
 Awesome (Fonticons, Inc.) and Codicons (Microsoft) are CC BY 4.0, and Material
 Design Icons is Apache-2.0.
+
+## Themes
+
+The themes whose licences are in `Licenses/Themes/` are ports of those themes'
+colours under the licences above. Each name is its authors', and none implies
+endorsement.
 
 ## Agent marks
 

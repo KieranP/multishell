@@ -8,6 +8,8 @@ struct AgentMarkView: View {
   let agentID: String?
   /// Drawn in place of a mark: the tab's kind, else the terminal.
   var unmarkedSymbol = PaneSymbol.terminal
+  /// The theme's colour for the agent's mark; `nil` takes `plainTint`.
+  let markTint: RGB?
   /// A mark with no colour of its own, the letters and the shell glyph all
   /// take the row's own text colour.
   let plainTint: Color
@@ -16,7 +18,7 @@ struct AgentMarkView: View {
   var body: some View {
     Group {
       if let agentID {
-        mark(AgentCatalogue.mark(agentID), tint: AgentCatalogue.markTintRGB(agentID)?.color)
+        mark(AgentCatalogue.mark(agentID), tint: markTint?.color)
       } else {
         Image(systemName: unmarkedSymbol)
           .font(.system(size: size))

@@ -15,28 +15,28 @@ struct SidebarQuickStats: View {
       cell(
         title: t("debug.quick-fps"),
         value: stats.framesPerSecondText,
-        valueColor: theme.smoothnessColor(stats.smoothness),
+        valueColor: theme.smoothnessColor(stats.smoothness, on: theme.projectsPanel),
         trend: stats.frameRateTrend,
         trendColor: theme.debugAppSeriesColor,
       )
       cell(
         title: t("debug.quick-cpu"),
         value: stats.totalCPUText,
-        valueColor: theme.textPrimary,
+        valueColor: theme.projectsPanel.text,
         trend: stats.cpuTrend,
         trendColor: theme.debugAppSeriesColor,
       )
       cell(
         title: t("debug.quick-memory"),
         value: stats.totalMemoryText,
-        valueColor: theme.textPrimary,
+        valueColor: theme.projectsPanel.text,
         trend: stats.memoryTrend,
         trendColor: theme.debugChildrenSeriesColor,
       )
     }
     .padding(.horizontal, 6)
     .padding(.vertical, 5)
-    .rowSelection(isSelected: model.showsDebugInfo)
+    .rowSelection(theme, isSelected: model.showsDebugInfo)
     .contentShape(.rect)
     .onTapGesture { model.showDebugInfo() }
     .padding(.horizontal, 6)
@@ -57,7 +57,7 @@ struct SidebarQuickStats: View {
     VStack(alignment: .leading, spacing: 1) {
       Text(title)
         .font(metrics.font(size: metrics.small, weight: .semibold))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.projectsPanel.textTertiary)
       Text(value)
         .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()

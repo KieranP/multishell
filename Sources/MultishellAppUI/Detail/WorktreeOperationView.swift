@@ -37,13 +37,16 @@ struct WorktreeOperationView: View {
         ScrollView(.vertical) {
           Text(failure)
             .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
-            .foregroundStyle(theme.textPrimary)
+            .foregroundStyle(theme.detail.text)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
         }
         .frame(maxWidth: 520, maxHeight: 180)
-        .background(theme.chromeColor, in: RoundedRectangle(cornerRadius: 6))
+        .background(
+          theme.color(.blockBackground, in: .detail),
+          in: RoundedRectangle(cornerRadius: 6),
+        )
         .padding(.top, 18)
         // No Return binding: a window-wide default action would also fire
         // from the sidebar's filter field.

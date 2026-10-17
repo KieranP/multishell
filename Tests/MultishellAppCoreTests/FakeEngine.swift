@@ -30,6 +30,8 @@ final class FakeEngine: TerminalSurfaceHost {
   var selectionTexts: [TerminalSession.ID: String] = [:]
   var screenshots: [TerminalSession.ID: Data] = [:]
   var frames: [TerminalSession.ID: CGRect] = [:]
+  /// Every theme handed to the engine, in order.
+  var appliedThemes: [Theme] = []
 
   func open(_ session: TerminalSession) throws {
     if refusesToOpen { throw OpenRefused() }
@@ -74,5 +76,5 @@ final class FakeEngine: TerminalSurfaceHost {
   }
   func screenshot(of id: TerminalSession.ID) -> Data? { screenshots[id] }
   func frame(of id: TerminalSession.ID) -> CGRect? { frames[id] }
-  func apply(_ theme: Theme, appearance: Appearance) {}
+  func apply(_ theme: Theme, appearance: Appearance) { appliedThemes.append(theme) }
 }

@@ -28,7 +28,7 @@ struct AgentBoardView: View {
         AgentBoardEmptyHint(theme: theme, metrics: metrics)
       }
     }
-    .background(theme.backgroundColor)
+    .background(theme.agentsPanel.background)
     .ticking($now, every: .seconds(Self.tickInterval))
   }
 

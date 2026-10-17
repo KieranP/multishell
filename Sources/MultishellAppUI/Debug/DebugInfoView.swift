@@ -56,6 +56,6 @@ struct DebugInfoView: View {
         .padding(14)
       }
     }
-    .background(theme.backgroundColor)
+    .background(theme.debugInfo.background)
   }
 }

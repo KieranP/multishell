@@ -29,7 +29,7 @@ struct TabStripButtons: View {
     } label: {
       Image(systemName: symbol)
         .font(model.metrics.font(size: model.metrics.glyph, weight: .medium))
-        .foregroundStyle(theme.textSecondary)
+        .foregroundStyle(theme.tabBar.textSecondary)
         .frame(width: model.metrics.splitButtonWidth, height: model.metrics.tabHeight)
         .contentShape(.rect)
     }

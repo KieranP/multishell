@@ -14,7 +14,7 @@ struct AgentBoardHeader: View {
     PanelHeader(
       title: t("label.agents"),
       summary: board.summary,
-      summaryColor: theme.textTertiary,
+      summaryColor: theme.header.textTertiary,
       theme: theme,
       metrics: metrics,
     ) {
@@ -26,10 +26,9 @@ struct AgentBoardHeader: View {
   /// it lets in lands where its state says, as an agent does.
   private var allTerminalsToggle: some View {
     Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsBinding)
-      .toggleStyle(.switch)
-      .controlSize(.mini)
+      .toggleStyle(KnobToggleStyle(theme: theme, section: .header))
       .font(metrics.font(size: metrics.caption))
-      .foregroundStyle(theme.textSecondary)
+      .foregroundStyle(theme.header.textSecondary)
       .help(t("board.show-all-terminals-info"))
   }
 }

@@ -44,14 +44,14 @@ struct NewTabMenu: View {
         .font(model.metrics.font(size: model.metrics.menuChevronSize, weight: .bold))
         .accessibilityHidden(true)
     }
-    .foregroundStyle(theme.textSecondary)
+    .foregroundStyle(theme.tabBar.textSecondary)
     .padding(.leading, model.metrics.stripGlyphInset)
     .frame(
       width: model.metrics.newTabMenuWidth,
       height: model.metrics.tabHeight,
       alignment: .leading,
     )
-    .background(theme.chromeColor)
+    .background(theme.tabBar.background)
     .contentShape(.rect)
   }
 
@@ -59,7 +59,7 @@ struct NewTabMenu: View {
   /// image, and the shell's symbol label showed no icon there.
   @ViewBuilder
   private func itemLabel(_ title: String, agentID: String?) -> some View {
-    if let image = AgentMarkImage.image(for: agentID) {
+    if let image = AgentMarkImage.image(for: agentID, tint: agentID.flatMap(theme.agentMarkRGB)) {
       Label {
         Text(title)
       } icon: {

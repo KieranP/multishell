@@ -20,7 +20,7 @@ struct DebugStackedRowView<Title: View, Headline: View>: View {
         Text(caption)
           .font(metrics.font(size: metrics.caption))
           .monospacedDigit()
-          .foregroundStyle(theme.textSecondary)
+          .foregroundStyle(theme.debugInfo.textSecondary)
       }
     }
   }

@@ -27,11 +27,16 @@ struct AgentBoardCardView: View {
     .padding(.horizontal, 9)
     .padding(.vertical, 8)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(theme.cardColor, in: RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius))
+    .background(
+      theme.agentsCard.background,
+      in: RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius),
+    )
     .overlay {
       RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius)
         .strokeBorder(
-          isHovered ? theme.color(for: card.state.shownState) : theme.hairline,
+          isHovered
+            ? theme.color(for: card.state.shownState, on: theme.agentsCard)
+            : theme.agentsCard.border,
           lineWidth: isHovered ? 1.5 : 1,
         )
     }
@@ -49,21 +54,26 @@ struct AgentBoardCardView: View {
   private var titleLine: some View {
     HStack(spacing: 4) {
       if let position = card.position {
-        PanePositionBadge(number: position.number, metrics: metrics, theme: theme)
+        PanePositionBadge(number: position.number, metrics: metrics, palette: theme.agentsCard)
       }
       Text(card.title)
         .font(metrics.font(size: metrics.secondary))
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(theme.agentsCard.text)
         .lineLimit(1)
       Spacer(minLength: 6)
       if !card.workers.isEmpty {
-        WorkerChip(workers: card.workers, theme: theme, metrics: metrics)
+        WorkerChip(
+          workers: card.workers,
+          theme: theme,
+          palette: theme.agentsCard,
+          metrics: metrics,
+        )
       }
       if let elapsed = card.elapsed(at: now) {
         Text(elapsed)
           .font(.system(size: metrics.badge, design: .monospaced))
           .monospacedDigit()
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.agentsCard.textTertiary)
       }
     }
   }
@@ -75,9 +85,10 @@ struct AgentBoardCardView: View {
       PaneGlyph(
         agentID: card.occupant.agentID,
         state: card.state.shownState,
-        ringFill: theme.cardColor,
-        plainTint: theme.textSecondary,
+        ringFill: theme.agentsCard.background,
+        plainTint: theme.agentsCard.textSecondary,
         theme: theme,
+        palette: theme.agentsCard,
         size: metrics.cardPaneGlyphSize,
       )
       WorktreeBreadcrumb(
@@ -89,7 +100,12 @@ struct AgentBoardCardView: View {
       )
       if let status = WorktreeStatus.badged(card.status) {
         Spacer(minLength: 6)
-        GitStatusBadge(status: status, theme: theme, metrics: metrics, tint: theme.textTertiary)
+        GitStatusBadge(
+          status: status,
+          theme: theme,
+          metrics: metrics,
+          tint: theme.agentsCard.textTertiary,
+        )
       }
     }
     .font(metrics.font(size: metrics.badge))

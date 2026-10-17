@@ -21,6 +21,11 @@ struct GitHarness {
 
   var project: Project { model.workspace.projects[0] }
 
+  /// What the watcher holds besides the themes folder, which it always does.
+  var watchedRepositoryNames: [String] {
+    watcher.watched.filter { $0 != model.themesDirectory }.map(\.lastPathComponent)
+  }
+
   init() async throws {
     git = try TestGit.runner()
     root = Scratch.path("appgit")
@@ -35,6 +40,7 @@ struct GitHarness {
       host: self.engine,
       coordinator: TestGit.coordinator(runner: git),
       watcher: watcher,
+      themesDirectory: root.appendingPathComponent("themes", isDirectory: true),
       platform: platform,
     )
     model.statusReadLog.pace = .unpaced
@@ -80,6 +86,7 @@ struct GitHarness {
       host: self.engine,
       coordinator: fake.coordinator,
       watcher: watcher,
+      themesDirectory: model.themesDirectory,
     )
     model.statusReadLog.pace = .unpaced
     model.presentedError = nil

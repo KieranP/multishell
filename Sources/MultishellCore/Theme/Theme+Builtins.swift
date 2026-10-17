@@ -1,41 +1,34 @@
+import Foundation
+
 extension Theme {
-  public static let builtins: [Theme] = [.multishellDark, .multishellLight]
+  /// The base themes, then ports of popular editors' themes, each setting every
+  /// key so none borrows Multishell's chrome; their licences are in Licenses/Themes/.
+  public static let builtins: [Theme] =
+    [.multishellDark, .multishellLight]
+    + [
+      "dracula", "one-dark", "nord", "solarized-light", "github-dark-default",
+      "github-light-default", "catppuccin-mocha", "catppuccin-macchiato", "catppuccin-frappe",
+      "catppuccin-latte",
+    ].map(builtin(named:))
 
-  /// Its focus ring is its own blue: the selection colour is mixed to sit
-  /// under text, and reads as a smudge as a one-point line.
-  static let multishellDark = Theme(
-    id: "multishell.dark",
-    name: "Multishell Dark",
-    isDark: true,
-    background: "#121215",
-    foreground: "#e4e4e7",
-    cursor: "#e4e4e7",
-    selectionBackground: "#2f4f7a",
-    ansi: [
-      "#26262b", "#ff6b60", "#6cc763", "#e5c07b",
-      "#5aa9f8", "#bf5af2", "#64d2ff", "#c8c8cd",
-      "#4a4a52", "#ff8b82", "#8fdb87", "#f0d49b",
-      "#7fbdff", "#d191f5", "#8fe0ff", "#f2f2f5",
-    ],
-    focusRing: "#5aa9f8",
-    inactivePaneOpacity: 0.8,
-  )
+  /// The base themes: every key set, so each is what a user theme of its
+  /// `is_dark` falls back on. Files rather than code so the examples are copies.
+  static let multishellDark = builtin(named: "multishell.dark")
+  static let multishellLight = builtin(named: "multishell.light")
 
-  static let multishellLight = Theme(
-    id: "multishell.light",
-    name: "Multishell Light",
-    isDark: false,
-    background: "#fbfbfa",
-    foreground: "#26262b",
-    cursor: "#26262b",
-    selectionBackground: "#b9d5f5",
-    ansi: [
-      "#3c3c43", "#c7392f", "#3f8c38", "#9a7218",
-      "#2f6fd0", "#8b3fbd", "#237f96", "#dcdcdf",
-      "#6b6b73", "#e05548", "#54a84b", "#b98d28",
-      "#4a8ae8", "#a55dd4", "#3399b0", "#f7f7f8",
-    ],
-    focusRing: "#2f6fd0",
-    inactivePaneOpacity: 0.8,
-  )
+  /// The file a built-in is read from, and its example copied from.
+  static func builtinFile(named name: String) -> URL? {
+    Bundle.coreResources.url(forResource: name, withExtension: "json", subdirectory: "themes")
+  }
+
+  /// A built-in that will not load is a broken build, which every test that
+  /// reads a theme would show; see `ThemeBuiltinsTests`.
+  private static func builtin(named name: String) -> Theme {
+    guard
+      let file = builtinFile(named: name),
+      let data = try? Data(contentsOf: file),
+      let theme = try? JSONDecoder().decode(Theme.self, from: data)
+    else { preconditionFailure("the built-in theme \(name) did not load") }
+    return theme
+  }
 }

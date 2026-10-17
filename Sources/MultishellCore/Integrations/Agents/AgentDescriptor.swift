@@ -11,11 +11,9 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// How this agent is told about a file: `@` for one that reads mentions,
   /// `nil` for a plain path. Only set where the prompt is known to resolve.
   public let fileMentionPrefix: String?
-  /// The mark drawn wherever this agent is at a prompt.
+  /// The mark drawn wherever this agent is at a prompt, in the theme's
+  /// `ui.agent_marks` colour for its id.
   public let mark: AgentMark
-  /// The hex `mark` is drawn at. `nil` draws it in the theme's own text
-  /// colour, which is what a project mark that is black or white wants.
-  let markTint: String?
 
   init(
     id: String,
@@ -25,7 +23,6 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     mark: AgentMark,
     resumeArguments: [String]? = nil,
     fileMentionPrefix: String? = nil,
-    markTint: String? = nil,
   ) {
     self.id = id
     self.name = name
@@ -34,6 +31,5 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     self.taskArgument = taskArgument
     self.fileMentionPrefix = fileMentionPrefix
     self.mark = mark
-    self.markTint = markTint
   }
 }

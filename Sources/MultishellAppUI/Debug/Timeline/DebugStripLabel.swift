@@ -17,7 +17,7 @@ struct DebugStripLabel: View {
       HStack(spacing: 6) {
         Text(metric.title)
           .font(metrics.font(size: metrics.caption))
-          .foregroundStyle(theme.textSecondary)
+          .foregroundStyle(theme.debugInfo.textSecondary)
         if metric.isSplitByOwner {
           DebugSeriesLegend(metric: metric, theme: theme, metrics: metrics)
         }
@@ -30,7 +30,7 @@ struct DebugStripLabel: View {
         Text(detail)
           .font(metrics.font(size: metrics.small))
           .monospacedDigit()
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.debugInfo.textTertiary)
       }
     }
     .lineLimit(1)
@@ -38,6 +38,7 @@ struct DebugStripLabel: View {
   }
 
   private var valueColor: Color {
-    metric.valueSmoothness(of: slot).map(theme.smoothnessColor) ?? theme.textPrimary
+    metric.valueSmoothness(of: slot).map { theme.smoothnessColor($0, on: theme.debugInfo) }
+      ?? theme.debugInfo.text
   }
 }

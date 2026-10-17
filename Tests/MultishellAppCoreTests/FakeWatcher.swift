@@ -6,6 +6,14 @@ import MultishellCore
 final class FakeWatcher: DirectoryWatcher {
   var onChange: (@MainActor ([URL]) -> Void)?
   var watched: [URL] = []
-  func watch(_ directories: [URL]) { watched = directories }
+  /// Every set it was asked to watch, in order.
+  private(set) var calls: [[URL]] = []
+  /// Runs as each set is handed over, for a test to look at the disk then.
+  var onWatch: (([URL]) -> Void)?
+  func watch(_ directories: [URL]) {
+    watched = directories
+    calls.append(directories)
+    onWatch?(directories)
+  }
   func stop() {}
 }

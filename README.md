@@ -91,8 +91,9 @@ every file it touches and how far each shell and agent goes.
 - Tabs, splits and side-by-side tab groups per worktree.
 - Terminals keep running while you look at another worktree, and a tab dragged
   to another worktree moves without restarting.
-- libghostty draws the terminals, with light and dark themes and your own in
-  JSON.
+- libghostty draws the terminals. Themes colour the whole window: Multishell's
+  light and dark, ten editor ports such as Dracula, Nord and Catppuccin, and
+  your own in JSON.
 - Find in a pane with Cmd+F, and click in the prompt to move the cursor there.
 - Drop files from Finder onto a terminal as `@` mentions or quoted paths.
 - Open the worktree in your editor.

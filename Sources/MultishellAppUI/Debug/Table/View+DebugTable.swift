@@ -6,7 +6,7 @@ extension View {
   func debugTableRow(_ theme: Theme, verticalPadding: Double = 5) -> some View {
     padding(.horizontal, UIMetrics.debugTableInset)
       .padding(.vertical, verticalPadding)
-      .hairline(.top, theme)
+      .hairline(.top, theme.debugInfo)
   }
 
   func debugTableRowHighlight(_ theme: Theme) -> some View {
@@ -28,7 +28,7 @@ extension View {
     leadingInset: Double = UIMetrics.debugTableInset,
   ) -> some View {
     font(metrics.font(size: metrics.caption))
-      .foregroundStyle(theme.textTertiary)
+      .foregroundStyle(theme.debugInfo.textTertiary)
       .padding(.leading, leadingInset)
       .padding(.trailing, UIMetrics.debugTableInset)
       .padding(.bottom, 4)

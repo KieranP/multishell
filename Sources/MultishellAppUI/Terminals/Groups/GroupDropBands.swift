@@ -7,6 +7,7 @@ import SwiftUI
 struct GroupDropBands: View {
   let model: AppModel
   let group: TabGroup
+  let theme: Theme
   @Binding var drag: TabDragState
 
   var body: some View {
@@ -46,18 +47,20 @@ struct GroupDropBands: View {
   private func band(_ placement: WorkspaceTab.Placement) -> some View {
     let target = TabGroupBand(groupID: group.id, placement: placement)
     let isLit = drag.band == target
-    return Color.accentColor
+    let color = theme.color(.selection, in: .terminalTab)
+    return
+      color
       .opacity(isLit ? 0.3 : 0.14)
       .frame(width: UIMetrics.dropBandWidth)
       .overlay(alignment: placement == .before ? .trailing : .leading) {
         // A line on the inside edge, where the new group's divider will
         // be, so the band reads as the group it is about to make.
-        Color.accentColor.opacity(isLit ? 0.9 : 0.5).frame(width: 1)
+        color.opacity(isLit ? 0.9 : 0.5).frame(width: 1)
       }
       .overlay {
         Image(systemName: "plus")
           .font(.system(size: 15, weight: .medium))
-          .foregroundStyle(Color.accentColor.opacity(isLit ? 1 : 0.7))
+          .foregroundStyle(color.opacity(isLit ? 1 : 0.7))
       }
       .onDrop(
         of: [TabTransfer.contentType],

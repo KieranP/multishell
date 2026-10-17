@@ -13,8 +13,8 @@ struct DebugStripChart: View, @MainActor Equatable {
     let points = timeline.points(of: metric)
     ZStack {
       DebugStripLayer(kind: .stalls(timeline.slots.map { $0?.smoothness == .stalled }))
-        .fill(theme.failureColor.opacity(0.18))
-      DebugStripLayer(kind: .midline).fill(theme.hairline)
+        .fill(theme.debugStallColor.opacity(0.18))
+      DebugStripLayer(kind: .midline).fill(theme.debugInfo.border)
       if metric.drawsBars {
         DebugStripLayer(kind: .bars(points)).fill(theme.debugAppSeriesColor)
       } else if metric.isSplitByOwner {

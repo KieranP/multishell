@@ -1,5 +1,4 @@
-/// What a highlighted range is, which a theme slot colours: a user theme then
-/// recolours highlighting with nothing new to write.
+/// What a highlighted range is, which the theme's `file` section colours.
 public enum HighlightRole: Hashable, Sendable {
   case attribute
   case comment

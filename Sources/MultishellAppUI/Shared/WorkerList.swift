@@ -17,14 +17,16 @@ struct WorkerList: View {
 
   @State private var now = Date()
 
+  private var palette: AreaPalette { theme.projectsPanel }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack(spacing: 5) {
         WorkerGlyph(metrics: metrics)
-          .foregroundStyle(theme.color(for: .running))
+          .foregroundStyle(theme.color(for: .running, on: palette))
         Text(workers.countText)
           .font(metrics.font(size: metrics.badge, weight: .semibold))
-          .foregroundStyle(theme.textPrimary)
+          .foregroundStyle(palette.text)
       }
       .padding(.bottom, 2)
       ForEach(workers.nested) { nested in
@@ -33,17 +35,18 @@ struct WorkerList: View {
           StateDot(
             state: worker.shownState,
             theme: theme,
+            palette: palette,
             diameter: UIMetrics.inlineStateDotDiameter,
           )
           .padding(.leading, CGFloat(nested.depth) * Self.nestingIndent)
           Text(worker.displayName)
             .font(metrics.font(size: metrics.badge, weight: .medium))
-            .foregroundStyle(theme.textPrimary)
+            .foregroundStyle(palette.text)
             .lineLimit(1)
           if let description = worker.description {
             Text(description)
               .font(metrics.font(size: metrics.badge))
-              .foregroundStyle(theme.textSecondary)
+              .foregroundStyle(palette.textSecondary)
               .lineLimit(1)
               .truncationMode(.tail)
           }
@@ -51,13 +54,13 @@ struct WorkerList: View {
             Text(occurrences)
               .font(metrics.font(size: metrics.small, weight: .medium))
               .monospacedDigit()
-              .foregroundStyle(theme.textSecondary)
+              .foregroundStyle(palette.textSecondary)
           }
           Spacer(minLength: 12)
           Text(worker.elapsed(at: now) ?? "")
             .font(.system(size: metrics.small, design: .monospaced))
             .monospacedDigit()
-            .foregroundStyle(theme.textTertiary)
+            .foregroundStyle(palette.textTertiary)
             .frame(minWidth: 38, alignment: .trailing)
         }
       }
@@ -65,7 +68,7 @@ struct WorkerList: View {
     .padding(.horizontal, 12)
     .padding(.vertical, 9)
     .frame(minWidth: 200, maxWidth: Self.maximumWidth, alignment: .leading)
-    .background(theme.sidebarColor)
+    .background(palette.background)
     .ticking($now, every: .seconds(1))
   }
 }

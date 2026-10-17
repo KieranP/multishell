@@ -59,8 +59,8 @@ struct TabStrip: View {
       .frame(height: model.metrics.tabHeight)
     }
     .frame(height: model.metrics.tabHeight)
-    .background(theme.chromeColor)
-    .hairline(.top, theme)
+    .background(theme.tabBar.background)
+    .hairline(.top, theme.tabBar)
     .contentShape(.rect)
     // The strip past its last tab, otherwise the one part of a group a
     // click does nothing in. The tabs are hit first.

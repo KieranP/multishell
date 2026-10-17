@@ -13,13 +13,13 @@ struct SplitDivider: View {
 
   var body: some View {
     let thickness = CGFloat(UIMetrics.splitDividerThickness)
-    return theme.chromeColor
+    return theme.color(.divider, in: .terminalTab)
       .frame(
         width: axis == .horizontal ? thickness : nil,
         height: axis == .vertical ? thickness : nil,
       )
       .overlay {
-        theme.hairline.frame(
+        theme.terminalTab.border.frame(
           width: axis == .horizontal ? CGFloat(UIMetrics.splitLineThickness) : nil,
           height: axis == .vertical ? CGFloat(UIMetrics.splitLineThickness) : nil,
         )

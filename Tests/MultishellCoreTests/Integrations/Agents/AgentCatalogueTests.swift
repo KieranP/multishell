@@ -49,14 +49,9 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
   }
 
-  @Test func everyCatalogueAgentsMarkIsItsOwnAndAnyTintItNamesParses() {
+  @Test func everyCatalogueAgentsMarkIsItsOwn() {
     for agent in AgentCatalogue.agents {
       #expect(AgentCatalogue.mark(agent.id) == agent.mark)
-      guard agent.markTint != nil else { continue }
-      #expect(
-        AgentCatalogue.markTintRGB(agent.id) != nil,
-        "\(agent.id) names a tint the hex parser rejects",
-      )
     }
   }
 
@@ -68,6 +63,5 @@ struct AgentCatalogueTests {
   /// heard of; the tab still has to draw something.
   @Test func anUnknownIdGetsLettersFromTheIdItself() {
     #expect(AgentCatalogue.mark("wezterm-agent") == .monogram("Wa"))
-    #expect(AgentCatalogue.markTintRGB("wezterm-agent") == nil)
   }
 }

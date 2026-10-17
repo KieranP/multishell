@@ -13,6 +13,7 @@ extension AppModel {
       host: GhosttyTerminalHost(),
       coordinator: try? WorktreeCoordinator(),
       watcher: FSEventsDirectoryWatcher(),
+      themesDirectory: Paths.themesDirectory,
       platform: platform,
       messageSource: SocketMessageSource(),
       notifier: UserNotificationNotifier(),

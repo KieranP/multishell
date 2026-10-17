@@ -20,9 +20,9 @@ struct FilesPanelRow: View {
 
   private var nameColor: Color {
     switch row.emphasis {
-    case .faint: theme.textTertiary
-    case .quiet: theme.textSecondary
-    case .strong: theme.textPrimary
+    case .faint: theme.filesPanel.textTertiary
+    case .quiet: theme.filesPanel.textSecondary
+    case .strong: theme.filesPanel.text
     }
   }
 
@@ -36,7 +36,7 @@ struct FilesPanelRow: View {
             systemName: FileIcon.symbol(for: row)
           )
           .font(metrics.font(size: metrics.small))
-          .foregroundStyle(theme.textTertiary)
+          .foregroundStyle(theme.filesPanel.textTertiary)
           .frame(width: metrics.glyph)
           .accessibilityHidden(true)
           Text(row.name)
@@ -46,7 +46,7 @@ struct FilesPanelRow: View {
           if let folder = row.parentFolder {
             Text(folder)
               .font(metrics.font(size: metrics.caption))
-              .foregroundStyle(theme.textTertiary)
+              .foregroundStyle(theme.filesPanel.textTertiary)
               .lineLimit(1)
               .truncationMode(.head)
           }
@@ -74,7 +74,7 @@ struct FilesPanelRow: View {
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.paneRowHeight)
     .background(
-      isSelected ? theme.faintFill : .clear,
+      isSelected ? theme.color(.selectionBackground, in: .filesPanel) : .clear,
       in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius),
     )
     .help(row.path)
@@ -92,7 +92,7 @@ struct FilesPanelRow: View {
     if row.isFolder {
       Image(systemName: "chevron.right")
         .font(model.metrics.font(size: model.metrics.small, weight: .semibold))
-        .foregroundStyle(theme.textTertiary)
+        .foregroundStyle(theme.filesPanel.textTertiary)
         .rotationEffect(row.isExpanded ? .degrees(90) : .zero)
         .frame(width: Self.chevronWidth)
         .accessibilityHidden(true)

@@ -15,23 +15,32 @@ struct PaneRow: View, @MainActor Equatable {
       PaneGlyph(
         agentID: pane.agentID,
         state: pane.state.shownState,
-        ringFill: theme.sidebarColor,
-        plainTint: pane.isFocused ? theme.textPrimary : theme.textSecondary,
+        ringFill: theme.projectsPanel.background,
+        plainTint: pane.isFocused
+          ? theme.projectsPanel.text : theme.projectsPanel.textSecondary,
         theme: theme,
+        palette: theme.projectsPanel,
         size: metrics.paneGlyphSize,
       )
       .help(pane.state.shownState.displayName)
       if let position = pane.position {
-        PanePositionBadge(number: position.number, metrics: metrics, theme: theme)
+        PanePositionBadge(number: position.number, metrics: metrics, palette: theme.projectsPanel)
       }
       Text(pane.title)
         .font(metrics.font(size: metrics.badge, weight: pane.isFocused ? .semibold : .regular))
-        .foregroundStyle(pane.isFocused ? theme.textPrimary : theme.textSecondary)
+        .foregroundStyle(
+          pane.isFocused ? theme.projectsPanel.text : theme.projectsPanel.textSecondary
+        )
         .lineLimit(1)
         .truncationMode(.tail)
       Spacer(minLength: 4)
       if !pane.workers.isEmpty {
-        WorkerChip(workers: pane.workers, theme: theme, metrics: metrics)
+        WorkerChip(
+          workers: pane.workers,
+          theme: theme,
+          palette: theme.projectsPanel,
+          metrics: metrics,
+        )
       }
     }
     .padding(.leading, metrics.paneRowIndent)

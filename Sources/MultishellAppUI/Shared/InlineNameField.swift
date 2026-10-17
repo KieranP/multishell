@@ -8,7 +8,7 @@ struct InlineNameField: View {
   let initial: String
   let prompt: String
   let font: Font
-  let color: Color
+  let palette: AreaPalette
   let commit: (String) -> Void
   let cancel: () -> Void
 
@@ -16,12 +16,12 @@ struct InlineNameField: View {
   @FocusState private var isFocused: Bool
 
   var body: some View {
-    TextField(prompt, text: $draft)
+    TextField("", text: $draft)
       .textFieldStyle(.plain)
+      .fieldPrompt(prompt, isShown: draft.isEmpty, color: palette.textTertiary)
       .font(font)
-      .foregroundStyle(color)
+      .foregroundStyle(palette.text)
       .focused($isFocused)
-      .accessibilityLabel(prompt)
       .onSubmit { commit(draft) }
       .onExitCommand(perform: cancel)
       .onAppear {

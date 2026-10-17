@@ -5,6 +5,8 @@ import SwiftUI
 /// tab's fill, the hairline, the whole area hit, a click and a middle click.
 struct TabFaceModifier: ViewModifier {
   let isShown: Bool
+  /// What the shown tab is filled with: the content under it, so the two join.
+  let shownFill: Color
   let theme: Theme
   let activate: () -> Void
   let close: () -> Void
@@ -13,10 +15,10 @@ struct TabFaceModifier: ViewModifier {
     content
       .padding(.horizontal, UIMetrics.tabSideInset)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .background(isShown ? theme.backgroundColor : .clear)
+      .background(isShown ? shownFill : .clear)
       .overlay(alignment: .trailing) {
         if !isShown {
-          theme.hairline.frame(width: UIMetrics.hairlineThickness).padding(.vertical, 8)
+          theme.tabBar.border.frame(width: UIMetrics.hairlineThickness).padding(.vertical, 8)
         }
       }
       .contentShape(.rect)

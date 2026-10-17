@@ -37,7 +37,8 @@ Under `~/Library/Application Support/Multishell`.
 - **A broken state file is moved aside with a timestamp**
   (design/state-and-store.md).
 - **Themes are JSON in a themes folder**, with the examples in an `examples`
-  folder inside it, written when the user opens the folder and not loaded.
+  folder inside it, written when the user opens the folder and not loaded. Each
+  is a copy of a built-in theme, and one that differs is rewritten then.
 - **The socket is mode 0600**, bound under a staging name and renamed into
   place, so it is never briefly world-readable: the mode comes from the umask at
   bind, and umask is process-wide. The command line's requests come in on it

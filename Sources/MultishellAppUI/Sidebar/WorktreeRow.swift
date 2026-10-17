@@ -41,7 +41,7 @@ struct WorktreeRow: View, @MainActor Equatable {
     HStack(spacing: 7) {
       // Always a dot, grey when nothing is running, and keeping its colour
       // when selected, which is why selection is an outline.
-      StateDot(state: state.shownState, theme: theme)
+      StateDot(state: state.shownState, theme: theme, palette: theme.projectsPanel)
         .frame(width: metrics.sidebarGlyphColumn)
         .help(t("sidebar.kind-and-state", kind, state.shownState.displayName))
 
@@ -67,7 +67,7 @@ struct WorktreeRow: View, @MainActor Equatable {
     .padding(.leading, metrics.worktreeRowIndent)
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
     .frame(height: height)
-    .rowSelection(isSelected: isSelected, isDropTarget: isDropTarget)
+    .rowSelection(theme, isSelected: isSelected, isDropTarget: isDropTarget)
     .contentShape(.rect)
     // `.contain` while renaming, or the field the Rename action opened would
     // sit inside an ignored subtree where VoiceOver cannot reach it.
@@ -121,7 +121,7 @@ struct WorktreeRow: View, @MainActor Equatable {
         initial: customName ?? "",
         prompt: t("sidebar.name-prompt"),
         font: metrics.font(size: metrics.secondary, weight: .medium),
-        color: theme.textPrimary,
+        palette: theme.projectsPanel,
         commit: commitRename,
         cancel: cancelRename,
       )
@@ -134,7 +134,7 @@ struct WorktreeRow: View, @MainActor Equatable {
   private var branchLine: some View {
     Text(worktree.name)
       .font(.system(size: metrics.badge, design: .monospaced))
-      .foregroundStyle(theme.textTertiary)
+      .foregroundStyle(theme.projectsPanel.textTertiary)
       .lineLimit(1)
       .truncationMode(.middle)
   }

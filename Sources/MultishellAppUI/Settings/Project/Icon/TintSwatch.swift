@@ -9,7 +9,7 @@ struct TintSwatch: View {
   let isSelected: Bool
   let pick: () -> Void
 
-  private var name: String { slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint") }
+  private var name: String { slot.map { Theme.projectIconSlotNames[$0] } ?? t("project.no-tint") }
 
   var body: some View {
     PlainGlyphButton(help: name, action: pick) {

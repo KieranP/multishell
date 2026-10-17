@@ -53,21 +53,26 @@ struct AppModelDirectoryWatchTests {
     gate.signal()
     await forced.value
 
-    #expect(!harness.watcher.watched.isEmpty)
+    #expect(!harness.watchedRepositoryNames.isEmpty)
   }
 
-  @Test func aForcedReArmOvertakenByOneWithNothingLeftToWatchLeavesNothingWatched() async throws {
+  @Test func aForcedReArmOvertakenByOneWithNoProjectLeftLeavesOnlyTheThemesFolderWatched()
+    async throws
+  {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (volumeChecks, gate) = holdingTheFirstVolumeCheck(in: harness)
 
     let forced = Task { await harness.model.rearmWatcher(evenIfUnchanged: true) }
     try await waitUntil { !volumeChecks.received.isEmpty }
+    let callsBeforeRemoval = harness.watcher.calls.count
     harness.model.removeProject(harness.project)
     await harness.model.rearmWatcher()
     gate.signal()
     await forced.value
+    let themesAlone = [harness.model.themesDirectory]
+    try await waitUntil { harness.watcher.watched == themesAlone }
 
-    #expect(harness.watcher.watched.isEmpty)
+    #expect(harness.watcher.calls.dropFirst(callsBeforeRemoval).allSatisfy { $0 == themesAlone })
   }
 }

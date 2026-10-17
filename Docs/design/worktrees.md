@@ -344,7 +344,7 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   leaves its date alone.
 - **A binary file, a mode change and a pure rename have no line for either
   column**, and a zero badge on a plainly changed worktree read as broken. They
-  are counted as files instead, shown in the theme's yellow.
+  are counted as files instead, in the theme's `ui.git` `changed` colour.
 - **An untracked file skipped for being binary, empty, too big or gone joins
   them.**
 - **An unmerged path is not one of them**: it prints zeroes from the cached

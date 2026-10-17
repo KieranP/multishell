@@ -13,24 +13,24 @@ struct FilesPanelHeader: View {
     HStack(spacing: 6) {
       Text(t("files-panel.title"))
         .font(metrics.font(size: metrics.secondary, weight: .semibold))
-        .foregroundStyle(theme.textSecondary)
+        .foregroundStyle(theme.header.textSecondary)
       Spacer(minLength: 8)
-      Picker(
-        t("files-panel.which"),
+      SegmentedSwitch(
+        label: t("files-panel.which"),
+        options: [(t("files-panel.all"), .all), (t("files-panel.modified"), .modified)],
         selection: Binding(
           get: { model.filesPanelState(of: worktreeID).mode },
           set: { model.setFilesPanelMode($0) },
         ),
-      ) {
-        Text(t("files-panel.all")).tag(FilesPanelMode.all)
-        Text(t("files-panel.modified")).tag(FilesPanelMode.modified)
-      }
-      .compactSegmented()
+        theme: theme,
+        section: .header,
+        metrics: metrics,
+      )
     }
     .padding(.leading, 12)
     .padding(.trailing, 8)
     .frame(height: model.metrics.tabHeight)
-    .background(theme.chromeColor)
-    .hairline(.bottom, theme)
+    .background(theme.header.background)
+    .hairline(.bottom, theme.header)
   }
 }
