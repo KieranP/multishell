@@ -72,6 +72,13 @@
   first libghostty build starts with no `.zig-cache/` or `zig-pkg/`. A debug
   bundle built in one names it in its state file and socket, so two can run at
   once (state-on-disk.md).
+- **Bundle builds of one tree run one at a time**, under a lock file in
+  `build/`. A debug build's opening `rm -rf` once emptied `Contents/MacOS` in a
+  release build that went on to sign and install the bundle with no binary. The
+  install copy runs under the same lock, so `make install` passes its
+  destination to `make-app.sh` rather than copying afterwards.
+- **`sign` refuses a bundle without its executable**: codesign seals one, and
+  `codesign --verify` passes it, but Finder says it is damaged.
 - **Running the tests is the exception**, several bounds being wall-clock.
   `make test` compiles unguarded, then runs under a lock file: a second worktree
   compiles alongside the first and waits silently for its turn to run.

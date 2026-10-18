@@ -51,10 +51,8 @@ compile-app: libghostty
 	swift build --target MultishellAppUI
 
 ## Build release and copy into /Applications (or INSTALL_DIR=...).
-install: release
-	rm -rf "$(INSTALL_DIR)/Multishell.app"
-	cp -R "$(APP)" "$(INSTALL_DIR)/Multishell.app"
-	@echo "installed $(INSTALL_DIR)/Multishell.app"
+install: libghostty
+	Scripts/make-app.sh release "$(INSTALL_DIR)"
 
 ## Report style and correctness violations. Same commands CI runs; fails on
 ## any finding.

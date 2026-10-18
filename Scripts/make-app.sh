@@ -6,7 +6,17 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$root/Scripts/build-lib.sh"
 
+# Builds of one tree share build/, and one emptied the bundle another was
+# about to sign and install; build.md.
+lock="$root/build/.make-app.lock"
+if [ -z "${MAKE_APP_HOLDS_LOCK:-}" ] && command -v lockf >/dev/null; then
+    mkdir -p "$root/build"
+    lockf -k -s -t 0 "$lock" true || echo "waiting for another make-app.sh in this tree" >&2
+    MAKE_APP_HOLDS_LOCK=1 exec lockf -k "$lock" "$0" "$@"
+fi
+
 config="${1:-debug}"
+install_dir="${2:-}"
 case "$config" in
     debug) configuration=Debug ;;
     release) configuration=Release ;;
@@ -69,3 +79,9 @@ sign "$identity" "$app" "$entitlements"
 codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 
 echo "built $app ($version, $commit)"
+
+if [ -n "$install_dir" ]; then
+    rm -rf "$install_dir/Multishell.app"
+    cp -R "$app" "$install_dir/Multishell.app"
+    echo "installed $install_dir/Multishell.app"
+fi

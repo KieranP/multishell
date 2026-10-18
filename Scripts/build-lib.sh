@@ -198,10 +198,22 @@ bundle_entitlements() {
     printf %s "$file"
 }
 
+# codesign seals a bundle with no executable and `--verify` passes it, but
+# Finder calls it damaged, which a racing build once installed; build.md.
+require_bundle_executable() {
+    local bundle="$1" executable
+    executable="$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" \
+        "$bundle/Contents/Info.plist" 2>/dev/null || true)"
+    [ -n "$executable" ] && [ -f "$bundle/Contents/MacOS/$executable" ] \
+        || die "error: $bundle has no Contents/MacOS/${executable:-<CFBundleExecutable>}," \
+            "       so macOS would refuse to open it. Was another build of this tree running?"
+}
+
 # An unsigned bundle is killed on launch on Apple silicon, so a failure here
 # is a warning rather than a stop. Runtime and entitlements: signing.md.
 sign() {
     local identity="$1" path="$2" entitlements="${3:-}" output
+    [ ! -d "$path" ] || require_bundle_executable "$path"
     local -a options=(--force --options runtime --sign "$identity")
     [ -z "$entitlements" ] || options+=(--entitlements "$entitlements")
     # A timestamp is a call to Apple's server, which notarisation requires and
