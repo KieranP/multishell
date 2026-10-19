@@ -18,7 +18,7 @@ extension DiffTextView {
       string.addAttribute(
         .foregroundColor,
         value: removedText,
-        range: NSRange(location: range.lowerBound - base, length: range.count),
+        range: NSRange(range.shifted(by: -base)),
       )
     }
   }

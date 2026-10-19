@@ -50,9 +50,12 @@
   **MultishellAppUI is the app**, built as `Multishell`: views, the engine host,
   the Mac platform port and its own word lookup.
 - **MultishellHighlight is a file tab's colouring**: the tree-sitter parse and
-  query over each grammar package, and the spans laid onto a diff's rows. Its
-  own target keeps the grammars out of the four libraries (Layering rules).
-  **TreeSitterScanners** compiles the three scanners copied under
+  query over each grammar package, and the spans laid onto a diff's rows, at its
+  root; a grammar's compile and our query corrections under `Grammars/`; what an
+  HTML or Svelte file holds in another language under `Injections/`; the reading
+  of a Svelte block's head under `SvelteBlockHeads/`; and `Support/`. Its own
+  target keeps the grammars out of the four libraries (Layering rules).
+  **TreeSitterScanners** compiles the four scanners copied under
   `ThirdParty/tree-sitter/` and gives Swift nothing (dependencies.md).
 - **Views sit under the part of the window they draw**: sidebar, detail area, a
   group of tabs or a pane, the Files panel, a file tab, board, Debug Info, a

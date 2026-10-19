@@ -32,7 +32,8 @@ struct HighlightLanguageTests {
     ("App.cs", HighlightLanguage.cSharp), ("main.cpp", .cpp), ("vec.hpp", .cpp), ("x.cc", .cpp),
     ("index.php", .php), ("Main.java", .java), ("App.kt", .kotlin), ("build.gradle.kts", .kotlin),
     ("Makefile", .makefile), ("GNUmakefile", .makefile), ("rules.mk", .makefile),
-    ("schema.sql", .sql), ("lib.h", .c),
+    ("schema.sql", .sql), ("lib.h", .c), ("App.svelte", .svelte), ("index.html", .html),
+    ("page.htm", .html), ("site.css", .css), ("_theme.scss", .scss),
   ])
   func eachAddedLanguageIsPickedByItsExtensionOrName(path: String, language: HighlightLanguage) {
     #expect(HighlightLanguage.language(forPath: path, firstLine: nil) == language)

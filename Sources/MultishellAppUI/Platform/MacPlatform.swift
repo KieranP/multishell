@@ -6,10 +6,6 @@ import os
 /// `Platform` on AppKit: the one place the model's needs meet the Mac.
 @MainActor
 final class MacPlatform: Platform {
-  /// The bundle identifier `make-app.sh` writes, which `log show` matches on.
-  /// Named rather than left a literal so a test can hold the two together.
-  nonisolated static let bundleIdentifier = "io.multishell.app"
-
   /// The workspace window, so window-scoped commands can tell whether they
   /// were issued there or in a settings window. Set by `WindowAccessor`.
   weak var workspaceWindow: NSWindow?
@@ -18,8 +14,11 @@ final class MacPlatform: Platform {
   /// The scenes' own window openers, which only a view can reach; set by
   /// `registeringWindowOpeners` for the command line's `ui show`.
   var openAuxiliaryWindow: ((AuxiliaryWindow) -> Void)?
-  private let logger = Logger(subsystem: bundleIdentifier, category: "platform")
-  private let signposter = OSSignposter(subsystem: bundleIdentifier, category: .pointsOfInterest)
+  private let logger = Logger(subsystem: AppBundle.identifier, category: "platform")
+  private let signposter = OSSignposter(
+    subsystem: AppBundle.identifier,
+    category: .pointsOfInterest,
+  )
   private var displayFrameLink: DisplayFrameLink?
 
   private var observers: [any NSObjectProtocol] = []
@@ -148,7 +147,7 @@ final class MacPlatform: Platform {
   /// `terminate` exits inside the call once the delegate agrees, which with
   /// no terminal open yet it does; see Docs/design/state-and-store.md.
   func handOverToRunningInstance() {
-    let identifier = Bundle.main.bundleIdentifier ?? Self.bundleIdentifier
+    let identifier = Bundle.main.bundleIdentifier ?? AppBundle.identifier
     NSRunningApplication.runningApplications(withBundleIdentifier: identifier)
       .first { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }?
       .activate()

@@ -64,7 +64,7 @@ enum ChangedPartsMarker {
       while next < parts.count, parts[next].lowerBound < line.upperBound {
         let clipped = parts[next].clamped(to: line)
         if !clipped.isEmpty {
-          local.append((clipped.lowerBound - start)..<(clipped.upperBound - start))
+          local.append(clipped.shifted(by: -start))
         }
         guard parts[next].upperBound <= line.upperBound else { break }
         next += 1

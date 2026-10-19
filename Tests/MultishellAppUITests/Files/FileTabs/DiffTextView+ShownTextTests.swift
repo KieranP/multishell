@@ -43,8 +43,8 @@ struct DiffTextViewShownTextTests {
     for pattern in ["let", "//[^\\n]*", "/\\*[\\s\\S]*?\\*/"] {
       let expression = try? NSRegularExpression(pattern: pattern)
       for match in expression?.matches(in: text.string, range: NSRange(0..<string.length)) ?? [] {
-        let range = match.range.location..<NSMaxRange(match.range)
-        spans.append(HighlightSpan(range: range, role: pattern == "let" ? .keyword : .comment))
+        let role: HighlightRole = pattern == "let" ? .keyword : .comment
+        spans.append(HighlightSpan(range: match.range.integerRange, role: role))
       }
     }
     return HighlightSpan.nonOverlappingRuns(spans, length: string.length)

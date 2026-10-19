@@ -1,11 +1,6 @@
 /// Two parses for a file tab's rows, the file on disk and `HEAD`'s text, each
 /// side's spans mapped onto the rows that show it.
 public enum DiffSideSpans {
-  /// The text of one side, its lines joined, as the highlighter parses it.
-  public static func sideText(of display: DiffDisplayText, side: DiffSide) -> String {
-    display.lines.filter { side.shows($0.kind) }.map(\.text).joined(separator: "\n")
-  }
-
   /// The sides worth parsing: `HEAD` only where a removed row shows it alone,
   /// an unchanged or new file being the file on disk throughout.
   public static func parsedSides(of display: DiffDisplayText) -> [DiffSide] {
@@ -15,47 +10,51 @@ public enum DiffSideSpans {
     }
   }
 
+  /// The stretches of a side's text whose spans `mapped` keeps, in text order, a run of
+  /// removed rows one and none empty; `nil` where it keeps them all.
+  public static func keptRanges(of text: DiffSideText) -> [Range<Int>]? {
+    guard keepsRemovedRowsAlone(text) else { return nil }
+    var ranges: [Range<Int>] = []
+    var isAfterRemovedLine = false
+    for (range, row) in zip(text.lineRanges, text.displayRows) {
+      let isRemoved = text.display.lines[row].kind == .removed
+      defer { isAfterRemovedLine = isRemoved }
+      guard isRemoved else { continue }
+      if isAfterRemovedLine, let last = ranges.last {
+        ranges[ranges.count - 1] = last.lowerBound..<range.upperBound
+      } else {
+        ranges.append(range)
+      }
+    }
+    return ranges.filter { !$0.isEmpty }
+  }
+
   /// A side's spans moved from its own text onto the rows' text, a span that
   /// crosses a line split at each row it reaches.
-  public static func mapped(
-    _ spans: [HighlightSpan],
-    from side: DiffSide,
-    onto display: DiffDisplayText,
-  ) -> [HighlightSpan] {
-    var rows: [(sideStart: Int, displayRow: Int, length: Int)] = []
-    var offset = 0
-    for (row, line) in display.lines.enumerated() where side.shows(line.kind) {
-      let length = line.text.utf16.count
-      rows.append((offset, row, length))
-      offset += length + 1
-    }
-    // Where both sides are parsed, a kept row is the file on disk's to colour.
-    let isOnlyRemovedRows = side == .committed && display.wholeSides.contains(.onDisk)
-    let takes = { (kind: DiffLine.Kind) in !isOnlyRemovedRows || kind == .removed }
+  public static func mapped(_ spans: [HighlightSpan], from text: DiffSideText) -> [HighlightSpan] {
+    let lines = text.lineRanges
+    let display = text.display
+    let keepsRemovedRowsAlone = Self.keepsRemovedRowsAlone(text)
+    let takes = { (kind: DiffLine.Kind) in !keepsRemovedRowsAlone || kind == .removed }
     var mapped: [HighlightSpan] = []
     for span in spans {
-      var low = 0
-      var high = rows.count
-      while low < high {
-        let middle = (low + high) / 2
-        if rows[middle].sideStart + rows[middle].length < span.range.lowerBound {
-          low = middle + 1
-        } else {
-          high = middle
-        }
-      }
-      var index = low
-      while index < rows.count, rows[index].sideStart < span.range.upperBound {
-        let row = rows[index]
-        let lower = max(span.range.lowerBound, row.sideStart) - row.sideStart
-        let upper = min(span.range.upperBound, row.sideStart + row.length) - row.sideStart
-        if lower < upper, takes(display.lines[row.displayRow].kind) {
-          let start = display.rowStarts[row.displayRow]
-          mapped.append(HighlightSpan(range: (start + lower)..<(start + upper), role: span.role))
+      var index = lines.firstIndex(endingAfter: span.range.lowerBound)
+      while index < lines.count, lines[index].lowerBound < span.range.upperBound {
+        let line = lines[index]
+        let row = text.displayRows[index]
+        let onLine = span.range.clamped(to: line)
+        if !onLine.isEmpty, takes(display.lines[row].kind) {
+          let shift = display.rowStarts[row] - line.lowerBound
+          mapped.append(HighlightSpan(range: onLine.shifted(by: shift), role: span.role))
         }
         index += 1
       }
     }
     return mapped
+  }
+
+  /// Where both sides are parsed, a kept row is the file on disk's to colour.
+  private static func keepsRemovedRowsAlone(_ text: DiffSideText) -> Bool {
+    text.side == .committed && text.display.wholeSides.contains(.onDisk)
   }
 }

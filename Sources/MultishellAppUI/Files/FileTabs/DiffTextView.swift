@@ -101,9 +101,9 @@ final class DiffTextView: NSTextView {
     shownTheme = theme
     let carried = selected.compactMap { value -> NSValue? in
       let range = value.rangeValue
-      guard let moved = text.carriedSelection(range.location..<NSMaxRange(range), from: previous)
+      guard let moved = text.carriedSelection(range.integerRange, from: previous)
       else { return nil }
-      return NSValue(range: NSRange(location: moved.lowerBound, length: moved.count))
+      return NSValue(range: NSRange(moved))
     }
     selectedRanges = carried.isEmpty ? [NSValue(range: NSRange(location: 0, length: 0))] : carried
     needsDisplay = true
@@ -181,7 +181,7 @@ final class DiffTextView: NSTextView {
   }
 
   private func selectionCopy() -> String {
-    let selections = selectedRanges.map(\.rangeValue).map { $0.location..<NSMaxRange($0) }
+    let selections = selectedRanges.map(\.rangeValue.integerRange)
     guard copiesAsDiff else { return displayText.plainCopy(selections: selections) }
     return displayText.diffCopy(selections: selections)
   }

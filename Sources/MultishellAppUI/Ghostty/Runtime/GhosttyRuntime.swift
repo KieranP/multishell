@@ -1,12 +1,13 @@
 import AppKit
 import GhosttyKit
+import MultishellAppCore
 import os
 
 /// The one libghostty app every surface shares, and its config: the user's
 /// base with the app's layer after it, so the app's colours, font and unbinds win.
 @MainActor
 final class GhosttyRuntime {
-  private static let logger = Logger(subsystem: MacPlatform.bundleIdentifier, category: "ghostty")
+  private static let logger = Logger(subsystem: AppBundle.identifier, category: "ghostty")
 
   let app: ghostty_app_t
   private let readBase: @MainActor () -> String

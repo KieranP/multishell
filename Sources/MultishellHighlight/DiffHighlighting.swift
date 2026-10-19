@@ -18,11 +18,18 @@ public enum DiffHighlighting {
       return []
     }
     return await runOnDispatch {
-      let spans = DiffSideSpans.parsedSides(of: text).flatMap { side in
-        let sideText = DiffSideSpans.sideText(of: text, side: side)
-        guard !sideText.isEmpty else { return [HighlightSpan]() }
-        let spans = SyntaxHighlighter.shared.spans(in: sideText, language: language)
-        return DiffSideSpans.mapped(spans, from: side, onto: text)
+      var cache = HighlightPassCache()
+      var spans: [HighlightSpan] = []
+      for side in DiffSideSpans.parsedSides(of: text) {
+        let sideText = DiffSideText(of: text, side: side)
+        guard !sideText.string.isEmpty else { continue }
+        let sideSpans = SyntaxHighlighter.shared.spans(
+          in: sideText.string,
+          language: language,
+          cache: &cache,
+          within: DiffSideSpans.keptRanges(of: sideText),
+        )
+        spans += DiffSideSpans.mapped(sideSpans, from: sideText)
       }
       return HighlightSpan.nonOverlappingRuns(spans, length: text.string.utf16.count)
     }

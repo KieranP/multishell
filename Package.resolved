@@ -1,5 +1,5 @@
 {
-  "originHash" : "6e232b069670ce82a25540b2146baac23a5dd7f4ecbe67f3dbf96a34f2617aa8",
+  "originHash" : "55a8b80a685b59f903bfa8adaf3a0f7a867b6b6f0ebcddd5626be64d40dff2c0",
   "pins" : [
     {
       "identity" : "swift-subprocess",
@@ -74,12 +74,30 @@
       }
     },
     {
+      "identity" : "tree-sitter-css",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter-css",
+      "state" : {
+        "revision" : "dda5cfc5722c429eaba1c910ca32c2c0c5bb1a3f",
+        "version" : "0.25.0"
+      }
+    },
+    {
       "identity" : "tree-sitter-go",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter/tree-sitter-go",
       "state" : {
         "revision" : "1547678a9da59885853f5f5cc8a99cc203fa2e2c",
         "version" : "0.25.0"
+      }
+    },
+    {
+      "identity" : "tree-sitter-html",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter-html",
+      "state" : {
+        "revision" : "5a5ca8551a179998360b4a4ca2c0f366a35acc03",
+        "version" : "0.23.2"
       }
     },
     {
@@ -173,11 +191,29 @@
       }
     },
     {
+      "identity" : "tree-sitter-scss",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter-grammars/tree-sitter-scss",
+      "state" : {
+        "revision" : "eb69c8f55ecc17235f43358c65ec644578554f92",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "tree-sitter-sql",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/DerekStride/tree-sitter-sql",
       "state" : {
         "revision" : "39fdb006403747241244326e8af3b3e96b85381c"
+      }
+    },
+    {
+      "identity" : "tree-sitter-svelte",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter-grammars/tree-sitter-svelte",
+      "state" : {
+        "revision" : "774a65aea563accc35f5d45fafa4d96ec5761f57",
+        "version" : "1.0.2"
       }
     },
     {

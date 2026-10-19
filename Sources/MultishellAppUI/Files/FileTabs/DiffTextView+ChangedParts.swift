@@ -13,10 +13,7 @@ extension DiffTextView {
       (line.kind == .added ? partTints.added : partTints.removed).setFill()
       let start = displayText.rowStarts[row]
       for part in line.changedParts {
-        fillTextSegments(
-          of: (start + part.lowerBound)..<(start + part.upperBound),
-          layoutManager: layoutManager,
-        )
+        fillTextSegments(of: part.shifted(by: start), layoutManager: layoutManager)
       }
     }
   }

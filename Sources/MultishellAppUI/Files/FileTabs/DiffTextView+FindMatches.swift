@@ -17,7 +17,7 @@ extension DiffTextView {
     needsDisplay = true
     guard let selected = find.selected, matches.indices.contains(selected) else { return }
     let match = matches[selected]
-    let range = NSRange(location: match.lowerBound, length: match.count)
+    let range = NSRange(match)
     if find.movesSelection(from: previous) {
       setSelectedRange(range)
       scrollRangeToVisible(range)
@@ -34,14 +34,8 @@ extension DiffTextView {
     else { return }
     let shownStart = displayText.rowStarts[rows.lowerBound]
     let shownEnd = displayText.range(ofRow: rows.upperBound - 1).upperBound
-    var low = 0
-    var high = matches.count
-    while low < high {
-      let middle = (low + high) / 2
-      if matches[middle].upperBound <= shownStart { low = middle + 1 } else { high = middle }
-    }
     tint.setFill()
-    for match in matches[low...] {
+    for match in matches[matches.firstIndex(endingAfter: shownStart)...] {
       guard match.lowerBound < shownEnd else { break }
       fillTextSegments(of: match, layoutManager: layoutManager)
     }
