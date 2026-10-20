@@ -21,9 +21,7 @@ struct NewWorktreeBranchFields: View {
             .font(.system(size: 13, design: .monospaced))
             .foregroundStyle(.secondary)
         }
-        TextField("", text: $draft.branch, prompt: Text(t("sheet.branch-prompt")))
-          .textFieldStyle(.roundedBorder)
-          .labelsHidden()
+        NewWorktreeBranchNameField(text: branchFieldText, prompt: t("sheet.branch-prompt"))
       }
     }
     if draft.branchNameIsRefused {
@@ -40,6 +38,10 @@ struct NewWorktreeBranchFields: View {
         ForEach(draft.remoteBranches, id: \.self, content: Text.init)
       }
     }
+  }
+
+  private var branchFieldText: Binding<String> {
+    Binding(get: { draft.branch }, set: { draft.typeBranch($0) })
   }
 
   @ViewBuilder

@@ -244,6 +244,25 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **The rules are git's own, in Swift, less the ones about slashes** that apply
   only to a full refname, the sheet asking on every keystroke.
   `GitBranchNameTests` holds it against real git over a table of names.
+- **The sheet's field turns unusual characters into dashes as they arrive**, a
+  pasted `Admin::UsersController#index` reading `Admin-UsersController-index`.
+  Anything but a letter, digit, `.`, `_`, `/` or `-` counts, wider than git's
+  list so a `#` goes too; a run of them with the dashes beside it is one dash,
+  and a run leading the name is dropped. Dashes typed alone stay. The structural
+  rules, `..` or a trailing `.`, are left to the warning, since a name half
+  typed breaks them. Trailing spaces stay until a word follows, since a paste
+  often ends in one and the trim already drops it. Only the field does this: an
+  API caller's name is refused, not rewritten.
+- **That field is an AppKit `NSTextField`.** SwiftUI's `TextField` on macOS
+  never writes a binding change back into a field being edited, so the fix
+  reached the draft while the field still showed `Admin::Users`.
+  `NewWorktreeBranchNameFieldTests` types into the real field to hold this. The
+  field waits while an input method is composing, and makes the fix through the
+  editor's change calls, so one undo takes back a pasted name whole.
+- **The field follows its editor's storage while editing.** Undo and redo change
+  the text without `controlTextDidChange`, so the draft kept a name the field
+  had stopped showing, and Create would have made it. The old SwiftUI field did
+  the same.
 - **An existing branch is held to the same rules**: the check ran only when
   creating one, so an API caller with an empty name ran the hook and was refused
   after. Cost: a detached checkout git would have allowed is refused too.
