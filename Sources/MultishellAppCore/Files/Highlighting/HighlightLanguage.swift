@@ -5,7 +5,9 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
   case c
   case cpp
   case cSharp
+  case css
   case golang
+  case html
   case java
   case javaScript
   case json
@@ -16,7 +18,9 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
   case python
   case ruby
   case rust
+  case scss
   case sql
+  case svelte
   case swift
   case toml
   case tsx
@@ -33,7 +37,8 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
     "yml": .yaml, "zig": .zig, "zon": .zig, "zsh": .bash,
     "c++": .cpp, "cc": .cpp, "cpp": .cpp, "cxx": .cpp, "h++": .cpp, "hh": .cpp, "hpp": .cpp,
     "hxx": .cpp, "cs": .cSharp, "java": .java, "kt": .kotlin, "kts": .kotlin, "mak": .makefile,
-    "mk": .makefile, "php": .php, "phtml": .php, "sql": .sql,
+    "mk": .makefile, "php": .php, "phtml": .php, "sql": .sql, "css": .css, "htm": .html,
+    "html": .html, "scss": .scss, "svelte": .svelte,
   ]
 
   /// Files whose language their name says rather than an extension.

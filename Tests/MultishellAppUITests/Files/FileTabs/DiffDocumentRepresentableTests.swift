@@ -41,7 +41,7 @@ struct DiffDocumentRepresentableTests {
     let row = try #require(topRow)
     #expect(row.rounded() == 119, "top row \(row)")
     let textView = try #require(host.descendants(of: DiffDocumentView.self).first?.textView)
-    #expect(textView.selectedRange() == NSRange(location: match.lowerBound, length: match.count))
+    #expect(textView.selectedRange() == NSRange(match))
   }
 
   @Test func aSearchMadeBeforeTheRebuiltViewDrewIsScrolledTo() throws {

@@ -1,4 +1,5 @@
 import Foundation
+import MultishellAppCore
 import TestScratch
 import Testing
 import UniformTypeIdentifiers
@@ -27,16 +28,16 @@ struct InfoPlistTemplateTests {
   }
 
   /// `log show --predicate 'subsystem == "…"'` with the bundle id finds nothing unless
-  /// `MacPlatform` logs under it.
+  /// the app logs under it.
   @Test func theLoggingSubsystemIsTheBundleIdentifier() throws {
-    let subsystem = MacPlatform.bundleIdentifier
+    let subsystem = AppBundle.identifier
     let isBundleIdentifier = try infoPlistTemplate().contains(
       "<key>CFBundleIdentifier</key><string>\(subsystem)</string>"
     )
     #expect(
       isBundleIdentifier,
       """
-      MacPlatform logs under \(subsystem), which is not the bundle identifier Info.plist.in \
+      The app logs under \(subsystem), which is not the bundle identifier Info.plist.in \
       carries, so a `log show` predicate on the bundle id finds none of this app's lines.
       """,
     )

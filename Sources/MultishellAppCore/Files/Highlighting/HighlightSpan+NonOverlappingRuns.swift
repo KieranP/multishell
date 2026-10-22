@@ -1,6 +1,6 @@
 extension HighlightSpan {
-  /// Runs in text order that do not overlap, a later span winning as applied in
-  /// turn: 202,607 spans of a 1 MiB file took 1.2 s on main, its runs 70 ms.
+  /// Runs in text order that do not overlap, a later span winning as applied in turn,
+  /// and a plain span clearing but leaving no run. Why each: Docs/design/files.md.
   public static func nonOverlappingRuns(_ spans: [Self], length: Int) -> [Self] {
     var roles = [HighlightRole?](repeating: nil, count: length)
     for span in spans {
@@ -15,7 +15,7 @@ extension HighlightSpan {
       }
       var end = start + 1
       while end < length, roles[end] == role { end += 1 }
-      runs.append(Self(range: start..<end, role: role))
+      if role != .plain { runs.append(Self(range: start..<end, role: role)) }
       start = end
     }
     return runs

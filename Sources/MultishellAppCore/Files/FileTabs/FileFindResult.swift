@@ -56,7 +56,7 @@ struct FileFindResult: Equatable, Sendable {
         range: NSRange(location: from, length: searchedText.length - from),
       )
       guard found.location != NSNotFound, found.length > 0 else { break }
-      matches.append(found.location..<NSMaxRange(found))
+      matches.append(found.integerRange)
       from = NSMaxRange(found)
     }
     guard !matches.isEmpty else { return Self(matches: [], selected: nil) }

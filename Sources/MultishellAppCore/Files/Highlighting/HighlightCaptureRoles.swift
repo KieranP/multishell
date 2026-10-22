@@ -1,15 +1,24 @@
 /// A grammar's capture names put into roles, by first component but for the
-/// exceptions, which vary by grammar: `constructor` is Swift's `init`.
+/// exceptions, some of which vary by grammar: `constructor` is Swift's `init`.
 public enum HighlightCaptureRoles {
   /// Marks for other tools, a spell checker's, that colour nothing.
   private static let notHighlights: Set<String> = ["spell"]
 
-  /// Names whose first component would mislead: `variable.builtin` is `self`
-  /// and `super`, `text.title` a Markdown heading, `character.special` Swift's `_`.
+  /// Names whose first component misleads: `variable.builtin` is `self`, `text.title` a
+  /// heading, `character.special` Swift's `_`, `type.qualifier` Svelte's `{@const}` and SQL's `LOCAL`.
   private static let exceptions: [String: HighlightRole] = [
     "character.special": .plain, "variable.builtin": .keyword, "text.title": .keyword,
-    "text.uri": .string,
+    "type.qualifier": .keyword,
+    "text.uri": .string, "constructor": .type,
     "text.literal": .string, "text.reference": .function, "string.special.key": .plain,
+  ]
+
+  /// Read first: Swift's `constructor` is `init`, HTML's and Svelte's `constant` the doctype,
+  /// and CSS's `property` a property or selector name where elsewhere it is a field.
+  private static let exceptionsByLanguage: [HighlightLanguage: [String: HighlightRole]] = [
+    .swift: ["constructor": .keyword],
+    .html: ["constant": .keyword], .svelte: ["constant": .keyword],
+    .css: ["property": .attribute], .scss: ["property": .attribute],
   ]
 
   /// Kotlin's, SQL's and Make's queries still use the older names:
@@ -23,11 +32,6 @@ public enum HighlightCaptureRoles {
     "storageclass": .keyword, "string": .string, "tag": .keyword, "type": .type,
   ]
 
-  /// Swift marks `init` as a constructor where the others mark a class name.
-  private static func constructorRole(in language: HighlightLanguage) -> HighlightRole {
-    language == .swift ? .keyword : .type
-  }
-
   /// `.plain` for `variable`, `operator`, `label` and the like, which still
   /// override an earlier pattern; `nil` for a mark that is no highlight.
   public static func role(
@@ -35,8 +39,9 @@ public enum HighlightCaptureRoles {
     in language: HighlightLanguage,
   ) -> HighlightRole? {
     guard !notHighlights.contains(name) else { return nil }
-    if name == "constructor" { return constructorRole(in: language) }
-    if let exception = exceptions[name] { return exception }
+    if let exception = exceptionsByLanguage[language]?[name] ?? exceptions[name] {
+      return exception
+    }
     let first = name.split(separator: ".").first.map(String.init) ?? name
     return byFirstComponent[first] ?? .plain
   }

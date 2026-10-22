@@ -21,4 +21,21 @@ struct HighlightSpanNonOverlappingRunsTests {
       ]
     )
   }
+
+  @Test func aPlainSpanClearsWhatItCoversAndLeavesNoRunOfItsOwn() {
+    let spans = [
+      HighlightSpan(range: 0..<10, role: .string),
+      HighlightSpan(range: 2..<8, role: .plain),
+      HighlightSpan(range: 4..<6, role: .keyword),
+    ]
+
+    let runs = HighlightSpan.nonOverlappingRuns(spans, length: 10)
+
+    #expect(
+      runs == [
+        HighlightSpan(range: 0..<2, role: .string), HighlightSpan(range: 4..<6, role: .keyword),
+        HighlightSpan(range: 8..<10, role: .string),
+      ]
+    )
+  }
 }

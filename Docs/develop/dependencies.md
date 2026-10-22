@@ -124,13 +124,15 @@
   bundle, which the bundling script copies with every other. Most repositories
   commit no `parser.c` on their main branch; tree-sitter-swift's tags it
   `<version>-with-generated-files`.
-- **JavaScript's, Python's and YAML's scanners are copied under
+- **CSS's, JavaScript's, Python's and YAML's scanners are copied under
   `ThirdParty/tree-sitter/`**, into one `TreeSitterScanners` target: their
   packages test for `src/scanner.c` against the build's working directory, so as
-  a dependency they build without it and fail to link. Only the scanner and the
-  files it includes are copied, 150 KB against 7.5 MB for the whole grammars.
-  Each folder names its tag and commit, which must match the package's pin, and
-  the open fixes
+  a dependency they build without it and fail to link. Only the scanner, the
+  headers beside it and the licence are copied, 175 KB against about 8.5 MB for
+  the whole grammars. Not every header is included: CSS's and JavaScript's
+  scanners take only `parser.h`, the folder kept whole so a bump is a copy. Each
+  folder names its tag and commit, which must match the package's pin, and the
+  open fixes
   ([javascript#383](https://github.com/tree-sitter/tree-sitter-javascript/pull/383),
   [yaml#46](https://github.com/tree-sitter-grammars/tree-sitter-yaml/pull/46))
   would let a folder go. tree-sitter's own template already tests against
@@ -141,14 +143,25 @@
   so the target disables that warning alone. The packaged grammars' warnings are
   theirs, a remote package's being hidden from the build.
 - **The maintained repository, not the most-starred**: the tree-sitter-grammars
-  YAML, TOML, Zig and Make, whose originals are stale or archived. Kotlin is
-  fwcd's, the most-starred and maintained; SQL is DerekStride's.
+  YAML, TOML, Zig, Make, Svelte and SCSS, whose originals are stale or archived;
+  Himujjal's Svelte was last pushed in 2024, serenadeai's SCSS in 2022. Kotlin
+  is fwcd's, the most-starred and maintained; SQL is DerekStride's.
+- **HTML's package is there for Svelte as much as for `.html`**: Svelte's query
+  opens `; inherits: html`, Neovim's convention, so its tags and attributes
+  colour only with HTML's query read first. SCSS's query likewise adds to CSS's,
+  which is read before it.
+- **SCSS's licence text is from the repository's `master`**: its `v1.0.0` tag
+  predates the `LICENSE` file (`8f47fa8b`), though its `package.json` and
+  `Cargo.toml` at the tag already say MIT.
 - **SQL is pinned by revision on its `gh-pages` branch**, the only place it
   commits a generated parser; its tags hold the grammar alone. A bump is the
   newest deploy commit there.
 - **C#, C++, Kotlin and SQL are the heavy grammars**, their generated parsers 17
   to 41 MB of C. Those four with Java, PHP and Make took the release binary from
   32.0 MB to 58.6 MB (2026-10-16).
+- **HTML, CSS, SCSS and Svelte are light**: 0.36 MB of code and data together in
+  a release build, by their objects' `__TEXT` and `__DATA` (2026-10-20), SCSS's
+  166 KB the most.
 - **Each grammar costs binary size and build time**, Swift's about 4.2 MB, most
   of it parse tables, so the list grows on request; the notices name each with
   the ICU headers the runtime compiles.

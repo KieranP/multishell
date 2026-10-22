@@ -70,9 +70,7 @@ struct SplitDiffDocumentViewTests {
     #expect(rows == 1_536 * 7, "four kept and three padded against one a block")
     for target in [rows - 1, 0, 5_000, 10_457, 1_234, 9_999, 3, 7_777, 4_321] {
       let range = view.committed.textView.displayText.range(ofRow: target)
-      view.committed.textView.scrollRangeToVisible(
-        NSRange(location: range.lowerBound, length: range.count)
-      )
+      view.committed.textView.scrollRangeToVisible(NSRange(range))
       view.layoutSubtreeIfNeeded()
       let left = view.committed.textView.visibleRect.minY
       let right = view.onDisk.textView.visibleRect.minY

@@ -461,6 +461,10 @@ rule holds is in `Docs/design/`.
   WorkspaceStoreTests+FileTabs and Workspace+RepairTests+FileTabs.
 - **A grammar bump whose query no longer compiles, or whose bundle is not
   found**: HighlightGrammarsTests, every grammar against its query.
+- **A `<script>`, `<style>` or Svelte expression left plain or coloured in the
+  wrong language**: HighlightInjectionsTests and its +Svelte, +ElementAttributes
+  and +AttributeInjections suites, ElementBodyLanguageTests and
+  SvelteBlockHeadTests.
 - **A drag nothing takes or a drop refuses goes back between the neighbours it
   left, and one a drop took stays**: AppModelTabDragTests.
 - **A segmented picker drawn only as wide as its labels**:

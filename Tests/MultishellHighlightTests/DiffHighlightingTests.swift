@@ -40,6 +40,18 @@ struct DiffHighlightingTests {
     #expect(Self.role(of: "let", in: right, spans: spans) == .keyword)
   }
 
+  @Test func anInjectionOnARemovedRowBelowAKeptOneIsHighlighted() async {
+    let unified = DiffDisplayText([
+      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "<script>let a</script>"),
+      DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "<script>var b</script>"),
+    ])
+
+    let spans = await DiffHighlighting.spans(for: unified, path: "a.html")
+
+    #expect(Self.role(of: "let", in: unified, spans: spans) == .keyword)
+    #expect(Self.role(of: "var", in: unified, spans: spans) == .keyword)
+  }
+
   @Test func aShebangAddedOnDiskNamesTheLanguageThoughHeadsLineIsListedFirst() async {
     let unified = DiffDisplayText([
       DiffLine(kind: .removed, oldNumber: 1, newNumber: nil, text: "set -e"),

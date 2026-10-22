@@ -14,8 +14,7 @@ struct DiffDisplayTextCarriedSelectionTests {
   }
 
   private static func range(of word: String, in text: DiffDisplayText) -> Range<Int> {
-    let found = (text.string as NSString).range(of: word)
-    return found.location..<NSMaxRange(found)
+    (text.string as NSString).range(of: word).integerRange
   }
 
   @Test func aSelectionFollowsItsLinesWhenLinesAreAddedAbove() {
@@ -39,10 +38,7 @@ struct DiffDisplayTextCarriedSelectionTests {
     let after = Self.text(["x", "a", "x", "b", "x", "c", "x"])
     let lastButTwo = (before.string as NSString).range(of: "x", options: .backwards)
 
-    let carried = after.carriedSelection(
-      lastButTwo.location..<NSMaxRange(lastButTwo),
-      from: before,
-    )
+    let carried = after.carriedSelection(lastButTwo.integerRange, from: before)
 
     #expect(carried == after.rowStarts[4]..<(after.rowStarts[4] + 1))
   }

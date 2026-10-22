@@ -27,7 +27,6 @@ extension DiffDisplayText {
       return end..<end
     }
     guard lines[target].text == line.text else { return nil }
-    let start = rowStarts[target] + range.lowerBound - previous.rowStarts[row]
-    return start..<(start + range.count)
+    return range.shifted(by: rowStarts[target] - previous.rowStarts[row])
   }
 }

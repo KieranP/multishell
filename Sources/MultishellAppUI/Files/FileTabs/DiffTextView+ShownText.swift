@@ -27,19 +27,14 @@ extension DiffTextView {
       if range.upperBound <= replaced.lowerBound {
         kept.append(run)
       } else if range.lowerBound >= replaced.upperBound {
-        kept.append(
-          HighlightSpan(
-            range: (range.lowerBound + shift)..<(range.upperBound + shift),
-            role: run.role,
-          )
-        )
+        kept.append(HighlightSpan(range: range.shifted(by: shift), role: run.role))
       } else {
         if range.lowerBound < replaced.lowerBound {
           kept.append(HighlightSpan(range: range.lowerBound..<replaced.lowerBound, role: run.role))
         }
         if range.upperBound > replaced.upperBound {
-          let lower = replaced.upperBound + shift
-          kept.append(HighlightSpan(range: lower..<(range.upperBound + shift), role: run.role))
+          let after = (replaced.upperBound..<range.upperBound).shifted(by: shift)
+          kept.append(HighlightSpan(range: after, role: run.role))
         }
       }
     }
@@ -70,7 +65,7 @@ extension DiffTextView {
     let replacing = Self.unitsBetween(top: top, bottom: bottom, of: text)
     guard !(replaced.isEmpty && replacing.isEmpty) else { return }
     storage.replaceCharacters(
-      in: NSRange(location: replaced.lowerBound, length: replaced.count),
+      in: NSRange(replaced),
       with: attributedText(text, drawn: drawn, units: replacing, theme: theme),
     )
     appliedRuns = appliedRuns.map { runs in
@@ -91,7 +86,7 @@ extension DiffTextView {
     paragraph.lineBreakMode = .byClipping
     let attributed = NSMutableAttributedString(
       string: (drawn as NSString).substring(
-        with: NSRange(location: units.lowerBound, length: units.count)
+        with: NSRange(units)
       ),
       attributes: [
         .font: geometry.font, .foregroundColor: theme.fileText, .paragraphStyle: paragraph,

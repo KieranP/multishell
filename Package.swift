@@ -27,7 +27,9 @@ let package = Package(
     .package(url: "https://github.com/tree-sitter/tree-sitter-c", exact: "0.24.2"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-c-sharp", exact: "0.23.5"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-cpp", exact: "0.23.4"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-css", exact: "0.25.0"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-go", exact: "0.25.0"),
+    .package(url: "https://github.com/tree-sitter/tree-sitter-html", exact: "0.23.2"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-java", exact: "0.23.5"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-javascript", exact: "0.25.0"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-json", exact: "0.24.8"),
@@ -43,6 +45,8 @@ let package = Package(
       url: "https://github.com/DerekStride/tree-sitter-sql",
       revision: "39fdb006403747241244326e8af3b3e96b85381c",
     ),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-scss", exact: "1.0.0"),
+    .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-svelte", exact: "1.0.2"),
     .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-toml", exact: "0.7.0"),
     .package(url: "https://github.com/tree-sitter/tree-sitter-typescript", exact: "0.23.2"),
     .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-yaml", exact: "0.7.2"),
@@ -82,7 +86,9 @@ let package = Package(
         .product(name: "TreeSitterC", package: "tree-sitter-c"),
         .product(name: "TreeSitterCPP", package: "tree-sitter-cpp"),
         .product(name: "TreeSitterCSharp", package: "tree-sitter-c-sharp"),
+        .product(name: "TreeSitterCSS", package: "tree-sitter-css"),
         .product(name: "TreeSitterGo", package: "tree-sitter-go"),
+        .product(name: "TreeSitterHTML", package: "tree-sitter-html"),
         .product(name: "TreeSitterJava", package: "tree-sitter-java"),
         .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
         .product(name: "TreeSitterJSON", package: "tree-sitter-json"),
@@ -93,7 +99,9 @@ let package = Package(
         .product(name: "TreeSitterPython", package: "tree-sitter-python"),
         .product(name: "TreeSitterRuby", package: "tree-sitter-ruby"),
         .product(name: "TreeSitterRust", package: "tree-sitter-rust"),
+        .product(name: "TreeSitterSCSS", package: "tree-sitter-scss"),
         .product(name: "TreeSitterSql", package: "tree-sitter-sql"),
+        .product(name: "TreeSitterSvelte", package: "tree-sitter-svelte"),
         .product(name: "TreeSitterTOML", package: "tree-sitter-toml"),
         .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
         .product(name: "TreeSitterYAML", package: "tree-sitter-yaml"),
@@ -102,12 +110,15 @@ let package = Package(
         .product(name: "TreeSitter", package: "tree-sitter"),
       ],
     ),
-    // The scanners JavaScript's, Python's and YAML's packages leave out; see
-    // Docs/develop/dependencies.md for why and for the warning.
+    // The scanners CSS's, JavaScript's, Python's and YAML's packages leave out;
+    // see Docs/develop/dependencies.md for why and for the warning.
     .target(
       name: "TreeSitterScanners",
       path: "ThirdParty/tree-sitter",
-      sources: ["javascript/src/scanner.c", "python/src/scanner.c", "yaml/src/scanner.c"],
+      sources: [
+        "css/src/scanner.c", "javascript/src/scanner.c", "python/src/scanner.c",
+        "yaml/src/scanner.c",
+      ],
       cSettings: [.treatAllWarnings(as: .error), .disableWarning("shorten-64-to-32")],
     ),
     .executableTarget(
@@ -170,7 +181,10 @@ let package = Package(
     .testTarget(name: "MultishellAppUITests", dependencies: ["MultishellAppUI", "TestScratch"]),
     .testTarget(
       name: "MultishellHighlightTests",
-      dependencies: ["MultishellHighlight", "MultishellAppCore"],
+      dependencies: [
+        "MultishellHighlight", "MultishellAppCore",
+        .product(name: "SwiftTreeSitter", package: "swift-tree-sitter"),
+      ],
     ),
   ],
 )

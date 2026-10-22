@@ -73,7 +73,7 @@ extension DiffTextView {
         if isFresh {
           let color = colors[run.role] ?? theme.color(for: run.role)
           colors[run.role] = color
-          let range = NSRange(location: run.range.lowerBound, length: run.range.count)
+          let range = NSRange(run.range)
           storage.addAttribute(.foregroundColor, value: color, range: range)
           if run.role == .comment { storage.addAttribute(.font, value: italic, range: range) }
         } else {
@@ -89,7 +89,7 @@ extension DiffTextView {
   /// A run no longer highlighted, back to the text `show` set.
   private func restorePlainText(in units: Range<Int>, of text: DiffDisplayText, theme: Theme) {
     guard let storage = textStorage, !units.isEmpty else { return }
-    let range = NSRange(location: units.lowerBound, length: units.count)
+    let range = NSRange(units)
     storage.addAttribute(.foregroundColor, value: theme.fileText, range: range)
     storage.addAttribute(.font, value: geometry.font, range: range)
     colorRemovedRows(of: text, in: units, of: storage, startingAt: 0, theme: theme)

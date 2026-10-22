@@ -20,7 +20,7 @@ struct DiffDocumentViewTests {
     #expect(textView.frame.height == geometry.documentHeight(rows: Self.rowCount))
     for target in [Self.rowCount - 1, 0, 5_000, 10_457, 1_234, 9_999, 3, 7_777, 4_321] {
       let range = textView.displayText.range(ofRow: target)
-      textView.scrollRangeToVisible(NSRange(location: range.lowerBound, length: range.count))
+      textView.scrollRangeToVisible(NSRange(range))
       textView.layoutSubtreeIfNeeded()
       let rowRect = NSRect(
         x: 0,

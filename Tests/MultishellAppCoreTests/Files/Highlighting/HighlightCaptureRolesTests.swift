@@ -28,6 +28,19 @@ struct HighlightCaptureRolesTests {
       HighlightCaptureRoles.role(forCapture: "constructor", in: .python) == .type,
       "a class name",
     )
+    #expect(HighlightCaptureRoles.role(forCapture: "constant", in: .html) == .keyword, "doctype")
+    #expect(HighlightCaptureRoles.role(forCapture: "constant", in: .svelte) == .keyword)
+    #expect(HighlightCaptureRoles.role(forCapture: "constant", in: .rust) == .number)
+    #expect(
+      HighlightCaptureRoles.role(forCapture: "type.qualifier", in: .svelte) == .keyword,
+      "Svelte's `{@const}`, SQL's `LOCAL`",
+    )
+  }
+
+  @Test func aCSSPropertyIsAnAttributeWhereAJavaScriptOneStaysPlain() {
+    #expect(HighlightCaptureRoles.role(forCapture: "property", in: .css) == .attribute)
+    #expect(HighlightCaptureRoles.role(forCapture: "property", in: .scss) == .attribute)
+    #expect(HighlightCaptureRoles.role(forCapture: "property", in: .javaScript) == .plain)
   }
 
   @Test(arguments: [
