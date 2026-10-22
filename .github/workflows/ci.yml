@@ -63,6 +63,7 @@ jobs:
             ThirdParty/ghostty/zig-pkg
             ThirdParty/ghostty/.zig-cache
           key: ${{ steps.zig-cache.outputs.cache-primary-key }}
+      - run: Scripts/fetch-grammars.sh
       # No debug info: about a quarter off the build. Crash backtraces lose
       # their line numbers; a failed expectation still names its own.
       - run: swift build --build-tests -Xswiftc -gnone

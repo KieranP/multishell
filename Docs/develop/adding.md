@@ -357,14 +357,15 @@ What each addition needs beyond the code itself.
   Failed under `error`, and a line in its decode; one left out of the keys is
   never saved.
 - **A highlighted language.** A case in `HighlightLanguage` with its extensions,
-  file names and interpreters; the grammar's package pinned exactly in
-  `Package.swift` at a tag committing its parser, or at a revision where no tag
-  does (dependencies.md); where the package drops its scanner, the scanner and
-  what it includes copied under `ThirdParty/tree-sitter/`, with a README naming
-  the tag and commit, and listed in `TreeSitterScanners`' `sources`; its entry
-  in `HighlightGrammars.sources`; any capture name whose first component
-  misleads in `HighlightCaptureRoles`, under `exceptionsByLanguage` where only
-  this grammar means it so; a case in `eachGrammarColoursAWordOfItsLanguage`;
-  and its notice and licence text. One that holds other languages also needs a
-  case in `MarkupHost`, whose every `switch` then asks how that host reads its
+  file names and interpreters; the grammar's row in `Scripts/fetch-grammars.sh`,
+  at a tag committing its parser or a revision where no tag does, with its
+  archive's SHA-256, and its `.package(path:)` in `Package.swift`
+  (dependencies.md); where the package drops its scanner, the scanner and what
+  it includes copied under `ThirdParty/tree-sitter/`, with a README naming the
+  tag and commit, and listed in `TreeSitterScanners`' `sources`; its entry in
+  `HighlightGrammars.sources`; any capture name whose first component misleads
+  in `HighlightCaptureRoles`, under `exceptionsByLanguage` where only this
+  grammar means it so; a case in `eachGrammarColoursAWordOfItsLanguage`; and its
+  notice and licence text. One that holds other languages also needs a case in
+  `MarkupHost`, whose every `switch` then asks how that host reads its
   attributes, its script and style languages and its injection query.

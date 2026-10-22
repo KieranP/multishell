@@ -64,8 +64,8 @@ patches in `ThirdParty/ghostty-patches/`. Each licence text is in
 
 simdutf, Highway and Wuffs are each also offered under Apache-2.0; Multishell
 takes the licence named above. Each grammar comes as a Swift package pinned in
-`Package.resolved`; the scanners of JavaScript, Python and YAML, which their
-packages leave out, are copied under `ThirdParty/tree-sitter/`.
+`Scripts/fetch-grammars.sh`; the scanners of JavaScript, Python and YAML, which
+their packages leave out, are copied under `ThirdParty/tree-sitter/`.
 
 The z2d source shipped is
 <https://github.com/vancluever/z2d/tree/7dbae85c81784dba9988320bf9543ed9a81350c8>.

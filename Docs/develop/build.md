@@ -47,9 +47,13 @@
   submodule's `.zig-cache/` and `zig-pkg/`, which neither touches. A bare
   `swift build` needs it built already, the package naming the xcframework by
   path; `make libghostty` does it.
+- **And fetches the tree-sitter grammars**, into `.build/grammars`: about 2 s
+  cold, nothing while the pins are unchanged. A bare `swift build` needs
+  `make grammars` first, the package naming each grammar by path
+  (dependencies.md).
 - **`make-app.sh` keeps only the paths and the order of the steps**; its
-  functions are in `build-lib.sh`, which it sources (and `build-ghostty.sh` its
-  `die`).
+  functions are in `build-lib.sh`, which it sources (and `build-ghostty.sh` and
+  `fetch-grammars.sh` its `die`).
 - **The Info.plist is a template filled in by placeholder**, and
   InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
@@ -149,7 +153,7 @@
   they never imported.
 - **`any` is written on every existential** (`ExistentialAny`), and **a warning
   fails the build**, bar the one the copied tree-sitter scanners turn off and
-  the grammar packages' own, which a remote package keeps hidden
+  the grammar packages' own, which are printed but reach none of our targets
   (dependencies.md).
 - **StrictMemorySafety is off**: 427 sites, nearly all libghostty's C API and
   Darwin's, each wanting an `unsafe` that says nothing a reader can act on.

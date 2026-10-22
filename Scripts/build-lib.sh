@@ -1,6 +1,6 @@
 #!/bin/bash
 # The parts of a bundle build that are not about this bundle, sourced by
-# make-app.sh and build-ghostty.sh under `set -euo pipefail`.
+# make-app.sh, build-ghostty.sh and fetch-grammars.sh under `set -euo pipefail`.
 
 # The copyright the bundle carries. One place, so LICENSE, the About box and
 # the notices cannot say three different things.

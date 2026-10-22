@@ -124,6 +124,24 @@
   bundle, which the bundling script copies with every other. Most repositories
   commit no `parser.c` on their main branch; tree-sitter-swift's tags it
   `<version>-with-generated-files`.
+- **The grammars come as GitHub's archive of each pinned commit, not as git
+  clones**: `Scripts/fetch-grammars.sh` downloads and unpacks them into
+  `.build/grammars/`, which `Package.swift` names by path. SwiftPM clones a
+  package's whole history and has no shallow clone, and most grammar
+  repositories commit every regenerated `parser.c`, so the clones came to 1.7
+  GB, Ruby's 367 MB and Kotlin's 303 MB, and took 8.6 minutes of a 13-minute CI
+  build, Kotlin's alone 334 s (2026-10-22). The 25 archives are 0.04 to 3.8 MB
+  and arrive in about 2 s.
+- **A bump is the grammar's row in the script**: its tag, the commit, and the
+  SHA-256 of `https://codeload.github.com/<owner>/<repo>/tar.gz/<commit>`.
+  GitHub has kept these archives byte-stable since 2023, and Homebrew pins them
+  the same way. If one ever changes, the fetch stops and prints both sums rather
+  than building from it. An archive leaves out git submodules: of the 25 only
+  YAML has one, its test suite, which the build never reads; otherwise each
+  archive matched its git checkout file for file (2026-10-22).
+- **The grammars' own SwiftTreeSitter dependencies are never fetched**: they
+  feed only each package's test target, so SwiftPM resolves four packages over
+  git, SwiftTreeSitter, the runtime, swift-subprocess and swift-system.
 - **CSS's, JavaScript's, Python's and YAML's scanners are copied under
   `ThirdParty/tree-sitter/`**, into one `TreeSitterScanners` target: their
   packages test for `src/scanner.c` against the build's working directory, so as
@@ -140,8 +158,11 @@
 - **The scanner target fails its build on a warning**, `treatAllWarnings`
   reaching clang as `-Werror`, the manifest's settings loop not reaching a C
   target; the Python and YAML scanners narrow a `size_t` length to `uint32_t`,
-  so the target disables that warning alone. The packaged grammars' warnings are
-  theirs, a remote package's being hidden from the build.
+  so the target disables that warning alone.
+- **The grammar packages' warnings show in every build but cannot fail it**: a
+  path package's are printed where a remote one's were hidden. Kotlin's, SCSS's,
+  Svelte's and Swift's manifests exclude files their repositories lack, and
+  SQL's scanner narrows a `size_t`.
 - **The maintained repository, not the most-starred**: the tree-sitter-grammars
   YAML, TOML, Zig, Make, Svelte and SCSS, whose originals are stale or archived;
   Himujjal's Svelte was last pushed in 2024, serenadeai's SCSS in 2022. Kotlin
