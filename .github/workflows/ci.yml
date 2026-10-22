@@ -1,7 +1,10 @@
 name: CI
 
+# A branch with a pull request would otherwise run twice per push; its pull
+# request run covers it.
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:

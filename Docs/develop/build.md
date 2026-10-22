@@ -126,14 +126,16 @@
 - **Cost**: xcodebuild keeps a derived directory of its own, shared by the app's
   and the helper's schemes, so everything compiles twice for anyone running the
   tests and the build.
-- **CI runs two jobs in parallel**: build and test, and the lint. It calls
-  `swift test` directly, so it takes no lock and has no write sandbox: a test
-  writing outside the temporary directories passes there. It shares only the
-  one-test-per-core cap with `make test`, and a run past 60 minutes is stopped.
-  libghostty's cache is saved as soon as it is built, so a red run still keeps
-  it; a cold build's time on CI is unmeasured. It builds the package without
-  debug info, which took a cold build from 38 s to 29 s here, so a crash
-  backtrace from CI has no line numbers.
+- **CI runs two jobs in parallel**: build and test, and the lint. It runs on a
+  push to main and on a pull request, so a branch with no pull request goes
+  untested and one with a pull request runs once per push. It calls `swift test`
+  directly, so it takes no lock and has no write sandbox: a test writing outside
+  the temporary directories passes there. It shares only the one-test-per-core
+  cap with `make test`, and a run past 60 minutes is stopped. libghostty's cache
+  is saved as soon as it is built, so a red run still keeps it; a cold build's
+  time on CI is unmeasured. It builds the package without debug info, which took
+  a cold build from 38 s to 29 s here, so a crash backtrace from CI has no line
+  numbers.
 - **A CI step that writes a script's output to `$GITHUB_OUTPUT` assigns it to a
   variable first.** A failing script inside `echo`'s `$(...)` leaves the step
   green, which once gave the build an empty Zig version and cache key.
