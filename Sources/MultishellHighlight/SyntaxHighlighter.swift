@@ -15,6 +15,10 @@ final class SyntaxHighlighter: Sendable {
     self.compile = compile
   }
 
+  static func grammarInput(from text: String, language: HighlightLanguage) -> String {
+    language == .svelte ? SvelteGrammarInput.text(from: text) : text
+  }
+
   /// In pattern order so a later pattern wins, then each injection's, all from matches reaching
   /// `keptRanges`, sorted and apart; UTF-16. One highlight's texts share `cache`.
   func spans(
@@ -26,7 +30,7 @@ final class SyntaxHighlighter: Sendable {
     // Every removed row blank leaves nothing to keep, so the parse is skipped.
     guard keptRanges?.isEmpty != true, let grammar = grammar(for: language, in: &cache),
       let parser = parser(for: language, grammar: grammar, in: &cache),
-      let tree = parser.parse(language == .svelte ? SvelteGrammarInput.text(from: text) : text)
+      let tree = parser.parse(Self.grammarInput(from: text, language: language))
     else { return [] }
     return spans(
       of: tree,

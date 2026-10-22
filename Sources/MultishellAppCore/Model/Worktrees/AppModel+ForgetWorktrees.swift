@@ -26,18 +26,10 @@ extension AppModel {
       pendingStatusRefreshes[id] = nil
       ignoreVerdicts[id] = nil
       filesPanelStates[id] = nil
-      fileTreeCache[id] = nil
-      pendingFileTreeListings[id]?.cancel()
-      pendingFileTreeListings[id] = nil
-      pendingTrackedFilesReads[id]?.cancel()
-      pendingTrackedFilesReads[id] = nil
     }
-    ignoredEntriesReads.cancel(where: gone.contains)
+    forgetPanelListings(where: gone.contains)
     panelFolderReads.cancel { gone.contains($0.worktreeID) }
-    setIfChanged(\.trackedFiles, trackedFiles.filter { !gone.contains($0.key) })
-    fileTreeListings = fileTreeListings.filter { !gone.contains($0.key) }
     setIfChanged(\.submoduleReadings, submoduleReadings.filter { !gone.contains($0.key) })
-    setIfChanged(\.ignoredEntries, ignoredEntries.filter { !gone.contains($0.key) })
     setIfChanged(\.ignoredFolderEntries, ignoredFolderEntries.filter { !gone.contains($0.key) })
     if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
     if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {

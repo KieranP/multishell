@@ -15,7 +15,7 @@ extension ShellIntegrationScriptsTests {
       zshrc.contains("]133;B"),
       "and the input mark, so the claim never stands over unmarked text",
     )
-    #expect(zshrc.contains("add-zsh-hook precmd _multishell_prompt_click"), "on every prompt")
+    #expect(zshrc.contains("add-zsh-hook precmd _multishell_prompt_marks"), "on every prompt")
     #expect(
       zshrc.contains("add-zsh-hook preexec _multishell_terminal_preexec"),
       "and output start, so the claim does not stand while a program runs",

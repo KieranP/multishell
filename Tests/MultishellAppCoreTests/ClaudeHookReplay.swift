@@ -47,4 +47,24 @@ struct ClaudeHookReplay {
       )
     }
   }
+
+  /// Expects every worker the last list named on `key`'s roster after event `index`.
+  func expectListedWorkersOnRoster(
+    of key: SessionStates.Key,
+    afterEvent index: Int,
+    sourceLocation: SourceLocation = #_sourceLocation,
+  ) {
+    let onRoster = Set(states.workers(key).map(\.id))
+    #expect(
+      lastListedIDs.isSubset(of: onRoster),
+      "event \(index): listed but missing \(lastListedIDs.subtracting(onRoster))",
+      sourceLocation: sourceLocation,
+    )
+  }
+
+  /// `key`'s workers as the roster draws them: each name indented two spaces per level.
+  func drawnWorkers(of key: SessionStates.Key) -> [String] {
+    states.workers(key).nested
+      .map { "\(String(repeating: "  ", count: $0.depth))\($0.worker.description ?? $0.id)" }
+  }
 }

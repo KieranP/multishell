@@ -8,7 +8,12 @@ import os
 final class MacPlatform: Platform {
   /// The workspace window, so window-scoped commands can tell whether they
   /// were issued there or in a settings window. Set by `WindowAccessor`.
-  weak var workspaceWindow: NSWindow?
+  weak var workspaceWindow: NSWindow? {
+    didSet {
+      guard workspaceWindow !== oldValue else { return }
+      observeWorkspaceWindowOcclusion()
+    }
+  }
   var onDidBecomeActive: (@MainActor () -> Void)?
   var onWorkspaceWindowDidBecomeVisible: (@MainActor () -> Void)?
   /// The scenes' own window openers, which only a view can reach; set by
@@ -22,6 +27,7 @@ final class MacPlatform: Platform {
   private var displayFrameLink: DisplayFrameLink?
 
   private var observers: [any NSObjectProtocol] = []
+  private var occlusionObservers: [any NSObjectProtocol] = []
 
   var isActive: Bool { NSApp?.isActive ?? true }
 
@@ -46,15 +52,29 @@ final class MacPlatform: Platform {
     let becameActive: @MainActor @Sendable (MacPlatform) -> Void = { platform in
       Task { @MainActor [weak platform] in platform?.onDidBecomeActive?() }
     }
+    observers = NotificationCenter.default.observe(
+      [(NSApplication.didBecomeActiveNotification, becameActive)],
+      for: self,
+    )
+  }
+
+  /// Only the workspace window's own changes: any window's, a settings window's
+  /// or a popover's, would re-read the file tabs while nothing came back.
+  private func observeWorkspaceWindowOcclusion() {
+    occlusionObservers.forEach(NotificationCenter.default.removeObserver)
+    guard let workspaceWindow else {
+      occlusionObservers = []
+      return
+    }
     let occlusionChanged: @MainActor @Sendable (MacPlatform) -> Void = { platform in
       guard platform.isWorkspaceWindowVisible else { return }
       platform.onWorkspaceWindowDidBecomeVisible?()
     }
-    let changes: [(NSNotification.Name, @MainActor @Sendable (MacPlatform) -> Void)] = [
-      (NSApplication.didBecomeActiveNotification, becameActive),
-      (NSWindow.didChangeOcclusionStateNotification, occlusionChanged),
-    ]
-    observers = NotificationCenter.default.observe(changes, for: self)
+    occlusionObservers = NotificationCenter.default.observe(
+      [(NSWindow.didChangeOcclusionStateNotification, occlusionChanged)],
+      for: self,
+      from: workspaceWindow,
+    )
   }
 
   func closeKeyWindow() {

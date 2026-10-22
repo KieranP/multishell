@@ -39,9 +39,9 @@
 - **Everything about a program someone else wrote is in Core's
   `Integrations/`**, one folder per kind: agents, editors, shells, and
   `AgentHookFiles/` for the files hooks are written into. A new agent touches
-  the agents folder alone, until someone draws its mark. Its hooks sit under
-  `Agents/Hooks/`, and what reads or writes one agent's own files under
-  `Agents/Hooks/AgentOwnFiles/`.
+  the agents folder and each built-in theme's `ui.agent_marks`, until someone
+  draws its mark. Its hooks sit under `Agents/Hooks/`, and what reads or writes
+  one agent's own files under `Agents/Hooks/AgentOwnFiles/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed as
   `multishell`, since it and the app would share one products path on a
   case-insensitive disk. Commands that drive the app sit under `Control/` by
@@ -87,7 +87,7 @@
   README.
 - **`ThirdParty/` holds what is built rather than written here**: Ghostty as a
   submodule, the patches the build lays over it, and the tree-sitter scanners
-  three grammar packages leave out. `Scripts/build-ghostty.sh` builds Ghostty
+  four grammar packages leave out. `Scripts/build-ghostty.sh` builds Ghostty
   into the GhosttyKit binary target under `.build/ghostty/`, which only the app
   links.
 - **A suite's harnesses and fakes stay at its root**, and a file covering

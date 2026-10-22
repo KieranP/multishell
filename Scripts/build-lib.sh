@@ -13,6 +13,18 @@ die() {
     exit 1
 }
 
+# Runs `script` again under `lockf -k lock`, once: `marker` names the variable
+# the re-run sees set. Without lockf the caller goes on unguarded; build.md.
+rerun_holding_lock() {
+    local lock="$1" marker="$2" script="$3"
+    shift 3
+    if [ -n "${!marker-}" ] || ! command -v lockf >/dev/null; then return 0; fi
+    mkdir -p "$(dirname "$lock")"
+    lockf -k -s -t 0 "$lock" true || echo "waiting for another $(basename "$script") in this tree" >&2
+    export "$marker=1"
+    exec lockf -k "$lock" "$script" "$@"
+}
+
 # Three integers, the only form the key takes: a `vX.Y.Z` tag on HEAD, else
 # the commit's date with no leading zeros. The commit is bundle_commit's.
 bundle_version() {

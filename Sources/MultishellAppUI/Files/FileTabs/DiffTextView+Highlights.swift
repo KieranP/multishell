@@ -1,6 +1,7 @@
 import AppKit
 import MultishellAppCore
 import MultishellCore
+import MultishellHighlight
 
 extension DiffTextView {
   /// Each turn's share of an apply: 150,000 runs of a 1 MiB file took 75 ms
@@ -40,6 +41,23 @@ extension DiffTextView {
       }
     }
     return (stale, fresh)
+  }
+
+  /// Parses with no view held, then colours the one `textView` still finds; the parse's time and
+  /// the apply's, which pace the tab's re-reads, or `nil` if stopped.
+  static func highlight(
+    _ text: DiffDisplayText,
+    path: String,
+    theme: Theme,
+    on textView: () -> DiffTextView?,
+  ) async -> Duration? {
+    let started = ContinuousClock.now
+    let runs = await DiffHighlighting.spans(for: text, path: path)
+    let parse = started.duration(to: .now)
+    guard !Task.isCancelled,
+      let applied = await textView()?.applyHighlights(runs, for: text, theme: theme)
+    else { return nil }
+    return parse + applied
   }
 
   /// Colours the shown text, a comment italic too, changing only runs that

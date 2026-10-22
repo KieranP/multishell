@@ -20,11 +20,9 @@ struct AppModelControlProjectsTests {
   }
 
   @Test func removingAProjectClosesItsShellsWithNoDialogButNotOverAWorkingAgent() async throws {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let (harness, session) = Harness.withOnePane()
     harness.messageSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+      SessionStateReport(state: .running, sessionID: session.id)
     )
     let id = ControlID.project(harness.project.id)
 
@@ -37,7 +35,7 @@ struct AppModelControlProjectsTests {
     #expect(await harness.messageSource.ask(.removeProject(id: id, force: true)) == .done)
     #expect(harness.model.workspace.projects.isEmpty)
     #expect(harness.model.pendingProjectRemoval == nil)
-    #expect(harness.engine.closed == [tab.focusedSessionID])
+    #expect(harness.engine.closed == [session.id])
   }
 
   @Test func removingAProjectWhoseRemovalDialogIsUpTakesTheDialogDown() async throws {

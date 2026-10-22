@@ -107,7 +107,7 @@ extension AppModel {
   /// the badges again for what the stages wrote.
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
     stageHandles.endSetup(stopper, on: worktree.id)
-    refreshBadges(of: worktree.id, in: worktree.projectID)
+    scheduleBadgeRefresh(of: worktree.id, in: worktree.projectID)
   }
 
   /// One of the project's file lists, before the post-create hook. Returns

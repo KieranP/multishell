@@ -58,8 +58,9 @@ at the bottom.
   which makes bash a login shell, and a login bash skips `--init-file`. Run
   straight, a bash tab got none of our hooks (EngineCommandLineTests).
 - **A session starts with no `ZDOTDIR` of the user's**, as a stock terminal
-  does; two of our files capture one their own files set and the third hands it
-  back.
+  does, unless the app's own environment has one, as after a launch from a
+  shell; that one goes in as `MULTISHELL_USER_ZDOTDIR` for ours to chain to. Two
+  of our files capture one their own files set and the third hands it back.
 - **The captured login environment does not hand one in**: ours would then
   source that directory's copy in place of the home one, skipping the file that
   set it. Cost: a `ZDOTDIR` set system-wide redirects zsh past our files, as
@@ -373,8 +374,9 @@ at the bottom.
   step typed in one pane's field stepped the other pane's search in a split.
 - **Escape, the close button and the menu's close all hand the keyboard to the
   bar's own pane**, not the focused one, as the sidebar filter hands it back.
-  `panes find --close` moves no keyboard, as no other request does
-  (`aCloseLeavesTheKeyboardWhereItWas`).
+  `panes find --close` moves no keyboard, even on the worktree in view, where a
+  tab request takes it as its click would (architecture.md;
+  `aCloseLeavesTheKeyboardWhereItWas`).
 - **The field takes the keyboard on the open keystroke alone**, through a
   request the bar claims once on screen; a bar a worktree switch brings back
   claims nothing.

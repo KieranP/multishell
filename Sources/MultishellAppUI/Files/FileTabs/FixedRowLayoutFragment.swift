@@ -16,7 +16,7 @@ final class FixedRowLayoutFragment: NSTextLayoutFragment {
         manager.offset(from: manager.documentRange.location, to: rangeInElement.location)
       } ?? 0
     let layoutDelegate = layoutDelegate
-    let row = MainActor.assumeIsolated { layoutDelegate?.text.row(atOffset: offset) } ?? 0
+    let row = MainActor.assumeIsolated { layoutDelegate?.displayText.row(atOffset: offset) } ?? 0
     return CGRect(
       x: frame.minX,
       y: geometry.top(ofRow: row) - DiffRowGeometry.verticalInset,

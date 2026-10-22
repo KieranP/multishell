@@ -1,7 +1,6 @@
 import AppKit
 import MultishellAppCore
 import MultishellCore
-import MultishellHighlight
 import SwiftUI
 
 /// A file tab's text in SwiftUI; its layout goes when the tab is hidden, the
@@ -54,13 +53,15 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
       view.show(text, theme: theme)
       coordinator.highlighting?.cancel()
       coordinator.highlighting = Task { @MainActor [weak view, weak model] in
-        let started = ContinuousClock.now
-        let runs = await DiffHighlighting.spans(for: text, path: path)
-        let parse = started.duration(to: .now)
-        guard !Task.isCancelled,
-          let applied = await view?.textView.applyHighlights(runs, for: text, theme: theme)
+        guard
+          let cost = await DiffTextView.highlight(
+            text,
+            path: path,
+            theme: theme,
+            on: { view?.textView },
+          )
         else { return }
-        model?.noteFileTabHighlighted(tabID, cost: parse + applied)
+        model?.noteFileTabHighlighted(tabID, cost: cost)
       }
     }
     if let shown = coordinator.paintedFindMatches.paint(

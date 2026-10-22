@@ -1,6 +1,6 @@
 /// A colour an entry of a theme's `ui` section may set, written in the file as
 /// its raw value. Which keys an entry takes is `InterfaceSection.colorKeys`.
-public enum InterfaceColorKey: String, CaseIterable, Sendable {
+public enum InterfaceColorKey: String, Sendable {
   case accent
   case added
   case background

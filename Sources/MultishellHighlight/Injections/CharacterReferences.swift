@@ -33,8 +33,6 @@ enum CharacterReferences {
     0x9E: "\u{017E}", 0x9F: "\u{0178}",
   ]
   private static let replacement: Unicode.Scalar = "\u{FFFD}"
-  private static let ampersand = UInt16(UInt8(ascii: "&"))
-  private static let hash = UInt16(UInt8(ascii: "#"))
   private static let semicolon = UInt16(UInt8(ascii: ";"))
   private static let equals = UInt16(UInt8(ascii: "="))
 
@@ -64,7 +62,7 @@ enum CharacterReferences {
     text.reserveCapacity(units.count)
     var index = 0
     while index < units.count {
-      if units[index] == ampersand, let (scalar, end) = reference(in: units, at: index) {
+      if units[index] == ASCIIUnits.ampersand, let (scalar, end) = reference(in: units, at: index) {
         text.append(contentsOf: scalar.utf16)
         onDecodedRun(index, scalar.utf16.count)
         index = end
@@ -82,7 +80,7 @@ enum CharacterReferences {
   private static func reference(in units: [UInt16], at start: Int) -> (Unicode.Scalar, Int)? {
     let body = start + 1
     guard body < units.count else { return nil }
-    if units[body] == hash { return number(in: units, at: body + 1) }
+    if units[body] == ASCIIUnits.hash { return number(in: units, at: body + 1) }
     // One past the longest name, as a longer run, a data URI's, can match none.
     let run = units[body...].prefix(longestName + 1).prefix { unit in
       ASCIIUnits.isLetter(unit) || ASCIIUnits.isDigit(unit)
@@ -98,10 +96,10 @@ enum CharacterReferences {
 
   private static func number(in units: [UInt16], at start: Int) -> (Unicode.Scalar, Int)? {
     let isHex =
-      start < units.count && (units[start] | ASCIIUnits.lowercaseBit) == UInt16(UInt8(ascii: "x"))
+      start < units.count && (units[start] | ASCIIUnits.lowercaseBit) == ASCIIUnits.lowercaseX
     let first = isHex ? start + 1 : start
     let digits = units[min(first, units.count)...].prefix { unit in
-      isHex ? isHexDigit(unit) : ASCIIUnits.isDigit(unit)
+      isHex ? ASCIIUnits.isHexDigit(unit) : ASCIIUnits.isDigit(unit)
     }
     guard !digits.isEmpty else { return nil }
     let value = UInt32(String(decoding: digits, as: UTF16.self), radix: isHex ? 16 : 10)
@@ -113,9 +111,5 @@ enum CharacterReferences {
   private static func scalar(for value: UInt32?) -> Unicode.Scalar {
     guard let value, value != 0 else { return replacement }
     return windows1252[value] ?? Unicode.Scalar(value) ?? replacement
-  }
-
-  private static func isHexDigit(_ unit: UInt16) -> Bool {
-    ASCIIUnits.isDigit(unit) || (0x61...0x66).contains(unit | ASCIIUnits.lowercaseBit)
   }
 }

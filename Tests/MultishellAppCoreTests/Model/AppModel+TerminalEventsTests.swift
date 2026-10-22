@@ -25,19 +25,17 @@ struct AppModelTerminalEventsTests {
   }
 
   @Test func terminalActivityReadsNoGitAsTheWatcherReportsWhatChanged() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    let (harness, session) = Harness.withOnePane()
 
     harness.engine.delegate?.terminalHost(
       harness.engine,
-      didRetitle: tab.focusedSessionID,
+      didRetitle: session.id,
       to: "make",
     )
-    harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: tab.focusedSessionID)
+    harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: session.id)
     harness.engine.delegate?.terminalHost(
       harness.engine,
-      didFinishCommandIn: tab.focusedSessionID,
+      didFinishCommandIn: session.id,
       exitCode: 0,
     )
 
@@ -56,11 +54,9 @@ struct AppModelTerminalEventsTests {
   }
 
   @Test func aProcessExitDropsTheTabAndTheLiveCount() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    let (harness, session) = Harness.withOnePane()
 
-    harness.engine.delegate?.terminalHost(harness.engine, didExit: tab.focusedSessionID)
+    harness.engine.delegate?.terminalHost(harness.engine, didExit: session.id)
 
     #expect(harness.model.workspace.tabs(in: harness.main.id).isEmpty)
     #expect(harness.model.liveTerminalCount == 0)

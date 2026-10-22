@@ -139,6 +139,6 @@ extension AppModel {
   /// A stage that has begun reads when it ends instead.
   func releasePathClaim(_ id: Worktree.ID, in project: Project) {
     pathClaims.release(id)
-    if !worktreeOperations.isRunning(id) { refreshBadges(of: id, in: project.id) }
+    if !worktreeOperations.isRunning(id) { scheduleBadgeRefresh(of: id, in: project.id) }
   }
 }

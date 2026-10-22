@@ -1,7 +1,6 @@
 import AppKit
 import MultishellAppCore
 import MultishellCore
-import MultishellHighlight
 import SwiftUI
 
 /// A file tab's split in SwiftUI, rebuilt on a font change as the unified view
@@ -58,14 +57,19 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
       coordinator.highlighting?.cancel()
       coordinator.highlighting = Task { @MainActor [weak view, weak model] in
         var cost = Duration.zero
-        for (side, text) in [(view?.committed, split.committed), (view?.onDisk, split.onDisk)] {
-          let started = ContinuousClock.now
-          let runs = await DiffHighlighting.spans(for: text, path: path)
-          let parse = started.duration(to: .now)
-          guard !Task.isCancelled,
-            let applied = await side?.textView.applyHighlights(runs, for: text, theme: theme)
+        let sides = [
+          (\SplitDiffDocumentView.committed, split.committed), (\.onDisk, split.onDisk),
+        ]
+        for (side, text) in sides {
+          guard
+            let sideCost = await DiffTextView.highlight(
+              text,
+              path: path,
+              theme: theme,
+              on: { view?[keyPath: side].textView },
+            )
           else { return }
-          cost += parse + applied
+          cost += sideCost
         }
         model?.noteFileTabHighlighted(tabID, cost: cost)
       }

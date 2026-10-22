@@ -169,9 +169,7 @@ struct AppModelTabClosingTests {
 
   @Test func answeringOneCloseDoesNotPerformAnotherThatReplacedIt() {
     let harness = Harness()
-    harness.model.select(harness.main)
-    let first = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.model.newTab()
+    let first = harness.openBackgroundTab()
     let second = harness.model.workspace.activeTab(in: harness.main.id)!
     for tab in [first, second] {
       harness.messageSource.send(
@@ -191,25 +189,21 @@ struct AppModelTabClosingTests {
   }
 
   @Test func aCloseTheEngineIsAskedForOnAWorkingPaneAsksFirst() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    let (harness, session) = Harness.withOnePane()
     harness.messageSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+      SessionStateReport(state: .running, sessionID: session.id)
     )
 
-    harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: tab.focusedSessionID)
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: session.id)
 
-    #expect(harness.model.pendingClose == .pane(tab.focusedSessionID))
+    #expect(harness.model.pendingClose == .pane(session.id))
     #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1, "nothing closed yet")
   }
 
   @Test func aCloseTheEngineIsAskedForOnAnIdlePaneClosesIt() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    let (harness, session) = Harness.withOnePane()
 
-    harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: tab.focusedSessionID)
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: session.id)
 
     #expect(harness.model.pendingClose == nil)
     #expect(harness.model.workspace.tabs(in: harness.main.id).isEmpty)

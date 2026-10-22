@@ -78,4 +78,15 @@ struct AppModelLifecycleTests {
     #expect(harness.engine.opened.isEmpty, "its config would outlive its quit")
     #expect(harness.model.liveTerminalCount == 0)
   }
+
+  @Test func quittingAsksOnlyWhileAShellIsLiveAndNoCommandLineQuitIsUnderWay() {
+    let harness = Harness()
+    #expect(!harness.model.asksBeforeQuitting)
+
+    harness.model.select(harness.main)
+    #expect(harness.model.asksBeforeQuitting)
+
+    harness.model.quitsWithoutAsking = true
+    #expect(!harness.model.asksBeforeQuitting)
+  }
 }

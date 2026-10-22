@@ -11,7 +11,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   public var baseBranch = ""
   public internal(set) var localBranches: [String] = []
   public internal(set) var remoteBranches: [String] = []
-  public internal(set) var hasCommits = true
+  private(set) var hasCommits = true
   public var isCreating = false
   public var startsAgent = false
   public internal(set) var agentID = ""
@@ -48,6 +48,8 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   public var startPoint: String? {
     createsBranch && !baseBranch.isEmpty ? baseBranch : nil
   }
+
+  public var showsNoCommitsNote: Bool { projectID != nil && !hasCommits }
 
   public init(projectID: Project.ID?) {
     self.projectID = projectID

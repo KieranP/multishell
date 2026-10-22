@@ -8,9 +8,7 @@ import Testing
 @Suite @MainActor
 struct AppModelFileDropTests {
   @Test func filesDroppedOnAShellArriveAsQuotedPaths() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    let (harness, session) = Harness.withOnePane()
 
     let dropped = harness.model.dropFiles(
       [harness.main.path.appendingPathComponent("a.swift")],
@@ -54,9 +52,7 @@ struct AppModelFileDropTests {
   /// The common case: the user types `claude` at a plain shell prompt, so
   /// the tab has no agent id and the hooks are what say who is there.
   @Test func filesDroppedOnAnAgentStartedByHandArriveAsMentions() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    let (harness, session) = Harness.withOnePane()
     #expect(session.agentID == nil, "a plain shell tab")
 
     harness.messageSource.send(
@@ -79,9 +75,7 @@ struct AppModelFileDropTests {
   /// And when it quits, the prompt is the shell's again. Claude's hooks
   /// report its own pid, so a pid that has left the table is the signal.
   @Test func anAgentThatHasQuitLeavesThePaneAPlainShell() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    let (harness, session) = Harness.withOnePane()
 
     harness.messageSource.send(
       SessionStateReport(
@@ -101,9 +95,7 @@ struct AppModelFileDropTests {
   }
 
   @Test func anAgentThisBuildDoesNotKnowGetsAPlainPath() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    let (harness, session) = Harness.withOnePane()
 
     harness.messageSource.send(
       SessionStateReport(
@@ -123,9 +115,8 @@ struct AppModelFileDropTests {
   }
 
   @Test func aDropFocusesThePaneItLandedIn() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let first = harness.model.workspace.sessions(in: harness.main.id)[0].id
+    let (harness, onlyPane) = Harness.withOnePane()
+    let first = onlyPane.id
     harness.model.splitActivePane(.horizontal)
     guard let second = harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID,
       second != first
@@ -147,9 +138,8 @@ struct AppModelFileDropTests {
   /// A promised drag's files land after the drop, when the user may have moved on. Taking
   /// the focus then would switch the worktree's tab and save that.
   @Test func aDropWhoseFilesArrivedLateDoesNotTakeTheFocusBack() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let first = harness.model.workspace.sessions(in: harness.main.id)[0].id
+    let (harness, onlyPane) = Harness.withOnePane()
+    let first = onlyPane.id
     harness.model.splitActivePane(.horizontal)
     guard let second = harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID,
       second != first
@@ -192,9 +182,7 @@ struct AppModelFileDropTests {
   }
 
   @Test func aDropOfNoFilesOrOnlyUnpastableNamesIsRefused() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    let (harness, session) = Harness.withOnePane()
     #expect(!harness.model.dropFiles([], into: session.id, takingFocus: true))
     #expect(
       !harness.model.dropFiles(
@@ -210,9 +198,7 @@ struct AppModelFileDropTests {
   /// A session whose surface never came up takes no text, and the drag is told so rather
   /// than the files going nowhere.
   @Test func aDropTheEngineCouldNotTakeIsRefused() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    let (harness, session) = Harness.withOnePane()
     harness.engine.liveSessionIDs.remove(session.id)
 
     #expect(

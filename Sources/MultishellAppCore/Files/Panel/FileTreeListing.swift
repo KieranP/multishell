@@ -65,7 +65,7 @@ struct FileTreeListing: Sendable {
     repositories = tracked.submodulePaths.union(
       files.filter { $0.hasSuffix("/") }.map { String($0.dropLast()) }
     )
-    let ignored = FileTree.ignoredFilesAndFolders(sources)
+    let ignored = Self.ignoredFilesAndFolders(sources)
     let paths = files.map { $0.hasSuffix("/") ? String($0.dropLast()) : $0 }
     filePaths = (paths + ignored.files).sorted()
     foldedFilePaths = filePaths.map(\.foldedForMatching)
@@ -76,5 +76,27 @@ struct FileTreeListing: Sendable {
       repositories: repositories,
       ignored: Set(ignored.files + ignored.folders),
     )
+  }
+
+  /// Ignored files, and folders whose entries are not listed until opened.
+  private static func ignoredFilesAndFolders(
+    _ sources: FileTreeSources
+  ) -> (files: [String], folders: [String]) {
+    var files: [String] = []
+    var folders: [String] = []
+    for entry in sources.ignoredEntries {
+      if entry.hasSuffix("/") {
+        folders.append(String(entry.dropLast()))
+      } else {
+        files.append(entry)
+      }
+    }
+    for (folder, entries) in sources.ignoredFolderEntries {
+      for entry in entries {
+        let path = folder + "/" + entry.name
+        if entry.isFolder { folders.append(path) } else { files.append(path) }
+      }
+    }
+    return (files, folders)
   }
 }

@@ -9,7 +9,7 @@ struct UnixSocketServerTests {
   private static let python = URL(fileURLWithPath: "/usr/bin/python3")
 
   @Test func linesFromSeveralClientsArriveWholeAndTheFileIsPrivate() async throws {
-    let listener = try ReportListener(prefix: "srv")
+    let listener = try ReportListener(tag: "srv")
     defer { listener.stop() }
     let path = listener.path
     let recorder = listener.recorder
@@ -228,7 +228,7 @@ struct UnixSocketServerTests {
   }
 
   @Test func aClientThatNeverSendsANewlineIsDroppedAtTheCap() async throws {
-    let listener = try ReportListener(prefix: "srv")
+    let listener = try ReportListener(tag: "srv")
     defer { listener.stop() }
     let path = listener.path
     let recorder = listener.recorder

@@ -14,6 +14,12 @@ public enum ShellChoice {
   /// which Homebrew installs do not always register.
   public static let extraShellNamesToSearch = ["zsh", "bash", "fish", "nu"]
 
+  /// Read once: the app never sets `SHELL`, and building the environment costs
+  /// 26 µs, paid per shell card on every board build.
+  private static let processLoginShellPath = loginShellPath(
+    environment: ProcessInfo.processInfo.environment
+  )
+
   /// The path in force for a project, or `nil` for `$SHELL`. `customID`
   /// resolves to `customPath`, and blank is `$SHELL` too.
   static func effectivePath(
@@ -33,11 +39,12 @@ public enum ShellChoice {
     customPath.trimmedOrNil
   }
 
+  /// `$SHELL` as the app was launched with it; see `loginShellPath(environment:)`.
+  public static func loginShellPath() -> String { processLoginShellPath }
+
   /// `$SHELL`, or `/bin/zsh` where the environment has none, which is what
   /// was assumed before shells could be chosen.
-  public static func loginShellPath(
-    environment: [String: String] = ProcessInfo.processInfo.environment
-  ) -> String {
+  static func loginShellPath(environment: [String: String]) -> String {
     let shell = environment["SHELL"] ?? ""
     return shell.isEmpty ? "/bin/zsh" : shell
   }

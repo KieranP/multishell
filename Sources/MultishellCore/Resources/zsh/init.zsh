@@ -27,7 +27,7 @@ if [ "${TERM_PROGRAM-}" = ghostty ]; then
   # include command-wrappers.zsh
 
   add-zsh-hook precmd _multishell_terminal_precmd
-  add-zsh-hook precmd _multishell_prompt_click
+  add-zsh-hook precmd _multishell_prompt_marks
   add-zsh-hook preexec _multishell_terminal_preexec
   # `cd x && cmd` runs cmd before any prompt reports the new directory.
   add-zsh-hook chpwd _multishell_report_directory
@@ -48,7 +48,7 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
   typeset -g _multishell_bin="__MULTISHELL_HELPER__"
   typeset -g _multishell_agents="__MULTISHELL_AGENTS__"
   typeset -g _multishell_ran=0
-  typeset -g _multishell_started=0
+  typeset -g _multishell_started_at=0
   zmodload zsh/net/socket 2>/dev/null
   zmodload zsh/datetime 2>/dev/null
 
@@ -56,12 +56,12 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
   # one in a parent directory, and a raw tab or newline lost every line.
   typeset -g _multishell_cwd=""
   () {
-    local s="${${MULTISHELL_WORKTREE-}//\\/\\\\}" c
-    s="${s//\"/\\\"}"
-    if [[ "$s" != *[[:cntrl:]]* ]]; then _multishell_cwd="$s"; return; fi
-    for c in "${(@s::)s}"; do
-      [[ "$c" == [[:cntrl:]] ]] && printf -v c '\\u%04x' $(( #c ))
-      _multishell_cwd+="$c"
+    local escaped="${${MULTISHELL_WORKTREE-}//\\/\\\\}" character
+    escaped="${escaped//\"/\\\"}"
+    if [[ "$escaped" != *[[:cntrl:]]* ]]; then _multishell_cwd="$escaped"; return; fi
+    for character in "${(@s::)escaped}"; do
+      [[ "$character" == [[:cntrl:]] ]] && printf -v character '\\u%04x' $(( #character ))
+      _multishell_cwd+="$character"
     done
   }
 

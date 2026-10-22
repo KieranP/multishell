@@ -7,8 +7,8 @@ public final class ReportListener {
   public let recorder = Recorder<String>()
   private let server: UnixSocketServer
 
-  public init(prefix: String = "cli") throws {
-    path = Scratch.socketPath(prefix)
+  public init(tag: String = "cli") throws {
+    path = Scratch.socketPath(tag)
     server = UnixSocketServer(path: path)
     server.onLine = { [recorder] line, _ in recorder.record(line) }
     try server.start()

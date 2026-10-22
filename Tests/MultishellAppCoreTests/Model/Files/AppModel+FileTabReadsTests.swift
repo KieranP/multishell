@@ -110,11 +110,7 @@ struct AppModelFileTabReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (tab, _) = try harness.openFileTab()
-    var turns = 0
-    while !harness.model.fileTabReadLog.isReading(tab.id), turns < 100_000 {
-      await Task.yield()
-      turns += 1
-    }
+    await harness.readBegins(in: tab.id)
     #expect(harness.model.fileTabReadLog.isReading(tab.id))
 
     harness.model.reconcileSessions(takingFocus: false)
@@ -155,11 +151,7 @@ struct AppModelFileTabReadsTests {
     try await waitUntil { harness.model.pendingFileTabReads[tab.id] == nil }
     let log = { harness.model.fileTabReadLog }
     harness.model.noteFileTabChanged(tab.id)
-    var turns = 0
-    while !log().isReading(tab.id), turns < 1_000_000 {
-      await Task.yield()
-      turns += 1
-    }
+    await harness.readBegins(in: tab.id)
     harness.model.newShellTab()
     harness.model.noteFileTabChanged(tab.id)
     harness.model.activateTab(tab.id)
@@ -180,11 +172,7 @@ struct AppModelFileTabReadsTests {
     try await waitUntil { harness.model.pendingFileTabReads[tab.id] == nil }
     let log = { harness.model.fileTabReadLog }
     harness.model.noteFileTabChanged(tab.id)
-    var turns = 0
-    while !log().isReading(tab.id), turns < 1_000_000 {
-      await Task.yield()
-      turns += 1
-    }
+    await harness.readBegins(in: tab.id)
     harness.model.newShellTab()
     try FileManager.default.removeItem(at: main.path.appending(path: "README.md"))
 

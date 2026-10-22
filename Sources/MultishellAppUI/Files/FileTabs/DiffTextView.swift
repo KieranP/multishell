@@ -78,7 +78,7 @@ final class DiffTextView: NSTextView {
     let selected = selectedRanges
     let previous = displayText
     displayText = text
-    rowLayout.text = text
+    rowLayout.displayText = text
     lineTints = (theme.addedLineTint, theme.removedLineTint)
     partTints = (theme.addedPartTint, theme.removedPartTint)
     paddingTint = theme.paddingRowTint

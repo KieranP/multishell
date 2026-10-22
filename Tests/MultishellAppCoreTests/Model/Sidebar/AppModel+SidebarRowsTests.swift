@@ -50,11 +50,9 @@ struct AppModelSidebarRowsTests {
   }
 
   @Test func aProjectsRowShowsItsWorktreesStateOnlyWhileTheyAreCollapsed() {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    let (harness, session) = Harness.withOnePane()
     harness.messageSource.send(
-      SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
+      SessionStateReport(state: .attention, sessionID: session.id)
     )
     let sessions = harness.model.sessionIDsByWorktree
 

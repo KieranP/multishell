@@ -49,9 +49,7 @@ struct WorktreeGitStatusTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     let touched = path.appendingPathComponent("touched.txt")
-    try "same\n".write(to: touched, atomically: true, encoding: .utf8)
-    _ = try await fixture.runner.run(["add", "touched.txt"], in: path)
-    _ = try await fixture.runner.run(["commit", "-qm", "touched"], in: path)
+    try await fixture.commit("touched", file: "touched.txt", content: "same\n")
     let index = path.appendingPathComponent(".git/index").path
     func indexInode() throws -> Int {
       try #require(FileManager.default.attributesOfItem(atPath: index)[.systemFileNumber] as? Int)

@@ -6,7 +6,7 @@ import Testing
 
 @Suite @MainActor
 struct AppModelControlGlobalSettingsTests {
-  @Test func theListNamesEverySettingByItsStateFileKey() async throws {
+  @Test func theListNamesSettingsByTheirStateFileKeys() async throws {
     let harness = Harness()
 
     let reply = try #require(await harness.messageSource.ask(.readGlobalSettings(key: nil)))

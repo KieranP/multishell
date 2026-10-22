@@ -38,11 +38,9 @@ struct AppModelControlAppTests {
   }
 
   @Test func aQuitSkipsTheConfirmationButIsRefusedOverAWorkingAgentUnlessForced() async throws {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let (harness, session) = Harness.withOnePane()
     harness.messageSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID)
+      SessionStateReport(state: .running, sessionID: session.id)
     )
 
     #expect(await harness.messageSource.ask(.quit(force: false)) == .refused(.agentWorking))

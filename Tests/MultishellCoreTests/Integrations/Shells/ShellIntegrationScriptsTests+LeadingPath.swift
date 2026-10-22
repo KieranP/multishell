@@ -21,7 +21,7 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test func zshPutsTheAppsEntriesBackInFrontOfWhatALoginProfileAdded() async throws {
-    try #require(FileManager.default.isExecutableFile(atPath: Self.zshPath))
+    try #require(InstalledShells.isInstalled(Self.zshPath))
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".zprofile", "export PATH=\"/opt/first:$PATH\"\n")

@@ -6,11 +6,11 @@ struct LineCounts: Equatable, Sendable {
   private(set) var unscoredFiles = 0
 
   init(summing lines: some Sequence<StatusChange.Lines>) {
-    for line in lines {
-      switch line {
-      case .counted(let lineInsertions, let lineDeletions):
-        insertions += lineInsertions
-        deletions += lineDeletions
+    for fileLines in lines {
+      switch fileLines {
+      case .counted(let added, let removed):
+        insertions += added
+        deletions += removed
 
       case .notCounted: break
 

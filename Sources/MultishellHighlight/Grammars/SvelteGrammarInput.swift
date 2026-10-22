@@ -2,23 +2,14 @@
 /// The grammar's text refuses both, and past a few lines its recovery leaves the rest one error.
 enum SvelteGrammarInput {
   private static let lessThan = UInt16(UInt8(ascii: "<"))
-  private static let greaterThan = UInt16(UInt8(ascii: ">"))
-  private static let ampersand = UInt16(UInt8(ascii: "&"))
   private static let openBrace = UInt16(UInt8(ascii: "{"))
   private static let closeBrace = UInt16(UInt8(ascii: "}"))
-  private static let slash = UInt16(UInt8(ascii: "/"))
-  private static let bang = UInt16(UInt8(ascii: "!"))
-  private static let star = UInt16(UInt8(ascii: "*"))
-  private static let hash = UInt16(UInt8(ascii: "#"))
   private static let dollar = UInt16(UInt8(ascii: "$"))
   private static let backtick = UInt16(UInt8(ascii: "`"))
-  private static let lowercaseX = UInt16(UInt8(ascii: "x"))
-  private static let space = UInt16(UInt8(ascii: " "))
   private static let quotes = Set("\"'".utf16)
   private static let lineBreaks = Set("\n\r".utf16)
   private static let commentOpening = Array("<!--".utf16)
   private static let commentClosing = Array("-->".utf16)
-  private static let blockCommentClosing = Array("*/".utf16)
   private static let rawTextTags = [Array("script".utf16), Array("style".utf16)]
 
   /// The same length in UTF-16, so every node's range is the source's.
@@ -34,9 +25,9 @@ enum SvelteGrammarInput {
       case openBrace:
         index = expressionEnd(from: index, in: units)
 
-      case greaterThan,
-        ampersand where !startsCharacterReference(at: index, in: units):
-        units[index] = space
+      case ASCIIUnits.greaterThan,
+        ASCIIUnits.ampersand where !startsCharacterReference(at: index, in: units):
+        units[index] = ASCIIUnits.space
         blanksAny = true
         index += 1
 
@@ -51,22 +42,23 @@ enum SvelteGrammarInput {
   /// in lowercase, its body; a `<` before no tag name is text, as the grammar reads it.
   private static func markupEnd(from start: Int, in units: [UInt16]) -> Int {
     if units[start...].starts(with: commentOpening) {
-      return end(of: commentClosing, from: start + commentOpening.count, in: units)
+      return units.index(past: commentClosing, from: start + commentOpening.count)
     }
     let next = start + 1
     guard next < units.count else { return next }
-    if units[next] == slash || units[next] == bang {
-      return end(of: [greaterThan], from: next, in: units)
+    if units[next] == ASCIIUnits.slash || units[next] == ASCIIUnits.bang {
+      return units.index(past: [ASCIIUnits.greaterThan], from: next)
     }
     guard ASCIIUnits.isLetter(units[next]) else { return next }
     let tagEnd = startTagEnd(from: next, in: units)
     let nameEnd =
       units[next..<tagEnd].firstIndex { unit in
-        ASCIIUnits.whitespace.contains(unit) || unit == slash || unit == greaterThan
+        ASCIIUnits.whitespace.contains(unit) || unit == ASCIIUnits.slash
+          || unit == ASCIIUnits.greaterThan
       } ?? tagEnd
     guard
       let rawTextTag = rawTextTags.first(where: { units[next..<nameEnd].elementsEqual($0) }),
-      units[tagEnd - 1] == greaterThan, units[tagEnd - 2] != slash
+      units[tagEnd - 1] == ASCIIUnits.greaterThan, units[tagEnd - 2] != ASCIIUnits.slash
     else { return tagEnd }
     return rawTextEnd(named: rawTextTag, from: tagEnd, in: units)
   }
@@ -75,7 +67,7 @@ enum SvelteGrammarInput {
     var index = start
     while index < units.count {
       let unit = units[index]
-      if unit == greaterThan { return index + 1 }
+      if unit == ASCIIUnits.greaterThan { return index + 1 }
       if unit == openBrace {
         index = expressionEnd(from: index, in: units)
       } else if quotes.contains(unit) {
@@ -105,7 +97,7 @@ enum SvelteGrammarInput {
     var index = start
     while let opening = units[index...].firstIndex(of: lessThan) {
       let nameStart = opening + 2
-      if nameStart + name.count <= units.count, units[opening + 1] == slash,
+      if nameStart + name.count <= units.count, units[opening + 1] == ASCIIUnits.slash,
         matchesIgnoringCase(units[nameStart..<(nameStart + name.count)], name)
       {
         return opening
@@ -136,10 +128,10 @@ enum SvelteGrammarInput {
       case backtick:
         index = templateEnd(from: index, in: units)
 
-      case slash where index + 1 < units.count && units[index + 1] == star:
-        index = end(of: blockCommentClosing, from: index + 2, in: units)
+      case ASCIIUnits.slash where index + 1 < units.count && units[index + 1] == ASCIIUnits.star:
+        index = units.index(past: ASCIIUnits.blockCommentClosing, from: index + 2)
 
-      case slash where index + 1 < units.count && units[index + 1] == slash:
+      case ASCIIUnits.slash where index + 1 < units.count && units[index + 1] == ASCIIUnits.slash:
         index = (units[index...].firstIndex { lineBreaks.contains($0) } ?? units.count) + 1
 
       default:
@@ -213,17 +205,14 @@ enum SvelteGrammarInput {
     guard index + 1 < units.count else { return false }
     let next = units[index + 1]
     if ASCIIUnits.isLetter(next) { return true }
-    guard next == hash, index + 2 < units.count else { return false }
+    guard next == ASCIIUnits.hash, index + 2 < units.count else { return false }
     let afterHash = units[index + 2]
     if ASCIIUnits.isDigit(afterHash) { return true }
-    guard afterHash | ASCIIUnits.lowercaseBit == lowercaseX, index + 3 < units.count else {
+    guard afterHash | ASCIIUnits.lowercaseBit == ASCIIUnits.lowercaseX, index + 3 < units.count
+    else {
       return false
     }
-    return isHexDigit(units[index + 3])
-  }
-
-  private static func isHexDigit(_ unit: UInt16) -> Bool {
-    ASCIIUnits.isDigit(unit) || (0x61...0x66).contains(unit | ASCIIUnits.lowercaseBit)
+    return ASCIIUnits.isHexDigit(units[index + 3])
   }
 
   private static func matchesIgnoringCase(
@@ -234,16 +223,5 @@ enum SvelteGrammarInput {
   {
     name.count == lowercased.count
       && zip(name, lowercased).allSatisfy { $0 | ASCIIUnits.lowercaseBit == $1 }
-  }
-
-  private static func end(of closing: [UInt16], from start: Int, in units: [UInt16]) -> Int {
-    var index = start
-    while index + closing.count <= units.count {
-      if units[index..<(index + closing.count)].elementsEqual(closing) {
-        return index + closing.count
-      }
-      index += 1
-    }
-    return units.count
   }
 }

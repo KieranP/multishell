@@ -8,12 +8,7 @@ source "$root/Scripts/build-lib.sh"
 
 # Builds of one tree share build/, and one emptied the bundle another was
 # about to sign and install; build.md.
-lock="$root/build/.make-app.lock"
-if [ -z "${MAKE_APP_HOLDS_LOCK:-}" ] && command -v lockf >/dev/null; then
-    mkdir -p "$root/build"
-    lockf -k -s -t 0 "$lock" true || echo "waiting for another make-app.sh in this tree" >&2
-    MAKE_APP_HOLDS_LOCK=1 exec lockf -k "$lock" "$0" "$@"
-fi
+rerun_holding_lock "$root/build/.make-app.lock" MULTISHELL_MAKE_APP_LOCKED "$root/Scripts/make-app.sh" "$@"
 
 config="${1:-debug}"
 install_dir="${2:-}"

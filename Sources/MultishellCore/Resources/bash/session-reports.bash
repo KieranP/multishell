@@ -37,12 +37,12 @@ fi
 # write and the trap standing then is put back; a failure sends the rest inline.
 _multishell_relayed() {
   [ "$_multishell_relay" = 1 ] || return 1
-  local sent=0 theirs
+  local failed=0 theirs
   eval "$_multishell_read_pipe_trap"
   trap '' PIPE
-  printf '%s\n' "$1" 2>/dev/null >&62 || sent=1
+  printf '%s\n' "$1" 2>/dev/null >&62 || failed=1
   eval "${theirs:-trap - PIPE}"
-  [ "$sent" = 0 ] && return 0
+  [ "$failed" = 0 ] && return 0
 
   _multishell_relay=0
   exec 62>&-
@@ -52,32 +52,32 @@ _multishell_relayed() {
 # Down one pipe or inline, never in the background: session-reports.zsh says why.
 _multishell_command_started() {
   _multishell_ran=1
-  _multishell_started=${EPOCHREALTIME:-$SECONDS}
+  _multishell_started_at=${EPOCHREALTIME:-$SECONDS}
   _multishell_output_mark
 
   # The program being started, sent only where it is an agent: the words
   # of the line, past any prefix. Docs/design/agents.md.
-  local line="$1" cmd=""
+  local line="$1" command_word=""
   while [ -n "$line" ]; do
-    cmd="${line%% *}"
-    case "$cmd" in
+    command_word="${line%% *}"
+    case "$command_word" in
       ""|*=*|command|env|exec) ;;
       *) break ;;
     esac
-    cmd=""
+    command_word=""
     case "$line" in
       *" "*) line="${line#* }" ;;
       *) line="" ;;
     esac
   done
-  cmd="${cmd##*/}"
+  command_word="${command_word##*/}"
   case " $_multishell_agents " in
-    (*" $cmd "*) ;;
-    (*) cmd="" ;;
+    (*" $command_word "*) ;;
+    (*) command_word="" ;;
   esac
 
-  _multishell_relayed "command-started $$ $cmd" ||
-    _multishell_run_helper command-started $$ "$cmd" >/dev/null 2>&1
+  _multishell_relayed "command-started $$ $command_word" ||
+    _multishell_run_helper command-started $$ "$command_word" >/dev/null 2>&1
 }
 
 # A bare `trap ... DEBUG` replaces the one .bashrc installed, silencing
@@ -97,7 +97,7 @@ _multishell_capture_debug() {
 
 # bash-preexec, which Atuin ships, installs its trap at the first prompt,
 # long after this file ran. Whether ours still stands is asked at each one.
-_multishell_owns_debug() {
+_multishell_owns_debug_or_saves_theirs() {
   case "$_multishell_seen_debug" in
     *_multishell_debug*) return 0 ;;
   esac
@@ -121,7 +121,7 @@ _multishell_debug() {
 }
 
 _multishell_precmd() {
-  local e=$?
+  local exit_code=$?
   # An empty Enter runs nothing, so the arm would live on into the user's
   # own PROMPT_COMMAND entry and report it as a command.
   _multishell_armed=0
@@ -132,16 +132,16 @@ _multishell_precmd() {
     # separator: EPOCHREALTIME writes the locale's, and a comma broke this.
     local now=${EPOCHREALTIME:-$SECONDS}
     now=${now%%[.,]*}
-    local began=${_multishell_started%%[.,]*}
-    local d=$(( now - began ))
-    [ "$d" -ge 0 ] || d=0
-    _multishell_relayed "command-finished $e $d" ||
-      _multishell_run_helper command-finished "$e" "$d" >/dev/null 2>&1
+    local began=${_multishell_started_at%%[.,]*}
+    local seconds=$(( now - began ))
+    [ "$seconds" -ge 0 ] || seconds=0
+    _multishell_relayed "command-finished $exit_code $seconds" ||
+      _multishell_run_helper command-finished "$exit_code" "$seconds" >/dev/null 2>&1
   fi
 
   # bash does not restore $? between PROMPT_COMMAND entries, and a prompt
   # showing the last exit code reads whatever we left.
-  return $e
+  return $exit_code
 }
 
 _multishell_arm() { _multishell_armed=1; }

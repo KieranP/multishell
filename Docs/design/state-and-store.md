@@ -5,6 +5,11 @@
 - **Projects are strict where other collections are lossy.** A project is the
   one thing git cannot give back, and one unknown pane kind from a newer build
   would otherwise cost every project.
+- **A field's decode verb says what a wrong type costs.** The strict one fails
+  the file, which is what moves it aside rather than saving an empty workspace
+  over it; the tolerant one costs that value alone, for what this build may not
+  understand, such as an enum case a newer build named. A verb rather than
+  `try?` or a label, either easy to miss on a wrapped line.
 - **References between types are repaired on load**, per-field defaults not
   reaching them. Cost: a hand edit that breaks a reference is tidied quietly.
 - **Runtime state stays out of the file.** A shell title would schedule several
@@ -53,10 +58,10 @@
 - **One copy of a build runs at a time.** Two copies both autosaved, and
   whichever wrote last decided what the next launch opened, losing every tab and
   project added in the other.
-- **The held socket is what tells the second copy**, so it hands over: the
-  running copy comes forward, this one quits and writes nothing meanwhile. The
-  socket is per build variant, and a debug build's per worktree too, so a debug
-  build beside the installed app is not a second copy.
+- **The socket's held lock is what tells the second copy**, so it hands over:
+  the running copy comes forward, this one quits and writes nothing meanwhile.
+  The socket is per build variant, and a debug build's per worktree too, so a
+  debug build beside the installed app is not a second copy.
 - **A copy that failed to quit starts no shell.** Its tabs' reports would reach
   the running copy's socket.
 - **A debug build keeps its own state file and socket**

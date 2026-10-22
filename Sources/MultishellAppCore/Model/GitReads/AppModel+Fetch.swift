@@ -20,7 +20,6 @@ extension AppModel {
       return
     }
     await refreshWorktrees(of: project)
-    await refreshStatuses()
-    await refreshBranchScan(of: project)
+    await refreshBadges(ofProject: project.id)
   }
 }

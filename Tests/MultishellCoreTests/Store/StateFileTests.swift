@@ -69,8 +69,8 @@ struct StateFileTests {
     #expect(FileManager.default.fileExists(atPath: reported?.path ?? ""), "the alert names it")
   }
 
-  /// Autosave encodes and writes on the main thread after every change. A
-  /// workspace far larger than anyone keeps must still save in a blink.
+  /// The quit save and the launch load and repair run on the main thread; autosave runs off it.
+  /// A workspace far larger than anyone keeps must still get through each in a blink.
   @Test func aLargeWorkspaceSavesLoadsAndRepairsWithoutAQuadratic() throws {
     let file = Scratch.statePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }

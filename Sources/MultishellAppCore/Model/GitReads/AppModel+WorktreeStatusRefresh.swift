@@ -30,7 +30,7 @@ extension AppModel {
 
   /// Nothing writes there now, so read rather than wait out the poll. Judged
   /// when the read runs: `endSetup` is called before a file list's entry clears.
-  func refreshBadges(of id: Worktree.ID, in projectID: Project.ID) {
+  func scheduleBadgeRefresh(of id: Worktree.ID, in projectID: Project.ID) {
     scheduleStatusRefresh(of: id)
     Task { @MainActor [weak self] in
       guard let self, !isBeingWritten(id), let project = workspace.project(projectID)

@@ -63,6 +63,25 @@ struct WorktreeTests {
     #expect(workspace.worktrees[1].createdAt == Date(timeIntervalSinceReferenceDate: 1000))
   }
 
+  @Test func aWorktreeIsWrittenWithoutItsID() throws {
+    let worktree = Worktree(
+      path: URL(filePath: "/repos/demo-feat"),
+      projectID: "/repos/demo",
+      head: "abc",
+      branch: "feat",
+      createdAt: Date(timeIntervalSinceReferenceDate: 1000),
+    )
+
+    let written = try JSONSerialization.jsonObject(with: JSONEncoder().encode(worktree))
+
+    #expect(
+      (written as? [String: Any]).map { Set($0.keys) } == [
+        "path", "projectID", "head", "branch", "isPrimary", "isLocked", "isInitializing",
+        "isBare", "createdAt",
+      ]
+    )
+  }
+
   @Test func aWorktreeWithoutTheBareFlagIsNotBare() throws {
     let worktree = try decodeJSON(
       Worktree.self,

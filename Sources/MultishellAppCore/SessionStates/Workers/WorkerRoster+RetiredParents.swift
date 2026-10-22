@@ -18,7 +18,7 @@ extension WorkerRoster {
   mutating func bringBackRetiredParents(of id: String) {
     var childID = id
     while let childIndex = workers.firstIndex(where: { $0.id == childID }),
-      let parentID = workers[childIndex].parentID, !isOut(parentID),
+      let parentID = workers[childIndex].parentID, !isOnRoster(parentID),
       workers.count < SessionStateReport.rosterCapacity,
       let retiredIndex = retired.lastIndex(where: { $0.id == parentID })
     {

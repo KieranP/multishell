@@ -15,9 +15,10 @@ struct WatchedDirectories: Sendable {
     let url: URL
   }
 
-  /// Deepest first, so a change inside `.git` is the git directory's and not
-  /// the worktree's around it.
   private let entries: [Directory]
+  /// The first entry for each real path, which `location` looks up from the
+  /// event's deepest folder up, so `.git` wins over the worktree around it.
+  private let entryIndexByRealPath: [String: Int]
 
   var realPaths: [String] { entries.map(\.realPath) }
   /// As the caller spelled them.
@@ -30,16 +31,24 @@ struct WatchedDirectories: Sendable {
       defer { free(resolved) }
       return Directory(realPath: String(cString: resolved), url: url)
     }
-    .sorted { $0.realPath.count > $1.realPath.count }
+    entryIndexByRealPath = Dictionary(
+      entries.enumerated().map { ($0.element.realPath, $0.offset) },
+      uniquingKeysWith: { first, _ in first },
+    )
   }
 
+  /// A lookup per folder above the event, not a scan of every entry: an
+  /// install's 80,000 events took 2.3 s against 300 watched directories.
   private func location(ofEventAt path: String) -> Location? {
     let path = path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
-    for (index, entry) in entries.enumerated() {
-      if path == entry.realPath { return Location(entryIndex: index, relative: "") }
-      let prefix = entry.realPath.hasSuffix("/") ? entry.realPath : entry.realPath + "/"
-      guard path.hasPrefix(prefix) else { continue }
-      return Location(entryIndex: index, relative: String(path.dropFirst(prefix.count)))
+    if let index = entryIndexByRealPath[path] { return Location(entryIndex: index, relative: "") }
+    var end = path.endIndex
+    while let slash = path[..<end].lastIndex(of: "/") {
+      let directory = slash == path.startIndex ? "/" : String(path[..<slash])
+      if let index = entryIndexByRealPath[directory] {
+        return Location(entryIndex: index, relative: String(path[path.index(after: slash)...]))
+      }
+      end = slash
     }
     return nil
   }

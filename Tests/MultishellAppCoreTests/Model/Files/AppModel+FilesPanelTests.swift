@@ -116,6 +116,29 @@ struct AppModelFilesPanelTests {
     #expect(harness.model.fileTreeRows(of: main.id).map(\.name) == ["src"])
   }
 
+  @Test func rendersWhileALargeListingBuildsReuseOneTreeAndItsRows() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    harness.model.trackedFiles[main.id] = TrackedFiles(
+      paths: (0..<30_000).map { "src/file\($0).txt" },
+      submodulePaths: [],
+      notCheckedOutPaths: [],
+      isCapped: false,
+    )
+
+    let first = harness.model.fileTreeRows(of: main.id)
+    let kept = harness.model.fileTreeCache[main.id]
+
+    #expect(harness.model.pendingFileTreeListings[main.id] != nil)
+    #expect(kept?.rows?.rows == first)
+    _ = harness.model.filesPanelSummary(of: main.id)
+    #expect(harness.model.fileTreeCache[main.id]?.rows?.rows == first)
+    try await waitUntil { !harness.model.fileTreeRows(of: main.id).isEmpty }
+    #expect(harness.model.fileTreeRows(of: main.id).map(\.name) == ["src"])
+  }
+
   @Test func sourcesThatRevertWhileABuildRunsShowTheirOwnRows() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

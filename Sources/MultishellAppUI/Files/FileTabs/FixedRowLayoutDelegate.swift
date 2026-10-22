@@ -5,7 +5,7 @@ import MultishellAppCore
 /// row: lines never wrap, and the text holds one per line.
 @MainActor
 final class FixedRowLayoutDelegate: NSObject, @MainActor NSTextLayoutManagerDelegate {
-  var text = DiffDisplayText([])
+  var displayText = DiffDisplayText([])
   let geometry: DiffRowGeometry
 
   init(geometry: DiffRowGeometry) {

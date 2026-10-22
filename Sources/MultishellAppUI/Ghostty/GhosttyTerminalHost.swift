@@ -64,12 +64,12 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     }
     view.onFocus = { [weak self] in self?.surfaceFocused(id) }
     view.onLinkClick = { [weak self] click in
-      self?.linkClicks.judge(click) { opening in self?.open(opening, clickedIn: id) }
+      self?.linkClicks.judge(click) { opening in self?.followLink(opening, clickedIn: id) }
     }
   }
 
   /// A text file goes to the delegate, whose editor setting decides where.
-  private func open(_ opening: GhosttyLinkRule.Opening?, clickedIn id: TerminalSession.ID) {
+  private func followLink(_ opening: GhosttyLinkRule.Opening?, clickedIn id: TerminalSession.ID) {
     guard views[id] != nil else { return }
     switch opening {
     case .inDefaultApplication(let url):

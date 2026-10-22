@@ -15,18 +15,8 @@ zig_cache="$ghostty/.zig-cache"
 xcframework="$output/GhosttyKit.xcframework"
 terminfo="$output/share/terminfo/78/xterm-ghostty"
 fingerprint_file="$output/fingerprint"
-lock_file="$root/.build/ghostty.lock"
 applied=()
 zig=""
-
-# Two builds at once, `make test` beside `make run`, would each revert the
-# patches under the other and delete its output.
-hold_lock() {
-    mkdir -p "$root/.build"
-    if [ -z "${MULTISHELL_GHOSTTY_LOCKED-}" ] && command -v lockf >/dev/null; then
-        MULTISHELL_GHOSTTY_LOCKED=1 exec lockf -k "$lock_file" "$root/Scripts/build-ghostty.sh" "$@"
-    fi
-}
 
 checked_out_commit() {
     if [ -e "$ghostty/.git" ]; then git -C "$ghostty" rev-parse HEAD; fi
@@ -150,7 +140,9 @@ build() {
     cp -R "$ghostty/macos/GhosttyKit.xcframework" "$xcframework"
 }
 
-hold_lock "$@"
+# Two builds at once, `make test` beside `make run`, would each revert the
+# patches under the other and delete its output.
+rerun_holding_lock "$root/.build/ghostty.lock" MULTISHELL_GHOSTTY_LOCKED "$root/Scripts/build-ghostty.sh" "$@"
 revert_leftover_patches
 check_out_pin
 if [ "${1-}" = --zig-version ]; then

@@ -11,15 +11,15 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
 
   /// Always the normalised form from `URL.normalizedDirectory`, so `id` can
   /// read it directly rather than standardise again on every comparison.
-  public private(set) var path: URL
+  public let path: URL
+  /// `path.path`, stored, as `Worktree.id` is.
+  public let id: String
   public internal(set) var isExpanded: Bool
   /// The user's own, as the settings forms edit them.
   public var settings: ProjectSettings
   /// What the repository's `.multishell.json` said when last read; see
   /// settings.md.
   public internal(set) var sharedSettingsSnapshot: SharedSettingsSnapshot = .unread
-
-  public var id: String { path.path }
 
   /// The folder name, less a bare repository's `.git` suffix. One hidden
   /// beside its worktrees takes the name of the folder holding it.
@@ -34,6 +34,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
 
   init(path: URL, isExpanded: Bool = true, settings: ProjectSettings = ProjectSettings()) {
     self.path = path.normalizedDirectory
+    self.id = self.path.path
     self.isExpanded = isExpanded
     self.settings = settings
   }
@@ -43,6 +44,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.path = try container.decode(URL.self, forKey: .path).normalizedDirectory
+    self.id = self.path.path
     self.isExpanded = try container.decode(Bool.self, forKey: .isExpanded, or: true)
     self.settings = try container.decode(
       ProjectSettings.self,

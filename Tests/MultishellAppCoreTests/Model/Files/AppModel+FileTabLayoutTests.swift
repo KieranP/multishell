@@ -43,8 +43,7 @@ struct AppModelFileTabLayoutTests {
     harness.model.setFileTabLayout(.split)
     harness.model.closeTab(first.id)
 
-    let second = try #require(harness.store.openFileTab(path: "README.md", in: main.id))
-    harness.model.reconcileSessions(takingFocus: true)
+    let (second, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[second.id] != nil }
 
     #expect(harness.model.layout(of: second) == .split)
@@ -65,8 +64,7 @@ struct AppModelFileTabLayoutTests {
     harness.model.setFileTabLayout(.split)
     #expect(harness.model.offersLayoutSwitch(for: readme))
 
-    let new = try #require(harness.store.openFileTab(path: "new.txt", in: main.id))
-    harness.model.reconcileSessions(takingFocus: true)
+    let (new, _) = try harness.openFileTab("new.txt")
     try await waitUntil { harness.model.changeKind(of: new) == .added }
 
     #expect(harness.model.changeKind(of: new) == .added)

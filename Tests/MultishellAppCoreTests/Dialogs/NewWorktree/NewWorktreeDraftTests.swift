@@ -189,6 +189,27 @@ struct NewWorktreeDraftTests {
     #expect(!draft.canCreate(checkedOut: []))
   }
 
+  @Test func theNoCommitsNoteShowsOnlyForAPickedProjectGitFoundNoCommitsIn() {
+    var draft = NewWorktreeDraft(projectID: firstProject)
+    draft.beginLoading()
+    #expect(!draft.showsNoCommitsNote, "loading")
+
+    draft.finishLoading(
+      firstProject,
+      with: NewWorktreeBranches(
+        hasCommits: false,
+        localBranches: [],
+        remoteBranches: [],
+        currentBranch: "HEAD",
+      ),
+      checkedOut: [],
+    )
+
+    #expect(draft.showsNoCommitsNote)
+    draft.projectID = nil
+    #expect(!draft.showsNoCommitsNote, "no project picked")
+  }
+
   @Test func aRemovedProjectClearsThePickerAndAnotherDoesNot() {
     var draft = loaded(firstProject)
     draft.forgetProject(unlessIn: [firstProject, secondProject])

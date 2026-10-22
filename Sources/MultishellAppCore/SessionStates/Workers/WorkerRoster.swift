@@ -28,7 +28,7 @@ struct WorkerRoster: Equatable, Sendable {
   /// A background shell's end is its exit, never a hook's.
   var firstNamedIndex: Int? {
     workers.firstIndex { worker in
-      !worker.isBackgroundShell && !worker.hasEnded && !worker.hasFailed
+      !worker.isAnonymous && !worker.isBackgroundShell && !worker.hasEnded && !worker.hasFailed
         && worker.id != Worker.overflowID
     }
   }
@@ -133,7 +133,7 @@ struct WorkerRoster: Equatable, Sendable {
       workers[index].adoptDetails(of: report)
       workers[index].wasListed = true
       workers[index].isBackgroundAgent = report.isBackgroundShell != true
-    } else if !isOut(report.id) {
+    } else if !isOnRoster(report.id) {
       var launched = Worker(report: report)
       launched.markNamedBeforeStart(isBackgroundShell: report.isBackgroundShell == true)
       launched.wasListed = true
@@ -179,7 +179,7 @@ struct WorkerRoster: Equatable, Sendable {
     }
   }
 
-  func isOut(_ id: String) -> Bool {
+  func isOnRoster(_ id: String) -> Bool {
     overflowed[id] != nil || workers.contains { $0.id == id }
   }
 

@@ -27,14 +27,12 @@ struct AppModelReconcileTests {
   }
 
   @Test func focusingTheActivePaneHandsTheKeyboardToTheActiveTabsFocusedSession() throws {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let (harness, session) = Harness.withOnePane()
     harness.engine.focused.removeAll()
 
     harness.model.focusActivePane()
 
-    #expect(harness.engine.focused == [tab.focusedSessionID])
+    #expect(harness.engine.focused == [session.id])
   }
 
   @Test func focusingTheActivePaneHandsTheKeyboardToAFileTabInFront() {

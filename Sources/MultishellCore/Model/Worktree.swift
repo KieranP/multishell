@@ -3,8 +3,16 @@ import Foundation
 /// A linked checkout belonging to a `Project`. Identity is the path, these
 /// being rediscovered from `git worktree list` on every refresh.
 public struct Worktree: Identifiable, Codable, Hashable, Sendable {
+  /// `id` is not written: it is derived from `path`.
+  enum CodingKeys: String, CodingKey {
+    case path, projectID, head, branch, isPrimary, isLocked, isInitializing, isBare, createdAt
+  }
+
   /// Normalised by `URL.normalizedDirectory` in both initialisers; see `Project`.
-  public private(set) var path: URL
+  public let path: URL
+  /// `path.path`, stored: reading it decodes the URL, 220 ns, and the sidebar
+  /// and the board compare ids hundreds of times a render.
+  public let id: String
   public internal(set) var projectID: Project.ID
   public internal(set) var head: String
   public internal(set) var branch: String?
@@ -20,7 +28,6 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// a copied directory or a filesystem with no birth time, sorted last.
   public var createdAt: Date?
 
-  public var id: String { path.path }
   /// The branch, the short SHA when detached, or the folder for a bare
   /// repository, which has neither.
   public var name: String {
@@ -37,6 +44,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.path = try container.decode(URL.self, forKey: .path).normalizedDirectory
+    self.id = self.path.path
     self.projectID = try container.decode(Project.ID.self, forKey: .projectID)
     self.head = try container.decode(String.self, forKey: .head, or: "")
     self.branch = try container.decodeIfPresent(String.self, forKey: .branch)
@@ -61,6 +69,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     createdAt: Date? = nil,
   ) {
     self.path = path.normalizedDirectory
+    self.id = self.path.path
     self.projectID = projectID
     self.head = head
     self.branch = branch

@@ -40,7 +40,7 @@ _multishell_report_directory() {
 }
 
 # Put back on every prompt, as a framework rebuilds PS1.
-_multishell_prompt_click() {
+_multishell_prompt_marks() {
   # A prompt that does not take `%{ %}` would show the escape instead.
   [[ -o prompt_percent ]] || return 0
   [[ "$PS1" == *"$_multishell_prompt_mark"* ]] || PS1="$_multishell_prompt_mark$PS1"
@@ -51,10 +51,10 @@ _multishell_prompt_click() {
 }
 
 _multishell_terminal_precmd() {
-  local e=$?
+  local exit_code=$?
   emulate -L zsh
   _multishell_prompted=1
-  (( _multishell_owes_command_end )) && print -n -- $'\e]133;D;'"$e"$'\a'
+  (( _multishell_owes_command_end )) && print -n -- $'\e]133;D;'"$exit_code"$'\a'
   _multishell_owes_command_end=0
 
   _multishell_report_directory

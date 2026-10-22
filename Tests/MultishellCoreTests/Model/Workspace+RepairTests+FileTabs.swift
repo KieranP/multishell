@@ -77,13 +77,9 @@ extension WorkspaceRepairTests {
 
   @Test func anOlderBuildsFileTakesItsStripOrderFromTheTabs() throws {
     var (workspace, tab) = consistentWorkspace()
-    let session = TerminalSession(
-      worktreeID: tab.worktreeID,
-      workingDirectory: URL(fileURLWithPath: "/repos/demo"),
-      title: "sh",
-    )
-    let second = TerminalTab(worktreeID: tab.worktreeID, groupID: tab.groupID, session: session.id)
-    workspace.sessions.append(session)
+    let shell = session()
+    let second = TerminalTab(worktreeID: tab.worktreeID, groupID: tab.groupID, session: shell.id)
+    workspace.sessions.append(shell)
     workspace.tabs.insert(second, at: 0)
     let index = try #require(workspace.groupIndex(tab.groupID))
     workspace.tabGroups[index].tabOrder = []

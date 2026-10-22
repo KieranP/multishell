@@ -8,16 +8,6 @@ import Testing
 @testable import MultishellGitKit
 
 extension AppModelFileChangesTests {
-  private func targets(of changed: [URL], in harness: GitHarness) throws -> FileChangeTargets {
-    FileChangeTargets(
-      changed: changed,
-      projects: harness.model.workspace.projects,
-      gitDirectories: [harness.project.id: try common(of: harness)],
-      worktrees: harness.model.workspace.worktrees,
-      themesDirectory: harness.model.themesDirectory,
-    )
-  }
-
   @Test func aFetchThatBringsACommitReadsAndOneThatFindsNothingDoesNot() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -39,8 +29,8 @@ extension AppModelFileChangesTests {
     defer { probe.stop() }
     let fetch = { _ = try await harness.git.run(["fetch", "-q", "origin"], in: path) }
 
-    let bringingACommit = try targets(of: try await probe.changes(during: fetch), in: harness)
-    let findingNothing = try targets(of: try await probe.changes(during: fetch), in: harness)
+    let bringingACommit = harness.model.fileChangeTargets(try await probe.changes(during: fetch))
+    let findingNothing = harness.model.fileChangeTargets(try await probe.changes(during: fetch))
 
     #expect(bringingACommit.projectsWithGitChanges == [harness.project.id])
     #expect(findingNothing.projectsWithGitChanges.isEmpty)
@@ -64,7 +54,7 @@ extension AppModelFileChangesTests {
     }
     _ = try? await harness.git.run(["fsmonitor--daemon", "stop"], in: path)
 
-    let found = try targets(of: changed, in: harness)
+    let found = harness.model.fileChangeTargets(changed)
     #expect(found.projectsWithGitChanges.isEmpty)
     #expect(found.fileChangesByWorktree.isEmpty)
   }

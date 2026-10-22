@@ -12,27 +12,27 @@ function _multishell_preexec --on-event fish_preexec
     # words as fish splits them, past any prefix. Docs/design/agents.md.
     set -l words
     printf '%s' $argv[1] | read --null --tokenize --list --local words
-    set -l cmd ""
+    set -l command_word ""
     for word in $words
         switch $word
             case '*=*' command env exec
                 continue
         end
-        set cmd (string replace --regex '.*/' '' -- $word)
+        set command_word (string replace --regex '.*/' '' -- $word)
         break
     end
-    contains -- "$cmd" $_multishell_agents; or set cmd ""
+    contains -- "$command_word" $_multishell_agents; or set command_word ""
 
-    _multishell_send command-started --pid $fish_pid --command "$cmd"
+    _multishell_send command-started --pid $fish_pid --command "$command_word"
 end
 
 function _multishell_postexec --on-event fish_postexec
-    set -l e $status
+    set -l exit_code $status
     # The helper takes seconds, and fish counts whole milliseconds.
     set -l ms (string pad --char 0 --width 4 -- $CMD_DURATION)
     set -l duration (string sub --end -3 -- $ms).(string sub --start -3 -- $ms)
 
-    _multishell_send command-finished --exit $e --duration $duration
+    _multishell_send command-finished --exit $exit_code --duration $duration
 end
 
 # Idle on the way out, as zsh ends: `exit 3` reports a failure first.

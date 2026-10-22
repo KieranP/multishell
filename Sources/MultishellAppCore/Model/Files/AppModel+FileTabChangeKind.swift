@@ -32,9 +32,8 @@ extension AppModel {
     // The innermost still read: one inside another lists its files apart, and
     // one collapsed or under a shut panel is no longer read again.
     let isRead = showsFilesPanel && filesPanelWorktree?.id == tab.worktreeID
-    let expanded = isRead ? filesPanelState(of: tab.worktreeID).expandedFolders : []
-    let submodule = (submoduleReadings[tab.worktreeID] ?? [:])
-      .filter { path, _ in expanded.contains(path) && tab.path.hasPrefix(path + "/") }
+    let read = isRead ? expandedSubmodules(of: tab.worktreeID) : [:]
+    let submodule = read.filter { path, _ in tab.path.hasPrefix(path + "/") }
       .max { $0.key.count < $1.key.count }
     guard let (folder, reading) = submodule else {
       return statuses[tab.worktreeID]?.changes.first { $0.path == tab.path }?.kind

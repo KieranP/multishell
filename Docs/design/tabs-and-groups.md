@@ -239,6 +239,9 @@ bottom.
 - **A file tab sits in the strip beside terminal tabs**, the same width rules,
   drag and reorder, its order and theirs one order per group. files.md has why
   it never leaves its worktree and why the splits disable on it.
+- **That order is written into each group, and every open, move and repair ends
+  by putting `tabs` in it**, so an older build, which reads order from `tabs`,
+  draws its terminal tabs as this one did.
 - **The active tab is still the focused group's**, of either kind: Cmd+W and
   Cmd+Shift+W close a file tab whole, Next and Previous Tab step through both
   kinds, and the menu's splits do nothing on one. A file tab offers no rename.

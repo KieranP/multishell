@@ -46,6 +46,29 @@ extension AppModelStatusReadsTests {
     #expect(harness.model.statuses[main.id]?.changedFiles == 1, "kept, as a failed read is kept")
   }
 
+  @Test func aPollLandingAfterARemovalBeganIsDropped() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    let model = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
+          printf '# branch.head main\\n1 .M N... 100644 100644 100644 a a x.txt\\n' ;;
+      esac
+      """
+    )
+    let main = try #require(harness.worktree(onBranch: "main"))
+
+    let poll = Task { await model.refreshStatuses() }
+    try await waitUntil { harness.statusRunCount() > 0 }
+    model.worktreeOperations.begin(.preDeleteHook, on: main.id)
+    try Data().write(to: gate)
+    await poll.value
+
+    #expect(model.statuses[main.id] == nil)
+  }
+
   /// A stage that failed is not still writing, and the pane's Dismiss is the
   /// user's to click: the row says what the tree holds meanwhile.
   @Test func aWorktreeWhoseStageFailedIsBadgedWithoutWaitingForTheDismiss() async throws {

@@ -13,10 +13,7 @@ extension SessionStatesTests {
       try replay.feed(line, for: .session(a))
       let workers = replay.states.workers(.session(a))
       let onRoster = workers.keyedByID()
-      #expect(
-        replay.lastListedIDs.isSubset(of: onRoster.keys),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster.keys))",
-      )
+      replay.expectListedWorkersOnRoster(of: .session(a), afterEvent: index)
       for (child, launcher) in replay.launcherByWorkerID {
         guard let worker = onRoster[child], onRoster[launcher] != nil else { continue }
         #expect(worker.parentID == launcher, "event \(index): \(child) not under \(launcher)")
@@ -39,11 +36,7 @@ extension SessionStatesTests {
     for (index, line) in ClaudeHookCapture.killsAndChains[...lastStop].enumerated() {
       try replay.feed(line, for: .session(a))
       let workers = replay.states.workers(.session(a))
-      let onRoster = Set(workers.map(\.id))
-      #expect(
-        replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
-      )
+      replay.expectListedWorkersOnRoster(of: .session(a), afterEvent: index)
       for worker in workers where worker.hasFailed {
         let name = worker.description ?? worker.id
         #expect(killed.contains(name), "event \(index): \(name) drawn failed")
@@ -64,8 +57,7 @@ extension SessionStatesTests {
     for line in ClaudeHookCapture.killsAndChains[...(chainThreeLaunched + 1)] {
       try replay.feed(line, for: .session(a))
     }
-    let drawn = replay.states.workers(.session(a)).nested
-      .map { "\(String(repeating: "  ", count: $0.depth))\($0.worker.description ?? $0.id)" }
+    let drawn = replay.drawnWorkers(of: .session(a))
     #expect(
       drawn.contains("chain-1") && drawn.contains("  chain-2") && drawn.contains("    chain-3")
     )
@@ -81,8 +73,7 @@ extension SessionStatesTests {
     for line in ClaudeHookCapture.fanOut[...firstPhantomStop] {
       try replay.feed(line, for: .session(a))
     }
-    let drawn = replay.states.workers(.session(a)).nested
-      .map { "\(String(repeating: "  ", count: $0.depth))\($0.worker.description ?? $0.id)" }
+    let drawn = replay.drawnWorkers(of: .session(a))
     #expect(
       drawn == [
         "short-parent", "  long-child", "outer", "  inner-2", "    b0fcq54hb", "  inner-1",
@@ -107,10 +98,7 @@ extension SessionStatesTests {
       try replay.feed(line, for: .session(a))
       let workers = replay.states.workers(.session(a))
       let onRoster = Set(workers.map(\.id))
-      #expect(
-        replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
-      )
+      replay.expectListedWorkersOnRoster(of: .session(a), afterEvent: index)
       if (10...twoWaitsHandedBack).contains(index) {
         #expect(onRoster.contains("aac8aafe04779d061"), "event \(index): two-waits missing")
       }
@@ -139,10 +127,7 @@ extension SessionStatesTests {
       try replay.feed(line, for: .session(a))
       let workers = replay.states.workers(.session(a))
       let onRoster = Set(workers.map(\.id))
-      #expect(
-        replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
-      )
+      replay.expectListedWorkersOnRoster(of: .session(a), afterEvent: index)
       if (8...topHandedBack).contains(index) {
         #expect(onRoster.contains(top), "event \(index): top missing")
       }
@@ -185,10 +170,7 @@ extension SessionStatesTests {
       try replay.feed(line, for: .session(a))
       let current = replay.states.workers(.session(a))
       let onRoster = Set(current.map(\.id))
-      #expect(
-        replay.lastListedIDs.isSubset(of: onRoster),
-        "event \(index): listed but missing \(replay.lastListedIDs.subtracting(onRoster))",
-      )
+      replay.expectListedWorkersOnRoster(of: .session(a), afterEvent: index)
       for (offset, id) in workerIDs.enumerated()
       where (launches[offset]...handBacks[offset]).contains(index) {
         #expect(onRoster.contains(id), "event \(index): \(id) missing")

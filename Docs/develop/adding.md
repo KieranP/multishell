@@ -5,9 +5,9 @@ What each addition needs beyond the code itself.
 - **A theme.** A `.json` in the themes folder; the examples beside it list every
   key, and anything a theme leaves out is its base theme's.
 - **A built-in theme** is a complete JSON file in Core's `Resources/themes`,
-  named in `Theme.builtins`; ThemeBuiltinsTests holds it to every key. A port of
-  someone's palette also takes a row in `THIRD-PARTY-NOTICES.md` and its licence
-  in `Licenses/Themes/`.
+  named in `Theme.builtins` and in ThemeBuiltinsTests' list of ids, the suite
+  that holds it to every key. A port of someone's palette also takes a row in
+  `THIRD-PARTY-NOTICES.md` and its licence in `Licenses/Themes/`.
 - **A new colour** is a key in its section's enum, in
   `InterfaceSection.colorKeys` for a `ui` one, and in every built-in theme under
   `Resources/themes`, which ThemeBuiltinsTests checks. The examples follow,
@@ -357,9 +357,11 @@ What each addition needs beyond the code itself.
   Failed under `error`, and a line in its decode; one left out of the keys is
   never saved.
 - **A highlighted language.** A case in `HighlightLanguage` with its extensions,
-  file names and interpreters; the grammar's row in `Scripts/fetch-grammars.sh`,
-  at a tag committing its parser or a revision where no tag does, with its
-  archive's SHA-256, and its `.package(path:)` in `Package.swift`
+  file names and interpreters, and a row in
+  `eachAddedLanguageIsPickedByItsExtensionOrName`; the grammar's row in
+  `Scripts/fetch-grammars.sh`, at a tag committing its parser or a revision
+  where no tag does, with its archive's SHA-256, and in `Package.swift` its
+  `.package(path:)` and its product in MultishellHighlight's dependencies
   (dependencies.md); where the package drops its scanner, the scanner and what
   it includes copied under `ThirdParty/tree-sitter/`, with a README naming the
   tag and commit, and listed in `TreeSitterScanners`' `sources`; its entry in

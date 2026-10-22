@@ -12,14 +12,12 @@ extension AppModel {
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, and a status read.
   public func readFilesPanel(of id: Worktree.ID) {
-    forgetPanelListings(except: id)
+    forgetPanelListings { $0 != id }
     scheduleTrackedFilesRead(of: id)
     scheduleIgnoredEntriesRead(of: id)
     scheduleStatusRefresh(of: id)
+    for path in expandedSubmodules(of: id).keys { scheduleSubmoduleRead(path, in: id) }
     let expanded = filesPanelState(of: id).expandedFolders
-    for path in (submoduleReadings[id] ?? [:]).keys where expanded.contains(path) {
-      scheduleSubmoduleRead(path, in: id)
-    }
     for path in (ignoredFolderEntries[id] ?? [:]).keys where expanded.contains(path) {
       scheduleIgnoredFolderRead(path, in: id)
     }
@@ -27,21 +25,20 @@ extension AppModel {
 
   /// Linux's tracked files and their tree hold about 80 MB, so only the panel's
   /// own worktree keeps them; coming back reads them again.
-  func forgetPanelListings(except kept: Worktree.ID?) {
-    let isKept = { (id: Worktree.ID) in id == kept }
-    for (id, task) in pendingTrackedFilesReads where !isKept(id) {
+  func forgetPanelListings(where isForgotten: (Worktree.ID) -> Bool) {
+    for (id, task) in pendingTrackedFilesReads where isForgotten(id) {
       task.cancel()
       pendingTrackedFilesReads[id] = nil
     }
-    ignoredEntriesReads.cancel { !isKept($0) }
-    setIfChanged(\.trackedFiles, trackedFiles.filter { isKept($0.key) })
-    setIfChanged(\.ignoredEntries, ignoredEntries.filter { isKept($0.key) })
-    fileTreeCache = fileTreeCache.filter { isKept($0.key) }
-    for (id, task) in pendingFileTreeListings where !isKept(id) {
+    ignoredEntriesReads.cancel(where: isForgotten)
+    setIfChanged(\.trackedFiles, trackedFiles.filter { !isForgotten($0.key) })
+    setIfChanged(\.ignoredEntries, ignoredEntries.filter { !isForgotten($0.key) })
+    fileTreeCache = fileTreeCache.filter { !isForgotten($0.key) }
+    for (id, task) in pendingFileTreeListings where isForgotten(id) {
       task.cancel()
       pendingFileTreeListings[id] = nil
     }
-    fileTreeListings = fileTreeListings.filter { isKept($0.key) }
+    fileTreeListings = fileTreeListings.filter { !isForgotten($0.key) }
   }
 
   /// The tracked files change only with the index, so are read on git changes,

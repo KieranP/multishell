@@ -8,9 +8,6 @@ struct ScannedBlockHead {
   }
 
   private static let openingBrackets = Set("([{".utf16)
-  private static let slash = UInt16(UInt8(ascii: "/"))
-  private static let star = UInt16(UInt8(ascii: "*"))
-  private static let space = UInt16(UInt8(ascii: " "))
   private static let openSquareBracket = UInt16(UInt8(ascii: "["))
   private static let closeSquareBracket = UInt16(UInt8(ascii: "]"))
   /// JavaScript's line ends, which close a `//` comment and stop a regex.
@@ -62,7 +59,7 @@ struct ScannedBlockHead {
         break
       } else if unit == openSquareBracket || unit == closeSquareBracket {
         isInClass = unit == openSquareBracket
-      } else if unit == slash, !isInClass {
+      } else if unit == ASCIIUnits.slash, !isInClass {
         return text[(index + 1)...].firstIndex { !JavaScriptUnits.isWordUnit($0) } ?? text.count
       }
     }
@@ -72,17 +69,14 @@ struct ScannedBlockHead {
 
   /// Where a `//` or `/*` comment starting at `index` ends; `nil` if none starts.
   private static func commentEnd(in text: [UInt16], at index: Int) -> Int? {
-    guard text[index] == slash, index + 1 < text.count else { return nil }
+    guard text[index] == ASCIIUnits.slash, index + 1 < text.count else { return nil }
     let body = index + 2
     switch text[index + 1] {
-    case slash:
+    case ASCIIUnits.slash:
       return text[body...].firstIndex(where: lineEnds.contains) ?? text.count
 
-    case star:
-      let close = text.indices.dropFirst(body).first { at in
-        text[at] == star && at + 1 < text.count && text[at + 1] == slash
-      }
-      return close.map { $0 + 2 } ?? text.count
+    case ASCIIUnits.star:
+      return text.index(past: ASCIIUnits.blockCommentClosing, from: body)
 
     default:
       return nil
@@ -109,14 +103,14 @@ struct ScannedBlockHead {
       }
       if let end = Self.commentEnd(in: text, at: index) {
         for blank in index..<end {
-          units[blank] = Self.space
+          units[blank] = ASCIIUnits.space
           bracketDepths[blank] = depth
         }
         index = end
         continue
       }
       // A regex hides what it holds as a string does, its `//` being no comment.
-      if unit == Self.slash, startsRegex(after: previous),
+      if unit == ASCIIUnits.slash, startsRegex(after: previous),
         let end = Self.regexEnd(in: text, at: index, unclosed: &unclosedRegexes)
       {
         previous = end - 1

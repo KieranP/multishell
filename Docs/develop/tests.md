@@ -49,8 +49,8 @@ rule holds is in `Docs/design/`.
 - **Sidebar counts agree with the columns they summarise**:
   AppModelAgentBoardTests over every state and both filter positions, the counts
   being made without building a card. A pane whose reported agent has exited is
-  a shell to the counts, the cards and the strip alike, the four having once
-  asked apart.
+  a shell to the counts, the cards, the strip and its sidebar row alike, the
+  four having once asked apart.
 - **An agent mark that draws nothing**: AgentMarkShapeTests holds each mark to
   its square; a file that will not parse is left out of the table rather than
   crashing a view.
@@ -171,8 +171,8 @@ rule holds is in `Docs/design/`.
   SharedProjectSettingsTests over an unknown key, a nested one, an order no
   build names and a wrong-typed flag.
 - **A stage ending while the board is up leaves it up**, and the first tab opens
-  under the create settings wherever the user is looking, without moving the
-  selection or the keyboard: AppModelWorktreeSetupTests.
+  under the create settings, and out of view without moving the selection or the
+  keyboard: AppModelWorktreeSetupTests.
 - **The login environment is not known before its PATH has been scanned**:
   AppModelLoginEnvironmentTests, using the system shells file so the check is
   independent of which agents the machine has.
@@ -353,16 +353,16 @@ rule holds is in `Docs/design/`.
 - **A zero or non-finite split weight is refused on decode and on write**:
   PaneNodeDecodingTests and WorkspaceStoreTests.
 - **A real surface is made only where its lifetime or libghostty's own callback
-  is the question**, on `/bin/sleep` and in no window: the runtime outliving it,
-  a closed session staying silent, the pane monitor's two events, and a clicked
-  link reaching the delegate after libghostty's click returns, resolved in the
-  pane's reported directory (GhosttySurfaceViewTests, GhosttyTerminalHostTests,
-  GhosttyPaneEventMonitorTests). A failed expectation on a pane is read into a
-  Bool first, as describing one trips over AppKit's cursors, null pointers in a
-  test process. What libghostty is handed is otherwise tested as values: the
-  key, modifier and mouse button mapping (GhosttyKeyInputTests,
-  GhosttyModifiersTests, GhosttyMouseButtonTests), split surrogates
-  (GhosttySurrogatePairingTests), the actions decoded
+  is the question**, on `/bin/sleep` and in no window on screen: the runtime
+  outliving it, a closed session staying silent, the pane monitor's two events,
+  and a clicked link reaching the delegate after libghostty's click returns,
+  resolved in the pane's reported directory (GhosttySurfaceViewTests,
+  GhosttyTerminalHostTests, GhosttyPaneEventMonitorTests). A failed expectation
+  on a pane is read into a Bool first, as describing one trips over AppKit's
+  cursors, null pointers in a test process. What libghostty is handed is
+  otherwise tested as values: the key, modifier and mouse button mapping
+  (GhosttyKeyInputTests, GhosttyModifiersTests, GhosttyMouseButtonTests), split
+  surrogates (GhosttySurrogatePairingTests), the actions decoded
   (GhosttySurfaceEventTests), the launch's C strings
   (GhosttySurfaceLaunchTests), the clipboard and a program's reads of it
   (PanePasteboardTests, GhosttyClipboardContentsTests,
@@ -387,10 +387,10 @@ rule holds is in `Docs/design/`.
   through +BashOutput, and fish's cursor through +FishOutput.
 - **bash launched as libghostty launches a command**, `exec -l`, still reading
   our init file: EngineCommandLineTests.
-- **`sudo` and `ssh` wrapped only where the user's features ask, and a function
-  of their own by either name kept**: ShellIntegrationScriptsTests
-  +CommandWrappers, the bash half under `InstalledBashes.all` and the fish half
-  under `InstalledShells.fishes`.
+- **`sudo` and `ssh` wrapped only where the user's features ask, and a `sudo`
+  function of their own kept**: ShellIntegrationScriptsTests +CommandWrappers,
+  the bash half under `InstalledBashes.all` and the fish half under
+  `InstalledShells.fishes`.
 - **A removal dialog left up for a worktree git no longer lists, and Remove
   offered on the main worktree**:
   AppModel+WorktreeListRefreshTests+RemovedOutsideTheApp and
@@ -432,7 +432,7 @@ rule holds is in `Docs/design/`.
 - **Emptying the sidebar filter leaves the field up, and only closing hands the
   keyboard back**: AppModelSidebarFilterTests.
 - **A project collapsed under the filter stays collapsed until the text changes,
-  and its rows are read once it opens**: AppModelSidebarFilterTests and
+  and its rows are read once it opens**: AppModelProjectExpansionTests and
   AppModel+StatusReadsTests+VisibleRows. SidebarViewTests holds the chevron to
   it by pixels.
 - **A header badge ringed in the sidebar's colour**: WorktreeHeaderTests.

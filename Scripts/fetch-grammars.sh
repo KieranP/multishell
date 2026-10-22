@@ -7,7 +7,6 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$root/Scripts/build-lib.sh"
 
 output="$root/.build/grammars"
-lock_file="$root/.build/grammars.lock"
 
 # Package identity, repository, the tag it was taken at, the commit, and the
 # SHA-256 of GitHub's archive of that commit. A bump changes all three.
@@ -39,23 +38,14 @@ pins=(
     "tree-sitter-zig tree-sitter-grammars/tree-sitter-zig v1.1.2 b670c8df85a1568f498aa5c8cae42f51a90473c0 c7af5b1a992fcaffdf50a11a9974fbf8f09d20c4d9ef42245ac90c152dd3a85a"
 )
 
-# Two at once, `make test` beside `make run`, would each replace the folder
-# the other is extracting into.
-hold_lock() {
-    mkdir -p "$root/.build"
-    if [ -z "${MULTISHELL_GRAMMARS_LOCKED-}" ] && command -v lockf >/dev/null; then
-        MULTISHELL_GRAMMARS_LOCKED=1 exec lockf -k "$lock_file" "$root/Scripts/fetch-grammars.sh" "$@"
-    fi
-}
-
 # Written last, so a folder a killed fetch left behind never passes for its pin.
-stamp() {
+stamp_file() {
     printf '%s\n' "$1/.fetched"
 }
 
 is_fetched() {
     local identity="$1" sha256="$2"
-    [ "$(cat "$(stamp "$output/$identity")" 2>/dev/null)" = "$sha256" ]
+    [ "$(cat "$(stamp_file "$output/$identity")" 2>/dev/null)" = "$sha256" ]
 }
 
 fetch() {
@@ -72,7 +62,7 @@ fetch() {
     rm -rf "$partial"
     mkdir -p "$partial"
     tar -xzf "$archive" -C "$partial" --strip-components 1
-    printf '%s\n' "$sha256" > "$(stamp "$partial")"
+    printf '%s\n' "$sha256" > "$(stamp_file "$partial")"
     rm -rf "${output:?}/$identity" "$archive"
     mv "$partial" "$output/$identity"
 }
@@ -90,7 +80,9 @@ remove_unpinned() {
     done
 }
 
-hold_lock "$@"
+# Two at once, `make test` beside `make run`, would each replace the folder
+# the other is extracting into.
+rerun_holding_lock "$root/.build/grammars.lock" MULTISHELL_GRAMMARS_LOCKED "$root/Scripts/fetch-grammars.sh" "$@"
 mkdir -p "$output"
 remove_unpinned
 pids=()

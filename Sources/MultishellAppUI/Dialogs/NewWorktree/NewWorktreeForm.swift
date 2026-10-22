@@ -68,7 +68,7 @@ struct NewWorktreeForm: View {
 
   @ViewBuilder
   private var fields: some View {
-    if project != nil, !draft.hasCommits {
+    if draft.showsNoCommitsNote {
       NewWorktreeFormNote(
         text: t("sheet.no-commits"),
         symbol: "exclamationmark.triangle.fill",

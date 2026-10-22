@@ -8,12 +8,9 @@ struct ProcessGroupTests {
   @Test func aGroupIsOursOnlyWhileItsLeaderPredatesTheHangup() throws {
     var hangup = timeval()
     gettimeofday(&hangup, nil)
-    let stranger = Process()
-    stranger.executableURL = URL(fileURLWithPath: "/bin/sleep")
-    stranger.arguments = ["30"]
-    try stranger.run()
+    let stranger = try WaitingShell()
     defer { stranger.terminate() }
-    let group = stranger.processIdentifier
+    let group = stranger.pid
 
     #expect(!ProcessGroup.isStillOurs(hungUpAt: hangup, group: group))
     var later = timeval()

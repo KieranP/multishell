@@ -157,10 +157,11 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **A stage that ends with its worktree gone takes its entry with it.** Stages
   are keyed by path, so an entry outlives its row and a worktree made again at
   that path inherits it.
-- **A failure with the worktree gone ends its own entry and alerts**, having no
-  pane left to put the message on. It once left the entry running, which reads
-  as busy: no shell opens there, removal is refused, and Cancel finds a stopper
-  already cleared. A removal that has since taken the entry keeps it.
+- **A failure with the worktree gone ends its own entry and says nothing**
+  (hooks.md); one with no pane left alerts instead. It once left the entry
+  running, which reads as busy: no shell opens there, removal is refused, and
+  Cancel finds a stopper already cleared. A removal that has since taken the
+  entry keeps it.
 - **Forgetting a worktree drops the entry and stops the stage**, as the pane's
   Cancel would: a hook left running in a directory removed in a terminal ran to
   its timeout and then alerted about a worktree that was not there.
@@ -281,10 +282,10 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   the app left its dialog up, and Confirm ran a removal on a path git no longer
   listed.
 - **A watcher tick names its directories**, and the records check runs only for
-  the project whose common `.git` holds one that fired. An empty list, which a
-  return to the foreground sends, is still every project. Every tick used to
-  re-read every project's records and re-arm every watch, for a comparison that
-  almost always came out equal.
+  the project whose common `.git` holds one that fired. Launch, a return to the
+  front and the round still check every project. Every tick used to re-read
+  every project's records and re-arm every watch, for a comparison that almost
+  always came out equal.
 - **Watches are re-armed wherever a list changes what is watched**, whichever
   read listed it, and when a project that was missing comes back: re-armed only
   after a records check, a worktree the branch check listed first was never
@@ -478,7 +479,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **A burst is never pushed back by the next change**: the read runs a quarter
   second after the first, or a build writing continuously would hold the badge
   for its whole length. A read the pace holds back waits until it is due rather
-  than being dropped, there being no five-second tick to pick it up.
+  than being dropped, the five-second tick reading only shares and merge
+  re-asks.
 - **Badges are read frontmost only, as before**; a return to the front reads
   everything, and a row the pace holds back then is read once it allows, as on
   opening a project. Without that, a change made in the background waited for

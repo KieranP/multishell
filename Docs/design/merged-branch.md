@@ -82,6 +82,8 @@
   read and went unpaced every round.
 - **Nothing observable is written unless it changed**, or the sidebar redraws on
   every poll.
+- **Verdicts are runtime state, never saved**: recomputed from git, no badge
+  comes off disk describing a branch that has moved since.
 - **Never badged**: main worktree, bare repo, detached HEAD, the trunk's own
   checkout.
 - **The user's git config cannot change what a read means.** Every runner turns

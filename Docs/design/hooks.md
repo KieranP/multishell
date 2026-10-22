@@ -84,3 +84,6 @@
 - **A stage that fails once its worktree is gone says nothing.** Removed outside
   the app before its hook started, the hook fails to enter the folder, and an
   alert would arrive about a worktree the user removed on purpose.
+- **Gone means git no longer lists it**, the row dropping at the next refresh. A
+  folder deleted without git stays listed as prunable, so a stage failing in it
+  says so on its pane.

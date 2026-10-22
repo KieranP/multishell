@@ -4,7 +4,8 @@ import MultishellCore
 extension AppModel {
   /// Named as `state.json` names them, a nested one with a dot.
   var globalSettings: [ControlSetting] {
-    appearanceSettings + agentSettings + worktreeSettings + terminalSettings + editorSettings
+    appearanceSettings + agentSettings + worktreeSettings + filesSettings + terminalSettings
+      + editorSettings
       + NotificationPreference.notifiableStates.map(notificationSetting)
   }
 
@@ -115,6 +116,11 @@ extension AppModel {
       ),
       .choice("gitStatusIndicator", { self.workspace.gitStatusIndicator }, setGitStatusIndicator),
       .choice("diffAlgorithm", { self.workspace.diffAlgorithm }, setDiffAlgorithm),
+    ]
+  }
+
+  private var filesSettings: [ControlSetting] {
+    [
       .choice("fileTabLayout", { self.workspace.fileTabLayout }, setFileTabLayout),
       .choice("filesPanelMode", { self.workspace.filesPanelMode }, setFilesPanelMode),
     ]

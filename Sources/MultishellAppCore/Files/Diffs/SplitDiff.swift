@@ -4,7 +4,7 @@ public struct SplitDiff: Equatable, Sendable {
   public let committed: DiffDisplayText
   public let onDisk: DiffDisplayText
 
-  public init(_ lines: [DiffLine]) {
+  init(_ lines: [DiffLine]) {
     var left: [DiffLine] = []
     var right: [DiffLine] = []
     var removed: [DiffLine] = []

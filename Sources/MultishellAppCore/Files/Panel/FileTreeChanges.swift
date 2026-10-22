@@ -18,11 +18,13 @@ struct FileTreeChanges: Sendable {
     sortedPaths = paths.sorted()
     foldedPaths = sortedPaths.map(\.foldedForMatching)
     var holding: Set<String> = []
+    // A folder already held has its parents held too, so the walk up stops there.
     for path in paths {
-      var parts = path.split(separator: "/").dropLast()
-      while !parts.isEmpty {
-        holding.insert(parts.joined(separator: "/"))
-        parts = parts.dropLast()
+      var end = path.hasSuffix("/") ? path.index(before: path.endIndex) : path.endIndex
+      while let slash = path[..<end].lastIndex(of: "/"),
+        holding.insert(String(path[..<slash])).inserted
+      {
+        end = slash
       }
     }
     foldersHoldingChanges = holding

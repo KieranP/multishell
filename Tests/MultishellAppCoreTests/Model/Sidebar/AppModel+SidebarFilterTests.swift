@@ -20,9 +20,7 @@ struct AppModelSidebarFilterTests {
   }
 
   @Test func closingTheFieldClearsItsTextAndHandsTheKeyboardToTheActivePane() throws {
-    let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let (harness, session) = Harness.withOnePane()
     harness.model.setShowsSidebarFilter(true)
     harness.model.sidebarFilterText = "side"
     harness.engine.focused.removeAll()
@@ -31,7 +29,7 @@ struct AppModelSidebarFilterTests {
 
     #expect(!harness.model.showsSidebarFilter)
     #expect(harness.model.sidebarFilterText.isEmpty)
-    #expect(harness.engine.focused == [tab.focusedSessionID])
+    #expect(harness.engine.focused == [session.id])
   }
 
   @Test func togglingTheFilterOpensTheFieldThenClosesAndClearsIt() {

@@ -78,6 +78,9 @@ command line's requests on the same socket. Newest at the bottom.
 - **Cost of the plugin**: JavaScript in the user's agent, so it spawns, unrefs
   and swallows everything, and it is the one integration whose contract we do
   not control from a payload.
+- **The plugin's source is a Swift string, not a `Resources` script** as the
+  shell integration's are: the helper writes it, and from `Contents/Helpers` the
+  resource bundle in `Contents/Resources` is out of its reach.
 - **Four events are narrowed**, "the agent raised a notification" not being "the
   agent is waiting".
 - **One raises a notification when a background shell finishes** as much as when
@@ -152,6 +155,8 @@ command line's requests on the same socket. Newest at the bottom.
   so under exec a helper killed by Gatekeeper would stop the agent working.
 - **Cost: one short-lived shell per event**, the pid coming from walking past
   shells either way.
+- **The line sets no variable, so it parses in fish as well as sh**: which shell
+  an agent runs its hooks through is not ours to choose.
 - **A settings file that is a symlink is written through, not over.** An atomic
   write would leave a regular file where a dotfiles repo's link was.
 - **The copy kept sits beside the link**, not in the repo it points into, where
@@ -299,7 +304,8 @@ command line's requests on the same socket. Newest at the bottom.
 - **The project override is a line, not a table**: it overrides whatever agent
   the project runs. Blank is the override to no flags (settings.md).
 - **Flags are not in the repository's file**: a flag is an argument to a
-  program, and that file is trusted for what is drawn, not for what runs.
+  program, and that file is trusted unasked only for what is drawn; what runs
+  from it, its hooks, waits on a yes (settings.md).
 - **Subagents are a roster by id.** The counting events name the worker, and so
   does every hook that fires inside it, so a start or a first tool call puts one
   on and its end takes it off.
@@ -688,7 +694,8 @@ command line's requests on the same socket. Newest at the bottom.
   nothing here, macOS refusing the connect at once.
 - **OpenCode's woken turn is a prompt of synthetic parts only**, which the
   plugin reads as the turn a child's end woke, not the user's: read as a new
-  turn it emptied the roster of the children still out.
+  turn it emptied the roster of the children still out. A message naming no
+  session starts no turn either, for the same reason.
 - **Shells and subagents are counted apart** wherever workers are counted, a
   shell not being a subagent to anyone reading the label.
 - **A sweep takes every dead agent before any dead shell.** An agent gone with
@@ -920,11 +927,12 @@ command line's requests on the same socket. Newest at the bottom.
 - **The app answers in data and the helper words it** (translation.md): ids and
   JSON on success, a typed refusal otherwise.
 - **Whatever a command prints is JSON**, indented and sorted as the app's
-  answers are, so a script reads every command one way. `panes read` and
-  `debug log` take `--plain` for text a person reads; a refusal stays words on
-  standard error with exit 1. `install-agent-hooks --print` is the one
-  exception: it prints the agent's file as a write makes it, as it did before
-  the other commands came, so `> ~/.codex/hooks.json` writes a working file.
+  answers are, so a script reads every command one way; a stream, `debug log` or
+  `debug samples --follow`, is one object a line. `panes read` and `debug log`
+  take `--plain` for text a person reads; a refusal stays words on standard
+  error with exit 1. `install-agent-hooks --print` is the one exception: it
+  prints the agent's file as a write makes it, as it did before the other
+  commands came, so `> ~/.codex/hooks.json` writes a working file.
 - **`tabs list` and `tabs show` include file tabs**, `kind` saying which. A file
   tab carries `path` and `isDeleted` and no `focusedPane`, `panes` or `layout`.
   Cost: a script reading panes off every tab filters on `kind` first.

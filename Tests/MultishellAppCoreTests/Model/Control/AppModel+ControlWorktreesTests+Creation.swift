@@ -70,6 +70,7 @@ extension AppModelControlWorktreesTests {
     let created = try #require(harness.worktree(onBranch: "feat/y"))
     let tab = try #require(harness.model.workspace.activeTab(in: created.id))
     #expect(harness.model.workspace.session(tab.focusedSessionID)?.agentID == "claude")
+    #expect(harness.engine.opened.last?.command?.last?.contains("fix it") == true)
   }
 
   @Test func anIDNoProjectHasIsRefusedByThatID() async throws {

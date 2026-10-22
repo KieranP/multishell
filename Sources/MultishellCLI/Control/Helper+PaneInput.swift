@@ -8,7 +8,7 @@ extension Helper {
     _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let enter = try CommandOptions(
+    let pressesReturn = try CommandOptions(
       optionWords,
       valued: [],
       flags: ["enter"],
@@ -16,7 +16,7 @@ extension Helper {
     )
     .has("enter")
     return try ask(
-      .typeIntoPane(id: id, text: text, pressingReturn: enter),
+      .typeIntoPane(id: id, text: text, pressingReturn: pressesReturn),
       environment: environment,
     )
   }

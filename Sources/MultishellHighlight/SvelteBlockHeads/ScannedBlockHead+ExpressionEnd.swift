@@ -4,8 +4,6 @@ extension ScannedBlockHead {
     "typeof", "void", "yield",
   ].map { Array($0.utf16) }
   private static let conditionKeywords = ["for", "if", "while", "with"].map { Array($0.utf16) }
-  private static let bang = UInt16(UInt8(ascii: "!"))
-  private static let greaterThan = UInt16(UInt8(ascii: ">"))
   private static let steppers = Set("+-".utf16)
 
   private static func endsOperand(_ unit: UInt16) -> Bool {
@@ -18,11 +16,11 @@ extension ScannedBlockHead {
   func endsExpression(at index: Int) -> Bool {
     if bracketDepths[index] == nil { return true }
     let unit = units[index]
-    if unit == Self.bang { return index > 0 && Self.endsOperand(units[index - 1]) }
+    if unit == ASCIIUnits.bang { return index > 0 && Self.endsOperand(units[index - 1]) }
     // `Promise<X[]>` has no space before its `>`, where `a > b` has one.
-    if unit == Self.greaterThan {
+    if unit == ASCIIUnits.greaterThan {
       return index > 0
-        && (Self.endsOperand(units[index - 1]) || units[index - 1] == Self.greaterThan)
+        && (Self.endsOperand(units[index - 1]) || units[index - 1] == ASCIIUnits.greaterThan)
     }
     if Self.steppers.contains(unit) {
       return index > 1 && units[index - 1] == unit && Self.endsOperand(units[index - 2])

@@ -6,7 +6,7 @@ import Testing
 
 @Suite @MainActor
 struct AppModelControlProjectSettingsTests {
-  @Test func theListHasEveryOwnSettingNullWhereItFollowsTheGlobalButNoTrustAnswers() async throws {
+  @Test func aSettingFollowingTheGlobalIsNullAndTrustAnswersAreLeftOut() async throws {
     let harness = Harness()
 
     let reply = try #require(

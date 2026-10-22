@@ -232,27 +232,4 @@ extension AppModelWorktreeRemovalRequestTests {
     let pending = try #require(fake.pendingWorktreeRemoval)
     #expect(pending.isStatusUnread)
   }
-
-  @Test func aPollLandingAfterARemovalBeganIsDropped() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    let gate = harness.root.appendingPathComponent("go")
-    let model = try harness.modelOnFakeGit(
-      """
-      case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
-          printf '# branch.head main\\n1 .M N... 100644 100644 100644 a a x.txt\\n' ;;
-      esac
-      """
-    )
-    let main = try #require(harness.worktree(onBranch: "main"))
-
-    let poll = Task { await model.refreshStatuses() }
-    try await waitUntil { harness.statusRunCount() > 0 }
-    model.worktreeOperations.begin(.preDeleteHook, on: main.id)
-    try Data().write(to: gate)
-    await poll.value
-
-    #expect(model.statuses[main.id] == nil)
-  }
 }

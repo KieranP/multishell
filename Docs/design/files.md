@@ -223,10 +223,11 @@ Newest at the bottom.
   defined and used, and a mixin's or function's name is a function. It also
   colours Svelte's `{:else if}`, which the grammar lexes as one token that the
   shipped query's `"else"` and `"if"` miss.
-- **Each grammar is its own Swift package, pinned exactly; its query ships in
-  that package's resource bundle.** CSS's, JavaScript's, Python's and YAML's
-  packages build without their scanners, so those four scanners, with what they
-  include, are copied under `ThirdParty/tree-sitter/`.
+- **Each grammar is its own Swift package, fetched as its pinned commit's
+  archive; its query ships in that package's resource bundle.** CSS's,
+  JavaScript's, Python's and YAML's packages build without their scanners, so
+  those four scanners, with what they include, are copied under
+  `ThirdParty/tree-sitter/`.
 - **The maintained repository over the most-starred one**, for YAML, TOML, Zig,
   Make, Svelte and SCSS, whose originals are archived or years stale.
 - **A `<script>` or `<style>` body and a Svelte `{…}` expression are parsed in

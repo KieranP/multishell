@@ -33,7 +33,7 @@ struct AppModelLoginEnvironmentTests {
     #expect(harness.model.presentedError?.title != PresentedError(GitUnavailable()).title)
   }
 
-  @Test func theAgentPathNoteNamesWhereThePathCameFrom() {
+  @Test func theAgentPathInfoNamesWhereThePathCameFrom() {
     let harness = Harness()
     #expect(harness.model.agentPathInfo == t("agents.path-asking"))
 

@@ -117,10 +117,11 @@
   the hook skips one and `CLAUDE.md` is formatted through `AGENTS.md`.
 - **Highlighting is SwiftTreeSitter 0.25.0 over the tree-sitter runtime
   0.25.10**, both pinned exactly, the runtime named too for its `TreeSitter`
-  module. SwiftTreeSitter's last tag is from June 2025 and its main branch still
-  pins 0.25.x, which bounds a grammar's language ABI to 13 to 15.
-- **Each grammar is its own Swift package, pinned to a tag that commits its
-  generated parser**, its highlights query read from that package's resource
+  module. SwiftTreeSitter's newest tag, 0.10.0 from February 2026, sorts below
+  0.25.0, and it and the main branch still pin tree-sitter 0.25.x, which bounds
+  a grammar's language ABI to 13 to 15.
+- **Each grammar is its own Swift package, pinned to a tagged commit carrying
+  its generated parser**, its highlights query read from that package's resource
   bundle, which the bundling script copies with every other. Most repositories
   commit no `parser.c` on their main branch; tree-sitter-swift's tags it
   `<version>-with-generated-files`.

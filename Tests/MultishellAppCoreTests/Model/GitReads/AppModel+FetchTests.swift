@@ -4,6 +4,7 @@ import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 
 @Suite(.serialized) @MainActor
 struct AppModelFetchTests {
@@ -44,5 +45,23 @@ struct AppModelFetchTests {
     await running.value
     #expect(!model.isFetching(project))
     #expect(harness.gitCallCount(startingWith: "fetch") == 1, "one fetch, not two")
+  }
+
+  @Test func aFetchRereadsOnlyItsOwnProjectsRows() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let otherProject = try await harness.addSecondProject()
+    let otherMain = try #require(harness.model.workspace.worktrees(of: otherProject.id).first)
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.clearStatuses()
+    var unread = WorktreeStatus()
+    unread.branch = "main"
+    unread.changedFiles = 99
+    harness.model.statuses = [otherMain.id: unread]
+
+    await harness.model.fetch(harness.project)
+
+    #expect(harness.model.statuses[main.id] != nil)
+    #expect(harness.model.statuses[otherMain.id] == unread)
   }
 }

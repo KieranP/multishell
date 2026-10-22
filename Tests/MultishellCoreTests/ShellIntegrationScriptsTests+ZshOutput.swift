@@ -17,7 +17,7 @@ extension ShellIntegrationScriptsTests {
     runsInputAsScript: Bool = false,
     helper: String = "/bin/echo",
   ) async throws -> String {
-    try #require(FileManager.default.isExecutableFile(atPath: Self.zshPath))
+    try #require(InstalledShells.isInstalled(Self.zshPath))
     let files = try GeneratedIntegration(helper: helper)
     defer { files.tearDown() }
     if let usersRC { try files.writeHomeFile(".zshrc", usersRC) }
@@ -50,7 +50,7 @@ extension ShellIntegrationScriptsTests {
   ) async throws
     -> String
   {
-    try #require(FileManager.default.isExecutableFile(atPath: Self.zshPath))
+    try #require(InstalledShells.isInstalled(Self.zshPath))
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     let zshrc = files.zshDirectory.appendingPathComponent(".zshrc").path

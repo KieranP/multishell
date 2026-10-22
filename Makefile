@@ -22,7 +22,7 @@ else
 SWIFT_TEST = swift test --skip-build
 endif
 
-.PHONY: libghostty grammars build release test compile-app lint format prettier install run clean signing-identity
+.PHONY: libghostty grammars build release test compile-app lint format require-prettier install run clean signing-identity
 
 ## Once per machine: the certificate that keeps the app's privacy permissions.
 signing-identity:
@@ -65,13 +65,13 @@ lint:
 	swiftlint lint --quiet
 
 ## Rewrite files in place to the project style (.swift-format, .prettierrc).
-format: prettier
+format: require-prettier
 	swift format --in-place --recursive Sources Tests Package.swift
 	prettier --write --log-level warn '**/*.md'
 
 ## Markdown goes through prettier, which the toolchain does not ship and CI
 ## does not run.
-prettier:
+require-prettier:
 	@command -v prettier >/dev/null || { echo "prettier not found: brew install prettier"; exit 1; }
 
 ## Build and launch the debug bundle.

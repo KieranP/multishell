@@ -28,7 +28,7 @@ extension AppModel {
     if shows, let worktree = filesPanelWorktree {
       readFilesPanel(of: worktree.id)
     } else if !shows {
-      forgetPanelListings(except: nil)
+      forgetPanelListings { _ in true }
     }
   }
 
@@ -87,9 +87,8 @@ extension AppModel {
 
   /// Kept between renders: a filter over 200,000 paths cost most of a second.
   public func fileTreeRows(of id: Worktree.ID) -> [FileTreeRow] {
-    let (tree, isKept) = keptFileTree(of: id)
+    let tree = fileTree(of: id)
     let state = filesPanelState(of: id)
-    guard isKept else { return tree.rows(state: state) }
     if let kept = fileTreeCache[id]?.rows, kept.state == state { return kept.rows }
     let rows = tree.rows(state: state)
     fileTreeCache[id]?.rows = (state, rows)
@@ -109,13 +108,9 @@ extension AppModel {
     !row.isFolder && workspace.activeWorkspaceTab(in: id)?.fileTab?.path == row.path
   }
 
-  func fileTree(of id: Worktree.ID) -> FileTree {
-    keptFileTree(of: id).tree
-  }
-
   /// Built only where something it is built from moved since the last; the
-  /// listing only where paths moved. Not kept while its listing builds.
-  private func keptFileTree(of id: Worktree.ID) -> (tree: FileTree, isKept: Bool) {
+  /// listing only where paths moved, and the last one shown while it builds.
+  func fileTree(of id: Worktree.ID) -> FileTree {
     let sources = FileTreeSources(
       tracked: trackedFiles[id] ?? .empty,
       status: statuses[id],
@@ -124,7 +119,11 @@ extension AppModel {
       ignoredFolderEntries: ignoredFolderEntries[id] ?? [:],
     )
     let cached = fileTreeCache[id]
-    if let cached, cached.sources == sources { return (cached.tree, true) }
+    if let cached, cached.sources == sources,
+      !cached.awaitsListing || pendingFileTreeListings[id] != nil
+    {
+      return cached.tree
+    }
     // A count moving, as an agent's every save does, keeps the listing.
     let key = FileTreeListing.Key(sources)
     if let listing = [cached?.tree.listing, fileTreeListings[id]].compactMap(\.self)
@@ -135,11 +134,13 @@ extension AppModel {
       pendingFileTreeListings.removeValue(forKey: id)?.cancel()
       let tree = FileTree(sources, listing: listing, reusingChangesOf: cached?.tree)
       fileTreeCache[id] = FileTreeCacheEntry(sources: sources, tree: tree)
-      return (tree, true)
+      return tree
     }
     buildListingInTheBackground(sources, key: key, for: id)
     let shown = cached?.tree.listing ?? fileTreeListings[id] ?? .empty
-    return (FileTree(sources, listing: shown, reusingChangesOf: cached?.tree), false)
+    let tree = FileTree(sources, listing: shown, reusingChangesOf: cached?.tree)
+    fileTreeCache[id] = FileTreeCacheEntry(sources: sources, tree: tree, awaitsListing: true)
+    return tree
   }
 
   private func smallListing(

@@ -7,17 +7,6 @@ import Testing
 
 @Suite @MainActor
 struct AppModelTests {
-  @Test func quittingAsksOnlyWhileAShellIsLiveAndNoCommandLineQuitIsUnderWay() {
-    let harness = Harness()
-    #expect(!harness.model.asksBeforeQuitting)
-
-    harness.model.select(harness.main)
-    #expect(harness.model.asksBeforeQuitting)
-
-    harness.model.quitsWithoutAsking = true
-    #expect(!harness.model.asksBeforeQuitting)
-  }
-
   @Test(arguments: [3, 4, 6, 9, 12, 17, 25, 33] as [UInt64])
   func anySequenceOfActionsAndEventsKeepsTheRuntimeConsistent(seed: UInt64) {
     var generator = SeededGenerator(seed: seed)

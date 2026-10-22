@@ -12,10 +12,10 @@ struct ProjectTests {
       .children.compactMap(\.label)
 
     #expect(
-      fields == ["path", "isExpanded", "settings", "sharedSettingsSnapshot"],
+      fields == ["path", "id", "isExpanded", "settings", "sharedSettingsSnapshot"],
       """
       A field was added to Project. Put it in CodingKeys, == and hash unless \
-      it is per-run state like sharedSettingsSnapshot, then add it here.
+      it is per-run state like sharedSettingsSnapshot or derived like id, then add it here.
       """,
     )
   }

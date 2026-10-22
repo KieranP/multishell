@@ -14,7 +14,9 @@ enum InjectionProbe {
     let grammar = try HighlightGrammars.compile(language)
     let parser = Parser()
     try parser.setLanguage(grammar.language)
-    let tree = try #require(parser.parse(text))
+    let tree = try #require(
+      parser.parse(SyntaxHighlighter.grammarInput(from: text, language: language))
+    )
     let found = HighlightInjections.find(
       in: tree,
       text: text as NSString,

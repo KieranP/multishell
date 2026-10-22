@@ -28,7 +28,7 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   _multishell_agents="__MULTISHELL_AGENTS__"
   _multishell_ran=0
   _multishell_armed=0
-  _multishell_started=0
+  _multishell_started_at=0
   # The marks are written only in a Ghostty pane; terminal-reports.bash.
   if [ "${TERM_PROGRAM-}" = ghostty ]; then _multishell_marks=1; else _multishell_marks=0; fi
 
@@ -47,7 +47,7 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   # Both halves at the top level of PROMPT_COMMAND: inside a function bash
   # reports no DEBUG trap and puts back the one set, functrace being off.
   _multishell_claim_debug='_multishell_seen_debug="$(trap -p DEBUG)"
-_multishell_owns_debug || trap "_multishell_debug" DEBUG'
+_multishell_owns_debug_or_saves_theirs || trap "_multishell_debug" DEBUG'
   _multishell_seen_debug=""
   _multishell_capture_debug "$(trap -p DEBUG)"
 

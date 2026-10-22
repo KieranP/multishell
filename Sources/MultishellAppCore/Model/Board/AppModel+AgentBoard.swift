@@ -23,7 +23,7 @@ extension AppModel {
         id: session.id,
         tabID: tab.id,
         worktreeID: worktree.id,
-        occupant: occupant(of: session),
+        occupant: occupant(of: session, in: worktree),
         title: title(ofPane: session, in: tab),
         projectName: projectNames[worktree.projectID] ?? "",
         worktreeName: workspace.displayName(of: worktree),
@@ -79,11 +79,14 @@ extension AppModel {
   }
 
   /// Who is at the prompt, by name.
-  private func occupant(of session: TerminalSession) -> AgentBoardCard.Occupant {
+  private func occupant(
+    of session: TerminalSession,
+    in worktree: Worktree,
+  ) -> AgentBoardCard.Occupant {
     if let agentID = agentIDAtThePrompt(of: session) {
       return .agent(id: agentID, name: agentDisplayName(agentID))
     }
-    return .shell(shellPath(forWorktree: session.worktreeID).executableName)
+    return .shell(shellPath(for: worktree).executableName)
   }
 
   public func setShowsAllTerminals(_ shows: Bool) {

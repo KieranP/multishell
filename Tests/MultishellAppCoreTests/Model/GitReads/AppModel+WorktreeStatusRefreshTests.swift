@@ -105,7 +105,7 @@ struct AppModelWorktreeStatusRefreshTests {
     #expect(harness.worktree(onBranch: "main") == nil)
   }
 
-  @Test func aPanesReadAsksNothingOfAWorktreeInAMissingProject() async throws {
+  @Test func aSingleRowsReadAsksNothingOfAWorktreeInAMissingProject() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let model = try harness.modelOnFakeGit("")
