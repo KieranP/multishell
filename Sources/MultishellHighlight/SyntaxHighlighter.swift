@@ -26,7 +26,7 @@ final class SyntaxHighlighter: Sendable {
     // Every removed row blank leaves nothing to keep, so the parse is skipped.
     guard keptRanges?.isEmpty != true, let grammar = grammar(for: language, in: &cache),
       let parser = parser(for: language, grammar: grammar, in: &cache),
-      let tree = parser.parse(text)
+      let tree = parser.parse(language == .svelte ? SvelteGrammarInput.text(from: text) : text)
     else { return [] }
     return spans(
       of: tree,

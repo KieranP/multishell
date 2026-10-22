@@ -157,6 +157,33 @@ struct SyntaxHighlighterTests {
     #expect(HighlightProbe.role(of: "b", in: text, spans: spans) == .comment)
   }
 
+  @Test(arguments: ["Under \"P > A\", set", "Tom & Jerry", "Tom &1 Jerry", "Tom &# Jerry"])
+  func aGreaterThanOrBareAmpersandInSvelteTextLeavesTheMarkupAndStyleAfterItHighlighted(
+    words: String
+  ) {
+    let prose = String(repeating: "and many more words follow on this line, ", count: 8)
+    let text = """
+      <div>
+        <p>
+          Start a <a
+            href="https://example.com"
+            target="_blank">token</a
+          >. \(words) the
+          \(prose)
+        </p>
+      </div>
+      <section></section>
+
+      <style>
+        p { margin: 0; }
+      </style>
+      """
+    let spans = HighlightProbe.spans(in: text, language: .svelte)
+
+    #expect(HighlightProbe.role(of: "section", in: text, spans: spans) == .keyword)
+    #expect(HighlightProbe.role(of: "margin", in: text, spans: spans) == .attribute)
+  }
+
   @Test func aRangeCountsInUTF16SoAnEmojiBeforeItShiftsNothing() {
     let text = "let 🙂 = 1\nfunc f() {}"
     let spans = HighlightProbe.spans(in: text, language: .swift)

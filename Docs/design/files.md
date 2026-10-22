@@ -359,6 +359,17 @@ Newest at the bottom.
   later `/` stops there: 32,000 units of `[ / ` took 13.4 s without it in a
   debug build, and 36 ms with it. The query names each place a `{…}` sits, so a
   Svelte expression needs no parent lookup.
+- **Svelte's grammar is given its file with each `>` and bare `&` in text
+  content a space**: its text token refuses both, as HTML's does, though HTML
+  allows them, and where HTML's recovery drops a word, Svelte's, a few lines on,
+  makes the rest of the file one error, its tags and style uncoloured. A `&`
+  starting no reference the grammar knows is bare, `&1` and `&#` too. The length
+  stays, so every range is the file's, and queries and injections read the file
+  itself. The tags, comments, script and style bodies and `{…}` expressions
+  skipped on the way are found as its scanner finds them, an expression's
+  strings, templates and comments hiding their braces. Neither grammar's main
+  branch fixes it, and patching one means vendoring its generated parser. The
+  pass took 85 ms of a 1.8 s debug highlight of 2.3 million units.
 - **The block-head cuts are a scanner of our own, not a TypeScript parse**: a
   head is no valid TypeScript, and its parse puts the error where recovery
   lands, not where the promise ends. `sum(a!/2) + b/2 then v` folds `then` into
