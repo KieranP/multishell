@@ -65,6 +65,16 @@ struct AppModelAppearanceTests {
     #expect(harness.model.workspace.appearance.fileFontName == nil)
   }
 
+  @Test func aFileTabsFontIsTheFileFamilyAndSizeNotTheTerminals() {
+    let harness = Harness()
+    harness.model.setTerminalFont(name: "Menlo", size: 15)
+
+    harness.model.setFileFontPickerID("Courier")
+    harness.model.setFileFontSize(13)
+
+    #expect(harness.model.fileFont == FileFont(family: "Courier", size: 13))
+  }
+
   @Test func theUIFontFamilyIsSetApartFromItsSize() {
     let harness = Harness()
     harness.model.setUIFontSize(15)

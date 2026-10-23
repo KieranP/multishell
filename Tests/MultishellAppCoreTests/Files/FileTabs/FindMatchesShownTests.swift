@@ -17,7 +17,7 @@ struct FindMatchesShownTests {
         .movesSelection(from: before)
     )
     #expect(
-      FindMatchesShown(text: "ab", matches: [0..<2], selected: 0, selectionMoves: 3)
+      FindMatchesShown(text: "ab", matches: [0..<2], selected: 0, selectionMoves: 2)
         .movesSelection(from: before)
     )
     #expect(

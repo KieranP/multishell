@@ -74,7 +74,10 @@ extension AppModel {
   /// The bar's, once it is on screen: `true` once per Cmd+F, and the field
   /// takes the keyboard on a `true`.
   public func takeFindFieldRequest(_ id: FindTargetID) -> Bool {
-    findFieldRequests.remove(id) != nil
+    // An observed `remove` of nothing still redraws every open bar.
+    guard findFieldRequests.contains(id) else { return false }
+    findFieldRequests.remove(id)
+    return true
   }
 
   /// The bar's, as its field takes or loses the keyboard.
@@ -145,7 +148,7 @@ extension AppModel {
       runFileFind(for: text, in: id)
       return
     }
-    if searched.map({ !$0.isSameSearchText(as: text) }) ?? true {
+    if searched.map({ !$0.isSameFindText(as: text) }) ?? true {
       setIfChanged(
         \.searchCounts[id],
         PaneSearchCount.forNewSearch(

@@ -75,4 +75,25 @@ struct AppModelDirectoryWatchTests {
 
     #expect(harness.watcher.calls.dropFirst(callsBeforeRemoval).allSatisfy { $0 == themesAlone })
   }
+
+  @Test func theThemesFolderIsMadeBeforeTheWatcherIsArmedOnIt() async throws {
+    let harness = Harness()
+    var foundAtArming: [Bool] = []
+    harness.watcher.onWatch = { directories in
+      guard directories.contains(harness.themes) else { return }
+      foundAtArming.append(FileManager.default.fileExists(atPath: harness.themes.path))
+    }
+
+    await harness.model.rearmWatcher(evenIfUnchanged: true)
+
+    #expect(foundAtArming == [true])
+  }
+
+  @Test func launchArmsTheWatcherOnTheThemesFolder() async {
+    let harness = Harness()
+
+    await harness.model.start()
+
+    #expect(harness.watcher.watched.contains(harness.themes))
+  }
 }

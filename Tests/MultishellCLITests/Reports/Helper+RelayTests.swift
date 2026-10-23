@@ -141,6 +141,7 @@ struct HelperRelayTests {
       in: home,
       environment: environment,
       bash: bash,
+      timeout: .seconds(10),
     )
 
     #expect(output.standardOutput.contains("alive"), "\(output.standardError)")
@@ -164,7 +165,9 @@ struct HelperRelayTests {
     let helper = try helper(
       in: home,
       relayingAs: """
-        while [ ! -e \(AnyShellQuoting.quote(written.path)) ]; do sleep 0.05; done
+        while [ ! -e \(AnyShellQuoting.quote(written.path)) ] && [ -d \(AnyShellQuoting.quote(home.path)) ]; do
+          sleep 0.05
+        done
         exit 2
         """,
     )

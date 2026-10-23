@@ -54,22 +54,6 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     }
   }
 
-  init(
-    worktree: Worktree,
-    branchHandling: BranchHandling,
-    customName: String?,
-    mergeState: WorktreeMergeState,
-    trashes: Bool,
-    isStatusUnread: Bool,
-  ) {
-    self.worktree = worktree
-    self.branchHandling = branchHandling
-    self.customName = customName
-    self.mergeState = mergeState
-    self.trashes = trashes
-    self.isStatusUnread = isStatusUnread
-  }
-
   static func decide(
     _ worktree: Worktree,
     confirms: Bool,

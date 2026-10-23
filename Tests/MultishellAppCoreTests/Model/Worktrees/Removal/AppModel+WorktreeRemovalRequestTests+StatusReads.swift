@@ -89,7 +89,7 @@ extension AppModelWorktreeRemovalRequestTests {
     let fake = try harness.modelOnFakeGit(
       """
       case "$PWD $*" in
-        *gated*status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done; printf '## gated\\0' ;;
+        *gated*status*) \(harness.holdLine(until: gate)); printf '## gated\\0' ;;
         *quick*status*) printf '## quick\\0' ;;
       esac
       """

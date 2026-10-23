@@ -21,4 +21,5 @@ final class NullEngine: TerminalSurfaceHost {
   func screenshot(of id: TerminalSession.ID) -> Data? { nil }
   func frame(of id: TerminalSession.ID) -> CGRect? { nil }
   func apply(_ theme: Theme, appearance: Appearance) {}
+  func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
 }

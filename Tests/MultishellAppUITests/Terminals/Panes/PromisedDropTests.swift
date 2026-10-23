@@ -7,60 +7,48 @@ import Testing
 /// A promise on this process's own pasteboard is never asked for.
 @Suite(.serialized) @MainActor
 struct PromisedDropTests {
-  /// Holds what came back, since delivery lands after the call returns, and
-  /// counts the answers: the drop is pasted once or it is pasted twice.
-  @MainActor private final class Delivery {
-    var urls: [URL]?
-    var answers = 0
-
-    func answer(_ urls: [URL]) {
-      self.urls = urls
-      answers += 1
-    }
-  }
-
   /// Twenty seconds before giving up, which is a two-core runner's headroom
   /// over a handful of operations.
-  private func awaitDelivery(_ delivery: Delivery) async throws -> [URL] {
-    try await waitUntil({ delivery.urls != nil }, seconds: 20)
-    return try #require(delivery.urls, "the drop was never delivered")
+  private func awaitDelivery(_ delivery: Recorder<[URL]>) async throws -> [URL] {
+    try await waitUntil({ !delivery.received.isEmpty }, seconds: 20)
+    return try #require(delivery.received.first, "the drop was never delivered")
   }
 
   @Test func anItemNamingTwoFilesOnceCalledInDeliversBoth() async throws {
-    let delivery = Delivery()
+    let delivery = Recorder<[URL]>()
     let directory = Scratch.path("promised")
     defer { Scratch.remove(directory) }
 
-    PromisedDrop.receive([TwoFilePromise()], into: directory) { delivery.answer($0) }
+    PromisedDrop.receive([TwoFilePromise()], into: directory) { delivery.record($0) }
 
     #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
   }
 
   @Test func anItemsFilesLandingOutOfOrderArePastedInTheOrderItNamesThem() async throws {
-    let delivery = Delivery()
+    let delivery = Recorder<[URL]>()
     let directory = Scratch.path("promised")
     defer { Scratch.remove(directory) }
 
     let promise = TwoFilePromise(landing: ["two.png", "one.png"])
-    PromisedDrop.receive([promise], into: directory) { delivery.answer($0) }
+    PromisedDrop.receive([promise], into: directory) { delivery.record($0) }
 
     #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
   }
 
   @Test func aDragWithNoPromisesIsAnsweredAtOnce() {
-    let delivery = Delivery()
+    let delivery = Recorder<[URL]>()
     // Its own directory, since `receive` deletes what it was given when nothing arrives.
     let directory = Scratch.path("promised")
-    PromisedDrop.receive([], into: directory) { delivery.answer($0) }
-    #expect(delivery.urls == [])
+    PromisedDrop.receive([], into: directory) { delivery.record($0) }
+    #expect(delivery.received == [[]])
   }
 
   /// Nowhere to put the files is the same answer as no files, not a silence:
   /// the state directory can refuse, and the drag still has to be told.
   @Test func aDropWithNowhereToReceiveIntoDeliversNothing() {
-    let delivery = Delivery()
-    PromisedDrop.receive([], into: nil) { delivery.answer($0) }
-    #expect(delivery.urls == [])
+    let delivery = Recorder<[URL]>()
+    PromisedDrop.receive([], into: nil) { delivery.record($0) }
+    #expect(delivery.received == [[]])
   }
 
   /// The directory exists before the sources are asked, and an empty one would otherwise
@@ -75,13 +63,13 @@ struct PromisedDropTests {
   }
 
   @Test func aDropAnsweredAtOnceIsNotAnsweredAgainWhenThePatienceRunsOut() async throws {
-    let delivery = Delivery()
+    let delivery = Recorder<[URL]>()
     let directory = Scratch.path("promised")
 
-    PromisedDrop.receive([], into: directory, givingUpAfter: 0.05) { delivery.answer($0) }
-    #expect(delivery.answers == 1)
+    PromisedDrop.receive([], into: directory, givingUpAfter: 0.05) { delivery.record($0) }
+    #expect(delivery.received.count == 1)
     try await Task.sleep(for: .milliseconds(300))
 
-    #expect(delivery.answers == 1)
+    #expect(delivery.received.count == 1)
   }
 }

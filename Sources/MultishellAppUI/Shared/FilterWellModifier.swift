@@ -10,7 +10,7 @@ struct FilterWellModifier: ViewModifier {
   func body(content: Content) -> some View {
     content
       .padding(.horizontal, UIMetrics.sidebarRowSideInset)
-      .frame(height: metrics.sidebarFilterHeight)
+      .frame(height: metrics.filterWellHeight)
       .background(palette.fill, in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius))
       .padding(.horizontal, UIMetrics.sidebarListSideInset)
   }

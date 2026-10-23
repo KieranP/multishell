@@ -29,7 +29,9 @@ struct HelperPaneWaitingTests {
   }
 
   @Test func aWaitForNoStateReturnsOnceTheDotHasGone() async throws {
-    let app = try ControlListener(reply: .output(#"{"id":"P"}"#))
+    let app = try ControlListener.answeringInTurn { look in
+      look < 2 ? Self.pane("running") : .output(#"{"id":"P"}"#)
+    }
     defer { app.stop() }
 
     let output = try await HelperBinary.run(
@@ -38,10 +40,13 @@ struct HelperPaneWaitingTests {
     )
 
     #expect(output.succeeded, "\(output.standardError)")
+    #expect(app.requests.received.count == 3)
   }
 
   @Test func aWaitForIdleReturnsOnceTheDotHasGoneAsTheAppKeepsNoIdleState() async throws {
-    let app = try ControlListener(reply: .output(#"{"id":"P"}"#))
+    let app = try ControlListener.answeringInTurn { look in
+      look < 2 ? Self.pane("running") : .output(#"{"id":"P"}"#)
+    }
     defer { app.stop() }
 
     let output = try await HelperBinary.run(
@@ -50,6 +55,7 @@ struct HelperPaneWaitingTests {
     )
 
     #expect(output.succeeded, "\(output.standardError)")
+    #expect(app.requests.received.count == 3)
   }
 
   @Test func aWaitForTextPrintsTheNewestLineThatMatchesAsJSON() async throws {

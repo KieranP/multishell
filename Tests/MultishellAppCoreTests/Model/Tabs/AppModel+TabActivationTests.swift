@@ -24,11 +24,9 @@ struct AppModelTabActivationTests {
     #expect(harness.model.tabInView?.id == tabs[1])
   }
 
-  @Test func aPaneShownFromItsRowBecomesTheFocusedPaneOfTheTabInView() throws {
+  @Test func aPaneShownFromItsRowBecomesTheFocusedPaneOfTheTabInView() {
     let harness = Harness()
-    harness.model.select(harness.main)
-    let first = try #require(harness.model.tabInView)
-    harness.model.newTab()
+    let first = harness.openBackgroundTab()
 
     harness.model.show(pane: first.focusedSessionID)
 

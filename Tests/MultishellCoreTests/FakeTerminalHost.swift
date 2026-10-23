@@ -44,4 +44,5 @@ final class FakeTerminalHost: TerminalHost {
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {}
+  func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
 }

@@ -4,10 +4,11 @@ import Testing
 
 extension SessionReconcilerTests {
   @Test func withNoWorktreeSelectedFocusingTheActiveSessionAsksTheHostNothing() {
-    let store = WorkspaceStore()
-    let host = FakeTerminalHost()
-    let reconciler = SessionReconciler(store: store, host: host)
+    store.openTab(in: worktree.id)
+    store.selectWorktree(nil)
+
     reconciler.focusActiveSession()
+
     #expect(host.log.isEmpty)
   }
 

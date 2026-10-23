@@ -75,11 +75,17 @@ struct AppModelFileTabChangeKindTests {
     #expect(harness.model.changeKind(of: tab) == .added)
   }
 
-  @Test func aSubmoduleNoLongerReadGivesNoDotFromItsLastReading() async throws {
+  @Test(arguments: [true, false])
+  func aSubmoduleNoLongerReadGivesNoDotFromItsLastReading(panelIsShut: Bool) async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
+    if panelIsShut {
+      harness.model.filesPanelStates[main.id] = FilesPanelState(expandedFolders: ["sub"])
+    } else {
+      harness.model.setShowsFilesPanel(true)
+    }
     let tab = try #require(harness.store.openFileTab(path: "sub/x.txt", in: main.id))
     harness.model.submoduleReadings[main.id] = [
       "sub": SubmoduleReading(tracked: .empty, status: Self.status("x.txt", .deleted))

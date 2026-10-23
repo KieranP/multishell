@@ -19,7 +19,7 @@ struct NotificationSettingsTextTests {
     }
     #expect(
       NotificationSettingsText.rows.allSatisfy { row in
-        !row.info.contains(NotificationSettingsText.caption(for: .notAsked, settingsLocation: nil))
+        !row.info.contains(NotificationSettingsText.caption(for: .allowed, settingsLocation: nil))
       },
       "what holds for every notification is said once at the foot of the page",
     )

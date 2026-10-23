@@ -46,10 +46,11 @@ struct AppModelWorktreeListRefreshTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let project = harness.project
+    let gate = harness.root.appendingPathComponent("go")
     let failing = try harness.modelOnFakeGit(
       """
       case "$1 $2" in
-        "worktree list") while [ ! -e "$SCRATCH/go" ]; do sleep 0.02; done; exit 128 ;;
+        "worktree list") \(harness.holdLine(until: gate)); exit 128 ;;
       esac
       """
     )
@@ -57,7 +58,7 @@ struct AppModelWorktreeListRefreshTests {
     let refresh = Task { await failing.refreshWorktrees(of: project) }
     try await waitUntil { harness.gitCalls().contains { $0.hasPrefix("worktree list") } }
     failing.removeProject(project)
-    try "".write(to: harness.root.appendingPathComponent("go"), atomically: true, encoding: .utf8)
+    try "".write(to: gate, atomically: true, encoding: .utf8)
     await refresh.value
 
     #expect(failing.missingProjects.isEmpty)

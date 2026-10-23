@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// The directories one stream watches, matched by real path: FSEvents names
 /// `/private/var` where a caller may have said `/var`.
@@ -32,8 +33,7 @@ struct WatchedDirectories: Sendable {
       return Directory(realPath: String(cString: resolved), url: url)
     }
     entryIndexByRealPath = Dictionary(
-      entries.enumerated().map { ($0.element.realPath, $0.offset) },
-      uniquingKeysWith: { first, _ in first },
+      keepingFirst: entries.enumerated().map { ($0.element.realPath, $0.offset) }
     )
   }
 

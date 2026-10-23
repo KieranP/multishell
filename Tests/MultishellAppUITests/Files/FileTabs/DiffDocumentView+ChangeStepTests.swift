@@ -5,7 +5,8 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellAppUI
 
-extension DiffDocumentViewTests {
+@Suite @MainActor
+struct DiffDocumentViewChangeStepTests {
   @Test func eachStepDownPutsTheNextChangeUnderAFewRowsOfContextWithTheSelectionAtIt() {
     let (view, window) = DiffDocumentFixture.shown(DiffDocumentFixture.twoChanges)
     defer { withExtendedLifetime(window) {} }

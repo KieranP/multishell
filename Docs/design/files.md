@@ -73,7 +73,11 @@ Newest at the bottom.
   modified file's first edit moves no path, the index holding it. The changed
   paths' half is kept while only counts move too: 50,000 new files took 0.3 s
   per status read. Past 20,000 changed paths it builds off the main actor as
-  well, as a tracked file changing moves the set without moving the listing.
+  well, as a tracked file changing moves the set without moving the listing. The
+  listing's bound counts every path it lists, a read submodule's and a staged
+  deletion's included. What a status read still costs the main actor, the tree's
+  kinds and counts and the shown rows, stays there by choice: 110 ms at 100,000
+  changed paths and 300 ms at 250,000, at most once in 10 s.
 - **Only the panel's own worktree keeps its listing**, a Linux-sized one and its
   tree holding about 80 MB; coming back reads it again, with each open folder
   git does not list. A folder git stops ignoring drops what was read of it.

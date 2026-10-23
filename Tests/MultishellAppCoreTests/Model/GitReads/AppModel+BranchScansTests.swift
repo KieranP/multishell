@@ -288,8 +288,7 @@ struct AppModelBranchScansTests {
       case "$*" in
         for-each-ref*)
           if [ -e .slow ]; then
-            i=0
-            while [ ! -e "$SCRATCH/release" ] && [ $i -lt 200 ]; do sleep 0.05; i=$((i+1)); done
+            \(harness.holdLine(until: release))
           else
             echo "$PWD" >> "$SCRATCH/scanned"
           fi ;;

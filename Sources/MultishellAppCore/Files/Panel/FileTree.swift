@@ -8,10 +8,10 @@ struct FileTree: Sendable {
   struct Node: Sendable {
     let name: String
     let path: String
-    var children: [Self]
-    var isFolder: Bool
-    var isRepository: Bool
-    var isIgnored: Bool
+    let children: [Self]
+    let isFolder: Bool
+    let isRepository: Bool
+    let isIgnored: Bool
   }
 
   let listing: FileTreeListing

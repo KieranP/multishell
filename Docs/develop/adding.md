@@ -25,8 +25,9 @@ What each addition needs beyond the code itself.
 - **A surface host also gives a pane's text, frame and last drawn image** where
   it can, which `panes read`, `tabs show` and `debug screenshot` answer from;
   one that cannot returns `nil` and the request is refused or the frame left
-  out. Search counts reach the model through the delegate, whose default drops
-  them, so `panes find` prints what it has at its two-second limit. A host that
+  out. Search counts reach the model through the delegate's `didCount`, and a
+  host that sends none leaves `panes find` printing what it has at its
+  two-second limit. A host that
   cannot say a session's terminal memory returns `nil`, and Debug Info leaves
   that screen and scrollback in the app's row.
 - **A host judges a clicked link itself** before anything opens it, and hands a
@@ -313,7 +314,7 @@ What each addition needs beyond the code itself.
   removal; keyed by file tab, in `pruneFileTabs`, or a closed tab's id keeps its
   entry for the run. Nothing forces any of the three.
 - **A request a view acts on is a model property the view takes** in its update,
-  `takeChangeStepRequest` and `takeFileTabFocusRequest` the pattern: a SwiftUI
+  `takeChangeStepRequests` and `takeFileTabFocusRequest` the pattern: a SwiftUI
   bar cannot reach the AppKit view beside it, and the take, read in
   `updateNSView`, is what makes SwiftUI call the update again.
 - **A value a poll or timer writes goes through `setIfChanged`**, or every view

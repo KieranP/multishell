@@ -6,15 +6,26 @@ import MultishellGitKit
 struct FileTreeListing: Sendable {
   /// What a listing is built from; a status whose counts alone moved keeps it.
   struct Key: Equatable, Sendable {
-    let tracked: TrackedFiles
-    let untrackedPaths: [String]
+    private let tracked: TrackedFiles
+    fileprivate let untrackedPaths: [String]
     private let submodules: [String: TrackedFiles]
     private let submoduleUntrackedPaths: [String: [String]]
-    let ignoredEntries: [String]
+    private let ignoredEntries: [String]
     private let ignoredFolderEntries: [String: [IgnoredFolderEntry]]
     /// A deleted file is listed by its change once the index no longer has it;
     /// a modified one is in the tracked list unless past its cap.
     fileprivate let changedPathsTrackedMayLack: Set<String>
+    /// Those of them no other list holds: an added path is tracked or untracked.
+    private let changedPathsBeyondTheLists: Int
+
+    /// Every path a listing builds from, what its build costs.
+    var pathCount: Int {
+      tracked.paths.count + untrackedPaths.count + ignoredEntries.count
+        + submodules.values.reduce(0) { $0 + $1.paths.count }
+        + submoduleUntrackedPaths.values.reduce(0) { $0 + $1.count }
+        + ignoredFolderEntries.values.reduce(0) { $0 + $1.count }
+        + changedPathsBeyondTheLists
+    }
 
     init(_ sources: FileTreeSources) {
       tracked = sources.tracked
@@ -24,9 +35,9 @@ struct FileTreeListing: Sendable {
       ignoredEntries = sources.ignoredEntries
       ignoredFolderEntries = sources.ignoredFolderEntries
       let isCapped = sources.tracked.isCapped
-      changedPathsTrackedMayLack = Set(
-        FileTree.statusChanges(in: sources).filter { isCapped || $0.kind != .modified }.map(\.path)
-      )
+      let lacked = FileTree.statusChanges(in: sources).filter { isCapped || $0.kind != .modified }
+      changedPathsTrackedMayLack = Set(lacked.map(\.path))
+      changedPathsBeyondTheLists = lacked.count { $0.kind != .added }
     }
   }
 

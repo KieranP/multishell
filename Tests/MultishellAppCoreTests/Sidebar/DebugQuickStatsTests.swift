@@ -22,6 +22,9 @@ struct DebugQuickStatsTests {
     #expect(stats.totalCPUPercent == 12, "the app and its children together")
     #expect(stats.totalMemory == 400 + 1_089)
     #expect(stats.frameRateTrend.count == 60)
+    #expect(stats.cpuTrend.count == 60)
+    #expect(stats.cpuTrend.last == 0.12)
+    #expect(stats.memoryTrend.count == 60)
     #expect(stats.memoryTrend.first == 0)
     #expect(stats.memoryTrend.last == 1, "the minute's own lowest to highest")
   }

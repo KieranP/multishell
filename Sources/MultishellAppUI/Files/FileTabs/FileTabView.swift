@@ -9,13 +9,6 @@ struct FileTabView: View {
   let tab: FileTab
   let theme: Theme
 
-  private var fileFont: FileFont {
-    FileFont(
-      family: model.workspace.appearance.fileFontName,
-      size: model.workspace.appearance.fileFontSize,
-    )
-  }
-
   var body: some View {
     let reading = model.fileTabReadings[tab.id]
     VStack(spacing: 0) {
@@ -23,7 +16,7 @@ struct FileTabView: View {
       switch reading?.content {
       case .text(let rows):
         rowsView(of: rows)
-          .id(fileFont)
+          .id(model.fileFont)
           .overlay(alignment: .topTrailing) {
             if model.findBarTargetIDs.contains(tab.id) {
               FindBar(model: model, targetID: tab.id, theme: theme)
@@ -55,7 +48,7 @@ struct FileTabView: View {
         path: tab.path,
         split: split,
         theme: theme,
-        font: fileFont,
+        font: model.fileFont,
         find: find,
       )
     } else {
@@ -65,7 +58,7 @@ struct FileTabView: View {
         path: tab.path,
         text: rows.displayText,
         theme: theme,
-        font: fileFont,
+        font: model.fileFont,
         find: find,
       )
     }

@@ -75,8 +75,8 @@ final class Harness {
 
   /// The model's tasks are `@MainActor`, so yielding hands them the actor this test holds; a
   /// handful of turns covers one that awaits a port on the way.
-  func settled(turns: Int = 10) async {
-    for _ in 0..<turns { await Task.yield() }
+  func settled() async {
+    for _ in 0..<10 { await Task.yield() }
   }
 
   /// The alert a save that ran off the main actor raised, waiting up to a

@@ -59,7 +59,6 @@ struct WorktreeHeader: View {
         model.toggleFilesPanel()
       } glyph: {
         HeaderGlyph(symbol: "sidebar.right")
-          .contentShape(.rect)
       }
       .foregroundStyle(
         model.showsFilesPanel

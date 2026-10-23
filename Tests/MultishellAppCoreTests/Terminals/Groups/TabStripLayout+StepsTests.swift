@@ -51,6 +51,11 @@ struct TabStripLayoutStepsTests {
     #expect(target(.leading, at: 400) == 3)
   }
 
+  @Test func aStripPulledPastItsStartStepsAsFromItsStart() {
+    #expect(target(.trailing, at: -40) == target(.trailing, at: 0))
+    #expect(target(.trailing, at: -40) == 3)
+  }
+
   @Test func aStripWithNothingInItOrNotYetScrolledIsAskedNothing() {
     #expect(layout.stepTarget(towards: .trailing, offset: 0, viewport: 300, count: 0) == nil)
     #expect(layout.stepTarget(towards: .trailing, offset: .nan, viewport: 300, count: 7) == nil)

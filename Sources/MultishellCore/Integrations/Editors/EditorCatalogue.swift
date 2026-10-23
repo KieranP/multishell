@@ -4,7 +4,7 @@ import Foundation
 /// workspace so a newer build's editor loads harmlessly on an older one.
 public enum EditorCatalogue {
   public static let noneID = "none"
-  /// A command template the user typed, with `{path}` for the worktree.
+  /// A command template the user typed, with `{path}` for the worktree or the clicked file.
   public static let customID = "custom"
 
   public static let editors: [EditorDescriptor] = [

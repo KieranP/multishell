@@ -188,8 +188,7 @@ extension AppModel {
   )
     -> FileTreeListing?
   {
-    let paths = key.tracked.paths.count + key.untrackedPaths.count + key.ignoredEntries.count
-    guard paths < Self.builtInPlaceBelow else { return nil }
+    guard key.pathCount < Self.builtInPlaceBelow else { return nil }
     return FileTreeListing(sources, key: key)
   }
 

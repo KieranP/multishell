@@ -239,17 +239,31 @@ struct AppModelWorktreeCreationTests {
   @Test func aStepReportedAfterItsCreateEndedIsDropped() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "done",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
+    let gate = harness.root.appendingPathComponent("go")
+    let held = try harness.modelOnFakeGit(
+      """
+      case "$1 $2" in
+        "worktree add") \(harness.holdLine(until: gate)) ;;
+      esac
+      """
     )
-    #expect(harness.model.worktreeCreationStep == nil)
+    let create = Task {
+      await held.createWorktree(
+        branch: "done",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
+    }
+    try await waitUntil { held.stageHandles.creationStopper != nil }
+    let stopper = try #require(held.stageHandles.creationStopper)
+    try Data().write(to: gate)
+    _ = await create.value
+    #expect(held.worktreeCreationStep == nil)
 
-    harness.model.noteCreationStep(.addingWorktree, of: ProcessStopper())
+    held.noteCreationStep(.addingWorktree, of: stopper)
 
-    #expect(harness.model.worktreeCreationStep == nil, "no create owns that stopper any more")
+    #expect(held.worktreeCreationStep == nil, "no create owns that stopper any more")
   }
 
   /// The settings window is its own scene, so a sheet outlives a removal

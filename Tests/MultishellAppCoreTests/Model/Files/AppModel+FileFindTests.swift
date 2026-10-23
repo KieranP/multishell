@@ -113,6 +113,7 @@ struct AppModelFileFindTests {
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
     harness.model.showFind()
     harness.model.setFindText("a", of: tab.id)
+    harness.model.findNext(in: tab.id)
     if isHidden { harness.model.newShellTab() }
 
     harness.model.setFileTabLayout(.split)
@@ -121,7 +122,7 @@ struct AppModelFileFindTests {
       _ = try #require(await harness.rowsArrive(in: tab.id))
     }
 
-    #expect(harness.model.selectedFileFindMatch(of: tab.id) == 0)
+    #expect(harness.model.selectedFileFindMatch(of: tab.id) == 1)
   }
 
   @Test func aSwitchToSplitKeepsTheMatchOnItsLineWhereLinesRepeat() async throws {

@@ -247,6 +247,10 @@ struct AppModelControlRequestAlertsTests {
     before(model)
     let request = Task { await model.answer(.addProject(path: plain.path)) }
     try await waitUntil({ FileManager.default.fileExists(atPath: asked.path) }, seconds: 10)
+    #expect(
+      FileManager.default.fileExists(atPath: asked.path),
+      "the request is held at its git check",
+    )
     return (model, request, { try Data().write(to: gate) })
   }
 }

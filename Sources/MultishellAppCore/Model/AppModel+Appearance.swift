@@ -22,6 +22,13 @@ extension AppModel {
     workspace.appearance.fileFontName ?? FontDetection.systemID
   }
 
+  public var fileFont: FileFont {
+    FileFont(
+      family: workspace.appearance.fileFontName,
+      size: workspace.appearance.fileFontSize,
+    )
+  }
+
   public func setTheme(_ id: Theme.ID) {
     store.setTheme(id)
     host.apply(currentTheme, appearance: workspace.appearance)

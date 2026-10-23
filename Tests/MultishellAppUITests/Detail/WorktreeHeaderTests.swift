@@ -11,14 +11,19 @@ struct WorktreeHeaderTests {
   @Test func aMissingProjectsBadgeIsRingedInTheHeadersColourNotTheSidebars() throws {
     let harness = ModelHarness()
     let worktree = harness.addPrimaryWorktree()
-    harness.model.missingProjects = [harness.project.id]
     let theme = Theme.multishellDark
-    let bitmap = try #require(
-      OffscreenWindow.pixels(
-        ofHosted: WorktreeHeader(model: harness.model, worktree: worktree, theme: theme),
-        size: CGSize(width: 600, height: 40),
+    func header() throws -> NSBitmapImageRep {
+      try #require(
+        OffscreenWindow.pixels(
+          ofHosted: WorktreeHeader(model: harness.model, worktree: worktree, theme: theme),
+          size: CGSize(width: 600, height: 40),
+        )
       )
-    )
+    }
+    let unbadged = try header()
+    harness.model.missingProjects = [harness.project.id]
+    let bitmap = try header()
+    #expect(bitmap.tiffRepresentation != unbadged.tiffRepresentation, "a badge is drawn")
     let sidebarColour = try #require(
       NSColor(theme.projectsPanel.background).usingColorSpace(bitmap.colorSpace)
     )

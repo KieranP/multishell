@@ -35,9 +35,3 @@ public protocol TerminalHost: AnyObject {
   @discardableResult
   func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool
 }
-
-extension TerminalHost {
-  /// An engine with no search: the bar's steps land nowhere rather than
-  /// failing the host.
-  public func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
-}

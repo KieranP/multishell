@@ -71,7 +71,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var customShellPath = ""
   /// Catalogue id of the editor Open in Editor uses, or `nil` for none.
   public internal(set) var preferredEditorID: String?
-  /// What `EditorCatalogue.customID` runs, with `{path}` for the worktree.
+  /// What `EditorCatalogue.customID` runs, with `{path}` for the worktree or the clicked file.
   public internal(set) var customEditorCommand = ""
   /// Selecting a worktree with no tabs opens one. Off, Cmd+T or the
   /// actions menu does.

@@ -12,7 +12,6 @@ struct DraggedFilePathsTests {
     let copy =
       temporary
       .appendingPathComponent("TemporaryItems", isDirectory: true)
-      .appendingPathComponent("NSIRD_screencaptureui_YGSj8h", isDirectory: true)
       .appendingPathComponent("Screenshot 2026-09-07 at 3.31.01 PM.png")
     #expect(DraggedFilePaths.isTemporaryCopy(copy))
 

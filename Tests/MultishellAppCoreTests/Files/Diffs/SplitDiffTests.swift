@@ -23,10 +23,4 @@ struct SplitDiffTests {
     )
     #expect(split.onDisk.lines.count == split.committed.lines.count)
   }
-
-  @Test func aSplitSideCopiesPlainTextWithItsPaddingLeftOut() {
-    let side = SplitDiff(Self.lines).onDisk
-
-    #expect(side.plainCopy(selections: [0..<side.string.utf16.count]) == "keep\nnew a\ntail\nend")
-  }
 }

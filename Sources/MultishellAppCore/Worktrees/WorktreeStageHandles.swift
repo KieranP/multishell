@@ -7,8 +7,8 @@ struct WorktreeStageHandles: Sendable {
   private var setupTasks: [Worktree.ID: Task<Void, Never>] = [:]
   private var stoppers: [Worktree.ID: ProcessStopper] = [:]
   /// The pre-create hook and `git worktree add` under the sheet, which run
-  /// before there is a worktree to key a handle by.
-  private var creationStopper: ProcessStopper?
+  /// before there is a worktree to key a handle by; read by a test.
+  private(set) var creationStopper: ProcessStopper?
 
   /// The file lists and post-create hook still running on `id`, as one task,
   /// so a test can await it.

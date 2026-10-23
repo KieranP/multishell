@@ -22,7 +22,7 @@ public struct DebugMemoryTable: Sendable, Equatable {
     )
   }
 
-  /// The app, the tabs, Other processes where there are any, and the total,
+  /// The app, the tabs, file tabs and Other processes where there are any, and the total,
   /// each bar against the heaviest row.
   public var rows: [DebugMemoryRow] {
     let appRowMemory = appMemoryOutsideTabs

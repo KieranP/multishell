@@ -30,21 +30,3 @@ public protocol TerminalHostDelegate: AnyObject {
     in id: TerminalSession.ID,
   )
 }
-
-extension TerminalHostDelegate {
-  /// A host without the distinction reports a finished command as activity.
-  public func terminalHost(
-    _ host: any TerminalHost,
-    didFinishCommandIn id: TerminalSession.ID,
-    exitCode: Int32?,
-  ) {
-    terminalHost(host, didSeeActivityIn: id)
-  }
-
-  /// A delegate with no find bar has no use for a count.
-  public func terminalHost(
-    _ host: any TerminalHost,
-    didCount count: TerminalSearchCount,
-    in id: TerminalSession.ID,
-  ) {}
-}

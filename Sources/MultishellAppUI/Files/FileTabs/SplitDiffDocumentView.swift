@@ -26,7 +26,7 @@ final class SplitDiffDocumentView: NSView {
 
   /// The right where neither side has the keyboard, as find counts there.
   private var keyboardSide: DiffDocumentView {
-    window?.firstResponder === committed.textView ? committed : onDisk
+    committed.textView.isFirstResponder ? committed : onDisk
   }
 
   init(geometry: DiffRowGeometry) {

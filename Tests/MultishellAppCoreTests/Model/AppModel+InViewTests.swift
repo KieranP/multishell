@@ -37,4 +37,12 @@ struct AppModelInViewTests {
 
     #expect(!harness.model.isFocusedPane(focused.focusedSessionID))
   }
+
+  @Test func aFileTabInFrontLeavesNoPaneFocused() throws {
+    let harness = Harness()
+    _ = harness.openFileTab()
+    let shell = try #require(harness.model.workspace.tabs(in: harness.main.id).first)
+
+    #expect(!harness.model.isFocusedPane(shell.focusedSessionID))
+  }
 }

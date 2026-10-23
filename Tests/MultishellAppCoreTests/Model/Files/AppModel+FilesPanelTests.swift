@@ -9,13 +9,14 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelFilesPanelTests {
-  private static func modified(_ count: Int) -> WorktreeStatus {
+  private static func modified(_ count: Int, kind: StatusChange.Kind = .modified) -> WorktreeStatus
+  {
     var status = WorktreeStatus()
     status.setChanges(
       (0..<count).map { number in
         StatusChange(
           path: "src/file\(number).txt",
-          kind: .modified,
+          kind: kind,
           lines: .counted(insertions: 1, deletions: 0),
         )
       }
@@ -210,6 +211,34 @@ struct AppModelFilesPanelTests {
 
     #expect(harness.model.pendingFileTreeChanges[main.id] != nil)
     #expect(summary.changedFiles == 30_000)
+  }
+
+  @Test func aListingLargeOnlyThroughAReadSubmoduleBuildsOffTheMainActor() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    harness.model.trackedFiles[main.id] = Self.tracked(10)
+    harness.model.submoduleReadings[main.id] = [
+      "sub": SubmoduleReading(tracked: Self.tracked(30_000), status: nil)
+    ]
+
+    _ = harness.model.fileTreeRows(of: main.id)
+
+    #expect(harness.model.pendingFileTreeListings[main.id] != nil)
+  }
+
+  @Test func aListingLargeOnlyThroughStagedDeletionsBuildsOffTheMainActor() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    harness.model.trackedFiles[main.id] = Self.tracked(10)
+    harness.model.statuses[main.id] = Self.modified(30_000, kind: .deleted)
+
+    _ = harness.model.fileTreeRows(of: main.id)
+
+    #expect(harness.model.pendingFileTreeListings[main.id] != nil)
   }
 
   @Test func rendersWhileALargeListingBuildsReuseOneTreeAndItsRows() async throws {

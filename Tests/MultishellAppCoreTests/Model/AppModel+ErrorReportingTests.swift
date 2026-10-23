@@ -10,11 +10,6 @@ struct AppModelErrorReportingTests {
     return error
   }
 
-  @Test func onlyAnErrorWithAStrongerFormIsRetryable() {
-    #expect(!PresentedError(title: "Failed", message: "").isRetryable)
-    #expect(retryable(counting: {}).isRetryable)
-  }
-
   @Test func aRetryableErrorGoesToTheDestructiveAlertAndAPlainOneToTheDismiss() {
     let harness = Harness()
     harness.model.presentedError = nil

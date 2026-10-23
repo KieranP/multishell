@@ -7,6 +7,18 @@ import Testing
 
 @Suite(.serialized)
 struct WorktreeGitCreationTests {
+  @Test func aNewIndexIsRefreshedOnceItsSecondHasPassed() async throws {
+    let fake = try FakeGit.make("", loggingCalls: true)
+    defer { fake.tearDown() }
+
+    await WorktreeGit(runner: fake.runner).settleIndex(
+      of: fake.directory,
+      stopper: ProcessStopper(),
+    )
+
+    #expect(FakeGit.calls(in: fake.directory).contains { $0.contains("update-index") })
+  }
+
   @Test func anAlreadyStoppedStopperSkipsTheIndexRefresh() async throws {
     let fake = try FakeGit.make("", loggingCalls: true)
     defer { fake.tearDown() }

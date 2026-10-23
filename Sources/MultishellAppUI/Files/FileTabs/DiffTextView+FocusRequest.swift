@@ -7,6 +7,6 @@ extension DiffTextView {
   func takeKeyboard(ifAskedBy model: AppModel, for tabID: FileTab.ID) {
     guard model.takeFileTabFocusRequest(tabID) else { return }
     // A turn later, once the view is in its window.
-    Task { @MainActor in window?.makeFirstResponder(self) }
+    Task { @MainActor in takeFirstResponder() }
   }
 }

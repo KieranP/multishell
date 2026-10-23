@@ -1,4 +1,5 @@
 import MultishellCore
+import Observation
 import Testing
 
 @testable import MultishellAppCore
@@ -223,6 +224,21 @@ struct AppModelFindTests {
 
     #expect(harness.model.takeFindFieldRequest(pane))
     #expect(harness.engine.searched.map(\.step) == [.find("make")])
+  }
+
+  @Test func aBarClaimingTheFieldWhenNoneWasAskedRedrawsNothing() {
+    let harness = Harness()
+    let pane = paneWithFindOpen(harness)
+    _ = harness.model.takeFindFieldRequest(pane)
+    let wrote = AtomicFlag()
+    withObservationTracking {
+      _ = harness.model.findFieldRequests
+    } onChange: {
+      wrote.raise()
+    }
+
+    #expect(!harness.model.takeFindFieldRequest(pane))
+    #expect(!wrote.raised)
   }
 
   @Test func aBarShownAgainByAWorktreeSwitchLeavesTheKeyboardInThePane() {

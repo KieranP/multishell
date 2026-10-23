@@ -70,6 +70,9 @@ struct UIMetrics: Equatable {
   /// The find bar's well height, and each of its glyph buttons' side.
   var findControlSize: Double { (bodySize * 2.2).rounded() }
 
+  /// The sidebar's and the Files panel's filter well.
+  var filterWellHeight: Double { (bodySize * 1.85).rounded() }
+
   init(fontSize: Double, fontFamily: String?) {
     bodySize = fontSize
     self.fontFamily = fontFamily

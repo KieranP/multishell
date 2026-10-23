@@ -23,4 +23,16 @@ final class FakeTerminalHostDelegate: TerminalHostDelegate {
   func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {
     reports.append(id)
   }
+  func terminalHost(
+    _ host: any TerminalHost,
+    didFinishCommandIn id: TerminalSession.ID,
+    exitCode: Int32?,
+  ) {
+    reports.append(id)
+  }
+  func terminalHost(
+    _ host: any TerminalHost,
+    didCount count: TerminalSearchCount,
+    in id: TerminalSession.ID,
+  ) {}
 }

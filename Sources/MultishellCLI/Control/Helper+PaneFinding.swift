@@ -24,11 +24,12 @@ extension Helper {
       flags: ["next", "previous", "close"],
       topic: topic,
     )
-    let steps: [(flag: String, action: PaneFindAction)] = [
+    let flaggedActions: [(flag: String, action: PaneFindAction)] = [
       ("next", .next), ("previous", .previous), ("close", .close),
     ]
     let asked =
-      steps.filter { options.has($0.flag) }.map(\.action) + (text.map { [.open($0)] } ?? [])
+      flaggedActions.filter { options.has($0.flag) }.map(\.action)
+      + (text.map { [.open($0)] } ?? [])
     guard asked.count == 1, let action = asked.first else {
       throw UsageError("panes find needs TEXT or one of --next, --previous, --close", topic: topic)
     }

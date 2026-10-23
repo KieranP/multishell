@@ -23,7 +23,6 @@ extension UIMetrics {
   /// The column a sidebar row's leading glyph sits in, one width for every
   /// row so the worktree, pane and agents rows line up.
   var sidebarGlyphColumn: Double { paneGlyphSize }
-  var sidebarFilterHeight: Double { (bodySize * 1.85).rounded() }
 
   /// A pane's row under the selected worktree: one line of badge-sized text,
   /// shorter than a worktree's so the panes read as its.

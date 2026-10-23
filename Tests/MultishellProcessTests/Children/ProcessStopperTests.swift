@@ -19,12 +19,10 @@ struct ProcessStopperTests {
 
   /// `kill(pid, 0)` calls a zombie alive and launchd reaps orphans at its own pace, so a
   /// zombie counts as ended and the check waits a little.
-  private func hasEnded(_ pid: pid_t, polls: Int = 30) async -> Bool {
-    for _ in 0..<polls {
-      if kill(pid, 0) != 0 || isZombie(pid) { return true }
-      try? await Task.sleep(for: .milliseconds(100))
-    }
-    return false
+  private func hasEnded(_ pid: pid_t, within seconds: Double = 3) async -> Bool {
+    let ended = { kill(pid, 0) != 0 || isZombie(pid) }
+    try? await waitUntil(ended, seconds: seconds)
+    return ended()
   }
 
   private func isZombie(_ pid: pid_t) -> Bool {
@@ -311,7 +309,9 @@ struct ProcessStopperTests {
       timeout: .milliseconds(200),
     )
     let child = try #require(sleepPID(in: output.standardOutput))
-    let polls = Int(ProcessStopper.killGrace * 10) + 50
-    #expect(await hasEnded(child, polls: polls), "left running as pid \(child)")
+    #expect(
+      await hasEnded(child, within: ProcessStopper.killGrace + 5),
+      "left running as pid \(child)",
+    )
   }
 }
