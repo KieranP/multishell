@@ -102,19 +102,23 @@ struct ProcessStopperTests {
   }
 
   @Test func theStopperEndsTheChildAndSaysTheUserAsked() async throws {
+    let scratch = try Scratch.directory("stopped-child")
+    defer { Scratch.remove(scratch) }
+    let ready = scratch.appendingPathComponent("ready")
     let stopper = ProcessStopper()
     Task {
-      try? await Task.sleep(for: .milliseconds(300))
+      try? await waitUntil { FileManager.default.fileExists(atPath: ready.path) }
       stopper.stop()
     }
     let started = ContinuousClock.now
     let output = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"),
-      ["-c", "sleep 30"],
+      ["-c", "touch \"\(ready.path)\"; sleep 30"],
       in: workingDirectory,
       stopper: stopper,
     )
     #expect(output.stopReason == .byUser)
+    #expect(FileManager.default.fileExists(atPath: ready.path), "stopped while it ran, not before")
     #expect(ContinuousClock.now - started < .seconds(12), "the child sleeps thirty")
   }
 
@@ -128,6 +132,7 @@ struct ProcessStopperTests {
       stopper: stopper,
     )
     #expect(output.stopReason == .byUser)
+    #expect(!output.succeeded, "hung up, not slept out")
   }
 
   /// The status proves the kill, not a clock: a loaded CI runner's startup
@@ -276,6 +281,7 @@ struct ProcessStopperTests {
       stopper: stopper,
     )
     #expect(next.stopReason == .byUser)
+    #expect(!next.succeeded, "hung up, not slept out")
   }
 
   /// SIGHUP reaches the group, so the shell goes at once and the guard on it

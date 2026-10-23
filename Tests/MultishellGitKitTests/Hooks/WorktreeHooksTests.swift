@@ -95,11 +95,12 @@ struct WorktreeHooksTests {
   @Test func theStopperEndsAPostCreateHookAndTheFailureSaysTheUserAsked() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
+    let started = fixture.root.appendingPathComponent("started")
     var project = fixture.project
-    project.settings = ProjectSettings(postCreateHook: "sleep 30")
+    project.settings = ProjectSettings(postCreateHook: "touch \"\(started.path)\"; sleep 30")
     let stopper = ProcessStopper()
     Task {
-      try? await Task.sleep(for: .milliseconds(300))
+      try? await waitUntil { FileManager.default.fileExists(atPath: started.path) }
       stopper.stop()
     }
 

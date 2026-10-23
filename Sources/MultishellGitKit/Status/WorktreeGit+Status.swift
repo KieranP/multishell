@@ -17,8 +17,6 @@ extension WorktreeGit {
     ]
   }
 
-  /// `--no-optional-locks`: a plain `git status` takes `index.lock`, failing a
-  /// `git commit` typed at that moment.
   func status(
     of worktree: Worktree,
     counting indicator: GitStatusIndicator = .default,
@@ -33,8 +31,8 @@ extension WorktreeGit {
     )
   }
 
-  /// The same read of any repository's checkout: a submodule the Files panel
-  /// opens is read as a worktree of its own.
+  /// Any repository's checkout, a submodule the Files panel opens too. Its index reads pass
+  /// `--no-optional-locks`, as a plain `git status` takes `index.lock` and fails a `git commit`.
   public func status(
     inRepositoryAt path: URL,
     counting indicator: GitStatusIndicator,

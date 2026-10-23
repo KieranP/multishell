@@ -6,6 +6,8 @@ import Testing
 @testable import MultishellGitKit
 
 extension WorktreeCoordinatorMergesTests {
+  /// Each run holds its slot for a second, as the status reads' width test does: at half
+  /// a second a slow runner saw waves leave before the next arrived, testing no width.
   @Test func severalProjectsReadTogetherStartNoMoreGitThanOneDoes() async throws {
     let fake = try FakeGit.make(
       """
@@ -14,7 +16,7 @@ extension WorktreeCoordinatorMergesTests {
           mkdir -p "$SCRATCH/running"
           touch "$SCRATCH/running/$$"
           ls "$SCRATCH/running" | wc -l >> "$SCRATCH/counts"
-          sleep 0.5
+          sleep 1
           rm "$SCRATCH/running/$$"
           echo "+ 1111111111111111111111111111111111111111" ;;
       esac
@@ -43,5 +45,6 @@ extension WorktreeCoordinatorMergesTests {
       Int(line.trimmingCharacters(in: .whitespaces))
     }.max()
     #expect(peak.map { $0 <= SharedReadState.maximumConcurrentReads } == true, "\(peak ?? 0)")
+    #expect(peak ?? 0 >= 4, "runs did not overlap: \(peak ?? 0)")
   }
 }

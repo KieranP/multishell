@@ -120,6 +120,12 @@ struct GitHarness {
     model.statuses = [:]
   }
 
+  /// A shell line holding a hook or a fake git until `gate` exists, or until the
+  /// harness is torn down.
+  func holdLine(until gate: URL) -> String {
+    "while [ ! -f \"\(gate.path)\" ] && [ -d \"\(root.path)\" ]; do sleep 0.02; done"
+  }
+
   /// A model on fake git whose `git status` takes 0.6 s, read at the standard pace.
   func modelWithSlowStatus() throws -> AppModel<FakeSurface> {
     let fake = try modelOnFakeGit("case \"$*\" in *status*) sleep 0.6;; esac; exit 0")
@@ -135,7 +141,7 @@ struct GitHarness {
         *status*)
           if [ ! -f "$SCRATCH/first" ]; then
             touch "$SCRATCH/first"
-            while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
+            \(holdLine(until: gate))
           fi
           printf '## main\\0' ;;
       esac
@@ -154,7 +160,7 @@ struct GitHarness {
     try modelOnFakeGit(
       """
       case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(root.path)" ]; do sleep 0.02; done
+        *status*) \(holdLine(until: gate))
           printf '## \(branch)\\0' ;;
       esac
       """
@@ -174,7 +180,7 @@ struct GitHarness {
       """
       if [ "$*" = "rev-parse --git-dir" ] && [ "$(basename "$PWD")" = "\(folder.lastPathComponent)" ]; then
         touch "\(asked.path)"
-        while [ ! -f "\(gate.path)" ] && [ -d "\(root.path)" ]; do sleep 0.02; done
+        \(holdLine(until: gate))
         exit 1
       fi
       exit 0

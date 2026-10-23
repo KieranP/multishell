@@ -156,22 +156,16 @@ struct AppModelStatusReadsTests {
     await harness.model.refreshWorktrees(of: harness.project)
     let doomed = try #require(harness.worktree(onBranch: "gone"))
     let main = try #require(harness.worktree(onBranch: "main"))
-    // A git slow enough that the removal lands while the round is inside it.
-    let slow = try harness.modelOnFakeGit(
-      """
-      while [ "${1#--}" != "$1" ]; do shift; done
-      case "$1" in
-        status) sleep 1; printf '## main\\0 M a.txt\\0' ;;
-      esac
-      """
-    )
+    let gate = harness.root.appendingPathComponent("go")
+    let held = try harness.modelWithStatusHeld(until: gate, answering: "main")
 
-    let round = Task { await slow.refreshStatuses() }
+    let round = Task { await held.refreshStatuses() }
     try await waitUntil { harness.statusRunCount() > 0 }
     harness.store.replaceWorktrees([main], forProject: harness.project.id)
+    try Data().write(to: gate)
     await round.value
 
-    #expect(slow.statuses[main.id] != nil, "the round landed, so there is something to judge")
-    #expect(slow.statuses[doomed.id] == nil, "a row that has gone keeps no reading")
+    #expect(held.statuses[main.id] != nil, "the round landed, so there is something to judge")
+    #expect(held.statuses[doomed.id] == nil, "a row that has gone keeps no reading")
   }
 }

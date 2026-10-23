@@ -58,15 +58,11 @@ struct GhosttyTerminalHostTests {
     let window = OffscreenWindow.holding(container, deferred: false)
     var isReleased: [() -> Bool] = []
     try autoreleasepool {
-      for index in 0..<5 {
-        let session = TerminalSession(
-          worktreeID: "/w",
-          workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()),
-          title: "Sleep \(index)",
-          command: ["/bin/sleep", "60"],
+      for _ in 0..<5 {
+        let (session, view) = try openSleepingSession(
+          in: host,
+          at: URL(fileURLWithPath: NSTemporaryDirectory()),
         )
-        try host.open(session)
-        let view = try #require(host.view(for: session.id))
         view.frame = container.bounds
         container.addSubview(view)
         isReleased.append { [weak view] in view == nil }

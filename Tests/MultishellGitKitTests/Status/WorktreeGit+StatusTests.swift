@@ -27,7 +27,6 @@ struct WorktreeGitStatusTests {
       )
     }
     let before = try indexModified()
-    try await Task.sleep(for: .milliseconds(50))
     try fixture.write("changed\n", to: "README.md")
     let main = try await fixture.worktree(onBranch: "main")
 
@@ -73,11 +72,9 @@ struct WorktreeGitStatusTests {
   @Test func beforeTheFirstCommitUnstagedLinesCountAsWellAsStagedOnes() async throws {
     let fixture = try await RepositoryFixture.make(commit: false)
     defer { fixture.tearDown() }
-    let path = fixture.project.path
-    let file = path.appendingPathComponent("a.txt")
-    try "one\n".write(to: file, atomically: true, encoding: .utf8)
-    _ = try await fixture.runner.run(["add", "a.txt"], in: path)
-    try "one\ntwo\nthree\n".write(to: file, atomically: true, encoding: .utf8)
+    try fixture.write("one\n", to: "a.txt")
+    _ = try await fixture.runner.run(["add", "a.txt"], in: fixture.project.path)
+    try fixture.write("one\ntwo\nthree\n", to: "a.txt")
     let git = WorktreeGit(runner: fixture.runner)
     let main = try await fixture.worktree(onBranch: "main")
 

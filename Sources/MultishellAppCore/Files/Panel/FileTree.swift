@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// Every file of a worktree as a tree: its listing, kept while only counts
-/// move, and the changes marked on it; flattened per render. See files.md.
+/// move, and the changes marked on it; flattened per panel state. See files.md.
 struct FileTree: Sendable {
   struct Node: Sendable {
     let name: String
@@ -15,51 +15,51 @@ struct FileTree: Sendable {
   }
 
   let listing: FileTreeListing
-  private let changes: FileTreeChanges
+  let changes: FileTreeChanges
   private let changeKinds: [String: StatusChange.Kind]
   private let lineCounts: [String: FileLineCounts]
 
   /// The number Modified shows: each changed path once, a file both removed
-  /// from the index and left on disk being one row.
-  var changedFileCount: Int { changes.sortedPaths.count }
+  /// from the index and left on disk being one row; counted while `changes` builds.
+  let changedFileCount: Int
 
   /// An opened submodule's files count in no Modified of the worktree's, and
   /// what git ignores lists greyed, in All alone; see Docs/design/files.md.
   init(
     _ sources: FileTreeSources,
     listing: FileTreeListing,
-    reusingChangesOf previous: Self?,
+    changes: FileTreeChanges,
   ) {
     self.listing = listing
+    self.changes = changes
     var kinds: [String: StatusChange.Kind] = [:]
     var counts: [String: FileLineCounts] = [:]
-    for change in Self.statusChanges(in: sources) {
+    func add(_ change: StatusChange) {
       kinds[change.path] = change.kind
-      guard let changeCounts = FileLineCounts(change.lines) else { continue }
+      guard let changeCounts = FileLineCounts(change.lines) else { return }
       let total = counts[change.path]
       counts[change.path] = FileLineCounts(
         insertions: (total?.insertions ?? 0) + changeCounts.insertions,
         deletions: (total?.deletions ?? 0) + changeCounts.deletions,
       )
     }
+    (sources.status?.changes ?? []).forEach(add)
+    // A submodule's paths sit under its folder, so none is one of the worktree's.
+    changedFileCount = kinds.count
+    Self.submoduleChanges(in: sources).forEach(add)
     changeKinds = kinds
     lineCounts = counts
-    let changed = Set((sources.status?.changes ?? []).map(\.path))
-    if let kept = previous?.changes,
-      kept.isBuilt(from: changed, repositories: listing.repositories)
-    {
-      changes = kept
-    } else {
-      changes = FileTreeChanges(changed, repositories: listing.repositories)
-    }
   }
 
   /// The worktree's changes and an opened submodule's, under its folder.
   static func statusChanges(in sources: FileTreeSources) -> [StatusChange] {
-    (sources.status?.changes ?? [])
-      + sources.submodules.flatMap { folder, submodule in
-        (submodule.status?.changes ?? []).map { $0.prefixed(byFolder: folder) }
-      }
+    (sources.status?.changes ?? []) + submoduleChanges(in: sources)
+  }
+
+  private static func submoduleChanges(in sources: FileTreeSources) -> [StatusChange] {
+    sources.submodules.flatMap { folder, submodule in
+      (submodule.status?.changes ?? []).map { $0.prefixed(byFolder: folder) }
+    }
   }
 
   /// git's output decodes a byte that is not UTF-8 as U+FFFD, so such a name

@@ -33,12 +33,11 @@ variant="$(bundle_variant "$root" "$config")"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 
-# Build, verify, and copy the App
 xcode_build "$root" Multishell "$derived" "$configuration"
 verify_binary "$products/Multishell"
 cp "$products/Multishell" "$app/Contents/MacOS/Multishell"
 
-# Build, verify, and copy the CLI, installed under the name hooks call
+# The CLI, installed under the name hooks call.
 xcode_build "$root" multishell-helper "$derived" "$configuration"
 verify_binary "$products/multishell-helper"
 cp "$products/multishell-helper" "$app/Contents/Helpers/multishell"

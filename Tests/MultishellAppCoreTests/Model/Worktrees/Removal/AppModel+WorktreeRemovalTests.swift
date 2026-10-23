@@ -13,24 +13,22 @@ struct AppModelWorktreeRemovalTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let worktree = try await harness.createWorktree(onBranch: "going")
-    harness.model.setSettings(ProjectSettings(preDeleteHook: "sleep 1"), for: harness.project)
+    let gate = harness.root.appendingPathComponent("gate")
+    harness.model.setSettings(
+      ProjectSettings(
+        preDeleteHook: harness.holdLine(until: gate)
+      ),
+      for: harness.project,
+    )
     #expect(harness.model.liveTerminalCount == 1)
 
     let removal = Task { _ = await harness.model.removeWorktree(worktree, deletesBranch: false) }
-    var seen: Set<WorktreeOperation.Stage> = []
-    try await waitUntil(
-      {
-        guard let stage = harness.model.worktreeOperations[worktree.id]?.stage else {
-          return !seen.isEmpty
-        }
-        seen.insert(stage)
-        return false
-      },
-      seconds: 15,
-    )
+    let stage = { harness.model.worktreeOperations[worktree.id]?.stage }
+    try await waitUntil({ stage() == .preDeleteHook }, seconds: 15)
+    #expect(stage() == .preDeleteHook, "the hook was named while it ran")
+    try Data().write(to: gate)
     await removal.value
 
-    #expect(seen.contains(.preDeleteHook), "the hook was named while it ran: \(seen)")
     #expect(harness.model.worktreeOperations.isEmpty)
     #expect(harness.worktree(onBranch: "going") == nil)
     #expect(harness.model.liveTerminalCount == 0)

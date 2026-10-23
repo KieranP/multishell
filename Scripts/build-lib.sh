@@ -2,8 +2,7 @@
 # The parts of a bundle build that are not about this bundle, sourced by
 # make-app.sh, build-ghostty.sh and fetch-grammars.sh under `set -euo pipefail`.
 
-# The copyright the bundle carries. One place, so LICENSE, the About box and
-# the notices cannot say three different things.
+# The copyright the About box shows, through bundle_copyright.
 COPYRIGHT_HOLDER="Kieran Pilkington"
 COPYRIGHT_YEARS="2026"
 
@@ -69,9 +68,8 @@ bundle_variant() {
     printf %s "$(basename "$root")" | tr -c 'A-Za-z0-9_-' '-'
 }
 
-# What the About box shows under the version, and the only place the holder
-# is written. AGPL section 5 wants the notice on the work it covers, and the
-# bundle carries LICENSE, THIRD-PARTY-NOTICES.md and Licenses/ beside it.
+# What the About box shows under the version. AGPL section 5 wants the notice
+# on the work it covers, beside the LICENSE and notices the bundle carries.
 bundle_copyright() {
     printf 'Copyright © %s %s. Licensed under the GNU AGPL v3.' \
         "$COPYRIGHT_YEARS" "$COPYRIGHT_HOLDER"

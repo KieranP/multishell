@@ -8,20 +8,20 @@ import Testing
 struct LoginShellEnvironmentTests {
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
   func theCaptureLeavesAHistoryFileItsEnvironmentNamesAlone() async throws {
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
-    let history = home.appendingPathComponent("zsh_history")
+    let shell = try ScratchShell("/bin/bash")
+    defer { shell.tearDown() }
+    let history = shell.home.appendingPathComponent("zsh_history")
     let lines = LongHistory.lines
     try lines.write(to: history, atomically: true, encoding: .utf8)
     try "HISTFILESIZE=10\n".write(
-      to: home.appendingPathComponent(".bash_profile"),
+      to: shell.home.appendingPathComponent(".bash_profile"),
       atomically: true,
       encoding: .utf8,
     )
 
     _ = await LoginShellEnvironment.capture(
-      shellPath: "/bin/bash",
-      home: home,
+      shellPath: shell.path,
+      home: shell.home,
       extraEnvironment: ["HISTFILE": history.path],
     )
 
@@ -31,67 +31,67 @@ struct LoginShellEnvironmentTests {
   /// macOS `/etc/zshrc` sets HISTFILE again after the empty one is inherited.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func theCaptureLeavesZshHistoryAloneThoughEtcZshrcNamesIt() async throws {
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
-    let history = home.appendingPathComponent(".zsh_history")
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
+    let history = shell.home.appendingPathComponent(".zsh_history")
     let lines = LongHistory.lines
     try lines.write(to: history, atomically: true, encoding: .utf8)
     try "HISTFILE=\(history.path)\nSAVEHIST=10\nsetopt share_history inc_append_history\n"
-      .write(to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+      .write(to: shell.home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
-    _ = await LoginShellEnvironment.capture(shellPath: "/bin/zsh", home: home)
+    _ = await LoginShellEnvironment.capture(shellPath: shell.path, home: shell.home)
 
     #expect(try String(contentsOf: history, encoding: .utf8) == lines)
   }
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func aLoginShellAnswersWithThePathItsOwnRcFilesBuilt() async throws {
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
     try "export PATH=/opt/marker/bin:$PATH\n".write(
-      to: home.appendingPathComponent(".zshrc"),
+      to: shell.home.appendingPathComponent(".zshrc"),
       atomically: true,
       encoding: .utf8,
     )
 
-    let environment = await LoginShellEnvironment.capture(shellPath: "/bin/zsh", home: home)
+    let environment = await LoginShellEnvironment.capture(shellPath: shell.path, home: shell.home)
 
     #expect(environment.path?.hasPrefix("/opt/marker/bin:") == true, "\(environment)")
-    #expect(environment.source == .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+    #expect(environment.source == .loginShell(URL(fileURLWithPath: shell.path)))
   }
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func aGreetingShapedLikeAnAssignmentIsNotTakenForAVariable() async throws {
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
     try "printf 'motd=welcome back'\n".write(
-      to: home.appendingPathComponent(".zshrc"),
+      to: shell.home.appendingPathComponent(".zshrc"),
       atomically: true,
       encoding: .utf8,
     )
 
-    let environment = await LoginShellEnvironment.capture(shellPath: "/bin/zsh", home: home)
+    let environment = await LoginShellEnvironment.capture(shellPath: shell.path, home: shell.home)
 
     #expect(environment.variables["motd"] == nil)
-    #expect(environment.variables["HOME"] == home.path)
+    #expect(environment.variables["HOME"] == shell.home.path)
     #expect(environment.path != nil)
   }
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func aShellThatHangsFallsBackToTheAppsOwnEnvironmentAndSaysItTimedOut() async throws {
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
     try "sleep 30\n".write(
-      to: home.appendingPathComponent(".zshrc"),
+      to: shell.home.appendingPathComponent(".zshrc"),
       atomically: true,
       encoding: .utf8,
     )
 
     let started = ContinuousClock.now
     let environment = await LoginShellEnvironment.capture(
-      shellPath: "/bin/zsh",
+      shellPath: shell.path,
       timeout: .milliseconds(300),
-      home: home,
+      home: shell.home,
     )
     let elapsed = ContinuousClock.now - started
 

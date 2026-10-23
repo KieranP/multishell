@@ -107,9 +107,8 @@ enum SvelteGrammarInput {
     return units.count
   }
 
-  /// Past the `}` closing the `{` at `start`, skipping what JavaScript's strings and
-  /// comments hold, as the grammar's scanner ends a Svelte expression. Its `\` escapes
-  /// nothing there, so `{/\}/}` ends at the first `}`.
+  /// Past the `}` closing the `{` at `start`, skipping JavaScript's strings and comments
+  /// as the grammar's scanner does; its `\` escapes nothing, so `{/\}/}` ends at the first `}`.
   private static func expressionEnd(from start: Int, in units: [UInt16]) -> Int {
     var depth = 0
     var index = start + 1

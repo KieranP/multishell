@@ -130,12 +130,7 @@ struct AppModelBranchScansTests {
   @Test func aPassThatChangesNothingDoesNotDisturbTheViews() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "feat",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    _ = try await harness.createWorktree(onBranch: "feat")
     await harness.model.refreshBranchScans()
 
     let model = harness.model

@@ -92,8 +92,7 @@ struct ProjectSettingsTests {
   /// What the bug actually cost: the trip through the store and the
   /// workspace's encoding, which is where the override used to be lost.
   @Test @MainActor func aBlankOverrideSurvivesTheStoreAndTheWorkspacesEncoding() throws {
-    let store = WorkspaceStore()
-    let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
+    let (store, project, _) = demoStore()
     store.setSettings(ProjectSettings(branchPrefix: ""), forProject: project.id)
 
     let data = try JSONEncoder().encode(store.workspace)

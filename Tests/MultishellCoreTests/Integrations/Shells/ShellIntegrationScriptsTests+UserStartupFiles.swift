@@ -85,11 +85,7 @@ extension ShellIntegrationScriptsTests {
     let relocated = files.home.appendingPathComponent(".config/zsh", isDirectory: true)
     try FileManager.default.createDirectory(at: relocated, withIntermediateDirectories: true)
     try files.writeHomeFile(".zprofile", "export ZDOTDIR=\"$HOME/.config/zsh\"\n")
-    try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
-      to: relocated.appendingPathComponent(".zshrc"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try files.writeHomeFile(".config/zsh/.zshrc", "export MULTISHELL_USER_RC_LOADED=relocated\n")
 
     var environment = files.environment(termProgram: nil)
     environment["ZDOTDIR"] = files.zshDirectory.path

@@ -26,25 +26,33 @@ struct AppModelWorktreeStatusRefreshTests {
   }
 
   /// Landing last, the read in flight would put the old setting's counts
-  /// back. The fake git sleeps in the diff it uses so that it does land last.
+  /// back. The fake git holds the diff only that read uses until the setting has changed.
   @Test func aReadStartedBeforeTheIndicatorChangedBadgesNothing() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
     let fake = try harness.modelOnFakeGit(
       """
       case "$*" in
         *status*) printf '## main\\0 M README.md\\0';;
         *--cached*) ;;
-        *numstat*) sleep 0.5; printf '3\\t0\\tREADME.md\\n';;
+        *numstat*)
+          \(harness.holdLine(until: gate))
+          printf '3\\t0\\tREADME.md\\0';;
       esac
       exit 0
       """
     )
     let main = try #require(fake.workspace.worktrees.first)
+    let unstagedDiffAsked = {
+      harness.gitCalls().contains { $0.contains("numstat") && !$0.contains("--cached") }
+    }
 
     let stale = Task { await fake.refreshStatus(of: main.id) }
-    await Task.yield()
+    try await waitUntil { unstagedDiffAsked() }
+    #expect(unstagedDiffAsked(), "the old setting's read is in flight")
     fake.setGitStatusIndicator(.stagedOnly)
+    try Data().write(to: gate)
     _ = await stale.value
 
     try await waitUntil { fake.statuses[main.id] != nil }

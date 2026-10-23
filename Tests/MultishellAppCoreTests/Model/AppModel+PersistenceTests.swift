@@ -78,6 +78,7 @@ struct AppModelPersistenceTests {
     let file = Scratch.statePath("autosave")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
+    harness.model.saveDebounce = .zero
     harness.model.select(harness.main)
     try await waitUntil { onDisk(file)?.selectedWorktreeID != nil }
     #expect(onDisk(file)?.selectedWorktreeID == harness.main.id)
@@ -96,7 +97,7 @@ struct AppModelPersistenceTests {
       harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: tab.focusedSessionID)
     }
     harness.model.statuses[harness.main.id] = WorktreeStatus()
-    try await Task.sleep(for: .seconds(1))
+    await harness.settled()
 
     #expect(harness.model.pendingSave == nil)
     let after = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]

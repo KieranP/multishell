@@ -6,6 +6,28 @@
 - **Disclaiming the child instead would mean owning the pty spawn**, and the
   name would then be an unsigned binary, which TCC refuses rather than asks
   about. Cost: a setup step before the first build.
+- **`Scripts/make-signing-identity.sh` makes the certificate once.** It is its
+  own root and no other machine trusts it; it only stops the local build's
+  identity moving under TCC.
+- **The PKCS#12 it imports carries a throwaway password**, because
+  Security.framework will not verify the MAC of an empty-password one and
+  reports a wrong password whoever wrote it. Nothing it guards is secret, the
+  certificate being public and the key bound for the keychain.
+- **That bundle uses PBE-SHA1-3DES and a SHA-1 MAC on purpose.** OpenSSL 3
+  defaults to PBES2 and a SHA-256 MAC, which Security.framework cannot read
+  either and reports the same way. OpenSSL 3 and the LibreSSL at
+  `/usr/bin/openssl` both accept the flags.
+- **Trust is set for code signing alone, in the user's own domain**, so it needs
+  no administrator and touches nothing else; macOS asks for the login password.
+  A refusal is not fatal, codesign signing with an untrusted identity and only
+  `codesign --verify` minding.
+- **`add-trusted-cert` takes no `-k`.** The import already added the
+  certificate, and a second copy under the same name makes
+  `codesign --sign "Multishell Dev"` ambiguous.
+- **The script test-signs a probe before it ends**, so a failure is still about
+  the script, the keychain's "codesign wants to use a key" dialog comes now
+  rather than mid-build, and it prints the designated requirement, which names
+  the certificate rather than a cdhash.
 - **Without the certificate the script signs ad hoc and says so**, a fresh clone
   still having to build. Where signing with it fails it says why first, a silent
   fall back being what the certificate exists to avoid.

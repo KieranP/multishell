@@ -34,10 +34,11 @@ struct ViewSidewaysWheelTests {
     let host = NSHostingView(rootView: workspace)
     host.frame = CGRect(x: 0, y: 0, width: 400, height: 400)
     let window = OffscreenWindow.holding(host)
-    OffscreenWindow.settle(within: 0.25)
+    let catchers = { host.descendants(of: SidewaysWheelView.self) }
+    OffscreenWindow.settle(until: { reference.scroller != nil && !catchers().isEmpty }, within: 2)
 
     #expect(reference.scroller?.frame.height == 28, "the strip's, 28 high, not the sidebar's 400")
-    let catcher = host.descendants(of: SidewaysWheelView.self).first
+    let catcher = catchers().first
     #expect(catcher != nil, "the catcher is in the hierarchy")
     #expect(catcher?.enclosingScrollView == nil, "and outside the scroller, or it is never called")
     withExtendedLifetime(window) {}

@@ -32,7 +32,7 @@ extension AppModel {
   private func scheduleSave() {
     pendingSave?.cancel()
     pendingSave = Task { @MainActor [weak self] in
-      try? await Task.sleep(for: .milliseconds(300))
+      try? await Task.sleep(for: self?.saveDebounce ?? .zero)
       guard !Task.isCancelled else { return }
       self?.saveOffMain()
     }

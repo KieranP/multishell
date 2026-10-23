@@ -72,7 +72,8 @@ Newest at the bottom.
   folded once for the filter, which folding them all per keystroke made 0.9 s. A
   modified file's first edit moves no path, the index holding it. The changed
   paths' half is kept while only counts move too: 50,000 new files took 0.3 s
-  per status read.
+  per status read. Past 20,000 changed paths it builds off the main actor as
+  well, as a tracked file changing moves the set without moving the listing.
 - **Only the panel's own worktree keeps its listing**, a Linux-sized one and its
   tree holding about 80 MB; coming back reads it again, with each open folder
   git does not list. A folder git stops ignoring drops what was read of it.

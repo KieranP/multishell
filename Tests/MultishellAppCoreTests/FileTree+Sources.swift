@@ -3,6 +3,11 @@
 extension FileTree {
   init(_ sources: FileTreeSources) {
     let key = FileTreeListing.Key(sources)
-    self.init(sources, listing: FileTreeListing(sources, key: key), reusingChangesOf: nil)
+    let listing = FileTreeListing(sources, key: key)
+    let changes = FileTreeChanges(
+      FileTreeChanges.paths(changedIn: sources),
+      repositories: listing.repositories,
+    )
+    self.init(sources, listing: listing, changes: changes)
   }
 }

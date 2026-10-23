@@ -21,6 +21,43 @@ struct MonochromeThemeTests {
       .allSatisfy { abs(Int($0) - Int($1)) <= 2 }
   }
 
+  /// Each pixel as `colorAt(x:y:)` reads it in sRGB, asked once per distinct pixel word:
+  /// asking per pixel took three seconds a scene, and a scene holds a few hundred words.
+  private static func forEachSRGBPixel(
+    in bitmap: NSBitmapImageRep,
+    _ body: (_ x: Int, _ y: Int, _ rgb: RGB) -> Void,
+  ) throws {
+    try #require(
+      bitmap.bitsPerSample == 8 && bitmap.bitsPerPixel == 32 && !bitmap.isPlanar,
+      "one 32-bit word a pixel",
+    )
+    let bytes = UnsafeRawPointer(try #require(bitmap.bitmapData))
+    let bytesPerRow = bitmap.bytesPerRow
+    var readings: [UInt32: RGB?] = [:]
+    for x in 0..<bitmap.pixelsWide {
+      for y in 0..<bitmap.pixelsHigh {
+        let word = bytes.loadUnaligned(fromByteOffset: y * bytesPerRow + x * 4, as: UInt32.self)
+        let rgb: RGB?
+        if let reading = readings[word] {
+          rgb = reading
+        } else {
+          rgb = sRGB(of: bitmap, x: x, y: y)
+          readings[word] = rgb
+        }
+        if let rgb { body(x, y, rgb) }
+      }
+    }
+  }
+
+  private static func sRGB(of bitmap: NSBitmapImageRep, x: Int, y: Int) -> RGB? {
+    guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return nil }
+    return RGB(
+      red: UInt8((pixel.redComponent * 255).rounded()),
+      green: UInt8((pixel.greenComponent * 255).rounded()),
+      blue: UInt8((pixel.blueComponent * 255).rounded()),
+    )
+  }
+
   /// The base theme's file with every colour replaced by `hex`, saved as
   /// `mono.json`, reloaded and chosen.
   private func applyTheme(allOf hex: String, to harness: ModelHarness) async throws {
@@ -79,17 +116,9 @@ struct MonochromeThemeTests {
       )
       let expected = try #require(HexColor.parse(hex))
       var found: [String: (x: Int, y: Int)] = [:]
-      for x in 0..<bitmap.pixelsWide {
-        for y in 0..<bitmap.pixelsHigh {
-          guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
-          let rgb = RGB(
-            red: UInt8((pixel.redComponent * 255).rounded()),
-            green: UInt8((pixel.greenComponent * 255).rounded()),
-            blue: UInt8((pixel.blueComponent * 255).rounded()),
-          )
-          if !Self.matches(rgb, expected), found[rgb.opaqueHex] == nil {
-            found[rgb.opaqueHex] = (x, y)
-          }
+      try Self.forEachSRGBPixel(in: bitmap) { x, y, rgb in
+        if !Self.matches(rgb, expected), found[rgb.opaqueHex] == nil {
+          found[rgb.opaqueHex] = (x, y)
         }
       }
       strays += found.prefix(8).map { "\(scene) \($0.key) at \($0.value)" }

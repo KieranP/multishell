@@ -15,23 +15,23 @@ struct AppModelProjectRemovalTests {
   /// Fields meant to still name a departed project.
   private static let exempt: Set = [prunedByTheNextStatusRead, ignoredWhenItFires]
 
-  /// Removing the project covers the hooks in it. The `sleep 30` is what
-  /// proves the signal, the setup task not being awaitable.
+  /// Removing the project covers the hooks in it. A hook left running would
+  /// still end, so only the time the setup took tells a signal from `sleep 30`.
   @Test func removingAProjectEndsAHookStillRunningInItsWorktrees() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 30"), for: harness.project)
 
-    // `harness.project` re-read each time: the create takes its hooks off the
-    // value it is handed, so a copy from before the settings write has none.
     let created = try await harness.createWorktree(onBranch: "setup")
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
 
     // Taken before the removal, which is what clears the entry.
     let setup = harness.model.stageHandles.setupTask(of: created.id)
+    let began = ContinuousClock.now
     harness.model.removeProject(harness.project)
     await setup?.value
 
+    #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     #expect(harness.model.workspace.projects.isEmpty)
     #expect(harness.model.worktreeOperations[created.id] == nil)
     #expect(harness.model.stageHandles.setupTask(of: created.id) == nil)

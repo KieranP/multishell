@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// One row of the Memory by tab table as the panel draws it: the app, a tab,
-/// what no tab runs, or the total.
+/// the file tabs, what no tab runs, or the total.
 public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public enum Source: Sendable, Hashable {
     case app
@@ -15,8 +15,8 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public let title: String
   /// The worktree for a tab, what the row counts for the others.
   public let subtitle: String
-  /// `nil` for a tab the engine could not place, as are its memories, and
-  /// for the total row, which has no share of its own.
+  /// `nil` for a tab the engine could not place, as are its memories, for the
+  /// file tabs, which run no process, and for the total, which has no share.
   let processCount: Int?
   let selfMemory: UInt64?
   let totalMemory: UInt64?

@@ -53,6 +53,29 @@ struct FileTreeTests {
     return status
   }
 
+  @Test func theChangedCountTakesEachPathOnceAndNoneOfAnOpenedSubmodules() {
+    let removedButKept = StatusChange(
+      path: "new.txt",
+      kind: .deleted,
+      lines: .counted(insertions: 0, deletions: 2),
+    )
+    let submoduleChange = StatusChange(
+      path: "lib.c",
+      kind: .modified,
+      lines: .counted(insertions: 1, deletions: 0),
+    )
+    var sources = FileTreeSources(
+      tracked: Self.tracked,
+      status: Self.status(Self.changes + [removedButKept]),
+    )
+    sources.submodules["vendor"] = SubmoduleReading(
+      tracked: .empty,
+      status: Self.status([submoduleChange]),
+    )
+
+    #expect(FileTree(sources).changedFileCount == 2)
+  }
+
   @Test func allListsFoldersFirstAndShutWithADotWhereTheyHoldAChange() {
     let tree = FileTree(
       FileTreeSources(
@@ -194,7 +217,7 @@ struct FileTreeTests {
     #expect(shut.first { $0.path == "new.txt" }?.showsChangeDot == false)
   }
 
-  @Test func aTreeReusingTheLastForTheSameChangedPathsShowsTheNewCounts() {
+  @Test func aTreeOnTheLastChangesForTheSameChangedPathsShowsTheNewCounts() {
     let before = FileTree(
       FileTreeSources(tracked: Self.tracked, status: Self.status(Self.changes))
     )
@@ -207,7 +230,7 @@ struct FileTreeTests {
     }
     let sources = FileTreeSources(tracked: Self.tracked, status: Self.status(moved))
 
-    let after = FileTree(sources, listing: before.listing, reusingChangesOf: before)
+    let after = FileTree(sources, listing: before.listing, changes: before.changes)
 
     var state = FilesPanelState()
     state.mode = .modified

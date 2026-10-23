@@ -12,12 +12,7 @@ struct AppModelStatusPollingTests {
   @Test func aCreateKilledMidCheckoutGetsItsBadgeBackOnceItsLockIsOld() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "killed",
-      basedOn: nil,
-      createsBranch: true,
-      in: harness.project,
-    )
+    _ = try await harness.createWorktree(onBranch: "killed")
     let lock = harness.project.path.appendingPathComponent(".git/worktrees/killed/locked")
     try "initializing".write(to: lock, atomically: true, encoding: .utf8)
     await harness.model.refreshWorktrees(of: harness.project)

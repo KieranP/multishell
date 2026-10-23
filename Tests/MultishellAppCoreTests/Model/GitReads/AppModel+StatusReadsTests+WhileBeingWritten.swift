@@ -50,14 +50,7 @@ extension AppModelStatusReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let gate = harness.root.appendingPathComponent("go")
-    let model = try harness.modelOnFakeGit(
-      """
-      case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
-          printf '# branch.head main\\n1 .M N... 100644 100644 100644 a a x.txt\\n' ;;
-      esac
-      """
-    )
+    let model = try harness.modelWithStatusHeld(until: gate, answering: "main")
     let main = try #require(harness.worktree(onBranch: "main"))
 
     let poll = Task { await model.refreshStatuses() }
@@ -122,7 +115,7 @@ extension AppModelStatusReadsTests {
     _ = try await harness.git.run(
       [
         "config", "filter.slow.smudge",
-        "while [ ! -f '\(gate.path)' ]; do sleep 0.02; done; cat",
+        "\(harness.holdLine(until: gate)); cat",
       ],
       in: repository,
     )
@@ -205,7 +198,7 @@ extension AppModelStatusReadsTests {
       ProjectSettings(
         postCreateHook: """
           mkdir -p build && echo x > build/one && echo x > build/two
-          while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
+          \(harness.holdLine(until: gate))
           """
       ),
       for: harness.project,

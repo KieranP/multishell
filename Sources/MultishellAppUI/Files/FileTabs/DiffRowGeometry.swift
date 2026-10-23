@@ -2,7 +2,7 @@ import AppKit
 
 /// Every row one height at `row × height` below the inset, as the forced
 /// fragments hold TextKit 2; the text, tints and gutter all place rows here.
-struct DiffRowGeometry: Equatable {
+struct DiffRowGeometry {
   /// Above the first row and below the last, as the prototype pads them.
   static let verticalInset: CGFloat = 6
   /// Natural rows are 15 to 18 pt by script; a fixed one a little taller

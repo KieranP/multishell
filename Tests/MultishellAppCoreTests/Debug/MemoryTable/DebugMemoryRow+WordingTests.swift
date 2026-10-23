@@ -34,6 +34,12 @@ struct DebugMemoryRowWordingTests {
     #expect(unplacedTab.selfMemoryText == "–")
   }
 
+  @Test func theFileTabsRowLeavesItsCountEmptyAsItRunsNoProcess() {
+    let fileTabs = row(.fileTabs, processCount: nil, selfMemory: 150, subtitle: "2 file tabs")
+
+    #expect(fileTabs.processCountText == "")
+  }
+
   @Test func aNarrowRowSaysItsSubtitleCountAndSelfUnderItsName() {
     let placed = row(.unattributed, processCount: 2, selfMemory: 1_024)
     #expect(placed.stackedCaptions.first?.hasPrefix("acme / main · 2 processes · ") == true)

@@ -57,7 +57,13 @@ struct AppModelWorktreeSetupTests {
   @Test func aSlowPostCreateHookReturnsAtOnceShowsItsProgressAndHoldsTheFirstTab() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    harness.model.setSettings(ProjectSettings(postCreateHook: "sleep 3"), for: harness.project)
+    let gate = harness.root.appendingPathComponent("gate")
+    harness.model.setSettings(
+      ProjectSettings(
+        postCreateHook: harness.holdLine(until: gate)
+      ),
+      for: harness.project,
+    )
 
     let created = try await harness.createWorktree(onBranch: "slow")
 
@@ -82,6 +88,7 @@ struct AppModelWorktreeSetupTests {
     harness.model.requestWorktreeRemoval(of: created)
     #expect(harness.model.pendingWorktreeRemoval == nil, "and nothing removes it meanwhile")
 
+    FileManager.default.createFile(atPath: gate.path, contents: nil)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil)
@@ -163,9 +170,11 @@ struct AppModelWorktreeSetupTests {
 
     let created = try await harness.createWorktree(onBranch: "stopped")
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
+    let began = ContinuousClock.now
     harness.model.cancelStage(of: created)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
+    #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     #expect(harness.model.worktreeOperations[created.id] == nil, "nothing to dismiss")
     #expect(harness.model.presentedError == nil)
     #expect(
@@ -186,9 +195,11 @@ struct AppModelWorktreeSetupTests {
 
     let created = try await harness.createWorktree(onBranch: "roster")
     harness.model.showAgentBoard()
+    let began = ContinuousClock.now
     harness.model.cancelStage(of: created)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
+    #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     #expect(harness.model.showsAgentBoard, "nothing the user did")
     let tabs = harness.model.workspace.tabs(in: created.id)
     #expect(tabs.count == 1, "owed by the create, not the select")
@@ -214,9 +225,11 @@ struct AppModelWorktreeSetupTests {
     let created = try await harness.createWorktree(onBranch: "owed")
     harness.model.select(main)
     let focusedBefore = harness.engine.focused.count
+    let began = ContinuousClock.now
     harness.model.cancelStage(of: created)
     await harness.model.stageHandles.setupTask(of: created.id)?.value
 
+    #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     let tabs = harness.model.workspace.tabs(in: created.id)
     #expect(tabs.count == 1)
     #expect(

@@ -46,7 +46,7 @@ extension Workspace {
     fileTabs.first { $0.worktreeID == worktree && $0.path == path }
   }
 
-  public func fileTabs(in worktree: Worktree.ID) -> [FileTab] {
+  func fileTabs(in worktree: Worktree.ID) -> [FileTab] {
     fileTabs.filter { $0.worktreeID == worktree }
   }
 

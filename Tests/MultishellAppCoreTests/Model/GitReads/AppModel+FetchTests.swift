@@ -13,14 +13,21 @@ struct AppModelFetchTests {
   @Test func aFetchMarksItsProjectForAllOfItAndRefusesASecond() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
+    let fetchGate = harness.root.appendingPathComponent("fetch-gate")
+    let rereadGate = harness.root.appendingPathComponent("reread-gate")
     let model = try harness.modelOnFakeGit(
       """
       case "$*" in
-        fetch*) sleep 1; touch "$SCRATCH/fetched" ;;
+        fetch*)
+          \(harness.holdLine(until: fetchGate))
+          touch "$SCRATCH/fetched" ;;
         worktree\\ list*)
           printf 'worktree %s\\nHEAD abc\\nbranch refs/heads/main\\n\\n' "$SCRATCH/demo" ;;
         for-each-ref*)
-          if [ -e "$SCRATCH/fetched" ]; then touch "$SCRATCH/rereading"; sleep 0.5; fi
+          if [ -e "$SCRATCH/fetched" ]; then
+            touch "$SCRATCH/rereading"
+            \(harness.holdLine(until: rereadGate))
+          fi
           printf 'refs/heads/main\\tAAA\\t\\t\\n' ;;
         *) exit 0 ;;
       esac
@@ -38,10 +45,12 @@ struct AppModelFetchTests {
     await model.fetch(project)
     #expect(model.isFetching(project), "the first one is still running")
 
+    try Data().write(to: fetchGate)
     let rereading = harness.root.appendingPathComponent("rereading")
     try await waitUntil { FileManager.default.fileExists(atPath: rereading.path) }
     #expect(model.isFetching(project), "the re-reads after it are what the user clicked for")
 
+    try Data().write(to: rereadGate)
     await running.value
     #expect(!model.isFetching(project))
     #expect(harness.gitCallCount(startingWith: "fetch") == 1, "one fetch, not two")

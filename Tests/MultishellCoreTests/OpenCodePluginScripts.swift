@@ -16,23 +16,30 @@ enum OpenCodePluginScripts {
 
     """
 
-  /// Helpers exit only once every step has run, so what the plugin queues
-  /// behind the first does not hang on a race; each says when it exits.
+  /// Helpers exit only once every step has run, so what the plugin queues behind the
+  /// first does not hang on a race. The plugin spawns the next from an exit's callback.
   static let stub = """
     let started = 0
+    let exited = 0
     let released = false
+    let drained
     const held = []
-    globalThis.releaseHelpers = () => {
+    const settle = () => { if (drained && exited === started) drained() }
+    globalThis.releaseHelpers = () => new Promise((resolve) => {
       released = true
+      drained = resolve
       for (const exit of held.splice(0)) exit()
-    }
+      settle()
+    })
     export const spawn = (command, args) => {
       const id = ++started
       process.stdout.write(JSON.stringify(args) + "\\n")
       const exits = []
       const exit = () => setTimeout(() => {
         process.stdout.write(JSON.stringify({ exited: id }) + "\\n")
+        exited += 1
         for (const callback of exits) callback(0)
+        settle()
       }, 1)
       if (released) exit()
       else held.push(exit)
@@ -71,9 +78,7 @@ enum OpenCodePluginScripts {
       else if (step.hook === "event") await plugin.event({ event: step.event })
       else await plugin[step.hook](step.input, step.output)
     }
-    globalThis.releaseHelpers()
-    // Long enough for every report the plugin queued to be sent.
-    await new Promise((resolve) => timeout(resolve, 300))
+    await globalThis.releaseHelpers()
     process.stdout.write(JSON.stringify({ waits }) + "\\n")
 
     """

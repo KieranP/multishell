@@ -254,18 +254,13 @@ extension AgentHookIntegrationReportsTests {
     let copilot = AgentHookCatalogue.copilot
     let parent = CopilotPayload.parent
     let child = CopilotPayload.child
-    let transcript = CopilotPayload.transcript
     func payload(_ json: String) throws -> AgentHookPayload {
       try #require(AgentHookPayload(json: Data(json.utf8)))
     }
 
-    let childStop = try payload(
-      #"{"hook_event_name":"Stop","session_id":"\#(child)","transcript_path":"\#(transcript)"}"#
-    )
+    let childStop = try payload(CopilotPayload.childStop)
     #expect(copilot.event(for: childStop) == nil)
-    let ownStop = try payload(
-      #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"\#(transcript)"}"#
-    )
+    let ownStop = try payload(CopilotPayload.stop)
     #expect(copilot.event(for: ownStop)?.state == .done)
     let fileNamedForItself = try payload(
       #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"/Users/dev/.copilot/session-state/\#(parent).jsonl"}"#
@@ -279,9 +274,7 @@ extension AgentHookIntegrationReportsTests {
       "only an agent that runs workers as conversations is read this way",
     )
 
-    let childTool = try payload(
-      #"{"hook_event_name":"PreToolUse","session_id":"\#(child)","tool_name":"Bash"}"#
-    )
+    let childTool = try payload(CopilotPayload.childTool)
     #expect(
       copilot.report(for: childTool, sessionID: nil, workingDirectory: nil, pid: nil)?
         .conversationID == child
@@ -297,9 +290,7 @@ extension AgentHookIntegrationReportsTests {
         == nil
     )
 
-    let end = try payload(
-      #"{"hook_event_name":"SubagentStop","session_id":"\#(parent)","transcript_path":"\#(transcript)","agent_id":"\#(child)","agent_type":"general-purpose","agent_name":"general-purpose"}"#
-    )
+    let end = try payload(CopilotPayload.subagentStop)
     #expect(
       copilot.event(for: end)?.workerChange(for: end)
         == WorkerReport(id: child, phase: .ended, type: "general-purpose")

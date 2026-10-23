@@ -4,5 +4,5 @@ public enum FileTabLayout: String, Codable, Hashable, Sendable {
   case split
   case unified
 
-  public static let `default` = Self.unified
+  static let `default` = Self.unified
 }

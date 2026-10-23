@@ -92,15 +92,21 @@ struct ProcessRunnerTests {
   /// A superseded status refresh cancels its task mid-read; the stopper, not
   /// the task, is what ends a child, or a slow `git status` never lands.
   @Test func cancellingTheTaskThatAwaitsAChildLetsTheChildFinish() async throws {
+    let scratch = try Scratch.directory("cancelled-await")
+    defer { Scratch.remove(scratch) }
+    let ready = scratch.appendingPathComponent("ready")
+    let release = scratch.appendingPathComponent("release")
+    let script = """
+      touch "\(ready.path)"
+      while [ ! -e "\(release.path)" ] && [ -d "\(scratch.path)" ]; do sleep 0.02; done
+      printf done
+      """
     let run = Task {
-      try await runner.capture(
-        bourneShell,
-        ["-c", "sleep 0.3; printf done"],
-        in: workingDirectory,
-      )
+      try await runner.capture(bourneShell, ["-c", script], in: workingDirectory)
     }
-    try await Task.sleep(for: .milliseconds(50))
+    try await waitUntil { FileManager.default.fileExists(atPath: ready.path) }
     run.cancel()
+    try Data().write(to: release)
     let output = try await run.value
 
     #expect(output.succeeded, "status \(output.status)")

@@ -107,7 +107,7 @@ extension AppModelControlWorktreesTests {
       ProjectSettings(
         preCreateHook: """
           touch "\(started.path)"
-          while [ ! -e "\(gate.path)" ] && [ -d "\(harness.root.path)" ]; do sleep 0.05; done
+          \(harness.holdLine(until: gate))
           """
       ),
       for: harness.project,
@@ -165,9 +165,15 @@ extension AppModelControlWorktreesTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let marks = harness.root.appendingPathComponent("marks", isDirectory: true)
+    let gate = harness.root.appendingPathComponent("gate")
     try FileManager.default.createDirectory(at: marks, withIntermediateDirectories: true)
     harness.model.setSettings(
-      ProjectSettings(preCreateHook: "touch \"\(marks.path)/$$\"; sleep 2"),
+      ProjectSettings(
+        preCreateHook: """
+          touch "\(marks.path)/$$"
+          \(harness.holdLine(until: gate))
+          """
+      ),
       for: harness.project,
     )
     let started = { (try? FileManager.default.contentsOfDirectory(atPath: marks.path).count) ?? 0 }
@@ -184,6 +190,7 @@ extension AppModelControlWorktreesTests {
     let request = Task { await harness.model.answer(.newWorktree(order("feat/cli", in: harness))) }
     try await waitUntil({ started() == 2 }, seconds: 15)
     harness.model.cancelWorktreeCreation()
+    FileManager.default.createFile(atPath: gate.path, contents: nil)
 
     #expect(await sheet.value == nil)
     #expect(await request.value.refusal == nil)

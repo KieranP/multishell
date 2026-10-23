@@ -157,7 +157,7 @@ struct SocketReplyTests {
     #expect(hungUp.wait(timeout: .now() + 5) == .success)
   }
 
-  @Test func aClientThatStopsReadingHoldsUpNoOtherAnswer() throws {
+  @Test func aClientThatStopsReadingHoldsUpNoOtherAnswer() async throws {
     let long = String(repeating: "x", count: 4_000_000) + "\n"
     let answered = Recorder<String>()
     let (server, path) = try server("rep") { line, channel in
@@ -172,10 +172,7 @@ struct SocketReplyTests {
     defer { close(stuck) }
     try UnixSocket.connectSocket(stuck, to: path.path)
     _ = "stuck\n".withCString { Darwin.write(stuck, $0, 6) }
-    let deadline = ContinuousClock.now + .seconds(5)
-    while answered.received.isEmpty, ContinuousClock.now < deadline {
-      Thread.sleep(forTimeInterval: 0.01)
-    }
+    try await waitUntil({ !answered.received.isEmpty }, seconds: 5)
     try #require(!answered.received.isEmpty, "the stuck answer is under way")
     let started = ContinuousClock.now
 

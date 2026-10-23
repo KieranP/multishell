@@ -10,16 +10,14 @@ extension AppModelWorktreeOrderTests {
   @Test func theRepositorysOrderIsUsedUntilTheUserOverridesIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    // Cut alphabetically last first, so the created order and the name
+    // Alphabetically last is born first, so the created order and the name
     // order disagree and only the file's answer can pass.
-    for branch in ["zulu", "alpha"] {
-      await harness.model.createWorktree(
-        branch: branch,
-        basedOn: nil,
-        createsBranch: true,
-        in: harness.project,
+    for (minute, branch) in ["zulu", "alpha"].enumerated() {
+      let worktree = try await harness.createWorktree(onBranch: branch)
+      try FileManager.default.setAttributes(
+        [.creationDate: Date(timeIntervalSince1970: 1_700_000_000 + 60 * Double(minute))],
+        ofItemAtPath: worktree.path.path,
       )
-      try? await Task.sleep(for: .milliseconds(1100))
     }
     try harness.writeSharedSettings(#"{ "worktreeSortOrder": "createdOldestFirst" }"#)
     await harness.model.refreshWorktrees(of: harness.project)

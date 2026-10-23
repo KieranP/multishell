@@ -20,7 +20,7 @@ public struct RGB: Hashable, Sendable {
 
   public var opaque: Self { Self(red: red, green: green, blue: blue) }
 
-  public init(red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8 = 255) {
+  init(red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8 = 255) {
     self.red = red
     self.green = green
     self.blue = blue

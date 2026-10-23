@@ -90,23 +90,13 @@ struct GitRunnerTests {
   @Test func aWorktreeWhoseWorkIsAllUntrackedReadsDirty() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let repository = fixture.project.path
     _ = try await fixture.runner.run(
       ["config", "status.showUntrackedFiles", "no"],
-      in: repository,
+      in: fixture.project.path,
     )
-    try "wip\n".write(
-      to: repository.appendingPathComponent("scratch.txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try fixture.write("wip\n", to: "scratch.txt")
 
-    let worktree = Worktree(
-      path: repository,
-      projectID: fixture.project.id,
-      head: "a",
-      branch: "main",
-    )
+    let worktree = try await fixture.worktree(onBranch: "main")
     let status = try await WorktreeGit(runner: try GitRunner()).status(of: worktree)
 
     #expect(status.untracked == 1)

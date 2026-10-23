@@ -1,6 +1,6 @@
 /// The samples of the longest range the panel shows, oldest first.
 struct DebugHistory: Sendable, Equatable {
-  static let capacity = DebugRange.fifteenMinutes.sampleCount
+  private static let capacity = DebugRange.fifteenMinutes.sampleCount
 
   private(set) var samples: [DebugSample] = []
   /// Past the last history's, so a follow from the command line never sees a

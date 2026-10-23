@@ -50,18 +50,24 @@ struct AppModelLifecycleTests {
     try await waitUntil { events.received.contains("finished") }
   }
 
-  @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async {
+  @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async throws {
     let file = Scratch.statePath("second-copy")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
+    harness.model.saveDebounce = .zero
     harness.messageSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
 
     await harness.model.start()
 
     #expect(harness.platform.handedOverToRunningInstance)
     #expect(harness.model.statusPolling == nil, "this copy does nothing more")
+    await harness.settled()
+    harness.model.pendingSave = nil
     harness.model.select(harness.main)
-    try? await Task.sleep(for: .milliseconds(600))
+    try await waitUntil { harness.model.pendingSave != nil }
+    #expect(harness.model.pendingSave != nil, "the selection scheduled a save")
+    await harness.model.pendingSave?.value
+    await harness.settled()
     #expect(!FileManager.default.fileExists(atPath: file.path), "the debounce is a writer too")
     harness.model.saveNow()
     #expect(!FileManager.default.fileExists(atPath: file.path), "two writers of one file")

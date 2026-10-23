@@ -3,9 +3,11 @@ import MultishellCore
 /// What a Memory by tab row says in its cells, and under its title where the
 /// table is too narrow for columns.
 extension DebugMemoryRow {
-  /// The total row leaves its count and Self empty; an unplaced tab says so.
+  /// The total row leaves its count and Self empty, and the file tabs, which run no
+  /// process, their count; an unplaced tab shows the dash.
   public var processCountText: String {
-    processCount.map(String.init) ?? (isTotal ? "" : DebugValueText.noValue)
+    processCount.map(String.init)
+      ?? (isTotal || source == .fileTabs ? "" : DebugValueText.noValue)
   }
 
   public var selfMemoryText: String {

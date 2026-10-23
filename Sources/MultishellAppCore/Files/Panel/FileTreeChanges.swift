@@ -1,8 +1,11 @@
 import Foundation
+import MultishellGitKit
 
-/// The changed paths' half of a `FileTree`, kept while only counts move:
-/// 50,000 new files took 0.3 s to build on the main actor for each status read.
+/// The changed paths' half of a `FileTree`, kept while only counts move: 50,000 took
+/// 0.3 s, so past AppModel's in-place bound one is built off the main actor.
 struct FileTreeChanges: Sendable {
+  static let empty = Self([], repositories: [])
+
   private let paths: Set<String>
   private let repositories: Set<String>
   let sortedPaths: [String]
@@ -34,6 +37,10 @@ struct FileTreeChanges: Sendable {
       repositories: repositories,
       ignored: [],
     )
+  }
+
+  static func paths(changedIn sources: FileTreeSources) -> Set<String> {
+    Set((sources.status?.changes ?? []).map(\.path))
   }
 
   func isBuilt(from paths: Set<String>, repositories: Set<String>) -> Bool {

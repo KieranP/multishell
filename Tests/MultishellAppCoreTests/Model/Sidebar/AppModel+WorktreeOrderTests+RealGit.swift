@@ -80,23 +80,21 @@ extension AppModelWorktreeOrderTests {
     )
   }
 
-  /// git makes the directories, so the birth times are real ones.
+  /// git makes the directories and the listing reads their birth times. The test sets
+  /// those a minute apart, as birth time is only whole-second on some filesystems.
   @Test func theCreatedOrderComesOffTheRealDirectories() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    // Alphabetically first is created first, so newest-first disagrees with the name
+    // Alphabetically first is born first, so newest-first disagrees with the name
     // order; the other way round, a birth-time tie would pass without reading a date.
-    for branch in ["alpha", "zulu"] {
-      await harness.model.createWorktree(
-        branch: branch,
-        basedOn: nil,
-        createsBranch: true,
-        in: harness.project,
+    for (minute, branch) in ["alpha", "zulu"].enumerated() {
+      let worktree = try await harness.createWorktree(onBranch: branch)
+      try FileManager.default.setAttributes(
+        [.creationDate: Date(timeIntervalSince1970: 1_700_000_000 + 60 * Double(minute))],
+        ofItemAtPath: worktree.path.path,
       )
-      // A second apart: birth time is only whole-second on some
-      // filesystems, and a tie here is what this test exists to rule out.
-      try? await Task.sleep(for: .milliseconds(1100))
     }
+    await harness.model.refreshWorktrees(of: harness.project)
 
     var settings = harness.project.settings
     settings.worktreeSortOrder = .createdNewestFirst
@@ -110,7 +108,7 @@ extension AppModelWorktreeOrderTests {
       ).map(\.name) == [
         "main", "zulu", "alpha",
       ],
-      "zulu was created second, and sorts after alpha by name",
+      "zulu was born second, and sorts after alpha by name",
     )
 
     settings.worktreeSortOrder = .createdOldestFirst

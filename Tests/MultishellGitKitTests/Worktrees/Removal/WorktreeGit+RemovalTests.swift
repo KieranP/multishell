@@ -298,17 +298,10 @@ struct WorktreeGitRemovalTests {
       """
     )
     defer { fake.tearDown() }
-    let gone = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-trees/gone"),
-      projectID: fake.directory.path,
-      head: "2222222",
-      branch: "gone",
-    )
+    let project = Project(path: fake.directory)
+    let gone = goneWorktree(of: project, in: fake)
 
-    try await WorktreeGit(runner: fake.runner).removeRecord(
-      of: gone,
-      in: Project(path: fake.directory),
-    )
+    try await WorktreeGit(runner: fake.runner).removeRecord(of: gone, in: project)
   }
 
   /// A worktree on branch `gone` whose directory was never made.

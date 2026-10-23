@@ -110,9 +110,14 @@ public final class AppModel<Surface> {
   @ObservationIgnored var panelFolderReads = CoalescedReads<PanelFolderRead>()
   /// The tree each panel last drew, rebuilt only when what it was built from changed.
   @ObservationIgnored var fileTreeCache: [Worktree.ID: FileTreeCacheEntry] = [:]
-  /// Listings too large to build in a render, built off the main actor.
-  var fileTreeListings: [Worktree.ID: FileTreeListing] = [:]
+  /// Listings too large to build in a render, held until a render takes one.
+  @ObservationIgnored var fileTreeListings: [Worktree.ID: FileTreeListing] = [:]
   @ObservationIgnored var pendingFileTreeListings: [Worktree.ID: Task<Void, Never>] = [:]
+  /// Changed paths too many to build in a render, held as a listing is.
+  @ObservationIgnored var fileTreeChanges: [Worktree.ID: FileTreeChanges] = [:]
+  @ObservationIgnored var pendingFileTreeChanges: [Worktree.ID: Task<Void, Never>] = [:]
+  /// Read by every panel render, so a landing redraws; the builds are unobserved.
+  var fileTreeBuildLandings = 0
   /// One coalesced listing read per worktree; see `scheduleTrackedFilesRead`.
   @ObservationIgnored var pendingTrackedFilesReads: [Worktree.ID: Task<Void, Never>] = [:]
 
@@ -318,6 +323,8 @@ public final class AppModel<Surface> {
   @ObservationIgnored var removalRequests = WorktreeRemovalRequests()
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
+  /// How long a change waits for the next before it is saved; tests set it to zero.
+  @ObservationIgnored var saveDebounce: Duration = .milliseconds(300)
   @ObservationIgnored var autosave: Task<Void, Never>?
   /// Set where another copy holds the socket: two copies autosaving one file
   /// leave the last writer's, so this one writes nothing; see state-and-store.md.

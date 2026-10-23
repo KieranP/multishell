@@ -77,7 +77,9 @@ rule holds is in `Docs/design/`.
   run loop by hand, since `run(until:)` returns at once while it has no source.
   The same event handed straight to the scroller moves it by nothing, which is
   why the catcher exists. ViewSidewaysWheelTests holds the marked scroller to
-  being the strip's and the catcher to sitting outside it.
+  being the strip's and the catcher to sitting outside it. With the screen
+  locked the scroller never moved and the four turns that expect it failed,
+  where the run before passed them on the same AppUI code (2026-10-23).
 - **A word on screen with no translation, or a translation nothing shows**:
   TranslationTests, one per catalogue (design/translation.md). The two files are
   a pair sharing TestScratch's TranslationCallSites, so a check added to one

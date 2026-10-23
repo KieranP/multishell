@@ -186,8 +186,14 @@ extension AppModelControlWorktreesTests {
     _ = await harness.model.answer(.newWorktree(order("feat/kept", in: harness)))
     let created = try #require(harness.worktree(onBranch: "feat/kept"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
+    let gate = harness.root.appendingPathComponent("gate")
     harness.model.setSettings(
-      ProjectSettings(preDeleteHook: "sleep 1; exit 1"),
+      ProjectSettings(
+        preDeleteHook: """
+          \(harness.holdLine(until: gate))
+          exit 1
+          """
+      ),
       for: harness.project,
     )
     let id = ControlID.worktree(created.id)
@@ -210,6 +216,7 @@ extension AppModelControlWorktreesTests {
     )
     let other = PresentedError(title: "Elsewhere", message: "Not the removal's")
     harness.model.presentedError = other
+    FileManager.default.createFile(atPath: gate.path, contents: nil)
     let reply = await removal.value
 
     guard case .removalVetoed? = reply.refusal else {

@@ -59,7 +59,7 @@ struct AppModelPIDWatchTests {
       )
       #expect(harness.model.pidWatch != nil)
       model = harness.model
-      try await Task.sleep(for: .milliseconds(50))
+      await harness.settled()
     }
     try await waitUntil({ model == nil }, seconds: 2)
 

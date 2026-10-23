@@ -39,6 +39,11 @@ extension AppModel {
       pendingFileTreeListings[id] = nil
     }
     fileTreeListings = fileTreeListings.filter { !isForgotten($0.key) }
+    for (id, task) in pendingFileTreeChanges where isForgotten(id) {
+      task.cancel()
+      pendingFileTreeChanges[id] = nil
+    }
+    fileTreeChanges = fileTreeChanges.filter { !isForgotten($0.key) }
   }
 
   /// The tracked files change only with the index, so are read on git changes,
@@ -78,7 +83,8 @@ extension AppModel {
   }
 
   private func pause(afterReadCosting cost: Duration, in id: Worktree.ID) -> Duration {
-    let rebuildCost = fileTreeListings[id]?.buildCost ?? .zero
+    let rebuildCost =
+      fileTreeListings[id]?.buildCost ?? fileTreeCache[id]?.tree.listing.buildCost ?? .zero
     return max(.seconds(1), (cost + rebuildCost) * Self.readCostMultiple)
   }
 

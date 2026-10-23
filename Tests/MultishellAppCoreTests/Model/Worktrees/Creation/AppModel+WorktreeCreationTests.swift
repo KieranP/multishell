@@ -172,8 +172,12 @@ struct AppModelWorktreeCreationTests {
   @Test func theSheetSeesThePreCreateHookThenNothing() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("gate")
     harness.model.setSettings(
-      ProjectSettings(preCreateHook: "sleep 1", postCreateHook: "true"),
+      ProjectSettings(
+        preCreateHook: harness.holdLine(until: gate),
+        postCreateHook: "true",
+      ),
       for: harness.project,
     )
 
@@ -185,18 +189,14 @@ struct AppModelWorktreeCreationTests {
         in: harness.project,
       )
     }
-    var seen: Set<WorktreeCreationStep> = []
-    try await waitUntil(
-      {
-        guard let step = harness.model.worktreeCreationStep else { return !seen.isEmpty }
-        seen.insert(step)
-        return false
-      },
-      seconds: 15,
+    try await waitUntil({ harness.model.worktreeCreationStep == .preCreateHook }, seconds: 15)
+    #expect(
+      harness.model.worktreeCreationStep == .preCreateHook,
+      "the sheet could name the hook it waited on",
     )
+    try Data().write(to: gate)
     _ = await create.value
 
-    #expect(seen.contains(.preCreateHook), "the sheet could name the hook it waited on: \(seen)")
     #expect(harness.model.worktreeCreationStep == nil, "cleared once the sheet's part is over")
     let created = try #require(harness.worktree(onBranch: "stepped"))
     await harness.model.stageHandles.setupTask(of: created.id)?.value
@@ -338,7 +338,7 @@ struct AppModelWorktreeCreationTests {
     defer { harness.tearDown() }
     let gate = harness.root.appendingPathComponent("go")
     harness.model.setSettings(
-      ProjectSettings(preCreateHook: "while [ ! -f \"\(gate.path)\" ]; do sleep 0.02; done"),
+      ProjectSettings(preCreateHook: harness.holdLine(until: gate)),
       for: harness.project,
     )
 

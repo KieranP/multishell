@@ -6,8 +6,8 @@ extension Helper {
   /// Names another socket, for the tests; a debug build's alone, so nothing
   /// left in a release shell's environment turns its helper on another app.
   static let controlSocketVariable = "MULTISHELL_CONTROL_SOCKET"
-  /// Long for a request the app answers on the spot; a create gets none,
-  /// its hooks having no limit unless the user set one.
+  /// Long for a request the app answers on the spot; a create or a removal
+  /// gets none, its hooks having no limit unless the user set one.
   static let answerTimeout: Duration = .seconds(30)
 
   /// This build's own app, never the pane's `MULTISHELL_SOCKET`: a debug

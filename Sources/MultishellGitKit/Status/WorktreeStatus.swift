@@ -30,7 +30,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public internal(set) var unscoredFiles = 0
 
   /// The branch git reports, or nil when detached. Compared against the
-  /// sidebar so a checkout made in a terminal shows up without a watcher.
+  /// sidebar, which catches a checkout no file event reports.
   public internal(set) var branch: String?
 
   /// New files counted but not listed by path.
