@@ -25,4 +25,13 @@ struct DiffRowGeometryTests {
     #expect(menlo.font.pointSize == 15)
     #expect(missing.font == NSFont.monospacedSystemFont(ofSize: 15, weight: .regular))
   }
+
+  @Test func aStepLeavesItsContextRowsWhereTheClipHasRoomAndFewerWhereItHasNot() {
+    let rowHeight = geometry.rowHeight
+
+    #expect(geometry.rowsAboveAChange(inClipOf: 300) == DiffRowGeometry.contextRowsAboveAChange)
+    #expect(geometry.rowsAboveAChange(inClipOf: rowHeight * 2.5) == 1)
+    #expect(geometry.rowsAboveAChange(inClipOf: rowHeight) == 0)
+    #expect(geometry.rowsAboveAChange(inClipOf: 0) == 0)
+  }
 }

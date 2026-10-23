@@ -29,6 +29,8 @@ struct UIMetrics: Equatable {
   static let headerGlyphSize: Double = 13
   /// The square a header's glyph button or menu takes around that glyph.
   static let headerGlyphButtonSide: Double = 28
+  /// Between the segments in a well, a switch's and the file bar's arrows alike.
+  static let segmentSpacing: Double = 2
 
   /// A state dot inside a line of text: the agents row's lanes, a worker's.
   static let inlineStateDotDiameter: Double = 6

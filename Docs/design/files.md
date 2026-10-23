@@ -395,3 +395,47 @@ Newest at the bottom.
 - **A saved file tab whose path leaves its worktree is dropped on load**, as is
   one whose id another tab holds or whose path another tab shows: a hand edit
   could otherwise point a tab anywhere.
+- **Arrows in a file tab's bar step from change to change**, drawn wherever a
+  line changed, in a segment well as the Unified / Split switch is, up before
+  down as the find bar has them. A change is a run of rows other than context, a
+  split side's padding included, so a removal is a stop in either layout. A step
+  counts from the selection where it is in view and from the first row in view
+  otherwise, as an editor counts from its cursor: a scroll by hand then a step
+  lands below what was read, not back at the top. It leaves the selection at the
+  change so the next step counts on from there, and keeps the column scrolled
+  sideways to, as a restore does. A split steps from the side holding the
+  keyboard, a step from the right having ignored a click on the left.
+- **Steps stop at either end and the arrow with nowhere to go greys out**, the
+  user's choice over wrapping as find does. The view reports which ways are open
+  as it scrolls and its selection moves, the bar not knowing either; the change
+  starts are kept with the rows, so that is a halving per scroll, not a walk of
+  the file.
+- **The change a step lands on is boxed** until the caret leaves it, so with
+  several in view the box shows which one the next step counts from, and a split
+  boxes both sides. It is held by the `HEAD` lines it replaces, or for a change
+  only adding lines the gap it fills, since `HEAD`'s numbering moves with no
+  edit: a change still sharing one of those lines, spanning that gap, or only
+  adding lines where those stood is the same change, the one sharing most where
+  several do, its first line edited or reverted or grown upward; one replacing
+  only a line beside it is not. Lines left where a replaced line was reverted
+  read the same as a line typed beside it, and either way the box stays on rows
+  the old one touched. Only a commit or checkout moves `HEAD`'s numbering, which
+  shows as `HEAD`'s text, hashed whole, no longer matching: the line above alone
+  read the same after a renumbering wherever it was blank or `}`. Only then, and
+  never on a plain miss, is it the change under the same unchanged line holding
+  its first line with a letter or digit, nearest its place: `}` or a blank line
+  repeats across a file and sent the box hundreds of lines away. Where neither
+  finds it the box is let go, a lost box costing one press and a wrong one
+  moving the caret off screen. Rows differ between Unified and Split and a
+  hidden tab lets its rows go, which is why it is held by line at all. A split
+  holds it as Unified does, each side showing half a change. The model keeps it
+  as it keeps the scroll, so a tab hidden and shown again or switched between
+  layouts boxes the same change and steps on from it. A re-read leaves a caret
+  already inside the box alone, the box lasting only while it is. A rebuilt view
+  keeps the box over a find match outside it, the box being the newer: a find
+  step there would have let it go. It is the file's text colour softened, not a
+  theme key, every theme's text reading against both tints, and drawn across the
+  visible width, so a sideways scroll redraws its rows.
+- **The caret a file opens with counts as no selection**, so a step down from
+  there lands on a change on the first row: a new or deleted file is one change
+  from row 0, and counting from that caret left both arrows grey.

@@ -8,6 +8,9 @@ import MultishellCore
 /// kind: a removal every seventh row, an addition two after it.
 @MainActor
 enum DiffDocumentFixture {
+  /// A line added at 300 and another at 350, in 400 rows.
+  static let twoChanges = text(rows: 400, adding: [300, 350])
+
   static func lines(_ count: Int) -> [DiffLine] {
     (0..<count).map { index in
       switch index % 7 {
@@ -60,5 +63,37 @@ enum DiffDocumentFixture {
     view.show(DiffDisplayText(lines(rows)), theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
     return (view, window)
+  }
+
+  /// `text` in a view 500 by 300 points, laid out.
+  static func shown(_ text: DiffDisplayText) -> (DiffDocumentView, NSWindow) {
+    let view = DiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 500, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    view.show(text, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+    return (view, window)
+  }
+
+  /// `count` rows of context but `added`, each a line added there.
+  static func text(rows count: Int, adding added: Set<Int>) -> DiffDisplayText {
+    DiffDisplayText(
+      (0..<count).map { row in
+        added.contains(row)
+          ? DiffLine(kind: .added, oldNumber: nil, newNumber: row + 1, text: "new \(row)")
+          : DiffLine(kind: .context, oldNumber: row + 1, newNumber: row + 1, text: "line \(row)")
+      }
+    )
+  }
+
+  /// The same with `removed` rows removed instead, split.
+  static func split(rows count: Int, removing removed: Set<Int>) -> SplitDiff {
+    SplitDiff(
+      (0..<count).map { row in
+        removed.contains(row)
+          ? DiffLine(kind: .removed, oldNumber: row + 1, newNumber: nil, text: "gone \(row)")
+          : DiffLine(kind: .context, oldNumber: row + 1, newNumber: row + 1, text: "line \(row)")
+      }
+    )
   }
 }

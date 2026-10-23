@@ -146,7 +146,8 @@ extension AppModel {
     fileTabReadLog.noteHighlightCost(cost, of: id)
   }
 
-  /// A closed tab's rows, reads, selection and scroll go with it. Run from the reconcile.
+  /// A closed tab's rows, reads, selection, scroll and requests go with it. Run
+  /// from the reconcile.
   func pruneFileTabs() {
     let open = Set(workspace.fileTabs.map(\.id))
     setIfChanged(\.fileTabReadings, fileTabReadings.filter { open.contains($0.key) })
@@ -158,6 +159,9 @@ extension AppModel {
     fileTabSelections = fileTabSelections.filter { open.contains($0.key) }
     fileTabScrolls = fileTabScrolls.filter { open.contains($0.key) }
     fileFindsShown = fileFindsShown.filter { open.contains($0.key) }
+    fileTabSteppedChangeAnchors = fileTabSteppedChangeAnchors.filter { open.contains($0.key) }
     if let request = fileTabFocusRequest, !open.contains(request) { fileTabFocusRequest = nil }
+    setIfChanged(\.changeStepRequests, changeStepRequests.filter { open.contains($0.key) })
+    setIfChanged(\.fileTabChangeSteps, fileTabChangeSteps.filter { open.contains($0.key) })
   }
 }

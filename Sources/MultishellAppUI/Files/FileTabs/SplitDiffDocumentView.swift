@@ -17,6 +17,17 @@ final class SplitDiffDocumentView: NSView {
   /// By the right side's scroll, which the left follows by the lock, anchored
   /// by the split as a whole: `HEAD`'s line where the left shows a removal.
   var onScrolledTo: ((FileTabScroll) -> Void)?
+  /// From the side holding the keyboard, as a step counts.
+  var onStepsCounted: ((ChangeSteps) -> Void)?
+  /// The change either side boxed or let go of, as Unified holds it, for the
+  /// model to keep.
+  var onSteppedChangeAnchorChanged: ((ChangeAnchor?) -> Void)?
+  private var firstResponderWatch: NSKeyValueObservation?
+
+  /// The right where neither side has the keyboard, as find counts there.
+  private var keyboardSide: DiffDocumentView {
+    window?.firstResponder === committed.textView ? committed : onDisk
+  }
 
   init(geometry: DiffRowGeometry) {
     committed = DiffDocumentView(geometry: geometry)
@@ -38,6 +49,18 @@ final class SplitDiffDocumentView: NSView {
       guard let self else { return }
       onScrolledTo?(split?.scroll(atRow: onDisk.topRow, x: onDiskScroll.x) ?? onDiskScroll)
     }
+    for (side, other) in [(committed, onDisk), (onDisk, committed)] {
+      side.onSteppedRowsChanged = { [weak self, weak other] rows in
+        other?.mirrorSteppedChange(rows)
+        self?.onSteppedChangeAnchorChanged?(rows.flatMap { self?.split?.anchor(ofChangeAt: $0) })
+      }
+      // The other side moves only by the lock; a keyboard crossing over is
+      // counted by the first responder's watch.
+      side.onStepOriginMoved = { [weak self, weak side] in
+        guard let self, let side, side === keyboardSide else { return }
+        countKeyboardSide()
+      }
+    }
   }
 
   required init?(coder: NSCoder) { nil }
@@ -49,11 +72,52 @@ final class SplitDiffDocumentView: NSView {
     following.awaitTheLock()
   }
 
+  /// Both sides' changes sit on the same rows, so either side's step is the
+  /// split's, and the lock and the box's mirror bring the other along.
+  func step(toChange direction: CycleDirection) {
+    keyboardSide.step(toChange: direction)
+  }
+
+  /// Where a dropped view of this tab, Unified or Split, boxed a change; the
+  /// right side's to take, as it holds a box the split carries.
+  func restoreSteppedChangeAnchor(_ anchor: ChangeAnchor) {
+    onDisk.restoreSteppedChangeAnchor(anchor)
+  }
+
+  /// The keyboard can cross sides with no scroll or selection to count on;
+  /// a move between other views of the window is not counted.
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    firstResponderWatch = window?.observe(\.firstResponder, options: [.old, .new]) {
+      [weak self] _, change in
+      let movedBetween = [change.oldValue, change.newValue].compactMap { $0 ?? nil }
+        .map(ObjectIdentifier.init)
+      MainActor.assumeIsolated {
+        guard let self else { return }
+        let sides = [self.committed.textView, self.onDisk.textView].map(ObjectIdentifier.init)
+        if movedBetween.contains(where: sides.contains) { self.countKeyboardSide() }
+      }
+    }
+  }
+
+  private func countKeyboardSide() {
+    onStepsCounted?(keyboardSide.changeSteps)
+  }
+
+  /// The box is carried by the split as a whole, once both sides are shown, on
+  /// the side holding the keyboard, whose mirror then has its new rows to box.
   func show(_ split: SplitDiff, theme: Theme) {
+    let steppedChangeAnchor = onDisk.takeSteppedChangeAnchorToCarry(boxedIn: self.split)
+    // Unboxed first, so neither side carries the box by its own half of the change.
+    committed.mirrorSteppedChange(nil)
+    onDisk.mirrorSteppedChange(nil)
     self.split = split
     divider.layer?.backgroundColor = theme.splitDividerColor.cgColor
     committed.show(split.committed, theme: theme)
     onDisk.show(split.onDisk, theme: theme)
+    keyboardSide.carrySteppedChange(steppedChangeAnchor, into: split)
+    // Each side counted as it was shown, before the box was carried.
+    countKeyboardSide()
   }
 
   override func layout() {

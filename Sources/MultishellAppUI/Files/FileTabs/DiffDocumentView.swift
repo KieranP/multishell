@@ -24,6 +24,14 @@ final class DiffDocumentView: NSView {
   /// Where a restore or the lock after one left the clip: reported back, the
   /// split's anchor would replace the one the model handed over.
   private var restoredOrigin: NSPoint?
+  private var lastScrollX: CGFloat = 0
+  /// Every scroll and selection move, after which `changeSteps` may differ.
+  var onStepOriginMoved: (() -> Void)?
+  /// The rows this side boxed or let go of, which a split's other side mirrors
+  /// and whose owner turns into an anchor for the model to keep.
+  var onSteppedRowsChanged: ((Range<Int>?) -> Void)?
+  /// The box a dropped view of this tab had, taken once the text is shown.
+  var pendingSteppedChangeAnchor: ChangeAnchor?
 
   /// Whose line numbers the gutter shows.
   var numbering: DiffSide {
@@ -32,10 +40,10 @@ final class DiffDocumentView: NSView {
   }
 
   var scrollOrigin: NSPoint { scrollView.contentView.bounds.origin }
+  var clipHeight: CGFloat { scrollView.contentView.bounds.height }
   /// The row at the top, a fraction where one is cut.
   var topRow: Double {
-    let geometry = textView.geometry
-    return max(0, (scrollOrigin.y - geometry.top(ofRow: 0)) / geometry.rowHeight)
+    textView.geometry.topRow(atScrollOffset: scrollOrigin.y)
   }
 
   init(geometry: DiffRowGeometry) {
@@ -55,11 +63,18 @@ final class DiffDocumentView: NSView {
     addSubview(gutter)
     addSubview(scrollView)
     let scrolled: @MainActor @Sendable (DiffDocumentView) -> Void = { $0.followScroll() }
-    observers = NotificationCenter.default.observe(
-      [(NSView.boundsDidChangeNotification, scrolled)],
-      for: self,
-      from: scrollView.contentView,
-    )
+    let selected: @MainActor @Sendable (DiffDocumentView) -> Void = { $0.selectionMoved() }
+    observers =
+      NotificationCenter.default.observe(
+        [(NSView.boundsDidChangeNotification, scrolled)],
+        for: self,
+        from: scrollView.contentView,
+      )
+      + NotificationCenter.default.observe(
+        [(NSTextView.didChangeSelectionNotification, selected)],
+        for: self,
+        from: textView,
+      )
   }
 
   required init?(coder: NSCoder) { nil }
@@ -80,7 +95,9 @@ final class DiffDocumentView: NSView {
     let isRestoring = pendingRestore != nil
     gutter.displayText = text
     gutter.apply(theme)
+    let steppedChangeAnchor = takeSteppedChangeAnchorToCarry(boxedIn: textView.displayText)
     textView.show(text, theme: theme)
+    carrySteppedChange(steppedChangeAnchor, into: text)
     needsLayout = true
     layoutSubtreeIfNeeded()
     // A re-read keeps the scroll where it was, within what is left, unless a
@@ -116,10 +133,7 @@ final class DiffDocumentView: NSView {
       !textView.displayText.lines.isEmpty
     {
       pendingRestore = nil
-      let geometry = textView.geometry
-      let row = textView.displayText.row(of: scroll)
-      // Row 0 is the top, its inset above it.
-      let y = row <= 0 ? 0 : geometry.top(ofRow: 0) + row * geometry.rowHeight
+      let y = textView.geometry.scrollOffset(puttingAtTop: textView.displayText.row(of: scroll))
       let clip = scrollView.contentView
       let target = clip.constrainBoundsRect(
         NSRect(origin: NSPoint(x: scroll.x, y: y), size: clip.bounds.size)
@@ -130,8 +144,8 @@ final class DiffDocumentView: NSView {
     followScroll()
   }
 
-  /// A split's lock: the other side's origin exactly, the same rows under the
-  /// forced geometry. The split guards against the echo.
+  /// Clamped. A restore, a step and a split's lock, which passes the other side's
+  /// origin exactly, the same rows under the forced geometry; the split guards the echo.
   func scroll(to origin: NSPoint) {
     defer {
       if isAwaitingTheLock { restoredOrigin = scrollView.contentView.bounds.origin }
@@ -149,6 +163,11 @@ final class DiffDocumentView: NSView {
     let origin = scrollView.contentView.bounds.origin
     gutter.scrolledTo = origin.y
     textView.layOutRowsAroundView()
+    if origin.x != lastScrollX {
+      lastScrollX = origin.x
+      textView.redraw(steppedChange: textView.steppedChange)
+    }
+    onStepOriginMoved?()
     guard pendingRestore == nil, !isAwaitingTheLock else { return }
     onScroll?(origin)
     guard restoredOrigin != origin else { return }

@@ -127,6 +127,10 @@ public final class AppModel<Surface> {
   /// The file tab a reconcile handed the keyboard to, taken by its view
   /// through `takeFileTabFocusRequest`, as a find field takes its request.
   var fileTabFocusRequest: FileTab.ID?
+  /// Taken by each file tab's view, which alone knows the selection a step counts from.
+  var changeStepRequests: [FileTab.ID: [CycleDirection]] = [:]
+  var fileTabChangeSteps: [FileTab.ID: ChangeSteps] = [:]
+  @ObservationIgnored var fileTabSteppedChangeAnchors: [FileTab.ID: ChangeAnchor] = [:]
   @ObservationIgnored var fileTabReadLog = FileTabReadLog()
   /// One coalesced read per file tab; see `scheduleFileTabRead`.
   @ObservationIgnored var pendingFileTabReads: [FileTab.ID: Task<Void, Never>] = [:]
@@ -385,10 +389,6 @@ public final class AppModel<Surface> {
   /// responder and reports the focus back through the reconciler.
   public func focusSurface(_ id: TerminalSession.ID) {
     host.focus(id)
-  }
-
-  func liveTerminalCount(in worktree: Worktree.ID) -> Int {
-    workspace.sessions(in: worktree).filter { liveSessionIDs.contains($0.id) }.count
   }
 
   deinit {

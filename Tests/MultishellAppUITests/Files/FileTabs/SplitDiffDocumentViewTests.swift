@@ -149,6 +149,224 @@ struct SplitDiffDocumentViewTests {
     #expect(view.committed.textView.visibleRect.minY == view.onDisk.textView.visibleRect.minY)
   }
 
+  @Test func aStepToAChangeMovesBothSidesToIt() throws {
+    let split = try #require(Self.replacedBlock(lastText: "end").split)
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+
+    view.step(toChange: .next)
+
+    #expect(view.onDisk.topRow == Double(200 - DiffRowGeometry.contextRowsAboveAChange))
+    #expect(view.committed.scrollOrigin.y == view.onDisk.scrollOrigin.y)
+  }
+
+  @Test func aStepCountsFromTheLeftSideWhenTheLeftSideHasTheKeyboard() throws {
+    let lines = (0..<60).map { row in
+      row == 5 || row == 40
+        ? DiffLine(kind: .removed, oldNumber: row + 1, newNumber: nil, text: "gone \(row)")
+        : DiffLine(kind: .context, oldNumber: row + 1, newNumber: row + 1, text: "line \(row)")
+    }
+    let split = SplitDiff(lines)
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 1_200)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+    window.makeFirstResponder(view.committed.textView)
+    let clicked = split.committed.rowStarts[30]
+    view.committed.textView.setSelectedRange(NSRange(location: clicked, length: 0))
+
+    view.step(toChange: .next)
+
+    #expect(
+      view.committed.textView.selectedRange()
+        == NSRange(location: split.committed.rowStarts[40], length: 0)
+    )
+  }
+
+  @Test func aStepBoxesTheChangeOnBothSides() throws {
+    let split = try #require(Self.replacedBlock(lastText: "end").split)
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+
+    view.step(toChange: .next)
+
+    #expect(view.onDisk.textView.steppedChange == 200..<300)
+    #expect(view.committed.textView.steppedChange == 200..<300)
+  }
+
+  @Test func aChangeBoxedInUnifiedIsBoxedOnBothSidesOfTheSplitOpenedAfter() throws {
+    let rows = Self.replacedBlock(lastText: "end")
+    let anchor = try #require(rows.displayText.anchor(ofChangeAt: 200..<400))
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    var reported: [ChangeAnchor?] = []
+    view.onSteppedChangeAnchorChanged = { reported.append($0) }
+    view.restoreSteppedChangeAnchor(anchor)
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+
+    view.show(try #require(rows.split), theme: Theme.builtins[0])
+
+    #expect(view.onDisk.textView.steppedChange == 200..<300)
+    #expect(view.committed.textView.steppedChange == 200..<300)
+    #expect(reported.last == anchor)
+  }
+
+  @Test func aSplitWhoseBoxedChangeIsGoneLetsGoOfIt() throws {
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    var reported: [ChangeAnchor?] = []
+    view.onSteppedChangeAnchorChanged = { reported.append($0) }
+    view.restoreSteppedChangeAnchor(
+      ChangeAnchor(
+        headDigest: 0,
+        headLineAbove: 5,
+        headLineBelow: 6,
+        textAbove: nil,
+        lineText: "nowhere",
+      )
+    )
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+
+    view.show(try #require(Self.replacedBlock(lastText: "end").split), theme: Theme.builtins[0])
+
+    #expect(reported == [nil])
+  }
+
+  @Test func theArrowsFollowTheKeyboardToTheOtherSide() throws {
+    let split = DiffDocumentFixture.split(rows: 400, removing: [50, 200])
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    var reported: [ChangeSteps] = []
+    view.onStepsCounted = { reported.append($0) }
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+    view.step(toChange: .next)
+    view.step(toChange: .next)
+    let onTheLast = reported.last
+
+    window.makeFirstResponder(view.committed.textView)
+    view.committed.textView.setSelectedRange(
+      NSRange(location: split.committed.rowStarts[199], length: 0)
+    )
+
+    #expect(onTheLast == ChangeSteps(hasNext: false, hasPrevious: true))
+    #expect(reported.last == ChangeSteps(hasNext: true, hasPrevious: true))
+  }
+
+  @Test func theArrowsRecountWhenTheKeyboardMovesSidesWithoutASelectionChange() throws {
+    let split = DiffDocumentFixture.split(rows: 400, removing: [50, 200])
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    var reported: [ChangeSteps] = []
+    view.onStepsCounted = { reported.append($0) }
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+    view.committed.textView.setSelectedRange(
+      NSRange(location: split.committed.rowStarts[199], length: 0)
+    )
+    window.makeFirstResponder(view.onDisk.textView)
+    view.step(toChange: .next)
+    view.step(toChange: .next)
+    let onTheLast = reported.last
+
+    window.makeFirstResponder(view.committed.textView)
+
+    #expect(onTheLast == ChangeSteps(hasNext: false, hasPrevious: true))
+    #expect(reported.last == ChangeSteps(hasNext: true, hasPrevious: true))
+  }
+
+  @Test func theKeyboardMovingBetweenOtherViewsLeavesTheArrowsUncounted() throws {
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let fields = [NSTextField(), NSTextField()]
+    let content = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 400))
+    for (index, field) in fields.enumerated() {
+      field.frame = NSRect(x: CGFloat(index) * 100, y: 320, width: 90, height: 20)
+      content.addSubview(field)
+    }
+    content.addSubview(view)
+    let window = OffscreenWindow.holding(content, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(DiffDocumentFixture.split(rows: 400, removing: [50]), theme: Theme.builtins[0])
+    window.makeFirstResponder(fields[0])
+    var counts = 0
+    view.onStepsCounted = { _ in counts += 1 }
+
+    window.makeFirstResponder(fields[1])
+    window.makeFirstResponder(fields[0])
+
+    #expect(counts == 0)
+  }
+
+  @Test func aRereadLetsGoOfABoxOnOneSideItCannotCarry() throws {
+    let split = DiffDocumentFixture.split(rows: 400, removing: [50, 200])
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.committed.mirrorSteppedChange(50..<51)
+
+    view.show(DiffDocumentFixture.split(rows: 400, removing: [200]), theme: Theme.builtins[0])
+
+    #expect(view.committed.textView.steppedChange == nil)
+  }
+
+  @Test func aRereadThatDropsTheBoxRecountsTheArrows() throws {
+    func split(revertingSeven: Bool) -> SplitDiff {
+      var lines = [
+        DiffLine(kind: .removed, oldNumber: 1, newNumber: nil, text: "1"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "1x"),
+      ]
+      lines += (2...6).map { (line: Int) in
+        DiffLine(kind: .context, oldNumber: line, newNumber: line, text: "\(line)")
+      }
+      lines +=
+        revertingSeven
+        ? [DiffLine(kind: .context, oldNumber: 7, newNumber: 7, text: "7")]
+        : [
+          DiffLine(kind: .removed, oldNumber: 7, newNumber: nil, text: "7"),
+          DiffLine(kind: .added, oldNumber: nil, newNumber: 7, text: "7x"),
+        ]
+      lines += (8...10).map { (line: Int) in
+        DiffLine(kind: .context, oldNumber: line, newNumber: line, text: "\(line)")
+      }
+      return SplitDiff(lines)
+    }
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    var reported: [ChangeSteps] = []
+    view.onStepsCounted = { reported.append($0) }
+    view.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split(revertingSeven: false), theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+    window.makeFirstResponder(view.onDisk.textView)
+    view.step(toChange: .next)
+    view.step(toChange: .next)
+
+    view.show(split(revertingSeven: true), theme: Theme.builtins[0])
+
+    #expect(view.onDisk.textView.steppedChange == nil)
+    #expect(reported.last?.allows(.next) == true)
+  }
+
   @Test func aScrollLeftInUnifiedOpensSplitOnTheSameLine() throws {
     let rows = FileTabRows(
       lines: (0..<100).map { index in

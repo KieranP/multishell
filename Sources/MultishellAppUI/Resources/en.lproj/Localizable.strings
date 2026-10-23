@@ -101,6 +101,8 @@
 "file.actions" = "File Actions";
 "file.layout" = "How changes are shown";
 "file.mode-changed" = "Mode changed";
+"file.next-change" = "Next Change";
+"file.previous-change" = "Previous Change";
 "file.split" = "Split";
 "file.unified" = "Unified";
 "files-panel.all" = "All";

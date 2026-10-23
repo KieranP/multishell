@@ -310,7 +310,12 @@ What each addition needs beyond the code itself.
 - **Runtime state.** On the model, never the workspace. Keyed by worktree it
   also goes in the forget, or it outlives its row and the next worktree at that
   path inherits it (design/worktrees.md); keyed by project, in the project's
-  removal.
+  removal; keyed by file tab, in `pruneFileTabs`, or a closed tab's id keeps its
+  entry for the run. Nothing forces any of the three.
+- **A request a view acts on is a model property the view takes** in its update,
+  `takeChangeStepRequest` and `takeFileTabFocusRequest` the pattern: a SwiftUI
+  bar cannot reach the AppKit view beside it, and the take, read in
+  `updateNSView`, is what makes SwiftUI call the update again.
 - **A value a poll or timer writes goes through `setIfChanged`**, or every view
   reading it redraws on each tick (design/merged-branch.md).
 - **The session states own who clears what**: change it there and in their

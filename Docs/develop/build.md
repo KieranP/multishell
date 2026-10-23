@@ -171,7 +171,7 @@
   agree; where they disagree, as on brace placement after a full header, import
   order and a lone wrapped element's trailing comma, swift-format's answer
   stands. They cost about 0.3 s of SwiftLint's 1.1 s uncached; swift-format
-  takes 4 s.
+  takes 7 s serial and 1.5 to 4 s with `--parallel`, which `make` passes.
 - **SwiftLint is pinned by `swiftlint_version`**, and any other version refuses
   to run. With every rule on, a newer SwiftLint would switch its new rules on
   unasked, so a bump is when they are reviewed. CI downloads that release;

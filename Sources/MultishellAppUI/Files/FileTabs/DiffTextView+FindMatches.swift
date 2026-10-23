@@ -5,7 +5,7 @@ import MultishellAppCore
 /// files.md for why not as TextKit 2 rendering attributes.
 extension DiffTextView {
   /// Matches in UTF-16 units; the selected one is scrolled to where `find` moved
-  /// it since `previous`, else selected alone on a rebuilt view's first paint.
+  /// it since `previous`, else selected alone on a first paint outside a box.
   func showFindMatches(
     _ find: FindMatchesShown,
     after previous: FindMatchesShown?,
@@ -21,7 +21,7 @@ extension DiffTextView {
     if find.movesSelection(from: previous) {
       setSelectedRange(range)
       scrollRangeToVisible(range)
-    } else if isFirstPaint {
+    } else if isFirstPaint, !isOutsideSteppedChange(match) {
       setSelectedRange(range)
     }
   }
@@ -39,5 +39,12 @@ extension DiffTextView {
       guard match.lowerBound < shownEnd else { break }
       fillTextSegments(of: match, layoutManager: layoutManager)
     }
+  }
+
+  /// A box the view came back with is newer than a match outside it: a find
+  /// step there would have moved the selection off the box and let it go.
+  private func isOutsideSteppedChange(_ match: Range<Int>) -> Bool {
+    guard let rows = steppedChange else { return false }
+    return !rows.contains(displayText.row(atOffset: match.lowerBound))
   }
 }

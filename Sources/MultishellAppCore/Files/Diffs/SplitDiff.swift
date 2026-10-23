@@ -4,7 +4,8 @@ public struct SplitDiff: Equatable, Sendable {
   public let committed: DiffDisplayText
   public let onDisk: DiffDisplayText
 
-  init(_ lines: [DiffLine]) {
+  /// `headDigest` is the Unified text's where it was already hashed.
+  init(_ lines: [DiffLine], headDigest: Int? = nil) {
     var left: [DiffLine] = []
     var right: [DiffLine] = []
     var removed: [DiffLine] = []
@@ -28,7 +29,7 @@ public struct SplitDiff: Equatable, Sendable {
       }
     }
     flush()
-    committed = DiffDisplayText(left, wholeSides: [.committed])
-    onDisk = DiffDisplayText(right, wholeSides: [.onDisk])
+    committed = DiffDisplayText(left, wholeSides: [.committed], headDigest: headDigest)
+    onDisk = DiffDisplayText(right, wholeSides: [.onDisk], headDigest: committed.headDigest)
   }
 }

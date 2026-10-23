@@ -11,11 +11,21 @@ public struct DiffDisplayText: Equatable, Sendable {
   public let string: String
   /// Where each row starts in `string`, in UTF-16 units.
   public let rowStarts: [Int]
+  /// The first row of each change, ascending: what a step lands on.
+  let changeStarts: [Int]
   /// The sides every line of which these rows hold: a split side holds one, and
   /// a parse of the other's partial text would colour it wrong.
   let wholeSides: [DiffSide]
+  /// Every `HEAD` line's text hashed in order, which only a commit or checkout
+  /// changes; a split's right side takes its left's, lacking the removed lines.
+  let headDigest: Int
 
-  public init(_ lines: [DiffLine], wholeSides: [DiffSide] = [.committed, .onDisk]) {
+  public init(_ lines: [DiffLine]) {
+    self.init(lines, wholeSides: [.committed, .onDisk], headDigest: nil)
+  }
+
+  /// `headDigest` where already hashed, or for rows missing some of `HEAD`'s lines.
+  init(_ lines: [DiffLine], wholeSides: [DiffSide], headDigest: Int?) {
     self.wholeSides = wholeSides
     var starts: [Int] = []
     starts.reserveCapacity(lines.count)
@@ -38,7 +48,18 @@ public struct DiffDisplayText: Equatable, Sendable {
     }
     self.lines = capped
     self.rowStarts = starts
+    self.changeStarts = capped.indices.filter { row in
+      capped[row].kind != .context && (row == 0 || capped[row - 1].kind == .context)
+    }
     self.string = capped.map(\.text).joined(separator: "\n")
+    self.headDigest = headDigest ?? Self.headDigest(of: capped)
+  }
+
+  /// Hasher is seeded per launch, so a digest is never saved.
+  private static func headDigest(of lines: [DiffLine]) -> Int {
+    var hasher = Hasher()
+    for line in lines where line.oldNumber != nil { hasher.combine(line.text) }
+    return hasher.finalize()
   }
 
   private static func capped(_ text: String) -> String {
@@ -50,14 +71,7 @@ public struct DiffDisplayText: Equatable, Sendable {
 
   /// The row holding a UTF-16 offset, the last row for one past the end.
   public func row(atOffset offset: Int) -> Int {
-    var low = 0
-    var high = rowStarts.count - 1
-    guard high >= 0 else { return 0 }
-    while low < high {
-      let middle = (low + high + 1) / 2
-      if rowStarts[middle] <= offset { low = middle } else { high = middle - 1 }
-    }
-    return low
+    max(0, rowStarts.partitioningIndex { $0 > offset } - 1)
   }
 
   /// A row's text, its newline left out, in UTF-16 units.

@@ -8,6 +8,8 @@ struct DiffRowGeometry {
   /// Natural rows are 15 to 18 pt by script; a fixed one a little taller
   /// than the font's own keeps Devanagari's marks inside it.
   private static let lineSpacingFactor: CGFloat = 1.45
+  /// What a step to a change leaves above it, so its first row reads in place.
+  static let contextRowsAboveAChange = 3
   /// `NSFontManager`'s weights run 0 to 15, 5 being regular.
   private static let regularWeight = 5
 
@@ -37,6 +39,23 @@ struct DiffRowGeometry {
 
   func top(ofRow row: Int) -> CGFloat {
     Self.verticalInset + CGFloat(row) * rowHeight
+  }
+
+  /// The clip's offset that puts `row` at the top, a fraction where one is
+  /// cut; row 0 and above keep the inset in view.
+  func scrollOffset(puttingAtTop row: Double) -> CGFloat {
+    row <= 0 ? 0 : Self.verticalInset + row * rowHeight
+  }
+
+  /// Fewer than the context rows in a clip too short for them, or the change
+  /// would sit below it and the next step count from above and find it again.
+  func rowsAboveAChange(inClipOf height: CGFloat) -> Int {
+    min(Self.contextRowsAboveAChange, max(0, Int(height / rowHeight) - 1))
+  }
+
+  /// The row at the top of a clip at `offset`, a fraction where one is cut.
+  func topRow(atScrollOffset offset: CGFloat) -> Double {
+    max(0, (offset - Self.verticalInset) / rowHeight)
   }
 
   /// The rows a rect in the document reaches, clamped to `count`: a rect

@@ -8,6 +8,10 @@ extension AppModel {
   /// Every live shell is a pty that quitting kills, unless `multishell quit` already asked.
   public var asksBeforeQuitting: Bool { liveTerminalCount > 0 && !quitsWithoutAsking }
 
+  func liveTerminalCount(in worktree: Worktree.ID) -> Int {
+    workspace.sessions(in: worktree).filter { liveSessionIDs.contains($0.id) }.count
+  }
+
   /// Opens the socket and asks git what each project actually has, over a
   /// workspace already read from disk. Terminals are not restored.
   public func start() async {

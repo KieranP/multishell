@@ -16,6 +16,11 @@ struct FileTabBar: View {
     if case .text(let rows) = reading?.content { rows } else { nil }
   }
 
+  /// What the counts and the arrows both show for.
+  private var changedLineCounts: FileLineCounts? {
+    rows.flatMap { $0.hasLineChanges ? $0.lineCounts : nil }
+  }
+
   var body: some View {
     HStack(spacing: 6) {
       if let folder = tab.folderCrumb {
@@ -30,9 +35,9 @@ struct FileTabBar: View {
         .foregroundStyle(theme.fileTab.text)
         .lineLimit(1)
         .layoutPriority(1)
-      if let rows, rows.hasLineChanges {
+      if let changedLineCounts {
         FileLineCountsText(
-          counts: rows.lineCounts,
+          counts: changedLineCounts,
           theme: theme,
           size: model.metrics.caption,
           showsZeroSides: false,
@@ -42,6 +47,9 @@ struct FileTabBar: View {
         Text(t("file.mode-changed")).foregroundStyle(theme.fileTab.textTertiary)
       }
       Spacer(minLength: 8)
+      if changedLineCounts != nil {
+        ChangeStepButtons(model: model, tabID: tab.id, palette: theme.fileTab)
+      }
       if model.offersLayoutSwitch(for: tab) { layoutSwitch }
       actionsMenu
     }

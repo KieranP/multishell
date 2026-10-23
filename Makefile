@@ -61,12 +61,12 @@ install: libghostty grammars
 ## Report style and correctness violations. Same commands CI runs; fails on
 ## any finding.
 lint:
-	swift format lint --strict --recursive Sources Tests Package.swift
+	swift format lint --strict --recursive --parallel Sources Tests Package.swift
 	swiftlint lint --quiet
 
 ## Rewrite files in place to the project style (.swift-format, .prettierrc).
 format: require-prettier
-	swift format --in-place --recursive Sources Tests Package.swift
+	swift format --in-place --recursive --parallel Sources Tests Package.swift
 	prettier --write --log-level warn '**/*.md'
 
 ## Markdown goes through prettier, which the toolchain does not ship and CI

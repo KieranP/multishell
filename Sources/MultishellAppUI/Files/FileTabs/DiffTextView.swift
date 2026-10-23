@@ -29,6 +29,16 @@ final class DiffTextView: NSTextView {
   /// The find bar's, painted under the text with the line tints; see
   /// `showFindMatches`.
   var findMatchPaint: (matches: [Range<Int>], tint: NSColor) = ([], .clear)
+  /// The rows of the change the bar's last step landed on, boxed; see
+  /// `drawSteppedChange`.
+  var steppedChange: Range<Int>? {
+    didSet {
+      guard steppedChange != oldValue else { return }
+      redraw(steppedChange: oldValue)
+      redraw(steppedChange: steppedChange)
+    }
+  }
+  private(set) var steppedChangeBorder = NSColor.clear
   private var documentWidth: CGFloat = 0
   /// The highlight runs the text carries at its current offsets, so the next
   /// apply changes only what differs; `nil` while unknown, mid-apply.
@@ -82,6 +92,7 @@ final class DiffTextView: NSTextView {
     lineTints = (theme.addedLineTint, theme.removedLineTint)
     partTints = (theme.addedPartTint, theme.removedPartTint)
     paddingTint = theme.paddingRowTint
+    steppedChangeBorder = theme.steppedChangeBorder
     backgroundColor = theme.fileBackground
     selectedTextAttributes = [.backgroundColor: theme.fileSelection]
     let drawn = text.drawnString
@@ -145,6 +156,7 @@ final class DiffTextView: NSTextView {
     }
     drawChangedParts(in: rect)
     drawFindMatches(in: rect)
+    drawSteppedChange()
   }
 
   override func setSelectedRanges(

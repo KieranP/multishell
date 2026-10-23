@@ -41,7 +41,16 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
       model?.noteFileTabSelection(text, of: tabID)
     }
     view.onScrolledTo = { [weak model] scroll in model?.noteFileTabScrolled(tabID, to: scroll) }
+    view.onStepOriginMoved = { [weak model, weak view] in
+      guard let view else { return }
+      model?.noteChangeSteps(view.changeSteps, of: tabID)
+    }
+    view.onSteppedRowsChanged = { [weak model, weak view] rows in
+      let anchor = rows.flatMap { view?.textView.displayText.anchor(ofChangeAt: $0) }
+      model?.noteSteppedChangeAnchor(anchor, of: tabID)
+    }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
+    if let anchor = model.steppedChangeAnchor(of: tabID) { view.restoreSteppedChangeAnchor(anchor) }
     return view
   }
 
@@ -72,6 +81,7 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
     ) {
       model.noteFileFindShown(shown, of: tabID)
     }
+    for direction in model.takeChangeStepRequests(tabID) { view.step(toChange: direction) }
     view.textView.takeKeyboard(ifAskedBy: model, for: tabID)
   }
 

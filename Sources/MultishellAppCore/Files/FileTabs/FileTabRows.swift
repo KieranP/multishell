@@ -17,7 +17,9 @@ public struct FileTabRows: Equatable, Sendable {
   init(lines unmarked: [DiffLine], hasModeChange: Bool = false) {
     let lines = ChangedPartsMarker.marking(unmarked)
     displayText = DiffDisplayText(lines)
-    split = lines.contains(where: \.isChange) ? SplitDiff(lines) : nil
+    split =
+      lines.contains(where: \.isChange)
+      ? SplitDiff(lines, headDigest: displayText.headDigest) : nil
     self.hasModeChange = hasModeChange
     lineCounts = FileLineCounts(
       insertions: lines.count { $0.kind == .added },

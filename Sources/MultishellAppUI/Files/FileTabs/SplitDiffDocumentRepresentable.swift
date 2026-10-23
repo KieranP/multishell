@@ -43,7 +43,12 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
       model?.noteFileTabSelection(text, of: tabID)
     }
     view.onScrolledTo = { [weak model] scroll in model?.noteFileTabScrolled(tabID, to: scroll) }
+    view.onStepsCounted = { [weak model] steps in model?.noteChangeSteps(steps, of: tabID) }
+    view.onSteppedChangeAnchorChanged = { [weak model] anchor in
+      model?.noteSteppedChangeAnchor(anchor, of: tabID)
+    }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
+    if let anchor = model.steppedChangeAnchor(of: tabID) { view.restoreSteppedChangeAnchor(anchor) }
     return view
   }
 
@@ -82,6 +87,7 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     ) {
       model.noteFileFindShown(shown, of: tabID)
     }
+    for direction in model.takeChangeStepRequests(tabID) { view.step(toChange: direction) }
     view.onDisk.textView.takeKeyboard(ifAskedBy: model, for: tabID)
   }
 

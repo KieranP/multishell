@@ -12,7 +12,7 @@ struct SegmentedSwitch<Value: Hashable>: View {
   let metrics: UIMetrics
 
   var body: some View {
-    HStack(spacing: 2) {
+    HStack(spacing: UIMetrics.segmentSpacing) {
       ForEach(options.indices, id: \.self) { index in
         let option = options[index]
         let isSelected = option.value == selection
