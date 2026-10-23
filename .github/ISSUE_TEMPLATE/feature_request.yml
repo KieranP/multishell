@@ -19,7 +19,7 @@ body:
     attributes:
       label: Checked first
       options:
-        - label: TODO.md does not already queue this
+        - label: No open issue already asks for this
           required: true
         - label: COMPAT.md does not already state it as unsupported
           required: true

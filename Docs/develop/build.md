@@ -267,5 +267,5 @@
   shows terminals with their focus ring, checked on a debug build. An in-process
   render of a view has no live terminal to show.
 - **Otherwise a view change stops at the checks above**: say what is unverified
-  and leave the looking to the user. BUGS.md takes no entry for it, since
-  whether a feature draws and works is checked by hand as it is built.
+  and leave the looking to the user. It takes no issue, since whether a feature
+  draws and works is checked by hand as it is built.

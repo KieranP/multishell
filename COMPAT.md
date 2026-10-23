@@ -23,7 +23,7 @@ just never updates the state indicator dot.
 single-architecture rather than universal. Only Apple silicon has been built and
 run here; Intel is unbuilt and untested. Only Xcode 27 has been built with, the
 floor of 26 resting on `xcodebuild` behaving there as it does in 27; see
-BUGS.md.
+[#23](https://github.com/KieranP/multishell/issues/23).
 
 A git older than 2.36 has no `-z` for `git worktree list`, so the app reads the
 newline form instead, and a worktree whose path holds a newline shows a
