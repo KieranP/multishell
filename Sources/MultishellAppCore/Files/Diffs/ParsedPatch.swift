@@ -6,6 +6,6 @@ enum ParsedPatch: Equatable, Sendable {
   case lines([DiffLine])
   /// Headers and no hunk: only the file's mode changed.
   case modeOnly
-  /// Nothing printed: the file is as `HEAD` has it, or untracked.
+  /// Nothing printed: the file is as the committed side has it, or untracked.
   case unchanged
 }

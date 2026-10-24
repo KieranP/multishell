@@ -17,7 +17,8 @@ final class OneShotRunner {
   }
   private var stoppers: [Worktree.ID: ProcessStopper] = [:]
 
-  func stopper(for id: Worktree.ID) -> ProcessStopper {
+  /// The new run's stopper, held in place of any earlier run's for the worktree.
+  func beginRun(for id: Worktree.ID) -> ProcessStopper {
     let stopper = ProcessStopper()
     stoppers[id] = stopper
     return stopper
@@ -25,7 +26,7 @@ final class OneShotRunner {
 
   /// Whether the run was still its worktree's, so its answer stands: a
   /// worktree made again at the path has a run of its own.
-  func finish(_ id: Worktree.ID, stopper: ProcessStopper) -> Bool {
+  func endRun(_ id: Worktree.ID, stopper: ProcessStopper) -> Bool {
     guard stoppers[id] === stopper else { return false }
     stoppers[id] = nil
     return true

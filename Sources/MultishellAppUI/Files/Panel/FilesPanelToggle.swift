@@ -18,6 +18,6 @@ struct FilesPanelToggle: View {
       model.showsFilesPanel ? theme.color(.accent, in: .header) : theme.header.textSecondary
     )
     .accessibilityLabel(t("files-panel.toggle"))
-    .accessibilityAddTraits(model.showsFilesPanel ? .isSelected : [])
+    .selectableButtonTraits(isSelected: model.showsFilesPanel)
   }
 }

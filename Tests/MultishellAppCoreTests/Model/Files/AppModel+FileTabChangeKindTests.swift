@@ -102,15 +102,16 @@ struct AppModelFileTabChangeKindTests {
   @Test func hidingATabWithNoDotGivesItNone() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, main) = try harness.openFileTab()
+    let main = try #require(harness.worktree(onBranch: "main"))
     let readme = main.path.appending(path: "README.md")
     let text = try String(contentsOf: readme, encoding: .utf8)
     try "staged\n".write(to: readme, atomically: true, encoding: .utf8)
     _ = try await harness.git.run(["add", "README.md"], in: main.path)
     try text.write(to: readme, atomically: true, encoding: .utf8)
     _ = await harness.model.refreshStatus(of: main.id, forced: true)
-    harness.model.noteFileTabChanged(tab.id)
+    let (tab, _) = try harness.openFileTab()
     _ = try #require(await harness.rowsArrive(in: tab.id))
+    #expect(harness.model.statuses[main.id]?.changes.isEmpty == false)
     #expect(harness.model.changeKind(of: tab) == nil)
 
     harness.model.newShellTab()

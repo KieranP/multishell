@@ -11,7 +11,7 @@ extension AppModel {
 
   /// The worktree the panel lists, where the panel can be: a worktree with
   /// tabs or with none, not an operation or a cover.
-  public var filesPanelWorktree: Worktree? {
+  var filesPanelWorktree: Worktree? {
     switch detailContent {
     case .noTabs(let worktree), .tabGroups(let worktree): worktree
     case .cover, .noSelection, .operation: nil

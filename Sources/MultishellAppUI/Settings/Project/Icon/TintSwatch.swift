@@ -28,6 +28,6 @@ struct TintSwatch: View {
       }
       .frame(width: 18, height: 18)
     }
-    .accessibilityAddTraits(isSelected ? .isSelected : [])
+    .selectableButtonTraits(isSelected: isSelected)
   }
 }

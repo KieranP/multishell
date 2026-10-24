@@ -104,6 +104,17 @@ struct AppModelControlGlobalSettingsTests {
     #expect(harness.model.workspace.port(of: harness.feature.id) == 4020)
   }
 
+  @Test func aCommandLineWriteThatLeavesAWorktreeWithoutAPortSucceeds() async {
+    let harness = Harness()
+
+    let reply = await harness.messageSource.ask(
+      .writeGlobalSetting(key: "portBlockStart", value: "65520")
+    )
+
+    #expect(reply == .done)
+    #expect(harness.model.workspace.port(of: harness.feature.id) == nil)
+  }
+
   @Test func aShellOrEditorThePickersCannotNameIsRefused() async {
     let harness = Harness()
 

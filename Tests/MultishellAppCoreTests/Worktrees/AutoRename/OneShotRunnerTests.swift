@@ -7,20 +7,20 @@ import Testing
 struct OneShotRunnerTests {
   @Test func aStoppedRunIsNoLongerTheWorktreesOnceAnotherStarts() {
     let runner = OneShotRunner()
-    let stopped = runner.stopper(for: "/w/feature")
+    let stopped = runner.beginRun(for: "/w/feature")
     runner.stop(["/w/feature"])
-    let current = runner.stopper(for: "/w/feature")
+    let current = runner.beginRun(for: "/w/feature")
 
     #expect(stopped.isStopRequested)
-    #expect(!runner.finish("/w/feature", stopper: stopped))
-    #expect(runner.finish("/w/feature", stopper: current))
-    #expect(!runner.finish("/w/feature", stopper: current), "finished once")
+    #expect(!runner.endRun("/w/feature", stopper: stopped))
+    #expect(runner.endRun("/w/feature", stopper: current))
+    #expect(!runner.endRun("/w/feature", stopper: current), "finished once")
   }
 
   @Test func stoppingEveryRunStopsEachWorktreesRun() {
     let runner = OneShotRunner()
-    let first = runner.stopper(for: "/w/a")
-    let second = runner.stopper(for: "/w/b")
+    let first = runner.beginRun(for: "/w/a")
+    let second = runner.beginRun(for: "/w/b")
 
     runner.stopAll()
 

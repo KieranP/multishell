@@ -19,10 +19,14 @@ public enum AgentTaskArgument: Hashable, Sendable {
   }
 
   public func arguments(for task: String) -> [String] {
-    let line = Self.oneLine(task)
-    return switch self {
-    case .operand: ["--", Self.unlikeAnySubcommand(line)]
-    case .option(let name): ["\(name)=\(line)"]
+    arguments(forPrompt: Self.oneLine(task))
+  }
+
+  /// Line breaks kept, for a CLI run directly rather than through a shell.
+  func arguments(forPrompt prompt: String) -> [String] {
+    switch self {
+    case .operand: ["--", Self.unlikeAnySubcommand(prompt)]
+    case .option(let name): ["\(name)=\(prompt)"]
     }
   }
 }

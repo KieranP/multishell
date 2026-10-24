@@ -4,14 +4,14 @@ import Testing
 @testable import MultishellCore
 
 @Suite
-struct AutoRenameAgentTests {
+struct AutoRenameChoiceTests {
   private static func resolve(
     agent: String? = nil,
     model: String? = nil,
     effort: String? = nil,
     projectAgent: String? = "claude",
-  ) -> AutoRenameAgent? {
-    AutoRenameAgent.resolve(
+  ) -> AutoRenameChoice? {
+    AutoRenameChoice.resolve(
       renameAgentID: agent,
       model: model,
       effort: effort,

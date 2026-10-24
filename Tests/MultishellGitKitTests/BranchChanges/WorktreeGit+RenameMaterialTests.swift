@@ -69,6 +69,20 @@ struct WorktreeGitRenameMaterialTests {
     #expect(!material.diff.contains("line 400"))
   }
 
+  @Test func aPathSpellingAFileHeaderLeavesTheStatWhole() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "work"], in: fixture.project.path)
+    try fixture.write("x\n", to: "diff --git x.txt")
+    try fixture.write("b\n", to: "b.txt")
+    _ = try await fixture.runner.run(["add", "."], in: fixture.project.path)
+
+    let material = try #require(try await Self.material(in: fixture))
+
+    #expect(material.diffstat.contains("2 files changed"))
+    #expect(material.diff.hasPrefix("diff --git a/"))
+  }
+
   @Test func aDiffWithinItsLimitIsWhole() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

@@ -52,23 +52,23 @@ extension AppModel {
       choice: choice,
       executable: executable,
       loginVariables: loginEnvironment?.variables ?? [:],
-      stopper: oneShotRunner.stopper(for: id),
+      stopper: oneShotRunner.beginRun(for: id),
     )
     let runner = oneShotRunner.run
     Task { @MainActor [weak self] in
       let answer = await run.answer(using: coordinator.git, runner: runner)
-      guard let self, oneShotRunner.finish(id, stopper: run.stopper), let answer else { return }
+      guard let self, oneShotRunner.endRun(id, stopper: run.stopper), let answer else { return }
       finishAutoRename(of: worktree, namedAtStart: startingName, with: answer)
     }
   }
 
   /// The base and agent a run would use, read once for the menu and the run;
   /// `nil` where the item is off.
-  private func autoRenameStart(for worktree: Worktree) -> (DefaultBranch, AutoRenameAgent)? {
+  private func autoRenameStart(for worktree: Worktree) -> (DefaultBranch, AutoRenameChoice)? {
     // A bare repository's empty index reads as the branch deleting every file.
     guard !worktree.isBare, !isAutoRenaming(worktree.id), !isBusy(worktree.id), coordinator != nil,
       let base = defaultBranchScans[worktree.projectID]?.branch,
-      let choice = AutoRenameAgent.resolve(
+      let choice = AutoRenameChoice.resolve(
         renameAgentID: workspace.renameAgentID,
         model: workspace.renameModel,
         effort: workspace.renameEffort,
@@ -144,6 +144,6 @@ extension AppModel {
       project: workspace.project(worktree.projectID)?.name ?? "",
       worktree: workspace.displayName(of: worktree),
     )
-    post(title: title, body: message, about: .worktree(worktree.id))
+    postNotification(title: title, body: message, about: .worktree(worktree.id))
   }
 }

@@ -15,14 +15,14 @@ struct FilesPanelHeader: View {
           model: model,
           mode: .files,
           symbol: "doc.on.doc",
-          title: t("files-panel.files"),
+          help: t("files-panel.files"),
           theme: theme,
         )
         FilesPanelModeTab(
           model: model,
           mode: .git,
           symbol: "arrow.triangle.branch",
-          title: t("files-panel.git"),
+          help: t("files-panel.git"),
           theme: theme,
         )
       }

@@ -138,11 +138,14 @@ enum FileTabReader {
     guard commit != nil, size == nil, isGone else {
       return CommittedSide(commit: commit, size: size, marksStaging: commit == nil)
     }
-    // Added by the branch and since deleted, it has no copy at the merge base to show
-    // removed, so `HEAD`'s is shown, its staging no part of what Branch shows.
-    guard
-      let headSize = try? await git.committedSize(of: repository.path, in: repository.directory)
-    else { return nil }
+    // Added by the branch and deleted, `HEAD`'s copy is shown removed, staging unmarked;
+    // none there either is the missing notice, and only a throw leaves git unable to say.
+    let headSize: Int?
+    do {
+      headSize = try await git.committedSize(of: repository.path, in: repository.directory)
+    } catch {
+      return nil
+    }
     return CommittedSide(commit: nil, size: headSize, marksStaging: false)
   }
 

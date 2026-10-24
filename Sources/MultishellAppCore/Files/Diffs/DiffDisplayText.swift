@@ -5,6 +5,9 @@ public struct DiffDisplayText: Equatable, Sendable {
   /// make the view as wide as a megabyte of text.
   private static let lineLengthLimit = 10_000
 
+  /// No rows, what a view holds before its first `show`.
+  public static let empty = Self([], marksStaging: true)
+
   /// With each text capped.
   public let lines: [DiffLine]
   /// The lines joined by newlines, with none after the last.

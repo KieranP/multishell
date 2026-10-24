@@ -2,7 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// One file's changes against `HEAD`, for its tab; see Docs/design/files.md.
+/// One file's changes against `HEAD` or the Branch list's merge base, for its
+/// tab; see Docs/design/files.md.
 extension WorktreeGit {
   /// Every line in context: large enough for any file under the size cap. git
   /// takes larger values, but 4294967296 wraps to no context at all.

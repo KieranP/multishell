@@ -93,14 +93,14 @@ struct ControlSetting {
     _ key: String,
     _ read: @escaping () -> Value,
     named name: @escaping (Value) -> String,
-    from value: @escaping (String) -> Value?,
+    from parse: @escaping (String) -> Value?,
     _ write: @escaping (Value) -> Void,
   ) -> Self {
     Self(
       key: key,
       read: { name(read()) },
       write: { text in
-        guard let chosen = value(text) else { return false }
+        guard let chosen = parse(text) else { return false }
         write(chosen)
         return true
       },

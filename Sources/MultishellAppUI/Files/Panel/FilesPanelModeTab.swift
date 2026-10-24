@@ -10,13 +10,13 @@ struct FilesPanelModeTab: View {
   let model: AppModel
   let mode: FilesPanelMode
   let symbol: String
-  let title: String
+  let help: String
   let theme: Theme
 
   private var isSelected: Bool { model.workspace.filesPanelMode == mode }
 
   var body: some View {
-    PlainGlyphButton(help: title) {
+    PlainGlyphButton(help: help) {
       model.setFilesPanelMode(mode)
     } glyph: {
       HeaderGlyph(symbol: symbol)

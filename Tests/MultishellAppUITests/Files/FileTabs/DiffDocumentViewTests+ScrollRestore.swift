@@ -29,7 +29,7 @@ extension DiffDocumentViewTests {
   @Test func aRestoreTakenWhileARereadLaysOutIsNotUndoneByThatReread() {
     let view = DiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     view.restore(FileTabScroll(line: 0, isCommittedLine: false, rowsFromLine: 120, x: 0))
-    view.show(DiffDisplayText([], marksStaging: true), theme: Theme.builtins[0])
+    view.show(.empty, theme: Theme.builtins[0])
     view.frame = NSRect(x: 0, y: 0, width: 500, height: 300)
     let window = OffscreenWindow.holding(view, deferred: false)
     defer { withExtendedLifetime(window) {} }

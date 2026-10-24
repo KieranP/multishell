@@ -648,8 +648,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   hook runs, and git then adds at a path whose row, entry and port are the
   removal's (`aCreateAtAPathWhoseRemovalIsInItsPreDeleteHookIsRefused`).
 - **A worktree re-added outside the app at a kept path takes a fresh block**,
-  never the one the removal's hook may be stopping servers on. Only for that
-  refresh: the old block is free again after it.
+  never the one the removal's hook may be stopping servers on. No worktree takes
+  the old block until that removal ends; the first refresh after frees it.
 - **Costs of a port read once at launch**: a tab dragged to another worktree
   keeps the old one's port, and a start or size change can give a new shell a
   port an open one still uses, both until reopened. A worktree removed outside

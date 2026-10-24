@@ -1,7 +1,7 @@
-/// Two parses for a file tab's rows, the file on disk and `HEAD`'s text, each
+/// Two parses for a file tab's rows, the file on disk and the committed text, each
 /// side's spans mapped onto the rows that show it.
 public enum DiffSideSpans {
-  /// The sides worth parsing: `HEAD` only where a removed row shows it alone,
+  /// The sides worth parsing: the committed one only where a removed row shows it alone,
   /// an unchanged or new file being the file on disk throughout.
   public static func parsedSides(of display: DiffDisplayText) -> [DiffSide] {
     display.wholeSides.filter { side in

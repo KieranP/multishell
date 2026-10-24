@@ -13,6 +13,21 @@ extension AppModel {
     schedulePanelBranchChangesRead()
   }
 
+  /// Branch counts from the base, which a fetch moves and a launch resolves late.
+  func noteDefaultBranchMoved(
+    from previous: DefaultBranch?,
+    to branch: DefaultBranch?,
+    ofProject id: Project.ID,
+  ) {
+    if filesPanelWorktree?.projectID == id { schedulePanelBranchChangesRead() }
+    guard workspace.changeScope == .branch else { return }
+    // A tip moving keeps hidden tabs' dots; a base resolving or changing may not.
+    let isNewBase = previous?.shortName != branch?.shortName
+    noteFileTabsChanged(releasingDots: isNewBase) { tab in
+      workspace.worktree(tab.worktreeID)?.projectID == id
+    }
+  }
+
   /// Only where the project has a base branch, a tab there counting from `HEAD`
   /// whatever the choice.
   public func offersChangeScopeSwitch(for tab: FileTab) -> Bool {

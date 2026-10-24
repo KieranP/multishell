@@ -5,10 +5,6 @@ import MultishellGitKit
 /// The git and disk reads behind the Files panel, each one at a time per
 /// worktree or folder; see Docs/design/files.md.
 extension AppModel {
-  /// Ten times what the last read and rebuild cost, so a build's churn takes
-  /// about a tenth of a core.
-  private static var readCostMultiple: Int { 10 }
-
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, a status read and, under Branch, a branch read.
   public func readFilesPanel(of id: Worktree.ID) {
@@ -65,31 +61,22 @@ extension AppModel {
     }
   }
 
-  /// An install or a build writes what git ignores constantly, so one read runs
-  /// at a time, the next waiting on its cost and the listing rebuild it set off.
+  /// Paced, as an install or a build writes what git ignores constantly.
   func scheduleIgnoredEntriesRead(of id: Worktree.ID) {
     guard let coordinator, let worktree = workspace.worktree(id) else { return }
-    ignoredEntriesReads.start(id) {
-      Task { @MainActor [weak self] in
-        let started = ContinuousClock.now
-        let entries = await coordinator.git.ignoredEntries(in: worktree.path)
-        let cost = started.duration(to: .now)
-        if let entries, let self, !Task.isCancelled, workspace.worktree(id) != nil {
-          setIfChanged(\.ignoredEntries[id], entries)
-          forgetFoldersNoLongerIgnored(in: id)
-        }
-        guard let pause = self?.pause(afterReadCosting: cost, in: id) else { return }
-        try? await Task.sleep(for: pause)
-        guard let self, !Task.isCancelled else { return }
-        if ignoredEntriesReads.finish(id) { scheduleIgnoredEntriesRead(of: id) }
-      }
-    }
-  }
-
-  func pause(afterReadCosting cost: Duration, in id: Worktree.ID) -> Duration {
-    let rebuildCost =
-      fileTreeListings[id]?.buildCost ?? fileTreeCache[id]?.tree.listing.buildCost ?? .zero
-    return max(.seconds(1), (cost + rebuildCost) * Self.readCostMultiple)
+    let git = coordinator.git
+    schedulePacedRead(
+      id,
+      in: id,
+      on: \.ignoredEntriesReads,
+      reading: { await git.ignoredEntries(in: worktree.path) },
+      landing: { model, entries in
+        guard let entries else { return }
+        model.setIfChanged(\.ignoredEntries[id], entries)
+        model.forgetFoldersNoLongerIgnored(in: id)
+      },
+      rerun: { $0.scheduleIgnoredEntriesRead(of: id) },
+    )
   }
 
   /// A folder git stopped ignoring is listed by git again, its files no longer greyed.
@@ -112,13 +99,16 @@ extension AppModel {
   func scheduleIgnoredFolderRead(_ path: String, in id: Worktree.ID) {
     guard let worktree = workspace.worktree(id) else { return }
     let folder = worktree.path.appending(path: path)
-    schedulePanelFolderRead(
+    schedulePacedRead(
       PanelFolderRead(kind: .ignoredFolder, path: path, worktreeID: id),
+      in: id,
+      on: \.panelFolderReads,
       reading: { await runOnDispatch { IgnoredFolderReader.entries(of: folder) } },
       landing: { model, entries in
         guard model.ignoredFolderEntries[id]?[path] != entries else { return }
         model.ignoredFolderEntries[id, default: [:]][path] = entries
       },
+      rerun: { $0.scheduleIgnoredFolderRead(path, in: id) },
     )
   }
 
@@ -130,8 +120,10 @@ extension AppModel {
     let directory = worktree.path.appending(path: path)
     let indicator = workspace.gitStatusIndicator
     let algorithm = workspace.diffAlgorithm
-    schedulePanelFolderRead(
+    schedulePacedRead(
       PanelFolderRead(kind: .submodule, path: path, worktreeID: id),
+      in: id,
+      on: \.panelFolderReads,
       reading: {
         guard await git.isRepositoryTop(directory),
           let tracked = await git.trackedFiles(in: directory)
@@ -147,32 +139,8 @@ extension AppModel {
         guard model.submoduleReadings[id]?[path] != reading else { return }
         model.submoduleReadings[id, default: [:]][path] = reading
       },
+      rerun: { $0.scheduleSubmoduleRead(path, in: id) },
     )
-  }
-
-  /// A build writes into an opened folder constantly, so one read per folder
-  /// runs at a time, one asked for meanwhile running once it is due.
-  private func schedulePanelFolderRead<Value: Sendable>(
-    _ read: PanelFolderRead,
-    reading: @escaping @Sendable () async -> Value,
-    landing: @escaping @MainActor (AppModel, Value) -> Void,
-  ) {
-    let id = read.worktreeID
-    panelFolderReads.start(read) {
-      Task { @MainActor [weak self] in
-        let started = ContinuousClock.now
-        let value = await reading()
-        let cost = started.duration(to: .now)
-        if let self, !Task.isCancelled, workspace.worktree(id) != nil { landing(self, value) }
-        guard let pause = self?.pause(afterReadCosting: cost, in: id) else { return }
-        try? await Task.sleep(for: pause)
-        guard let self, !Task.isCancelled, panelFolderReads.finish(read) else { return }
-        switch read.kind {
-        case .ignoredFolder: scheduleIgnoredFolderRead(read.path, in: id)
-        case .submodule: scheduleSubmoduleRead(read.path, in: id)
-        }
-      }
-    }
   }
 
   /// Events skipped while the window was covered: its file tabs and, in the

@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Agents: the preferred agent, or the hooks, a row per agent found,
-/// apart as they grow with each agent. None is recommended or installed here.
+/// Settings > Agents: the preferred agent and Auto Rename, or the hooks, a row
+/// per agent found, apart as they grow. None is recommended or installed here.
 struct AppAgentsPage: View {
   enum Part: CaseIterable {
     case agent

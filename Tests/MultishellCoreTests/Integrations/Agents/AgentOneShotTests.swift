@@ -20,6 +20,10 @@ struct AgentOneShotTests {
     try oneShot(id).arguments(prompt: prompt, model: model, effort: effort)
   }
 
+  @Test func aOneWordPromptIsNotReadAsASubcommand() throws {
+    #expect(try Self.arguments("claude", prompt: "doctor").last == "doctor ")
+  }
+
   @Test func eachAgentRunsOnePromptWithNoToolThatCouldTouchTheWorktree() throws {
     #expect(
       try Self.arguments("claude")
@@ -124,7 +128,7 @@ struct AgentOneShotTests {
   }
 
   @Test func aPromptOpeningWithADashIsNeverReadAsAFlag() throws {
-    #expect(try Self.arguments("codex", prompt: "-h").suffix(2) == ["--", "-h"])
+    #expect(try Self.arguments("codex", prompt: "-h").suffix(2) == ["--", "-h "])
     #expect(try Self.arguments("copilot", prompt: "-h").last == "--prompt=-h")
   }
 }

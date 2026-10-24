@@ -34,8 +34,7 @@ extension AppModel {
     if let worktree = filesPanelWorktree { scheduleBranchChangesRead(of: worktree.id) }
   }
 
-  /// One read per worktree at a time, paced by its cost; one asked for meanwhile
-  /// runs once it is due.
+  /// Paced, as every status landing asks for one.
   func scheduleBranchChangesRead(of id: Worktree.ID) {
     guard showsFilesPanel, filesPanelWorktree?.id == id, listsBranchChanges, let coordinator,
       let worktree = workspace.worktree(id), mayReadStatus(of: worktree),
@@ -44,29 +43,29 @@ extension AppModel {
       let status = statuses[id]
     else { return }
     let algorithm = workspace.diffAlgorithm
-    branchChangesReads.start(id) {
-      Task { @MainActor [weak self] in
-        let started = ContinuousClock.now
-        let changes = await coordinator.git.branchChanges(
+    let git = coordinator.git
+    schedulePacedRead(
+      id,
+      in: id,
+      on: \.branchChangesReads,
+      reading: {
+        await git.branchChanges(
           inRepositoryAt: worktree.path,
           since: base,
           status: status,
           diffAlgorithm: algorithm,
         )
-        let cost = started.duration(to: .now)
+      },
+      landing: { model, changes in
         // A failed read keeps the last one rather than reading as no changes, and one
         // a new algorithm or base overtook leaves it to the read asked for since.
-        if let self, !Task.isCancelled, workspace.worktree(id) != nil,
-          workspace.diffAlgorithm == algorithm, defaultBranch(ofWorktree: id) == base
-        {
-          if let changes { setIfChanged(\.branchChanges[id], changes) }
-          setIfChanged(\.failedBranchReads[id], changes == nil ? base.shortName : nil)
-        }
-        guard let pause = self?.pause(afterReadCosting: cost, in: id) else { return }
-        try? await Task.sleep(for: pause)
-        guard let self, !Task.isCancelled else { return }
-        if branchChangesReads.finish(id) { scheduleBranchChangesRead(of: id) }
-      }
-    }
+        guard model.workspace.diffAlgorithm == algorithm,
+          model.defaultBranch(ofWorktree: id) == base
+        else { return }
+        if let changes { model.setIfChanged(\.branchChanges[id], changes) }
+        model.setIfChanged(\.failedBranchReads[id], changes == nil ? base.shortName : nil)
+      },
+      rerun: { $0.scheduleBranchChangesRead(of: id) },
+    )
   }
 }

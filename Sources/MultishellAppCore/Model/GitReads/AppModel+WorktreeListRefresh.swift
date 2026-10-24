@@ -59,7 +59,7 @@ extension AppModel {
         store.replaceWorktrees(
           discovered,
           forProject: project.id,
-          keeping: worktreeOperations.removalsPastTheirRecord,
+          keeping: worktreeOperations.removalsOutlivingTheirRecord,
         )
       )
       worktreeRecords[project.id] = records

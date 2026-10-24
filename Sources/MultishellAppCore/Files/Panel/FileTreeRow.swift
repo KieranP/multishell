@@ -12,7 +12,7 @@ public struct FileTreeRow: Identifiable, Hashable, Sendable {
     case strong
   }
 
-  /// Relative to the worktree; a folder chain merged in Modified is its last.
+  /// Relative to the worktree; a folder chain merged in the Git list is its last.
   public let path: String
   /// The file's or folder's name, `Tests/AppCoreTests/Detail` for a merged
   /// chain of single-child folders.

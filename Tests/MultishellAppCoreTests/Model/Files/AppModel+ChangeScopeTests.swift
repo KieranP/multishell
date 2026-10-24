@@ -65,6 +65,7 @@ struct AppModelChangeScopeTests {
     let feature = try await harness.featureInGitList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
+    try #require(harness.model.branchChanges[feature.id] != nil)
 
     harness.model.setChangeScope(.modified)
 

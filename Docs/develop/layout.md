@@ -16,12 +16,13 @@
   terminal under `Kernel/`, and under `Support/` what belongs to no concern.
   **MultishellGitKit**: worktree operations, a create's and a removal's each in
   its own folder of `Worktrees/`; a project's hooks and file lists; the output
-  readers; what a branch is, where it points and whether it landed; status; the
-  paths an index tracks and one file's patches and stored copies, for the Files
-  panel and a file tab; the runner; and `Support/`. WorktreeGit and
-  WorktreeCoordinator sit at its root with their extensions under each concern,
-  since seven concerns extend them and none owns them, beside the state every
-  WorktreeGit a launch builds shares.
+  readers; what a branch is, where it points and whether it landed; what a
+  branch changed since its base, for the Branch list and Auto Rename, under
+  `BranchChanges/`; status; the paths an index tracks and one file's patches and
+  stored copies, for the Files panel and a file tab; the runner; and `Support/`.
+  WorktreeGit and WorktreeCoordinator sit at its root with their extensions
+  under each concern, since eight concerns extend them and none owns them,
+  beside the state every WorktreeGit a launch builds shares.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited
   settings, what a tab runs, what each session is doing, when to read git and to
   notify, creates and removals under way, every decision a view makes, and what

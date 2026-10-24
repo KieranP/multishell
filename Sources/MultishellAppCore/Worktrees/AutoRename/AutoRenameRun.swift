@@ -22,7 +22,7 @@ struct AutoRenameRun: Sendable {
 
   let worktree: Worktree
   let base: DefaultBranch
-  let choice: AutoRenameAgent
+  let choice: AutoRenameChoice
   let executable: URL
   let loginVariables: [String: String]
   let stopper: ProcessStopper

@@ -13,6 +13,9 @@ public final class WorkspaceStore {
   /// Rows kept for a removal after git dropped their record. One git lists again
   /// was re-added outside the app, and takes a block the removal's hook is not using.
   @ObservationIgnored private var keptPastTheirRecord: Set<Worktree.ID> = []
+  /// The block each re-added row's removal hook still runs with, free in
+  /// `portBlocks` but given to no one until that removal ends.
+  @ObservationIgnored private var removalHookBlocks: [Worktree.ID: Int] = [:]
 
   /// Set where unread state is still on disk: saving the empty workspace over
   /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
@@ -81,7 +84,8 @@ extension WorkspaceStore {
     let discarded = workspace.worktrees(of: id).map(\.id)
     for id in discarded { discardWorktree(id) }
     keptPastTheirRecord.subtract(discarded)
-    workspace.settlePortBlocks()
+    for id in discarded { removalHookBlocks[id] = nil }
+    workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
     return discarded
   }
 
@@ -140,10 +144,13 @@ extension WorkspaceStore {
     let readded = keptPastTheirRecord.intersection(listed)
     let ours = Set(workspace.worktrees(of: id).map(\.id))
     keptPastTheirRecord = keptPastTheirRecord.subtracting(ours).union(stillRemoving.map(\.id))
+    removalHookBlocks = removalHookBlocks.filter { kept.contains($0.key) }
     if !readded.isEmpty {
-      let hooksBlocks = Set(readded.compactMap { workspace.portBlocks[$0] })
-      for id in readded { workspace.portBlocks[id] = nil }
-      workspace.settlePortBlocks(avoiding: hooksBlocks)
+      for id in readded {
+        removalHookBlocks[id] = workspace.portBlocks[id]
+        workspace.portBlocks[id] = nil
+      }
+      workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
     }
     let fresh = (discovered + stillRemoving).map(keepingKnownCreationDate)
     guard workspace.worktrees(of: id) != fresh else { return [] }
@@ -152,7 +159,7 @@ extension WorkspaceStore {
     for id in discarded { discardWorktree(id) }
     workspace.worktrees.removeAll { $0.projectID == id }
     workspace.worktrees.append(contentsOf: fresh)
-    workspace.settlePortBlocks()
+    workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
     return discarded
   }
 
@@ -732,12 +739,12 @@ extension WorkspaceStore {
 
   public func setPortBlockStart(_ port: Int) {
     workspace.portBlockStart = port.clamped(to: PortBlock.starts)
-    workspace.settlePortBlocks()
+    workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
   }
 
   public func setPortBlockSize(_ size: Int) {
     workspace.portBlockSize = size.clamped(to: PortBlock.sizes)
-    workspace.settlePortBlocks()
+    workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
   }
 
   /// Negative reads as no limit, like zero.

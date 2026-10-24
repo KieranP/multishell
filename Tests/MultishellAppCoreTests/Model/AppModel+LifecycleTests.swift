@@ -48,6 +48,7 @@ struct AppModelLifecycleTests {
 
     #expect(!finishedFirst)
     try await waitUntil { events.received.contains("finished") }
+    #expect(events.received.contains("finished"))
   }
 
   @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async throws {

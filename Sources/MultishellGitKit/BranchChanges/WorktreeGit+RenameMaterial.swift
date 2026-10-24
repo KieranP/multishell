@@ -18,11 +18,13 @@ extension WorktreeGit {
     return Data(head[...lastBreak])
   }
 
-  /// The stat before the patch's first file header, and the patch from it.
+  /// The stat before the patch's first file header, and the patch from it. The
+  /// header opens a line, so a path spelling it in the stat is not taken for it.
   private static func split(_ output: Data) -> (stat: Data, patch: Data) {
-    let header = Data("diff --git ".utf8)
+    let header = Data("\ndiff --git ".utf8)
     guard let found = output.range(of: header) else { return (output, Data()) }
-    return (Data(output[..<found.lowerBound]), Data(output[found.lowerBound...]))
+    let patchStart = found.lowerBound + 1
+    return (Data(output[..<patchStart]), Data(output[patchStart...]))
   }
 
   /// `nil` where the branch shares no history with the base, which leaves
@@ -70,7 +72,7 @@ extension WorktreeGit {
     let cut = Self.cutAtLine(patch, limit: diffByteLimit)
     return RenameMaterial(
       branch: branchName.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) },
-      subjects: subjects.split(separator: "\n").map(String.init).filter { !$0.isEmpty },
+      subjects: subjects.split(separator: "\n").map(String.init),
       diffstat: String(decoding: stat, as: UTF8.self)
         .trimmingCharacters(in: .whitespacesAndNewlines),
       // A NUL would end the prompt's argument there, argv being C strings.

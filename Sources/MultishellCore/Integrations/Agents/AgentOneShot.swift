@@ -4,7 +4,7 @@ public struct AgentOneShot: Hashable, Sendable {
   /// The subcommand, the print mode and the tools taken away, in that order.
   private let leadingArguments: [String]
   private let promptArgument: AgentTaskArgument
-  private let modelFlag: AgentOption
+  private let modelFlag = AgentOption(name: "--model")
   /// `nil` for an agent with no effort flag, which runs at its own default.
   private let effortFlag: AgentOption?
   /// Laid over the login shell's, for what an agent takes no flag for.
@@ -18,13 +18,11 @@ public struct AgentOneShot: Hashable, Sendable {
     leadingArguments: [String],
     promptArgument: AgentTaskArgument,
     models: [AgentModel],
-    modelFlag: AgentOption = AgentOption(name: "--model"),
     effortFlag: AgentOption? = nil,
     environment: [String: String] = [:],
   ) {
     self.leadingArguments = leadingArguments
     self.promptArgument = promptArgument
-    self.modelFlag = modelFlag
     self.effortFlag = effortFlag
     self.environment = environment
     self.models = models
@@ -53,10 +51,6 @@ public struct AgentOneShot: Hashable, Sendable {
     var arguments = leadingArguments
     if let model { arguments += modelFlag.arguments(model) }
     if let effortFlag, let effort { arguments += effortFlag.arguments(effort) }
-    switch promptArgument {
-    case .operand: arguments += ["--", prompt]
-    case .option(let name): arguments.append("\(name)=\(prompt)")
-    }
-    return arguments
+    return arguments + promptArgument.arguments(forPrompt: prompt)
   }
 }

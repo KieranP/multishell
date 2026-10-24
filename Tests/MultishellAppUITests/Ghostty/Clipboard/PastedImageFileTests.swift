@@ -135,7 +135,7 @@ struct PastedImageFileTests {
     )
 
     _ = save(pasteboard, in: drops)
-    DropCopies.sweep(in: drops, now: Date().addingTimeInterval(2 * 24 * 60 * 60))
+    DropCopies.sweep(in: drops, now: Date().addingTimeInterval(DropCopies.retention - 60))
 
     #expect(FileManager.default.fileExists(atPath: file.path))
   }

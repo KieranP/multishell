@@ -12,7 +12,7 @@ extension Workspace {
     }
   }
 
-  /// Takes a bare repository's block, having no shells to give a port to, and moves
+  /// Drops a bare repository's block, having no shells to give a port to, and moves
   /// every other worktree without a port to the lowest free block not `avoiding`.
   mutating func settlePortBlocks(avoiding reserved: Set<Int> = []) {
     for worktree in worktrees where worktree.isBare { portBlocks[worktree.id] = nil }

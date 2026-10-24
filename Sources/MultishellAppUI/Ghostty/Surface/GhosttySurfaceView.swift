@@ -11,7 +11,7 @@ final class GhosttySurfaceView: NSView {
   private(set) static var isForwardingUserInput = false
   /// The command line is performing a menu action, which no input inside counts
   /// as the user's.
-  private(set) static var isActingForTheCommandLine = false
+  private static var isActingForTheCommandLine = false
 
   /// `nil` once freed, or where libghostty refused to make it.
   private(set) var surface: ghostty_surface_t?

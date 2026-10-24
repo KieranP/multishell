@@ -1,8 +1,8 @@
 import MultishellAppCore
 import SwiftUI
 
-/// The dropdown both settings windows use for an agent, shell, editor or font.
-/// `options(selected:)` keeps a stale choice listed rather than blank.
+/// The dropdown both settings windows use for an agent, shell, editor, font or a list
+/// the catalogue fixes. `options(selected:)` keeps a stale choice listed rather than blank.
 struct DetectionPicker: View {
   let label: String
   @Binding var selection: String

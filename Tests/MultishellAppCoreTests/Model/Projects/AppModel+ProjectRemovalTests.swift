@@ -140,4 +140,24 @@ struct AppModelProjectRemovalTests {
     harness.model.removeProject(harness.project)
     #expect(harness.model.lastCommitDates.isEmpty)
   }
+
+  @Test func removingTheProjectEndsAPostDeleteHookPastItsRecord() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("gate")
+    let written = harness.root.appendingPathComponent("post-delete.txt")
+    let (_, removal) = try await harness.removalHeld(
+      in: .postDeleteHook,
+      by: ProjectSettings(
+        postDeleteHook: harness.holdLine(until: gate) + "; echo ran > '\(written.path)'"
+      ),
+    )
+    await harness.model.refreshWorktrees(of: harness.project)
+
+    harness.model.removeProject(harness.project)
+    FileManager.default.createFile(atPath: gate.path, contents: nil)
+    _ = await removal.value
+
+    #expect(!FileManager.default.fileExists(atPath: written.path))
+  }
 }

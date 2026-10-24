@@ -14,7 +14,7 @@ public struct WorktreeOperations: Equatable, Sendable {
   }
 
   /// Worktrees whose removal runs on past their record, kept listed till it ends.
-  var removalsPastTheirRecord: Set<Worktree.ID> {
+  var removalsOutlivingTheirRecord: Set<Worktree.ID> {
     Set(operations.filter { $0.value.isRunning && $0.value.stage.outlivesTheRecord }.keys)
   }
 

@@ -11,7 +11,7 @@ final class DiffGutterView: NSView {
   private static let barWidth: CGFloat = 3
   private static let trailing: CGFloat = 6
 
-  var displayText = DiffDisplayText([], marksStaging: true)
+  var displayText = DiffDisplayText.empty
   /// Whose line numbers the rows carry: the committed side's on a split's left.
   var numbering = DiffSide.onDisk
   private let geometry: DiffRowGeometry

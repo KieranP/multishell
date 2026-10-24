@@ -10,17 +10,6 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelAutoRenameTests {
-  private final class Requests: @unchecked Sendable {
-    private let lock = NSLock()
-    private var list: [OneShotRequest] = []
-
-    var all: [OneShotRequest] { lock.withLock { list } }
-
-    func append(_ request: OneShotRequest) {
-      lock.withLock { list.append(request) }
-    }
-  }
-
   private static let claude = URL(fileURLWithPath: "/opt/fake/bin/claude")
 
   nonisolated private static func output(
@@ -40,7 +29,7 @@ struct AppModelAutoRenameTests {
   private static func committedFeature(
     in harness: GitHarness,
     answering reply: ProcessOutput,
-    requests: Requests = Requests(),
+    requests: Recorder<OneShotRequest> = Recorder(),
   ) async throws -> Worktree {
     let feature = try await harness.featureInGitList()
     try await TestRepository.commit(
@@ -53,7 +42,7 @@ struct AppModelAutoRenameTests {
     harness.model.agentDetection = AgentDetection(found: ["claude": claude])
     harness.model.setPreferredAgent("claude")
     harness.model.oneShotRunner.run = { request in
-      requests.append(request)
+      requests.record(request)
       return reply
     }
     return feature
@@ -62,12 +51,16 @@ struct AppModelAutoRenameTests {
   private static func holdRuns(
     in harness: GitHarness,
     until gate: URL,
-    requests: Requests,
+    requests: Recorder<OneShotRequest>,
     answering reply: ProcessOutput,
   ) {
+    let root = harness.root
     harness.model.oneShotRunner.run = { request in
-      requests.append(request)
-      while !FileManager.default.fileExists(atPath: gate.path), !request.stopper.isStopRequested {
+      requests.record(request)
+      let manager = FileManager.default
+      while !manager.fileExists(atPath: gate.path), manager.fileExists(atPath: root.path),
+        !request.stopper.isStopRequested
+      {
         try await Task.sleep(for: .milliseconds(20))
       }
       return reply
@@ -81,7 +74,7 @@ struct AppModelAutoRenameTests {
   @Test func theAgentsReplyNamesTheRowAndTheBranchKeepsItsName() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("\"Billing export\"\n"),
@@ -94,19 +87,35 @@ struct AppModelAutoRenameTests {
     #expect(harness.model.customName(of: feature) == "Billing export")
     #expect(try await harness.branches().contains("feature"))
     #expect(harness.model.autoRenameFailure(of: feature.id) == nil)
-    let request = try #require(requests.all.first)
+    let request = try #require(requests.received.first)
     #expect(request.executable == Self.claude)
     #expect(request.directory.standardizedFileURL == feature.path.standardizedFileURL)
     #expect(request.arguments.first == "-p")
     #expect(request.arguments.last?.contains("- Add CSV export for billing") == true)
-    #expect(request.environment[SessionEnvironment.socketVariable] == "/dev/null")
-    #expect(request.environment[SessionEnvironment.sessionVariable] == "")
+  }
+
+  @Test func theAgentsHooksReportToNoPane() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let requests = Recorder<OneShotRequest>()
+    let feature = try await Self.committedFeature(
+      in: harness,
+      answering: Self.output("Billing export"),
+      requests: requests,
+    )
+
+    harness.model.autoRename(feature)
+    try await Self.awaitEnd(of: feature, in: harness)
+
+    let environment = try #require(requests.received.first).environment
+    #expect(environment[SessionEnvironment.socketVariable] == "/dev/null")
+    #expect(environment[SessionEnvironment.sessionVariable] == "")
   }
 
   @Test func theRenameAgentRunsAtItsChosenModelAndEffort() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("Billing export"),
@@ -119,7 +128,7 @@ struct AppModelAutoRenameTests {
     harness.model.autoRename(feature)
     try await Self.awaitEnd(of: feature, in: harness)
 
-    let arguments = try #require(requests.all.first).arguments
+    let arguments = try #require(requests.received.first).arguments
     #expect(arguments.contains("--model") && arguments.contains("haiku"))
     #expect(arguments.contains("--effort") && arguments.contains("low"))
   }
@@ -127,7 +136,7 @@ struct AppModelAutoRenameTests {
   @Test func whileTheAgentRunsTheRowSaysSoAndASecondAutoRenameIsRefused() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("Billing export"),
@@ -146,11 +155,11 @@ struct AppModelAutoRenameTests {
     #expect(harness.model.isAutoRenaming(feature.id))
     #expect(!harness.model.canAutoRename(feature))
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     FileManager.default.createFile(atPath: gate.path, contents: nil)
     try await Self.awaitEnd(of: feature, in: harness)
 
-    #expect(requests.all.count == 1)
+    #expect(requests.received.count == 1)
     #expect(harness.model.canAutoRename(feature), "free again once it ends")
   }
 
@@ -223,7 +232,7 @@ struct AppModelAutoRenameTests {
   @Test func anAgentDetectionDidNotFindFailsWithoutRunningAnything() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("Billing export"),
@@ -238,7 +247,7 @@ struct AppModelAutoRenameTests {
     harness.model.autoRename(feature)
 
     #expect(harness.model.autoRenameFailure(of: feature.id)?.contains("not on your PATH") == true)
-    #expect(requests.all.isEmpty)
+    #expect(requests.received.isEmpty)
   }
 
   @Test func aNewBranchWithNothingCommittedOrStagedCannotBeAutoRenamed() async throws {
@@ -277,7 +286,7 @@ struct AppModelAutoRenameTests {
   @Test func aNameGivenWhileTheAgentRanIsKept() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("x"),
@@ -288,7 +297,7 @@ struct AppModelAutoRenameTests {
     Self.holdRuns(in: harness, until: gate, requests: requests, answering: Self.output("Agent's"))
 
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     harness.model.renameWorktree(feature.id, to: "Mine")
     FileManager.default.createFile(atPath: gate.path, contents: nil)
     try await Self.awaitEnd(of: feature, in: harness)
@@ -300,7 +309,7 @@ struct AppModelAutoRenameTests {
   @Test func aRenameFieldOpenWhenTheReplyLandsStaysOpenAndUnnamed() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("x"),
@@ -311,7 +320,7 @@ struct AppModelAutoRenameTests {
     Self.holdRuns(in: harness, until: gate, requests: requests, answering: Self.output("Agent's"))
 
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     harness.model.beginRenamingWorktree(feature)
     FileManager.default.createFile(atPath: gate.path, contents: nil)
     try await Self.awaitEnd(of: feature, in: harness)
@@ -323,7 +332,7 @@ struct AppModelAutoRenameTests {
   @Test func aCheckoutWhileTheAgentRanNamesNothing() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("x"),
@@ -334,7 +343,7 @@ struct AppModelAutoRenameTests {
     Self.holdRuns(in: harness, until: gate, requests: requests, answering: Self.output("Agent's"))
 
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     _ = try await harness.git.run(["checkout", "-q", "-b", "other"], in: feature.path)
     await harness.model.refreshWorktrees(of: harness.project)
     try #require(harness.model.workspace.worktree(feature.id)?.branch == "other")
@@ -448,29 +457,10 @@ struct AppModelAutoRenameTests {
     #expect(harness.model.autoRenameFailure(of: feature.id)?.contains("still") == true)
   }
 
-  @Test func theFailureShownIsTheEndOfWhatTheAgentSaid() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    let preamble = (1...20).map { "banner line \($0) with workdir and model" }.joined(
-      separator: "\n"
-    )
-    let feature = try await Self.committedFeature(
-      in: harness,
-      answering: Self.output("", status: 1, error: preamble + "\nError: not logged in"),
-    )
-
-    harness.model.autoRename(feature)
-    try await Self.awaitEnd(of: feature, in: harness)
-
-    let failure = try #require(harness.model.autoRenameFailure(of: feature.id))
-    #expect(failure.contains("not logged in"))
-    #expect(!failure.contains("banner line 1 "), "the start of a long preamble is cut")
-  }
-
   @Test func aNewRunTakesBackTheLastFailuresBanner() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("", status: 1),
@@ -493,7 +483,7 @@ struct AppModelAutoRenameTests {
   @Test func forgettingTheWorktreeStopsItsAgent() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("x"),
@@ -504,10 +494,10 @@ struct AppModelAutoRenameTests {
     Self.holdRuns(in: harness, until: gate, requests: requests, answering: Self.output("x"))
 
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     harness.model.forgetWorktrees([feature.id])
 
-    #expect(try #require(requests.all.first).stopper.isStopRequested)
+    #expect(try #require(requests.received.first).stopper.isStopRequested)
     FileManager.default.createFile(atPath: gate.path, contents: nil)
   }
 
@@ -597,7 +587,7 @@ struct AppModelAutoRenameTests {
   @Test func theAgentStartsInTheWorktreeAndIsToldSo() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("Billing export"),
@@ -611,7 +601,7 @@ struct AppModelAutoRenameTests {
     harness.model.autoRename(feature)
     try await Self.awaitEnd(of: feature, in: harness)
 
-    let environment = try #require(requests.all.first).environment
+    let environment = try #require(requests.received.first).environment
     #expect(environment["PWD"] == feature.path.path)
     #expect(environment["OLDPWD"] == nil)
     #expect(environment["PATH"] == "/usr/bin")
@@ -620,17 +610,17 @@ struct AppModelAutoRenameTests {
   @Test func quittingStopsARunningAgent() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(in: harness, answering: Self.output("x"))
     let gate = Scratch.path("auto-rename-quit-gate")
     defer { Scratch.remove(gate) }
     Self.holdRuns(in: harness, until: gate, requests: requests, answering: Self.output("x"))
 
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     harness.model.shutDown()
 
-    #expect(try #require(requests.all.first).stopper.isStopRequested)
+    #expect(try #require(requests.received.first).stopper.isStopRequested)
   }
 
   @Test func aFailureAtTheClickItselfPostsNoBanner() async throws {
@@ -712,7 +702,7 @@ struct AppModelAutoRenameTests {
   @Test func aCheckoutTheListingHadNotSeenAtTheClickStillGetsItsName() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("x"),
@@ -730,14 +720,14 @@ struct AppModelAutoRenameTests {
     )
 
     harness.model.autoRename(feature)
-    try await waitUntil { !requests.all.isEmpty }
+    try await waitUntil { !requests.received.isEmpty }
     await harness.model.refreshWorktrees(of: harness.project)
     try #require(harness.model.workspace.worktree(feature.id)?.branch == "billing")
     FileManager.default.createFile(atPath: gate.path, contents: nil)
     try await Self.awaitEnd(of: feature, in: harness)
 
     #expect(harness.model.customName(of: feature) == "Billing export")
-    #expect(requests.all.first?.arguments.last?.contains("Branch: billing") == true)
+    #expect(requests.received.first?.arguments.last?.contains("Branch: billing") == true)
   }
 
   @Test func anAgentsStyledErrorIsShownWithoutItsEscapes() async throws {
@@ -822,7 +812,7 @@ struct AppModelAutoRenameTests {
   @Test func aDetachedHeadIsToldAsDetachedNotAsTheListingsBranch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let requests = Requests()
+    let requests = Recorder<OneShotRequest>()
     let feature = try await Self.committedFeature(
       in: harness,
       answering: Self.output("Billing export"),
@@ -834,7 +824,7 @@ struct AppModelAutoRenameTests {
     harness.model.autoRename(feature)
     try await Self.awaitEnd(of: feature, in: harness)
 
-    let prompt = try #require(requests.all.first?.arguments.last)
+    let prompt = try #require(requests.received.first?.arguments.last)
     #expect(prompt.contains("Branch: none, HEAD is detached"))
     #expect(!prompt.contains("Branch: feature"))
   }

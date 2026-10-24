@@ -126,6 +126,26 @@ struct FileTabReaderTests {
     #expect(Self.text(reading)?.lines.map(\.kind) == [.removed], "HEAD's text, removed")
   }
 
+  @Test func sinceTheBaseAFileGitNeverHadThatIsGoneIsMissingNotUnreadable() async throws {
+    let repository = try await Repository.make()
+    defer { repository.tearDown() }
+    let base = try await repository.base()
+    _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
+    try await TestRepository.commit(
+      "work",
+      files: ["work.txt": "work\n"],
+      in: repository.path,
+      using: repository.runner,
+    )
+    try repository.write("new\n", to: "new.txt")
+    try FileManager.default.removeItem(at: repository.path.appending(path: "new.txt"))
+
+    let reading = await repository.read("new.txt", since: base)
+
+    #expect(reading.isFileGone)
+    #expect(reading.content == .missing)
+  }
+
   @Test func aTabWhoseMergeBaseGitCannotReadKeepsWhatItLastShowed() async throws {
     let repository = try await Repository.make()
     defer { repository.tearDown() }

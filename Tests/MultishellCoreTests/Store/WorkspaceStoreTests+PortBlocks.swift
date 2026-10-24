@@ -80,6 +80,39 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.port(of: other.id) == 3020, "3010 is the removal's hook's")
   }
 
+  @Test func aRemovalsHookKeepsItsBlockFromTheNextWorktreeWhileItRuns() {
+    let (store, main, other) = twoWorktreeStore()
+    store.replaceWorktrees([main], forProject: main.projectID, keeping: [other.id])
+    store.replaceWorktrees([main, other], forProject: main.projectID, keeping: [other.id])
+    let next = Worktree(
+      path: URL(fileURLWithPath: "/repos/demo-c"),
+      projectID: main.projectID,
+      head: "c",
+      branch: "c",
+    )
+
+    store.replaceWorktrees([main, other, next], forProject: main.projectID, keeping: [other.id])
+
+    #expect(store.workspace.port(of: next.id) == 3030)
+  }
+
+  @Test func aRemovalsHookFreesItsBlockOnceThatRemovalEnds() {
+    let (store, main, other) = twoWorktreeStore()
+    store.replaceWorktrees([main], forProject: main.projectID, keeping: [other.id])
+    store.replaceWorktrees([main, other], forProject: main.projectID, keeping: [other.id])
+    store.replaceWorktrees([main, other], forProject: main.projectID)
+    let next = Worktree(
+      path: URL(fileURLWithPath: "/repos/demo-c"),
+      projectID: main.projectID,
+      head: "c",
+      branch: "c",
+    )
+
+    store.replaceWorktrees([main, other, next], forProject: main.projectID)
+
+    #expect(store.workspace.port(of: next.id) == 3010)
+  }
+
   @Test func aRemovedProjectFreesItsWorktreesBlocks() {
     let (store, project, worktree) = demoStore()
     store.removeProject(project.id)

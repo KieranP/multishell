@@ -1,7 +1,7 @@
 /// A range carried to another layout of the same rows by the file's line,
 /// not by content: Unified's removed rows shift where repeated lines sit.
 extension DiffDisplayText {
-  /// A line this layout lacks, `HEAD`'s on Split's right, gives an empty range
+  /// A line this layout lacks, a committed one on Split's right, gives an empty range
   /// at the next line it has, else the end of the last before it or the text.
   func rangeOnSameLine(_ range: Range<Int>, from previous: DiffDisplayText) -> Range<Int>? {
     guard !previous.lines.isEmpty, !lines.isEmpty else { return nil }

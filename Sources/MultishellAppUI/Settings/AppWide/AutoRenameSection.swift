@@ -18,7 +18,6 @@ struct AutoRenameSection: View {
         refreshing: model,
         info: t("agents.rename-agent-info"),
       )
-      // Greyed where there is nothing to choose: no Rename agent, or no effort flag.
       DetectionPicker(
         label: t("agents.rename-model"),
         selection: model.settingBinding(\.renameModel, or: AppModel.renameUnsetID) { modelID in

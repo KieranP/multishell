@@ -2,7 +2,7 @@ import MultishellCore
 
 /// The agent, model and effort an Auto Rename runs, each checked against the
 /// catalogue so nothing it does not list reaches a CLI.
-struct AutoRenameAgent: Equatable {
+struct AutoRenameChoice: Equatable {
   let agent: AgentDescriptor
   let model: String?
   let effort: String?

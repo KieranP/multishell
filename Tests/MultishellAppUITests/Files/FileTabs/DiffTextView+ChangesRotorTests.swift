@@ -37,7 +37,7 @@ struct DiffTextViewChangesRotorTests {
     let first = try #require(textView.rotor(rotor, resultFor: forward))
     forward.currentItem = first
 
-    view.show(DiffDisplayText([], marksStaging: true), theme: Theme.builtins[0])
+    view.show(.empty, theme: Theme.builtins[0])
 
     #expect(textView.rotor(rotor, resultFor: forward) == nil)
   }
