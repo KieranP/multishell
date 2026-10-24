@@ -19,16 +19,21 @@ extension WorktreeGit {
     ]
   }
 
-  /// `diff-index` writes nothing to the index. Before the first commit both
-  /// sides diff against the empty tree, and only then; see worktrees.md.
+  /// `diff-index` writes nothing to the index; against `commit` where given, else
+  /// `HEAD`, else the empty tree before the first commit; see worktrees.md.
   public func patches(
     of path: String,
     in directory: URL,
     diffAlgorithm: DiffAlgorithm,
+    since commit: String? = nil,
   ) async -> FilePatches? {
-    guard let base = await diffBase(in: directory) else { return nil }
     let arguments = Self.patchArguments(diffAlgorithm)
-    guard
+    if let commit {
+      guard let onDisk = await runner.outputBytes(arguments + [commit, "--", path], in: directory)
+      else { return nil }
+      return FilePatches(onDisk: onDisk, staged: nil)
+    }
+    guard let base = await diffBase(in: directory),
       let onDisk = await runner.outputBytes(arguments + [base, "--", path], in: directory),
       let staged = await runner.outputBytes(
         arguments + ["--cached", base, "--", path],

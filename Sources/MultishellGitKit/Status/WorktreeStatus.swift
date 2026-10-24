@@ -16,7 +16,8 @@ public struct WorktreeStatus: Hashable, Sendable {
 
   /// What the badge counts, an entry a path or two where git lists it twice;
   /// its lines are the sums of these. Under Staged Only, the index alone.
-  public internal(set) var changes: [StatusChange] = []
+  public private(set) var changes: [StatusChange] = []
+  private var kinds = ChangeKinds([])
   /// New files by path, whatever the indicator, at most
   /// `WorktreeGit.listedPathLimit` of the `untracked` counted.
   public internal(set) var untrackedPaths: [String] = []
@@ -55,8 +56,12 @@ public struct WorktreeStatus: Hashable, Sendable {
 
   init() {}
 
+  /// One path's kind, looked up per file tab render.
+  public func kind(of path: String) -> StatusChange.Kind? { kinds[path] }
+
   mutating func setChanges(_ changes: [StatusChange]) {
     self.changes = changes
+    kinds = ChangeKinds(changes)
     let counts = LineCounts(summing: changes.map(\.lines))
     insertions = counts.insertions
     deletions = counts.deletions

@@ -40,7 +40,7 @@ struct FileTreeChanges: Sendable {
   }
 
   static func paths(changedIn sources: FileTreeSources) -> Set<String> {
-    Set((sources.status?.changes ?? []).map(\.path))
+    Set(sources.markedChanges.map(\.path))
   }
 
   func isBuilt(from paths: Set<String>, repositories: Set<String>) -> Bool {

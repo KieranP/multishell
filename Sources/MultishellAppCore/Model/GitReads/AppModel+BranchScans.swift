@@ -127,7 +127,20 @@ extension AppModel {
   }
 
   private func recordDefaultBranch(_ defaultBranch: DefaultBranch?, of id: Project.ID) {
-    setIfChanged(\.defaultBranches[id], defaultBranch)
+    let scan = defaultBranch.map(DefaultBranchScan.found) ?? .absent
+    let previous = defaultBranchScans[id]
+    guard previous != scan else { return }
+    defaultBranchScans[id] = scan
+    // From no answer to no base, the tabs count from `HEAD` before and after.
+    guard previous?.branch != scan.branch else { return }
+    // Branch counts from the base, which a fetch moves and a launch resolves late.
+    if filesPanelWorktree?.projectID == id { schedulePanelBranchChangesRead() }
+    guard workspace.changeScope == .branch else { return }
+    // A tip moving keeps hidden tabs' dots; a base resolving or changing may not.
+    let isNewBase = previous?.branch?.shortName != scan.branch?.shortName
+    noteFileTabsChanged(releasingDots: isNewBase) { tab in
+      workspace.worktree(tab.worktreeID)?.projectID == id
+    }
   }
 
   /// The scan answers by branch, the sidebar asks by worktree.

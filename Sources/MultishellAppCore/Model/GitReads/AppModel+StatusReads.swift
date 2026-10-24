@@ -21,7 +21,7 @@ extension AppModel {
   public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
     store.setDiffAlgorithm(algorithm)
     statusReadLog.invalidate()
-    noteEveryFileTabChanged()
+    noteFileTabsChanged(releasingDots: false) { _ in true }
     Task { await refreshStatuses() }
   }
 
@@ -54,7 +54,7 @@ extension AppModel {
     var merged = statuses.filter { known.contains($0.key) }
     merged.merge(fresh) { _, new in new }
     setIfChanged(\.statuses, merged)
-    await refreshWorktreesWhoseBranchMoved(fresh)
+    await noteStatusesLanded(fresh)
   }
 
   /// Whether git may be asked about this worktree's status, and whether an
@@ -89,9 +89,16 @@ extension AppModel {
     return readings
   }
 
+  /// What every status read's landing sets off, from the poll or one worktree's.
+  func noteStatusesLanded(_ fresh: [Worktree.ID: WorktreeStatus]) async {
+    // Even one that moved no count: an edit can change the diff since the base alone.
+    for id in fresh.keys { scheduleBranchChangesRead(of: id) }
+    await refreshWorktreesWhoseBranchMoved(fresh)
+  }
+
   /// Where a status read's branch disagrees with the row, re-read that project:
   /// a share whose changes no file event reports is caught here.
-  func refreshWorktreesWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
+  private func refreshWorktreesWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
     var drifted: Set<Project.ID> = []
     for worktree in workspace.worktrees {
       if let status = fresh[worktree.id], status.branch != worktree.branch {

@@ -707,5 +707,9 @@ extension WorkspaceStore {
   public func setFilesPanelMode(_ mode: FilesPanelMode) {
     workspace.filesPanelMode = mode
   }
+
+  public func setChangeScope(_ scope: ChangeScope) {
+    workspace.changeScope = scope
+  }
 }
 // swiftlint:enable no_grouping_extension

@@ -158,7 +158,12 @@
 "file.binary-notice" = "Binary file, %@. Open in Editor to view it.";
 "file.missing-notice" = "This file is neither on disk nor in the last commit.";
 "file.too-large-notice" = "This file is %@, too large to show here.";
+"file.unreadable-notice" = "git could not say what this file is compared with. It is read again on its next change.";
+"files-panel.branch-unreadable" = "Could not read the changes since %@";
+"files-panel.no-base" = "No base branch to compare with";
+"files-panel.no-branch-changes" = "No changes since %@";
 "files-panel.no-modified" = "No modified files";
+"files-panel.no-shared-history" = "No history shared with %@";
 "files-panel.tracked-capped" = "Listing stops at %d tracked files.";
 "find.count" = "%1$d/%2$d";
 "find.count-unselected" = "-/%d";
@@ -295,7 +300,9 @@
 "spoken.lane-count" = "%1$d %2$@";
 "spoken.line" = "line %1$d: %2$@";
 "spoken.line-added" = "Added, %1$@, line %2$d: %3$@";
+"spoken.line-added-unmarked" = "Added, line %1$d: %2$@";
 "spoken.line-removed" = "Removed, %1$@, was line %2$d: %3$@";
+"spoken.line-removed-unmarked" = "Removed, was line %1$d: %2$@";
 "spoken.locked" = "locked";
 "spoken.memory" = "%@ memory";
 "spoken.named" = "%1$@, %2$@";

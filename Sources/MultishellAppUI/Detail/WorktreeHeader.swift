@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Project › name, a renamed one's branch, the path, the actions menu and the
-/// Files toggle. The path gives way first; the names never do.
+/// Project › name, a renamed one's branch, the path, the actions menu and, while
+/// the panel is shut, the Files toggle. The path gives way first; the names never do.
 struct WorktreeHeader: View {
   let model: AppModel
   let worktree: Worktree
@@ -45,28 +45,11 @@ struct WorktreeHeader: View {
         .padding(.leading, 6)
       Spacer(minLength: 8)
       actionsMenu
-      filesToggle
+      if model.worktreeHeaderShowsFilesPanelToggle {
+        FilesPanelToggle(model: model, theme: theme)
+      }
     }
     .windowHeader(fill: theme.header.background)
-  }
-
-  /// Shows the Files panel on the window's right, in the header's accent
-  /// while it is open. Drawn only where the panel can be.
-  @ViewBuilder
-  private var filesToggle: some View {
-    if model.filesPanelWorktree != nil {
-      PlainGlyphButton(help: t("files-panel.toggle-help")) {
-        model.toggleFilesPanel()
-      } glyph: {
-        HeaderGlyph(symbol: "sidebar.right")
-      }
-      .foregroundStyle(
-        model.showsFilesPanel
-          ? theme.color(.accent, in: .header) : theme.header.textSecondary
-      )
-      .accessibilityLabel(t("files-panel.toggle"))
-      .accessibilityAddTraits(model.showsFilesPanel ? .isSelected : [])
-    }
   }
 
   /// Everything that acts on the selected worktree, in one place a new user

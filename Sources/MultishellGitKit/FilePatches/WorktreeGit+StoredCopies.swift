@@ -4,10 +4,14 @@ import MultishellProcess
 /// What git holds of one file, read by size before by content, for a file tab
 /// and the Files panel's open rule; see Docs/design/files.md.
 extension WorktreeGit {
-  /// `HEAD`'s copy's size, `nil` where it has none; asked first, so a small file
-  /// whose last commit is huge never diffs into memory.
-  public func committedSize(of path: String, in directory: URL) async throws -> Int? {
-    try await size(of: "HEAD:\(path)", in: directory)
+  /// The copy's size in `commit`, else `HEAD`, `nil` where it has none; asked
+  /// first, so a small file whose last commit is huge never diffs into memory.
+  public func committedSize(
+    of path: String,
+    in directory: URL,
+    at commit: String? = nil,
+  ) async throws -> Int? {
+    try await size(of: "\(commit ?? "HEAD"):\(path)", in: directory)
   }
 
   /// The first `byteCount` bytes of git's copy of a gone file, the index's

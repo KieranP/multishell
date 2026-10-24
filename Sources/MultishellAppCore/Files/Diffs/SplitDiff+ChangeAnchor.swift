@@ -7,11 +7,11 @@ extension SplitDiff: ChangeAnchoring {
     return onDisk.anchor(ofChangeAt: rows) ?? left
   }
 
-  /// As Unified decides, the left side holding every `HEAD` line; by text, the
+  /// As Unified decides, the left side holding every committed line; by text, the
   /// nearer of either side's, a moved line being removed on one and added on the other.
   public func change(at anchor: ChangeAnchor) -> Range<Int>? {
-    guard committed.hasHEADMoved(since: anchor) else {
-      return committed.change(sharingHEADLinesWith: anchor)
+    guard committed.hasCommittedSideMoved(since: anchor) else {
+      return committed.change(sharingCommittedLinesWith: anchor)
     }
     let nearest = [committed.nearestChange(holding: anchor), onDisk.nearestChange(holding: anchor)]
       .compactMap(\.self)

@@ -48,7 +48,13 @@ public struct WorktreeGit: Sendable {
   }
 
   func hasCommits(in directory: URL) async -> Bool {
-    await runner.succeeds(["rev-parse", "--verify", "--quiet", "HEAD"], in: directory)
+    await headCommit(in: directory) != nil
+  }
+
+  /// `HEAD`'s commit, `nil` where it is unborn or git could not say.
+  public func headCommit(in directory: URL) async -> String? {
+    await runner.output(["rev-parse", "--verify", "--quiet", "HEAD"], in: directory)?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// What a diff starts from where `HEAD` is unborn.

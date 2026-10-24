@@ -160,6 +160,18 @@
       <key>other</key><string>The text of %d open files, estimated</string>
     </dict>
   </dict>
+  <key>files-panel.footer-branch</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d changed file,</string>
+      <key>other</key><string>%d changed files,</string>
+    </dict>
+  </dict>
   <key>files-panel.footer-modified</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>

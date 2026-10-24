@@ -36,7 +36,8 @@ enum DiffDocumentFixture {
     DiffDisplayText(
       texts.enumerated().map { index, text in
         DiffLine(kind: .context, oldNumber: index + 1, newNumber: index + 1, text: text)
-      }
+      },
+      marksStaging: true,
     )
   }
 
@@ -60,7 +61,7 @@ enum DiffDocumentFixture {
     let view = DiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
     let window = OffscreenWindow.holding(view, deferred: false)
-    view.show(DiffDisplayText(lines(rows)), theme: Theme.builtins[0])
+    view.show(DiffDisplayText(lines(rows), marksStaging: true), theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
     return (view, window)
   }
@@ -82,7 +83,8 @@ enum DiffDocumentFixture {
         added.contains(row)
           ? DiffLine(kind: .added, oldNumber: nil, newNumber: row + 1, text: "new \(row)")
           : DiffLine(kind: .context, oldNumber: row + 1, newNumber: row + 1, text: "line \(row)")
-      }
+      },
+      marksStaging: true,
     )
   }
 
@@ -93,7 +95,8 @@ enum DiffDocumentFixture {
         removed.contains(row)
           ? DiffLine(kind: .removed, oldNumber: row + 1, newNumber: nil, text: "gone \(row)")
           : DiffLine(kind: .context, oldNumber: row + 1, newNumber: row + 1, text: "line \(row)")
-      }
+      },
+      marksStaging: true,
     )
   }
 }

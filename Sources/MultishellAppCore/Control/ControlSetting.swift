@@ -100,12 +100,24 @@ struct ControlSetting {
     _ read: @escaping () -> Value,
     _ write: @escaping (Value) -> Void,
   ) -> Self {
+    choice(key, read, named: { $0.rawValue }, from: { Value(rawValue: $0) }, write)
+  }
+
+  /// One the command line names in the app's words, where the state file keeps
+  /// those an earlier build wrote.
+  static func choice<Value>(
+    _ key: String,
+    _ read: @escaping () -> Value,
+    named name: @escaping (Value) -> String,
+    from value: @escaping (String) -> Value?,
+    _ write: @escaping (Value) -> Void,
+  ) -> Self {
     Self(
       key: key,
-      read: { read().rawValue },
+      read: { name(read()) },
       write: { text in
-        guard let value = Value(rawValue: text) else { return false }
-        write(value)
+        guard let chosen = value(text) else { return false }
+        write(chosen)
         return true
       },
     )

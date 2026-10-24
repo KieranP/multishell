@@ -41,9 +41,9 @@ struct AppModelFileTabChangeStepTests {
     harness.model.noteChangeSteps(ChangeSteps(hasNext: true, hasPrevious: false), of: tab.id)
     harness.model.noteSteppedChangeAnchor(
       ChangeAnchor(
-        headDigest: 0,
-        headLineAbove: 1,
-        headLineBelow: nil,
+        committedDigest: 0,
+        committedLineAbove: 1,
+        committedLineBelow: nil,
         textAbove: nil,
         lineText: "a",
       ),

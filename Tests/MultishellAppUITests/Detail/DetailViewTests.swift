@@ -11,12 +11,23 @@ import Testing
 @Suite @MainActor
 struct DetailViewTests {
   @Test func theHeaderDrawsNothingOutsideTheNarrowestDetail() throws {
+    try expectNothingDrawnOutside(width: TabAreaWidth.minimum, showsFilesPanel: false)
+  }
+
+  @Test func theHeaderBesideAnOpenPanelDrawsNothingOutsideTheNarrowestDetail() throws {
+    try expectNothingDrawnOutside(
+      width: TabAreaWidth.minimum + FilesPanelWidth.initial,
+      showsFilesPanel: true,
+    )
+  }
+
+  private func expectNothingDrawnOutside(width: Double, showsFilesPanel: Bool) throws {
     let harness = ModelHarness()
     let worktree = harness.addPrimaryWorktree(branch: "feature/a-branch")
     harness.store.selectWorktree(worktree.id)
     try #require(harness.model.workspace.selectedWorktree != nil)
+    harness.model.setShowsFilesPanel(showsFilesPanel)
 
-    let width = TabAreaWidth.minimum
     let margin = 100.0
     let box = NSView(frame: NSRect(x: 0, y: 0, width: width + 2 * margin, height: 60))
     let window = OffscreenWindow.holding(box, deferred: false)

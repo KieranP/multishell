@@ -16,7 +16,7 @@ final class DiffTextView: NSTextView {
 
   /// Held here: a layout manager holds its delegate weakly.
   private let rowLayout: FixedRowLayoutDelegate
-  private(set) var displayText = DiffDisplayText([])
+  private(set) var displayText = DiffDisplayText([], marksStaging: true)
   /// Unified copies a selection touching a change as `git diff` prints it;
   /// a split side copies plain text.
   var copiesAsDiff = true

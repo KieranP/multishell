@@ -10,7 +10,7 @@ extension WorktreeGit {
 
   /// `--diff-filter=u` drops unmerged paths, which print `0 0`. Renames and the
   /// algorithm are set here so a user's own git config cannot move the counts.
-  private static func numstatOptions(_ algorithm: DiffAlgorithm) -> [String] {
+  static func numstatOptions(_ algorithm: DiffAlgorithm) -> [String] {
     [
       "--numstat", "-z", "--diff-filter=u", "--no-renames",
       "--diff-algorithm=\(algorithm.rawValue)",
@@ -125,7 +125,7 @@ extension WorktreeGit {
 
   /// The reads block, on a dead mount until it times out, so they run on
   /// Dispatch and not on a cooperative pool thread; see worktrees.md.
-  private func untrackedChanges(_ paths: [String], in path: URL) async -> [StatusChange] {
+  func untrackedChanges(_ paths: [String], in path: URL) async -> [StatusChange] {
     guard !paths.isEmpty else { return [] }
     let memo = readState.untrackedMemo
     let lines = await runOnDispatch {

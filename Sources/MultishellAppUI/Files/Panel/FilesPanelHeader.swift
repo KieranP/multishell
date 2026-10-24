@@ -2,34 +2,36 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The panel's name and its All / Modified switch, on the tab strip's band.
+/// The panel's Files and Git, and the glyph that shuts it, in the title bar's
+/// band; see Docs/design/files.md.
 struct FilesPanelHeader: View {
   let model: AppModel
-  let worktreeID: Worktree.ID
   let theme: Theme
 
   var body: some View {
-    let metrics = model.metrics
-    HStack(spacing: 6) {
-      Text(t("files-panel.title"))
-        .font(metrics.font(size: metrics.secondary, weight: .semibold))
-        .foregroundStyle(theme.header.textSecondary)
+    HStack(spacing: 0) {
+      HStack(spacing: 2) {
+        FilesPanelModeTab(
+          model: model,
+          mode: .files,
+          symbol: "doc.on.doc",
+          title: t("files-panel.files"),
+          theme: theme,
+        )
+        FilesPanelModeTab(
+          model: model,
+          mode: .git,
+          symbol: "arrow.triangle.branch",
+          title: t("files-panel.git"),
+          theme: theme,
+        )
+      }
+      .accessibilityElement(children: .contain)
+      .accessibilityLabel(t("files-panel.which"))
       Spacer(minLength: 8)
-      SegmentedSwitch(
-        label: t("files-panel.which"),
-        options: [(t("files-panel.all"), .all), (t("files-panel.modified"), .modified)],
-        selection: Binding(
-          get: { model.filesPanelState(of: worktreeID).mode },
-          set: { model.setFilesPanelMode($0) },
-        ),
-        palette: theme.header,
-        metrics: metrics,
-      )
+      FilesPanelToggle(model: model, theme: theme)
     }
-    .padding(.leading, 12)
-    .padding(.trailing, 8)
-    .frame(height: model.metrics.tabHeight)
-    .background(theme.header.background)
+    .windowHeader(fill: theme.header.background)
     .hairline(.bottom, theme.header)
   }
 }

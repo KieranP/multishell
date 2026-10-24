@@ -186,7 +186,8 @@ struct StateFileTests {
     workspace.gitStatusIndicator = .stagedOnly
     workspace.diffAlgorithm = .patience
     workspace.fileTabLayout = .split
-    workspace.filesPanelMode = .modified
+    workspace.filesPanelMode = .git
+    workspace.changeScope = .branch
 
     let stateFile = StateFile(fileURL: file)
     try stateFile.save(workspace)

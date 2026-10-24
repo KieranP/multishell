@@ -105,6 +105,26 @@ struct WorkspaceTests {
     )
   }
 
+  @Test func theFilesPanelReadsTheOldAllAndModifiedValuesAsItsFilesAndGitViews() throws {
+    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).filesPanelMode == .files)
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "filesPanelMode": "all" }"#).filesPanelMode == .files
+    )
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "filesPanelMode": "modified" }"#).filesPanelMode == .git
+    )
+  }
+
+  @Test func aWorkspaceWithoutAChangeScopeComparesWithHeadAndAnUnknownOneFallsBack() throws {
+    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).changeScope == .modified)
+    #expect(try decodeJSON(Workspace.self, #"{ "changeScope": "branch" }"#).changeScope == .branch)
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "changeScope": "whateverIsNext" }"#).changeScope
+        == .modified,
+      "a scope a newer build named costs that value alone",
+    )
+  }
+
   @Test func theRemovalFieldsDefaultToAskingAndKeepingAndEveryWrittenChoiceStands() throws {
     let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
     #expect(workspace.confirmsWorktreeRemoval, "asks until told not to")

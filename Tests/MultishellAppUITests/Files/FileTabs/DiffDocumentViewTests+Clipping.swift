@@ -17,7 +17,10 @@ extension DiffDocumentViewTests {
     let view = DiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     view.frame = NSRect(x: 0, y: 0, width: 400, height: 150)
     box.addSubview(view)
-    view.show(DiffDisplayText(DiffDocumentFixture.lines(40)), theme: Theme.builtins[0])
+    view.show(
+      DiffDisplayText(DiffDocumentFixture.lines(40), marksStaging: true),
+      theme: Theme.builtins[0],
+    )
     box.layoutSubtreeIfNeeded()
     box.display()
 

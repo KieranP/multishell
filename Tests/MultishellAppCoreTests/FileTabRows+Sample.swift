@@ -21,6 +21,6 @@ extension FileTabRows {
         text: "after \(index)",
       )
     }
-    return FileTabRows(lines: leading + gone + new + trailing)
+    return FileTabRows(lines: leading + gone + new + trailing, marksStaging: true)
   }
 }

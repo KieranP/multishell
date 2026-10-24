@@ -16,17 +16,26 @@ public struct DiffDisplayText: Equatable, Sendable {
   /// The sides every line of which these rows hold: a split side holds one, and
   /// a parse of the other's partial text would colour it wrong.
   let wholeSides: [DiffSide]
-  /// Every `HEAD` line's text hashed in order, which only a commit or checkout
-  /// changes; a split's right side takes its left's, lacking the removed lines.
-  let headDigest: Int
+  /// Every committed line's text hashed, the merge base's under Branch (files.md), which a
+  /// commit, checkout or new scope changes; a split's right side takes its left's.
+  let committedDigest: Int
+  /// Whether a changed line says staged or unstaged: not against an older
+  /// commit than `HEAD`, whose changes the index holds too.
+  public let marksStaging: Bool
 
-  public init(_ lines: [DiffLine]) {
-    self.init(lines, wholeSides: [.committed, .onDisk], headDigest: nil)
+  public init(_ lines: [DiffLine], marksStaging: Bool) {
+    self.init(
+      lines,
+      wholeSides: [.committed, .onDisk],
+      committedDigest: nil,
+      marksStaging: marksStaging,
+    )
   }
 
-  /// `headDigest` where already hashed, or for rows missing some of `HEAD`'s lines.
-  init(_ lines: [DiffLine], wholeSides: [DiffSide], headDigest: Int?) {
+  /// `committedDigest` where already hashed, or for rows missing some committed lines.
+  init(_ lines: [DiffLine], wholeSides: [DiffSide], committedDigest: Int?, marksStaging: Bool) {
     self.wholeSides = wholeSides
+    self.marksStaging = marksStaging
     var starts: [Int] = []
     starts.reserveCapacity(lines.count)
     var offset = 0
@@ -52,11 +61,11 @@ public struct DiffDisplayText: Equatable, Sendable {
       capped[row].kind != .context && (row == 0 || capped[row - 1].kind == .context)
     }
     self.string = capped.map(\.text).joined(separator: "\n")
-    self.headDigest = headDigest ?? Self.headDigest(of: capped)
+    self.committedDigest = committedDigest ?? Self.committedDigest(of: capped)
   }
 
   /// Hasher is seeded per launch, so a digest is never saved.
-  private static func headDigest(of lines: [DiffLine]) -> Int {
+  private static func committedDigest(of lines: [DiffLine]) -> Int {
     var hasher = Hasher()
     for line in lines where line.oldNumber != nil { hasher.combine(line.text) }
     return hasher.finalize()

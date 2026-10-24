@@ -87,11 +87,11 @@ struct AppModelFileTabReadsTests {
     harness.model.noteFileFindShown(FileFindShown(text: "hello", selectionMoves: 1), of: tab.id)
     harness.model.noteFileTabScrolled(
       tab.id,
-      to: FileTabScroll(line: 0, isHEADsLine: false, rowsFromLine: 40, x: 0),
+      to: FileTabScroll(line: 0, isCommittedLine: false, rowsFromLine: 40, x: 0),
     )
     #expect(
       harness.model.fileTabScroll(of: tab.id)
-        == FileTabScroll(line: 0, isHEADsLine: false, rowsFromLine: 40, x: 0)
+        == FileTabScroll(line: 0, isCommittedLine: false, rowsFromLine: 40, x: 0)
     )
 
     harness.model.closeTab(tab.id)

@@ -6,11 +6,11 @@ import Testing
 
 @Suite @MainActor
 struct FilesPanelHeaderTests {
-  @Test func theSelectedSegmentReadsInTheHeadersText() throws {
+  @Test func theChosenListsGlyphReadsInTheHeadersText() throws {
     let harness = ModelHarness()
-    let worktree = harness.addPrimaryWorktree()
+    _ = harness.addPrimaryWorktree()
     let theme = try MagentaTheme.with([.header: [.text]])
-    let header = FilesPanelHeader(model: harness.model, worktreeID: worktree.id, theme: theme)
+    let header = FilesPanelHeader(model: harness.model, theme: theme)
 
     let bitmap = try #require(
       OffscreenWindow.pixels(ofHosted: header, size: CGSize(width: 320, height: 40))

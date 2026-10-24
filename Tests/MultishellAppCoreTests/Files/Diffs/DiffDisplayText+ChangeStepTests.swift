@@ -19,7 +19,8 @@ struct DiffDisplayTextChangeStepTests {
       DiffLine(kind: .context, oldNumber: 8, newNumber: 9, text: "i"),
       DiffLine.padding,
       DiffLine(kind: .context, oldNumber: 10, newNumber: 10, text: "j"),
-    ]
+    ],
+    marksStaging: true,
   )
 
   @Test func aStepDownFromASelectionInViewLandsOnTheNextRunOfChanges() {
@@ -58,10 +59,13 @@ struct DiffDisplayTextChangeStepTests {
   }
 
   @Test func withNoSelectionPlacedAStepDownLandsOnAChangeStartingInTheFirstRowInView() {
-    let newFile = DiffDisplayText([
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "a"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "b"),
-    ])
+    let newFile = DiffDisplayText(
+      [
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "a"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "b"),
+      ],
+      marksStaging: true,
+    )
 
     #expect(newFile.startOfChange(.next, stepOriginRow: nil, shownRows: 0..<2) == 0)
   }
@@ -78,9 +82,12 @@ struct DiffDisplayTextChangeStepTests {
   }
 
   @Test func aFileWithNothingChangedHasNoChangeToStepTo() {
-    let unchanged = DiffDisplayText([
-      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "a")
-    ])
+    let unchanged = DiffDisplayText(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "a")
+      ],
+      marksStaging: true,
+    )
 
     #expect(unchanged.startOfChange(.next, stepOriginRow: 0, shownRows: 0..<1) == nil)
   }

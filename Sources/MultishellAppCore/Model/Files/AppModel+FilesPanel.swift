@@ -21,6 +21,14 @@ extension AppModel {
   /// Open, and with a worktree to list: what both edges' widths allow for.
   public var isFilesPanelOnScreen: Bool { showsFilesPanel && filesPanelWorktree != nil }
 
+  /// Modified or Branch, drawn over the Git list alone, Files counting from `HEAD`.
+  public var filesPanelShowsChangeScopeSwitch: Bool { workspace.filesPanelMode == .git }
+
+  /// Where the panel can be but is shut: open, its own header carries the toggle.
+  public var worktreeHeaderShowsFilesPanelToggle: Bool {
+    !showsFilesPanel && filesPanelWorktree != nil
+  }
+
   /// The header glyph's and the View menu's; shut at each launch.
   public func setShowsFilesPanel(_ shows: Bool) {
     guard showsFilesPanel != shows else { return }
@@ -37,12 +45,13 @@ extension AppModel {
   }
 
   /// A click on a worktree row's git badge: that worktree, the panel open on
-  /// what changed there.
+  /// what the badge counts, its Git list under Modified.
   public func showModifiedFiles(of worktree: Worktree) {
     if workspace.selectedWorktreeID != worktree.id || detailCover != nil {
       guard select(worktree) else { return }
     }
-    setFilesPanelMode(.modified)
+    setChangeScope(.modified)
+    setFilesPanelMode(.git)
     filesPanelStates[worktree.id]?.filterText = ""
     setShowsFilesPanel(true)
   }
@@ -53,10 +62,12 @@ extension AppModel {
     return state
   }
 
-  /// The panel's switch, kept for every worktree's panel and the next launch.
+  /// The panel's Files or Git, kept for every worktree's panel and the next launch.
   public func setFilesPanelMode(_ mode: FilesPanelMode) {
     guard workspace.filesPanelMode != mode else { return }
     store.setFilesPanelMode(mode)
+    forgetBranchChangesUnlessListed()
+    schedulePanelBranchChangesRead()
   }
 
   public func setFilesPanelFilterText(_ text: String, in id: Worktree.ID) {
@@ -70,16 +81,16 @@ extension AppModel {
     let path = row.path
     var state = filesPanelState(of: id)
     switch state.mode {
-    case .all:
+    case .files:
       if state.expandedFolders.remove(path) == nil {
         state.expandedFolders.insert(path)
         if row.isRepository { scheduleSubmoduleRead(path, in: id) }
         if row.isIgnored { scheduleIgnoredFolderRead(path, in: id) }
       }
 
-    case .modified:
-      if state.collapsedModifiedFolders.remove(path) == nil {
-        state.collapsedModifiedFolders.insert(path)
+    case .git:
+      if state.collapsedGitFolders.remove(path) == nil {
+        state.collapsedGitFolders.insert(path)
       }
     }
     filesPanelStates[id] = state
@@ -99,6 +110,7 @@ extension AppModel {
     FilesPanelSummary(
       tree: fileTree(of: id),
       status: statuses[id],
+      comparison: changeComparison(of: id),
       tracked: trackedFiles[id] ?? .empty,
     )
   }
@@ -117,6 +129,7 @@ extension AppModel {
       submodules: submoduleReadings[id] ?? [:],
       ignoredEntries: ignoredEntries[id] ?? [],
       ignoredFolderEntries: ignoredFolderEntries[id] ?? [:],
+      branchChanges: changeComparison(of: id).branchChanges,
     )
     // Read before the cache answers, so a render it answers still redraws on a landing.
     _ = fileTreeBuildLandings

@@ -154,7 +154,7 @@
   spinners, which AppKit draws.
 - **Controls AppKit would draw in its own grey are drawn by the app** inside the
   themed areas: the actions menus' buttons, through `glyphMenuStyle`; the
-  All/Modified, Unified/Split and Debug Info range switches, as
+  Modified/Branch, Unified/Split and Debug Info range switches, as
   `SegmentedSwitch` on their section's `fill` and `selection_background`; Pause,
   as one segment; the board's toggle, on the header's `accent` or `fill` and its
   `knob`; and every field's prompt, laid over the field in the area's faintest

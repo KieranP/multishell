@@ -10,6 +10,8 @@ struct SegmentedSwitch<Value: Hashable>: View {
   @Binding var selection: Value
   let palette: AreaPalette
   let metrics: UIMetrics
+  /// Spreads the segments over the width offered, each an equal share.
+  var fillsWidth = false
 
   var body: some View {
     HStack(spacing: UIMetrics.segmentSpacing) {
@@ -19,7 +21,12 @@ struct SegmentedSwitch<Value: Hashable>: View {
         Button {
           selection = option.value
         } label: {
-          SegmentFace(isSelected: isSelected, palette: palette, metrics: metrics) {
+          SegmentFace(
+            isSelected: isSelected,
+            palette: palette,
+            metrics: metrics,
+            fillsWidth: fillsWidth,
+          ) {
             Text(option.title)
           }
         }
@@ -27,7 +34,7 @@ struct SegmentedSwitch<Value: Hashable>: View {
         .selectableButtonTraits(isSelected: isSelected)
       }
     }
-    .segmentWell(palette)
+    .segmentWell(palette, fillsWidth: fillsWidth)
     .accessibilityElement(children: .contain)
     .accessibilityLabel(label)
   }

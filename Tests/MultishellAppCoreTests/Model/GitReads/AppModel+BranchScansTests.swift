@@ -137,7 +137,7 @@ struct AppModelBranchScansTests {
     let fired = AtomicFlag()
     withObservationTracking {
       _ = model.mergeStates
-      _ = model.defaultBranches
+      _ = model.defaultBranchScans
     } onChange: {
       fired.raise()
     }

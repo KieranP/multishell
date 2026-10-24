@@ -33,17 +33,19 @@ struct AppModelFilesPanelTests {
     )
   }
 
-  @Test func aClickOnTheGitBadgeOpensThePanelOnModified() async throws {
+  @Test func aClickOnTheGitBadgeOpensThePanelOnItsGitListUnderModified() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.setFilesPanelFilterText("x", in: main.id)
+    harness.model.setChangeScope(.branch)
 
     harness.model.showModifiedFiles(of: main)
 
     #expect(harness.model.showsFilesPanel)
     #expect(harness.model.workspace.selectedWorktreeID == main.id)
-    #expect(harness.model.filesPanelState(of: main.id).mode == .modified)
+    #expect(harness.model.filesPanelState(of: main.id).mode == .git)
+    #expect(harness.model.workspace.changeScope == .modified, "what the badge counts")
     #expect(harness.model.filesPanelState(of: main.id).filterText == "")
   }
 
@@ -73,6 +75,18 @@ struct AppModelFilesPanelTests {
 
     harness.model.setShowsFilesPanel(false)
     #expect(!harness.model.isFilesPanelOnScreen)
+  }
+
+  @Test func theWorktreeHeaderCarriesThePanelsToggleOnlyWhileThePanelIsShut() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    #expect(!harness.model.worktreeHeaderShowsFilesPanelToggle, "no worktree in view")
+
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    #expect(harness.model.worktreeHeaderShowsFilesPanelToggle)
+
+    harness.model.setShowsFilesPanel(true)
+    #expect(!harness.model.worktreeHeaderShowsFilesPanelToggle, "the panel's own header has it")
   }
 
   @Test func aPathASparseCheckoutLeavesOffDiskListsGreyedAndDoesNotOpen() async throws {
@@ -145,7 +159,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.modified)
+    harness.model.setFilesPanelMode(.git)
     var status = Self.modified(30_000)
     harness.model.statuses[main.id] = status
 
@@ -175,7 +189,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.modified)
+    harness.model.setFilesPanelMode(.git)
     harness.model.trackedFiles[main.id] = Self.tracked(30_000)
     harness.model.statuses[main.id] = Self.modified(30_000)
 
@@ -290,7 +304,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.modified)
+    harness.model.setFilesPanelMode(.git)
     harness.model.statuses[main.id] = Self.modified(3)
     _ = harness.model.fileTreeRows(of: main.id)
     harness.model.statuses[main.id] = Self.modified(30_000)
@@ -329,7 +343,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.modified)
+    harness.model.setFilesPanelMode(.git)
     harness.model.statuses[main.id] = Self.modified(30_000)
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
     try await waitUntil { renderer.rows.count > 30_000 }

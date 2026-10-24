@@ -17,7 +17,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
-    case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode
+    case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode, changeScope
   }
 
   /// Keys no property answers to any more, read only to carry what an older
@@ -103,8 +103,11 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var diffAlgorithm = DiffAlgorithm.default
   /// Unified or Split, chosen in any file tab's bar and kept for the next.
   public internal(set) var fileTabLayout = FileTabLayout.default
-  /// All or Modified, chosen in any worktree's panel and kept for the next.
+  /// Files or Git, chosen in any worktree's panel and kept for the next.
   public internal(set) var filesPanelMode = FilesPanelMode.default
+  /// Modified or Branch, chosen in the panel or any file tab's bar, which
+  /// both follow it.
+  public internal(set) var changeScope = ChangeScope.default
 
   /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var projectHookTimeout: Duration? {
@@ -230,6 +233,7 @@ public struct Workspace: Codable, Hashable, Sendable {
       forKey: .filesPanelMode,
       or: .default,
     )
+    changeScope = container.decodeTolerantly(ChangeScope.self, forKey: .changeScope, or: .default)
 
     // A file written before groups names no group but says which tab was
     // active. Read here, or `repair` falls back to the last tab.

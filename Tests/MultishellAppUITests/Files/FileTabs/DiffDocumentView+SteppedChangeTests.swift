@@ -65,9 +65,9 @@ struct DiffDocumentViewSteppedChangeTests {
     view.onSteppedRowsChanged = { reported.append($0) }
     view.restoreSteppedChangeAnchor(
       ChangeAnchor(
-        headDigest: 0,
-        headLineAbove: 5,
-        headLineBelow: 6,
+        committedDigest: 0,
+        committedLineAbove: 5,
+        committedLineBelow: 6,
         textAbove: nil,
         lineText: "nowhere",
       )
@@ -93,7 +93,8 @@ struct DiffDocumentViewSteppedChangeTests {
           default:
             DiffLine(kind: .context, oldNumber: row, newNumber: row + 1, text: "line \(row)")
           }
-        }
+        },
+        marksStaging: true,
       )
     }
     let (view, window) = DiffDocumentFixture.shown(text(editing: "first"))

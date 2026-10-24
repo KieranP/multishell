@@ -5,8 +5,28 @@ import MultishellGitKit
 /// what the panel left out, after them; see Docs/design/files.md.
 public enum FilesPanelFooterText {
   public static func changes(_ summary: FilesPanelSummary) -> String {
-    summary.changedFiles > 0
-      ? t("files-panel.footer-modified", summary.changedFiles) : t("files-panel.no-modified")
+    switch summary.comparison {
+    case .head:
+      summary.changedFiles > 0
+        ? t("files-panel.footer-modified", summary.changedFiles) : t("files-panel.no-modified")
+
+    case .noBase:
+      t("files-panel.no-base")
+
+    case .unread:
+      ""
+
+    case .unreadable(let baseName):
+      t("files-panel.branch-unreadable", baseName)
+
+    case .branch(let changes) where changes.mergeBase == nil:
+      t("files-panel.no-shared-history", changes.baseName)
+
+    case .branch(let changes):
+      summary.changedFiles > 0
+        ? t("files-panel.footer-branch", summary.changedFiles)
+        : t("files-panel.no-branch-changes", changes.baseName)
+    }
   }
 
   /// `nil` where the panel lists everything.

@@ -26,10 +26,21 @@ extension AppModel {
     strikeIfGoneOrBack(id)
   }
 
-  /// Every file tab, as when the diff algorithm changes what each counts.
-  func noteEveryFileTabChanged() {
-    fileTabReadLog.forgetPace()
-    for tab in workspace.fileTabs { noteFileTabChanged(tab.id) }
+  /// The tabs a new algorithm, scope or base reaches, read afresh; `releasingDots`
+  /// where it can move a hidden tab's dot, which then follows the new reads.
+  func noteFileTabsChanged(releasingDots: Bool, where isReached: (FileTab) -> Bool) {
+    for tab in workspace.fileTabs where isReached(tab) {
+      if releasingDots, let reading = fileTabReadings[tab.id], case .released = reading.content {
+        fileTabReadings[tab.id] = FileTabReading(
+          content: .releasedFollowingStatus,
+          isFileGone: reading.isFileGone,
+        )
+      }
+      fileTabReadLog.forgetPace(of: tab.id)
+      // One waiting out the old pace would show the old diff until then.
+      pendingFileTabReads.removeValue(forKey: tab.id)?.cancel()
+      noteFileTabChanged(tab.id)
+    }
   }
 
   /// The tabs on screen that hold nothing to show, or were owed a read while hidden.
@@ -100,6 +111,7 @@ extension AppModel {
       in: worktree.path,
       git: coordinator.git,
       diffAlgorithm: workspace.diffAlgorithm,
+      since: fileTabBase(in: tab.worktreeID),
       previous: fileTabReadings[id],
     )
     let readsAgain = fileTabReadLog.finish(id, cost: started.duration(to: .now))

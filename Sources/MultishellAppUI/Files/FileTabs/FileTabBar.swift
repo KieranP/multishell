@@ -50,6 +50,9 @@ struct FileTabBar: View {
       if changedLineCounts != nil {
         ChangeStepButtons(model: model, tabID: tab.id, palette: theme.fileTab)
       }
+      if model.offersChangeScopeSwitch(for: tab) {
+        ChangeScopeSwitch(model: model, palette: theme.fileTab)
+      }
       if model.offersLayoutSwitch(for: tab) { layoutSwitch }
       actionsMenu
     }

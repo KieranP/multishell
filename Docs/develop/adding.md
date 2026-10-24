@@ -27,9 +27,8 @@ What each addition needs beyond the code itself.
   one that cannot returns `nil` and the request is refused or the frame left
   out. Search counts reach the model through the delegate's `didCount`, and a
   host that sends none leaves `panes find` printing what it has at its
-  two-second limit. A host that
-  cannot say a session's terminal memory returns `nil`, and Debug Info leaves
-  that screen and scrollback in the app's row.
+  two-second limit. A host that cannot say a session's terminal memory returns
+  `nil`, and Debug Info leaves that screen and scrollback in the app's row.
 - **A host judges a clicked link itself** before anything opens it, and hands a
   text file to the delegate's `didAskToEdit` for the user's editor. Nothing
   forces either. Left to libghostty, a link once ran whatever a program printed,

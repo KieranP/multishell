@@ -35,10 +35,20 @@ extension AppModel {
     let read = isRead ? expandedSubmodules(of: tab.worktreeID) : [:]
     let submodule = read.filter { path, _ in tab.path.hasPrefix(path + "/") }
       .max { $0.key.count < $1.key.count }
-    guard let (folder, reading) = submodule else {
-      return statuses[tab.worktreeID]?.changes.first { $0.path == tab.path }?.kind
-    }
+    guard let (folder, reading) = submodule else { return worktreeChangeKind(of: tab) }
     let inside = String(tab.path.dropFirst(folder.count + 1))
-    return reading.status?.changes.first { $0.path == inside }?.kind
+    return reading.status?.kind(of: inside)
+  }
+
+  /// Under Branch the panel's current read, counting from the merge base as the
+  /// tab does, or none where it holds none (files.md); else the status's.
+  private func worktreeChangeKind(of tab: FileTab) -> StatusChange.Kind? {
+    if case .branch(let changes) = changeComparison(of: tab.worktreeID) {
+      // No shared history leaves the tab counting from `HEAD`, as the status does.
+      guard changes.mergeBase == nil else { return changes.kind(of: tab.path) }
+    } else if fileTabBase(in: tab.worktreeID) != nil {
+      return nil
+    }
+    return statuses[tab.worktreeID]?.kind(of: tab.path)
   }
 }

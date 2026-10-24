@@ -27,7 +27,7 @@ extension AppModel {
   }
 
   func removeProject(_ project: Project) {
-    defaultBranches[project.id] = nil
+    defaultBranchScans[project.id] = nil
     // Paths are ids, so the project re-added under the same filter text came back collapsed.
     setIfChanged(
       \.projectsCollapsedWhileFiltering,

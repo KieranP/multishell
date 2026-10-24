@@ -1,4 +1,4 @@
-/// One row of a file tab: a line of the file on disk, or one `HEAD` had that
+/// One row of a file tab: a line of the file on disk, or one the committed side had that
 /// the file no longer does.
 public struct DiffLine: Hashable, Sendable {
   public enum Kind: Hashable, Sendable {
@@ -14,7 +14,7 @@ public struct DiffLine: Hashable, Sendable {
   public let kind: Kind
   /// The change is in the index as well as on disk, drawn hollow in the gutter.
   public let isStaged: Bool
-  /// In `HEAD`; `nil` for an added line.
+  /// On the committed side; `nil` for an added line.
   public let oldNumber: Int?
   /// In the file on disk; `nil` for a removed line, which has none to show.
   public let newNumber: Int?

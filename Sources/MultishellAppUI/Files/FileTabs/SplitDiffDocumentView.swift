@@ -2,7 +2,7 @@ import AppKit
 import MultishellAppCore
 import MultishellCore
 
-/// `HEAD` on the left, the file on disk on the right, locked by scroll offset,
+/// The committed side on the left, the file on disk on the right, locked by scroll offset,
 /// the same row on both sides under forced geometry; see files.md.
 @MainActor
 final class SplitDiffDocumentView: NSView {
@@ -15,7 +15,7 @@ final class SplitDiffDocumentView: NSView {
 
   private var split: SplitDiff?
   /// By the right side's scroll, which the left follows by the lock, anchored
-  /// by the split as a whole: `HEAD`'s line where the left shows a removal.
+  /// by the split as a whole: the committed line where the left shows a removal.
   var onScrolledTo: ((FileTabScroll) -> Void)?
   /// From the side holding the keyboard, as a step counts.
   var onStepsCounted: ((ChangeSteps) -> Void)?
@@ -67,7 +67,8 @@ final class SplitDiffDocumentView: NSView {
 
   /// On the side that has the line, the lock bringing the other along.
   func restore(_ scroll: FileTabScroll) {
-    let (restoring, following) = scroll.isHEADsLine ? (committed, onDisk) : (onDisk, committed)
+    let (restoring, following) =
+      scroll.isCommittedLine ? (committed, onDisk) : (onDisk, committed)
     restoring.restore(scroll)
     following.awaitTheLock()
   }

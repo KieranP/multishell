@@ -14,7 +14,7 @@ struct SplitDiffTests {
   ]
 
   @Test func eachRunOfRemovedLinesSitsBesideItsAddedOnesTheShorterPadded() {
-    let split = SplitDiff(Self.lines)
+    let split = SplitDiff(Self.lines, marksStaging: true)
 
     #expect(split.committed.lines.map(\.text) == ["keep", "old a", "old b", "tail", ""])
     #expect(split.onDisk.lines.map(\.text) == ["keep", "new a", "", "tail", "end"])

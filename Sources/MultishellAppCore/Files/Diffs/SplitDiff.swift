@@ -1,11 +1,11 @@
-/// `HEAD` beside the file on disk, row for row: each run of removed lines beside
+/// The committed side beside the file on disk, row for row: each run of removed lines beside
 /// the added run that replaced it, the shorter padded.
 public struct SplitDiff: Equatable, Sendable {
   public let committed: DiffDisplayText
   public let onDisk: DiffDisplayText
 
-  /// `headDigest` is the Unified text's where it was already hashed.
-  init(_ lines: [DiffLine], headDigest: Int? = nil) {
+  /// `committedDigest` is the Unified text's where it was already hashed.
+  init(_ lines: [DiffLine], marksStaging: Bool, committedDigest: Int? = nil) {
     var left: [DiffLine] = []
     var right: [DiffLine] = []
     var removed: [DiffLine] = []
@@ -29,7 +29,17 @@ public struct SplitDiff: Equatable, Sendable {
       }
     }
     flush()
-    committed = DiffDisplayText(left, wholeSides: [.committed], headDigest: headDigest)
-    onDisk = DiffDisplayText(right, wholeSides: [.onDisk], headDigest: committed.headDigest)
+    committed = DiffDisplayText(
+      left,
+      wholeSides: [.committed],
+      committedDigest: committedDigest,
+      marksStaging: marksStaging,
+    )
+    onDisk = DiffDisplayText(
+      right,
+      wholeSides: [.onDisk],
+      committedDigest: committed.committedDigest,
+      marksStaging: marksStaging,
+    )
   }
 }

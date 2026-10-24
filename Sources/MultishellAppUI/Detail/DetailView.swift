@@ -28,13 +28,11 @@ struct DetailView: View {
         )
 
       case .tabGroups(let worktree):
-        WorktreeHeader(model: model, worktree: worktree, theme: theme)
         besideFilesPanel(of: worktree, theme: theme) {
           WorktreeTabGroups(model: model, worktree: worktree, theme: theme)
         }
 
       case .noTabs(let worktree):
-        WorktreeHeader(model: model, worktree: worktree, theme: theme)
         besideFilesPanel(of: worktree, theme: theme) { Spacer() }
 
       case .noSelection(let hasProjects):
@@ -52,8 +50,8 @@ struct DetailView: View {
     .background(theme.detail.background)
   }
 
-  /// The worktree's tab area with the Files panel at its right while open,
-  /// resized from its left edge as the sidebar is from its right.
+  /// The worktree's header over its tab area, the Files panel full height at
+  /// their right while open, resized from its left edge; see files.md.
   private func besideFilesPanel(
     of worktree: Worktree,
     theme: Theme,
@@ -63,7 +61,13 @@ struct DetailView: View {
     return GeometryReader { area in
       let range = FilesPanelWidth.range(inDetailOfWidth: area.size.width)
       HStack(spacing: 0) {
-        tabArea.frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 0) {
+          // Clipped from its leading side, as the whole detail is.
+          WorktreeHeader(model: model, worktree: worktree, theme: theme)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+            .clipped()
+          tabArea.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
         if model.isFilesPanelOnScreen {
           ResizeHandle(
             width: $filesPanelWidth,

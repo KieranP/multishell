@@ -13,7 +13,7 @@ extension AppModelPersistenceTests {
     let tab = try #require(before.store.openFileTab(path: "README.md", in: before.main.id))
     before.model.noteFileTabScrolled(
       tab.id,
-      to: FileTabScroll(line: 0, isHEADsLine: false, rowsFromLine: 240.5, x: 12),
+      to: FileTabScroll(line: 0, isCommittedLine: false, rowsFromLine: 240.5, x: 12),
     )
 
     let (after, _, _, error) = before.relaunched()
@@ -21,7 +21,7 @@ extension AppModelPersistenceTests {
     #expect(error == nil)
     #expect(
       after.fileTabScroll(of: tab.id)
-        == FileTabScroll(line: 0, isHEADsLine: false, rowsFromLine: 240.5, x: 12)
+        == FileTabScroll(line: 0, isCommittedLine: false, rowsFromLine: 240.5, x: 12)
     )
   }
 }

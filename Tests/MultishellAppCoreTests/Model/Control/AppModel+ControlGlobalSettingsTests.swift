@@ -201,4 +201,23 @@ struct AppModelControlGlobalSettingsTests {
     )
     #expect(harness.model.workspace.appearance.uiFontName == "Menlo")
   }
+
+  @Test func theFilesPanelIsNamedFilesOrGitOnTheCommandLineAsInThePanel() async {
+    let harness = Harness()
+
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "filesPanelMode", value: "git"))
+        == .done
+    )
+    #expect(harness.model.workspace.filesPanelMode == .git)
+    let read = await harness.messageSource.ask(.readGlobalSettings(key: "filesPanelMode"))
+    #expect(read?.output == #""git""#)
+    #expect(
+      await harness.messageSource.ask(
+        .writeGlobalSetting(key: "filesPanelMode", value: "modified")
+      )
+        == .refused(.invalidValue(key: "filesPanelMode", value: "modified")),
+      "modified is a change scope",
+    )
+  }
 }

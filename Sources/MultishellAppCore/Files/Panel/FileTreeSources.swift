@@ -11,4 +11,10 @@ struct FileTreeSources: Equatable, Sendable {
   var ignoredEntries: [String] = []
   /// The read ignored folders' entries, open or shut, by the folder's path.
   var ignoredFolderEntries: [String: [IgnoredFolderEntry]] = [:]
+  /// The changes since the base branch under Branch, which the tree marks in
+  /// place of the status read's; `nil` elsewhere.
+  var branchChanges: [StatusChange]?
+
+  /// The worktree's own changes the tree marks, an opened submodule's apart.
+  var markedChanges: [StatusChange] { branchChanges ?? status?.changes ?? [] }
 }

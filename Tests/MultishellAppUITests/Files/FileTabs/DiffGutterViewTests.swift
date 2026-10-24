@@ -8,7 +8,7 @@ import Testing
 struct DiffGutterViewTests {
   private static func gutter(_ line: DiffLine, numbering: DiffSide) -> DiffGutterView {
     let gutter = DiffGutterView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
-    gutter.displayText = DiffDisplayText([line])
+    gutter.displayText = DiffDisplayText([line], marksStaging: true)
     gutter.numbering = numbering
     return gutter
   }

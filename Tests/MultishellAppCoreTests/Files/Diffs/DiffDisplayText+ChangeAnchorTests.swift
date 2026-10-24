@@ -13,7 +13,8 @@ struct DiffDisplayTextChangeAnchorTests {
       DiffLine(kind: .removed, oldNumber: 4, newNumber: nil, text: "gone d"),
       DiffLine(kind: .context, oldNumber: 5, newNumber: 4, text: "e"),
       DiffLine(kind: .added, oldNumber: nil, newNumber: 5, text: "f"),
-    ]
+    ],
+    marksStaging: true,
   )
 
   /// `HEAD` has lines 1 to 6; the file adds `added` lines after line 2 and "y"
@@ -32,7 +33,7 @@ struct DiffDisplayTextChangeAnchorTests {
       DiffLine(kind: .added, oldNumber: nil, newNumber: 5 + added, text: "y"),
       DiffLine(kind: .context, oldNumber: 5, newNumber: 6 + added, text: "5"),
     ]
-    return DiffDisplayText(lines)
+    return DiffDisplayText(lines, marksStaging: true)
   }
 
   /// `HEAD` has lines 1 to 8; the file adds `first` after line 2 and "}" after
@@ -53,7 +54,7 @@ struct DiffDisplayTextChangeAnchorTests {
     }
     lines.append(DiffLine(kind: .added, oldNumber: nil, newNumber: new, text: "}"))
     lines.append(DiffLine(kind: .context, oldNumber: 7, newNumber: new + 1, text: "line 7"))
-    return DiffDisplayText(lines)
+    return DiffDisplayText(lines, marksStaging: true)
   }
 
   @Test func aChangeIsFoundAgainByItsAnchor() throws {
@@ -74,16 +75,19 @@ struct DiffDisplayTextChangeAnchorTests {
 
   @Test func aChangeIsFoundAgainOnceTheChangesAboveItAreCommitted() throws {
     let before = Self.additions(adding: 2)
-    let committed = DiffDisplayText([
-      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "1"),
-      DiffLine(kind: .context, oldNumber: 2, newNumber: 2, text: "2"),
-      DiffLine(kind: .context, oldNumber: 3, newNumber: 3, text: "x0"),
-      DiffLine(kind: .context, oldNumber: 4, newNumber: 4, text: "x1"),
-      DiffLine(kind: .context, oldNumber: 5, newNumber: 5, text: "3"),
-      DiffLine(kind: .context, oldNumber: 6, newNumber: 6, text: "4"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 7, text: "y"),
-      DiffLine(kind: .context, oldNumber: 7, newNumber: 8, text: "5"),
-    ])
+    let committed = DiffDisplayText(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "1"),
+        DiffLine(kind: .context, oldNumber: 2, newNumber: 2, text: "2"),
+        DiffLine(kind: .context, oldNumber: 3, newNumber: 3, text: "x0"),
+        DiffLine(kind: .context, oldNumber: 4, newNumber: 4, text: "x1"),
+        DiffLine(kind: .context, oldNumber: 5, newNumber: 5, text: "3"),
+        DiffLine(kind: .context, oldNumber: 6, newNumber: 6, text: "4"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 7, text: "y"),
+        DiffLine(kind: .context, oldNumber: 7, newNumber: 8, text: "5"),
+      ],
+      marksStaging: true,
+    )
     let anchor = try #require(before.anchor(ofChangeAt: 6..<7))
 
     #expect(committed.change(at: anchor) == 6..<7)
@@ -91,16 +95,19 @@ struct DiffDisplayTextChangeAnchorTests {
 
   @Test func aChangeGrownUpwardOverTheLineAboveItKeepsItsAnchor() throws {
     let before = Self.additions(adding: 1)
-    let grown = DiffDisplayText([
-      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "1"),
-      DiffLine(kind: .context, oldNumber: 2, newNumber: 2, text: "2"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 3, text: "x0"),
-      DiffLine(kind: .context, oldNumber: 3, newNumber: 4, text: "3"),
-      DiffLine(kind: .removed, oldNumber: 4, newNumber: nil, text: "4"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 5, text: "4 edited"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 6, text: "y"),
-      DiffLine(kind: .context, oldNumber: 5, newNumber: 7, text: "5"),
-    ])
+    let grown = DiffDisplayText(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "1"),
+        DiffLine(kind: .context, oldNumber: 2, newNumber: 2, text: "2"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 3, text: "x0"),
+        DiffLine(kind: .context, oldNumber: 3, newNumber: 4, text: "3"),
+        DiffLine(kind: .removed, oldNumber: 4, newNumber: nil, text: "4"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 5, text: "4 edited"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 6, text: "y"),
+        DiffLine(kind: .context, oldNumber: 5, newNumber: 7, text: "5"),
+      ],
+      marksStaging: true,
+    )
     let anchor = try #require(before.anchor(ofChangeAt: 5..<6))
 
     #expect(grown.change(at: anchor) == 4..<7)
@@ -113,7 +120,8 @@ struct DiffDisplayTextChangeAnchorTests {
         line.text == "y"
           ? DiffLine(kind: .added, oldNumber: nil, newNumber: line.newNumber, text: "y edited")
           : line
-      }
+      },
+      marksStaging: true,
     )
     let anchor = try #require(before.anchor(ofChangeAt: 5..<6))
 
@@ -150,7 +158,7 @@ struct DiffDisplayTextChangeAnchorTests {
         DiffLine(kind: .added, oldNumber: nil, newNumber: 4, text: "4x"),
         DiffLine(kind: .context, oldNumber: 5, newNumber: 5, text: "5"),
       ]
-      return DiffDisplayText(lines)
+      return DiffDisplayText(lines, marksStaging: true)
     }
     let anchor = try #require(text(revertingThree: false).anchor(ofChangeAt: 2..<6))
 
@@ -173,7 +181,7 @@ struct DiffDisplayTextChangeAnchorTests {
         DiffLine(kind: .added, oldNumber: nil, newNumber: 6, text: "5y"),
         DiffLine(kind: .context, oldNumber: 6, newNumber: 7, text: "6"),
       ]
-      return DiffDisplayText(lines)
+      return DiffDisplayText(lines, marksStaging: true)
     }
     let anchor = try #require(text(revertingFive: false).anchor(ofChangeAt: 4..<7))
 
@@ -182,12 +190,14 @@ struct DiffDisplayTextChangeAnchorTests {
 
   @Test func aChangeStillReplacingHEADLinesWinsOverALineAddedAboveIt() throws {
     let boxed = DiffDisplayText(
-      (1...4).map(DiffLine.unchanged) + DiffLine.replaced(5...7) + [.unchanged(8)]
+      (1...4).map(DiffLine.unchanged) + DiffLine.replaced(5...7) + [.unchanged(8)],
+      marksStaging: true,
     )
     let edited = DiffDisplayText(
       (1...4).map(DiffLine.unchanged)
         + [DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "new")]
-        + [.unchanged(5)] + DiffLine.replaced(6...7) + [.unchanged(8)]
+        + [.unchanged(5)] + DiffLine.replaced(6...7) + [.unchanged(8)],
+      marksStaging: true,
     )
     let anchor = try #require(boxed.anchor(ofChangeAt: 4..<10))
 
@@ -195,10 +205,14 @@ struct DiffDisplayTextChangeAnchorTests {
   }
 
   @Test func atTheEndOfTheFileAChangeStillReplacingHEADLinesWinsOverLinesAppended() throws {
-    let boxed = DiffDisplayText((1...4).map(DiffLine.unchanged) + DiffLine.replaced(5...7))
+    let boxed = DiffDisplayText(
+      (1...4).map(DiffLine.unchanged) + DiffLine.replaced(5...7),
+      marksStaging: true,
+    )
     let edited = DiffDisplayText(
       (1...4).map(DiffLine.unchanged) + DiffLine.replaced(5...6) + [.unchanged(7)]
-        + [DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "tail")]
+        + [DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "tail")],
+      marksStaging: true,
     )
     let anchor = try #require(boxed.anchor(ofChangeAt: 4..<10))
 
@@ -225,7 +239,7 @@ struct DiffDisplayTextChangeAnchorTests {
           lines.append(DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "boxed"))
         }
       }
-      return DiffDisplayText(lines)
+      return DiffDisplayText(lines, marksStaging: true)
     }
     let anchor = try #require(text(committingAbove: 0).anchor(ofChangeAt: 11..<12))
 
@@ -243,7 +257,7 @@ struct DiffDisplayTextChangeAnchorTests {
         DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "return foo(bar)"),
         DiffLine(kind: .context, oldNumber: 5 + committed, newNumber: nil, text: "line 5"),
       ]
-      return DiffDisplayText(lines)
+      return DiffDisplayText(lines, marksStaging: true)
     }
     let anchor = try #require(text(committingAbove: 0).anchor(ofChangeAt: 4..<6))
 
@@ -257,7 +271,8 @@ struct DiffDisplayTextChangeAnchorTests {
           DiffLine(kind: .context, oldNumber: line, newNumber: line, text: "\(line)")
         }
           + changed
-          + [DiffLine(kind: .context, oldNumber: 9, newNumber: 9, text: "9")]
+          + [DiffLine(kind: .context, oldNumber: 9, newNumber: 9, text: "9")],
+        marksStaging: true,
       )
     }
     let boxed = text([
@@ -293,7 +308,7 @@ struct DiffDisplayTextChangeAnchorTests {
       lines.append(DiffLine(kind: .context, oldNumber: 61, newNumber: new, text: "}"))
       lines.append(DiffLine(kind: .added, oldNumber: nil, newNumber: new + 1, text: ""))
       lines.append(DiffLine(kind: .context, oldNumber: 62, newNumber: new + 2, text: "line 62"))
-      return DiffDisplayText(lines)
+      return DiffDisplayText(lines, marksStaging: true)
     }
     let anchor = try #require(text(keepingFirst: true).anchor(ofChangeAt: 2..<3))
 
@@ -315,12 +330,14 @@ struct DiffDisplayTextChangeAnchorTests {
         + [DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "a1")]
         + [DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "a2")]
         + [context("L3", 3), context("L4", 4)] + edit("L5", 5) + [context("L6", 6)]
-        + edit("L7", 7) + [context("L8", 8)]
+        + edit("L7", 7) + [context("L8", 8)],
+      marksStaging: true,
     )
     let committed = DiffDisplayText(
       [context("L1", 1), context("L2", 2), context("a1", 3), context("a2", 4)]
         + [context("L3", 5), context("L4", 6)] + edit("L5", 7) + [context("L6", 8)]
-        + edit("L7", 9) + [context("L8", 10)]
+        + edit("L7", 9) + [context("L8", 10)],
+      marksStaging: true,
     )
     let anchor = try #require(before.anchor(ofChangeAt: 9..<11))
 
@@ -344,7 +361,7 @@ struct DiffDisplayTextChangeAnchorTests {
           lines.append(DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "  print(x)"))
         }
       }
-      return DiffDisplayText(lines)
+      return DiffDisplayText(lines, marksStaging: true)
     }
     let anchor = try #require(text(keepingFirst: true).anchor(ofChangeAt: 3..<4))
 
@@ -354,7 +371,8 @@ struct DiffDisplayTextChangeAnchorTests {
   @Test func aChangeNoLongerThereFindsNone() throws {
     let anchor = try #require(Self.additions(adding: 1).anchor(ofChangeAt: 5..<6))
     let reverted = DiffDisplayText(
-      Self.additions(adding: 1).lines.filter { $0.text != "y" }
+      Self.additions(adding: 1).lines.filter { $0.text != "y" },
+      marksStaging: true,
     )
 
     #expect(reverted.change(at: anchor) == nil)

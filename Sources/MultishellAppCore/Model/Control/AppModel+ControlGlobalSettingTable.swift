@@ -122,7 +122,14 @@ extension AppModel {
   private var filesSettings: [ControlSetting] {
     [
       .choice("fileTabLayout", { self.workspace.fileTabLayout }, setFileTabLayout),
-      .choice("filesPanelMode", { self.workspace.filesPanelMode }, setFilesPanelMode),
+      .choice(
+        "filesPanelMode",
+        { self.workspace.filesPanelMode },
+        named: \.commandName,
+        from: FilesPanelMode.init(commandName:),
+        setFilesPanelMode,
+      ),
+      .choice("changeScope", { self.workspace.changeScope }, setChangeScope),
     ]
   }
 

@@ -59,12 +59,12 @@ struct FileTabReadLog {
 
   mutating func owe(_ id: FileTab.ID) { owed.insert(id) }
 
-  /// Every tab's reads forgotten, as a change of diff algorithm wants: the
-  /// cost of a diff the tab no longer shows says nothing about the next.
-  mutating func forgetPace() {
-    lastCost = [:]
-    lastHighlightCost = [:]
-    lastFinished = [:]
+  /// A tab's reads forgotten, as a change of what it diffs wants: the cost of
+  /// a diff the tab no longer shows says nothing about the next.
+  mutating func forgetPace(of id: FileTab.ID) {
+    lastCost[id] = nil
+    lastHighlightCost[id] = nil
+    lastFinished[id] = nil
   }
 
   mutating func keep(only ids: Set<FileTab.ID>) {

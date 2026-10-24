@@ -12,10 +12,13 @@ struct DiffTextViewChangedPartsTests {
     view.frame = NSRect(x: 0, y: 0, width: 400, height: 120)
     let window = OffscreenWindow.holding(view, deferred: false)
     defer { withExtendedLifetime(window) {} }
-    let rows = FileTabRows(lines: [
-      DiffLine(kind: .removed, oldNumber: 1, newNumber: nil, text: "let total = 1"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "let total = 10"),
-    ])
+    let rows = FileTabRows(
+      lines: [
+        DiffLine(kind: .removed, oldNumber: 1, newNumber: nil, text: "let total = 1"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "let total = 10"),
+      ],
+      marksStaging: true,
+    )
     view.show(rows.displayText, theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
     let textView = view.textView

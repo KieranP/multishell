@@ -11,15 +11,16 @@ public struct FileTabRows: Equatable, Sendable {
 
   var lines: [DiffLine] { displayText.lines }
   public var hasLineChanges: Bool { !lineCounts.isEmpty }
-  /// False where every row is `HEAD`'s, removed: a deleted file's.
+  /// False where every row is the committed side's, removed: a deleted file's.
   var holdsTextOnDisk: Bool { lines.contains { $0.kind != .removed } }
 
-  init(lines unmarked: [DiffLine], hasModeChange: Bool = false) {
+  init(lines unmarked: [DiffLine], marksStaging: Bool, hasModeChange: Bool = false) {
     let lines = ChangedPartsMarker.marking(unmarked)
-    displayText = DiffDisplayText(lines)
+    displayText = DiffDisplayText(lines, marksStaging: marksStaging)
     split =
       lines.contains(where: \.isChange)
-      ? SplitDiff(lines, headDigest: displayText.headDigest) : nil
+      ? SplitDiff(lines, marksStaging: marksStaging, committedDigest: displayText.committedDigest)
+      : nil
     self.hasModeChange = hasModeChange
     lineCounts = FileLineCounts(
       insertions: lines.count { $0.kind == .added },
@@ -35,7 +36,8 @@ public struct FileTabRows: Equatable, Sendable {
       lines: lines.filter { $0.kind != .removed }.map { line in
         number += 1
         return DiffLine(kind: .context, oldNumber: nil, newNumber: number, text: line.text)
-      }
+      },
+      marksStaging: displayText.marksStaging,
     )
   }
 }

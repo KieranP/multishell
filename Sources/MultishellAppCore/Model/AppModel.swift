@@ -120,9 +120,15 @@ public final class AppModel<Surface> {
   var fileTreeBuildLandings = 0
   /// One coalesced listing read per worktree; see `scheduleTrackedFilesRead`.
   @ObservationIgnored var pendingTrackedFilesReads: [Worktree.ID: Task<Void, Never>] = [:]
+  /// What each worktree changed since its base branch, read while its panel
+  /// shows Branch.
+  var branchChanges: [Worktree.ID: BranchChanges] = [:]
+  /// The base each worktree's last Branch read failed against, which the footer says.
+  var failedBranchReads: [Worktree.ID: String] = [:]
+  @ObservationIgnored var branchChangesReads = CoalescedReads<Worktree.ID>()
 
   /// Each file tab's last read. Runtime only: contents never reach the file,
-  /// so after a relaunch a deleted file's tab shows `HEAD`'s text removed.
+  /// so after a relaunch a deleted file's tab shows its committed text removed.
   public internal(set) var fileTabReadings: [FileTab.ID: FileTabReading] = [:]
   /// The file tab a reconcile handed the keyboard to, taken by its view
   /// through `takeFileTabFocusRequest`, as a find field takes its request.
@@ -270,9 +276,9 @@ public final class AppModel<Surface> {
   /// Whether each worktree's branch has already landed on its project's
   /// default branch. Runtime only; see `WorktreeMergeState`.
   var mergeStates: [Worktree.ID: WorktreeMergeState] = [:]
-  /// The branch each project's merges are measured against, `origin/main`
-  /// and the like. Absent for a project with none to measure against.
-  var defaultBranches: [Project.ID: DefaultBranch] = [:]
+  /// What each project's merges are measured against, `origin/main` and the
+  /// like, once a scan answers.
+  var defaultBranchScans: [Project.ID: DefaultBranchScan] = [:]
   /// When each worktree's branch was last committed to. Runtime only: the
   /// workspace must not be rewritten because someone committed.
   var lastCommitDates: [Worktree.ID: Date] = [:]
@@ -377,18 +383,6 @@ public final class AppModel<Surface> {
     store.selectWorktree(nil)
     wireCallbacks()
     observeForAutosave()
-  }
-
-  /// The view a session draws into, from whichever engine opened it: the one
-  /// thing a view takes from the host.
-  public func surface(for id: TerminalSession.ID) -> Surface? {
-    host.view(for: id)
-  }
-
-  /// The user clicked into a surface's frame: the engine makes it first
-  /// responder and reports the focus back through the reconciler.
-  public func focusSurface(_ id: TerminalSession.ID) {
-    host.focus(id)
   }
 
   deinit {

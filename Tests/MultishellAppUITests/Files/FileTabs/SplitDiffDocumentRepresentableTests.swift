@@ -69,9 +69,9 @@ struct SplitDiffDocumentRepresentableTests {
     let tabID = UUID()
     harness.model.noteSteppedChangeAnchor(
       ChangeAnchor(
-        headDigest: 0,
-        headLineAbove: 5,
-        headLineBelow: 6,
+        committedDigest: 0,
+        committedLineAbove: 5,
+        committedLineBelow: 6,
         textAbove: nil,
         lineText: "nowhere",
       ),

@@ -9,6 +9,8 @@ struct SegmentFace<Content: View>: View {
   let isSelected: Bool
   let palette: AreaPalette
   let metrics: UIMetrics
+  /// Shares the well's width with its siblings rather than hugging its title.
+  var fillsWidth = false
   @ViewBuilder let content: () -> Content
 
   var body: some View {
@@ -16,6 +18,7 @@ struct SegmentFace<Content: View>: View {
       .font(metrics.font(size: metrics.caption, weight: isSelected ? .semibold : .regular))
       .foregroundStyle(isSelected ? palette.text : palette.textSecondary)
       .padding(.horizontal, 8)
+      .frame(maxWidth: fillsWidth ? .infinity : nil)
       .frame(height: Self.height)
       .background(
         isSelected ? palette.color(.selectionBackground) : .clear,

@@ -36,7 +36,10 @@ extension DiffTextViewTests {
     defer { withExtendedLifetime(window) {} }
     let line = String(repeating: "W", count: 200)
     view.show(
-      DiffDisplayText([DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: line)]),
+      DiffDisplayText(
+        [DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: line)],
+        marksStaging: true,
+      ),
       theme: Theme.builtins[0],
     )
 

@@ -9,7 +9,8 @@ struct DiffDisplayTextCarriedSelectionTests {
     DiffDisplayText(
       lines.enumerated().map { index, line in
         DiffLine(kind: .context, oldNumber: index + 1, newNumber: index + 1, text: line)
-      }
+      },
+      marksStaging: true,
     )
   }
 

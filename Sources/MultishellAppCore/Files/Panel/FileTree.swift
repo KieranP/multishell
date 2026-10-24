@@ -19,12 +19,12 @@ struct FileTree: Sendable {
   private let changeKinds: [String: StatusChange.Kind]
   private let lineCounts: [String: FileLineCounts]
 
-  /// The number Modified shows: each changed path once, a file both removed
+  /// The number the Git list shows: each changed path once, a file both removed
   /// from the index and left on disk being one row; counted while `changes` builds.
   let changedFileCount: Int
 
-  /// An opened submodule's files count in no Modified of the worktree's, and
-  /// what git ignores lists greyed, in All alone; see Docs/design/files.md.
+  /// An opened submodule's files count in no Git list of the worktree's, and
+  /// what git ignores lists greyed, in Files alone; see Docs/design/files.md.
   init(
     _ sources: FileTreeSources,
     listing: FileTreeListing,
@@ -35,7 +35,7 @@ struct FileTree: Sendable {
     var kinds: [String: StatusChange.Kind] = [:]
     var counts: [String: FileLineCounts] = [:]
     func add(_ change: StatusChange) {
-      kinds[change.path] = change.kind
+      kinds[change.path] = kinds[change.path]?.combined(with: change.kind) ?? change.kind
       guard let changeCounts = FileLineCounts(change.lines) else { return }
       let total = counts[change.path]
       counts[change.path] = FileLineCounts(
@@ -43,10 +43,11 @@ struct FileTree: Sendable {
         deletions: (total?.deletions ?? 0) + changeCounts.deletions,
       )
     }
-    (sources.status?.changes ?? []).forEach(add)
+    sources.markedChanges.forEach(add)
     // A submodule's paths sit under its folder, so none is one of the worktree's.
     changedFileCount = kinds.count
-    Self.submoduleChanges(in: sources).forEach(add)
+    // Its changes are against its own `HEAD`, which Branch does not count from.
+    if sources.branchChanges == nil { Self.submoduleChanges(in: sources).forEach(add) }
     changeKinds = kinds
     lineCounts = counts
   }
@@ -69,12 +70,12 @@ struct FileTree: Sendable {
   }
 
   /// A filter lists the matching files flat; otherwise the open folders'
-  /// contents, Modified merging each chain of single-child folders.
+  /// contents, the Git list merging each chain of single-child folders.
   func rows(state: FilesPanelState) -> [FileTreeRow] {
-    let isModified = state.mode == .modified
+    let isGitList = state.mode == .git
     guard state.filterText.isEmpty else {
-      let candidates = isModified ? changes.sortedPaths : listing.filePaths
-      let folded = isModified ? changes.foldedPaths : listing.foldedFilePaths
+      let candidates = isGitList ? changes.sortedPaths : listing.filePaths
+      let folded = isGitList ? changes.foldedPaths : listing.foldedFilePaths
       let filter = state.filterText.foldedForMatching
       // What a shut folder read from disk holds stays out, as when unread.
       let shut = listing.readFolders.subtracting(state.expandedFolders).map { $0 + "/" }
@@ -94,7 +95,7 @@ struct FileTree: Sendable {
       }
     }
     var rows: [FileTreeRow] = []
-    flatten(isModified ? changes.roots : listing.roots, depth: 0, state: state, into: &rows)
+    flatten(isGitList ? changes.roots : listing.roots, depth: 0, state: state, into: &rows)
     return rows
   }
 
@@ -104,7 +105,7 @@ struct FileTree: Sendable {
     state: FilesPanelState,
     into rows: inout [FileTreeRow],
   ) {
-    let isModified = state.mode == .modified
+    let isGitList = state.mode == .git
     for node in nodes {
       guard node.isFolder else {
         rows.append(
@@ -120,15 +121,15 @@ struct FileTree: Sendable {
       }
       var shown = node
       var name = node.name
-      while isModified, shown.children.count == 1, let only = shown.children.first, only.isFolder,
+      while isGitList, shown.children.count == 1, let only = shown.children.first, only.isFolder,
         !only.isRepository
       {
         shown = only
         name += "/" + only.name
       }
       let isExpanded =
-        isModified
-        ? !state.collapsedModifiedFolders.contains(shown.path)
+        isGitList
+        ? !state.collapsedGitFolders.contains(shown.path)
         : state.expandedFolders.contains(shown.path)
       rows.append(
         FileTreeRow(

@@ -106,7 +106,7 @@ struct FileTreeTests {
     #expect(rows.map(\.depth).prefix(4) == [0, 1, 2, 2])
   }
 
-  @Test func modifiedListsOnlyChangesWithEachChainOfSingleChildFoldersMerged() {
+  @Test func theGitListListsOnlyChangesWithEachChainOfSingleChildFoldersMerged() {
     let tree = FileTree(
       FileTreeSources(
         tracked: Self.tracked,
@@ -114,11 +114,38 @@ struct FileTreeTests {
       )
     )
     var state = FilesPanelState()
-    state.mode = .modified
+    state.mode = .git
 
     #expect(tree.rows(state: state).map(\.name) == ["Tests/AppTests/Detail", "A.swift", "new.txt"])
-    state.collapsedModifiedFolders = ["Tests/AppTests/Detail"]
+    state.collapsedGitFolders = ["Tests/AppTests/Detail"]
     #expect(tree.rows(state: state).map(\.name) == ["Tests/AppTests/Detail", "new.txt"])
+    #expect(tree.changedFileCount == 2)
+  }
+
+  @Test func branchChangesAreMarkedInPlaceOfTheStatusReadsAndListTheirOwnPaths() {
+    let committed = StatusChange(
+      path: "Sources/App/View.swift",
+      kind: .modified,
+      lines: .counted(insertions: 7, deletions: 0),
+    )
+    let deleted = StatusChange(
+      path: "Sources/Old.swift",
+      kind: .deleted,
+      lines: .counted(insertions: 0, deletions: 3),
+    )
+    let tree = FileTree(
+      FileTreeSources(
+        tracked: Self.tracked,
+        status: Self.status(Self.changes, untracked: ["new.txt"]),
+        branchChanges: [committed, deleted],
+      )
+    )
+    var state = FilesPanelState()
+    state.mode = .git
+
+    let files = tree.rows(state: state).filter { !$0.isFolder }
+    #expect(files.map(\.name) == ["View.swift", "Old.swift"])
+    #expect(files.first?.lineCounts == FileLineCounts(insertions: 7, deletions: 0))
     #expect(tree.changedFileCount == 2)
   }
 
@@ -233,9 +260,31 @@ struct FileTreeTests {
     let after = FileTree(sources, listing: before.listing, changes: before.changes)
 
     var state = FilesPanelState()
-    state.mode = .modified
+    state.mode = .git
     let rows = after.rows(state: state).filter { !$0.isFolder }
     #expect(rows.map(\.path) == ["new.txt", "Tests/AppTests/Detail/A.swift"].sorted())
     #expect(rows.allSatisfy { $0.lineCounts == FileLineCounts(insertions: 9, deletions: 9) })
+  }
+
+  @Test func aPathListedRemovedAndNewTakesTheNewFilesKindWhicheverComesFirst() {
+    let removed = StatusChange(
+      path: "a.txt",
+      kind: .deleted,
+      lines: .counted(insertions: 0, deletions: 1),
+    )
+    let new = StatusChange(
+      path: "a.txt",
+      kind: .added,
+      lines: .counted(insertions: 1, deletions: 0),
+    )
+    var state = FilesPanelState()
+    state.mode = .git
+
+    let kinds = [[removed, new], [new, removed]].map { changes in
+      FileTree(FileTreeSources(tracked: Self.tracked, branchChanges: changes))
+        .rows(state: state).first { $0.path == "a.txt" }?.changeKind
+    }
+
+    #expect(kinds == [.added, .added])
   }
 }

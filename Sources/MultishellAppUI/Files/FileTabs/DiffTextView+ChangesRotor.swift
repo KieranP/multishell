@@ -26,7 +26,10 @@ extension DiffTextView: @MainActor NSAccessibilityCustomRotorItemSearchDelegate 
     let range = displayText.range(ofRow: row)
     let result = NSAccessibilityCustomRotor.ItemResult(targetElement: self)
     result.targetRange = NSRange(range)
-    result.customLabel = AccessibilityText.changedLine(lines[row])
+    result.customLabel = AccessibilityText.changedLine(
+      lines[row],
+      marksStaging: displayText.marksStaging,
+    )
     return result
   }
 }

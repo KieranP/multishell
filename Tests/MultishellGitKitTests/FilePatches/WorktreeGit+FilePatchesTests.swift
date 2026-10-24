@@ -23,7 +23,7 @@ struct WorktreeGitFilePatchesTests {
     )
 
     let onDisk = String(decoding: patches.onDisk, as: UTF8.self)
-    let staged = String(decoding: patches.staged, as: UTF8.self)
+    let staged = String(decoding: try #require(patches.staged), as: UTF8.self)
     #expect(onDisk.contains("-one") && onDisk.contains("+three"))
     #expect(staged.contains("-one") && staged.contains("+two") && !staged.contains("three"))
   }
@@ -47,5 +47,33 @@ struct WorktreeGitFilePatchesTests {
     )
 
     #expect(String(decoding: patches.onDisk, as: UTF8.self).contains("\n a\n \n-b\n"))
+  }
+
+  @Test func aFilesPatchSinceTheMergeBaseHoldsItsCommittedAndUncommittedLines() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.commit("seed", file: "a.txt", content: "one\n")
+    let base = try #require(
+      DefaultBranch.resolve(
+        from: await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project) ?? [],
+        override: nil,
+      )
+    )
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "work"], in: fixture.project.path)
+    try await fixture.commit("work", file: "a.txt", content: "one\ntwo\n")
+    try fixture.write("one\ntwo\nthree\n", to: "a.txt")
+
+    let patches = try #require(
+      await WorktreeGit(runner: fixture.runner).patches(
+        of: "a.txt",
+        in: fixture.project.path,
+        diffAlgorithm: .histogram,
+        since: base.tip,
+      )
+    )
+
+    let onDisk = String(decoding: patches.onDisk, as: UTF8.self)
+    #expect(onDisk.contains("+two") && onDisk.contains("+three"))
+    #expect(patches.staged == nil, "the index holds the commits too, so marks nothing apart")
   }
 }

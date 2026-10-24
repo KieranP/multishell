@@ -31,7 +31,8 @@ struct DiffTextViewShownTextTests {
           newNumber: row.0 == .removed ? nil : index + 1,
           text: row.1,
         )
-      }
+      },
+      marksStaging: true,
     )
   }
 

@@ -5,8 +5,8 @@ import MultishellCore
 public struct FilesPanelState: Equatable, Sendable {
   public internal(set) var mode = FilesPanelMode.default
   public internal(set) var filterText = ""
-  /// Folders opened in All, which starts with every folder shut.
+  /// Folders opened in the Files list, which starts with every folder shut.
   var expandedFolders: Set<String> = []
-  /// Folders shut in Modified, which starts with every folder open.
-  var collapsedModifiedFolders: Set<String> = []
+  /// Folders shut in the Git list, which starts with every folder open.
+  var collapsedGitFolders: Set<String> = []
 }

@@ -6,6 +6,12 @@ public struct StatusChange: Hashable, Sendable {
     case added
     case deleted
     case modified
+
+    /// One path listed twice, removed from the index and left on disk, is the
+    /// new file it is.
+    public func combined(with other: Self) -> Self {
+      self == .added || other == .added ? .added : other
+    }
   }
 
   public enum Lines: Hashable, Sendable {

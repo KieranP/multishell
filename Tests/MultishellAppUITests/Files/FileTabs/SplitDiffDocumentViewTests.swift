@@ -29,7 +29,8 @@ struct SplitDiffDocumentViewTests {
             text: "b \(index)",
           )
         }
-        + [DiffLine(kind: .context, oldNumber: 500, newNumber: 500, text: lastText)]
+        + [DiffLine(kind: .context, oldNumber: 500, newNumber: 500, text: lastText)],
+      marksStaging: true,
     )
   }
 
@@ -57,7 +58,7 @@ struct SplitDiffDocumentViewTests {
   }
 
   @Test func bothSidesShowTheSameRowsAfterJumpsStartingAtTheEnd() throws {
-    let split = SplitDiff(Self.lines(blocks: 1_536))
+    let split = SplitDiff(Self.lines(blocks: 1_536), marksStaging: true)
     let rows = split.onDisk.lines.count
     let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     view.frame = NSRect(x: 0, y: 0, width: 900, height: 400)
@@ -108,7 +109,7 @@ struct SplitDiffDocumentViewTests {
     view.frame = NSRect(x: 0, y: 0, width: 600, height: 300)
     let window = OffscreenWindow.holding(view, deferred: false)
     defer { withExtendedLifetime(window) {} }
-    view.show(SplitDiff(lines), theme: Theme.builtins[0])
+    view.show(SplitDiff(lines, marksStaging: true), theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
     view.committed.scroll(to: NSPoint(x: 1_500, y: 0))
     let sideways = view.committed.textView.visibleRect.minX
@@ -140,7 +141,7 @@ struct SplitDiffDocumentViewTests {
     for side in [view.committed, view.onDisk] {
       for case let scroll as NSScrollView in side.subviews { scroll.scrollerStyle = .legacy }
     }
-    view.show(SplitDiff(lines), theme: Theme.builtins[0])
+    view.show(SplitDiff(lines, marksStaging: true), theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
 
     view.onDisk.scroll(to: NSPoint(x: 0, y: 1_000_000))
@@ -170,7 +171,7 @@ struct SplitDiffDocumentViewTests {
         ? DiffLine(kind: .removed, oldNumber: row + 1, newNumber: nil, text: "gone \(row)")
         : DiffLine(kind: .context, oldNumber: row + 1, newNumber: row + 1, text: "line \(row)")
     }
-    let split = SplitDiff(lines)
+    let split = SplitDiff(lines, marksStaging: true)
     let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     view.frame = NSRect(x: 0, y: 0, width: 800, height: 1_200)
     let window = OffscreenWindow.holding(view, deferred: false)
@@ -228,9 +229,9 @@ struct SplitDiffDocumentViewTests {
     view.onSteppedChangeAnchorChanged = { reported.append($0) }
     view.restoreSteppedChangeAnchor(
       ChangeAnchor(
-        headDigest: 0,
-        headLineAbove: 5,
-        headLineBelow: 6,
+        committedDigest: 0,
+        committedLineAbove: 5,
+        committedLineBelow: 6,
         textAbove: nil,
         lineText: "nowhere",
       )
@@ -347,7 +348,7 @@ struct SplitDiffDocumentViewTests {
       lines += (8...10).map { (line: Int) in
         DiffLine(kind: .context, oldNumber: line, newNumber: line, text: "\(line)")
       }
-      return SplitDiff(lines)
+      return SplitDiff(lines, marksStaging: true)
     }
     let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     var reported: [ChangeSteps] = []
@@ -382,7 +383,8 @@ struct SplitDiffDocumentViewTests {
             newNumber: index + 101,
             text: "line \(index)",
           )
-        }
+        },
+      marksStaging: true,
     )
     let unified = DiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
     unified.frame = NSRect(x: 0, y: 0, width: 500, height: 300)

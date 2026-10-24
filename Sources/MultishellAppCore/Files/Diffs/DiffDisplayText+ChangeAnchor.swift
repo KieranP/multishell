@@ -7,26 +7,26 @@ extension DiffDisplayText: ChangeAnchoring {
       lines[row].kind != .padding && lines[row].text.contains { $0.isLetter || $0.isNumber }
     }
     return ChangeAnchor(
-      headDigest: headDigest,
-      headLineAbove: headLine(above: start),
-      headLineBelow: headLine(below: rows.upperBound),
+      committedDigest: committedDigest,
+      committedLineAbove: committedLine(above: start),
+      committedLineBelow: committedLine(below: rows.upperBound),
       textAbove: text(above: start),
       lineText: wordyRow.map { lines[$0].text },
     )
   }
 
-  /// By `HEAD` lines while `HEAD` is as it was, else by text, as after a
+  /// By committed lines while that side is as it was, else by text, as after a
   /// commit; see Docs/design/files.md.
   public func change(at anchor: ChangeAnchor) -> Range<Int>? {
-    hasHEADMoved(since: anchor)
+    hasCommittedSideMoved(since: anchor)
       ? nearestChange(holding: anchor)?.rows
-      : change(sharingHEADLinesWith: anchor)
+      : change(sharingCommittedLinesWith: anchor)
   }
 
-  /// A commit or checkout changed `HEAD`, renumbering its lines, which no edit
+  /// A commit, checkout or new scope moved the committed side, renumbering it, which no edit
   /// to the file does.
-  func hasHEADMoved(since anchor: ChangeAnchor) -> Bool {
-    headDigest != anchor.headDigest
+  func hasCommittedSideMoved(since anchor: ChangeAnchor) -> Bool {
+    committedDigest != anchor.committedDigest
   }
 
   /// Under the same unchanged line, with its distance for a split to weigh both
@@ -38,34 +38,34 @@ extension DiffDisplayText: ChangeAnchoring {
       guard let rows = change(containing: start),
         rows.contains(where: { lines[$0].kind != .padding && lines[$0].text == lineText })
       else { continue }
-      let distance = abs(headLine(above: start) - anchor.headLineAbove)
+      let distance = abs(committedLine(above: start) - anchor.committedLineAbove)
       if distance < nearest?.distance ?? .max { nearest = (distance, rows) }
     }
     return nearest
   }
 
-  /// The one sharing most of the anchor's replaced `HEAD` lines, or where either
+  /// The one sharing most of the anchor's replaced committed lines, or where either
   /// only adds, one meeting the other's gap: after an edit, not one beside it.
-  func change(sharingHEADLinesWith anchor: ChangeAnchor) -> Range<Int>? {
-    let pastHEAD = (lines.last { $0.oldNumber != nil }?.oldNumber ?? 0) + 1
-    let anchorBelow = anchor.headLineBelow ?? pastHEAD
-    let anchorOnlyAdds = anchorBelow == anchor.headLineAbove + 1
+  func change(sharingCommittedLinesWith anchor: ChangeAnchor) -> Range<Int>? {
+    let pastCommitted = (lines.last { $0.oldNumber != nil }?.oldNumber ?? 0) + 1
+    let anchorBelow = anchor.committedLineBelow ?? pastCommitted
+    let anchorOnlyAdds = anchorBelow == anchor.committedLineAbove + 1
     var widest: (sharedSpan: Int, rows: Range<Int>)?
     for start in changeStarts {
-      let above = headLine(above: start)
+      let above = committedLine(above: start)
       guard above < anchorBelow else { break }
       guard let rows = change(containing: start) else { continue }
-      let below = headLine(below: rows.upperBound) ?? pastHEAD
+      let below = committedLine(below: rows.upperBound) ?? pastCommitted
       let onlyAdds = below == above + 1
-      let sharedSpan = min(below, anchorBelow) - max(above, anchor.headLineAbove)
+      let sharedSpan = min(below, anchorBelow) - max(above, anchor.committedLineAbove)
       guard sharedSpan > (anchorOnlyAdds || onlyAdds ? 0 : 1) else { continue }
       if sharedSpan > widest?.sharedSpan ?? 0 { widest = (sharedSpan, rows) }
     }
     return widest?.rows
   }
 
-  /// The `HEAD` line of the unchanged row a change ends at, `nil` past the end.
-  private func headLine(below end: Int) -> Int? {
+  /// The committed line of the unchanged row a change ends at, `nil` past the end.
+  private func committedLine(below end: Int) -> Int? {
     lines.indices.contains(end) ? lines[end].oldNumber : nil
   }
 
@@ -73,8 +73,8 @@ extension DiffDisplayText: ChangeAnchoring {
     row == 0 ? nil : lines[row - 1].text
   }
 
-  /// The `HEAD` line of the unchanged row above `row`, 0 at the top.
-  private func headLine(above row: Int) -> Int {
+  /// The committed line of the unchanged row above `row`, 0 at the top.
+  private func committedLine(above row: Int) -> Int {
     row == 0 ? 0 : lines[row - 1].oldNumber ?? 0
   }
 }

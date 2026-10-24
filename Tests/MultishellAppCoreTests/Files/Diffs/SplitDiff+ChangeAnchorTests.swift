@@ -12,7 +12,8 @@ struct SplitDiffChangeAnchorTests {
       DiffLine(kind: .context, oldNumber: 3, newNumber: 3, text: "c"),
       DiffLine(kind: .added, oldNumber: nil, newNumber: 4, text: "d"),
       DiffLine(kind: .context, oldNumber: 4, newNumber: 5, text: "e"),
-    ]
+    ],
+    marksStaging: true,
   )
 
   @Test func aSplitHoldsAChangeByTheLineUnifiedWould() throws {
@@ -24,9 +25,9 @@ struct SplitDiffChangeAnchorTests {
   @Test func aUnifiedAnchorWhoseNumbersMovedIsFoundInSplitByItsRemovedLine() throws {
     let split = try #require(Self.rows.split)
     let moved = ChangeAnchor(
-      headDigest: 0,
-      headLineAbove: 40,
-      headLineBelow: 41,
+      committedDigest: 0,
+      committedLineAbove: 40,
+      committedLineBelow: 41,
       textAbove: "a",
       lineText: "old b",
     )
@@ -41,7 +42,8 @@ struct SplitDiffChangeAnchorTests {
         DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "gone b"),
         DiffLine(kind: .context, oldNumber: 3, newNumber: 2, text: "c"),
         DiffLine(kind: .added, oldNumber: nil, newNumber: 3, text: "d"),
-      ]
+      ],
+      marksStaging: true,
     )
     let split = try #require(removal.split)
     let anchor = try #require(removal.displayText.anchor(ofChangeAt: 1..<2))
@@ -61,7 +63,7 @@ struct SplitDiffChangeAnchorTests {
         DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "return foo(bar)"),
         DiffLine(kind: .context, oldNumber: committed + 3, newNumber: nil, text: "c"),
       ]
-      return FileTabRows(lines: lines)
+      return FileTabRows(lines: lines, marksStaging: true)
     }
     let anchor = try #require(rows(committingAbove: 0).split?.anchor(ofChangeAt: 1..<2))
 
@@ -82,7 +84,8 @@ struct SplitDiffChangeAnchorTests {
               text: "10",
             ),
             DiffLine(kind: .added, oldNumber: nil, newNumber: nil, text: "x"),
-          ]
+          ],
+        marksStaging: true,
       )
     }
     let anchor = try #require(rows(removingTen: false).displayText.anchor(ofChangeAt: 10..<11))
@@ -96,9 +99,11 @@ struct SplitDiffChangeAnchorTests {
     let split = try #require(Self.rows.split)
     let anchor = try #require(Self.rows.displayText.anchor(ofChangeAt: 1..<3))
 
-    #expect(!split.committed.hasHEADMoved(since: anchor))
-    #expect(!split.onDisk.hasHEADMoved(since: anchor))
-    #expect(!SplitDiff(Self.rows.lines).committed.hasHEADMoved(since: anchor))
+    #expect(!split.committed.hasCommittedSideMoved(since: anchor))
+    #expect(!split.onDisk.hasCommittedSideMoved(since: anchor))
+    #expect(
+      !SplitDiff(Self.rows.lines, marksStaging: true).committed.hasCommittedSideMoved(since: anchor)
+    )
   }
 
   @Test func anEditedAdditionHeldInSplitIsFoundByItsPlaceInEitherLayout() throws {
@@ -108,7 +113,8 @@ struct SplitDiffChangeAnchorTests {
         line.text == "d"
           ? DiffLine(kind: .added, oldNumber: nil, newNumber: line.newNumber, text: "d edited")
           : line
-      }
+      },
+      marksStaging: true,
     )
 
     #expect(try #require(edited.split).change(at: anchor) == 3..<4)
@@ -135,7 +141,7 @@ struct SplitDiffChangeAnchorTests {
         new += 1
       }
     }
-    let rows = FileTabRows(lines: lines)
+    let rows = FileTabRows(lines: lines, marksStaging: true)
     let split = try #require(rows.split)
     let anchor = try #require(rows.displayText.anchor(ofChangeAt: 79..<80))
 

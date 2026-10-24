@@ -10,12 +10,13 @@ extension AppModel {
   private static var readCostMultiple: Int { 10 }
 
   /// What a shown panel needs of its worktree: its tracked files, each folder open
-  /// in it that git does not list, and a status read.
+  /// in it that git does not list, a status read and, under Branch, a branch read.
   public func readFilesPanel(of id: Worktree.ID) {
     forgetPanelListings { $0 != id }
     scheduleTrackedFilesRead(of: id)
     scheduleIgnoredEntriesRead(of: id)
     scheduleStatusRefresh(of: id)
+    scheduleBranchChangesRead(of: id)
     for path in expandedSubmodules(of: id).keys { scheduleSubmoduleRead(path, in: id) }
     let expanded = filesPanelState(of: id).expandedFolders
     for path in (ignoredFolderEntries[id] ?? [:]).keys where expanded.contains(path) {
@@ -31,6 +32,9 @@ extension AppModel {
       pendingTrackedFilesReads[id] = nil
     }
     ignoredEntriesReads.cancel(where: isForgotten)
+    branchChangesReads.cancel(where: isForgotten)
+    setIfChanged(\.branchChanges, branchChanges.filter { !isForgotten($0.key) })
+    setIfChanged(\.failedBranchReads, failedBranchReads.filter { !isForgotten($0.key) })
     setIfChanged(\.trackedFiles, trackedFiles.filter { !isForgotten($0.key) })
     setIfChanged(\.ignoredEntries, ignoredEntries.filter { !isForgotten($0.key) })
     fileTreeCache = fileTreeCache.filter { !isForgotten($0.key) }
@@ -82,7 +86,7 @@ extension AppModel {
     }
   }
 
-  private func pause(afterReadCosting cost: Duration, in id: Worktree.ID) -> Duration {
+  func pause(afterReadCosting cost: Duration, in id: Worktree.ID) -> Duration {
     let rebuildCost =
       fileTreeListings[id]?.buildCost ?? fileTreeCache[id]?.tree.listing.buildCost ?? .zero
     return max(.seconds(1), (cost + rebuildCost) * Self.readCostMultiple)

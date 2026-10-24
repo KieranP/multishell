@@ -4,12 +4,15 @@ import Testing
 
 @Suite
 struct DiffDisplayTextDiffCopyTests {
-  private static let text = DiffDisplayText([
-    DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "one"),
-    DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "two"),
-    DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "TWO"),
-    DiffLine(kind: .context, oldNumber: 3, newNumber: 3, text: "three"),
-  ])
+  private static let text = DiffDisplayText(
+    [
+      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "one"),
+      DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "two"),
+      DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "TWO"),
+      DiffLine(kind: .context, oldNumber: 3, newNumber: 3, text: "three"),
+    ],
+    marksStaging: true,
+  )
 
   @Test func aSelectionInsideUnchangedLinesCopiesPlainText() {
     #expect(Self.text.diffCopy(selections: [1..<3]) == "ne")
@@ -28,13 +31,16 @@ struct DiffDisplayTextDiffCopyTests {
   }
 
   @Test func aSplitSideCopiesPlainTextWithItsPaddingLeftOut() {
-    let side = SplitDiff([
-      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "keep"),
-      DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "old a"),
-      DiffLine(kind: .removed, oldNumber: 3, newNumber: nil, text: "old b"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "new a"),
-      DiffLine(kind: .context, oldNumber: 4, newNumber: 3, text: "tail"),
-    ]).onDisk
+    let side = SplitDiff(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "keep"),
+        DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "old a"),
+        DiffLine(kind: .removed, oldNumber: 3, newNumber: nil, text: "old b"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "new a"),
+        DiffLine(kind: .context, oldNumber: 4, newNumber: 3, text: "tail"),
+      ],
+      marksStaging: true,
+    ).onDisk
 
     #expect(side.plainCopy(selections: [0..<side.string.utf16.count]) == "keep\nnew a\ntail")
   }

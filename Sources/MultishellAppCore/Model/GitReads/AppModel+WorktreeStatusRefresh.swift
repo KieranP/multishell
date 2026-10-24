@@ -24,7 +24,7 @@ extension AppModel {
     guard let reading = readings[worktreeID] else { return false }
     noteDirectoryPresent(of: worktreeID)
     setIfChanged(\.statuses[worktreeID], reading.status)
-    await refreshWorktreesWhoseBranchMoved([worktreeID: reading.status])
+    await noteStatusesLanded([worktreeID: reading.status])
     return true
   }
 

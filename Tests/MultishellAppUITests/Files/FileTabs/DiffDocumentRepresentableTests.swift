@@ -16,7 +16,7 @@ struct DiffDocumentRepresentableTests {
     let text = Self.text
     harness.model.noteFileTabScrolled(
       tabID,
-      to: FileTabScroll(line: 120, isHEADsLine: false, rowsFromLine: 0, x: 0),
+      to: FileTabScroll(line: 120, isCommittedLine: false, rowsFromLine: 0, x: 0),
     )
     harness.model.noteFileFindShown(FileFindShown(text: "line", selectionMoves: 1), of: tabID)
     let match = text.range(ofRow: 300)
@@ -50,7 +50,7 @@ struct DiffDocumentRepresentableTests {
     let text = Self.text
     harness.model.noteFileTabScrolled(
       tabID,
-      to: FileTabScroll(line: 120, isHEADsLine: false, rowsFromLine: 0, x: 0),
+      to: FileTabScroll(line: 120, isCommittedLine: false, rowsFromLine: 0, x: 0),
     )
     harness.model.noteFileFindShown(FileFindShown(text: "line", selectionMoves: 1), of: tabID)
     let match = text.range(ofRow: 300)
@@ -200,9 +200,9 @@ struct DiffDocumentRepresentableTests {
     let tabID = UUID()
     harness.model.noteSteppedChangeAnchor(
       ChangeAnchor(
-        headDigest: 0,
-        headLineAbove: 5,
-        headLineBelow: 6,
+        committedDigest: 0,
+        committedLineAbove: 5,
+        committedLineBelow: 6,
         textAbove: nil,
         lineText: "nowhere",
       ),

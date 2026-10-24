@@ -57,7 +57,26 @@ extension WorktreeGitTests {
     #expect(await git.isBehind("side", of: "main", in: project) == true)
     #expect(await git.changesAreOnBase("side", against: "main", in: project) == false)
     #expect(await git.ignoredPaths(["new.txt", "README.md"], in: project.path) == [])
+    let base = try #require(
+      DefaultBranch.resolve(from: await git.branchRefs(project) ?? [], override: nil)
+    )
     for worktree in worktrees {
+      #expect(
+        await git.branchChanges(
+          inRepositoryAt: worktree.path,
+          since: base,
+          status: try await git.status(of: worktree, counting: .stagedOnly),
+          diffAlgorithm: .histogram,
+        ) != nil
+      )
+      #expect(
+        await git.patches(
+          of: "README.md",
+          in: worktree.path,
+          diffAlgorithm: .histogram,
+          since: base.tip,
+        ) != nil
+      )
       for indicator in GitStatusIndicator.allCases {
         #expect(try await git.status(of: worktree, counting: indicator).isDirty)
       }

@@ -25,7 +25,7 @@ struct DiffHighlightingTests {
   }
 
   @Test func aSplitsCommittedSideIsColouredByHeadsTextAlone() async {
-    let left = SplitDiff(Self.commentedOut).committed
+    let left = SplitDiff(Self.commentedOut, marksStaging: true).committed
 
     let spans = await DiffHighlighting.spans(for: left, path: "a.swift")
 
@@ -33,7 +33,7 @@ struct DiffHighlightingTests {
   }
 
   @Test func aSplitsOnDiskSideIsColouredByTheFileOnDiskAlone() async {
-    let right = SplitDiff(Self.commentedOut).onDisk
+    let right = SplitDiff(Self.commentedOut, marksStaging: true).onDisk
 
     let spans = await DiffHighlighting.spans(for: right, path: "a.swift")
 
@@ -41,10 +41,13 @@ struct DiffHighlightingTests {
   }
 
   @Test func anInjectionOnARemovedRowBelowAKeptOneIsHighlighted() async {
-    let unified = DiffDisplayText([
-      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "<script>let a</script>"),
-      DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "<script>var b</script>"),
-    ])
+    let unified = DiffDisplayText(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "<script>let a</script>"),
+        DiffLine(kind: .removed, oldNumber: 2, newNumber: nil, text: "<script>var b</script>"),
+      ],
+      marksStaging: true,
+    )
 
     let spans = await DiffHighlighting.spans(for: unified, path: "a.html")
 
@@ -53,11 +56,14 @@ struct DiffHighlightingTests {
   }
 
   @Test func aShebangAddedOnDiskNamesTheLanguageThoughHeadsLineIsListedFirst() async {
-    let unified = DiffDisplayText([
-      DiffLine(kind: .removed, oldNumber: 1, newNumber: nil, text: "set -e"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "#!/bin/bash"),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "echo hi"),
-    ])
+    let unified = DiffDisplayText(
+      [
+        DiffLine(kind: .removed, oldNumber: 1, newNumber: nil, text: "set -e"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "#!/bin/bash"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 2, text: "echo hi"),
+      ],
+      marksStaging: true,
+    )
 
     let spans = await DiffHighlighting.spans(for: unified, path: "deploy")
 

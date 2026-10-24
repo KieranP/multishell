@@ -7,7 +7,12 @@ extension AppModel {
   /// The branch this project's merges are measured against, `nil` while
   /// none has been resolved. What the settings panel shows as detected.
   func defaultBranch(of project: Project) -> DefaultBranch? {
-    defaultBranches[project.id]
+    defaultBranchScans[project.id]?.branch
+  }
+
+  /// The branch the worktree's project measures against, `nil` as above.
+  func defaultBranch(ofWorktree id: Worktree.ID) -> DefaultBranch? {
+    workspace.worktree(id).flatMap { defaultBranchScans[$0.projectID]?.branch }
   }
 
   /// What the default-branch field shows while not overridden, and seeds an

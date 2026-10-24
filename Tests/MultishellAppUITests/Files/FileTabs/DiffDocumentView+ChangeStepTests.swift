@@ -44,7 +44,8 @@ struct DiffDocumentViewChangeStepTests {
             newNumber: row + 1,
             text: String(repeating: "w", count: 300),
           )
-      }
+      },
+      marksStaging: true,
     )
     let (view, window) = DiffDocumentFixture.shown(wide)
     defer { withExtendedLifetime(window) {} }
@@ -97,7 +98,8 @@ struct DiffDocumentViewChangeStepTests {
     let newFile = DiffDisplayText(
       (0..<40).map { row in
         DiffLine(kind: .added, oldNumber: nil, newNumber: row + 1, text: "line \(row)")
-      }
+      },
+      marksStaging: true,
     )
     let (view, window) = DiffDocumentFixture.shown(newFile)
     defer { withExtendedLifetime(window) {} }

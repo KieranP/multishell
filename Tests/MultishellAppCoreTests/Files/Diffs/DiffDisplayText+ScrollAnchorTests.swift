@@ -29,7 +29,7 @@ struct DiffDisplayTextScrollAnchorTests {
 
     let scroll = unified.scroll(atRow: 40, x: 0)
 
-    #expect(scroll == FileTabScroll(line: 41, isHEADsLine: true, rowsFromLine: 0, x: 0))
+    #expect(scroll == FileTabScroll(line: 41, isCommittedLine: true, rowsFromLine: 0, x: 0))
     #expect(unified.row(of: scroll) == 40)
   }
 
@@ -37,12 +37,13 @@ struct DiffDisplayTextScrollAnchorTests {
     let deleted = DiffDisplayText(
       (0..<50).map { index in
         DiffLine(kind: .removed, oldNumber: index + 1, newNumber: nil, text: "\(index)")
-      }
+      },
+      marksStaging: true,
     )
 
     let scroll = deleted.scroll(atRow: 20, x: 0)
 
-    #expect(scroll == FileTabScroll(line: 21, isHEADsLine: true, rowsFromLine: 0, x: 0))
+    #expect(scroll == FileTabScroll(line: 21, isCommittedLine: true, rowsFromLine: 0, x: 0))
     #expect(deleted.row(of: scroll) == 20)
   }
 
@@ -53,7 +54,7 @@ struct DiffDisplayTextScrollAnchorTests {
 
     let scroll = unified.scroll(atRow: 250, x: 0)
 
-    #expect(scroll.isHEADsLine)
+    #expect(scroll.isCommittedLine)
     #expect(split.lines[Int(split.row(of: scroll))].oldNumber == 251)
   }
 
@@ -61,12 +62,14 @@ struct DiffDisplayTextScrollAnchorTests {
     let onDisk = DiffDisplayText(
       (0..<300).map { index in
         DiffLine(kind: .context, oldNumber: index + 1, newNumber: index + 1, text: "\(index)")
-      }
+      },
+      marksStaging: true,
     )
     let deleted = DiffDisplayText(
       (0..<300).map { index in
         DiffLine(kind: .removed, oldNumber: index + 1, newNumber: nil, text: "\(index)")
-      }
+      },
+      marksStaging: true,
     )
 
     let scroll = onDisk.scroll(atRow: 50, x: 0)

@@ -13,7 +13,13 @@ struct FilesPanel: View {
     let summary = model.filesPanelSummary(of: worktree.id)
     let rows = model.fileTreeRows(of: worktree.id)
     VStack(spacing: 0) {
-      FilesPanelHeader(model: model, worktreeID: worktree.id, theme: theme)
+      FilesPanelHeader(model: model, theme: theme)
+      if model.filesPanelShowsChangeScopeSwitch {
+        // The header's palette: the panel's selection is its fill, so a pill would vanish.
+        ChangeScopeSwitch(model: model, palette: theme.header, fillsWidth: true)
+          .padding(.horizontal, UIMetrics.sidebarListSideInset)
+          .padding(.top, 8)
+      }
       FilesPanelFilterField(model: model, worktreeID: worktree.id, theme: theme)
       ScrollView {
         LazyVStack(spacing: UIMetrics.sidebarRowSpacing) {
