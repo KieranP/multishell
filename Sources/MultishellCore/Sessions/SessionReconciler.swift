@@ -37,6 +37,8 @@ public final class SessionReconciler: TerminalHostDelegate {
   public var onCloseRequest: (@MainActor (TerminalSession.ID) -> Void)?
   /// A link clicked in a session named a text file, for the GUI's editor.
   public var onEditRequest: (@MainActor (URL, TerminalSession.ID) -> Void)?
+  /// What a paste of copied files types in a session, worded by the GUI.
+  public var textForPastedFiles: (@MainActor ([URL], TerminalSession.ID) -> String?)?
   /// The engine's search counted in a session, for its find bar.
   public var onSearchCount: (@MainActor (TerminalSession.ID, TerminalSearchCount) -> Void)?
 
@@ -118,6 +120,14 @@ public final class SessionReconciler: TerminalHostDelegate {
     in id: TerminalSession.ID,
   ) {
     onEditRequest?(file, id)
+  }
+
+  public func terminalHost(
+    _ host: any TerminalHost,
+    textForPastedFiles urls: [URL],
+    in id: TerminalSession.ID,
+  ) -> String? {
+    textForPastedFiles?(urls, id)
   }
 
   public func terminalHost(

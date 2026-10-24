@@ -7,6 +7,14 @@ import Testing
 
 @Suite @MainActor
 struct AppModelFileDropTests {
+  private func pastedText(
+    _ urls: [URL],
+    in harness: Harness,
+    into id: TerminalSession.ID,
+  ) -> String? {
+    harness.engine.delegate?.terminalHost(harness.engine, textForPastedFiles: urls, in: id)
+  }
+
   @Test func filesDroppedOnAShellArriveAsQuotedPaths() {
     let (harness, session) = Harness.withOnePane()
 
@@ -70,6 +78,27 @@ struct AppModelFileDropTests {
     )
 
     #expect(harness.engine.pasted.map(\.text) == ["@Sources/App.swift "])
+  }
+
+  @Test func aMentionIsRelativeToTheDirectoryTheAgentReportsRunningIn() {
+    let (harness, session) = Harness.withOnePane()
+
+    harness.messageSource.send(
+      SessionStateReport(
+        state: .idle,
+        sessionID: session.id,
+        workingDirectory: harness.main.path.appendingPathComponent("Sources").path,
+        pid: ProcessInfo.processInfo.processIdentifier,
+        agentID: AgentCatalogue.claudeID,
+      )
+    )
+    harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("Sources/App.swift")],
+      into: session.id,
+      takingFocus: true,
+    )
+
+    #expect(harness.engine.pasted.map(\.text) == ["@App.swift "])
   }
 
   /// And when it quits, the prompt is the shell's again. Claude's hooks
@@ -213,5 +242,51 @@ struct AppModelFileDropTests {
       harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == session.id,
       "and nothing else moved",
     )
+  }
+
+  @Test func filesPastedAtAShellAreQuotedPathsWithNoTrailingSpace() {
+    let (harness, session) = Harness.withOnePane()
+
+    let text = pastedText(
+      [harness.main.path.appendingPathComponent("My Notes.md")],
+      in: harness,
+      into: session.id,
+    )
+
+    #expect(text == "'\(harness.main.path.path)/My Notes.md'")
+  }
+
+  @Test func filesPastedAtAClaudeCodeTabAreMentions() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.store.openTab(
+      in: harness.main.id,
+      title: "Claude Code",
+      agentID: AgentCatalogue.claudeID,
+    )
+    harness.model.reconcileSessions(takingFocus: true)
+    guard let session = harness.model.workspace.sessions(in: harness.main.id).last else {
+      Issue.record("the agent tab has a session")
+      return
+    }
+
+    let text = pastedText(
+      [
+        harness.main.path.appendingPathComponent("Sources/App.swift"),
+        URL(fileURLWithPath: "/elsewhere/shot one.png"),
+      ],
+      in: harness,
+      into: session.id,
+    )
+
+    #expect(text == "@Sources/App.swift @/elsewhere/shot\\ one.png")
+  }
+
+  @Test func filesPastedIntoASessionTheWorkspaceNoLongerHasStillTypeQuotedPaths() {
+    let (harness, _) = Harness.withOnePane()
+
+    let text = pastedText([URL(fileURLWithPath: "/tmp/a b")], in: harness, into: UUID())
+
+    #expect(text == "'/tmp/a b'")
   }
 }

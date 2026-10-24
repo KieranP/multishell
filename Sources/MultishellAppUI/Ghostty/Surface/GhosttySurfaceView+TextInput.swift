@@ -16,7 +16,7 @@ extension GhosttySurfaceView: @preconcurrency NSTextInputClient {
       textCommittedInKeyDown?.append(text)
     } else if !text.isEmpty {
       // Dictation and the like arrive outside a key, typed rather than pasted.
-      send(GhosttyKeyInput(committing: text))
+      sendUserInput(GhosttyKeyInput(committing: text))
     }
   }
 

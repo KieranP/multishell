@@ -9,7 +9,7 @@ extension GhosttySurfaceView: NSMenuItemValidation {
   }
 
   @IBAction func paste(_ sender: Any?) {
-    performBindingAction("paste_from_clipboard")
+    Self.forwardingUserInput { performBindingAction("paste_from_clipboard") }
   }
 
   @IBAction override func selectAll(_ sender: Any?) {
@@ -19,7 +19,7 @@ extension GhosttySurfaceView: NSMenuItemValidation {
   func validateMenuItem(_ item: NSMenuItem) -> Bool {
     switch item.action {
     case #selector(copy(_:)): surface.map(ghostty_surface_has_selection) ?? false
-    case #selector(paste(_:)): PanePasteboard.hasPasteableType()
+    case #selector(paste(_:)): PanePasteboard.hasPasteableType(on: pasteboard)
     default: surface != nil
     }
   }

@@ -22,6 +22,9 @@ What each addition needs beyond the code itself.
   sent unbracketed as keystrokes so a shell runs the line, and each session's
   pty path and foreground pid where it knows them, without which Debug Info puts
   every pane under Other processes.
+- **A host pastes copied files as the delegate's `textForPastedFiles` words
+  them**, so an agent gets mentions, and a copied image as a file saved to the
+  drops directory, only for the user's own paste (design/terminals.md).
 - **A surface host also gives a pane's text, frame and last drawn image** where
   it can, which `panes read`, `tabs show` and `debug screenshot` answer from;
   one that cannot returns `nil` and the request is refused or the frame left

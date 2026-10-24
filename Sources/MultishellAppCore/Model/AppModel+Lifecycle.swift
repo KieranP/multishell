@@ -19,7 +19,7 @@ extension AppModel {
     // On the main actor, before `start` first yields, so no tab can open ahead.
     presentingFailure { try refreshAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.
-    let sweep = sweepPromisedDropCopies
+    let sweep = sweepDropCopies
     Task { await runOnDispatch(sweep) }
     await refreshAll()
     // With no project nothing else arms the watcher, which the themes folder needs.

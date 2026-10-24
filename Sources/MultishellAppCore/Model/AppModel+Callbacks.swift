@@ -31,6 +31,9 @@ extension AppModel {
     reconciler.onEditRequest = { [weak self] file, id in
       self?.openInEditor(file: file, clickedIn: id)
     }
+    reconciler.textForPastedFiles = { [weak self] urls, id in
+      self?.pastedText(for: urls, into: id)
+    }
     reconciler.onSearchCount = { [weak self] id, count in self?.noteSearchCount(count, in: id) }
     messageSource.onReport = { [weak self] report in self?.receive(report) }
     messageSource.onRequest = { [weak self] request in await self?.answer(request) }

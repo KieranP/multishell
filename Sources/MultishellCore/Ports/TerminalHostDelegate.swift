@@ -10,6 +10,13 @@ public protocol TerminalHostDelegate: AnyObject {
   /// A link clicked in a session named a text file, which the editor the user
   /// chose opens rather than the engine.
   func terminalHost(_ host: any TerminalHost, didAskToEdit file: URL, in id: TerminalSession.ID)
+  /// What a paste of copied files types in a session, which only the app
+  /// knows: paths for a shell, mentions for an agent at its prompt.
+  func terminalHost(
+    _ host: any TerminalHost,
+    textForPastedFiles urls: [URL],
+    in id: TerminalSession.ID,
+  ) -> String?
   /// Something happened the user may want to see. The engine cannot report
   /// "a command is running", so this is the honest signal for a dot.
   func terminalHost(_ host: any TerminalHost, didSeeActivityIn id: TerminalSession.ID)

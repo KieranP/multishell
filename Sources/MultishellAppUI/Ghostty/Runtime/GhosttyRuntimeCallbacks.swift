@@ -49,8 +49,8 @@ enum GhosttyRuntimeCallbacks {
     return true
   }
 
-  /// Text only, the one representation a pane pastes. libghostty reads from
-  /// its tick on the main thread; anywhere else no read is started to hang.
+  /// Text only, on the main thread: inside the user's own action for a paste, as
+  /// the image rule needs, and on the tick for a program. Elsewhere none starts.
   private static func readClipboard(
     _ userdata: UnsafeMutableRawPointer?,
     _ location: ghostty_clipboard_e,

@@ -49,4 +49,25 @@ struct GhosttyClipboardAnswerTests {
     #expect(answer == .unsupported)
     #expect(answer.result == GHOSTTY_CLIPBOARD_READ_UNSUPPORTED)
   }
+
+  @Test func aReadAPaneDoesNotServeNeverReadsThePasteboard() {
+    var reads = 0
+    let pasteboardText = { () -> String? in
+      reads += 1
+      return "hi"
+    }
+
+    _ = GhosttyClipboardAnswer(
+      .init(handle: nil, wantsText: true),
+      at: GHOSTTY_CLIPBOARD_SELECTION,
+      text: pasteboardText(),
+    )
+    _ = GhosttyClipboardAnswer(
+      .init(handle: nil),
+      at: GHOSTTY_CLIPBOARD_STANDARD,
+      text: pasteboardText(),
+    )
+
+    #expect(reads == 0)
+  }
 }

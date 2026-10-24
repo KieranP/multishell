@@ -15,13 +15,22 @@ enum GhosttyClipboardAnswer: Equatable {
     }
   }
 
-  /// Only the general pasteboard is the Mac's, and a read with nothing to
-  /// hand back is unavailable, not refused.
-  init(_ request: GhosttyClipboardRequest, at location: ghostty_clipboard_e, text: String?) {
+  /// Only the general pasteboard is the Mac's, and a read with nothing to hand
+  /// back is unavailable, not refused. `text` is read only for a read served.
+  init(
+    _ request: GhosttyClipboardRequest,
+    at location: ghostty_clipboard_e,
+    text readText: @autoclosure () -> String?,
+  ) {
     guard location == GHOSTTY_CLIPBOARD_STANDARD else {
       self = .unsupported
       return
     }
+    guard request.wantsText || request.wantsList else {
+      self = .unavailable
+      return
+    }
+    let text = readText()
     let handedOver = request.wantsText ? text : nil
     guard handedOver != nil || request.wantsList else {
       self = .unavailable

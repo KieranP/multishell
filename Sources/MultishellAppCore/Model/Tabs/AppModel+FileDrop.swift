@@ -10,13 +10,9 @@ extension AppModel {
     into id: TerminalSession.ID,
     takingFocus: Bool,
   ) -> Bool {
-    guard acceptsFileDrop(into: id), let session = workspace.session(id) else { return false }
-    let text = FilePathText.droppedText(
-      for: urls,
-      relativeTo: session.workingDirectory,
-      mentionPrefix: fileMentionPrefix(for: session),
-    )
-    guard !text.isEmpty, host.paste(text, into: id) else { return false }
+    guard acceptsFileDrop(into: id), workspace.session(id) != nil,
+      let text = pastedText(for: urls, into: id), host.paste(text + " ", into: id)
+    else { return false }
     // Recorded as well as focused, only a reporting engine moving the tab's
     // focused pane otherwise. Not once the pane has left the screen.
     if takingFocus {
@@ -32,9 +28,24 @@ extension AppModel {
     liveSessionIDs.contains(id)
   }
 
-  /// How the agent at a pane's prompt is told about a file. A shell, a custom
-  /// command and an agent with no prefix all get a quoted path.
-  private func fileMentionPrefix(for session: TerminalSession) -> String? {
-    agentIDAtThePrompt(of: session).flatMap { AgentCatalogue.agent($0)?.fileMentionPrefix }
+  /// What a paste of copied files types in a session, worded as a drop on it
+  /// would be, or as a shell takes them where the session is gone.
+  func pastedText(for urls: [URL], into id: TerminalSession.ID) -> String? {
+    let session = workspace.session(id)
+    // Asked once: each ask probes the reporting pid, and two could disagree.
+    let agentID = session.flatMap(agentIDAtThePrompt(of:))
+    return FilePathText.pastedText(
+      for: urls,
+      relativeTo: session.map { mentionDirectory(for: $0, agentID: agentID) },
+      mentionPrefix: agentID.flatMap { AgentCatalogue.agent($0)?.fileMentionPrefix },
+    )
+  }
+
+  /// Where the agent at the prompt said it runs, else where the pane started.
+  private func mentionDirectory(for session: TerminalSession, agentID: String?) -> URL {
+    guard let agentID, reportedAgents[session.id]?.agentID == agentID,
+      let directory = reportedAgentDirectories[session.id]
+    else { return session.workingDirectory }
+    return directory
   }
 }

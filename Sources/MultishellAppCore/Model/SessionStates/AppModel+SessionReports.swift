@@ -29,6 +29,9 @@ extension AppModel {
       // Who is at that prompt, so a drop is written as that agent reads a file.
       if let agentID = report.agentID {
         setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agentID, pid: pid))
+        reportedAgentDirectories[id] = report.workingDirectory.map { path in
+          URL(fileURLWithPath: path, isDirectory: true)
+        }
       }
       noteCommandAgent(report, of: id)
       apply(report, pid: pid, to: .session(id))

@@ -127,6 +127,31 @@ struct GhosttyTerminalHostTests {
     #expect(delegate.editedFiles.map(\.path) == [inMoved.path, inStarted.path])
   }
 
+  @Test func filesPastedInAPaneAreHandedToTheDelegateForItsSessionUntilItCloses() throws {
+    let (host, delegate) = hostWithDelegate()
+    let (session, view) = try openSleepingSession(
+      in: host,
+      at: URL(fileURLWithPath: NSTemporaryDirectory()),
+    )
+    let drops = try Scratch.directory("drops")
+    defer { Scratch.remove(drops) }
+    let file = URL(fileURLWithPath: "/tmp/shot.png")
+    let pasteboard = NSPasteboard.withUniqueName()
+    defer { pasteboard.releaseGlobally() }
+    pasteboard.clearContents()
+    pasteboard.writeObjects([file as NSURL])
+    view.pasteboard = pasteboard
+    view.dropsDirectory = drops
+    delegate.textForPastedFiles = "@/tmp/shot.png"
+
+    view.paste(nil)
+    host.close(session.id)
+    view.paste(nil)
+
+    #expect(delegate.pastedFiles.map(\.files) == [[file]])
+    #expect(delegate.pastedFiles.map(\.id) == [session.id])
+  }
+
   @Test func aLinkJudgedAfterItsPaneClosedOpensNothingAndLaterClicksStillDo() async throws {
     let directory = try Scratch.directory("link-closed")
     defer { Scratch.remove(directory) }

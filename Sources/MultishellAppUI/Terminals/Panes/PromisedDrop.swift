@@ -24,7 +24,7 @@ enum PromisedDrop {
   /// to write is left out, so the rest of a drag still delivers.
   static func receive(
     _ receivers: [NSFilePromiseReceiver],
-    into destination: URL? = try? PromisedDropCopies.makeDirectory(),
+    into destination: URL? = try? DropCopies.makeDirectory(),
     givingUpAfter patience: TimeInterval = defaultPatience,
     then deliver: @escaping ([URL]) -> Void,
   ) {
@@ -41,7 +41,7 @@ enum PromisedDrop {
       recounting: promised,
       fileNamesOfItem: { receivers[$0].fileNames },
       onDelivery: { urls in
-        if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
+        if urls.isEmpty { DropCopies.remove(directory) }
         deliver(urls)
       },
     )

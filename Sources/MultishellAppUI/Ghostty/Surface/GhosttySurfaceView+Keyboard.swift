@@ -34,7 +34,7 @@ extension GhosttySurfaceView {
     for delivery in deliveries {
       switch delivery {
       case .committed(let text):
-        send(GhosttyKeyInput(committing: text, action))
+        sendUserInput(GhosttyKeyInput(committing: text, action))
 
       case .key(let text, let isComposing):
         var input = GhosttyKeyInput(
@@ -44,13 +44,13 @@ extension GhosttySurfaceView {
           text: text,
         )
         input.isComposing = isComposing
-        send(input)
+        sendUserInput(input)
       }
     }
   }
 
   override func keyUp(with event: NSEvent) {
-    send(GhosttyKeyInput(event, GHOSTTY_ACTION_RELEASE))
+    sendUserInput(GhosttyKeyInput(event, GHOSTTY_ACTION_RELEASE))
   }
 
   /// A command key's release, which AppKit hands to no view, sent here so a
@@ -73,12 +73,18 @@ extension GhosttySurfaceView {
     let isDown =
       GhosttyModifiers.mods(flags).rawValue & mod.rawValue != 0
       && GhosttyModifiers.isOwnSideDown(keyCode: event.keyCode, in: flags)
-    send(GhosttyKeyInput(event, isDown ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE))
+    sendUserInput(GhosttyKeyInput(event, isDown ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE))
   }
 
   func send(_ input: GhosttyKeyInput) {
     guard let surface else { return }
     input.withCValue { _ = ghostty_surface_key(surface, $0) }
+  }
+
+  /// A key from the keyboard, unlike one the command line presses, so a paste
+  /// it makes may take a copied image.
+  func sendUserInput(_ input: GhosttyKeyInput) {
+    Self.forwardingUserInput { send(input) }
   }
 
   /// `flags` with the modifiers libghostty translates with (Option as Alt), the rest kept.

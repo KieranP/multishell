@@ -43,4 +43,30 @@ extension AppModelSessionReportsTests {
     )
     #expect(wrote.raised, "a different agent still lands")
   }
+
+  @Test func aReportThatOnlyMovesTheAgentsDirectoryWritesNothingTheBoardReads() throws {
+    let (harness, session) = Harness.withOnePane()
+    func report(from directory: String) {
+      harness.model.receive(
+        SessionStateReport(
+          state: .running,
+          sessionID: session.id,
+          workingDirectory: directory,
+          pid: 4242,
+          agentID: AgentCatalogue.claudeID,
+        )
+      )
+    }
+    report(from: harness.main.path.path)
+
+    let wrote = AtomicFlag()
+    withObservationTracking {
+      _ = harness.model.reportedAgents
+    } onChange: {
+      wrote.raise()
+    }
+    report(from: harness.main.path.appendingPathComponent("Sources").path)
+
+    #expect(!wrote.raised)
+  }
 }

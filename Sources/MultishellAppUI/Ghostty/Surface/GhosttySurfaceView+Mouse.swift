@@ -79,12 +79,8 @@ extension GhosttySurfaceView {
   ) -> Bool {
     guard let surface else { return false }
     sendPointerPosition(of: event)
-    return ghostty_surface_mouse_button(
-      surface,
-      state,
-      button,
-      GhosttyModifiers.mods(event.modifierFlags),
-    )
+    let mods = GhosttyModifiers.mods(event.modifierFlags)
+    return Self.forwardingUserInput { ghostty_surface_mouse_button(surface, state, button, mods) }
   }
 
   private func sendPointerPosition(of event: NSEvent) {

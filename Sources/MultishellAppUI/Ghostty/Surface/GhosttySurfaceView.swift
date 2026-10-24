@@ -6,6 +6,13 @@ import MultishellCore
 /// own `SurfaceView_AppKit`. Its shell starts as the view is made.
 @MainActor
 final class GhosttySurfaceView: NSView {
+  /// A key, click or menu action of the user's is inside libghostty right now,
+  /// in any pane, as an `all:` keybind pastes into every pane during one key.
+  private(set) static var isForwardingUserInput = false
+  /// The command line is performing a menu action, which no input inside counts
+  /// as the user's.
+  private(set) static var isActingForTheCommandLine = false
+
   /// `nil` once freed, or where libghostty refused to make it.
   private(set) var surface: ghostty_surface_t?
   var onRetitle: ((String) -> Void)?
@@ -20,6 +27,11 @@ final class GhosttySurfaceView: NSView {
   var onFocus: (() -> Void)?
   /// A link Cmd+clicked in the pane, with the directory a relative one resolves in.
   var onLinkClick: ((GhosttyClickedLink) -> Void)?
+  /// What a paste of copied files types here, asked of the app.
+  var textForPastedFiles: (([URL]) -> String?)?
+  /// Where a paste reads from and a copied image is saved; tests use their own.
+  var pasteboard = NSPasteboard.general
+  var dropsDirectory = Paths.dropsDirectory
 
   /// The input method's uncommitted text, empty when nothing is composing.
   var markedText = ""
@@ -61,6 +73,26 @@ final class GhosttySurfaceView: NSView {
 
   @available(*, unavailable)
   required init?(coder: NSCoder) { nil }
+
+  /// A menu action the command line asked for, which is not the user's paste.
+  @discardableResult
+  static func actingForTheCommandLine<Result>(_ body: () -> Result) -> Result {
+    let wasActing = isActingForTheCommandLine
+    isActingForTheCommandLine = true
+    defer { isActingForTheCommandLine = wasActing }
+    return body()
+  }
+
+  /// libghostty reads the clipboard for a paste before the key, click or menu
+  /// action returns, and for a program's read later; terminals.md has more.
+  @discardableResult
+  static func forwardingUserInput<Result>(_ body: () -> Result) -> Result {
+    guard !isActingForTheCommandLine else { return body() }
+    let wasForwarding = isForwardingUserInput
+    isForwardingUserInput = true
+    defer { isForwardingUserInput = wasForwarding }
+    return body()
+  }
 
   /// Ends the shell. Not from the surface's own close callback, which runs
   /// inside libghostty and would free the surface mid-call.

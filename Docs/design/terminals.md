@@ -181,7 +181,7 @@ at the bottom.
 - **bash's command mark comes off the same debug trap as the hooks.**
 - **Files dropped on a terminal are pasted, never run.** A shell gets absolute
   quoted paths; an agent whose prompt reads mentions gets its prefix and paths
-  relative to the session's directory.
+  relative to the directory its hooks report, else the session's.
 - **One quoting for every shell**, a backslash and a `!` going outside the
   quotes: tcsh at a prompt expands a `!` even inside them, and fish reads `\\`
   and `\'` inside single quotes as escapes, so a name ending in a backslash
@@ -549,9 +549,10 @@ at the bottom.
   is let go while another app is in front.
 - **Cost: the pane shows libghostty's lock cursor at the prompt**, not whether
   macOS took the switch, and a keybind toggle shows nothing.
-- **Copied files paste as quoted paths, as a drop does**, single-quoted for any
-  shell and a name holding a control character left out, where the wrapper
-  escaped them with backslashes.
+- **Copied files paste as a drop words them**, single-quoted for any shell or an
+  agent's mentions, and a name holding a control character left out, where the
+  wrapper escaped them with backslashes. A program's clipboard read gets the
+  quoted paths whatever the pane holds, a mention being for the user's prompt.
 - **Files all left out paste nothing.** Finder puts a copied file's name beside
   it as text, so falling back to the text pasted the very name left out.
 - **The right-hand Option key is told apart**, so `macos-option-as-alt = left`
@@ -705,3 +706,53 @@ at the bottom.
   open until the file closed.
 - **Cost: another app's scheme, `vscode://` or `slack://`, opens nothing.**
   Ghostty's app asks before handing a scheme on.
+- **A copied image pastes as a file saved to the drops directory**, one file for
+  each item holding one, their paths or mentions typed as copied files' are,
+  since a pane takes only text and an agent reads an image from a file.
+- **Text beats an image**, as Office and Keynote put a picture of a copied
+  selection beside its text, but empty or blank text does not hide the image.
+  Cost: an app that puts an address as text beside a copied image pastes the
+  address.
+- **Saved once per copy**, known by the pasteboard's change count read before
+  the image, so the same image pasted again types the same path. Each paste of
+  the user's dates its directory today, the sweep going by that date, so the
+  last path they typed resolves for a week; a program's read writes no date.
+- **Only the user's own paste saves an image**, as libghostty reads the
+  clipboard for one before the key, click or menu action returns, a middle click
+  pasting by default, and for a program's OSC 52 or kitty read later, on its
+  tick. Saving for those wrote a file the program could be refused, and handed
+  it the path where `clipboard-read = allow`. A key `panes key` presses is not
+  the user's, and of the binding actions only the Edit menu's Paste is marked.
+  The mark is the app's, not a pane's, as an `all:` keybind pastes into every
+  pane inside one key, in the order the panes were made, the keyed one among
+  them.
+- **A read outside the user's input reuses the file their paste saved**, so the
+  read a program makes after a kitty paste event lists gets the image's path,
+  quoted as a copied file's is for a program. Cost: an OSC 52 read allowed after
+  the user pasted that copy gets it too, and a listing the program never reads
+  after leaves its file for the sweep.
+- **Copied files paste as quoted paths where the pane's session is gone**, as
+  they did before agents got mentions for them.
+- **The pasteboard is read only for a read a pane serves**, as a keybind pasting
+  the selection clipboard would otherwise save an image for nothing.
+- **A PNG, JPEG, GIF or WebP is written as it came**, in the first of them its
+  item names, 3 ms for a 6 MB PNG; re-encoding a 12 MP JPEG as PNG took 877 ms
+  and tripled it, and a GIF lost its animation. Each is written as it is read,
+  so one image at a time is held.
+- **Cost: an image that cannot be saved pastes nothing, and says nothing**, a
+  full disk reading the same as a clipboard with no image.
+- **Cost: a copy of many images is saved before the key returns**, each fetched
+  and written on the main thread, a TIFF-only one at 144 ms.
+- **A menu action the command line performs is not the user's paste**, so
+  `ui menu "Edit > Paste"` saves no image, as a `panes key` press does not.
+- **A mention is relative to the directory the agent's hooks report**, kept
+  outside what is drawn as a hook's cwd moves often, and compared resolved where
+  the spellings differ, an agent's getcwd naming a symlink's target. Cost: after
+  a worktree moves, the mention is absolute, which still resolves.
+- **Cost: the image is read on the main thread inside libghostty's read**, so
+  one Universal Clipboard has yet to bring from a phone holds the app until it
+  arrives, as text did at a few bytes.
+- **Cost: the path is this Mac's**, so a pane running ssh or a container is
+  typed a path that does not exist there, as a dropped file is.
+- **Cost: an image offered only as TIFF is made a PNG on the main thread**,
+  inside libghostty's read, measured at 144 ms for a 5K one.

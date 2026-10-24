@@ -28,6 +28,7 @@ extension AppModel {
     setIfChanged(\.liveSessionIDs, live)
     setIfChanged(\.sessionTitles, sessionTitles.filter { live.contains($0.key) })
     setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
+    reportedAgentDirectories = reportedAgentDirectories.filter { live.contains($0.key) }
     setIfChanged(\.commandAgentIDs, commandAgentIDs.filter { live.contains($0.key) })
     pruneStates()
     pruneFind()

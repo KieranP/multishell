@@ -357,17 +357,19 @@ rule holds is in `Docs/design/`.
 - **A real surface is made only where its lifetime or libghostty's own callback
   is the question**, on `/bin/sleep` and in no window on screen: the runtime
   outliving it, a closed session staying silent, the pane monitor's two events,
-  and a clicked link reaching the delegate after libghostty's click returns,
-  resolved in the pane's reported directory (GhosttySurfaceViewTests,
-  GhosttyTerminalHostTests, GhosttyPaneEventMonitorTests). A failed expectation
-  on a pane is read into a Bool first, as describing one trips over AppKit's
-  cursors, null pointers in a test process. What libghostty is handed is
-  otherwise tested as values: the key, modifier and mouse button mapping
-  (GhosttyKeyInputTests, GhosttyModifiersTests, GhosttyMouseButtonTests), split
-  surrogates (GhosttySurrogatePairingTests), the actions decoded
+  a clicked link reaching the delegate after libghostty's click returns,
+  resolved in the pane's reported directory, and a clipboard read made inside
+  the user's key, click or Edit > Paste (GhosttySurfaceViewTests,
+  GhosttyTerminalHostTests, GhosttyPaneEventMonitorTests,
+  GhosttySurfaceViewClipboardTests). A failed expectation on a pane is read into
+  a Bool first, as describing one trips over AppKit's cursors, null pointers in
+  a test process. What libghostty is handed is otherwise tested as values: the
+  key, modifier and mouse button mapping (GhosttyKeyInputTests,
+  GhosttyModifiersTests, GhosttyMouseButtonTests), split surrogates
+  (GhosttySurrogatePairingTests), the actions decoded
   (GhosttySurfaceEventTests), the launch's C strings
   (GhosttySurfaceLaunchTests), the clipboard and a program's reads of it
-  (PanePasteboardTests, GhosttyClipboardContentsTests,
+  (PanePasteboardTests, PastedImageFileTests, GhosttyClipboardContentsTests,
   GhosttyClipboardAnswerTests) and the unsafe paste question
   (GhosttyPasteConfirmationTests). Secure keyboard entry's balance against a
   fake system switch is GhosttySecureInputTests. Focus kept in step with the

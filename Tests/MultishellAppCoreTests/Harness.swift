@@ -57,7 +57,7 @@ final class Harness {
     )
     model.statusReadLog.pace = .unpaced
     model.refreshAppLaunchFiles = { _ in }
-    model.sweepPromisedDropCopies = {}
+    model.sweepDropCopies = {}
     let path = root.appendingPathComponent("bin").path
     model.captureLoginEnvironment = { [root] in
       LoginShellEnvironment(

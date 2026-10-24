@@ -47,7 +47,7 @@ extension MacPlatform {
     }
     owner.update()
     guard owner.items[index].isEnabled else { return .disabled }
-    owner.performActionForItem(at: index)
+    GhosttySurfaceView.actingForTheCommandLine { owner.performActionForItem(at: index) }
     return .performed
   }
 }

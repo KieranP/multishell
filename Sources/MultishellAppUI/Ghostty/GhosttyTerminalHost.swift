@@ -66,6 +66,9 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     view.onLinkClick = { [weak self] click in
       self?.linkClicks.judge(click) { opening in self?.followLink(opening, clickedIn: id) }
     }
+    view.textForPastedFiles = { [weak self] urls in
+      self.flatMap { $0.delegate?.terminalHost($0, textForPastedFiles: urls, in: id) }
+    }
   }
 
   /// A text file goes to the delegate, whose editor setting decides where.
@@ -94,6 +97,7 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     view.onCloseRequest = nil
     view.onFocus = nil
     view.onLinkClick = nil
+    view.textForPastedFiles = nil
   }
 
   func close(_ id: TerminalSession.ID) {

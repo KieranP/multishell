@@ -41,8 +41,8 @@ public enum Paths {
       .appendingPathComponent("init.fish", isDirectory: false)
   }
 
-  /// Where a drag's promised files are copied. macOS materialises one into a
-  /// per-drag directory the pane's own shell is refused; see terminals.md.
+  /// Where a drag's promised files and pasted images are copied, somewhere the
+  /// pane's own shell can read; see terminals.md.
   public static var dropsDirectory: URL {
     stateDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
   }

@@ -68,8 +68,8 @@ Under `~/Library/Application Support/Multishell`.
   installed, so two builds do not take it from each other.
 - **The integration directory is generated at launch** from the scripts bundled
   in MultishellCore, so an edit there lasts until the next launch.
-- **The drops directory holds files a drag promised rather than handed over**,
-  swept at launch once a week old.
+- **The drops directory holds files a drag promised rather than handed over and
+  images pasted from the clipboard**, swept at launch once a week old.
 - **The merged Ghostty config passes through the temporary directory**, a file
   per load, gone once libghostty has read it (design/terminals.md).
 - **`multishell debug screenshot` writes its PNG from the helper**, to the file

@@ -10,7 +10,15 @@ extension GhosttySurfaceView {
     at location: ghostty_clipboard_e,
   ) -> ghostty_clipboard_read_result_e {
     guard let surface else { return GHOSTTY_CLIPBOARD_READ_UNAVAILABLE }
-    let answer = GhosttyClipboardAnswer(request, at: location, text: PanePasteboard.pasteText())
+    let answer = GhosttyClipboardAnswer(
+      request,
+      at: location,
+      text: PanePasteboard.pasteText(
+        on: pasteboard,
+        dropsDirectory: dropsDirectory,
+        isUsersPaste: Self.isForwardingUserInput,
+      ) { [textForPastedFiles] in textForPastedFiles?($0) },
+    )
     if case .reply(let text, let available) = answer {
       sendReply(to: request, text: text, available: available, confirmed: false, on: surface)
     }

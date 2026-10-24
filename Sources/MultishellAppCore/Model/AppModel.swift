@@ -209,6 +209,9 @@ public final class AppModel<Surface> {
   /// Which agent last reported in each session, so a dropped file and the
   /// board both know who is at the prompt; see `ReportedAgent`.
   var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
+  /// Where each reporting agent says it runs, for its file mentions. Not
+  /// observed, as nothing drawn reads it and a hook's cwd moves often.
+  @ObservationIgnored var reportedAgentDirectories: [TerminalSession.ID: URL] = [:]
   /// The agent a shell said it was starting, kept only while that command
   /// runs. What marks a pane where nobody installed the agent's hooks.
   var commandAgentIDs: [TerminalSession.ID: String] = [:]
@@ -241,8 +244,8 @@ public final class AppModel<Surface> {
   /// A harness stands in for both, the real ones writing the account's own files.
   @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) throws -> Void =
     { try AppLaunchFiles.refresh(helper: $0) }
-  @ObservationIgnored var sweepPromisedDropCopies: @Sendable () -> Void = {
-    PromisedDropCopies.sweep()
+  @ObservationIgnored var sweepDropCopies: @Sendable () -> Void = {
+    DropCopies.sweep()
   }
 
   /// The environment of the user's interactive login shell, once captured.

@@ -21,7 +21,7 @@ struct AppModelLifecycleTests {
       calls.record("refresh")
       throw CocoaError(.fileWriteNoPermission)
     }
-    harness.model.sweepPromisedDropCopies = { calls.record("sweep") }
+    harness.model.sweepDropCopies = { calls.record("sweep") }
 
     await harness.model.start()
 
@@ -36,7 +36,7 @@ struct AppModelLifecycleTests {
   @Test func launchReturnsBeforeTheDroppedFileSweepFinishes() async throws {
     let harness = Harness()
     let events = Recorder<String>()
-    harness.model.sweepPromisedDropCopies = {
+    harness.model.sweepDropCopies = {
       let giveUp = Date().addingTimeInterval(10)
       while !events.received.contains("open"), Date() < giveUp { usleep(1000) }
       events.record("finished")

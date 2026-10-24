@@ -4,30 +4,27 @@ import MultishellProcess
 
 /// What a terminal receives for files dropped or pasted on it, never a newline.
 public enum FilePathText {
-  /// Quoted absolute paths for a shell, relative mentions for an agent, with
-  /// a trailing space.
-  static func droppedText(
+  /// Quoted absolute paths for a shell, mentions for an agent relative to any
+  /// directory given, one line; `nil` where every file is left out.
+  public static func pastedText(
     for urls: [URL],
-    relativeTo directory: URL,
+    relativeTo directory: URL?,
     mentionPrefix: String? = nil,
-  ) -> String {
-    let words =
-      mentionPrefix.map { prefix in
-        urls.filter(isTypable).map { prefix + escaping(path(of: $0, relativeTo: directory)) }
-      } ?? quotedPaths(urls)
-    guard !words.isEmpty else { return "" }
-    return words.joined(separator: " ") + " "
+  ) -> String? {
+    let words = words(for: urls, relativeTo: directory, mentionPrefix: mentionPrefix)
+    return words.isEmpty ? nil : words.joined(separator: " ")
   }
 
-  /// What a paste of copied files types: each as a shell takes it, with no
-  /// trailing space; `nil` where every file is left out.
-  public static func pastedText(for urls: [URL]) -> String? {
-    let paths = quotedPaths(urls)
-    return paths.isEmpty ? nil : paths.joined(separator: " ")
-  }
-
-  private static func quotedPaths(_ urls: [URL]) -> [String] {
-    urls.filter(isTypable).map { AnyShellQuoting.quote($0.standardizedFileURL.path) }
+  private static func words(
+    for urls: [URL],
+    relativeTo directory: URL?,
+    mentionPrefix: String?,
+  ) -> [String] {
+    let typable = urls.filter(isTypable)
+    guard let prefix = mentionPrefix else {
+      return typable.map { AnyShellQuoting.quote($0.standardizedFileURL.path) }
+    }
+    return typable.map { prefix + escaping(path(of: $0, relativeTo: directory)) }
   }
 
   /// A path carrying a control character is left out rather than mangled: a
@@ -44,10 +41,16 @@ public enum FilePathText {
       .replacingOccurrences(of: " ", with: "\\ ")
   }
 
-  /// Relative inside the session's directory, absolute otherwise. Both sides
-  /// standardized and neither resolved, as the session recorded its own.
-  private static func path(of url: URL, relativeTo directory: URL) -> String {
-    guard let below = url.pathComponents(under: directory), !below.isEmpty else {
+  /// Relative inside the directory, absolute otherwise. Both sides as spelled
+  /// first, then resolved, an agent's getcwd naming a symlink's target.
+  private static func path(of url: URL, relativeTo directory: URL?) -> String {
+    guard let directory,
+      let below = url.pathComponents(under: directory)
+        ?? url.resolvingSymlinksInPath().pathComponents(
+          under: directory.resolvingSymlinksInPath()
+        ),
+      !below.isEmpty
+    else {
       return url.standardizedFileURL.path
     }
     return below.joined(separator: "/")
