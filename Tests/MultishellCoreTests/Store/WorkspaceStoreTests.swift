@@ -96,6 +96,31 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.agentFlags["claude"] == nil, "cleared, so nothing is left behind")
   }
 
+  @Test func anotherRenameAgentStartsAtItsOwnDefaultModelAndEffort() {
+    let store = WorkspaceStore()
+    store.setRenameAgent("claude")
+    store.setRenameModel("haiku")
+    store.setRenameEffort("low")
+    store.setRenameAgent("claude")
+    #expect(store.workspace.renameModel == "haiku", "the same agent keeps what was chosen")
+    store.setRenameAgent("codex")
+    #expect(store.workspace.renameAgentID == "codex")
+    #expect(store.workspace.renameModel == nil && store.workspace.renameEffort == nil)
+  }
+
+  @Test func aRenameModelKeepsTheEffortOnlyWhereItTakesIt() {
+    let store = WorkspaceStore()
+    store.setRenameAgent("codex")
+    store.setRenameModel("gpt-6-sol")
+    store.setRenameEffort("high")
+    store.setRenameModel("gpt-5.5")
+    #expect(store.workspace.renameEffort == "high", "gpt-5.5 takes high too")
+    store.setRenameModel("gpt-6-sol")
+    store.setRenameEffort("ultra")
+    store.setRenameModel("gpt-5.5")
+    #expect(store.workspace.renameEffort == nil, "gpt-5.5 has no ultra")
+  }
+
   @Test func everyTabAndPaneWriteNamingAnUnknownIDLeavesTheWorkspaceAlone() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)

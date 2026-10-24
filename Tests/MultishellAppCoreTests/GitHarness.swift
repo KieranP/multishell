@@ -18,6 +18,7 @@ struct GitHarness {
   let engine = FakeEngine()
   let watcher = FakeWatcher()
   let platform = FakePlatform()
+  let notifier = FakeNotifier()
 
   var project: Project { model.workspace.projects[0] }
 
@@ -42,8 +43,11 @@ struct GitHarness {
       watcher: watcher,
       themesDirectory: root.appendingPathComponent("themes", isDirectory: true),
       platform: platform,
+      notifier: notifier,
     )
     model.statusReadLog.pace = .unpaced
+    // A real run would reach the developer's own agent account.
+    model.oneShotRunner.run = { _ in throw HarnessRunsNoAgent() }
     await model.addProject(at: repository)
   }
 

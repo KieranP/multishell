@@ -27,7 +27,7 @@ struct DescriptorExhaustionTests {
       URL(fileURLWithPath: "/bin/sh"),
       ["-c", "printf ok"],
       in: workingDirectory,
-    )
+    ).standardOutput
     #expect(output == "ok", "works again once descriptors are back")
   }
 

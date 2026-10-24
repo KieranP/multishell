@@ -53,5 +53,7 @@ extension AppModel {
   public func shutDown() {
     saveNow()
     messageSource.stop()
+    // A run's timeout is the app's own timer, gone with it.
+    oneShotRunner.stopAll()
   }
 }

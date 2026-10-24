@@ -41,6 +41,11 @@ What each addition needs beyond the code itself.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
   follow. An agent's row names its mark; its colour is a `ui.agent_marks` key in
   every built-in theme, empty where the project's mark has no colour of its own.
+- **An agent's one-shot run**, for Auto Rename: the flags that run one prompt
+  with no tool able to write, how the prompt goes, its model and effort flags,
+  and its models with each one's efforts, in `AgentCatalogue+OneShots`.
+  AgentOneShotTests pins each row's arguments; nothing checks them against the
+  CLI's own help.
 - **Removing an agent adds its id to `AgentCatalogue.retiredIDs`**, or a state
   file naming it raises an install alert for it at every run:
   WorkspaceRetiredAgentsTests.

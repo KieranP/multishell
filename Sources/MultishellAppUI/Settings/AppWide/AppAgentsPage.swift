@@ -26,7 +26,9 @@ struct AppAgentsPage: View {
       SplitPagePicker(label: t("label.agents"), selection: $part, title: \.title)
 
       switch part {
-      case .agent: agentSection
+      case .agent:
+        agentSection
+        AutoRenameSection(model: model)
 
       case .hooks:
         if !model.agentHooksRows.isEmpty {

@@ -36,7 +36,15 @@ extension AppModel {
       project: projectName,
       worktree: worktreeName,
     )
-    let body = NotificationPolicy.body(for: state, message: report.shownMessage)
+    post(
+      title: title,
+      body: NotificationPolicy.body(for: state, message: report.shownMessage),
+      about: key,
+    )
+  }
+
+  /// Posts a banner and keeps what takes it back and what Debug Info lists.
+  func post(title: String, body: String, about key: SessionStates.Key) {
     notifier.notify(title: title, body: body, about: key)
     notifiedKeys.insert(key)
     notificationLog.append(.init(title: title, body: body, key: key, postedAt: Date()))

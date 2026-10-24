@@ -9,6 +9,8 @@ public struct WorktreeStatus: Hashable, Sendable {
   var conflicted = 0
   public internal(set) var ahead = 0
   public internal(set) var behind = 0
+  /// What `ahead` and `behind` count against, `origin/main` and the like.
+  public internal(set) var upstream: String?
 
   /// Files with any change, every new file in a new folder among them,
   /// whichever indicator is set. A file both staged and modified counts once.
@@ -38,6 +40,8 @@ public struct WorktreeStatus: Hashable, Sendable {
   public var unlistedUntrackedFiles: Int { max(0, untracked - untrackedPaths.count) }
 
   public var isDirty: Bool { changedFiles > 0 }
+  /// Anything in the index, which Auto Rename reads beside the commits.
+  public var hasStagedChanges: Bool { staged > 0 }
   public var isCleanAndInSync: Bool { changedFiles == 0 && ahead == 0 && behind == 0 }
 
   /// One line for a tooltip: "+12 −3 · 2 modified · 1 untracked · ↑2".

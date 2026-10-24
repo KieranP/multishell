@@ -70,6 +70,8 @@ Newest at the bottom.
   lowercasing, which is right in English and wrong in German.
 - **What another program said stays English**: git's stderr, a hook's output, an
   exception's description. The app's words around them are translated.
+- **Auto Rename's prompt is English whatever the language**: a model reads it
+  and nobody sees it.
 - **The helper's own output stays English too.** Its words sit in a terminal
   beside git's and its commands are English tokens, so half a translated
   sentence reads worse than none.

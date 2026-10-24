@@ -18,7 +18,25 @@ public struct DetectionOption: Identifiable, Equatable, Sendable {
     noneID: String,
     customID: String,
   ) -> [Self] {
-    var options = [Self(id: noneID, label: t("option.none"))]
+    [Self(id: noneID, label: t("option.none"))]
+      + installedOrSelectedOptions(
+        entries,
+        isInstalled: isInstalled,
+        selected: selected,
+        reserved: [noneID, customID],
+      )
+      + [Self(id: customID, label: t("option.custom-command-item"))]
+  }
+
+  /// What is installed, then the selected one marked where it is not, or
+  /// where no entry has its id and it is none of `reserved`.
+  static func installedOrSelectedOptions(
+    _ entries: [(id: String, name: String)],
+    isInstalled: (String) -> Bool,
+    selected: String?,
+    reserved: Set<String>,
+  ) -> [Self] {
+    var options: [Self] = []
     for entry in entries {
       if isInstalled(entry.id) {
         options.append(Self(id: entry.id, label: entry.name))
@@ -26,12 +44,9 @@ public struct DetectionOption: Identifiable, Equatable, Sendable {
         options.append(.notInstalled(entry.id, name: entry.name))
       }
     }
-    if let selected, selected != noneID, selected != customID,
-      !entries.contains(where: { $0.id == selected })
-    {
+    if let selected, !reserved.contains(selected), !entries.contains(where: { $0.id == selected }) {
       options.append(.notInstalled(selected, name: selected))
     }
-    options.append(Self(id: customID, label: t("option.custom-command-item")))
     return options
   }
 

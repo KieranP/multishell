@@ -19,6 +19,7 @@ struct AgentLaunchTests {
       executable: "flagless",
       taskArgument: .operand,
       mark: .monogram("Fl"),
+      oneShot: claude.oneShot,
     )
     #expect(
       AgentLaunch.arguments(for: flagless, resume: true) == nil,

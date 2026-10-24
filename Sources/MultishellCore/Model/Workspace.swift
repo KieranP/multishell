@@ -10,6 +10,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case appearance, worktreeDefaults
     case notificationPreference = "notifications"
     case preferredAgentID, customAgentCommand, agentFlags
+    case renameAgentID, renameModel, renameEffort
     case autoStartsAgent = "autoStartAgent"
     case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
     case preferredShellID = "defaultShell"
@@ -62,6 +63,12 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Extra arguments each agent is started with, by catalogue id, as typed.
   /// Per agent, not one line; see Docs/design/agents.md.
   public internal(set) var agentFlags: [String: String] = [:]
+  /// The catalogue agent Auto Rename runs, or `nil` for the project's agent.
+  public internal(set) var renameAgentID: String?
+  /// One of that agent's catalogue models, or `nil` for its own default.
+  public internal(set) var renameModel: String?
+  /// One of that model's catalogue efforts, or `nil` for the agent's default.
+  public internal(set) var renameEffort: String?
   /// New Tab, and the first tab of a worktree turned to, start the
   /// preferred agent rather than a plain shell. Projects may override it.
   public internal(set) var autoStartsAgent = false
@@ -164,6 +171,9 @@ public struct Workspace: Codable, Hashable, Sendable {
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try container.decode(String.self, forKey: .customAgentCommand, or: "")
     agentFlags = try container.decode([String: String].self, forKey: .agentFlags, or: [:])
+    renameAgentID = try container.decodeIfPresent(String.self, forKey: .renameAgentID)
+    renameModel = try container.decodeIfPresent(String.self, forKey: .renameModel)
+    renameEffort = try container.decodeIfPresent(String.self, forKey: .renameEffort)
     autoStartsAgent = try container.decode(Bool.self, forKey: .autoStartsAgent, or: false)
     // State from before the two were split says one thing about both.
     autoStartsAgentOnCreate = try container.decode(

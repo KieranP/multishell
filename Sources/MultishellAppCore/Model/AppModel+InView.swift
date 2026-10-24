@@ -23,6 +23,12 @@ extension AppModel {
     worktreeInView.flatMap { workspace.activeWorkspaceTab(in: $0.id) }
   }
 
+  /// In view with the app in front, which is when a banner about it is not
+  /// needed. Gated on the board as `isPaneInView` is.
+  func isWorktreeOnScreen(_ id: Worktree.ID) -> Bool {
+    worktreeIDInView == id && platform.isActive
+  }
+
   /// The active tab's focused pane, with nothing covering it. One per window,
   /// not per group: a surface reports focus back, so two would trade it.
   public func isFocusedPane(_ id: TerminalSession.ID) -> Bool {

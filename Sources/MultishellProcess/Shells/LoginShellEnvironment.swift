@@ -13,7 +13,7 @@ public struct LoginShellEnvironment: Sendable, Equatable {
   /// would rather run with a poorer PATH than keep the dropdowns empty.
   public static let timeout: Duration = .seconds(8)
 
-  let variables: [String: String]
+  public let variables: [String: String]
   public let source: Source
 
   public var path: String? { variables["PATH"] }

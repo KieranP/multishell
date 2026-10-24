@@ -7,7 +7,8 @@ struct DetectionPicker: View {
   let label: String
   @Binding var selection: String
   let options: (String) -> [DetectionOption]
-  let refresh: () -> Void
+  /// `nil` for a list the catalogue fixes, which no PATH scan changes.
+  var refresh: (() -> Void)?
   let info: String
   /// Greys the control while an override is off; the (i) stays readable.
   var isEnabled = true
@@ -24,7 +25,9 @@ struct DetectionPicker: View {
         }
       }
       .disabled(!isEnabled)
-      SettingsSymbolButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
+      if let refresh {
+        SettingsSymbolButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
+      }
     }
   }
 }

@@ -64,6 +64,28 @@ struct GitRunner: Sendable {
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
   ) async throws -> String {
+    try await succeededOutput(
+      arguments,
+      in: directory,
+      environment: environment,
+      timeout: timeout,
+      stopper: stopper,
+    ).standardOutput
+  }
+
+  /// `run`'s bytes undecoded, for output cut by size before it is read as text.
+  func runBytes(_ arguments: [String], in directory: URL) async throws -> Data {
+    try await succeededOutput(arguments, in: directory).standardOutputBytes
+  }
+
+  /// Throws `ProcessFailure` on a non-zero exit, as `run` and `runBytes` both do.
+  private func succeededOutput(
+    _ arguments: [String],
+    in directory: URL,
+    environment: [String: String] = [:],
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil,
+  ) async throws -> ProcessOutput {
     try await logged(arguments, in: directory) { exitUsageProbe in
       try await processRunner.run(
         executable,

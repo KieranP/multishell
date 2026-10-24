@@ -51,7 +51,7 @@ public struct ProcessRunner: Sendable {
     }
   }
 
-  /// Throws `ProcessFailure` on a non-zero exit.
+  /// The output where the child exited 0; throws `ProcessFailure` on any other exit.
   public func run(
     _ executable: URL,
     _ arguments: [String],
@@ -60,7 +60,7 @@ public struct ProcessRunner: Sendable {
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
     exitUsageProbe: ExitUsageProbe? = nil,
-  ) async throws -> String {
+  ) async throws -> ProcessOutput {
     let output = try await capture(
       executable,
       arguments,
@@ -70,16 +70,7 @@ public struct ProcessRunner: Sendable {
       stopper: stopper,
       exitUsageProbe: exitUsageProbe,
     )
-    guard output.succeeded else {
-      throw ProcessFailure(
-        executable: executable.lastPathComponent,
-        arguments: arguments,
-        status: output.status,
-        message: output.standardError.trimmingCharacters(in: .whitespacesAndNewlines),
-        stopReason: output.stopReason,
-      )
-    }
-    return output.standardOutput
+    return try output.requiringSuccess(of: executable, arguments: arguments)
   }
 
   /// Throws only where the child could not start; a non-zero exit comes back

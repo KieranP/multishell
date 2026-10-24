@@ -81,7 +81,38 @@ extension AppModel {
         { self.workspace.autoStartsAgentOnCreate },
         setAutoStartsAgentOnCreate,
       ),
-    ] + flagSettings
+    ] + flagSettings + renameSettings
+  }
+
+  /// A model or effort the chosen Rename agent does not list is refused, as
+  /// the picker cannot choose one.
+  private var renameSettings: [ControlSetting] {
+    [
+      .optionalText(
+        "renameAgentID",
+        { self.workspace.renameAgentID },
+        accepts: { AgentCatalogue.agent($0) != nil },
+        setRenameAgent,
+      ),
+      .optionalText(
+        "renameModel",
+        { self.workspace.renameModel },
+        accepts: { model in self.workspace.renameOneShot?.offers(model: model) == true },
+        setRenameModel,
+      ),
+      .optionalText(
+        "renameEffort",
+        { self.workspace.renameEffort },
+        accepts: { effort in
+          self.workspace.renameOneShot?.offers(
+            effort: effort,
+            withModel: self.workspace.renameModel,
+          )
+            == true
+        },
+        setRenameEffort,
+      ),
+    ]
   }
 
   private var worktreeSettings: [ControlSetting] {

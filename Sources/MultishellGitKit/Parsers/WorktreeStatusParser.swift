@@ -57,7 +57,10 @@ enum WorktreeStatusParser {
     } else {
       // The upstream goes first: a clone of an empty repository has one from
       // clone time, and reads `No commits yet on main...origin/main`.
-      if let dots = name.range(of: "...") { name = String(name[..<dots.lowerBound]) }
+      if let dots = name.range(of: "...") {
+        status.upstream = String(name[dots.upperBound...])
+        name = String(name[..<dots.lowerBound])
+      }
       if let prefix = unbornPrefixes.first(where: name.hasPrefix) {
         name = String(name.dropFirst(prefix.count))
       }

@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 
+@testable import MultishellAppCore
 @testable import MultishellAppUI
 @testable import MultishellCore
 @testable import MultishellGitKit
@@ -12,6 +13,7 @@ struct WorktreeRowTests {
 
   private func row(
     status: WorktreeStatus? = nil,
+    autoRename: AutoRenameState? = nil,
     beginRename: @escaping () -> Void = {},
   ) -> WorktreeRow {
     WorktreeRow(
@@ -26,6 +28,7 @@ struct WorktreeRowTests {
       terminalCount: 1,
       state: nil,
       operation: nil,
+      autoRename: autoRename,
       isSelected: false,
       isDropTarget: false,
       status: status,
@@ -36,6 +39,7 @@ struct WorktreeRowTests {
       commitRename: { _ in },
       cancelRename: {},
       showModifiedFiles: {},
+      clearAutoRenameFailure: {},
     )
   }
 
@@ -47,5 +51,10 @@ struct WorktreeRowTests {
     var dirty = WorktreeStatus()
     dirty.changedFiles = 1
     #expect(row() != row(status: dirty))
+  }
+
+  @Test func aWorktreeRowWhoseAutoRenameMovedIsADifferentRow() {
+    #expect(row() != row(autoRename: .running))
+    #expect(row(autoRename: .running) != row(autoRename: .failed("Not signed in")))
   }
 }

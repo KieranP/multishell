@@ -41,6 +41,8 @@ extension AppModel {
       id: ControlID.worktree(worktree.id),
       name: displayName(of: worktree),
       isRenaming: row.isRenaming,
+      isAutoRenaming: isAutoRenaming(worktree.id),
+      autoRenameFailure: autoRenameFailure(of: worktree.id),
       isInView: isInView(worktree),
       state: state(ofWorktree: worktree.id, sessions: sessions),
       terminalCount: row.shownTerminalCount(of: sessions[worktree.id].count),

@@ -16,6 +16,9 @@ struct SidebarRowListing: Encodable, Equatable {
     let id: String
     let name: String
     let isRenaming: Bool
+    let isAutoRenaming: Bool
+    /// Why the last Auto Rename left the name, until the row's warning is clicked.
+    let autoRenameFailure: String?
     let isInView: Bool
     let state: SessionState?
     /// The count the row shows, none where its pane rows list them.

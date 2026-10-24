@@ -23,6 +23,7 @@ public enum AgentCatalogue {
       executable: "claude",
       taskArgument: .operand,
       mark: .claude,
+      oneShot: claudeOneShot,
       resumeArguments: ["--continue"],
       fileMentionPrefix: "@",
     ),
@@ -32,6 +33,7 @@ public enum AgentCatalogue {
       executable: "codex",
       taskArgument: .operand,
       mark: .codex,
+      oneShot: codexOneShot,
       resumeArguments: ["resume", "--last"],
     ),
     AgentDescriptor(
@@ -40,6 +42,7 @@ public enum AgentCatalogue {
       executable: "gemini",
       taskArgument: .option("--prompt-interactive"),
       mark: .gemini,
+      oneShot: geminiOneShot,
       resumeArguments: ["--resume", "latest"],
     ),
     AgentDescriptor(
@@ -48,6 +51,7 @@ public enum AgentCatalogue {
       executable: "copilot",
       taskArgument: .option("--interactive"),
       mark: .copilot,
+      oneShot: copilotOneShot,
       resumeArguments: ["--continue"],
     ),
     AgentDescriptor(
@@ -56,6 +60,7 @@ public enum AgentCatalogue {
       executable: "opencode",
       taskArgument: .option("--prompt"),
       mark: .openCode,
+      oneShot: openCodeOneShot,
       resumeArguments: ["--continue"],
     ),
   ]

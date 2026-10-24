@@ -649,6 +649,29 @@ extension WorkspaceStore {
     workspace.agentFlags[id] = flags.nonEmpty
   }
 
+  /// A model or effort is one of an agent's, so another agent starts at its
+  /// own defaults.
+  public func setRenameAgent(_ id: String?) {
+    guard workspace.renameAgentID != id else { return }
+    workspace.renameAgentID = id
+    workspace.renameModel = nil
+    workspace.renameEffort = nil
+  }
+
+  /// An effort the new model does not take is dropped, so none reaches its CLI.
+  public func setRenameModel(_ model: String?) {
+    workspace.renameModel = model
+    if let effort = workspace.renameEffort,
+      workspace.renameOneShot?.offers(effort: effort, withModel: model) != true
+    {
+      workspace.renameEffort = nil
+    }
+  }
+
+  public func setRenameEffort(_ effort: String?) {
+    workspace.renameEffort = effort
+  }
+
   public func setAutoStartsAgent(_ enabled: Bool) {
     workspace.autoStartsAgent = enabled
   }

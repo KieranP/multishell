@@ -2,7 +2,9 @@
    `t("the.key")`; see Docs/design/translation.md. */
 
 "action.add" = "Add";
+"action.auto-rename" = "Auto Rename";
 "action.cancel" = "Cancel";
+"action.clear-auto-rename-failure" = "Clear Auto Rename Failure";
 "action.clear-status" = "Clear Status";
 "action.copy" = "Copy";
 "action.copy-branch" = "Copy Branch";
@@ -27,6 +29,7 @@
 "action.update" = "Update";
 "action.use-branch-name" = "Use Branch Name";
 "action.worktree-actions" = "Worktree actions";
+"agents.auto-rename" = "Auto Rename";
 "agents.auto-start-create" = "Auto-start on worktree creation";
 "agents.auto-start-create-info" = "Turns on Start an agent in the New Worktree sheet, so a new worktree's first tab runs the agent. Any project can override this.";
 "agents.auto-start-tab" = "Auto-start on tab open";
@@ -42,6 +45,12 @@
 "agents.install-helper" = "Install Command Line Tool…";
 "agents.part-agent" = "Agent";
 "agents.preferred-agent" = "Preferred agent:";
+"agents.rename-agent" = "Rename agent:";
+"agents.rename-agent-info" = "Runs once, unable to change the worktree, to name it from its commits and staged changes. The project's agent is the one its tabs start, run at its own model and effort.";
+"agents.rename-effort" = "Rename effort:";
+"agents.rename-effort-info" = "How hard the model thinks. An agent with no effort flag runs at its own default, and this is greyed.";
+"agents.rename-model" = "Rename model:";
+"agents.rename-model-info" = "A model this agent's recent releases take. The agent's default is whatever its own settings name.";
 "agents.row-label" = "%@:";
 "agents.show" = "Show %@";
 "appearance.file-font" = "File font:";
@@ -257,6 +266,8 @@
 "sheet.task" = "Task:";
 "sheet.task-prompt" = "Optional";
 "sidebar.add-project" = "Add Project (⌘O)";
+"sidebar.auto-rename-failed" = "Auto Rename failed: %@\nClick to clear.";
+"sidebar.auto-renaming" = "Auto Rename is asking the agent for a name";
 "sidebar.clear-filter" = "Clear filter";
 "sidebar.collapse" = "Collapse";
 "sidebar.collapsed-state" = "%@ in a terminal of a collapsed worktree";

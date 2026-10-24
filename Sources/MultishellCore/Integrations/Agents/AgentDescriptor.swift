@@ -14,6 +14,8 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// The mark drawn wherever this agent is at a prompt, in the theme's
   /// `ui.agent_marks` colour for its id.
   public let mark: AgentMark
+  /// Auto Rename's run: one prompt, then exit.
+  public let oneShot: AgentOneShot
 
   init(
     id: String,
@@ -21,6 +23,7 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     executable: String,
     taskArgument: AgentTaskArgument,
     mark: AgentMark,
+    oneShot: AgentOneShot,
     resumeArguments: [String]? = nil,
     fileMentionPrefix: String? = nil,
   ) {
@@ -31,5 +34,6 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     self.taskArgument = taskArgument
     self.fileMentionPrefix = fileMentionPrefix
     self.mark = mark
+    self.oneShot = oneShot
   }
 }

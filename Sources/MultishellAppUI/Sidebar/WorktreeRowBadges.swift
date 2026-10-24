@@ -7,6 +7,7 @@ import SwiftUI
 /// so the row's own spacing sits between them.
 struct WorktreeRowBadges: View {
   let operation: WorktreeOperation?
+  let autoRename: AutoRenameState?
   let isLocked: Bool
   let mergeState: WorktreeMergeState
   let status: WorktreeStatus?
@@ -15,20 +16,29 @@ struct WorktreeRowBadges: View {
   let theme: Theme
   let metrics: UIMetrics
   let showModifiedFiles: () -> Void
+  let clearAutoRenameFailure: () -> Void
 
   var body: some View {
     if let operation {
       if operation.isRunning {
-        ProgressView()
-          .controlSize(.mini)
-          .help(operation.title)
+        runningGlyph(help: operation.title)
       } else {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .font(metrics.font(size: metrics.badge))
-          .foregroundStyle(theme.failureColor)
-          .help(operation.title)
-          .accessibilityLabel(operation.title)
+        failureGlyph(saying: operation.title)
       }
+    }
+    switch autoRename {
+    case .running:
+      runningGlyph(help: t("sidebar.auto-renaming"))
+
+    case .failed(let message):
+      Button(action: clearAutoRenameFailure) {
+        failureGlyph(saying: t("sidebar.auto-rename-failed", message))
+          .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+
+    case nil:
+      EmptyView()
     }
     if isLocked {
       Image(systemName: "lock.fill")
@@ -70,5 +80,21 @@ struct WorktreeRowBadges: View {
         .background(theme.projectsPanel.fill, in: Capsule())
         .help(t("count.terminals", terminalCount))
     }
+  }
+
+  /// One look for anything under way on the row, a stage or an Auto Rename.
+  private func runningGlyph(help: String) -> some View {
+    ProgressView()
+      .controlSize(.mini)
+      .help(help)
+  }
+
+  /// One look for anything that failed on the row, so a warning reads one way.
+  private func failureGlyph(saying text: String) -> some View {
+    Image(systemName: "exclamationmark.triangle.fill")
+      .font(metrics.font(size: metrics.badge))
+      .foregroundStyle(theme.failureColor)
+      .help(text)
+      .accessibilityLabel(text)
   }
 }

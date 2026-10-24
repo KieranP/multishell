@@ -10,6 +10,9 @@ struct WorkspaceTests {
     workspace.preferredAgentID = "codex"
     workspace.preferredShellID = "/bin/zsh"
     workspace.preferredEditorID = "zed"
+    workspace.renameAgentID = "claude"
+    workspace.renameModel = "haiku"
+    workspace.renameEffort = "low"
     let fields = Mirror(reflecting: workspace).children.count
     let encoded = try JSONEncoder().encode(workspace)
     let keys = try #require(try JSONSerialization.jsonObject(with: encoded) as? [String: Any]).keys
@@ -36,6 +39,18 @@ struct WorkspaceTests {
     #expect(workspace.agentFlags.isEmpty, "no agent is given flags it was not asked to pass")
     #expect(!workspace.autoStartsAgent, "off until asked for")
     #expect(!workspace.autoStartsAgentOnCreate, "off until asked for")
+    #expect(workspace.renameAgentID == nil, "Auto Rename runs the project's agent")
+    #expect(workspace.renameModel == nil && workspace.renameEffort == nil)
+  }
+
+  @Test func aRenameChoiceANewerBuildWroteIsKeptAsText() throws {
+    let workspace = try decodeJSON(
+      Workspace.self,
+      #"{ "renameAgentID": "future-agent", "renameModel": "m-9", "renameEffort": "ludicrous" }"#,
+    )
+    #expect(workspace.renameAgentID == "future-agent")
+    #expect(workspace.renameModel == "m-9")
+    #expect(workspace.renameEffort == "ludicrous")
   }
 
   @Test func aWorkspaceFromBeforeAutoStartWasSplitSaysTheSameAboutCreation() throws {

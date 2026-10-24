@@ -13,6 +13,7 @@ struct ProcessRunnerTests {
 
   @Test func runReturnsWhatTheChildWroteToStandardOutput() async throws {
     let out = try await runner.run(bourneShell, ["-c", "printf hello"], in: workingDirectory)
+      .standardOutput
     #expect(out == "hello")
   }
 
@@ -61,6 +62,7 @@ struct ProcessRunnerTests {
       for _ in 0..<children {
         group.addTask {
           let seen = try await runner.run(bourneShell, ["-c", script], in: workingDirectory)
+            .standardOutput
           return Int(seen.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
         }
       }
@@ -77,14 +79,14 @@ struct ProcessRunnerTests {
       ["-c", "printf \"$MULTISHELL_TEST-$HOME\""],
       in: workingDirectory,
       environment: ["MULTISHELL_TEST": "yes"],
-    )
+    ).standardOutput
     #expect(out.hasPrefix("yes-/"))
   }
 
   @Test func aChildStartsInTheDirectoryItIsGiven() async throws {
     let directory = try Scratch.directory("start-here")
     defer { Scratch.remove(directory) }
-    let out = try await runner.run(bourneShell, ["-c", "pwd -P"], in: directory)
+    let out = try await runner.run(bourneShell, ["-c", "pwd -P"], in: directory).standardOutput
     let started = URL(fileURLWithPath: out.trimmingCharacters(in: .whitespacesAndNewlines))
     #expect(Scratch.physicalPath(of: started) == Scratch.physicalPath(of: directory))
   }
@@ -143,6 +145,7 @@ struct ProcessRunnerTests {
 
   @Test func aChildThatReadsStdinGetsEOFNotTheApps() async throws {
     let out = try await runner.run(bourneShell, ["-c", "cat; printf done"], in: workingDirectory)
+      .standardOutput
     #expect(out == "done")
   }
 }

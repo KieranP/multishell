@@ -15,6 +15,7 @@ struct WorktreeRow: View, @MainActor Equatable {
   let state: SessionState?
   /// A create or remove running here, or failed and not yet dismissed.
   let operation: WorktreeOperation?
+  let autoRename: AutoRenameState?
   let isSelected: Bool
   /// A tab is being dragged over this row and would land here on release.
   let isDropTarget: Bool
@@ -30,6 +31,8 @@ struct WorktreeRow: View, @MainActor Equatable {
   /// A click on the git badge, or the row's named action: the Files panel
   /// opened on what changed here.
   let showModifiedFiles: () -> Void
+  /// The warning of a failed Auto Rename clicked: its reason has been read.
+  let clearAutoRenameFailure: () -> Void
 
   private var kind: String { worktree.kindText() }
 
@@ -55,6 +58,7 @@ struct WorktreeRow: View, @MainActor Equatable {
 
       WorktreeRowBadges(
         operation: operation,
+        autoRename: autoRename,
         isLocked: worktree.isLocked,
         mergeState: mergeState,
         status: status,
@@ -62,6 +66,7 @@ struct WorktreeRow: View, @MainActor Equatable {
         theme: theme,
         metrics: metrics,
         showModifiedFiles: showModifiedFiles,
+        clearAutoRenameFailure: clearAutoRenameFailure,
       )
     }
     .padding(.leading, metrics.worktreeRowIndent)
@@ -82,12 +87,19 @@ struct WorktreeRow: View, @MainActor Equatable {
         isSelected: isSelected,
         customName: customName,
         mergeState: mergeState,
+        autoRename: autoRename,
       )
     )
+    .accessibilityHint(AccessibilityText.worktreeHint(autoRename: autoRename))
     .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
     // The row ignores its children, so the badge's button is reached here.
     .accessibilityAction(named: t("action.show-modified-files"), showModifiedFiles)
+    .accessibilityActions {
+      if autoRename?.failureMessage != nil {
+        Button(t("action.clear-auto-rename-failure"), action: clearAutoRenameFailure)
+      }
+    }
   }
 
   /// The user's name over the branch, or the branch alone. The branch never
@@ -144,6 +156,7 @@ struct WorktreeRow: View, @MainActor Equatable {
   static func == (a: Self, b: Self) -> Bool {
     a.worktree == b.worktree && a.customName == b.customName && a.isRenaming == b.isRenaming
       && a.terminalCount == b.terminalCount && a.state == b.state && a.operation == b.operation
+      && a.autoRename == b.autoRename
       && a.isSelected == b.isSelected && a.isDropTarget == b.isDropTarget
       && a.status == b.status && a.mergeState == b.mergeState && a.theme == b.theme
       && a.metrics == b.metrics

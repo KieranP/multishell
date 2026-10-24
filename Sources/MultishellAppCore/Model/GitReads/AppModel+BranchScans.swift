@@ -56,9 +56,11 @@ extension AppModel {
       // them about a base that no longer applies.
       forgetMergeStates(ofProject: project.id)
       recordDefaultBranch(nil, of: project.id)
+      recordScannedBranchTips(nil, of: project.id)
       return
     }
     recordDefaultBranch(inputs.defaultBranch, of: project.id)
+    recordScannedBranchTips(inputs, of: project.id)
 
     let plan = planMergeReads(of: project.id, against: inputs)
     forgetMergeStates(ofWorktrees: plan.unbadgeable)
@@ -141,6 +143,16 @@ extension AppModel {
     noteFileTabsChanged(releasingDots: isNewBase) { tab in
       workspace.worktree(tab.worktreeID)?.projectID == id
     }
+  }
+
+  /// What Auto Rename's menu item reads, the scan seeing a commit as its ref
+  /// moves where a worktree's listed `HEAD` waits for the next listing.
+  private func recordScannedBranchTips(_ inputs: MergeInputs?, of id: Project.ID) {
+    var fresh = scannedBranchTips
+    for worktree in workspace.worktrees(of: id) {
+      fresh[worktree.id] = worktree.branch.flatMap { inputs?.tip(of: $0) }
+    }
+    setIfChanged(\.scannedBranchTips, fresh)
   }
 
   /// The scan answers by branch, the sidebar asks by worktree.

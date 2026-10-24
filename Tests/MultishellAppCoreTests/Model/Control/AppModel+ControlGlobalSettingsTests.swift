@@ -240,4 +240,45 @@ struct AppModelControlGlobalSettingsTests {
       "modified is a change scope",
     )
   }
+
+  @Test func theRenameAgentModelAndEffortAreSetAsThePickersSetThem() async {
+    let harness = Harness()
+    let write = { (key: String, value: String) in
+      await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value))
+    }
+
+    #expect(await write("renameAgentID", "codex") == .done)
+    #expect(await write("renameModel", "gpt-6-sol") == .done)
+    #expect(await write("renameEffort", "ultra") == .done)
+    #expect(harness.model.workspace.renameEffort == "ultra")
+    #expect(await write("renameModel", "gpt-5.5") == .done)
+
+    #expect(harness.model.workspace.renameModel == "gpt-5.5")
+    #expect(harness.model.workspace.renameEffort == nil, "gpt-5.5 has no ultra")
+    #expect(await write("renameAgentID", "") == .done)
+    #expect(harness.model.workspace.renameAgentID == nil)
+  }
+
+  @Test func aRenameModelOrEffortTheRenameAgentDoesNotListIsRefused() async {
+    let harness = Harness()
+    let write = { (key: String, value: String) in
+      await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value))
+    }
+
+    #expect(
+      await write("renameModel", "haiku")
+        == .refused(.invalidValue(key: "renameModel", value: "haiku")),
+      "no Rename agent, so no model of one",
+    )
+    #expect(await write("renameAgentID", "gemini") == .done)
+    #expect(
+      await write("renameEffort", "high")
+        == .refused(.invalidValue(key: "renameEffort", value: "high")),
+      "Gemini CLI takes no effort flag",
+    )
+    #expect(
+      await write("renameAgentID", AgentCatalogue.customID)
+        == .refused(.invalidValue(key: "renameAgentID", value: "custom"))
+    )
+  }
 }

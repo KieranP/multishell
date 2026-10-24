@@ -8,6 +8,9 @@ extension Helper {
         notifications.done, agentFlags.claude and the rest, which list
         prints. An empty VALUE clears a setting that may be empty.
         defaultShell takes a shell's full path, login or custom.
+        renameModel and renameEffort take only what renameAgentID's agent
+        lists, and are cleared when it changes; renameEffort is also cleared
+        by a renameModel that does not take it.
     usage: multishell config project PROJECT_ID list
     usage: multishell config project PROJECT_ID get KEY
     usage: multishell config project PROJECT_ID set KEY VALUE

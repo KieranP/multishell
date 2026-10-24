@@ -248,6 +248,7 @@ public final class AppModel<Surface> {
     DropCopies.sweep()
   }
 
+  @ObservationIgnored let oneShotRunner = OneShotRunner()
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered and its PATH has been scanned.
   var loginEnvironment: LoginShellEnvironment?
@@ -274,6 +275,8 @@ public final class AppModel<Surface> {
   var themeCatalogue = ThemeCatalogue.builtinsOnly
   @ObservationIgnored var alertedMissingAgentIDs: Set<String> = []
 
+  public internal(set) var autoRenames: [Worktree.ID: AutoRenameState] = [:]
+  var scannedBranchTips: [Worktree.ID: String] = [:]
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   public internal(set) var statuses: [Worktree.ID: WorktreeStatus] = [:]
   /// Whether each worktree's branch has already landed on its project's

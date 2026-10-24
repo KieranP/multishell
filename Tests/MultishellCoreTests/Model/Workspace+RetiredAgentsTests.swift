@@ -84,4 +84,16 @@ struct WorkspaceRetiredAgentsTests {
     #expect(restored.loadError == nil)
     #expect(restored.store.workspace.preferredAgentID == nil)
   }
+
+  @Test func aRetiredRenameAgentFallsBackToTheProjectsAgent() {
+    var workspace = Workspace()
+    workspace.renameAgentID = "aider"
+    workspace.renameModel = "gpt-4"
+    workspace.renameEffort = "high"
+
+    workspace.forgetRetiredAgents()
+
+    #expect(workspace.renameAgentID == nil)
+    #expect(workspace.renameModel == nil && workspace.renameEffort == nil)
+  }
 }

@@ -8,6 +8,11 @@ extension Workspace {
       sessions[index].title = ""
     }
     if preferredAgentID.map(retired.contains) == true { preferredAgentID = nil }
+    if renameAgentID.map(retired.contains) == true {
+      renameAgentID = nil
+      renameModel = nil
+      renameEffort = nil
+    }
     for index in projects.indices
     where projects[index].settings.preferredAgentID.map(retired.contains) == true {
       projects[index].settings.preferredAgentID = nil

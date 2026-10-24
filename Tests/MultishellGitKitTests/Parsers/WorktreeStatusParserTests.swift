@@ -124,4 +124,14 @@ struct WorktreeStatusParserTests {
     #expect(entries.map(\.path) == ["odd\nname.txt", "\u{301}accent.txt"])
     #expect(entries.map(\.isUntracked) == [false, true])
   }
+
+  @Test func theBranchLineNamesItsUpstreamOrNone() {
+    let tracked = WorktreeStatusParser.parse(zeroTerminated("## main...origin/main [behind 1]\n"))
+    #expect(tracked.status.upstream == "origin/main")
+    #expect(WorktreeStatusParser.parse(zeroTerminated("## main\n")).status.upstream == nil)
+    let unborn = WorktreeStatusParser.parse(
+      zeroTerminated("## No commits yet on main...origin/main\n")
+    )
+    #expect(unborn.status.upstream == "origin/main")
+  }
 }

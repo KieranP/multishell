@@ -12,6 +12,8 @@ struct WorktreeActions: View {
     // The field it opens is on the sidebar row, wherever the menu was
     // asked for; the model carries which worktree is being renamed.
     Button(t("action.rename")) { model.beginRenamingWorktree(worktree) }
+    Button(t("action.auto-rename")) { model.autoRename(worktree) }
+      .disabled(!model.canAutoRename(worktree))
     if model.customName(of: worktree) != nil {
       Button(t("action.use-branch-name")) { model.renameWorktree(worktree.id, to: nil) }
     }

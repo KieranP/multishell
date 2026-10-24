@@ -34,6 +34,7 @@ extension AccessibilityText {
     isSelected: Bool,
     customName: String?,
     mergeState: WorktreeMergeState,
+    autoRename: AutoRenameState?,
   ) -> String {
     var parts = [
       t("spoken.named", customName ?? worktree.name, worktree.kindText(inSentence: true))
@@ -46,11 +47,22 @@ extension AccessibilityText {
         operation.isRunning ? operation.title : t("spoken.operation-failed", operation.title)
       )
     }
+    switch autoRename {
+    case .running: parts.append(t("spoken.auto-renaming"))
+    case .failed: parts.append(t("spoken.auto-rename-failed"))
+    case nil: break
+    }
     if worktree.isLocked { parts.append(t("spoken.locked")) }
     if mergeState.showsBadge(with: status) { parts.append(mergeState.summary) }
     if let status = WorktreeStatus.badged(status) { parts.append(status.summary) }
     if terminalCount > 0 { parts.append(t("count.terminals", terminalCount)) }
     return parts.joined(separator: ", ")
+  }
+
+  /// Why a failed Auto Rename left the name, said once asked for rather than
+  /// read out with the label on every visit to the row.
+  public static func worktreeHint(autoRename: AutoRenameState?) -> String {
+    autoRename?.failureMessage ?? ""
   }
 
   /// A pane's row in the sidebar: its title, which pane of a split it is,

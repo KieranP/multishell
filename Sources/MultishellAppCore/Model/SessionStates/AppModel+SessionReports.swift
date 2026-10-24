@@ -54,9 +54,7 @@ extension AppModel {
       )
 
     case .worktree(let id):
-      // Gated on the board as `isPaneInView` is, the worktree being selected
-      // with nothing of it on screen; and on frontmost as `isSeen`.
-      let seen = worktreeIDInView == id && platform.isActive
+      let seen = isWorktreeOnScreen(id)
       return SessionVisibility(worktreeID: id, isSeen: seen, isOnScreen: seen)
     }
   }

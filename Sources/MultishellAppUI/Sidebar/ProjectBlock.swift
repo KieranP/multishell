@@ -96,6 +96,7 @@ struct ProjectBlock: View {
       terminalCount: row.shownTerminalCount(of: sessions[worktree.id].count),
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
+      autoRename: model.autoRenames[worktree.id],
       isSelected: model.isInView(worktree),
       isDropTarget: tabDropTarget == worktree.id,
       status: model.statuses[worktree.id],
@@ -106,6 +107,7 @@ struct ProjectBlock: View {
       commitRename: { model.commitWorktreeRename(of: worktree.id, to: $0) },
       cancelRename: { model.cancelRenamingWorktree() },
       showModifiedFiles: { model.showModifiedFiles(of: worktree) },
+      clearAutoRenameFailure: { model.clearAutoRenameFailure(of: worktree.id) },
     )
     .equatable()
     .onTapGesture { model.select(worktree) }

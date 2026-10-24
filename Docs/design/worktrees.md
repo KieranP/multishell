@@ -51,6 +51,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   directory acts on it, so a row that hid it would lie. The removal dialog names
   the worktree as its row does, and the branch in its body, where what cannot be
   undone belongs.
+- **Auto Rename writes the same name Rename does**, from what an agent makes of
+  the branch's commits; the branch stays (agents.md).
 - **The trunk row holds the top whatever the sort says.** Rows sort in tiers
   first: git's main worktree, a linked worktree on the trunk, the active ones if
   asked for, then the rest. The trunk gets a tier of its own because a bare

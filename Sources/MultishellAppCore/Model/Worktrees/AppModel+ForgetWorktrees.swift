@@ -10,6 +10,9 @@ extension AppModel {
     setIfChanged(\.statuses, statuses.filter { !gone.contains($0.key) })
     forgetMergeStates(ofWorktrees: gone)
     setIfChanged(\.lastCommitDates, lastCommitDates.filter { !gone.contains($0.key) })
+    setIfChanged(\.autoRenames, autoRenames.filter { !gone.contains($0.key) })
+    oneShotRunner.stop(gone)
+    setIfChanged(\.scannedBranchTips, scannedBranchTips.filter { !gone.contains($0.key) })
     pathResolutions.forget(gone)
     removalRequests.forget(gone)
     // Their sessions went with them, so a worktree re-made at the path starts cold.
@@ -18,6 +21,8 @@ extension AppModel {
     statusReadLog.forget(gone)
     coordinator?.forgetStatusReads(of: ids)
     for id in ids {
+      // A banner about a row no longer there has nothing left to select.
+      withdrawNotification(about: .worktree(id))
       // A stage still running has no pane left to Cancel from, so it is ended
       // as that Cancel would end it; its task lets go of these as it returns.
       stageHandles.stopStage(of: id)
