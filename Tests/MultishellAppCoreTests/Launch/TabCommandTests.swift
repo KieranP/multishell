@@ -118,6 +118,7 @@ struct TabCommandTests {
         project: project,
         worktree: worktree,
         worktreeName: hostile,
+        port: nil,
       )
       let command = TabCommand.running(
         ["/usr/bin/printf", "[%s]\\n"] + AgentFlags.arguments("--name={{branch}}", values: values),

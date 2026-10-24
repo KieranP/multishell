@@ -118,6 +118,8 @@
 "error.no-editor-command-title" = "No editor command";
 "error.no-editor-message" = "Pick a preferred editor in Settings > General.";
 "error.no-editor-title" = "No editor chosen";
+"error.no-port-block-message" = "A port block would end past %2$d, so MULTISHELL_PORT is unset in %1$@. Lower the starting port or the block size in Settings > Worktrees, or remove a worktree.";
+"error.no-port-block-title" = "No port block for a worktree";
 "error.not-a-repository-message" = "%@ is not inside a repository and is not a bare one, or git could not read it.";
 "error.not-a-repository-title" = "Not a git repository";
 "error.not-a-worktree-title" = "Not a worktree";
@@ -129,6 +131,8 @@
 "error.pre-create-hook" = "Worktree not created: its pre-create hook %@";
 "error.pre-delete-hook" = "Worktree not removed: its pre-delete hook %@";
 "error.printed-nothing" = "%@ and printed nothing.";
+"error.removal-still-running-message" = "%@ is still being removed. Create it again once that removal has finished.";
+"error.removal-still-running-title" = "A removal is still running there";
 "error.said-then-ending" = "%1$@\n\n%2$@.";
 "error.settings-shape-message" = "%@ holds something else at its top level, so Multishell will not rewrite it. Use Show JSON beside the agent and add the entries yourself.";
 "error.settings-shape-title" = "That settings file is not a JSON object";
@@ -168,6 +172,7 @@
 "find.count" = "%1$d/%2$d";
 "find.count-unselected" = "-/%d";
 "hook-variable.branch" = "Its branch";
+"hook-variable.port" = "First port of its block";
 "hook-variable.project-name" = "Repository folder name";
 "hook-variable.project-path" = "Repository root";
 "hook-variable.worktree-path" = "The worktree created or removed";
@@ -237,6 +242,8 @@
 "option.shell-path" = "%1$@  %2$@";
 "option.system-font" = "System";
 "option.system-monospace" = "System monospace";
+"port-block.caption" = "No port block ending by %2$d is left for %1$@, so MULTISHELL_PORT is unset there.";
+"port-block.worktree" = "%1$@ (%2$@)";
 "project-removal.nothing-on-disk" = "Nothing on disk is touched; the repository and its worktrees stay where they are.";
 "project-removal.takes" = "Takes the project and its worktrees out of the sidebar.";
 "project-removal.title" = "Remove project %@?";

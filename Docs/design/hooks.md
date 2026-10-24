@@ -87,3 +87,7 @@
 - **Gone means git no longer lists it**, the row dropping at the next refresh. A
   folder deleted without git stays listed as prunable, so a stage failing in it
   says so on its pane.
+- **`MULTISHELL_PORT` is unset after the rc files where the worktree has no
+  block**, in the script's prologue, so neither the app's environment nor an rc
+  file gives a port it has not. A set port is not pinned the same way: the
+  prologue would carry it as shell text, which no value ever is (agents.md).

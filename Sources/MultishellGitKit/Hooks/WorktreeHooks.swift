@@ -12,6 +12,7 @@ public enum WorktreeHooks {
     for project: Project,
     worktreePath: URL,
     branch: String,
+    port: Int?,
     shellPath: String?,
     timeout: Duration?,
     stopper: ProcessStopper?,
@@ -25,6 +26,7 @@ public enum WorktreeHooks {
       project: project,
       worktreePath: worktreePath,
       branch: branch,
+      port: port,
     )
     let directory = await runOnDispatch {
       Self.workingDirectory(for: stage, project: project, worktreePath: worktreePath)
@@ -35,6 +37,7 @@ public enum WorktreeHooks {
         in: directory,
         shellPath: shellPath ?? ShellChoice.loginShellPath(),
         environment: environment,
+        unsetting: HookVariable.namesToUnset(port: port),
         timeout: timeout,
         stopper: stopper,
       )

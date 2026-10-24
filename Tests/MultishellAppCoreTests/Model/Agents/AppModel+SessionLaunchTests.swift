@@ -100,6 +100,38 @@ struct AppModelSessionLaunchTests {
     )
   }
 
+  @Test func aSessionStartsWithItsWorktreesPortInTheFlagsAndTheEnvironment() throws {
+    let harness = Harness()
+    harness.model.setPreferredShell("/bin/sh")
+    harness.model.agentDetection = AgentDetection(found: [
+      "claude": URL(fileURLWithPath: "/bin/claude")
+    ])
+    harness.model.setAgentFlags("--port {{port}}", for: AgentCatalogue.claudeID)
+    let session = TerminalSession(
+      worktreeID: harness.feature.id,
+      workingDirectory: harness.feature.path,
+      title: "Claude Code",
+      agentID: AgentCatalogue.claudeID,
+    )
+
+    let prepared = harness.model.preparedForLaunch(session)
+
+    #expect(prepared.port == 3010)
+    #expect(
+      prepared.command?.last?.withoutLeadingPathStatement
+        == "claude --port 3010; exec /bin/sh -l"
+    )
+    harness.model.select(harness.feature)
+    let opened = try #require(harness.engine.opened.last)
+    #expect(
+      SessionEnvironment.variables(for: opened, socket: URL(fileURLWithPath: "/s"))[
+        "MULTISHELL_PORT"
+      ] == "3010",
+      "reaches the engine's environment",
+    )
+    #expect(harness.model.workspace.sessions.allSatisfy { $0.port == nil }, "never saved")
+  }
+
   /// A saved tab that comes back as `claude --continue` is the same tab,
   /// and the flags said how that tab is meant to run.
   @Test func aResumedAgentTabIsStartedWithTheFlagsToo() {

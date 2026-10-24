@@ -55,9 +55,26 @@ enum WorkspaceInvariants {
         "\(context): a blank custom name",
       )
     }
+    checkPortBlocks(workspace, context)
     if let selected = workspace.selectedWorktreeID {
       #expect(worktreeIDs.contains(selected), "\(context): selection of a missing worktree")
     }
+  }
+
+  private static func checkPortBlocks(_ workspace: Workspace, _ context: String) {
+    let holders = workspace.worktrees.filter { !$0.isBare }.map(\.id)
+    #expect(
+      Set(workspace.portBlocks.keys).isSubset(of: holders),
+      "\(context): a block for a missing or bare worktree",
+    )
+    #expect(
+      Set(workspace.portBlocks.values).count == workspace.portBlocks.count,
+      "\(context): a block held twice",
+    )
+    #expect(workspace.portBlocks.values.allSatisfy { $0 >= 0 }, "\(context): a negative block")
+    var settled = workspace
+    settled.settlePortBlocks()
+    #expect(settled.portBlocks == workspace.portBlocks, "\(context): a block left ungiven")
   }
 
   private static func checkFileTabs(

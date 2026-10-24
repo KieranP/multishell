@@ -32,10 +32,26 @@ extension Workspace {
     }
 
     repairGroups()
+    repairPortBlocks()
 
     if let selected = selectedWorktreeID, !worktreeIDs.contains(selected) {
       selectedWorktreeID = nil
     }
+  }
+
+  /// Drops a block whose worktree is not listed or is bare, one no setting could
+  /// fit, and a block already held, the worktree listed first keeping it.
+  private mutating func repairPortBlocks() {
+    var kept: [Worktree.ID: Int] = [:]
+    var held: Set<Int> = []
+    for worktree in worktrees where !worktree.isBare {
+      guard let index = portBlocks[worktree.id], PortBlock.indices.contains(index),
+        held.insert(index).inserted
+      else { continue }
+      kept[worktree.id] = index
+    }
+    portBlocks = kept
+    settlePortBlocks()
   }
 
   /// One pass in display order drops missing and repeated sessions and

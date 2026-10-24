@@ -34,7 +34,7 @@ extension WorkspaceStoreTests {
       let workspace = store.workspace
       let tabIDs = workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
       let anyTabID = tabIDs.randomElement(using: &rng)
-      switch Int.random(in: 0..<20, using: &rng) {
+      switch Int.random(in: 0..<21, using: &rng) {
       case 0, 1:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
@@ -148,6 +148,13 @@ extension WorkspaceStoreTests {
       case 18:
         if let anyTabID {
           Bool.random(using: &rng) ? store.closeTab(anyTabID) : store.activateTab(anyTabID)
+        }
+
+      case 19:
+        if Bool.random(using: &rng) {
+          store.setPortBlockStart([80, 3000, 65_520, 65_535].randomElement(using: &rng)!)
+        } else {
+          store.setPortBlockSize([0, 1, 10, 30_000].randomElement(using: &rng)!)
         }
 
       default:

@@ -39,6 +39,7 @@ extension AppModel {
             try await url.removeFromDisk()
           }
         },
+        port: workspace.port(of: worktree.id),
         deletesBranch: deletesBranch,
         forcesBranchDeletion: forcesBranchDeletion,
         shellPath: workspace.effectiveShellPath(for: effective),

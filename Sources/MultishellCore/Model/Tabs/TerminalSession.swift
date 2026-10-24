@@ -3,7 +3,7 @@ import Foundation
 /// What a terminal should be, not a running process, which lives behind
 /// `TerminalHost`. No natural key, so it carries a generated id.
 public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
-  /// `shellOverride` is left out on purpose; see its doc comment.
+  /// `shellOverride` and `port` are left out on purpose; see their doc comments.
   enum CodingKeys: String, CodingKey {
     case id, worktreeID, workingDirectory, title, command, agentID
   }
@@ -20,6 +20,9 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// The shell to run when `command` is nil. Runtime only, never saved: a
   /// relaunched tab reads the setting again.
   public var shellOverride: String?
+  /// The worktree's port as the shell starts. Runtime only, for the reason
+  /// `shellOverride` is, so a shell keeps it until reopened.
+  public var port: Int?
 
   /// A plain shell's title is saved empty and put in words here, or a tab
   /// saved under one language kept that language's word under the next.

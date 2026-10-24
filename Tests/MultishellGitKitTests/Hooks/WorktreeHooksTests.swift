@@ -40,6 +40,42 @@ struct WorktreeHooksTests {
     #expect(recorded[3] == "hooked")
   }
 
+  @Test func everyHookButPreCreateGetsTheWorktreesPort() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
+    let record = { (file: String) in
+      "printf %s \"${MULTISHELL_PORT-unset}\" > \"$MULTISHELL_PROJECT_PATH/\(file)\""
+    }
+    project.settings = ProjectSettings(
+      preCreateHook: record("pre-create.txt"),
+      postCreateHook: record("post-create.txt"),
+      preDeleteHook: record("pre-delete.txt"),
+      postDeleteHook: record("post-delete.txt"),
+    )
+    let path = try await fixture.coordinator.create(
+      branch: "ported",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
+    try await fixture.coordinator.runPostCreateHook(
+      for: project,
+      worktreePath: path,
+      branch: "ported",
+      port: 41_010,
+    )
+    let worktree = try await fixture.worktree(onBranch: "ported", in: project)
+    try await fixture.coordinator.removeUnlinking(worktree, in: project, port: 41_010)
+
+    let recorded = try ["pre-create", "post-create", "pre-delete", "post-delete"].map { stage in
+      try String(
+        contentsOf: project.path.appendingPathComponent("\(stage).txt"),
+        encoding: .utf8,
+      )
+    }
+    #expect(recorded == ["unset", "41010", "41010", "41010"])
+  }
+
   @Test func thePostDeleteHookRunsInTheRepositoryWithTheOldPath() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

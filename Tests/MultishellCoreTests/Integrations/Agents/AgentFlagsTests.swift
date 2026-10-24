@@ -73,6 +73,7 @@ struct AgentFlagsTests {
       project: project,
       worktree: odd,
       worktreeName: "{{project_path}}",
+      port: nil,
     )
 
     #expect(
@@ -106,5 +107,16 @@ struct AgentFlagsTests {
       #expect(custom.text == "my-agent --name=\"$MULTISHELL_BRANCH\"", "read, never written in")
       #expect(custom.environment == ["MULTISHELL_BRANCH": hostile])
     }
+  }
+
+  @Test func aWorktreeWithoutAPortBlockLeavesThePortTokenAsTyped() {
+    let values = WorktreePlaceholder.values(
+      project: project,
+      worktree: Worktree(path: URL(fileURLWithPath: "/w"), projectID: project.id, head: "a"),
+      worktreeName: "w",
+      port: nil,
+    )
+
+    #expect(AgentFlags.arguments("--port={{port}}", values: values) == ["--port={{port}}"])
   }
 }

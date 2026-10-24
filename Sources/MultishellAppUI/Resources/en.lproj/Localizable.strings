@@ -140,7 +140,7 @@
 "hooks.post-delete" = "Post-delete";
 "hooks.post-delete-info" = "Runs in the repository after git worktree remove, once the directory is gone.";
 "hooks.pre-create" = "Pre-create";
-"hooks.pre-create-info" = "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path. A non-zero exit stops the create; git is never asked.";
+"hooks.pre-create-info" = "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path and MULTISHELL_PORT unset. A non-zero exit stops the create; git is never asked.";
 "hooks.pre-delete" = "Pre-delete";
 "hooks.pre-delete-info" = "Runs in the worktree before git worktree remove, after the confirmation, or in the repository when the directory is already gone. A non-zero exit stops the removal; the worktree stays.";
 "hooks.shared-header" = "From %@";
@@ -315,6 +315,11 @@
 "worktrees.indicator-info" = "What the badge on a worktree row and a board card counts. Staged & Unstaged counts every line in the working tree; Staged Only counts what git diff --cached shows. Uncountable files follow a ~.";
 "worktrees.path" = "Worktree path:";
 "worktrees.path-info" = "Where each project's worktrees are created. Absolute, or relative to the repository. {project} is the repository folder name, ~ is home. Default ../{project}-worktrees. Any project can override it.";
+"worktrees.port-block-size" = "Port block size:";
+"worktrees.port-block-size-info" = "How many ports each worktree's block holds. A project counts up from MULTISHELL_PORT, a web server on + 1 and so on. A block that would end past 65535 is not given.";
+"worktrees.port-block-start" = "Starting port:";
+"worktrees.port-block-start-info" = "Each worktree gets a block of ports from here, its first in MULTISHELL_PORT and {{port}}. A change moves every block's ports; open shells keep theirs until reopened.";
+"worktrees.ports" = "ports";
 "worktrees.prefix-none" = "none";
 "worktrees.seconds" = "seconds";
 "worktrees.sort" = "Sort worktrees:";

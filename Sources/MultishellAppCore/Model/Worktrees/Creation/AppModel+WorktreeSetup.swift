@@ -143,6 +143,7 @@ extension AppModel {
         for: effective,
         worktreePath: worktree.path,
         branch: branch,
+        port: workspace.port(of: worktree.id),
         shellPath: shellPath,
         timeout: workspace.projectHookTimeout,
         stopper: stopper,

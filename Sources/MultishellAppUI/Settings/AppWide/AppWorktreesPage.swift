@@ -30,17 +30,39 @@ struct AppWorktreesPage: View {
 
       Section {
         InfoLabeledContent(t("worktrees.hook-timeout"), info: t("worktrees.hook-timeout-info")) {
-          TextField(
+          SettingsNumberField(
             t("worktrees.hook-timeout"),
             value: model.settingBinding(
               \.projectHookTimeoutSeconds,
               write: model.setProjectHookTimeoutSeconds,
             ),
-            format: .number,
           )
-          .frame(width: 60)
-          .multilineTextAlignment(.trailing)
           Text(t("worktrees.seconds"))
+        }
+      }
+
+      Section {
+        InfoLabeledContent(
+          t("worktrees.port-block-start"),
+          info: t("worktrees.port-block-start-info"),
+        ) {
+          SettingsNumberField(
+            t("worktrees.port-block-start"),
+            value: model.settingBinding(\.portBlockStart, write: model.setPortBlockStart),
+          )
+        }
+        InfoLabeledContent(
+          t("worktrees.port-block-size"),
+          info: t("worktrees.port-block-size-info"),
+        ) {
+          SettingsNumberField(
+            t("worktrees.port-block-size"),
+            value: model.settingBinding(\.portBlockSize, write: model.setPortBlockSize),
+          )
+          Text(t("worktrees.ports"))
+        }
+        if let caption = model.worktreesWithoutPortsCaption {
+          SettingsCaption(caption)
         }
       }
 

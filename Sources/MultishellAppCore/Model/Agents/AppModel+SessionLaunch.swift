@@ -8,6 +8,7 @@ extension AppModel {
   func preparedForLaunch(_ session: TerminalSession) -> TerminalSession {
     var prepared = session
     prepared.shellOverride = shellPath(forWorktree: session.worktreeID)
+    prepared.port = workspace.port(of: session.worktreeID)
     guard let agentID = session.agentID else { return prepared }
     prepared.command = agentCommand(
       agentID,
@@ -81,6 +82,7 @@ extension AppModel {
       project: place.project,
       worktree: place.worktree,
       worktreeName: workspace.displayName(of: place.worktree),
+      port: workspace.port(of: place.worktree.id),
     )
   }
 

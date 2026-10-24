@@ -47,6 +47,7 @@ extension WorktreeCoordinator {
         createsBranch: createsBranch,
         settings: settings,
       ),
+      port: nil,
       shellPath: shellPath,
       timeout: timeout,
       stopper: stopper,
@@ -61,12 +62,14 @@ extension WorktreeCoordinator {
     in project: Project,
     deletesBranch: Bool = false,
     shellPath: String? = nil,
+    port: Int? = nil,
     onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil,
   ) async throws {
     try await remove(
       worktree,
       in: project,
       trash: { try FileManager.default.removeItem(at: $0) },
+      port: port,
       deletesBranch: deletesBranch,
       shellPath: shellPath,
       onStep: onStep,

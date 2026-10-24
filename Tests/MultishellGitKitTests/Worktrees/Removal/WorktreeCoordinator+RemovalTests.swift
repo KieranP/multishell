@@ -41,7 +41,12 @@ struct WorktreeCoordinatorRemovalTests {
     let worktree = try await fixture.worktree(onBranch: "dirty")
     let bin = fixture.root.appendingPathComponent("bin", isDirectory: true)
 
-    try await fixture.coordinator.remove(worktree, in: fixture.project, trash: moveToBin(bin))
+    try await fixture.coordinator.remove(
+      worktree,
+      in: fixture.project,
+      trash: moveToBin(bin),
+      port: nil,
+    )
 
     #expect(!FileManager.default.fileExists(atPath: path.path))
     #expect(
@@ -73,6 +78,7 @@ struct WorktreeCoordinatorRemovalTests {
       worktree,
       in: project,
       trash: moveToBin(bin),
+      port: nil,
       onStep: { steps.record($0) },
     )
 
@@ -105,6 +111,7 @@ struct WorktreeCoordinatorRemovalTests {
         worktree,
         in: fixture.project,
         trash: { _ in throw CocoaError(.fileWriteNoPermission) },
+        port: nil,
       )
     }
     #expect(FileManager.default.fileExists(atPath: path.path))
@@ -302,6 +309,7 @@ struct WorktreeCoordinatorRemovalTests {
         pinned,
         in: fixture.project,
         trash: { _ in throw CocoaError(.fileWriteNoPermission) },
+        port: nil,
       )
     }
 
@@ -332,7 +340,12 @@ struct WorktreeCoordinatorRemovalTests {
     let worktree = try await fixture.worktree(onBranch: "untouched")
 
     await #expect(throws: TrashFailure.self) {
-      try await fixture.coordinator.remove(worktree, in: fixture.project, trash: { _ in })
+      try await fixture.coordinator.remove(
+        worktree,
+        in: fixture.project,
+        trash: { _ in },
+        port: nil,
+      )
     }
 
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("wip.txt").path))

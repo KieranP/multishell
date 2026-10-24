@@ -55,7 +55,13 @@ extension AppModel {
     do {
       let discovered = try await coordinator.git.list(project)
       guard forgetCacheUnlessListed(project.id) else { return }
-      forgetWorktrees(store.replaceWorktrees(discovered, forProject: project.id))
+      forgetWorktrees(
+        store.replaceWorktrees(
+          discovered,
+          forProject: project.id,
+          keeping: worktreeOperations.removalsPastTheirRecord,
+        )
+      )
       worktreeRecords[project.id] = records
       let wasMissing = missingProjects.remove(project.id) != nil
       applySharedSettingsReading(shared, for: project)

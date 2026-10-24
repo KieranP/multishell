@@ -353,6 +353,7 @@ struct WorktreeCoordinatorCreationTests {
       for: project,
       worktreePath: path,
       branch: "halves",
+      port: nil,
     )
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
   }

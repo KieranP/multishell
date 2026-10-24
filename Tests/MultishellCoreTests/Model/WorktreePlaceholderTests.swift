@@ -15,6 +15,7 @@ struct WorktreePlaceholderTests {
     #expect(values[.worktreePath] == "/Users/dev/Work/multishell-worktrees/fix")
     #expect(values[.projectName] == "multishell")
     #expect(values[.projectPath] == "/Users/dev/Work/multishell")
+    #expect(values[.port] == "3040")
     #expect(
       values.count == WorktreePlaceholder.allCases.count,
       "a case with no value expands to nothing",
@@ -31,6 +32,7 @@ struct WorktreePlaceholderTests {
       project: project,
       worktree: detached,
       worktreeName: "abc1234",
+      port: nil,
     )
     #expect(values[.branch] == "abc1234", "never the empty string: `--name=` is worse")
   }

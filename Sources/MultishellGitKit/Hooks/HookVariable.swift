@@ -10,6 +10,7 @@ public enum HookVariable: CaseIterable, Sendable {
   case projectName
   case worktreePath
   case branch
+  case port
 
   /// Spelled by the placeholder meaning the same, so a custom command and a
   /// hook read one name.
@@ -19,6 +20,7 @@ public enum HookVariable: CaseIterable, Sendable {
     case .projectName: WorktreePlaceholder.projectName.variable
     case .worktreePath: WorktreePlaceholder.worktreePath.variable
     case .branch: WorktreePlaceholder.branch.variable
+    case .port: WorktreePlaceholder.port.variable
     }
   }
 
@@ -29,13 +31,22 @@ public enum HookVariable: CaseIterable, Sendable {
     case .projectName: t("hook-variable.project-name")
     case .worktreePath: t("hook-variable.worktree-path")
     case .branch: t("hook-variable.branch")
+    case .port: t("hook-variable.port")
     }
   }
 
+  /// A port for a worktree with none, unset after the rc files. A set value is
+  /// never written into the script, any value being shell text there.
+  static func namesToUnset(port: Int?) -> [String] {
+    port == nil ? [Self.port.name] : []
+  }
+
+  /// `port` is `nil` where the worktree has no block, which leaves its variable unset.
   static func environment(
     project: Project,
     worktreePath: URL,
     branch: String,
+    port: Int?,
   ) -> [String: String] {
     var environment: [String: String] = [:]
     for variable in allCases {
@@ -45,6 +56,7 @@ public enum HookVariable: CaseIterable, Sendable {
         case .projectName: project.name
         case .worktreePath: worktreePath.path
         case .branch: branch
+        case .port: port.map(String.init)
         }
     }
     return environment

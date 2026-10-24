@@ -8,7 +8,7 @@ struct HookVariableTests {
     #expect(
       HookVariable.allCases.map(\.name) == [
         "MULTISHELL_PROJECT_PATH", "MULTISHELL_PROJECT_NAME", "MULTISHELL_WORKTREE_PATH",
-        "MULTISHELL_BRANCH",
+        "MULTISHELL_BRANCH", "MULTISHELL_PORT",
       ]
     )
   }

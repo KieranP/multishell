@@ -260,6 +260,8 @@ command line's requests on the same socket. Newest at the bottom.
   reaches the docs by hand.
 - **An unknown placeholder is left as typed**, so the mistake shows in the tab
   rather than an argument going missing.
+- **So is `{{port}}` in a worktree with no port block**, and Settings >
+  Worktrees names it in a caption (worktrees.md).
 - **One pass over what was typed**, so a token inside a value is text: a branch
   named after another placeholder used to be expanded again.
 - **The branch placeholder on a detached worktree is the short SHA, never

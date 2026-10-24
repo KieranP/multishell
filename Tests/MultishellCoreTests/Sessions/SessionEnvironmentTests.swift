@@ -23,6 +23,22 @@ struct SessionEnvironmentTests {
     )
   }
 
+  @Test func aSessionWithAPortGetsItAsMultishellPortAndOneWithoutGetsNone() {
+    var session = TerminalSession(
+      worktreeID: "/w",
+      workingDirectory: URL(fileURLWithPath: "/w/repo"),
+      title: "Shell",
+    )
+    let socket = URL(fileURLWithPath: "/s")
+    #expect(SessionEnvironment.variables(for: session, socket: socket)["MULTISHELL_PORT"] == nil)
+
+    session.port = 3010
+
+    #expect(
+      SessionEnvironment.variables(for: session, socket: socket)["MULTISHELL_PORT"] == "3010"
+    )
+  }
+
   @Test func theBaseVariablesStandWhicheverShellTheTabRuns() {
     for shell in ["/bin/zsh", "/bin/bash", "/opt/homebrew/bin/fish"] {
       let session = TerminalSession(

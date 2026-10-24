@@ -30,5 +30,6 @@ func consistentWorkspace() -> (workspace: Workspace, tab: TerminalTab) {
   workspace.tabGroups = [group]
   workspace.focusedGroupByWorktree = [worktree.id: group.id]
   workspace.selectedWorktreeID = worktree.id
+  workspace.portBlocks = [worktree.id: 0]
   return (workspace, tab)
 }

@@ -18,6 +18,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
     case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode, changeScope
+    case portBlockStart, portBlockSize, portBlocks
   }
 
   /// Keys no property answers to any more, read only to carry what an older
@@ -46,6 +47,9 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// The user's own name for a worktree. Here and not on `Worktree`, whose
   /// records git replaces wholesale on every refresh.
   var customWorktreeNames: [Worktree.ID: String] = [:]
+  /// Each worktree's port block, by index from `portBlockStart`. Here for the
+  /// reason `customWorktreeNames` is; see Docs/design/worktrees.md.
+  var portBlocks: [Worktree.ID: Int] = [:]
 
   public internal(set) var appearance = Appearance()
   public internal(set) var worktreeDefaults = WorktreeSettings()
@@ -108,6 +112,10 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Modified or Branch, chosen in the panel or any file tab's bar, which
   /// both follow it.
   public internal(set) var changeScope = ChangeScope.default
+  /// The first port of the first block. Changing it or the size moves every
+  /// block's ports; only a worktree left without a port changes block.
+  public internal(set) var portBlockStart = PortBlock.defaultStart
+  public internal(set) var portBlockSize = PortBlock.defaultSize
 
   /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var projectHookTimeout: Duration? {
@@ -234,6 +242,26 @@ public struct Workspace: Codable, Hashable, Sendable {
       or: .default,
     )
     changeScope = container.decodeTolerantly(ChangeScope.self, forKey: .changeScope, or: .default)
+    // Tolerated, each block alone: one is given again on load, so a bad value costs itself.
+    portBlockStart = container.decodeTolerantly(
+      Int.self,
+      forKey: .portBlockStart,
+      or: PortBlock.defaultStart,
+    ).clamped(to: PortBlock.starts)
+    portBlockSize = container.decodeTolerantly(
+      Int.self,
+      forKey: .portBlockSize,
+      or: PortBlock.defaultSize,
+    ).clamped(to: PortBlock.sizes)
+    portBlocks = container.decodeTolerantly(
+      [Worktree.ID: JSONValue].self,
+      forKey: .portBlocks,
+      or: [:],
+    )
+    .compactMapValues { value in
+      guard case .integer(let index) = value else { return nil }
+      return index
+    }
 
     // A file written before groups names no group but says which tab was
     // active. Read here, or `repair` falls back to the last tab.

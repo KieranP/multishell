@@ -5,6 +5,8 @@ import Foundation
 public enum WorktreePlaceholder: String, CaseIterable, Sendable {
   /// The branch, or the short SHA when detached.
   case branch
+  /// The first port of the worktree's block, with no value where it has none.
+  case port
   /// The repository's folder name.
   case projectName = "project"
   /// The repository root.
@@ -26,15 +28,17 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
     case .worktreePath: "MULTISHELL_WORKTREE_PATH"
     case .projectName: "MULTISHELL_PROJECT_NAME"
     case .projectPath: "MULTISHELL_PROJECT_PATH"
+    case .port: "MULTISHELL_PORT"
     }
   }
 
-  /// `worktreeName` is what the sidebar shows, `Workspace.displayName(of:)`,
-  /// which the worktree record cannot answer on its own.
+  /// `worktreeName` and `port` are what the workspace says, `displayName(of:)`
+  /// and `port(of:)`, which the worktree record cannot answer on its own.
   public static func values(
     project: Project,
     worktree: Worktree,
     worktreeName: String,
+    port: Int?,
   ) -> [Self: String] {
     var values: [Self: String] = [:]
     for placeholder in allCases {
@@ -45,6 +49,7 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
         case .worktreePath: worktree.path.path
         case .projectName: project.name
         case .projectPath: project.path.path
+        case .port: port.map(String.init)
         }
     }
     return values

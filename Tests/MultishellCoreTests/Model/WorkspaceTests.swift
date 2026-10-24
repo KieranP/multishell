@@ -184,6 +184,47 @@ struct WorkspaceTests {
     #expect(unlimited.projectHookTimeout == nil)
   }
 
+  @Test func aWorkspaceWithoutPortSettingsStartsAt3000InBlocksOf10() throws {
+    let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
+
+    #expect(workspace.portBlockStart == 3000)
+    #expect(workspace.portBlockSize == 10)
+    #expect(workspace.portBlocks.isEmpty)
+  }
+
+  @Test func portSettingsOutsideTheirRangesAreBroughtInsideOnLoad() throws {
+    let low = try decodeJSON(Workspace.self, #"{ "portBlockStart": 22, "portBlockSize": -4 }"#)
+    let high = try decodeJSON(
+      Workspace.self,
+      #"{ "portBlockStart": 99999, "portBlockSize": 99999999999 }"#,
+    )
+
+    #expect(low.portBlockStart == 1024)
+    #expect(low.portBlockSize == 1)
+    #expect(high.portBlockStart == 65_535)
+    #expect(high.portBlockSize == 64_512)
+  }
+
+  @Test func portValuesOfTheWrongShapeCostThemselvesNotTheFile() throws {
+    let workspace = try decodeJSON(
+      Workspace.self,
+      #"{ "portBlockStart": "3000", "portBlockSize": 2.5, "portBlocks": { "/w": 1e19 } }"#,
+    )
+
+    #expect(workspace.portBlockStart == 3000)
+    #expect(workspace.portBlockSize == 10)
+    #expect(workspace.portBlocks.isEmpty)
+  }
+
+  @Test func aMalformedBlockCostsItsOwnEntryNotTheOthers() throws {
+    let workspace = try decodeJSON(
+      Workspace.self,
+      #"{ "portBlocks": { "/a": 0, "/b": 1, "/c": 1e19, "/d": "2" } }"#,
+    )
+
+    #expect(workspace.portBlocks == ["/a": 0, "/b": 1])
+  }
+
   @Test func aWorkspaceWithoutCustomWorktreeNamesHasNone() throws {
     #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).customWorktreeNames.isEmpty)
     let named = try decodeJSON(

@@ -115,6 +115,7 @@ struct StateFileTests {
       }
     }
     #expect(workspace.tabs.count == 2000)
+    workspace.settlePortBlocks()
 
     let stateFile = StateFile(fileURL: file)
     let saving = ContinuousClock.now
@@ -188,6 +189,9 @@ struct StateFileTests {
     workspace.fileTabLayout = .split
     workspace.filesPanelMode = .git
     workspace.changeScope = .branch
+    workspace.portBlockStart = 4000
+    workspace.portBlockSize = 25
+    workspace.portBlocks = ["/repos/demo": 2]
 
     let stateFile = StateFile(fileURL: file)
     try stateFile.save(workspace)

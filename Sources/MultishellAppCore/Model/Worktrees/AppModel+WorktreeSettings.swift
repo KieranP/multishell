@@ -17,6 +17,14 @@ extension AppModel {
     store.setProjectHookTimeoutSeconds(seconds)
   }
 
+  public func setPortBlockStart(_ port: Int) {
+    store.setPortBlockStart(port)
+  }
+
+  public func setPortBlockSize(_ size: Int) {
+    store.setPortBlockSize(size)
+  }
+
   public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     store.setWorktreeDefaults(defaults)
   }

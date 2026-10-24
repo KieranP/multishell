@@ -5,7 +5,8 @@ import Foundation
 extension WorktreePlaceholder {
   static let sampleProject = Project(path: URL(fileURLWithPath: "/Users/dev/Work/multishell"))
 
-  /// A worktree of `sampleProject` on `kieran/fix`, which the sidebar calls "The fix".
+  /// A worktree of `sampleProject` on `kieran/fix`, which the sidebar calls "The fix", its
+  /// block starting at 3040.
   static var sampleValues: [WorktreePlaceholder: String] {
     values(
       project: sampleProject,
@@ -16,6 +17,7 @@ extension WorktreePlaceholder {
         branch: "kieran/fix",
       ),
       worktreeName: "The fix",
+      port: 3040,
     )
   }
 
@@ -30,6 +32,7 @@ extension WorktreePlaceholder {
         branch: branch,
       ),
       worktreeName: branch,
+      port: 3040,
     )
   }
 }

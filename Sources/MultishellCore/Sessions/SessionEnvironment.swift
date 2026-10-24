@@ -27,6 +27,7 @@ public enum SessionEnvironment {
       socketVariable: socket.path,
       appPIDVariable: String(ProcessInfo.processInfo.processIdentifier),
     ]
+    if let port = session.port { variables[WorktreePlaceholder.port.variable] = String(port) }
     if let bundle {
       variables["PATH"] = searchPath(inheritedPath, leadingWith: bundle)
       variables[leadingPathVariable] = leadingEntries(of: bundle).joined(separator: ":")

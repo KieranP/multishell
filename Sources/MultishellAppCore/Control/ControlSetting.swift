@@ -62,33 +62,17 @@ struct ControlSetting {
   }
 
   /// Refused outside `range` rather than clamped, so a write reads back as given.
-  static func number(
+  static func number<Value: LosslessStringConvertible & Comparable>(
     _ key: String,
-    _ read: @escaping () -> Double,
-    in range: ClosedRange<Double>,
-    _ write: @escaping (Double) -> Void,
+    _ read: @escaping () -> Value,
+    in range: ClosedRange<Value>,
+    _ write: @escaping (Value) -> Void,
   ) -> Self {
     Self(
       key: key,
       read: read,
       write: { text in
-        guard let value = Double(text), range.contains(value) else { return false }
-        write(value)
-        return true
-      },
-    )
-  }
-
-  static func count(
-    _ key: String,
-    _ read: @escaping () -> Int,
-    _ write: @escaping (Int) -> Void,
-  ) -> Self {
-    Self(
-      key: key,
-      read: read,
-      write: { text in
-        guard let value = Int(text), value >= 0 else { return false }
+        guard let value = Value(text), range.contains(value) else { return false }
         write(value)
         return true
       },

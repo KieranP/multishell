@@ -84,6 +84,26 @@ struct AppModelControlGlobalSettingsTests {
     #expect(harness.model.workspace.preferredAgentID == nil)
   }
 
+  @Test func aPortStartBelow1024OrABlockSizeBelowOneIsRefused() async {
+    let harness = Harness()
+
+    for (key, value) in [("portBlockStart", "80"), ("portBlockSize", "0")] {
+      #expect(
+        await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value))
+          == .refused(.invalidValue(key: key, value: value))
+      )
+    }
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "portBlockStart", value: "4000"))
+        == .done
+    )
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "portBlockSize", value: "20"))
+        == .done
+    )
+    #expect(harness.model.workspace.port(of: harness.feature.id) == 4020)
+  }
+
   @Test func aShellOrEditorThePickersCannotNameIsRefused() async {
     let harness = Harness()
 

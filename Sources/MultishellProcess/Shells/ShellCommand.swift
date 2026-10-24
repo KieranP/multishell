@@ -54,19 +54,22 @@ public enum ShellCommand {
   }
 
   /// A multi-line sh script whose first failing line ends it, inside an
-  /// interactive login shell; see Docs/design/hooks.md.
+  /// interactive login shell, `unsetting` after its rc files; see hooks.md.
   public static func runScript(
     _ script: String,
     in directory: URL,
     shellPath: String,
     environment: [String: String] = [:],
+    unsetting: [String] = [],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
   ) async throws -> String {
     let shell = ShellInvocation.forCommandLine(inShellAt: shellPath)
     let arguments = shell.arguments + [Self.evalScriptCommand]
     let environment = ShellInvocation.historyless(environment)
-      .merging([Self.scriptVariable: Self.prologue(entering: directory) + script]) { $1 }
+      .merging([
+        Self.scriptVariable: Self.prologue(entering: directory, unsetting: unsetting) + script
+      ]) { $1 }
     let output = try await ProcessRunner().capture(
       shell.executable,
       arguments,
@@ -102,10 +105,11 @@ public enum ShellCommand {
   }
 
   /// Back to the script's directory, as the rc files may leave the shell
-  /// anywhere; then `set -e`, then the marker its stderr is read from.
-  private static func prologue(entering directory: URL) -> String {
-    "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\nset -e\n"
-      + "printf '%s\\n' '\(stderrStartMarker)' >&2\n"
+  /// anywhere; then the unsets, `set -e`, and the marker its stderr is read from.
+  private static func prologue(entering directory: URL, unsetting: [String]) -> String {
+    let unsets = unsetting.map { "unset \(AnyShellQuoting.quote($0))\n" }.joined()
+    return "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\n" + unsets
+      + "set -e\nprintf '%s\\n' '\(stderrStartMarker)' >&2\n"
   }
 
   /// The part of a failure's stderr after the marker, or all of it where the

@@ -10,6 +10,9 @@ public final class WorkspaceStore {
   public private(set) var workspace: Workspace
 
   @ObservationIgnored private let file: StateFile
+  /// Rows kept for a removal after git dropped their record. One git lists again
+  /// was re-added outside the app, and takes a block the removal's hook is not using.
+  @ObservationIgnored private var keptPastTheirRecord: Set<Worktree.ID> = []
 
   /// Set where unread state is still on disk: saving the empty workspace over
   /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
@@ -77,6 +80,8 @@ extension WorkspaceStore {
     workspace.projects.removeAll { $0.id == id }
     let discarded = workspace.worktrees(of: id).map(\.id)
     for id in discarded { discardWorktree(id) }
+    keptPastTheirRecord.subtract(discarded)
+    workspace.settlePortBlocks()
     return discarded
   }
 
@@ -117,23 +122,37 @@ extension WorkspaceStore {
 }
 
 extension WorkspaceStore {
-  /// Replaces a project's worktrees with what git just reported, returning
-  /// the ones that went. A refresh landing after a removal resurrects nothing.
+  /// Replaces a project's worktrees with what git just reported, returning the ones that went.
+  /// A refresh landing after a removal resurrects nothing; `kept` stay listed till theirs ends.
   @discardableResult
   public func replaceWorktrees(
     _ discovered: [Worktree],
     forProject id: Project.ID,
+    keeping kept: Set<Worktree.ID> = [],
   )
     -> [Worktree.ID]
   {
     guard workspace.project(id) != nil else { return [] }
-    let fresh = discovered.map(keepingKnownCreationDate)
+    let listed = Set(discovered.map(\.id))
+    let stillRemoving = workspace.worktrees(of: id).filter { worktree in
+      kept.contains(worktree.id) && !listed.contains(worktree.id)
+    }
+    let readded = keptPastTheirRecord.intersection(listed)
+    let ours = Set(workspace.worktrees(of: id).map(\.id))
+    keptPastTheirRecord = keptPastTheirRecord.subtracting(ours).union(stillRemoving.map(\.id))
+    if !readded.isEmpty {
+      let hooksBlocks = Set(readded.compactMap { workspace.portBlocks[$0] })
+      for id in readded { workspace.portBlocks[id] = nil }
+      workspace.settlePortBlocks(avoiding: hooksBlocks)
+    }
+    let fresh = (discovered + stillRemoving).map(keepingKnownCreationDate)
     guard workspace.worktrees(of: id) != fresh else { return [] }
     let survivors = Set(fresh.map(\.id))
     let discarded = workspace.worktrees(of: id).map(\.id).filter { !survivors.contains($0) }
     for id in discarded { discardWorktree(id) }
     workspace.worktrees.removeAll { $0.projectID == id }
     workspace.worktrees.append(contentsOf: fresh)
+    workspace.settlePortBlocks()
     return discarded
   }
 
@@ -170,6 +189,7 @@ extension WorkspaceStore {
   private func discardWorktree(_ id: Worktree.ID) {
     workspace.worktrees.removeAll { $0.id == id }
     workspace.customWorktreeNames[id] = nil
+    workspace.portBlocks[id] = nil
     workspace.tabs.removeAll { $0.worktreeID == id }
     workspace.fileTabs.removeAll { $0.worktreeID == id }
     workspace.tabGroups.removeAll { $0.worktreeID == id }
@@ -685,6 +705,16 @@ extension WorkspaceStore {
 
   public func setTrashesRemovedWorktrees(_ enabled: Bool) {
     workspace.trashesRemovedWorktrees = enabled
+  }
+
+  public func setPortBlockStart(_ port: Int) {
+    workspace.portBlockStart = port.clamped(to: PortBlock.starts)
+    workspace.settlePortBlocks()
+  }
+
+  public func setPortBlockSize(_ size: Int) {
+    workspace.portBlockSize = size.clamped(to: PortBlock.sizes)
+    workspace.settlePortBlocks()
   }
 
   /// Negative reads as no limit, like zero.

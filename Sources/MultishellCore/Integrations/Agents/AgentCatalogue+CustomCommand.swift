@@ -1,6 +1,7 @@
 extension AgentCatalogue {
   /// What a custom command writes for the task it starts on.
   private static let taskToken = "{{task}}"
+  static let taskVariable = "MULTISHELL_TASK"
 
   /// The custom agent command, which runs as written: each placeholder reads
   /// a variable, so no value is ever shell text. See Docs/design/agents.md.
@@ -14,7 +15,7 @@ extension AgentCatalogue {
     for (placeholder, value) in values {
       tokens[placeholder.token] = (placeholder.variable, value)
     }
-    tokens[taskToken] = ("MULTISHELL_TASK", AgentTaskArgument.oneLine(task))
+    tokens[taskToken] = (taskVariable, AgentTaskArgument.oneLine(task))
     return ShellLine(line, substituting: tokens, forShellNamed: shellName)
   }
 }

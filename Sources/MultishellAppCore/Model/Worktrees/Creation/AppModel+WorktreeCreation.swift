@@ -53,10 +53,11 @@ extension AppModel {
     let effective = effectiveProject(project)
     let settings = effectiveWorktreeSettings(for: project)
     let shellPath = workspace.effectiveShellPath(for: effective)
+    let planned = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
+    if await refuseIfStillBeingRemoved(planned) { return nil }
     // The row can arrive mid-checkout: git writes its record before the
     // first file, and that directory is watched. See worktrees.md.
-    let claimed = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
-      .flatMap(claimPath(_:))
+    let claimed = planned.flatMap(claimPath(_:))
     let stopper = ProcessStopper()
     // A create from the command line leaves the sheet's Cancel and progress to one it shows.
     if takesOverTheSheet { stageHandles.beginCreation(with: stopper) }
@@ -107,9 +108,29 @@ extension AppModel {
       lists: fileLists(of: project, inEffect: effective),
     )
     select(created, openingFirstTab: .onCreate)
+    if workspace.port(of: created.id) == nil { alertNoPortBlock(for: created) }
     // A setup still running holds the tab back, and `openHeldBackTab` takes it.
     if !isBusy(created.id) { newWorktreeFirstTabs[created.id] = nil }
     return created
+  }
+
+  /// Says so and returns `true` where a removal runs on at `planned`: made now,
+  /// the worktree would take that removal's entry and the block it holds.
+  private func refuseIfStillBeingRemoved(_ planned: URL?) async -> Bool {
+    // Any stage: a pre-delete hook can pass the record while this create's own hook runs.
+    let removing = worktreeOperations.removalsRunning
+    guard let planned, !removing.isEmpty else { return false }
+    // git lists the resolved path; resolving reads the disk, so off the main actor.
+    let isRemoving = await runOnDispatch {
+      let resolved = { (url: URL) in
+        (url.resolvedAsFarAsItExists(keepingDanglingLinks: true) ?? url).standardizedFileURL.path
+      }
+      let target = resolved(planned)
+      return removing.contains { resolved(URL(fileURLWithPath: $0)) == target }
+    }
+    guard isRemoving else { return false }
+    presentedError = .removalStillRunning(planned.path)
+    return true
   }
 
   /// The user's Cancel, of the hook or of git itself, is nothing to report.

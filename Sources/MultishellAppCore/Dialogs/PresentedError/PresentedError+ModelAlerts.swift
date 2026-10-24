@@ -63,6 +63,20 @@ extension PresentedError {
     )
   }
 
+  static func removalStillRunning(_ path: String) -> PresentedError {
+    PresentedError(
+      title: t("error.removal-still-running-title"),
+      message: t("error.removal-still-running-message", path),
+    )
+  }
+
+  static func noPortBlock(_ worktreeName: String) -> PresentedError {
+    PresentedError(
+      title: t("error.no-port-block-title"),
+      message: t("error.no-port-block-message", worktreeName, PortBlock.highestPort),
+    )
+  }
+
   static func themeUnreadable(_ problem: String) -> PresentedError {
     PresentedError(title: t("error.theme-unreadable-title"), message: problem)
   }

@@ -109,10 +109,23 @@ extension AppModel {
         { self.workspace.trashesRemovedWorktrees },
         setTrashesRemovedWorktrees,
       ),
-      .count(
+      .number(
         "hookTimeoutSeconds",
         { self.workspace.projectHookTimeoutSeconds },
+        in: 0...Int.max,
         setProjectHookTimeoutSeconds,
+      ),
+      .number(
+        "portBlockStart",
+        { self.workspace.portBlockStart },
+        in: PortBlock.starts,
+        setPortBlockStart,
+      ),
+      .number(
+        "portBlockSize",
+        { self.workspace.portBlockSize },
+        in: PortBlock.sizes,
+        setPortBlockSize,
       ),
       .choice("gitStatusIndicator", { self.workspace.gitStatusIndicator }, setGitStatusIndicator),
       .choice("diffAlgorithm", { self.workspace.diffAlgorithm }, setDiffAlgorithm),

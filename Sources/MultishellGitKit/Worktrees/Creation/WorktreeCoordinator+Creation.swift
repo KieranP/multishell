@@ -63,11 +63,13 @@ extension WorktreeCoordinator {
       createsBranch: createsBranch,
     )
 
+    // No block yet, one being given when the refresh after the add lists it.
     try await WorktreeHooks.run(
       .preCreate,
       for: project,
       worktreePath: path,
       branch: branch,
+      port: nil,
       shellPath: shellPath,
       timeout: timeout,
       stopper: stopper,
@@ -110,6 +112,7 @@ extension WorktreeCoordinator {
     for project: Project,
     worktreePath: URL,
     branch: String,
+    port: Int?,
     shellPath: String? = nil,
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
@@ -119,6 +122,7 @@ extension WorktreeCoordinator {
       for: project,
       worktreePath: worktreePath,
       branch: branch,
+      port: port,
       shellPath: shellPath,
       timeout: timeout,
       stopper: stopper,

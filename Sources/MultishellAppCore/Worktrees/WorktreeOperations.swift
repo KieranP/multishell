@@ -8,6 +8,16 @@ public struct WorktreeOperations: Equatable, Sendable {
   /// Whether nothing is held, for the tests.
   var isEmpty: Bool { operations.isEmpty }
 
+  /// Worktrees a removal is running on, at any stage.
+  var removalsRunning: Set<Worktree.ID> {
+    Set(operations.filter { $0.value.isRunning && $0.value.stage.isRemoval }.keys)
+  }
+
+  /// Worktrees whose removal runs on past their record, kept listed till it ends.
+  var removalsPastTheirRecord: Set<Worktree.ID> {
+    Set(operations.filter { $0.value.isRunning && $0.value.stage.outlivesTheRecord }.keys)
+  }
+
   /// Something is running on the worktree, or has failed and not been
   /// dismissed. Nothing starts a shell there until then.
   func isBusy(_ id: Worktree.ID) -> Bool {

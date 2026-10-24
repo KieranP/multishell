@@ -19,7 +19,7 @@ Under `~/Library/Application Support/Multishell`.
   socket of the copy that answered.
 - **`state.json`**: sidebar, terminal tabs and file tabs by path with their
   scroll, the groups they sit in with their widths, order and shown tab, pane
-  trees, worktree names and creation dates, every setting.
+  trees, worktree names, creation dates and port blocks, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
   a file tab's text, whether the Files panel is open, its filter and the folders

@@ -19,6 +19,17 @@ extension WorktreeOperation {
       self == .linkingFiles || self == .copyingFiles || self == .postCreateHook
     }
 
+    var isRemoval: Bool { self == .preDeleteHook || outlivesTheRecord }
+
+    /// A removal stage that runs on after git has forgotten the record, so the
+    /// refresh its own remove causes must not end it.
+    var outlivesTheRecord: Bool {
+      switch self {
+      case .removingWorktree, .deletingWorktree, .postDeleteHook, .deletingBranch: true
+      case .linkingFiles, .copyingFiles, .postCreateHook, .preDeleteHook: false
+      }
+    }
+
     /// What the pane's Cancel does at this stage, `nil` where it has none.
     /// One property, so a stage cannot offer the button and say nothing.
     public var cancelHelp: String? {
