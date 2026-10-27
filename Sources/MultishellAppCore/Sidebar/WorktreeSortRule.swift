@@ -39,14 +39,6 @@ struct WorktreeSortRule: Equatable, Sendable {
     self.trunkBranch = trunkBranch
   }
 
-  /// `nil` where the dates cannot separate the two, so the name decides. A
-  /// date nobody knows sorts last in both directions.
-  private static func compare(_ a: Date?, _ b: Date?, newestFirst: Bool) -> Bool? {
-    if (a == nil) != (b == nil) { return b == nil }
-    guard let a, let b, a != b else { return nil }
-    return newestFirst ? a > b : a < b
-  }
-
   /// Everything the sort reads, so two equal lists sort the same. The closures
   /// are asked once per worktree: they read runtime state, which the caller holds.
   func keys(
@@ -90,7 +82,7 @@ struct WorktreeSortRule: Equatable, Sendable {
       break
 
     case .createdNewestFirst, .createdOldestFirst:
-      if let byDate = Self.compare(
+      if let byDate = DateOrder.precedes(
         a.createdAt,
         b.createdAt,
         newestFirst: sortOrder == .createdNewestFirst,
@@ -99,7 +91,7 @@ struct WorktreeSortRule: Equatable, Sendable {
       }
 
     case .committedNewestFirst, .committedOldestFirst:
-      if let byDate = Self.compare(
+      if let byDate = DateOrder.precedes(
         a.lastCommit,
         b.lastCommit,
         newestFirst: sortOrder == .committedNewestFirst,

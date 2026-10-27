@@ -10,8 +10,6 @@ struct DiffRowGeometry {
   private static let lineSpacingFactor: CGFloat = 1.45
   /// What a step to a change leaves above it, so its first row reads in place.
   static let contextRowsAboveAChange = 3
-  /// `NSFontManager`'s weights run 0 to 15, 5 being regular.
-  private static let regularWeight = 5
 
   let font: NSFont
   let rowHeight: CGFloat
@@ -22,14 +20,8 @@ struct DiffRowGeometry {
   /// `fontFamily` `nil`, or one this Mac lacks, is the system monospace.
   init(fontFamily: String?, fontSize: CGFloat) {
     let chosen =
-      fontFamily.flatMap { family in
-        NSFontManager.shared.font(
-          withFamily: family,
-          traits: [],
-          weight: Self.regularWeight,
-          size: fontSize,
-        )
-      } ?? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+      fontFamily.flatMap { NSFont.regular(ofFamily: $0, size: fontSize) }
+      ?? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
     font = chosen
     rowHeight = (fontSize * Self.lineSpacingFactor).rounded()
     let printable = (0x20..<0x7F).compactMap { Unicode.Scalar($0).map { String(Character($0)) } }

@@ -69,6 +69,19 @@
       "selection": "#0969da",
       "selection_background": "#afb8c133"
     },
+    "quick_switcher": {
+      "background": "#ffffff",
+      "text": "#1f2328",
+      "text_secondary": "#656d76",
+      "text_tertiary": "#6e7781",
+      "border": "#d0d7de",
+      "fill": "#eaeef280",
+      "selection_background": "#afb8c133",
+      "field_background": "#ffffff",
+      "field_text": "#1f2328",
+      "field_text_secondary": "#656d76",
+      "field_border": "#d0d7de"
+    },
     "files_panel": {
       "background": "#f6f8fa",
       "text": "#1f2328",

@@ -105,7 +105,7 @@ struct FilesPanelRow: View {
     if row.isFolder {
       model.toggleFolder(row, in: worktreeID)
     } else {
-      Task { await model.openFileFromPanel(row.path, in: worktreeID) }
+      Task { await model.openFileAsTab(row.path, in: worktreeID) }
     }
   }
 }

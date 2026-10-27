@@ -31,6 +31,8 @@ public protocol Platform: AnyObject, Sendable {
   var windows: [PlatformWindow] { get }
   /// Every item of the menu bar, for `multishell ui menu`.
   var menuItems: [PlatformMenuItem] { get }
+  /// The app's own of those, without what macOS adds, for the quick switcher.
+  var commandMenuItems: [PlatformMenuItem] { get }
   var isWorkspaceWindowFullScreen: Bool { get }
 
   func closeKeyWindow()
@@ -97,6 +99,9 @@ public protocol Platform: AnyObject, Sendable {
   func signpost(_ name: String)
   /// The item at `path`, titles from the bar down, chosen as a click would.
   func performMenuItem(_ path: [String]) -> PlatformMenuOutcome
+  /// The user's own choice of the item, once the window has redrawn and the
+  /// keyboard is back where the item acts; a beep where it cannot be chosen.
+  func chooseMenuItem(_ path: [String])
   /// Whether a font family by this name is installed now, as the font picker lists them.
   func hasFontFamily(_ family: String) -> Bool
 }

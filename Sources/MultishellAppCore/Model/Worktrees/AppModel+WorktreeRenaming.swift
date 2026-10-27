@@ -5,11 +5,7 @@ extension AppModel {
   /// opened first, one collapsed by its chevron or the filter leaving no row.
   public func beginRenamingWorktree(_ worktree: Worktree) {
     guard workspace.worktree(worktree.id) != nil else { return }
-    if isFilteringSidebar {
-      expandWhileFiltering(worktree.projectID)
-    } else if let project = workspace.project(worktree.projectID), !project.isExpanded {
-      setExpanded(true, for: project)
-    }
+    expandProject(holding: worktree)
     renamingWorktreeID = worktree.id
   }
 

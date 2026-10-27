@@ -23,6 +23,10 @@ enum AppShortcutCatalogue {
   /// The Agents board, in place of the selected worktree's terminals. Not
   /// Cmd+A, which is Select All in a pane and stays there.
   static let toggleAgentBoard = AppShortcut("a", .shift)
+  static let quickSwitcher = AppShortcut("p")
+  /// Ghostty's own command palette's key, which an embedding never shows;
+  /// taken from the surface, as Cmd+F is.
+  static let quickSwitcherCommands = AppShortcut("p", .shift)
   static let undo = AppShortcut("z")
   static let redo = AppShortcut("z", .shift)
   static let nextTab = AppShortcut.control(.tab)
@@ -49,7 +53,7 @@ enum AppShortcutCatalogue {
     newTab, newShellTab, newAgentTab, closePane, closeTab, newWorktree,
     addProject, openInEditor, splitRight, splitDown,
     moveTabToNewGroup, nextGroup, previousGroup,
-    toggleAgentBoard, undo, redo, nextTab, previousTab,
+    toggleAgentBoard, quickSwitcher, quickSwitcherCommands, undo, redo, nextTab, previousTab,
     find, findNext, findPrevious, closeFind,
     cut, copy, paste, selectAll,
   ]

@@ -40,6 +40,19 @@ struct AppModelControlPresentationsTests {
     )
   }
 
+  @Test func theQuickSwitcherIsListedAndADismissClosesIt() async throws {
+    let harness = Harness()
+    harness.model.toggleQuickSwitcher(.all)
+
+    let info = try #require(await harness.messageSource.ask(.info))
+    let presented = try #require(info.outputFields["presented"] as? [[String: Any]])
+    #expect(presented.compactMap { $0["kind"] as? String } == ["quick-switcher"])
+
+    let dismissed = try #require(await harness.messageSource.ask(.dismissPresentation))
+    #expect(dismissed.outputFields["kind"] as? String == "quick-switcher")
+    #expect(harness.model.quickSwitcher == nil)
+  }
+
   @Test func aDismissClosesTheNewWorktreeSheetAndANameField() async throws {
     let harness = Harness()
     harness.model.select(harness.main)

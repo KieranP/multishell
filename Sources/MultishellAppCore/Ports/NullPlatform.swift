@@ -12,6 +12,7 @@ public final class NullPlatform: Platform {
   public var notificationSettingsLocation: String? { nil }
   public var windows: [PlatformWindow] { [] }
   public var menuItems: [PlatformMenuItem] { [] }
+  public var commandMenuItems: [PlatformMenuItem] { [] }
   public var isWorkspaceWindowFullScreen: Bool { false }
 
   public init() {}
@@ -48,5 +49,6 @@ public final class NullPlatform: Platform {
   public func screenshotWorkspaceWindow() -> Data? { nil }
   public func signpost(_ name: String) {}
   public func performMenuItem(_ path: [String]) -> PlatformMenuOutcome { .notFound }
+  public func chooseMenuItem(_ path: [String]) {}
   public func hasFontFamily(_ family: String) -> Bool { false }
 }

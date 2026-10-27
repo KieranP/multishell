@@ -32,6 +32,7 @@ struct RootView: View {
         DetailView(model: model)
       }
     }
+    .overlay { QuickSwitcherLayer(model: model) }
     .background(WindowAccessor { platform.workspaceWindow = $0 })
     .registeringWindowOpeners(with: platform)
     .ignoresSafeArea()

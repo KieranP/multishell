@@ -15,6 +15,7 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
   /// The worktree's header and the board's, Debug Info's and the Files panel's.
   case header
   case projectsPanel = "projects_panel"
+  case quickSwitcher = "quick_switcher"
   case states
   case tabBar = "tab_bar"
   case terminalTab = "terminal_tab"
@@ -49,6 +50,10 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
       [.background] + text + [.border, .fill, .selectionBackground, .accent, .highlight, .knob]
 
     case .projectsPanel: [.background] + text + [.border, .fill, .selection, .selectionBackground]
+
+    case .quickSwitcher:
+      [.background] + text + [.border, .fill, .selectionBackground]
+        + [.fieldBackground, .fieldText, .fieldTextSecondary, .fieldBorder]
 
     case .states: [.working, .waiting, .done, .failed]
 

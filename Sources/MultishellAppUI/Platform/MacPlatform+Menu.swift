@@ -7,16 +7,37 @@ extension MacPlatform {
     NSApp.mainMenu.map { Self.items(in: $0, under: []) } ?? []
   }
 
-  private static func items(in menu: NSMenu, under path: [String]) -> [PlatformMenuItem] {
+  static func items(
+    in menu: NSMenu,
+    under path: [String],
+    isInAppMenu: Bool = false,
+    skipping isSkipped: (NSMenuItem) -> Bool = { _ in false },
+    isAvailable: (NSMenuItem) -> Bool = { _ in true },
+  ) -> [PlatformMenuItem] {
     menu.update()
-    return menu.items.filter { !$0.isSeparatorItem && !$0.isHidden }.flatMap { item in
+    let appMenu = path.isEmpty ? menu.items.first : nil
+    return menu.items.filter { !$0.isSeparatorItem && !$0.isHidden && !isSkipped($0) }.flatMap {
+      item in
       let itemPath = path + [item.title]
+      let isInAppMenu = isInAppMenu || item === appMenu
       guard let submenu = item.submenu else {
         return [
-          PlatformMenuItem(path: itemPath, isEnabled: item.isEnabled, isChecked: item.state == .on)
+          PlatformMenuItem(
+            path: itemPath,
+            isEnabled: item.isEnabled && isAvailable(item),
+            isChecked: item.state == .on,
+            shortcut: MenuShortcutText.of(item),
+            isInAppMenu: isInAppMenu,
+          )
         ]
       }
-      return items(in: submenu, under: itemPath)
+      return items(
+        in: submenu,
+        under: itemPath,
+        isInAppMenu: isInAppMenu,
+        skipping: isSkipped,
+        isAvailable: isAvailable,
+      )
     }
   }
 
@@ -25,7 +46,7 @@ extension MacPlatform {
   private static func leaf(at path: [String], in menu: NSMenu) -> (NSMenu, Int)? {
     guard let title = path.first,
       let index = menu.items.firstIndex(where: { item in
-        !item.isHidden && withoutEllipsis(item.title) == withoutEllipsis(title)
+        !item.isHidden && item.title.withoutTrailingEllipsis == title.withoutTrailingEllipsis
       })
     else { return nil }
     let item = menu.items[index]
@@ -33,21 +54,34 @@ extension MacPlatform {
     return item.submenu.flatMap { leaf(at: Array(path.dropFirst()), in: $0) }
   }
 
-  private static func withoutEllipsis(_ title: String) -> String {
-    var trimmed = title
-    for ellipsis in ["…", "..."] where trimmed.hasSuffix(ellipsis) {
-      trimmed.removeLast(ellipsis.count)
+  /// The leaf `path` names, its menu validated now so enabled is current.
+  private static func validatedLeaf(at path: [String]) -> (owner: NSMenu, index: Int)? {
+    guard let menu = NSApp.mainMenu, let (owner, index) = leaf(at: path, in: menu) else {
+      return nil
     }
-    return trimmed
+    owner.update()
+    return (owner, index)
   }
 
   func performMenuItem(_ path: [String]) -> PlatformMenuOutcome {
-    guard let menu = NSApp.mainMenu, let (owner, index) = Self.leaf(at: path, in: menu) else {
-      return .notFound
-    }
-    owner.update()
+    guard let (owner, index) = Self.validatedLeaf(at: path) else { return .notFound }
     guard owner.items[index].isEnabled else { return .disabled }
     GhosttySurfaceView.actingForTheCommandLine { owner.performActionForItem(at: index) }
     return .performed
+  }
+
+  /// On a timer, which fires only after the run loop has waited and SwiftUI
+  /// has taken the switcher's field down; a queued block ran before that.
+  func chooseMenuItem(_ path: [String]) {
+    Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { [weak self] _ in
+      MainActor.assumeIsolated {
+        guard let (owner, index) = Self.validatedLeaf(at: path), owner.items[index].isEnabled
+        else {
+          self?.beep()
+          return
+        }
+        owner.performActionForItem(at: index)
+      }
+    }
   }
 }

@@ -23,6 +23,24 @@ extension AppModel {
     Task { await refreshStatuses(inProject: project.id) }
   }
 
+  /// Opens the project holding `worktree`, so its row shows: by the chevron's
+  /// flag, or by the filter's own, the filter cleared where its text hides the row.
+  func expandProject(holding worktree: Worktree) {
+    if isFilteringSidebar {
+      let isListed = sidebarEntries.contains { entry in
+        entry.worktrees.contains { $0.id == worktree.id }
+      }
+      guard isListed else {
+        sidebarFilterText = ""
+        expandProject(holding: worktree)
+        return
+      }
+      expandWhileFiltering(worktree.projectID)
+    } else if let project = workspace.project(worktree.projectID), !project.isExpanded {
+      setExpanded(true, for: project)
+    }
+  }
+
   /// Its rows went unread while collapsed, so they are read now.
   func expandWhileFiltering(_ projectID: Project.ID) {
     guard projectsCollapsedWhileFiltering.remove(projectID) != nil else { return }

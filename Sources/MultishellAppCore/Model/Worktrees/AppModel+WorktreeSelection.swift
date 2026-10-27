@@ -20,6 +20,7 @@ extension AppModel {
     // detail area. The seen-clearing is left to the reconcile at the end.
     uncoverDetail(markingInViewSeen: false)
     store.selectWorktree(worktree.id)
+    noteRecentWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if openingFirstTab != .onCreate { askAboutSharedSettingsIfNeeded(for: worktree.projectID) }
     if wantsFirstTab(in: worktree, for: openingFirstTab) {

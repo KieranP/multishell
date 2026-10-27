@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Every chrome size, derived from one number so the UI font slider scales
@@ -5,6 +6,10 @@ import SwiftUI
 struct UIMetrics: Equatable {
   /// Round a board column and a Debug Info block, which sit on the same fill.
   static let columnCornerRadius: Double = 8
+  /// The find bar's and the quick switcher's panel, and the well their field
+  /// sits in, a step inside it.
+  static let floatingPanelCornerRadius: Double = 10
+  static let floatingPanelWellCornerRadius: Double = floatingPanelCornerRadius - 3
 
   /// Layout space a split's divider takes, wider than its line: the panes are
   /// NSViews and take mouse events before a SwiftUI overlay.
@@ -93,5 +98,13 @@ struct UIMetrics: Equatable {
   func font(size: Double, weight: Font.Weight = .regular) -> Font {
     guard let fontFamily else { return .system(size: size, weight: weight) }
     return .custom(fontFamily, fixedSize: size).weight(weight)
+  }
+
+  /// The same font for a field AppKit draws, found by family as the setting
+  /// names it; one no longer installed falls back to the system's.
+  func appKitFont(size: Double) -> NSFont {
+    guard let fontFamily else { return .systemFont(ofSize: size) }
+    return NSFont.regular(ofFamily: fontFamily, size: size)
+      ?? NSFont(name: fontFamily, size: size) ?? .systemFont(ofSize: size)
   }
 }

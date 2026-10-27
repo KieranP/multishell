@@ -188,7 +188,8 @@
   string literal, `Workspace.init(from:)`, a field per line, and
   `AppModel.reply(to:)`, one case per control request; `WorkspaceStore` passes
   400 lines because every writer of its `private(set)` state must live in the
-  file. `closure_body_length` is off: a SwiftUI `Form` is one closure.
+  file, and `AppModel` because no extension may hold a stored property.
+  `closure_body_length` is off: a SwiftUI `Form` is one closure.
 - **Names are three letters or more**, bar `a`, `b`, `c`, `x`, `y`, `i`, `id`,
   `at`, `on`, `to`, `up`, `fd` and the persisted `_0`.
 - **Members sit in SwiftLint's `type_contents_order`**: cases, type aliases,

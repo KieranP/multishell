@@ -8,6 +8,7 @@ extension AppModel {
     guard takingFocus else { return }
     // The keyboard is a pane's now, whatever field held it.
     findFieldTargetID = nil
+    dismissQuickSwitcher()
     reconciler.focusActiveSession()
     requestFocusForFileTabInView()
     markInViewSeen()

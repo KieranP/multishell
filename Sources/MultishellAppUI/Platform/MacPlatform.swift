@@ -19,6 +19,8 @@ final class MacPlatform: Platform {
   /// The scenes' own window openers, which only a view can reach; set by
   /// `registeringWindowOpeners` for the command line's `ui show`.
   var openAuxiliaryWindow: ((AuxiliaryWindow) -> Void)?
+  /// Whether the menu item of a title can act now, which the model knows.
+  var isCommandAvailable: ((String) -> Bool)?
   private let logger = Logger(subsystem: AppBundle.identifier, category: "platform")
   private let signposter = OSSignposter(
     subsystem: AppBundle.identifier,

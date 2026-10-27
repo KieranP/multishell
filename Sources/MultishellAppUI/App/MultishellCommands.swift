@@ -10,11 +10,12 @@ struct MultishellCommands: Commands {
 
   let model: AppModel
 
-  // Only the find items carry `.disabled`: Commands are not re-evaluated
-  // reliably, so every action is also a no-op when it does not apply.
+  // Only the find items carry `.disabled`: a disabled item gives its key to the
+  // pane, and Commands are not re-evaluated reliably. Each action is a no-op.
   var body: some Commands {
     aboutItem
     newItems
+    printItems
     pasteboardItems
     undoItems
     findMenu
@@ -44,6 +45,12 @@ struct MultishellCommands: Commands {
       Button(t("action.open-in-editor")) { model.openWorktreeInViewInEditor() }
         .keyboardShortcut(AppShortcutCatalogue.openInEditor)
     }
+  }
+
+  // Print and Page Setup would take Cmd+P and Shift+Cmd+P, the quick
+  // switcher's keys, and nothing here prints.
+  private var printItems: some Commands {
+    CommandGroup(replacing: .printItem) {}
   }
 
   // SwiftUI's stock Edit items decide enablement on its update cycle, which
@@ -117,6 +124,10 @@ struct MultishellCommands: Commands {
     CommandGroup(after: .toolbar) {
       Button(t("label.agents")) { model.toggleAgentBoard() }
         .keyboardShortcut(AppShortcutCatalogue.toggleAgentBoard)
+      Button(t("menu.quick-switcher")) { model.toggleQuickSwitcher(.all) }
+        .keyboardShortcut(AppShortcutCatalogue.quickSwitcher)
+      Button(t("menu.quick-switcher-commands")) { model.toggleQuickSwitcher(.commands) }
+        .keyboardShortcut(AppShortcutCatalogue.quickSwitcherCommands)
       // No key yet; one is an `AppShortcut` in the catalogue (adding.md).
       Toggle(t("menu.files-panel"), isOn: model.showsFilesPanelBinding)
       Divider()

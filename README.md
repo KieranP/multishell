@@ -95,6 +95,8 @@ every file it touches and how far each shell and agent goes.
   light and dark, ten editor ports such as Dracula, Nord and Catppuccin, and
   your own in JSON.
 - Find in a pane with Cmd+F, and click in the prompt to move the cursor there.
+- Cmd+P goes to any agent, worktree, tab or project, or opens a file of the
+  selected worktree, waiting agents first; Shift+Cmd+P runs a menu command.
 - Drop files from Finder onto a terminal as `@` mentions or quoted paths.
 - Open the worktree in your editor.
 - Your shell rc files are never edited.

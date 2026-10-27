@@ -4,12 +4,7 @@ import Foundation
 /// then title and id, so a render never reorders cards that have not moved.
 enum AgentBoardOrder {
   static func precedes(_ lhs: AgentBoardCard, _ rhs: AgentBoardCard) -> Bool {
-    switch (lhs.since, rhs.since) {
-    case (let left?, let right?) where left != right: return left > right
-    case (nil, .some): return false
-    case (.some, nil): return true
-    default: break
-    }
+    if let bySince = DateOrder.precedes(lhs.since, rhs.since, newestFirst: true) { return bySince }
     if lhs.title != rhs.title { return lhs.title < rhs.title }
     return lhs.id.uuidString < rhs.id.uuidString
   }

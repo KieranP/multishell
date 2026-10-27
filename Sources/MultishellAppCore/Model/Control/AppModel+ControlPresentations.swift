@@ -12,6 +12,7 @@ extension AppModel {
     if pendingProjectRemoval != nil { up.append(PresentationEntry(.projectRemoval)) }
     if pendingSharedSettingsTrust != nil { up.append(PresentationEntry(.sharedSettingsTrust)) }
     if newWorktreeRequest != nil { up.append(PresentationEntry(.newWorktree)) }
+    if quickSwitcher != nil { up.append(PresentationEntry(.quickSwitcher)) }
     if renamingTabID != nil { up.append(PresentationEntry(.tabRename)) }
     if renamingWorktreeID != nil { up.append(PresentationEntry(.worktreeRename)) }
     return up
@@ -42,6 +43,8 @@ extension AppModel {
 
     // Closed, not cancelled: a create running may be a request's, not the sheet's.
     case .newWorktree: newWorktreeRequest = nil
+
+    case .quickSwitcher: closeQuickSwitcher()
 
     case .tabRename: cancelRenamingTab()
     case .worktreeRename: cancelRenamingWorktree()

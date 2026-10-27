@@ -3,6 +3,8 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
+// Every stored property must be declared here, no extension holding one.
+// swiftlint:disable file_length
 /// Wires the core to a GUI and turns view actions into store mutations;
 /// see Docs/design/architecture.md.
 @Observable
@@ -55,6 +57,11 @@ public final class AppModel<Surface> {
   /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false
+  /// The quick switcher while it is up; see `toggleQuickSwitcher`.
+  public internal(set) var quickSwitcher: QuickSwitcherState?
+  /// Worktrees by when they were last selected, newest first, for the
+  /// switcher's Recent. Unobserved, as the selection writing it redraws anyway.
+  @ObservationIgnored var recentWorktreeIDs: [Worktree.ID] = []
   /// The project a menu asked the settings window for; `settingsWindowProjectID`
   /// is the one it shows.
   var requestedSettingsProjectID: Project.ID?

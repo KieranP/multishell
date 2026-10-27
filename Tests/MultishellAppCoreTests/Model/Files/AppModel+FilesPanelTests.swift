@@ -110,7 +110,7 @@ struct AppModelFilesPanelTests {
       harness.model.fileTreeRows(of: main.id).first { $0.path == "left/b.txt" }
     )
     #expect(!row.isOpenable)
-    await harness.model.openFileFromPanel("left/b.txt", in: main.id)
+    await harness.model.openFileAsTab("left/b.txt", in: main.id)
     #expect(harness.model.workspace.fileTabs.isEmpty)
     #expect(harness.platform.beeps == 1)
   }
@@ -127,7 +127,7 @@ struct AppModelFilesPanelTests {
     #expect(leftPad.isIgnored && leftPad.isFolder)
     harness.model.toggleFolder(leftPad, in: main.id)
     try await waitUntil { rows().contains { $0.path.hasPrefix("node_modules/left-pad/") } }
-    await harness.model.openFileFromPanel("node_modules/left-pad/index.js", in: main.id)
+    await harness.model.openFileAsTab("node_modules/left-pad/index.js", in: main.id)
     let tab = try #require(harness.model.workspace.fileTabs.first)
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
 

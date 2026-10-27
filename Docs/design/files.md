@@ -81,9 +81,10 @@ Newest at the bottom.
   deletion's included. What a status read still costs the main actor, the tree's
   kinds and counts and the shown rows, stays there by choice: 110 ms at 100,000
   changed paths and 300 ms at 250,000, at most once in 10 s.
-- **Only the panel's own worktree keeps its listing**, a Linux-sized one and its
-  tree holding about 80 MB; coming back reads it again, with each open folder
-  git does not list. A folder git stops ignoring drops what was read of it.
+- **Only the panel's own worktree keeps its listing**, and the selected one's
+  while the quick switcher is up, a Linux-sized one and its tree holding about
+  80 MB; coming back reads it again, with each open folder git does not list. A
+  folder git stops ignoring drops what was read of it.
 - **File tabs are a type of their own beside terminal tabs**, one order per
   group covering both. A tab holding a file would promise a pane tree it has not
   got.

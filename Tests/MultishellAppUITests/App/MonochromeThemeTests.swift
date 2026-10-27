@@ -11,7 +11,7 @@ import Testing
 @Suite(.serialized) @MainActor
 struct MonochromeThemeTests {
   private enum Scene: CaseIterable {
-    case agentBoard, debugInfo, worktreeWithFilesPanelAndFilter
+    case agentBoard, debugInfo, quickSwitcher, worktreeWithFilesPanelAndFilter
   }
 
   /// A glyph a menu's button style draws is colour-matched once more, landing
@@ -85,6 +85,22 @@ struct MonochromeThemeTests {
       harness.model.setDebugToolsEnabled(true)
       harness.model.showDebugInfo()
 
+    case .quickSwitcher:
+      _ = harness.model.select(worktree)
+      harness.model.newShellTab()
+      harness.model.quickSwitcher = QuickSwitcherState(
+        scope: .all,
+        commands: [
+          PlatformMenuItem(
+            path: ["View", "Files Panel"],
+            isEnabled: true,
+            isChecked: true,
+            shortcut: "⇧⌘E",
+          )
+        ],
+      )
+      harness.model.setQuickSwitcherText("i")
+
     case .worktreeWithFilesPanelAndFilter:
       _ = harness.model.select(worktree)
       harness.model.newShellTab()
@@ -111,6 +127,7 @@ struct MonochromeThemeTests {
         )
         DetailView(model: harness.model)
       }
+      .overlay { QuickSwitcherLayer(model: harness.model) }
       let bitmap = try #require(
         OffscreenWindow.pixels(ofHosted: window, size: CGSize(width: 1100, height: 600))
       )

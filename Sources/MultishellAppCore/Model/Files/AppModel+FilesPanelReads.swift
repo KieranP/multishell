@@ -8,7 +8,7 @@ extension AppModel {
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, a status read and, under Branch, a branch read.
   public func readFilesPanel(of id: Worktree.ID) {
-    forgetPanelListings { $0 != id }
+    forgetUnreadPanelListings()
     scheduleTrackedFilesRead(of: id)
     scheduleIgnoredEntriesRead(of: id)
     scheduleStatusRefresh(of: id)
@@ -20,8 +20,17 @@ extension AppModel {
     }
   }
 
-  /// Linux's tracked files and their tree hold about 80 MB, so only the panel's
-  /// own worktree keeps them; coming back reads them again.
+  /// Keeps only the listings something still reads: a shown panel's worktree's,
+  /// and the selected worktree's while the quick switcher is up.
+  func forgetUnreadPanelListings() {
+    var read = Set<Worktree.ID>()
+    if isFilesPanelOnScreen, let id = filesPanelWorktree?.id { read.insert(id) }
+    if quickSwitcher != nil, let id = workspace.selectedWorktreeID { read.insert(id) }
+    forgetPanelListings { !read.contains($0) }
+  }
+
+  /// Linux's tracked files and their tree hold about 80 MB, so only the listings
+  /// `forgetUnreadPanelListings` names are kept; coming back reads them again.
   func forgetPanelListings(where isForgotten: (Worktree.ID) -> Bool) {
     for (id, task) in pendingTrackedFilesReads where isForgotten(id) {
       task.cancel()
@@ -56,7 +65,11 @@ extension AppModel {
       let tracked = await coordinator.git.trackedFiles(in: worktree.path)
       guard let self, !Task.isCancelled else { return }
       pendingTrackedFilesReads[id] = nil
-      guard workspace.worktree(id) != nil, let tracked else { return }
+      guard workspace.worktree(id) != nil, let tracked else {
+        // Nothing observed moved, and what waited on the read must still redraw.
+        fileTreeBuildLandings += 1
+        return
+      }
       setIfChanged(\.trackedFiles[id], tracked)
     }
   }

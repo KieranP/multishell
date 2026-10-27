@@ -51,6 +51,7 @@
 "close.pane-title" = "Close this pane?";
 "close.tab-button" = "Close Tab";
 "close.tab-title" = "Close this tab?";
+"command.application" = "Application";
 "debug.app-row" = "Multishell";
 "debug.count-and-self" = "%1$@ · %2$@ self";
 "debug.file-tabs-row" = "File tabs";
@@ -304,6 +305,7 @@
 "spoken.auto-rename-failed" = "Auto Rename failed";
 "spoken.auto-renaming" = "Auto Rename running";
 "spoken.branch" = "branch %@";
+"spoken.checked" = "checked";
 "spoken.collapsed" = "collapsed";
 "spoken.cpu" = "%@ CPU";
 "spoken.debug-info" = "Debug Info";

@@ -16,6 +16,7 @@ extension Theme {
   /// The shown file tab's face, its bar and its notices.
   var fileTab: AreaPalette { AreaPalette(self, .fileTab) }
   var findBar: AreaPalette { AreaPalette(self, .findBar) }
+  var quickSwitcher: AreaPalette { AreaPalette(self, .quickSwitcher) }
   var agentsPanel: AreaPalette { AreaPalette(self, .agentsPanel) }
   var agentsColumn: AreaPalette { AreaPalette(self, .agentsColumn) }
   var agentsCard: AreaPalette { AreaPalette(self, .agentsCard) }

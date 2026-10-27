@@ -44,7 +44,9 @@ final class FakePlatform: Platform {
   var onDisplayFrame: (@MainActor (ContinuousClock.Instant) -> Void)?
   var windows: [PlatformWindow] = []
   var menuItems: [PlatformMenuItem] = []
+  var commandMenuItems: [PlatformMenuItem] { menuItems }
   var performedMenuItems: [[String]] = []
+  var chosenMenuItems: [[String]] = []
   var shownWindows: [AuxiliaryWindow] = []
   var closedWindows: [AuxiliaryWindow] = []
   /// `nil` stands for a closed main window.
@@ -114,4 +116,5 @@ final class FakePlatform: Platform {
     performedMenuItems.append(path)
     return .performed
   }
+  func chooseMenuItem(_ path: [String]) { chosenMenuItems.append(path) }
 }

@@ -8,4 +8,7 @@ struct FileTreeCacheEntry {
   /// Built on the last change set while the sources' own builds, as `awaitsListing`.
   let awaitsChanges: Bool
   var rows: (state: FilesPanelState, rows: [FileTreeRow])?
+  /// The quick switcher's last search over `tree`'s listing, carried to the
+  /// next entry while that listing holds and let go with it.
+  var quickSwitcherSearch: QuickSwitcherFileSearch?
 }

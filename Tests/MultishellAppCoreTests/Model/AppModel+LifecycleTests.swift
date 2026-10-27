@@ -14,6 +14,26 @@ struct AppModelLifecycleTests {
     #expect(harness.model.liveTerminalCount == 0)
   }
 
+  @Test func aQuickSwitcherOpenedWhileLaunchingStaysOpenAsLaunchEnds() async {
+    let harness = Harness()
+    harness.model.toggleQuickSwitcher(.all)
+
+    await harness.model.start()
+
+    #expect(harness.model.quickSwitcher != nil)
+  }
+
+  @Test func aRenameBegunWhileLaunchingKeepsTheKeyboardAsLaunchEnds() async {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.beginRenamingWorktree(harness.main)
+    harness.engine.focused = []
+
+    await harness.model.start()
+
+    #expect(harness.engine.focused.isEmpty)
+  }
+
   @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
     let harness = Harness()
     let calls = Recorder<String>()

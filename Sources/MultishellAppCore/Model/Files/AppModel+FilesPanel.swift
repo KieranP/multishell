@@ -36,7 +36,7 @@ extension AppModel {
     if shows, let worktree = filesPanelWorktree {
       readFilesPanel(of: worktree.id)
     } else if !shows {
-      forgetPanelListings { _ in true }
+      forgetUnreadPanelListings()
     }
   }
 
@@ -168,6 +168,8 @@ extension AppModel {
       tree: tree,
       awaitsListing: built == nil,
       awaitsChanges: !changes.isBuilt,
+      quickSwitcherSearch: cached?.tree.listing.key == listing.key
+        ? cached?.quickSwitcherSearch : nil,
     )
     return tree
   }

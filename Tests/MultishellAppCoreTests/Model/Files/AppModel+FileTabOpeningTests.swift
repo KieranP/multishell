@@ -16,9 +16,9 @@ struct AppModelFileTabOpeningTests {
     harness.model.select(main)
     try Data([0x89, 0x00]).write(to: main.path.appending(path: "icon.png"))
 
-    await harness.model.openFileFromPanel("README.md", in: main.id)
-    await harness.model.openFileFromPanel("icon.png", in: main.id)
-    await harness.model.openFileFromPanel("README.md", in: main.id)
+    await harness.model.openFileAsTab("README.md", in: main.id)
+    await harness.model.openFileAsTab("icon.png", in: main.id)
+    await harness.model.openFileAsTab("README.md", in: main.id)
 
     #expect(harness.model.workspace.fileTabs.map(\.path) == ["README.md"])
     #expect(harness.platform.beeps == 1)
@@ -32,7 +32,7 @@ struct AppModelFileTabOpeningTests {
     harness.model.select(main)
     try FileManager.default.removeItem(at: main.path.appending(path: "README.md"))
 
-    await harness.model.openFileFromPanel("README.md", in: main.id)
+    await harness.model.openFileAsTab("README.md", in: main.id)
 
     #expect(harness.model.workspace.fileTabs.map(\.path) == ["README.md"])
   }
@@ -55,8 +55,8 @@ struct AppModelFileTabOpeningTests {
     )
     _ = await harness.model.refreshStatus(of: main.id)
 
-    await harness.model.openFileFromPanel("CLAUDE.md", in: main.id)
-    await harness.model.openFileFromPanel("away.txt", in: main.id)
+    await harness.model.openFileAsTab("CLAUDE.md", in: main.id)
+    await harness.model.openFileAsTab("away.txt", in: main.id)
 
     #expect(harness.model.workspace.fileTabs.map(\.path) == ["README.md"])
     #expect(harness.platform.beeps == 1)
@@ -75,7 +75,7 @@ struct AppModelFileTabOpeningTests {
     _ = try await harness.git.run(["commit", "-q", "-m", "link"], in: main.path)
     _ = await harness.model.refreshStatus(of: main.id)
 
-    await harness.model.openFileFromPanel("docs.md", in: main.id)
+    await harness.model.openFileAsTab("docs.md", in: main.id)
 
     #expect(harness.model.workspace.fileTabs.isEmpty)
     #expect(harness.platform.beeps == 1)

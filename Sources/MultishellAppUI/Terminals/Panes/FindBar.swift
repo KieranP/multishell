@@ -8,7 +8,6 @@ struct FindBar: View {
   /// What the bar takes when the pane has it; a narrower pane shrinks the
   /// well rather than drawing the bar over its neighbour.
   private static let width: CGFloat = 340
-  private static let cornerRadius: CGFloat = 10
   private static let padding: CGFloat = 7
 
   let model: AppModel
@@ -26,8 +25,7 @@ struct FindBar: View {
     }
     .padding(Self.padding)
     .frame(maxWidth: Self.width)
-    .background(theme.findBar.background, in: RoundedRectangle(cornerRadius: Self.cornerRadius))
-    .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius).strokeBorder(theme.findBar.border))
+    .floatingPanel(theme.findBar.background, border: theme.findBar.border)
     .padding(12)
     // A turn later, and only against a Cmd+F: a bar a worktree switch brings
     // back must not take the keyboard from the pane. See terminals.md.
@@ -63,14 +61,9 @@ struct FindBar: View {
     }
     .padding(.horizontal, 10)
     .frame(height: metrics.findControlSize)
-    .background(
+    .floatingPanelWell(
       theme.color(.fieldBackground, in: .findBar),
-      in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3),
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: Self.cornerRadius - 3).strokeBorder(
-        theme.color(.fieldBorder, in: .findBar)
-      )
+      border: theme.color(.fieldBorder, in: .findBar),
     )
   }
 

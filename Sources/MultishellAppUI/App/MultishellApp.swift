@@ -49,7 +49,11 @@ struct MultishellApp: App {
 
   init() {
     let platform = MacPlatform()
+    let model = AppModel(platform: platform)
+    platform.isCommandAvailable = { [weak model] title in
+      model?.isMenuCommandAvailable(titled: title) ?? true
+    }
     _platform = State(initialValue: platform)
-    _model = State(initialValue: AppModel(platform: platform))
+    _model = State(initialValue: model)
   }
 }

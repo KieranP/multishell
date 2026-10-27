@@ -61,6 +61,20 @@ struct AppModelFilesPanelReadsTests {
     #expect(harness.model.trackedFiles[other.id] == nil)
   }
 
+  @Test func aListingReadThatFailsStillRedrawsWhatWaitedOnIt() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let other = try await harness.createWorktree(onBranch: "other")
+    try FileManager.default.removeItem(at: other.path)
+    let landingsBefore = harness.model.fileTreeBuildLandings
+
+    harness.model.scheduleTrackedFilesRead(of: other.id)
+    try await waitUntil { harness.model.pendingTrackedFilesReads[other.id] == nil }
+
+    #expect(harness.model.trackedFiles[other.id] == nil)
+    #expect(harness.model.fileTreeBuildLandings == landingsBefore + 1)
+  }
+
   @Test func comingBackToAWorktreeRereadsItsOpenIgnoredFolder() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

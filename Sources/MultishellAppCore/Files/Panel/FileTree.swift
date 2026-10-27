@@ -65,8 +65,12 @@ struct FileTree: Sendable {
 
   /// git's output decodes a byte that is not UTF-8 as U+FFFD, so such a name
   /// no longer matches the file's.
+  static func isOpenable(_ path: String, notCheckedOut: Set<String>) -> Bool {
+    !notCheckedOut.contains(path) && !path.unicodeScalars.contains("\u{FFFD}")
+  }
+
   func isOpenable(_ path: String) -> Bool {
-    !listing.notCheckedOutFiles.contains(path) && !path.unicodeScalars.contains("\u{FFFD}")
+    Self.isOpenable(path, notCheckedOut: listing.notCheckedOutFiles)
   }
 
   /// A filter lists the matching files flat; otherwise the open folders'
