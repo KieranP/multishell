@@ -42,6 +42,34 @@ extension AppModelNotificationsTests {
     #expect(harness.model.workspace.activeTab(in: harness.feature.id)?.id == tab.id)
   }
 
+  @Test func aClickInAnotherWorktreeLeavesTheDoneOfItsOtherActiveTabUnseen() throws {
+    let harness = Harness()
+    let clicked = harness.openBackgroundTab()
+    let passedOver = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.select(harness.feature)
+    harness.messageSource.send(
+      SessionStateReport(state: .done, sessionID: passedOver.focusedSessionID)
+    )
+
+    harness.model.revealNotificationSubject(.session(clicked.focusedSessionID))
+
+    #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id == clicked.id)
+    #expect(harness.model.state(ofPane: passedOver.focusedSessionID) == .done)
+  }
+
+  @Test func aClickOnTheUnfocusedPaneOfASplitHandsThatPaneTheKeyboard() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.splitActivePane(.horizontal)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let clicked = try #require(tab.sessionIDs.first { $0 != tab.focusedSessionID })
+    harness.model.select(harness.feature)
+
+    harness.model.revealNotificationSubject(.session(clicked))
+
+    #expect(harness.engine.focused.last == clicked)
+  }
+
   @Test func aBannerClickReachesTheModelThroughTheNotifier() {
     let harness = Harness()
     let first = harness.openBackgroundTab()

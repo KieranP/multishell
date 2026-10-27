@@ -23,7 +23,7 @@ struct AppModelLifecycleTests {
     #expect(harness.model.quickSwitcher != nil)
   }
 
-  @Test func aRenameBegunWhileLaunchingKeepsTheKeyboardAsLaunchEnds() async {
+  @Test func aWorktreeRenameBegunWhileLaunchingKeepsTheKeyboardAsLaunchEnds() async {
     let harness = Harness()
     harness.model.select(harness.main)
     harness.model.beginRenamingWorktree(harness.main)
@@ -31,6 +31,32 @@ struct AppModelLifecycleTests {
 
     await harness.model.start()
 
+    #expect(harness.engine.focused.isEmpty)
+  }
+
+  @Test func aTabRenameBegunWhileLaunchingKeepsTheKeyboardAsLaunchEnds() async throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.beginRenamingTab(tab.id)
+    harness.engine.focused = []
+
+    await harness.model.start()
+
+    #expect(harness.engine.focused.isEmpty)
+  }
+
+  @Test func aFindFieldFocusedWhileLaunchingKeepsTheKeyboardAsLaunchEnds() async throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.showFind()
+    let pane = try #require(harness.model.workspace.activeTab(in: harness.main.id)).focusedSessionID
+    harness.model.noteFindField(focused: true, of: pane)
+    harness.engine.focused = []
+
+    await harness.model.start()
+
+    #expect(harness.model.findFieldTargetID == pane)
     #expect(harness.engine.focused.isEmpty)
   }
 

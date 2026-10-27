@@ -25,8 +25,8 @@ extension AppModel {
 
   func replyToSelectPane(_ id: TerminalSession.ID) -> ControlReply {
     guard let tab = workspace.tab(owning: id) else { return .refused(.noPane(id: id)) }
-    if let refusal = bringIntoView(.terminal(tab)) { return .refused(refusal) }
-    show(pane: id, in: tab)
+    let refusal = bringIntoView(tab.worktreeID) { store.focusSession(id) }
+    if let refusal { return .refused(refusal) }
     return .done
   }
 

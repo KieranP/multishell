@@ -170,6 +170,41 @@ struct AppModelTabOpeningTests {
     #expect(session.agentID == "claude")
   }
 
+  @Test func aMenusNewShellTabInAnotherWorktreeLeavesTheDoneOfItsActiveTabUnseen() throws {
+    let (harness, passedOver) = try worktreeWithADoneOutOfView()
+
+    harness.model.newShellTab(selecting: harness.main)
+
+    #expect(harness.model.workspace.tabs(in: harness.main.id).count == 2)
+    #expect(harness.model.state(ofPane: passedOver) == .done)
+  }
+
+  @Test func aMenusNewAgentTabInAnotherWorktreeLeavesTheDoneOfItsActiveTabUnseen() throws {
+    let (harness, passedOver) = try worktreeWithADoneOutOfView()
+
+    harness.model.newAgentTab(selecting: harness.main)
+
+    #expect(harness.model.workspace.tabs(in: harness.main.id).count == 2)
+    #expect(harness.model.state(ofPane: passedOver) == .done)
+  }
+
+  @Test func aMenusNewAgentTabWithNoAgentChosenSaysSoAndLogsTheShellThatFailedToStart() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let pane = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+      .focusedSessionID
+    harness.model.select(harness.feature)
+    harness.engine.close(pane)
+    harness.engine.refusesToOpen = true
+    harness.platform.logged.removeAll()
+
+    harness.model.newAgentTab(selecting: harness.main)
+
+    #expect(harness.model.workspace.session(pane) == nil)
+    #expect(harness.model.presentedError?.title == PresentedError.noAgentChosen.title)
+    #expect(harness.platform.logged.count == 1)
+  }
+
   @Test func aWorktreeThatCannotBeSelectedGetsNoTab() throws {
     let harness = Harness()
     harness.model.select(harness.main)
@@ -184,5 +219,16 @@ struct AppModelTabOpeningTests {
       harness.model.workspace.tabs(in: harness.main.id).count == 1,
       "nothing landed where it was",
     )
+  }
+
+  private func worktreeWithADoneOutOfView() throws -> (Harness, TerminalSession.ID) {
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.select(harness.main)
+    let pane = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+      .focusedSessionID
+    harness.model.select(harness.feature)
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: pane))
+    return (harness, pane)
   }
 }

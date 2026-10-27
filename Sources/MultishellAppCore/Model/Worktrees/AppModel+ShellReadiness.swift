@@ -11,7 +11,12 @@ extension AppModel {
   /// Whether a shell may start in `worktree`: no create or remove running or
   /// failed there, and its directory present. Every way of starting one asks.
   func requireShellReady(_ worktree: Worktree) -> Bool {
-    !isBusy(worktree.id) && requireDirectory(of: worktree)
+    isShellReadyBesidesDirectory(worktree) && requireDirectory(of: worktree)
+  }
+
+  /// The rest of that rule, for a caller whose select has just probed the directory.
+  func isShellReadyBesidesDirectory(_ worktree: Worktree) -> Bool {
+    !isBusy(worktree.id)
   }
 
   /// Checked before anything that starts a shell, a missing directory being

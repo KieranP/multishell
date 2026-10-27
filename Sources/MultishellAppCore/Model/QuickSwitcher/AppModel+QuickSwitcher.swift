@@ -144,14 +144,12 @@ extension AppModel {
       }
 
     case .fileTab(let id):
-      let tab = workspace.fileTab(id)
-      guard goTo(tab.flatMap { workspace.worktree($0.worktreeID) }) else { return }
-      activateTab(id)
+      let worktree = workspace.fileTab(id).flatMap { workspace.worktree($0.worktreeID) }
+      goTo(worktree) { store.activateTab(id) }
 
     case .pane(let id):
-      let session = workspace.session(id)
-      guard goTo(session.flatMap { workspace.worktree($0.worktreeID) }) else { return }
-      show(pane: id)
+      let worktree = workspace.session(id).flatMap { workspace.worktree($0.worktreeID) }
+      goTo(worktree) { store.focusSession(id) }
 
     case .project(let id):
       guard let worktree = preferredWorktree(ofProject: id) else {
@@ -179,15 +177,14 @@ extension AppModel {
 
   /// Its project opens in the sidebar so its row shows. A worktree that cannot
   /// be selected leaves the keyboard where it was; one gone since beeps.
-  @discardableResult
-  private func goTo(_ worktree: Worktree?) -> Bool {
-    guard let worktree, select(worktree) else {
+  private func goTo(_ worktree: Worktree?, turning turn: () -> Void = {}) {
+    guard let worktree, select(worktree, openingFirstTab: .onSelect, turning: turn)
+    else {
       if worktree == nil { platform.beep() }
       focusActivePane()
-      return false
+      return
     }
     expandProject(holding: worktree)
-    return true
   }
 
   /// The project's worktree turned to last, else its main one.

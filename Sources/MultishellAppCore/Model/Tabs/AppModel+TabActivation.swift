@@ -7,19 +7,20 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
-  /// A pane of the selected worktree brought on screen with the keyboard,
-  /// from its sidebar row.
+  /// A pane of the selected worktree brought on screen with the keyboard, from
+  /// its sidebar row. The reconcile hands the keyboard to the pane just focused.
   public func show(pane id: TerminalSession.ID) {
-    guard let tab = workspace.tab(owning: id) else { return }
-    show(pane: id, in: tab)
-  }
-
-  /// The reconcile hands the keyboard to the active tab's focused pane,
-  /// which is this one now, so nothing more is needed to land in it.
-  func show(pane id: TerminalSession.ID, in tab: TerminalTab) {
-    store.activateTab(tab.id)
+    guard let tab = workspace.tab(owning: id), isWorktreeInView(of: tab) else { return }
     store.focusSession(id)
     reconcileSessions(takingFocus: true)
+  }
+
+  /// A pane of any worktree brought on screen with the keyboard, its worktree
+  /// selected; a missing directory alerts and leaves a cover such as the board up.
+  func reveal(pane id: TerminalSession.ID) {
+    guard let tab = workspace.tab(owning: id), let worktree = workspace.worktree(tab.worktreeID)
+    else { return }
+    select(worktree, openingFirstTab: .onSelect) { store.focusSession(id) }
   }
 
   public func activateNextTab() { activateAdjacentTab(.next) }

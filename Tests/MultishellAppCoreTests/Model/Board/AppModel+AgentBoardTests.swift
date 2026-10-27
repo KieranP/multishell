@@ -101,6 +101,26 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.count(of: .idle) == 1)
   }
 
+  @Test func openingACardLeavesTheDoneOfItsWorktreesOtherActiveTabUnseen() throws {
+    let harness = Harness()
+    let model = harness.model
+    let chosen = harness.openBackgroundTab()
+    let passedOver = try #require(model.workspace.activeTab(in: harness.main.id))
+    model.showAgentBoard()
+    model.setShowsAllTerminals(true)
+    for tab in [chosen, passedOver] {
+      harness.messageSource.send(SessionStateReport(state: .done, sessionID: tab.focusedSessionID))
+    }
+    let card = try #require(
+      model.agentBoard.column(.done).cards.first { $0.id == chosen.focusedSessionID }
+    )
+
+    model.show(card)
+
+    #expect(harness.engine.focused.last == chosen.focusedSessionID)
+    #expect(model.state(ofPane: passedOver.focusedSessionID) == .done)
+  }
+
   /// The sidebar entry and the badge count without building a card, so a shell reporting a new
   /// prompt does not re-render the sidebar.
   @Test func theCheapCountsAgreeWithTheColumnsTheySummarise() {

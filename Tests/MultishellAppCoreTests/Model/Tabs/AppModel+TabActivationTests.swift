@@ -24,6 +24,28 @@ struct AppModelTabActivationTests {
     #expect(harness.model.tabInView?.id == tabs[1])
   }
 
+  @Test func showingAPaneOfAWorktreeNotSelectedLeavesItsStripAsItWas() throws {
+    let harness = Harness()
+    let background = harness.openBackgroundTab()
+    let shown = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.select(harness.feature)
+
+    harness.model.show(pane: background.focusedSessionID)
+
+    #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id == shown.id)
+  }
+
+  @Test func showingAPaneUnderACoverLeavesTheKeyboardWhereItWas() throws {
+    let harness = Harness()
+    let background = harness.openBackgroundTab()
+    harness.model.showAgentBoard()
+    let focusesBefore = harness.engine.focused.count
+
+    harness.model.show(pane: background.focusedSessionID)
+
+    #expect(harness.engine.focused.count == focusesBefore)
+  }
+
   @Test func aPaneShownFromItsRowBecomesTheFocusedPaneOfTheTabInView() {
     let harness = Harness()
     let first = harness.openBackgroundTab()

@@ -131,16 +131,23 @@ extension AppModel {
     store.setOpensTerminalOnCreate(enabled)
   }
 
-  /// A worktree menu's New Shell Tab: that worktree selected first, so the tab
-  /// opens where it was asked for, and nothing opened where it cannot be.
+  /// A worktree menu's New Shell Tab, opened there once the select succeeds and
+  /// has probed the directory.
   public func newShellTab(selecting worktree: Worktree) {
-    guard select(worktree, openingFirstTab: .never) else { return }
-    newShellTab()
+    select(worktree, openingFirstTab: .never) {
+      if isShellReadyBesidesDirectory(worktree) { store.openTab(in: worktree.id) }
+    }
   }
 
   /// The same for New Agent Tab, starting the agent the project prefers.
   public func newAgentTab(selecting worktree: Worktree) {
-    guard select(worktree, openingFirstTab: .never) else { return }
-    newAgentTab()
+    let agentID = effectiveAgentID(for: worktree)
+    var lacksAgent = false
+    select(worktree, openingFirstTab: .never) {
+      guard isShellReadyBesidesDirectory(worktree) else { return }
+      if let agentID { addAgentTab(agentID, in: worktree, group: nil) } else { lacksAgent = true }
+    }
+    // After the select's reconcile, which logs any launch failure the alert replaces.
+    if lacksAgent { presentedError = .noAgentChosen }
   }
 }

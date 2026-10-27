@@ -102,8 +102,8 @@ extension AppModel {
 
   func replyToSelectTab(_ id: WorkspaceTab.ID) -> ControlReply {
     guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
-    if let refusal = bringIntoView(tab) { return .refused(refusal) }
-    activateTab(tab.id)
+    let refusal = bringIntoView(tab.worktreeID) { store.activateTab(id) }
+    if let refusal { return .refused(refusal) }
     return .done
   }
 

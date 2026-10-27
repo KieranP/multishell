@@ -247,6 +247,26 @@ Raised by reviews and settled; a review need not raise these again.
 - **A run starting at a later word missed after an earlier word start.** Each
   letter takes the first word start that has it; finding the best of every such
   choice is a search per title on every key.
+- **Command availability kept in a table by title, a missing title counting as
+  able to act.** SwiftUI's buttons share one action and carry no identifier, so
+  the title is the only key; a command left out is listed and does nothing,
+  where one wrongly hidden could not be found at all.
+- **`isMenuCommandAvailable` an `AppModel` method in MultishellAppUI.** It maps
+  the UI's localized titles to the `can…` properties, which are the decisions,
+  and those live and are tested in MultishellAppCore.
+- **Each Cmd+P walking the whole menu bar, even for an empty All.** Walking on
+  first need moves the same cost onto the first letter typed, Shift+Cmd+P needs
+  it at once, and a second walk point would be a second place the list is read.
+- **Each arrow press building the rows again.** It is the same build as a
+  render, above, well under a millisecond.
+- **The sidebar filter opened while launch ran losing the keyboard as it ends.**
+  Its field is shown whether or not it is editing, and the model has no word of
+  which; the switcher's, a rename's and a find bar's are known while they edit.
+- **Launch's end skipping the seen-marking while one of those fields edits.**
+  Unproven: launch selects nothing, and a Done in a pane in view is seen as it
+  arrives, so no test found a pane the skipped marking would have cleared.
+- **A rename field taken down without its blur, its id left set at launch's
+  end.** Unproven: every way a rename ends found so far clears the id.
 
 ## Checked by hand
 
@@ -266,6 +286,3 @@ What tests cannot reach, to check in `make run` before a release:
 - **Files Panel listed under a cover while the panel is on.** Choosing it turns
   the panel off, as View > Files Panel does there; leaving it out hid a command
   that acts.
-- **The sidebar filter opened while launch ran losing the keyboard as it ends.**
-  Its field is shown whether or not it is editing, and the model has no word of
-  which; the switcher's and a rename's are up only while they edit.

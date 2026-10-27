@@ -127,6 +127,41 @@ struct AppModelControlTabsTests {
     #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id == background.id)
   }
 
+  @Test func selectingATabInAnotherWorktreeLeavesTheDoneOfItsOtherActiveTabUnseen() async throws {
+    let harness = Harness()
+    let chosen = harness.openBackgroundTab()
+    let passedOver = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.select(harness.feature)
+    harness.messageSource.send(
+      SessionStateReport(state: .done, sessionID: passedOver.focusedSessionID)
+    )
+
+    let reply = await harness.messageSource.ask(.selectTab(id: chosen.id))
+
+    #expect(reply == .done)
+    #expect(harness.engine.focused.last == chosen.focusedSessionID)
+    #expect(harness.model.state(ofPane: passedOver.focusedSessionID) == .done)
+  }
+
+  @Test func aTabRefusedForAWorktreeWhoseFolderHasGoneLeavesItsStripAsItWas() async throws {
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    let chosen = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+    harness.model.newTab()
+    let shown = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+    harness.model.select(harness.main)
+    try FileManager.default.removeItem(at: harness.feature.path)
+
+    let reply = try #require(await harness.messageSource.ask(.selectTab(id: chosen.id)))
+
+    guard case .alert(let title, _)? = reply.refusal else {
+      Issue.record("not an alert: \(reply)")
+      return
+    }
+    #expect(title == PresentedError.worktreeDirectoryMissing("").title)
+    #expect(harness.model.workspace.activeTab(in: harness.feature.id)?.id == shown.id)
+  }
+
   @Test func anUnknownTabOrPaneIsRefusedByItsID() async {
     let harness = Harness()
     let id = UUID()

@@ -8,10 +8,11 @@ extension AppModel {
   /// Every live shell is a pty that quitting kills, unless `multishell quit` already asked.
   public var asksBeforeQuitting: Bool { liveTerminalCount > 0 && !quitsWithoutAsking }
 
-  /// The quick switcher's field or a rename's, each up only while it edits, so
-  /// one opened while launch ran keeps the keyboard as it ends.
-  private var isAFieldHoldingTheKeyboard: Bool {
-    quickSwitcher != nil || renamingWorktreeID != nil
+  /// The quick switcher's field, a rename's or a find bar's, each known to the
+  /// model while it edits, so one opened while launch ran keeps the keyboard.
+  private var isSwitcherRenameOrFindEditing: Bool {
+    quickSwitcher != nil || renamingWorktreeID != nil || renamingTabID != nil
+      || findFieldTargetID != nil
   }
 
   func liveTerminalCount(in worktree: Worktree.ID) -> Int {
@@ -30,7 +31,7 @@ extension AppModel {
     await refreshAll()
     // With no project nothing else arms the watcher, which the themes folder needs.
     await rearmWatcher()
-    reconcileSessions(takingFocus: !isAFieldHoldingTheKeyboard)
+    reconcileSessions(takingFocus: !isSwitcherRenameOrFindEditing)
     startStatusPolling()
     await refreshLoginEnvironment()
   }

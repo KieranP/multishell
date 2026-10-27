@@ -11,12 +11,17 @@ extension AppModel {
     workspace.tab(owning: id) == nil ? .noPane(id: id) : nil
   }
 
-  /// Selects a tab's worktree where it is not in view, as a click on the row,
-  /// and answers the refusal when that cannot be done.
-  func bringIntoView(_ tab: WorkspaceTab) -> ControlRefusal? {
-    guard let worktree = workspace.worktree(tab.worktreeID),
-      isInView(worktree) || select(worktree, openingFirstTab: .never)
-    else { return .worktreeNotReady(id: ControlID.worktree(tab.worktreeID)) }
-    return nil
+  /// Turns the store to a tab or pane and hands it the keyboard, selecting its
+  /// worktree where it is not in view, as a click on the row; else the refusal.
+  func bringIntoView(_ worktreeID: Worktree.ID, turning turn: () -> Void) -> ControlRefusal? {
+    if let worktree = workspace.worktree(worktreeID) {
+      if isInView(worktree) {
+        turn()
+        reconcileSessions(takingFocus: true)
+        return nil
+      }
+      if select(worktree, openingFirstTab: .never, turning: turn) { return nil }
+    }
+    return .worktreeNotReady(id: ControlID.worktree(worktreeID))
   }
 }

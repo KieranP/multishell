@@ -1,6 +1,7 @@
 # Worktrees and projects
 
-Discovery, naming, ordering, removal. Newest at the bottom.
+Discovery, naming, ordering, removal. Newest at the bottom, above "Reviewed and
+left as is".
 
 - **Watch every worktree and the common `.git`, and poll only as a backstop.**
   Changes show in about half a second rather than at the next five-second tick.
@@ -659,3 +660,52 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   reads back as given or not at all.
 - **No UI shows the port**; the variable is enough. Cost: nothing checks whether
   another program already holds a port in the block.
+
+## Reviewed and left as is
+
+Raised by reviews and settled; a review need not raise these again.
+
+- **`select` taking a `turning` closure rather than a typed pane or tab.** A
+  menu's New Shell Tab and New Agent Tab open a tab there, which is neither. The
+  closure runs before the focus because the focus marks seen the pane it lands
+  in, which would otherwise be the tab the user passed over.
+- **A control request's `bringIntoView` turning and reconciling itself for a
+  worktree in view.** A select there would ask the shared-hooks question and
+  note the worktree as recent for a request, not a click.
+- **`reveal(pane:)` selecting a worktree already in view where `bringIntoView`
+  does not.** A notification click or a board card is the user's own turn to
+  that worktree, so it is noted as recent as a row click would be.
+- **`reveal`, `bringIntoView` and the switcher's `goTo` as three wrappers over
+  `select`.** Each answers a refusal its own way: nothing, a control refusal, or
+  a beep with the keyboard handed back.
+- **`show(pane:)` beside `reveal(pane:)`.** Show stays inside the selected
+  worktree; reveal selects the pane's worktree first, with all a select does.
+- **The Editor's Open in Tab and a tab moved to a worktree changing the store
+  before `select`.** Each probes the directory just before, so a refusal needs
+  the folder to vanish between two calls on the main actor.
+
+### Asked both ways
+
+Reviews have asked for each of these and for its opposite. The side below is
+the one kept; a review that would argue the other side need not raise it.
+
+- **A typed pane-or-tab target for `select`, or a closure.** Round 3 asked for
+  one entry point that turns before the reconcile; round 4 for a typed target
+  instead. The closure stays, as above, since a menu's new tab is neither.
+- **`newAgentTab(selecting:)` with one `select`, or one per branch.** Round 6
+  asked to branch once on the agent, round 7 to call `select` once. It calls
+  `select` once and notes a missing agent in the closure.
+- **The menu openers' readiness check: the full rule, or no second probe.**
+  Round 4 asked not to probe the directory again after `select`; round 7 to
+  reuse `requireShellReady`. They call `isShellReadyBesidesDirectory`, the rule
+  without the probe, which `requireShellReady` is built from.
+- **Which alert wins the one slot: No agent chosen, or a launch failure.** Round
+  5 asked for the no-agent alert to be set last, round 7 for the failure not to
+  be lost. The no-agent alert shows, as it answers the user's click, and the
+  reconcile logs every launch failure, the one it shows included.
+- **One helper for revealing a pane, or each caller its own.** Rounds 5 and 6
+  asked to share it; each sharing then drew the next wrapper finding. Board and
+  notifications share `reveal(pane:)`; the switcher and control requests keep
+  their own refusal handling, as above.
+- **The folder-gone tests passing on the code before the fix.** They guard the
+  order `select` runs the closure in, not a bug that was there; they stay.

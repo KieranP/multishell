@@ -57,16 +57,11 @@ extension AppModel {
     notifier.withdraw(about: key)
   }
 
-  /// A click on the notification: bring the tab, or the worktree, on screen.
+  /// A click on the notification: its pane, with the keyboard, or its worktree.
   func revealNotificationSubject(_ key: SessionStates.Key) {
     switch key {
     case .session(let id):
-      guard let tab = workspace.tab(owning: id), let worktree = workspace.worktree(tab.worktreeID)
-      else { return }
-      // A worktree whose directory has gone is not selected, and activating
-      // a tab in it would rewrite what the selected worktree shows.
-      guard select(worktree) else { return }
-      activateTab(tab.id)
+      reveal(pane: id)
 
     case .worktree(let id):
       if let worktree = workspace.worktree(id) { select(worktree) }

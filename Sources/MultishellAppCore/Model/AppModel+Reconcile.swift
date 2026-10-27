@@ -32,14 +32,11 @@ extension AppModel {
       shouldBeLive: { warm.contains($0.worktreeID) },
       prepare: { preparedForLaunch($0) },
     )
+    // One alert slot, which a later alert can take: every failure is logged and
+    // the first shown, rather than one message about the last and nothing else.
     for (index, failure) in failures.enumerated() {
-      // One alert slot: four sessions failing at once would otherwise leave
-      // one message about the last of them and nothing about the rest.
-      if index == 0 {
-        present(failure.error)
-      } else {
-        platform.log("a session could not be opened: \(failure.error)")
-      }
+      platform.log("a session could not be opened: \(failure.error)")
+      if index == 0 { present(failure.error) }
       store.closeSession(failure.sessionID)
     }
     pruneStates()

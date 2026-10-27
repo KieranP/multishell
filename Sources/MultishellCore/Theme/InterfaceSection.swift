@@ -52,7 +52,7 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
     case .projectsPanel: [.background] + text + [.border, .fill, .selection, .selectionBackground]
 
     case .quickSwitcher:
-      [.background] + text + [.border, .fill, .selectionBackground]
+      [.background] + text + [.border, .selectionBackground]
         + [.fieldBackground, .fieldText, .fieldTextSecondary, .fieldBorder]
 
     case .states: [.working, .waiting, .done, .failed]

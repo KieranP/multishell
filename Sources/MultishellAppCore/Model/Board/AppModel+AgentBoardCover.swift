@@ -32,11 +32,6 @@ extension AppModel {
   /// A click on a card: turn to its pane and leave the board. The card stays,
   /// moving to Idle if what was shown was a Done.
   public func show(_ card: AgentBoardCard) {
-    guard let tab = workspace.tab(card.tabID), let worktree = workspace.worktree(card.worktreeID)
-    else { return }
-    // The board is left by `select`, and only once it agrees to go: a
-    // missing directory raises an alert and stays put.
-    guard select(worktree) else { return }
-    show(pane: card.id, in: tab)
+    reveal(pane: card.id)
   }
 }

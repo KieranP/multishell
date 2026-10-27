@@ -7,7 +7,7 @@ import Testing
 struct AppModelReconcileTests {
   /// The model has one alert slot, so what happens when several things fail at
   /// once has to be decided rather than left to whichever wrote last.
-  @Test func onlyTheFirstFailedSessionTakesTheAlertAndTheRestAreLogged() {
+  @Test func onlyTheFirstFailedSessionTakesTheAlertAndEveryOneIsLogged() {
     let harness = Harness()
     harness.model.select(harness.main)
     for _ in 0..<3 { harness.model.newTab() }
@@ -21,8 +21,8 @@ struct AppModelReconcileTests {
 
     #expect(harness.model.presentedError != nil, "the user is told once")
     #expect(
-      harness.platform.logged.count == 3,
-      "and the rest are in the log: \(harness.platform.logged)",
+      harness.platform.logged.count == 4,
+      "and every one is in the log: \(harness.platform.logged)",
     )
   }
 
