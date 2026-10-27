@@ -22,7 +22,7 @@ public enum AgentHookCatalogue {
     ?? FileManager.default.homeDirectoryForCurrentUser
 
   public static let integrations: [AgentHookIntegration] = [
-    claude, codex, gemini, copilot, openCode,
+    claude, codex, gemini, antigravity, copilot, openCode,
   ]
 
   /// The notification types of Claude's that announce rather than ask, out of
@@ -123,6 +123,31 @@ public enum AgentHookCatalogue {
   /// In the wrapper every shell-tool command runs in and nothing else does, so
   /// no MCP server matches. Not a documented contract; see agents.md.
   private static let geminiShellMarker = "/gemini-shell-"
+
+  /// Antigravity CLI reads `~/.gemini/config/hooks.json`, sets of hooks by name.
+  /// Four of its six events, none asking for the user, Stop once per state.
+  static let antigravity = AgentHookIntegration(
+    id: AgentCatalogue.antigravityID,
+    file: underHome(".gemini/config/hooks.json"),
+    events: [
+      AgentHookEvent("SessionStart", .idle, startsSession: true),
+      AgentHookEvent("PreInvocation", .running, isPrompt: true),
+      AgentHookEvent("PreToolUse", .running, matcher: "*"),
+      AgentHookEvent(AgentHookPayload.antigravityStop, .done),
+      AgentHookEvent(
+        AgentHookPayload.antigravityStop,
+        .idle,
+        reportedName: AgentHookPayload.antigravityCancelledStop,
+      ),
+      AgentHookEvent(
+        AgentHookPayload.antigravityStop,
+        .failed,
+        reportedName: AgentHookPayload.antigravityFailedStop,
+      ),
+    ],
+    format: .namedHookSet("multishell"),
+    payloadSpelling: .antigravity,
+  )
 
   /// Copilot CLI reads every JSON file in `~/.copilot/hooks`. Ours uses its VS Code spelling, where
   /// no SubagentStart names an id, so a worker goes on at its own first event; see agents.md.

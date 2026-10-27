@@ -207,10 +207,9 @@
   `isEmpty`, since it prints `x` when it fails.
 - **Size and complexity limits sit just above the largest that exists**: 60-line
   functions, complexity 15, 9 parameters, 4-member tuples, types nested two
-  deep, 120-column lines. They stop growth rather than force a split. Four
+  deep, 120-column lines. They stop growth rather than force a split. Three
   exceed them by choice and are marked: `SVGPathParser.path(fromData:)` (kept
-  whole on 2026-09-30), `OpenCodePlugin.javaScript(helperExpression:)`, one
-  string literal, `Workspace.init(from:)`, a field per line, and
+  whole on 2026-09-30), `Workspace.init(from:)`, a field per line, and
   `AppModel.reply(to:)`, one case per control request; `WorkspaceStore` passes
   400 lines because every writer of its `private(set)` state must live in the
   file, and `AppModel` because no extension may hold a stored property.

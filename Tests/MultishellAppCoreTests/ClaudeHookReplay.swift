@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 /// Feeds captured payloads through Claude's hook integration and the session
 /// states, as the helper and the app would, noting what each list named.

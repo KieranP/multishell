@@ -14,11 +14,30 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     /// A JavaScript plugin, OpenCode having no hooks in its settings at
     /// all. A file of ours alone, like the one above.
     case plugin
+    /// Antigravity keeps named sets of hooks in a file of the user's; ours is
+    /// the set of this name, its events directly under it.
+    case namedHookSet(String)
 
     /// Whether the file holds nothing but what Multishell wrote.
     var isOursAlone: Bool {
-      if case .userSettingsFile = self { return false }
-      return true
+      switch self {
+      case .userSettingsFile, .namedHookSet: false
+      case .ownHookFile, .plugin: true
+      }
+    }
+  }
+
+  /// How the payload on stdin is spelled. Antigravity's names no event, so
+  /// its hook line does.
+  enum PayloadSpelling: Sendable {
+    case hookEventName
+    case antigravity
+
+    var hookLineNamesEvent: Bool {
+      switch self {
+      case .hookEventName: false
+      case .antigravity: true
+      }
     }
   }
 
@@ -34,7 +53,11 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   public let id: String
   public let file: URL
   let events: [AgentHookEvent]
+  /// One event per name, the first listed: Antigravity's Stop stands for three
+  /// states and is written once.
+  let writtenEvents: [AgentHookEvent]
   let format: Format
+  let payloadSpelling: PayloadSpelling
   /// What the agent asks of the user before it will run a hook, when it
   /// asks anything at all. Codex trusts a hook only once told to.
   public let trustNote: String?
@@ -72,6 +95,21 @@ public struct AgentHookIntegration: Identifiable, Sendable {
 
   public var isOursAlone: Bool { format.isOursAlone }
 
+  private var namedHookSetName: String? {
+    if case .namedHookSet(let name) = format { return name }
+    return nil
+  }
+
+  var isNamedHookSet: Bool { namedHookSetName != nil }
+
+  var sectionKey: String { namedHookSetName ?? "hooks" }
+
+  /// Whether its hooks or plugin can say it is waiting for the user, which
+  /// Antigravity's cannot.
+  public var reportsWaiting: Bool {
+    isPlugin || events.contains { $0.state == .attention }
+  }
+
   public var isPlugin: Bool {
     if case .plugin = format { return true }
     return false
@@ -82,6 +120,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     file: URL,
     events: [AgentHookEvent],
     format: Format,
+    payloadSpelling: PayloadSpelling = .hookEventName,
     trustNote: String? = nil,
     backgroundShellMarker: String? = nil,
     resumption: Resumption = .never,
@@ -95,7 +134,10 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.id = id
     self.file = file
     self.events = events
+    var names: Set<String> = []
+    writtenEvents = events.filter { names.insert($0.name).inserted }
     self.format = format
+    self.payloadSpelling = payloadSpelling
     self.trustNote = trustNote
     self.backgroundShellMarker = backgroundShellMarker
     self.resumption = resumption

@@ -38,7 +38,8 @@ command line's requests on the same socket. Newest at the bottom.
   overtakes its started (terminals.md).
 - **Four agents share one hook line and one parser**, each running a command at
   every lifecycle event with the same three fields. What differs is the file,
-  the event names and how the file spells a hook.
+  the event names and how the file spells a hook. A fifth, Antigravity, runs the
+  same line naming its event, its payload having its own reader.
 - **The app knows no agent by name anywhere else.**
 - **Only the last month of each agent's releases is supported.** A feature every
   release of that month has is relied on with no branch for older ones. This
@@ -68,13 +69,13 @@ command line's requests on the same socket. Newest at the bottom.
 - **A file of the user's is never rewritten unasked**, since the write sorts its
   keys and re-indents it. The row offers Update instead, which swaps ours for
   this build's and keeps a hook of theirs inside our group.
-- **One reports to no command at all**, only to a plugin seeing a session go
-  idle, so it gets a plugin calling the helper as any script would.
+- **One reports to no command at all**, only to a plugin seeing a session's run
+  end, so it gets a plugin calling the helper as any script would.
 - **That one alone says a permission was answered**, allowed or denied, so its
   pane alone clears Waiting on the answer rather than at the next tool call.
-- **Its permission-ask hook is deliberately not used**: uncalled since its
-  permissions rewrite, and if called again it would repeat a prompt the event
-  bus already reported.
+- **Its permission hook is deliberately not used**: `permission.evaluate` runs
+  for every check, answered or not, and would repeat a prompt the event bus
+  already reports.
 - **Cost of the plugin**: JavaScript in the user's agent, so it spawns, unrefs
   and swallows everything, and it is the one integration whose contract we do
   not control from a payload.
@@ -443,29 +444,25 @@ command line's requests on the same socket. Newest at the bottom.
 - **One agent names a subagent to its telemetry and never to a hook**, so its
   rows show none.
 - **One runs a subagent as a child session**, its plugin reading the child's
-  creation as a start, its busy status and tool calls as work, and its idle or
-  error as the end. A child's idle is not the pane's Done.
-- **Both the old and new spellings of that idle end a child**: reading only the
-  deprecated old one would leave the pane Working for good once it is dropped.
-- **The parent's idle comes in both spellings too, so the plugin sends its Done
-  once**: the model cannot drop a second Done, since the shell's own report of a
-  finished command arrives after the terminal's in just that shape.
-- **The parent's busy status clears that**, reporting nothing: otherwise a turn
-  that never passed the message hook ended in no Done at all.
+  creation as a start, its run starting and tool calls as work, and its run
+  ending, however it ends, as the end. A child's end is not the pane's Done.
+- **A parent's run starting says Working only where no prompt already has**, so
+  a turn the prompt hook never saw still shows, and ends in a Done.
 - **An ended child's id is kept, marked rather than deleted**, so a second end
-  or a late permission of its own is not read as the parent's; only a busy
-  status puts it back.
+  or a late permission of its own is not read as the parent's; only its next run
+  puts it back. A move away drops its session's children outright, as they now
+  run elsewhere.
 - **A child the plugin never saw created is asked about**: a task resumed by its
   id reuses its session and publishes no creation, so its first message read as
-  the parent's prompt. The session's parent is looked up once per id, any
-  failure leaving it the parent's. Every hook for that id shares the first one's
-  one-second bound, so a lookup that never settles costs one hook a second, not
-  every hook; an answer after the bound still puts the child back.
+  the parent's prompt. One lookup is in flight per id, and a hook waits at most
+  a second for its turn in the session's queue, which an earlier event's
+  unsettled lookup can hold each time; an answer after the bound still puts the
+  child back.
 - **Ended ids are kept in their own capped list, oldest first**, capped on that
-  list rather than on the map: gated on the map, a child cycling busy and idle
-  grew the list without bound.
+  list rather than on the map: gated on the map, a child running and ending over
+  and over grew the list without bound.
 - **One place per child there**, so those cycles neither grow the list nor push
-  other children out, at the price of a short scan per end.
+  other children out.
 - **Where the pieces disagree, the pane's dot is what they agree on**: a report
   for a worker not on the roster puts it on, an end for one never seen takes
   nothing, and the roster clears with everything else.
@@ -612,10 +609,10 @@ command line's requests on the same socket. Newest at the bottom.
   by that turn's Stop, never by the last worker out.** Paying it at the exit
   announced Done, then Working, then Done again seconds later, with two banners.
 - **Claude and Copilot always do**, the work's end reaching the model as a
-  message; OpenCode for a background child; Gemini only where steering is on and
-  a finished shell injects or notifies, read from its settings at each Done in
-  Gemini's order, system defaults first and a project's own only in a folder
-  Gemini trusts, by its own rule.
+  message; OpenCode for every child, a cancelled one too; Gemini only where
+  steering is on and a finished shell injects or notifies, read from its
+  settings at each Done in Gemini's order, system defaults first and a project's
+  own only in a folder Gemini trusts, by its own rule.
 - **Codex does not**: a child's answer is recorded with `trigger_turn: false`,
   so its last worker out pays.
 - **Under an empty `HOME` Gemini's settings are read from Node's temporary
@@ -685,19 +682,29 @@ command line's requests on the same socket. Newest at the bottom.
   subagent's task by the id it launches it under and its transcript
   `agent-<agent_id>.jsonl`, read from the binary.
 - **OpenCode's plugin sends its own list at the parent's Done**, the children it
-  saw start and not end, which outranks what a missed event left behind.
+  saw start and not end, which outranks what a missed event left behind. Only
+  that session's own, its children's children among them: two sessions in one
+  plugin listed each other's (`aSessionsDoneListsOnlyItsOwnChildrenAsOut`).
+  Under the service every session reports to the one worktree roster, so there a
+  Done lists every session's
+  (`underTheServiceADoneListsEverySessionsChildrenAsOut`).
 - **And one report at a time, each once the helper before has exited**, with a
   two-second bound on a helper that never does. Started together they landed in
   either order, and a cancelled child's end landing after the Done that left it
   out put it back on the roster for good.
-- **A plain Working queued behind another is dropped**, saying nothing the first
-  will not: each helper that hangs holds the queue two seconds, and a burst of
-  tool calls queued minutes of reports. An app gone or with a full backlog costs
-  nothing here, macOS refusing the connect at once.
-- **OpenCode's woken turn is a prompt of synthetic parts only**, which the
-  plugin reads as the turn a child's end woke, not the user's: read as a new
-  turn it emptied the roster of the children still out. A message naming no
-  session starts no turn either, for the same reason.
+- **A quiet Working already queued drops its twin**, a session's own or a
+  worker's that starts nothing and asks nothing, when only quiet Workings stand
+  between them: each helper that hangs holds the queue two seconds, and a burst
+  of tool calls queued minutes of reports, a parent's and a child's in turn
+  among them (`aParentsAndChildsToolCallsInTurnQueueOneWorkingEach`). A prompt
+  between them keeps both, or the reply's Working was taken for the tool call's
+  and the prompt never cleared
+  (`aWorkingQueuedBeforeAPromptDoesNotSwallowTheReplysWorking`). An app gone or
+  with a full backlog costs nothing here, macOS refusing the connect at once.
+- **OpenCode's woken turn runs no prompt hook**: a child's end reaches the
+  parent as a synthetic message, so the plugin reports that turn's start as a
+  plain Working. Read as a new turn it emptied the roster of the children still
+  out. A prompt naming no session starts no turn either, for the same reason.
 - **Shells and subagents are counted apart** wherever workers are counted, a
   shell not being a subagent to anyone reading the label.
 - **A sweep takes every dead agent before any dead shell.** An agent gone with
@@ -1128,3 +1135,416 @@ command line's requests on the same socket. Newest at the bottom.
   seconds, and past that nobody is watching the row. Cost: the bound and a
   removal's stop cover the agent, not the git reads before it, which take no
   stopper; a hung volume holds the row's spinner until git returns.
+- **OpenCode 2 alone is supported**, the user's call on 2026-10-27: 2 runs no
+  plugin written for 1.x, and one file serving both kept a second adapter to
+  test for a line about to go. The plugin is a default export of an `id` and a
+  `setup`, still at `plugin/multishell.js`, which 2.1.4 scans beside `plugins/`,
+  so an install from an older build reads as needing Update.
+- **The bus carries every directory's sessions**, the background service running
+  them all, and each directory loads the plugin once. An event's envelope may
+  name its directory, and a run's events did not in the probe, so the plugin
+  keeps the sessions its hooks named and those created here, and asks about any
+  other, remembering the answer. Read from the 2.1.4 binary and a probe on
+  2026-10-27, not seen for a global plugin across two directories.
+- **An envelope naming another directory settles it unasked**; one naming this
+  one still asks, as only the answer says whether the session is a child, and an
+  answer naming another directory outweighs it. A location naming no directory
+  says nothing, in an envelope, a creation or an answer, and leaves the record's
+  source as it was, or an answer naming no directory outranked the envelope that
+  asked for it (`anAnswerNamingNoDirectoryLeavesALaterEnvelopeToSay`).
+- **Only the events the plugin reads are queued**, a session's creation and move
+  and the six it looks up for: a streamed part names its session too, and one
+  whose lookup failed was asked about again for each part
+  (`anEventThePluginDoesNotReadAsksNothing`).
+- **A session the TUI moves to another worktree is placed by its new location**,
+  as `session.moved` says: kept here, the old worktree's dot showed the new
+  one's turns (`aSessionMovedAwayIsAnotherDirectorysAndOneMovedHereIsThisOnes`).
+  Moved away, mid-turn, after its Done or while asking, it ends here: its
+  children end and are dropped, filed with it as elsewhere's, and it goes Idle
+  wherever it stood, or the old worktree kept work now running elsewhere
+  (`aSessionMovedAwayMidTurnLeavesItsTurnAndChildrenEndedHere`,
+  `aSessionMovedAwayAfterItsDoneOrWhileAskingGoesIdleHere`,
+  `aMovedSessionsChildRunningLaterReportsNothingHere`). A move ends it here with
+  no placement record too: it goes Idle if the tracker remembers it reporting
+  here, its latest 512, or if a session under it on the roster leaves with it,
+  running or ended, as either's end woke its turn; for one with a parent that
+  end woke its parent's turn instead
+  (`aSessionForgottenAmongTheLatestStillEndsHereWhenMovedAway`,
+  `aParentUnseenHereThatMovesAwayMidTurnLeavesTheWorktreeIdle`,
+  `aChildTheRosterForgotSendsNoIdleWhenItLeavesWithAWorkerUnderIt`). The
+  sessions leaving with it are those the roster or the placement records put
+  under it, as the roster passes a forgotten parent's children up
+  (`aChildLeavingTakesTheGrandchildTheRosterPassedUpToItsSession`). Each is
+  dropped outright, taking no place among the 64 ended, or another session's
+  oldest ended child was forgotten
+  (`aMoveAwayForgetsNoOtherSessionsEndedChild`). A move back takes its children
+  out of elsewhere's again (`aSessionMovedBackGetsItsChildrenBack`). A child
+  whose parent moved away is elsewhere's, whatever an older answer says, unless
+  a hook named it here after the move, and so is any session further down that
+  line, though an answer filed the one between
+  (`aChildAnsweredAfterItsParentMovedAwayIsElsewheresToo`,
+  `aHookNamedChildOfAnotherDirectorysSessionStaysHere`,
+  `aGrandchildAnsweredAfterItsSessionMovedAwayIsElsewheresToo`). A session moved
+  here brings every session filed elsewhere under it, its children's children
+  too, as each one's record keeps its top-level session through an event naming
+  no parent (`aSessionMovedHereBringsItsChildrenFromElsewhere`,
+  `aSessionMovedHereBringsItsChildrensChildrenToo`,
+  `aMovedChildsEventElsewhereKeepsItFiledUnderItsSession`). A lookup answered
+  after the move cannot bring it back (`aLateAnswerDoesNotUndoAMove`).
+- **A session a hook named stays here whatever a late answer or its creation
+  says**: hooks fire only for this directory's sessions, and where it ended up
+  turned on whether the answer beat the bound
+  (`aSessionAHookNamedStaysHereWhenALateAnswerNamesElsewhere`,
+  `aSessionAHookNamedStaysHereWhenItsCreationNamesElsewhere`).
+- **An answer naming a parent makes a child of a session a hook or envelope
+  placed here**, though the parent is unknown after a reload or forgotten past
+  1024, whether the answer came within the bound or after it
+  (`aSessionWhoseAnswerNamesAParentIsAChildWhereverItWasPlaced`,
+  `aLateAnswerNamingAParentMakesAChildOfASessionAHookNamed`).
+- **A child's record keeps its parent**, from a creation as from an answer, so
+  one a hook named first is still a child once the roster forgets it
+  (`aChildAHookNamedBeforeItsCreationStaysAChildOnceTheRosterForgetsIt`). A
+  creation naming a parent makes a child of a hook-named session as an answer
+  does (`aCreationNamingAParentMakesAChildOfASessionAHookNamed`).
+- **A child of a session here is here whatever its own location says**, in a
+  creation or a lookup's answer; read by its location alone, a resumed child's
+  answer naming no directory made it a parent
+  (`aChildWhoseAnswerNamesNoDirectoryIsStillAChildOfAParentHere`). A parent
+  unknown here is asked about once its child is placed, after a reload as for a
+  middle session silent on its task, so a move of the top-level session takes
+  the whole line (`aGrandchildUnderAnUnknownParentLeavesWithItsMovedSession`).
+- **A child the roster forgot rejoins it from its record** when it is resumed,
+  past the 64 ended; kept as a plain session here, its resumption read as the
+  parent's turn and announced Done
+  (`aChildTheRosterForgotIsReadAsAChildWhenResumedNotAsTheParent`,
+  `pastTheEndedChildLimitOnlyTheOldestLeavesTheRosterAndRejoinsAsAChild`).
+- **Each session's events wait only for that session's lookup**, which has no
+  bound. One queue for the whole bus held a parent's Done behind another
+  directory's lookup, landing after the next prompt's Working
+  (`aLookupForAnotherSessionHoldsBackNoEventOfThisOne`). A hook's lookup keeps
+  its one-second bound, and an answer landing after it still counts.
+- **A session's hooks take their place in the same queue**, the hook waiting at
+  most a second for its turn: a hook-named session is here before its lookup
+  ends, and an event during the lookup is reported after the hook's Working, not
+  dropped or overwritten (`anEventDuringAHooksLookupIsTheHookedSessions`). An
+  event waits up to a second for a hook's lookup still out, as its answer may
+  make a child: read before it, a resumed child's end was the parent's Done and
+  the late answer started a worker that never ended
+  (`aChildWhoseRunEndsBeforeItsLateAnswerEndsAsAChild`). An answer past that
+  second, after the session's own run ended, starts it on the roster and ends it
+  at once, read from its last own report: kept started, it was out in every
+  later Done, and joined silently, the worktree stayed on its Done mid-turn
+  (`aChildWhoseRunEndedBeforeAnAnswerPastTheBoundJoinsTheRosterEnded`). After
+  the parent's own Done it joins ended and silent, or its end over that Done
+  left the worktree Working with no Stop to come; a grandchild reads its
+  top-level session's Done, its own parent having none
+  (`aChildWhoseLateAnswerLandsAfterItsParentsDoneJoinsTheRosterQuietly`,
+  `aGrandchildWhoseLateAnswerLandsAfterTheSessionsDoneJoinsTheRosterQuietly`). A
+  prompt it raised as its own is answered there and raised again as the
+  worker's, or the reply, now the worker's, left the agent's prompt standing;
+  one any session is raising as its own stays up, as all share the agent's
+  prompt (`aPromptAChildRaisedAsItsOwnBecomesTheWorkersOnceItsLateAnswerLands`,
+  `aChildsLateAnswerLeavesItsParentsOwnPromptStanding`,
+  `aChildsLateAnswerLeavesAnotherSessionsPromptStanding`).
+- **Each session has one placement record**: here or elsewhere, the source that
+  said so and when, its parent and agent. A source overrides the record unless
+  one ranked above it set it: a hook or a move outranks a creation or an answer,
+  and those outrank an envelope; between equals the newer wins. A parent moved
+  away after a session was placed takes it along, a hook's word too, as the
+  answer naming that parent can land after the move
+  (`aChildAHookNamedBeforeItsParentMovedAwayIsElsewheresOnceAnswered`); a hook
+  naming it again after the move stamps it anew and keeps it here
+  (`aChildAHookNamesAgainAfterItsParentMovedAwayStaysHere`). A hook counts from
+  when it fired, not when its turn in the session's queue came: one fired before
+  the move but run after it kept a moved child here
+  (`aHookThatFiredBeforeItsParentMovedAwayKeepsNoChildHere`). The precedence
+  spread over four maps read worse and drifted between them.
+- **A session leaves here one way, whatever filed it elsewhere**: a move, an
+  answer or an envelope re-files every session under it and drops them and the
+  session itself from the roster. An answer that left the children's records
+  here put them back on the roster in the old worktree
+  (`aSessionAnAnswerFilesElsewhereTakesItsChildrenAlong`), and a child filed
+  away by an envelope stayed out in its parent's Done for good
+  (`aChildAnEnvelopeFilesElsewhereLeavesItsParentsRoster`). The sessions under
+  it take the word that moved it, so one that outranks it brings them back
+  (`aSessionBackHereAfterAnEnvelopeFiledItElsewhereBringsItsChildrenBack`). A
+  session with a record moves them only on a change of place: another
+  directory's session moving to a third left its child here dropped
+  (`anotherDirectorysSessionMovingElsewhereLeavesItsChildHereAlone`). A session
+  whose record was forgotten still ends here if it reported here, its children
+  with it
+  (`aSessionWhoseRecordWasForgottenGoesIdleWhenAnEnvelopeFilesItElsewhere`,
+  `aForgottenSessionAnEnvelopeFilesElsewhereTakesItsChildrenAlong`); another
+  directory's session an envelope shows for the first time never moved, and its
+  child here runs on
+  (`anotherDirectorysSessionFirstSeenAfterItsChildIsHereLeavesTheChildRunning`),
+  but a parent unseen here that the TUI moves away takes its child along
+  (`aParentUnseenHereThatMovesAwayTakesItsChildAlong`). Any arrival here, and
+  any move here though the record already said here, has an envelope-filed
+  session asked about again
+  (`aSessionAHookBringsBackAsksAgainAboutAChildAnEnvelopeFiledElsewhere`,
+  `aMoveHereOfASessionAlreadyHereStillAsksAgainAboutAnEnvelopeFiledChild`). The
+  session joining the roster forgets its own reports, or one that reported as
+  its own before its parent was known sent a stray Idle long after its parent
+  moved away, from the roster or forgotten by it
+  (`aChildThatOnceReportedAsItsOwnSendsNoIdleLongAfterItsParentMovedAway`,
+  `aChildTheRosterForgotSendsNoIdleLongAfterItsParentMovedAway`).
+- **A top-level session is walked up the parents at each use**, never stored: a
+  parent learned after its child, from a late answer, left the grandchild out of
+  the Done and behind on a move away
+  (`aGrandchildCreatedBeforeItsParentsLateAnswerCountsUnderTheTopLevelSession`).
+  An ended child the roster forgets passes its children to its own parent, so a
+  grandchild still running stays under its session
+  (`aGrandchildStillRunningCountsUnderTheSessionOnceItsEndedParentIsForgotten`).
+  A move re-files every record under the session, here or elsewhere, rather than
+  dropping them, or a grandchild seen before its parent was filed by its own
+  location
+  (`aSessionMovedHereBringsAGrandchildWhoseEventComesBeforeItsParents`).
+- **An envelope's word gives way to a later envelope naming the other side**: a
+  child an envelope filed elsewhere is asked about again once its parent is
+  moved here (`aChildAnEnvelopeFiledElsewhereComesBackWithItsMovedParent`). An
+  envelope names no parent, so a session it filed elsewhere before any move here
+  is asked about on its next event, whatever that event's envelope says
+  (`aChildAnEnvelopeFiledElsewhereIsAskedAgainOnceItsParentMovesHere`).
+- **The records are bounded at 1024 for each place**, the service running for
+  days, so other directories' sessions never push out this one's
+  (`aSessionAHookNamedKeepsItsPlaceWhileOtherDirectoriesSessionsComeAndGo`). One
+  forgotten costs a lookup, so a session a hook named is asked about again once
+  forgotten (`aSessionAHookNamedIsAskedAboutAgainOnceForgotten`); a child still
+  on the roster counts as here without one
+  (`aChildOnTheRosterWhosePlaceWasForgottenStillEnds`). The sessions' last own
+  reports are bounded at 512.
+- **Under the service the helper is told of no tab**: the service keeps the
+  environment of the tab that first started it, so every tab's sessions named
+  that one. The plugin reads `--service` in its process's arguments and hands
+  the helper an environment without the tab's session, worktree, socket and app,
+  so the helper finds the app's socket itself and the report marks the worktree
+  by its directory. A TUI started with `--standalone` runs the plugin in its own
+  process and keeps the tab. Cost: two OpenCode tabs in one worktree share one
+  dot.
+- **A run's end is one of three events**: succeeded is Done, failed is Failed,
+  and interrupted by the user is Idle, as Codex's `Interrupt` is, nothing having
+  finished. A run superseded by a prompt sent mid-turn reports nothing, the next
+  run carrying on. A failed run's error message is the report's. One ended for
+  inactivity is Failed, never having finished. A shutdown is the service going,
+  so it reports nothing and the pid poll clears the pane as the service's pid
+  goes.
+- **A cancelled child wakes its parent in 2**, which hears of it as a message,
+  so no end the plugin sends says it wakes nobody.
+- **No hook of the plugin's may throw**: a throw fails the user's prompt or tool
+  call, so every hook and event body swallows its errors.
+- **It subscribes before it registers its hooks**, the bus replaying nothing. A
+  hook that fails to register aborts the subscription before `setup` throws:
+  OpenCode counts that plugin as failed, and its loop read on with nothing to
+  stop it (`aSetupThatFailsToRegisterAHookStopsReadingTheBus`).
+- **Each session's last Working is its own**: two sessions in one directory
+  shared one, and one's Done swallowed the other's (`eachSessionsDoneIsItsOwn`).
+  A run's end arrives once in 2, so no second Done is dropped.
+- **A creation naming no directory is asked about**, not filed as another
+  directory's.
+- **Antigravity CLI is a sixth agent beside Gemini CLI**, which Google stopped
+  serving on personal plans on 2026-06-18 but which Standard and Enterprise
+  licences and API keys still reach; the user kept both on 2026-10-27.
+- **Its hooks go in `~/.gemini/config/hooks.json`**, Antigravity reading none
+  from its settings file, as sets of hooks by name. Ours is the set
+  `multishell`, merged into as a settings file is: Remove takes out our hooks
+  and keeps one of the user's put there, and a set left holding only its
+  `enabled` goes. Update keeps the set's `enabled` as it found it, so a set the
+  user switched off stays off.
+- **Its payload names no event**, so the hook line does with `--event`, and is
+  camelCase: the first of `workspacePaths` is the directory, the hook running in
+  the folder that holds its file. Read from a probe of 1.4.8 on 2026-10-27.
+- **Its timeout is in seconds**, unlike Gemini's milliseconds: Antigravity's
+  hooks page gives seconds with a default of 30, and the probe's hooks, given 5,
+  ran their whole process walks, which a 5 ms limit would have killed.
+- **Six events, and none says it waits for the user**: PreToolUse fires before
+  the approval prompt, and nothing after it. A pane shows Working through a
+  permission prompt. Antigravity says waiting through OSC 7501, which it probes
+  for and our terminal does not answer; reading it is a Ghostty patch, not
+  taken.
+- **Each model call is a turn start**, PreInvocation firing per call with no
+  sign of the user's prompt bar `invocationNum`. Antigravity has no worker the
+  roster counts, so a start mid-turn clears nothing.
+- **A Stop's `terminationReason` picks its state**: `USER_CANCELED` is Idle,
+  `ERROR` is Failed, the rest Done. A failed Stop's non-empty `error` is the
+  report's message.
+- **PostToolUse is not asked for**: a backgrounded command's arrives as it
+  exits, after the turn's Stop, and put a finished pane back to Working.
+- **No background shell or subagent is counted**: no event names a subagent, and
+  how a backgrounded command's process reads is unread. A pane waiting on one
+  goes Done at the Stop.
+- **A hook printing nothing and exiting 0 lets the tool run**, and one exiting 1
+  after a tool is logged, both seen in the probe.
+- **Its one-shot run is `--mode plan --print=<prompt>`**, `--print` taking the
+  prompt as its value, models and efforts as named in the 1.4.8 binary. Cost:
+  plan mode makes no edit but no flag takes a tool away, and the list is not
+  checked against `agy models`, which reads the account.
+
+## Reviewed and left as is
+
+- **`--subagent-wakes` with nothing in the repository sending `false`** (round
+  1, 2026-10-28): it is an option of the helper's `state` command, which a
+  user's own script or plugin may send, and fields are only ever added. The rule
+  that a cancelled worker's end says so stands for any reporter that knows it.
+- **A closed bus stream is not subscribed to again** (round 1): nothing shows
+  2.1.4 ending the stream while the plugin runs, and a reload calls `setup`
+  afresh. Unproven, so no retry loop.
+- **A prompt sent mid-turn starts a turn, emptying the roster** (round 2): the
+  prompt hook's `delivery` cannot tell it apart, the probe of 2.1.4 showing an
+  idle session's first prompt as `steer` too, and whether a superseded run keeps
+  its children is unread.
+- **Antigravity's directory is the first of `workspacePaths`, over the tab's
+  worktree** (round 3): a report from a tab names its session, which decides the
+  pane; the directory places only one naming none, and Antigravity lists the
+  workspace it started in first.
+- **A named set's `enabled` handled in `hooksObject`, `isLeftEmpty` and
+  `replacingOurs`** (round 3): round 2 put the restore in one line of
+  `replacingOurs`; moving the drop from `removing` to Remove is another shape
+  for the same behaviour, which is tested, so it stays.
+- **A lookup that never settles holds its session's queue for good** (round 4):
+  an unbounded lookup was round 1's fix for a slow one dropping a session, and a
+  `session.get` that never settles is a wedged service.
+- **A switched-off Antigravity set still reads as current in Settings** (round
+  5): Update keeps the switch as the user left it, and a state of its own for a
+  switched-off set is a feature, not a fix.
+- **A prompt reports a new turn once its lookup's one-second bound runs out**
+  (round 6), even where the late answer would show a resumed child: the bound
+  keeps OpenCode's hooks from waiting, and the answer still puts the child back.
+  Until then the child reports as its own session and shares the agent's one
+  prompt on the dot, so its Working can answer the session's or a sibling's
+  prompt (round 48); a prompt per session is a redesign of the app's prompt
+  raisers, not a fix. A hook whose own wait runs out with its lookup's returns
+  before its report, which can then land after another session's event (round
+  49).
+- **An Antigravity payload that is not a JSON object reports nothing** (round
+  7): the probe of 1.4.8 saw an object on every event, and a report made up from
+  the hook line alone would be a guess.
+- **Antigravity's Stop `fullyIdle` is not read** (round 8): the probe saw it
+  true on every Stop, and what false would mean is unread, so a Stop is Done by
+  its reason alone.
+- **The plugin compares directories as OpenCode spells them** (round 8): the
+  plugin's location and a session's come from the same server, and the probe saw
+  one spelling; resolving links on every event costs a call each.
+- **A late event for a child forgotten past the 64 ended starts it again**
+  (round 11): its lookup names a parent, as a resumed child's does, and only its
+  own next run would end it; the 1.x plugin did the same, and it takes 64 ended
+  children and then a stray event. A move away and back reaches it too, its
+  ended children having been dropped at the move (round 56).
+- **A child located here whose parent is another directory's joins this roster**
+  (round 15): a session located here is this directory's by the plugin's own
+  rule, and nothing shows OpenCode placing a child apart from its parent.
+- **`ourGroup` deciding a named set's entry shape beside the format switches**
+  (round 15): it is the one place both the write and the merge take an entry's
+  shape from, so the merge cannot write a shape the write does not.
+- **Antigravity's `--continue` after an Auto Rename run** (round 17): it picks
+  the latest conversation in the workspace, by the research of 1.4.x, so tabs in
+  other worktrees keep their own, but a rename run in the same worktree may be
+  the latest. The cost already recorded for Gemini, Copilot and OpenCode, whose
+  runs also stay in their history.
+- **Other Antigravity products firing our hooks** (round 17): unread whether any
+  read `~/.gemini/config/hooks.json`; a run outside a pane reports by directory,
+  as every agent's does.
+- **A child created under an ended child is placed here** (round 18): unread
+  whether OpenCode creates one, the app draws a worker whose parent is no longer
+  out at the top, and the ended child's next run puts it back on the roster.
+- **A session no answer can place is asked about at each event** (round 21):
+  every session the probe saw carried a location, and a failed lookup asked
+  again was round 1's fix for one that would otherwise be dropped for good.
+- **Events queued before a hook fails to register may still report** (round 21):
+  the window is between the subscription and one registration rejecting, and
+  nothing shows it reached.
+- **`reportsWaiting` true for any plugin** (round 21): OpenCode's is the only
+  plugin and reports Waiting; another would say so when it comes.
+- **A creation naming no session** (round 22): the worker it would store under
+  no id never reaches the app, its report failing to spawn, and lists as nothing
+  in a Done; no observable effect was found.
+- **A grandchild whose parent was forgotten counts under that parent** (round
+  24): outside the service a Done then leaves it out, but it takes 64 ended
+  children and a late event or resume of the grandchild.
+- **Under the service a move away's Idle settles the worktree's one entry**
+  (round 25), another session's turn there with it: the cost recorded for two
+  OpenCode tabs in one worktree sharing one dot. Two sessions in one standalone
+  TUI share its tab's dot the same way (rounds 46 and 50): a child that reported
+  as its own before its late answer, landing after its parent moved away, sends
+  its own Idle over the other session's turn.
+- **Two walks for the sessions under one** (round 31): the tracker walks the
+  roster and placement walks the records, each its own store, through one
+  `ancestorsOf`. A roster child's parent passed up when its ended parent is
+  forgotten has the same top-level session either way.
+- **A child the TUI moves by itself** (round 32) is ignored by `onMoved`, and a
+  later move of it can send a stale Idle: nothing shows OpenCode moving a child
+  apart from its parent.
+- **A move here re-asks every envelope-filed session elsewhere** (round 32), one
+  lookup each on its next event: an envelope names no parent, so any of them may
+  have come with the move, and moves are rare.
+- **A running child left out of a Done after a move here mid-turn** (rounds 33
+  and 42), until the child's next event rejoins it, and a grandchild's rejoin
+  leaves it out still while its parent stays off the roster (round 52):
+  rejoining every re-filed session at the move would mark ones that ended long
+  ago as started. A forgotten session filed back here by a hook also leaves its
+  moved children elsewhere, which needs OpenCode to change a session's place
+  without `session.moved`.
+- **A child's run end read from `reported`** (round 43): past 512 other sessions
+  reporting while its lookup is still out, or a permission reply after an
+  interrupt, its late answer starts a worker that never ends. The first is the
+  wedged service of round 4; nothing shows the second.
+- **`recordedDescendants` beside the roster walk** (round 43): the roster passes
+  a forgotten ended parent's children up, and the records forget too at 1024, so
+  neither store alone names every session leaving; the move merges both.
+- **`relocate` scans every record** (round 33), up to 2048, to find one
+  session's children. It runs on a change of place and on any move of a session
+  with no record, in each directory's plugin; moves are rare, and an index kept
+  on every write costs more than the scan.
+- **A child leaving after its parent's Done listed a grandchild sends no Idle**
+  (round 41): the grandchild's end report then waits on a parent turn that may
+  not come here. It needs an envelope naming another directory for a child here
+  and an unread answer to whether the child's woken run wakes its parent.
+- **The 65 ended children in
+  `aChildTheRosterForgotSendsNoIdleWhenItLeavesWithAWorkerUnderIt`** (round 41)
+  change no report under the parent-fact guard; they are the path on which the
+  roster-based guard round 39 replaced sent the Idle.
+- **A session a hook named is asked about once** (round 55), however that lookup
+  ends (`theParentIsLookedUpOnceHoweverTheLookupEnds`): a resumed child whose
+  one lookup fails reports as its own session for good. Asking again on each
+  hook costs a lookup per tool call, for a `session.get` failing once, which
+  nothing shows.
+- **"child" and "worker" in the plugin** (round 12): a child is OpenCode's
+  session relation, by `parentID`; a worker is the roster's entry the app
+  counts. `isWorker(parentID)` asks whether the parent is on the roster.
+
+### Asked both ways
+
+- **A standalone Done listing every session's children or only its own** (round
+  52): two sessions in one standalone TUI share its pane, so its own list drops
+  the other's running children until their next report. Kept its own
+  (`aSessionsDoneListsOnlyItsOwnChildrenAsOut`): the cost is round 25's shared
+  dot, and only the service, every tab's sessions in one plugin, lists all.
+- **An unseen parent's move away, with its child here** (rounds 34 and 35): the
+  plugin cannot tell a parent of another directory moving between two others
+  from one of this directory it never saw, after a reload or forgotten. The
+  child leaves with it: OpenCode runs a child in its parent's worktree, and a
+  child here under another directory's parent is round 15's unseen premise.
+- **Antigravity's Stop listed three times under reported names, and
+  `hooksObject` writing each name once**: round 4 asked for the write-once skip
+  so the last of three identical entries did not silently win; round 5 asked to
+  drop the three entries for one Stop whose state follows the payload's reason.
+  Kept round 4's: every event keeps one state, as the other agents' do, and the
+  skip is tested by every install test.
+- **An envelope naming another directory, against a resumed child placed
+  there**: round 1 had the envelope settle another directory's sessions unasked,
+  sparing every directory's copy of the plugin a lookup per foreign session;
+  round 14 asked for a lookup so a resumed child located elsewhere, its creation
+  unseen, joins its parent here. Kept round 1's: a child whose creation is seen
+  is placed by its parent, and the other case needs a resume with no creation.
+- **A lookup's answer against an envelope naming this directory**: round 2 had a
+  lookup naming another directory outweigh the envelope; round 14 asked for the
+  envelope to win where the answer names a subdirectory. Kept round 2's: the
+  answer is the session's own location, and a session in a subdirectory has its
+  own copy of the plugin there.
+- **`hookLineNamesEvent` as a switch or `self == .antigravity`**: round 1 wrote
+  the comparison, round 12 asked for a switch so a new spelling must answer, and
+  round 18 asked for the comparison again. Kept round 12's switch.
+- **The plugin source test checking each state's report call**: round 6 loosened
+  it to any quoted state, round 13 restored the calls so a state no call sends
+  fails it, and round 21 asked to drop it as rename churn. Kept round 13's, the
+  behaviour suite not checking each state is spelled as the helper takes it.

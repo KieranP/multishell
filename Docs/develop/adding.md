@@ -106,6 +106,13 @@ What each addition needs beyond the code itself.
   question a permission prompt stands for, whether a file beside it names each
   worker's parent, and whether a tool call's result names the background work it
   launched or stopped.
+- **An agent whose payload names no event** needs a case of the payload
+  spelling, which puts `--event` on its hook line, and a payload reader of its
+  own. Left at the default, every payload reads as none and the hook reports
+  nothing, exiting 0 all the same.
+- **An agent keeping named sets of hooks in a file of the user's** takes the
+  named-set format: our set's name is the section every merge, install check and
+  refusal reads, and its `enabled` is kept through Update.
 - **An agent whose Stop does not list the shells it backgrounded names a shell
   marker on the integration**, text only such a shell's command line holds.
   Nothing forces it either: without one a pane waiting on the shell goes Done

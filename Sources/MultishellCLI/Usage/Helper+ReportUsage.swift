@@ -56,9 +56,10 @@ extension Helper {
     """
 
   static let agentHookUsage = """
-    usage: multishell agent-hook --agent ID
+    usage: multishell agent-hook --agent ID [--event NAME]
         Read that agent's hook payload from stdin and report the state its
-        event stands for. Always exits 0. Known agents:
+        event stands for. --event names the event for an agent whose payload
+        does not, as Antigravity's does not. Always exits 0. Known agents:
         \(knownAgentList).
     usage: multishell install-agent-hooks --agent ID [--print]
         Write the hooks into that agent's own file and print the agent and

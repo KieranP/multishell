@@ -65,6 +65,7 @@ rather than from its hooks. Any other shell reports only what you send it with
 | Claude Code      | Yes   | Yes     | Yes    | Yes     | Yes |
 | Codex            | Yes   | Yes     | No     | Yes     | No  |
 | Gemini CLI       | Yes   | Yes     | No     | Shells  | No  |
+| Antigravity CLI  | Yes   | No      | Yes    | No      | No  |
 | Copilot CLI      | Yes   | Yes     | No     | Yes     | No  |
 | OpenCode         | Yes   | Yes     | Yes    | Yes     | No  |
 | A custom command | No    | No      | No     | No      | No  |
@@ -73,31 +74,37 @@ Waiting is a dot for an agent stopped at a permission prompt or a question,
 Workers the chip counting the subagents and background shells it has out, `@` a
 dropped or pasted file arriving as `@path` rather than a quoted one. Gemini has
 no subagent hooks, so its chip counts only the shells it backgrounded. Codex
-runs no hook until you trust it once with `/hooks`. OpenCode is given a plugin,
-and is the only one that reports your answer to a permission prompt, so its
-Waiting clears then rather than at the next tool call.
+runs no hook until you trust it once with `/hooks`. Antigravity runs no hook
+while it waits for you, so its pane shows Working through a permission prompt,
+and its chip counts nothing. OpenCode 2 is given a plugin, and is the only one
+that reports your answer to a permission prompt, so its Waiting clears then
+rather than at the next tool call. An OpenCode running in its background
+service, as it does unless started with `--standalone`, marks the worktree
+rather than the tab.
 
 | Agent       | File                                      | Ours alone |
 | ----------- | ----------------------------------------- | ---------- |
 | Claude Code | `~/.claude/settings.json`                 | No         |
 | Codex       | `~/.codex/hooks.json`                     | No         |
 | Gemini CLI  | `~/.gemini/settings.json`                 | No         |
+| Antigravity | `~/.gemini/config/hooks.json`             | No         |
 | Copilot CLI | `~/.copilot/hooks/multishell.json`        | Yes        |
 | OpenCode    | `~/.config/opencode/plugin/multishell.js` | Yes        |
 
 A file of yours is merged into, with a `.before-multishell` copy kept the first
-time and Remove taking out only our own entries. One holding comments or a
-trailing comma, as Gemini's may, is refused rather than rewritten; add the
-entries by hand. A file of ours alone is written whole and deleted again. Where
-either holds hooks an older build wrote, Settings > Agents > Hooks offers
-Update, which puts this build's in their place. Nothing rewrites them unasked.
+time and Remove taking out only our own entries; in Antigravity's, ours is the
+set named `multishell`. One holding comments or a trailing comma, as Gemini's
+may, is refused rather than rewritten; add the entries by hand. A file of ours
+alone is written whole and deleted again. Where either holds hooks an older
+build wrote, Settings > Agents > Hooks offers Update, which puts this build's in
+their place. Nothing rewrites them unasked.
 
 An agent is listed once its executable is on the login shell's PATH, and a saved
 tab resumes it, or runs the custom line again. Typing an agent at a supported
 shell's prompt marks the pane with no hooks installed, from the command alone:
 `codex` marks it, `npx codex` does not.
 
-Any of the five can be the Rename agent for Auto Rename, run once with no tool
+Any of the six can be the Rename agent for Auto Rename, run once with no tool
 able to change the worktree. Gemini CLI and OpenCode take no effort flag, so
 they run at their own default. A custom command has no one-shot form, so with it
 as the project's agent Auto Rename is off until Settings > Agents names a Rename

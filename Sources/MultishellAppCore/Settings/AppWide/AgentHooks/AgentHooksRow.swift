@@ -54,7 +54,11 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   }
 
   private static func info(for integration: AgentHookIntegration) -> String {
-    var sentences = [t("agent-hooks.reports", integration.name)]
+    var sentences = [
+      integration.reportsWaiting
+        ? t("agent-hooks.reports", integration.name)
+        : t("agent-hooks.reports-no-waiting", integration.name)
+    ]
     if integration.isOursAlone {
       sentences.append(t("agent-hooks.ours-alone", integration.displayPath))
     } else {

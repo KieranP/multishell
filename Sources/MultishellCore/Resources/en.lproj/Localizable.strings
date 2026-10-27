@@ -11,6 +11,7 @@
 "agent-hooks.ours-alone" = "%@ is Multishell's own file: Add writes it and Remove deletes it.";
 "agent-hooks.plugin" = "Plugin";
 "agent-hooks.reports" = "%@ reports Working, Waiting for input and Done through its hooks.";
+"agent-hooks.reports-no-waiting" = "%@ reports Working and Done through its hooks, which say nothing while it waits for you.";
 "agent-hooks.shared" = "Other hooks in %@ stay, and the first write keeps a copy.";
 "agents.helper-installed" = "Installed in /usr/local/bin";
 "agents.not-installed" = "Not installed";
@@ -176,8 +177,8 @@
 "error.theme-unreadable-title" = "A theme file could not be read";
 "error.trash-refused" = "Worktree not removed: the directory could not be moved to the Trash or deleted";
 "error.trash-took-nothing" = "The directory is still there.";
-"error.unknown-hooks-message" = "%1$@ holds something under hooks.%2$@ that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
-"error.unknown-hooks-section-message" = "%@ holds something under hooks that is not the object of events the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
+"error.unknown-hooks-message" = "%1$@ holds something under %2$@.%3$@ that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
+"error.unknown-hooks-section-message" = "%1$@ holds something under %2$@ that is not the object of events the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unknown-hooks-title" = "That settings file has hooks Multishell does not recognise";
 "error.unmoved-state-message" = "It could not be moved aside either, so it is still at %1$@ and Multishell started empty. Nothing will be saved over it. Move it away and Multishell saves this session again; make it readable and relaunch to get it back.\n\n%2$@";
 "error.unparsable-settings-message" = "%@ has something in it Multishell cannot read back — a comment or a trailing comma will do it — and rewriting the file would lose it. Use Show JSON beside the agent and add the entries yourself.";

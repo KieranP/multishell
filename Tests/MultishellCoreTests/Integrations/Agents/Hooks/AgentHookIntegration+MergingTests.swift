@@ -10,7 +10,8 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
   func addAndRemoveGiveBackTheFileTheyWereGiven(seed: UInt64) throws {
     var rng = SeededGenerator(seed: seed)
     for integration in AgentHookCatalogue.integrations where !integration.isOursAlone {
-      let before = settings(&rng, events: integration.events.map(\.name))
+      let section = integration.sectionKey
+      let before = settings(&rng, events: integration.events.map(\.name), under: section)
       let misshapen = integration.eventsOfUnexpectedShape(in: before)
 
       let added = integration.adding(to: before, helper: helper)
@@ -20,20 +21,20 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
       )
       let addedTwice = integration.adding(to: added, helper: helper)
       #expect(
-        try hooksJSON(in: addedTwice) == hooksJSON(in: added),
+        try hooksJSON(in: addedTwice, under: section) == hooksJSON(in: added, under: section),
         "seed \(seed) \(integration.id): adding twice adds nothing",
       )
 
       let after = integration.removing(from: added)
       #expect(
-        foreign(in: after) == foreign(in: before),
+        foreign(in: after, under: section) == foreign(in: before, under: section),
         "seed \(seed) \(integration.id): a hook of the user's did not come back",
       )
       #expect(
         !integration.hasOurHookUnderEveryEvent(in: after) || integration.events.isEmpty,
         "seed \(seed) \(integration.id): ours did not all come out",
       )
-      for (key, value) in before where key != "hooks" {
+      for (key, value) in before where key != section {
         #expect(
           String(describing: after[key] ?? "") == String(describing: value),
           "seed \(seed) \(integration.id): \(key) was not left alone",
@@ -42,26 +43,27 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     }
   }
 
-  private func hooksJSON(in settings: [String: Any]) throws -> Data {
+  private func hooksJSON(in settings: [String: Any], under section: String) throws -> Data {
     try JSONSerialization.data(
-      withJSONObject: settings["hooks"] ?? NSNull(),
+      withJSONObject: settings[section] ?? NSNull(),
       options: [.sortedKeys, .fragmentsAllowed],
     )
   }
 
   /// Every hook in the file that is not ours, by the command it runs, plus
   /// whatever sits under an event in a shape these do not write.
-  private func foreign(in settings: [String: Any]) -> Set<String> {
+  private func foreign(in settings: [String: Any], under section: String) -> Set<String> {
     var found: Set<String> = []
-    for (event, value) in settings["hooks"] as? [String: Any] ?? [:] {
+    for (event, value) in settings[section] as? [String: Any] ?? [:] {
       guard let groups = value as? [[String: Any]] else {
         found.insert("\(event)=\(String(describing: value))")
         continue
       }
       for group in groups {
-        let commands = (group["hooks"] as? [[String: Any]] ?? []).compactMap { hook in
+        var commands = (group["hooks"] as? [[String: Any]] ?? []).compactMap { hook in
           hook["command"] as? String
         }
+        if let bare = group["command"] as? String { commands.append(bare) }
         for command in commands where !AgentHookCatalogue.isOurHook(command) {
           found.insert("\(event)=\(command)")
         }
@@ -75,10 +77,11 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
   private func settings(
     _ rng: inout SeededGenerator,
     events: [String],
+    under section: String,
   ) -> [String: Any] {
     var hooks: [String: Any] = [:]
     for event in events + ["PreCompact", "SomethingLater"] {
-      switch Int.random(in: 0...5, using: &rng) {
+      switch Int.random(in: 0...6, using: &rng) {
       case 0: break
       case 1: hooks[event] = []
 
@@ -89,10 +92,12 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
         hooks[event] = [["hooks": [["type": "command", "command": retiredClaudeHookLine]]]]
 
       case 4: hooks[event] = "echo \(event)"
-      default: hooks[event] = ["command": "echo \(event)"]
+
+      case 5: hooks[event] = ["command": "echo \(event)"]
+      default: hooks[event] = [["type": "command", "command": "echo bare \(event)"]]
       }
     }
-    var settings: [String: Any] = ["hooks": hooks]
+    var settings: [String: Any] = [section: hooks]
     if Bool.random(using: &rng) { settings["model"] = "opus" }
     if Bool.random(using: &rng) { settings["permissions"] = ["allow": ["Bash(git *)"]] }
     return settings
@@ -281,5 +286,18 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
 
   private func command(of group: [String: Any]) -> String {
     ((group["hooks"] as? [[String: Any]])?.first?["command"] as? String) ?? ""
+  }
+
+  @Test func removingFromAnotherAgentsHooksKeepsAKeyNamedEnabled() throws {
+    let settings: [String: Any] = [
+      "hooks": [
+        "enabled": true,
+        "Stop": [
+          AgentHookCatalogue.claude.ourGroup(for: AgentHookEvent("Stop", .done), helper: helper)
+        ],
+      ]
+    ]
+    let left = AgentHookCatalogue.claude.removing(from: settings)
+    #expect((left["hooks"] as? [String: Any])?["enabled"] as? Bool == true)
   }
 }

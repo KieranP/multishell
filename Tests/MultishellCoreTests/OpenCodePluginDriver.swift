@@ -9,21 +9,40 @@ import Testing
 protocol OpenCodePluginDriver {}
 
 extension OpenCodePluginDriver {
-  /// What the helper was called with, one list per report, in order.
-  /// `sessions` is what the fake client answers a lookup with, by id.
+  /// What the helper was called with, one report per list. `sessions` answers
+  /// lookups by id; `bounds` says when the one-second bound on a lookup runs out.
   func reports(
     of steps: [OpenCodePluginStep],
     sessions: [String: [String: String]] = [:],
+    bounds: OpenCodePluginBounds = .atOnce,
   ) throws -> [[String]] {
-    try run(steps, sessions: sessions).reports
+    try run(steps, sessions: sessions, bounds: bounds).reports
   }
 
-  /// The reports, how many of the plugin's bounded waits on a lookup began,
-  /// and every line in order, a helper's exit included.
+  /// The session, socket and app variables each helper was handed, where the
+  /// plugin handed it an environment of its own rather than its process's.
+  func helperEnvironments(
+    of steps: [OpenCodePluginStep],
+    asService: Bool,
+  ) throws -> [[String: String]] {
+    try run(steps, asService: asService).lines.compactMap { line in
+      guard let object = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
+        object["session"] != nil
+      else { return nil }
+      return object.compactMapValues { $0 as? String }
+    }
+  }
+
+  /// The reports, how many lookups the plugin made, and every line in order, a
+  /// helper's exit included.
   func run(
     _ steps: [OpenCodePluginStep],
     sessions: [String: [String: String]] = [:],
-  ) throws -> (reports: [[String]], waits: Int, lines: [String]) {
+    asService: Bool = false,
+    bounds: OpenCodePluginBounds = .atOnce,
+    toolHookRejects: Bool = false,
+    toolHookThrows: Bool = false,
+  ) throws -> (reports: [[String]], lookups: Int, lines: [String]) {
     let node = try #require(openCodeNode)
     let directory = Scratch.path("opencode-plugin")
     defer { Scratch.remove(directory) }
@@ -52,9 +71,17 @@ extension OpenCodePluginDriver {
 
     let script = String(decoding: try JSONEncoder().encode(steps), as: UTF8.self)
     let known = String(decoding: try JSONEncoder().encode(sessions), as: UTF8.self)
+    let flags = String(
+      decoding: try JSONEncoder().encode([
+        "service": asService, "realBounds": bounds == .afterASecond,
+        "heldBounds": bounds == .never, "toolHookRejects": toolHookRejects,
+        "toolHookThrows": toolHookThrows,
+      ]),
+      as: UTF8.self,
+    )
     let process = Process()
     process.executableURL = node
-    process.arguments = ["--import", "./register.mjs", "./drive.mjs", script, known]
+    process.arguments = ["--import", "./register.mjs", "./drive.mjs", script, known, flags]
     process.currentDirectoryURL = directory
     let out = Pipe()
     let errors = Pipe()
@@ -69,12 +96,12 @@ extension OpenCodePluginDriver {
       "node failed: \(String(decoding: failed, as: UTF8.self))",
     )
     let lines = String(decoding: printed, as: UTF8.self).split(separator: "\n")
-    let waits = lines.compactMap { line in
-      try? JSONDecoder().decode([String: Int].self, from: Data(line.utf8))["waits"]
-    }
+    let counts = lines.compactMap { line in
+      try? JSONDecoder().decode([String: Int].self, from: Data(line.utf8))
+    }.last
     return (
       lines.compactMap { try? JSONDecoder().decode([String].self, from: Data($0.utf8)) },
-      waits.last ?? 0, lines.map(String.init),
+      counts?["lookups"] ?? 0, lines.map(String.init),
     )
   }
 

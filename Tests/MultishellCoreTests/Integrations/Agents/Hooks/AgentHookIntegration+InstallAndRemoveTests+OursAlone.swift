@@ -55,8 +55,15 @@ extension AgentHookIntegrationInstallAndRemoveTests {
       source.contains("homedir() + \"/Library/Application Support/Multishell/bin/multishell\"")
     )
     #expect(source.contains("\"state\", state, \"--agent\", \"opencode\""))
-    for state in [SessionState.running, .attention, .done, .failed] {
-      #expect(source.contains("report(\"\(state.rawValue)\""), "no \(state.rawValue)")
+    for state in [SessionState.running, .attention] {
+      #expect(source.contains("reportFor(id, \"\(state.rawValue)\""), "no \(state.rawValue)")
+    }
+    let runEnds: [(String, SessionState)] = [
+      ("succeeded", .done), ("failed", .failed), ("stopped", .idle),
+    ]
+    for (end, state) in runEnds {
+      #expect(source.contains("\(end): \"\(state.rawValue)\""), "no \(state.rawValue)")
+      #expect(source.contains("runEnded(runEndStates.\(end))"), "no call sends \(end)")
     }
     #expect(openCode.hasOurHookUnderEveryEvent(in: file))
     #expect(openCode.hooksObject(helper: helper).isEmpty, "a plugin is not a hooks object")

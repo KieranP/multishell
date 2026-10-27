@@ -8,13 +8,13 @@ extension PresentedError {
     case let entries as UnexpectedHookEntriesShape:
       return (
         t("error.unknown-hooks-title"),
-        t("error.unknown-hooks-message", entries.file.path, entries.event),
+        t("error.unknown-hooks-message", entries.file.path, entries.section, entries.event),
       )
 
     case let section as UnexpectedHookSectionShape:
       return (
         t("error.unknown-hooks-title"),
-        t("error.unknown-hooks-section-message", section.file.path),
+        t("error.unknown-hooks-section-message", section.file.path, section.section),
       )
 
     case let unparsable as UnparsableSettingsFile:

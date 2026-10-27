@@ -101,8 +101,9 @@ terminals, with the diff unified or side by side.
 
 ### Agents
 
-- **The agent you already use.** Claude Code, Codex, Gemini CLI, Copilot CLI and
-  OpenCode, each with its own icon on its tab, or any command you name.
+- **The agent you already use.** Claude Code, Codex, Gemini CLI, Antigravity
+  CLI, Copilot CLI and OpenCode, each marked on its tab, or any command you
+  name.
 - **An Agents board** of every running agent, with a chip counting the subagents
   and background shells each has out.
 - **A Dock badge** for the agents waiting on you, and **notifications** for tabs

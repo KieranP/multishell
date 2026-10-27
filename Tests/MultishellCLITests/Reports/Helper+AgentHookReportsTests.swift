@@ -71,6 +71,27 @@ struct HelperAgentHookReportsTests {
     #expect(report?.workingDirectory == "/w/repo")
   }
 
+  /// The hook runs in the folder holding its hooks file, so only the payload
+  /// can say the directory.
+  @Test func anAntigravityStopNamedByTheHookLineIsDoneInItsFirstWorkspace() async throws {
+    let listener = try ReportListener()
+    defer { listener.stop() }
+    let antigravity = try await HelperBinary.run(
+      ["agent-hook", "--agent", "antigravity", "--event", "Stop"],
+      environment: ["MULTISHELL_SOCKET": listener.path.path],
+      stdin: #"""
+        {"conversationId":"c","terminationReason":"NO_TOOL_CALL","fullyIdle":true,
+         "workspacePaths":["/w/repo"]}
+        """#,
+    )
+    #expect(antigravity.succeeded && antigravity.standardOutput.isEmpty)
+    try await waitUntil { listener.recorder.received.count == 1 }
+    let report = SessionStateReport.parse(listener.recorder.received.last ?? "")
+    #expect(report?.state == .done)
+    #expect(report?.agentID == "antigravity")
+    #expect(report?.workingDirectory == "/w/repo")
+  }
+
   /// Claude says one prompt twice: the notification speaks and carries the
   /// wording, so the request moves the dot without a banner.
   @Test func claudesPermissionRequestMovesTheDotSilentlyAndWithoutWords() async throws {

@@ -1,7 +1,7 @@
 import Foundation
-import MultishellCore
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @MainActor struct CopilotPaneHarness {
   private static let copilot = AgentHookCatalogue.integration("copilot")!

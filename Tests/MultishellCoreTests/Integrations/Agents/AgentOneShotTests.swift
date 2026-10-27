@@ -40,6 +40,7 @@ struct AgentOneShotTests {
         ]
     )
     #expect(try Self.arguments("gemini") == ["--approval-mode", "plan", "--prompt=\(Self.prompt)"])
+    #expect(try Self.arguments("antigravity") == ["--mode", "plan", "--print=\(Self.prompt)"])
     #expect(
       try Self.arguments("copilot") == [
         "--silent", "--no-ask-user", "--disable-builtin-mcps", "--deny-tool=shell",
@@ -57,7 +58,7 @@ struct AgentOneShotTests {
           "OPENCODE_DISABLE_PROJECT_CONFIG": "1",
         ]
     )
-    for id in ["claude", "codex", "gemini", "copilot"] {
+    for id in ["claude", "codex", "gemini", "antigravity", "copilot"] {
       #expect(try Self.oneShot(id).environment.isEmpty)
     }
   }
@@ -74,6 +75,10 @@ struct AgentOneShotTests {
     #expect(
       try Self.arguments("copilot", model: "gpt-5.5", effort: "minimal").suffix(5)
         == ["--model", "gpt-5.5", "--reasoning-effort", "minimal", "--prompt=\(Self.prompt)"]
+    )
+    #expect(
+      try Self.arguments("antigravity", model: "gemini-4-argon", effort: "high").suffix(5)
+        == ["--model", "gemini-4-argon", "--effort", "high", "--print=\(Self.prompt)"]
     )
     #expect(
       try Self.arguments("opencode", model: "anthropic/claude-haiku-5-5").suffix(4)

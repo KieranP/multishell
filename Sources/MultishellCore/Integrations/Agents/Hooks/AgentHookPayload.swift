@@ -56,10 +56,10 @@ public struct AgentHookPayload: Hashable, Sendable {
   }
 }
 
-// A memberwise init stays synthesized for the tests to build one with.
+// A memberwise init stays synthesized, for the Antigravity reader and the tests.
 // swiftlint:disable:next no_grouping_extension
 extension AgentHookPayload {
-  public init?(json data: Data) {
+  init?(json data: Data) {
     guard
       let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
       let eventName = object["hook_event_name"] as? String

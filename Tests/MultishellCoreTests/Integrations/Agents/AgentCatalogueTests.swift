@@ -22,6 +22,7 @@ struct AgentCatalogueTests {
     #expect(resume("claude") == ["--continue"])
     #expect(resume("codex") == ["resume", "--last"])
     #expect(resume("gemini") == ["--resume", "latest"])
+    #expect(resume("antigravity") == ["--continue"])
     #expect(resume("copilot") == ["--continue"])
     #expect(resume("opencode") == ["--continue"])
     #expect(resume("nonesuch") == nil, "an id the catalogue does not know is a shell")
@@ -32,6 +33,7 @@ struct AgentCatalogueTests {
     #expect(task("claude") == .operand)
     #expect(task("codex") == .operand)
     #expect(task("gemini") == .option("--prompt-interactive"))
+    #expect(task("antigravity") == .option("--prompt-interactive"))
     #expect(task("copilot") == .option("--interactive"))
     #expect(task("opencode") == .option("--prompt"))
   }
