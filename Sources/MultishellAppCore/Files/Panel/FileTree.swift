@@ -19,11 +19,11 @@ struct FileTree: Sendable {
   private let changeKinds: [String: StatusChange.Kind]
   private let lineCounts: [String: FileLineCounts]
 
-  /// The number the Git list shows: each changed path once, a file both removed
+  /// The number the Changes list shows: each changed path once, a file both removed
   /// from the index and left on disk being one row; counted while `changes` builds.
   let changedFileCount: Int
 
-  /// An opened submodule's files count in no Git list of the worktree's, and
+  /// An opened submodule's files count in no Changes list of the worktree's, and
   /// what git ignores lists greyed, in Files alone; see Docs/design/files.md.
   init(
     _ sources: FileTreeSources,
@@ -74,12 +74,12 @@ struct FileTree: Sendable {
   }
 
   /// A filter lists the matching files flat; otherwise the open folders'
-  /// contents, the Git list merging each chain of single-child folders.
+  /// contents, the Changes list merging each chain of single-child folders.
   func rows(state: FilesPanelState) -> [FileTreeRow] {
-    let isGitList = state.mode == .git
+    let isChangesList = state.mode == .changes
     guard state.filterText.isEmpty else {
-      let candidates = isGitList ? changes.sortedPaths : listing.filePaths
-      let folded = isGitList ? changes.foldedPaths : listing.foldedFilePaths
+      let candidates = isChangesList ? changes.sortedPaths : listing.filePaths
+      let folded = isChangesList ? changes.foldedPaths : listing.foldedFilePaths
       let filter = state.filterText.foldedForMatching
       // What a shut folder read from disk holds stays out, as when unread.
       let shut = listing.readFolders.subtracting(state.expandedFolders).map { $0 + "/" }
@@ -99,7 +99,7 @@ struct FileTree: Sendable {
       }
     }
     var rows: [FileTreeRow] = []
-    flatten(isGitList ? changes.roots : listing.roots, depth: 0, state: state, into: &rows)
+    flatten(isChangesList ? changes.roots : listing.roots, depth: 0, state: state, into: &rows)
     return rows
   }
 
@@ -109,7 +109,7 @@ struct FileTree: Sendable {
     state: FilesPanelState,
     into rows: inout [FileTreeRow],
   ) {
-    let isGitList = state.mode == .git
+    let isChangesList = state.mode == .changes
     for node in nodes {
       guard node.isFolder else {
         rows.append(
@@ -125,15 +125,16 @@ struct FileTree: Sendable {
       }
       var shown = node
       var name = node.name
-      while isGitList, shown.children.count == 1, let only = shown.children.first, only.isFolder,
+      while isChangesList, shown.children.count == 1, let only = shown.children.first,
+        only.isFolder,
         !only.isRepository
       {
         shown = only
         name += "/" + only.name
       }
       let isExpanded =
-        isGitList
-        ? !state.collapsedGitFolders.contains(shown.path)
+        isChangesList
+        ? !state.collapsedChangesFolders.contains(shown.path)
         : state.expandedFolders.contains(shown.path)
       rows.append(
         FileTreeRow(

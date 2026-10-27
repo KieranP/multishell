@@ -5,7 +5,7 @@ import MultishellGitKit
 /// left its project's base branch; see Docs/design/files.md.
 extension AppModel {
   private var listsBranchChanges: Bool {
-    workspace.filesPanelMode == .git && workspace.changeScope == .branch
+    workspace.filesPanelMode == .changes && workspace.changeScope == .branch
   }
 
   /// What the panel counts the worktree's changes against, as its footer says.

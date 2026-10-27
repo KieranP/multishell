@@ -41,6 +41,7 @@ extension WorktreeCoordinator {
     settings: WorktreeSettings,
     basedOn startPoint: String? = nil,
     createsBranch: Bool = true,
+    tracksStartPoint: Bool = true,
     shellPath: String? = nil,
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
@@ -88,6 +89,7 @@ extension WorktreeCoordinator {
         at: path,
         basedOn: startPoint,
         createsBranch: createsBranch,
+        tracksStartPoint: tracksStartPoint,
         in: project,
         stopper: stopper,
       )

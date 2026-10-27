@@ -187,7 +187,7 @@ struct StateFileTests {
     workspace.gitStatusIndicator = .stagedOnly
     workspace.diffAlgorithm = .patience
     workspace.fileTabLayout = .split
-    workspace.filesPanelMode = .git
+    workspace.filesPanelMode = .changes
     workspace.changeScope = .branch
     workspace.portBlockStart = 4000
     workspace.portBlockSize = 25

@@ -10,11 +10,13 @@ extension WorktreeGit {
     at path: URL,
     basedOn startPoint: String?,
     createsBranch: Bool,
+    tracksStartPoint: Bool,
     in project: Project,
     stopper: ProcessStopper?,
   ) async throws {
     var arguments = ["worktree", "add"]
     if createsBranch { arguments += ["-b", branch] }
+    if createsBranch, !tracksStartPoint { arguments.append("--no-track") }
     arguments.append(path.path)
     arguments.append(createsBranch ? (startPoint ?? "HEAD") : branch)
     _ = try await runner.run(arguments, in: project.path, stopper: stopper)

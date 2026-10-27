@@ -100,7 +100,7 @@ struct ProjectBlock: View {
       isSelected: model.isInView(worktree),
       isDropTarget: tabDropTarget == worktree.id,
       status: model.statuses[worktree.id],
-      mergeState: model.mergeState(of: worktree),
+      standing: model.branchStanding(of: worktree),
       theme: theme,
       metrics: metrics,
       beginRename: { model.beginRenamingWorktree(worktree) },
@@ -108,6 +108,7 @@ struct ProjectBlock: View {
       cancelRename: { model.cancelRenamingWorktree() },
       showModifiedFiles: { model.showModifiedFiles(of: worktree) },
       clearAutoRenameFailure: { model.clearAutoRenameFailure(of: worktree.id) },
+      servicesPopover: { ServicesPopover(model: model, worktree: worktree, theme: theme) },
     )
     .equatable()
     .onTapGesture { model.select(worktree) }

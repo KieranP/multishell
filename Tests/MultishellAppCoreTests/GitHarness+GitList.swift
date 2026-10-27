@@ -10,7 +10,7 @@ extension GitHarness {
     let feature = try await createWorktree(onBranch: "feature")
     await model.refreshBranchScan(of: project)
     model.select(feature)
-    model.setFilesPanelMode(.git)
+    model.setFilesPanelMode(.changes)
     model.setShowsFilesPanel(true)
     return feature
   }

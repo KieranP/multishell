@@ -21,8 +21,8 @@ struct WorktreeRow: View, @MainActor Equatable {
   let isDropTarget: Bool
   let status: WorktreeStatus?
   /// Whether the branch has already landed on the project's default branch,
-  /// which is what says the worktree can go.
-  let mergeState: WorktreeMergeState
+  /// which is what says the worktree can go, and its pull request and CI run.
+  let standing: BranchStanding
   let theme: Theme
   let metrics: UIMetrics
   let beginRename: () -> Void
@@ -33,6 +33,7 @@ struct WorktreeRow: View, @MainActor Equatable {
   let showModifiedFiles: () -> Void
   /// The warning of a failed Auto Rename clicked: its reason has been read.
   let clearAutoRenameFailure: () -> Void
+  let servicesPopover: () -> ServicesPopover
 
   private var kind: String { worktree.kindText() }
 
@@ -60,13 +61,14 @@ struct WorktreeRow: View, @MainActor Equatable {
         operation: operation,
         autoRename: autoRename,
         isLocked: worktree.isLocked,
-        mergeState: mergeState,
+        standing: standing,
         status: status,
         terminalCount: terminalCount,
         theme: theme,
         metrics: metrics,
         showModifiedFiles: showModifiedFiles,
         clearAutoRenameFailure: clearAutoRenameFailure,
+        servicesPopover: servicesPopover,
       )
     }
     .padding(.leading, metrics.worktreeRowIndent)
@@ -86,7 +88,7 @@ struct WorktreeRow: View, @MainActor Equatable {
         terminalCount: terminalCount,
         isSelected: isSelected,
         customName: customName,
-        mergeState: mergeState,
+        standing: standing,
         autoRename: autoRename,
       )
     )
@@ -158,7 +160,7 @@ struct WorktreeRow: View, @MainActor Equatable {
       && a.terminalCount == b.terminalCount && a.state == b.state && a.operation == b.operation
       && a.autoRename == b.autoRename
       && a.isSelected == b.isSelected && a.isDropTarget == b.isDropTarget
-      && a.status == b.status && a.mergeState == b.mergeState && a.theme == b.theme
+      && a.status == b.status && a.standing == b.standing && a.theme == b.theme
       && a.metrics == b.metrics
   }
 }

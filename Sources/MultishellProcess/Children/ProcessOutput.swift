@@ -15,7 +15,7 @@ public struct ProcessOutput: Sendable {
   public var succeeded: Bool { status == 0 }
 
   /// Itself where the child exited 0, else the `ProcessFailure` that exit is.
-  func requiringSuccess(of executable: URL, arguments: [String]) throws -> Self {
+  public func requiringSuccess(of executable: URL, arguments: [String]) throws -> Self {
     guard succeeded else {
       throw ProcessFailure(
         executable: executable.lastPathComponent,

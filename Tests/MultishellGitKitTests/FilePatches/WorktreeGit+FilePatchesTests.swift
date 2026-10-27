@@ -55,7 +55,7 @@ struct WorktreeGitFilePatchesTests {
     try await fixture.commit("seed", file: "a.txt", content: "one\n")
     let base = try #require(
       DefaultBranch.resolve(
-        from: await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project) ?? [],
+        from: await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project)?.refs ?? [],
         override: nil,
       )
     )

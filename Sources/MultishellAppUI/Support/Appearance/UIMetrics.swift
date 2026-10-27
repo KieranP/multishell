@@ -4,7 +4,7 @@ import SwiftUI
 /// Every chrome size, derived from one number so the UI font slider scales
 /// the sidebar, tabs and header together and rows never clip their text.
 struct UIMetrics: Equatable {
-  /// Round a board column and a Debug Info block, which sit on the same fill.
+  /// Round a board column, a Debug Info block and a services' page card.
   static let columnCornerRadius: Double = 8
   /// The find bar's and the quick switcher's panel, and the well their field
   /// sits in, a step inside it.
@@ -69,6 +69,9 @@ struct UIMetrics: Equatable {
   var panePositionGlyphSize: Double { badge - 2 }
   /// The chevron between project and worktree on a board card's location line.
   var cardBreadcrumbChevronSize: Double { badge - 3 }
+  /// A pull request's and a CI run's glyph, on a row, in the header and in
+  /// their popover, a touch over the badge text beside them.
+  var serviceGlyphSize: Double { badge + 2 }
 
   var rowHeight: Double { (bodySize * 2.15).rounded() }
 

@@ -11,12 +11,12 @@ extension AppModelPersistenceTests {
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)
 
-    before.model.setFilesPanelMode(.git)
+    before.model.setFilesPanelMode(.changes)
 
-    #expect(before.model.filesPanelState(of: before.feature.id).mode == .git)
+    #expect(before.model.filesPanelState(of: before.feature.id).mode == .changes)
     let (after, _, _, error) = before.relaunched()
     #expect(error == nil)
-    #expect(after.filesPanelState(of: before.main.id).mode == .git)
+    #expect(after.filesPanelState(of: before.main.id).mode == .changes)
   }
 
   @Test func modifiedOrBranchIsOneChoiceKeptAcrossARelaunch() {

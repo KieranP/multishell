@@ -10,8 +10,8 @@ public enum WorktreeMergeState: Hashable, Sendable {
   case unknown
   case unmerged
 
-  /// How the branch was found to have landed. The first two are proof; the
-  /// third is inference, and `isCertain` is what tells them apart.
+  /// How the branch was found to have landed. All but `upstreamGone` are
+  /// proof, and `isCertain` is what tells them apart.
   public enum Evidence: Hashable, Sendable {
     /// Every commit is reachable from the base: a merge commit, or a
     /// fast-forward.
@@ -19,6 +19,9 @@ public enum WorktreeMergeState: Hashable, Sendable {
     /// The base has an equivalent patch for every commit on the branch:
     /// how a rebase-merge or a run of cherry-picks lands.
     case patchEquivalent
+    /// The host merged a pull request whose head is the branch's tip, so
+    /// nothing on the branch is left out of it; see Docs/design/services.md.
+    case pullRequest(number: Int)
     /// Upstream gone and the base moved on: what a squash merge leaves.
     /// Not proof; see Docs/design/merged-branch.md for what else is asked.
     case upstreamGone
@@ -37,7 +40,12 @@ public enum WorktreeMergeState: Hashable, Sendable {
     guard case .merged(let evidence, let defaultBranch) = self else { return "" }
     switch evidence {
     case .ancestor: return t("merged.into", defaultBranch)
+
     case .patchEquivalent: return t("merged.into-rebased", defaultBranch)
+
+    case .pullRequest(let number):
+      return t("merged.into-pull-request", defaultBranch, String(number))
+
     case .upstreamGone: return t("merged.upstream-gone")
     }
   }
@@ -54,7 +62,7 @@ public enum WorktreeMergeState: Hashable, Sendable {
   public func removalNote(branch: String) -> String? {
     guard case .merged(let evidence, let defaultBranch) = self else { return nil }
     switch evidence {
-    case .ancestor, .patchEquivalent:
+    case .ancestor, .patchEquivalent, .pullRequest:
       return t("merged.removal-note", branch, defaultBranch)
 
     case .upstreamGone:

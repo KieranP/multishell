@@ -9,6 +9,15 @@ struct BranchRef: Hashable, Sendable {
   let tip: String
   /// The upstream is configured and no longer there: `git`'s `[gone]`.
   let upstreamIsGone: Bool
+  /// The remote-tracking ref this branch follows, `refs/remotes/origin/feat`.
+  let upstreamRef: String?
+  /// The remote that ref belongs to, and the branch's own name there, which
+  /// is what a pull request and a CI run are known by.
+  let upstreamRemote: String?
+  let upstreamBranch: String?
+  /// The remote its pushes go to, `branch.<name>.pushRemote` and
+  /// `remote.pushDefault` resolved; one unlike `upstreamRemote` is a fork's.
+  let pushRemote: String?
   /// What this ref points at when symbolic, as `refs/remotes/origin/HEAD`
   /// is. Read here so the default branch costs no process of its own.
   let symref: String?
@@ -39,12 +48,20 @@ struct BranchRef: Hashable, Sendable {
     fullName: String,
     tip: String,
     upstreamIsGone: Bool = false,
+    upstreamRef: String? = nil,
+    upstreamRemote: String? = nil,
+    upstreamBranch: String? = nil,
+    pushRemote: String? = nil,
     symref: String? = nil,
     committedAt: Date? = nil,
   ) {
     self.fullName = fullName
     self.tip = tip
     self.upstreamIsGone = upstreamIsGone
+    self.upstreamRef = upstreamRef
+    self.upstreamRemote = upstreamRemote
+    self.upstreamBranch = upstreamBranch
+    self.pushRemote = pushRemote
     self.symref = symref
     self.committedAt = committedAt
   }

@@ -5,12 +5,24 @@ import Foundation
 enum PatchEquivalenceParser {
   static func parse(_ output: String) -> Bool {
     var landed = false
-    for line in output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline) {
-      let trimmed = line.trimmingCharacters(in: .whitespaces)
-      guard !trimmed.isEmpty else { continue }
-      if trimmed.hasPrefix("+") { return false }
-      if trimmed.hasPrefix("-") { landed = true }
+    for line in lines(of: output) {
+      if line.hasPrefix("+") { return false }
+      if line.hasPrefix("-") { landed = true }
     }
     return landed
+  }
+
+  /// The `+` commits: those whose change the base has no match for.
+  static func unmatchedCommits(_ output: String) -> Set<String> {
+    Set(
+      lines(of: output).filter { $0.hasPrefix("+") }
+        .map { $0.dropFirst().trimmingCharacters(in: .whitespaces) }
+    )
+  }
+
+  private static func lines(of output: String) -> [String] {
+    output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline)
+      .map { $0.trimmingCharacters(in: .whitespaces) }
+      .filter { !$0.isEmpty }
   }
 }

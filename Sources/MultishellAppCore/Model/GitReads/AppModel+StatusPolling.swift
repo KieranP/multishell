@@ -33,6 +33,7 @@ extension AppModel {
   func pollBetweenRounds() async {
     await pollWorktreesOnNetworkVolumes()
     if mergeReadLog.hasReadsLeftOver { await refreshBranchScans() }
+    startServicePoll()
   }
 
   func pollWorktreesOnNetworkVolumes() async {
@@ -48,6 +49,7 @@ extension AppModel {
     await refreshProjectsIfChanged()
     await refreshStatuses()
     await refreshBranchScans()
+    startServicePoll(interval: ServiceReadInterval.activation)
   }
 
   /// The global excludes file sits outside every watched directory, so what
@@ -60,6 +62,7 @@ extension AppModel {
     await refreshStatuses()
     await refreshBranchScans()
     await refreshSharedSettingsIfChanged()
+    startServicePoll()
   }
 
   /// An add that died leaves git's mark with nothing in the records changing,

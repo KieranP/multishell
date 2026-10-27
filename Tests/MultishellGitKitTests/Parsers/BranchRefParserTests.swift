@@ -33,6 +33,22 @@ struct BranchRefParserTests {
     #expect(byName["refs/heads/main"]?.committedAt == nil)
   }
 
+  @Test func aBranchNamesTheRemoteAndTheBranchThereItTracks() {
+    let refs = BranchRefParser.parse(
+      """
+      refs/heads/k/tabs\tab1\trefs/remotes/my.fork/tabs\t\t\t1700000000\tmy.fork\trefs/heads/tabs
+      refs/heads/local-only\tcd2\t\t\t\t1700000000\t\t
+      """
+    )
+
+    #expect(refs[0].upstreamRef == "refs/remotes/my.fork/tabs")
+    #expect(refs[0].upstreamRemote == "my.fork")
+    #expect(refs[0].upstreamBranch == "tabs", "the name on the remote, not the local one")
+    #expect(refs[1].upstreamRef == nil)
+    #expect(refs[1].upstreamRemote == nil)
+    #expect(refs[1].upstreamBranch == nil)
+  }
+
   /// A date git could not print, or one from a build that formatted it
   /// differently, costs the date and not the row.
   @Test func aRefWhoseDateIsNotANumberKeepsTheRest() {

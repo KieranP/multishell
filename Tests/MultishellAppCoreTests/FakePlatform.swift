@@ -53,6 +53,7 @@ final class FakePlatform: Platform {
   var workspaceWindowSize: (width: Double, height: Double)? = (1_200, 800)
   var workspaceWindowScreenshot: Data?
   var signposts: [String] = []
+  var openedWebPages: [URL] = []
   var fontFamilies: Set<String> = ["Menlo", "SF Mono"]
 
   func log(_ message: String) { logged.append(message) }
@@ -60,6 +61,7 @@ final class FakePlatform: Platform {
   func closeKeyWindow() { closedKeyWindows += 1 }
   func chooseDirectory(prompt: String) async -> URL? { directoryToChoose }
   func revealInFileBrowser(_ url: URL) { revealed.append(url) }
+  func openWebPage(_ url: URL) { openedWebPages.append(url) }
   func copyToClipboard(_ text: String) { clipboard.append(text) }
   func beep() { beeps += 1 }
   /// A stand-in for the type check: a zero byte anywhere makes it binary.

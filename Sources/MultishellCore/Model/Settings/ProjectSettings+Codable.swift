@@ -13,6 +13,7 @@ extension ProjectSettings {
     case opensTerminalOnSelect, worktreeSortOrder, showsActiveWorktreesFirst, opensTerminalOnCreate
     case preferredShellID = "defaultShell"
     case iconGlyph, iconTint
+    case disabledIntegrations
     case trustDecisions = "sharedHooks"
   }
 
@@ -66,6 +67,11 @@ extension ProjectSettings {
     iconGlyph = try container.decodeIfPresent(String.self, forKey: .iconGlyph)?.nonEmpty
     // Tolerated: a tint that is not a number costs the tint, not the file.
     iconTint = ProjectIcon.usableTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
+    // Lossy: an integration a newer build named costs that entry alone.
+    disabledIntegrations = container.decodeLossy(
+      ServiceIntegration.self,
+      forKey: .disabledIntegrations,
+    )
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again.
     trustDecisions = container.decodeLossy(

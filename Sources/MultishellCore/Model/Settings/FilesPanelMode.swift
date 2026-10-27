@@ -1,8 +1,13 @@
-/// What the Files panel lists: every file, or what git says changed. One saved
-/// choice for every worktree; the raw values are what earlier builds wrote.
+/// What the Files panel shows, one saved choice for every worktree; the raw
+/// values are what earlier builds wrote.
 public enum FilesPanelMode: String, Codable, Hashable, Sendable {
+  case changes = "modified"
+  case ciRuns = "ci"
   case files = "all"
-  case git = "modified"
+  case pullRequest = "pull-request"
 
   public static let `default` = Self.files
+
+  /// Files and Changes list files; the other two are the services' pages.
+  public var listsFiles: Bool { self == .files || self == .changes }
 }

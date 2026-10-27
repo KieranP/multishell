@@ -27,7 +27,7 @@ public struct PresentedError: Identifiable {
   init(_ error: any Error) {
     let alert =
       Self.hookOrFileListAlert(error) ?? Self.worktreeAlert(error) ?? Self.processAlert(error)
-      ?? Self.settingsOrStateFileAlert(error)
+      ?? Self.settingsOrStateFileAlert(error) ?? Self.serviceAlert(error)
       ?? (t("error.something-went-wrong"), Self.describe(error))
     title = alert.title
     message = alert.message

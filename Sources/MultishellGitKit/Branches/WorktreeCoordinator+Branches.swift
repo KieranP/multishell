@@ -9,8 +9,8 @@ extension WorktreeCoordinator {
   ) async
     -> BranchScan?
   {
-    guard let refs = await git.branchRefs(project) else { return nil }
-    return BranchScan(refs: refs, defaultBranchOverride: override)
+    guard let list = await git.branchRefs(project) else { return nil }
+    return BranchScan(list, defaultBranchOverride: override)
   }
 
   public func deleteBranch(_ branch: String, in project: Project, force: Bool) async throws {

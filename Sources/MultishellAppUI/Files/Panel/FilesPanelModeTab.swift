@@ -2,25 +2,30 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Files or Git on the panel's header: a glyph, underlined while chosen.
-struct FilesPanelModeTab: View {
-  private static let underlineHeight: Double = 2
-  private static let underlineInset: Double = 7
+/// A page on the panel's header: a glyph, underlined while chosen, named in a
+/// tooltip while the pointer rests on it.
+struct FilesPanelModeTab<Glyph: View>: View {
+  private static var underlineHeight: Double { 2 }
+  private static var underlineInset: Double { 7 }
 
   let model: AppModel
   let mode: FilesPanelMode
-  let symbol: String
-  let help: String
+  let name: String
   let theme: Theme
+  @ViewBuilder let glyph: () -> Glyph
 
-  private var isSelected: Bool { model.workspace.filesPanelMode == mode }
+  private var isSelected: Bool { model.shownFilesPanelMode == mode }
 
   var body: some View {
-    PlainGlyphButton(help: help) {
+    Button {
       model.setFilesPanelMode(mode)
-    } glyph: {
-      HeaderGlyph(symbol: symbol)
+    } label: {
+      glyph()
+        .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
+        .contentShape(.rect)
     }
+    .buttonStyle(.plain)
+    .accessibilityLabel(name)
     .foregroundStyle(isSelected ? theme.header.text : theme.header.textTertiary)
     .frame(maxHeight: .infinity)
     .overlay(alignment: .bottom) {
@@ -31,6 +36,7 @@ struct FilesPanelModeTab: View {
           .padding(.horizontal, Self.underlineInset)
       }
     }
+    .hoverTooltip(name, palette: theme.header, metrics: model.metrics)
     .selectableButtonTraits(isSelected: isSelected)
   }
 }

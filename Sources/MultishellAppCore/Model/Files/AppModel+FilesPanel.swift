@@ -21,8 +21,11 @@ extension AppModel {
   /// Open, and with a worktree to list: what both edges' widths allow for.
   public var isFilesPanelOnScreen: Bool { showsFilesPanel && filesPanelWorktree != nil }
 
-  /// Modified or Branch, drawn over the Git list alone, Files counting from `HEAD`.
-  public var filesPanelShowsChangeScopeSwitch: Bool { workspace.filesPanelMode == .git }
+  /// Files or Changes shows: a services' page lists no files, so reads none.
+  var isFileListOnScreen: Bool { isFilesPanelOnScreen && shownFilesPanelMode.listsFiles }
+
+  /// Modified or Branch, drawn over the Changes list alone, Files counting from `HEAD`.
+  public var filesPanelShowsChangeScopeSwitch: Bool { shownFilesPanelMode == .changes }
 
   /// Where the panel can be but is shut: open, its own header carries the toggle.
   public var worktreeHeaderShowsFilesPanelToggle: Bool {
@@ -45,29 +48,43 @@ extension AppModel {
   }
 
   /// A click on a worktree row's git badge: that worktree, the panel open on
-  /// what the badge counts, its Git list under Modified.
+  /// what the badge counts, its Changes list under Modified.
   public func showModifiedFiles(of worktree: Worktree) {
     if workspace.selectedWorktreeID != worktree.id || detailCover != nil {
       guard select(worktree) else { return }
     }
     setChangeScope(.modified)
-    setFilesPanelMode(.git)
+    setFilesPanelMode(.changes)
     filesPanelStates[worktree.id]?.filterText = ""
     setShowsFilesPanel(true)
   }
 
   public func filesPanelState(of id: Worktree.ID) -> FilesPanelState {
     var state = filesPanelStates[id] ?? FilesPanelState()
-    state.mode = workspace.filesPanelMode
+    state.mode = shownFilesPanelMode
     return state
   }
 
-  /// The panel's Files or Git, kept for every worktree's panel and the next launch.
+  /// The panel's page, kept for every worktree's panel and the next launch.
+  /// Leaving or reaching a services' page reads what the new one shows.
   public func setFilesPanelMode(_ mode: FilesPanelMode) {
     guard workspace.filesPanelMode != mode else { return }
     store.setFilesPanelMode(mode)
     forgetBranchChangesUnlessListed()
     schedulePanelBranchChangesRead()
+    readFilesPanelIfItsKindChanged()
+  }
+
+  /// Between a page that lists files and one that does not, the panel keeps
+  /// no listing or needs one; a tool coming or going changes the page too.
+  func readFilesPanelIfItsKindChanged() {
+    let shown = shownFilesPanelMode
+    let previous = remoteState.lastReadPanelPage ?? shown
+    if shown != previous, !(shown.listsFiles && previous.listsFiles), isFilesPanelOnScreen,
+      let worktree = filesPanelWorktree
+    {
+      readFilesPanel(of: worktree.id)
+    }
   }
 
   public func setFilesPanelFilterText(_ text: String, in id: Worktree.ID) {
@@ -88,10 +105,13 @@ extension AppModel {
         if row.isIgnored { scheduleIgnoredFolderRead(path, in: id) }
       }
 
-    case .git:
-      if state.collapsedGitFolders.remove(path) == nil {
-        state.collapsedGitFolders.insert(path)
+    case .changes:
+      if state.collapsedChangesFolders.remove(path) == nil {
+        state.collapsedChangesFolders.insert(path)
       }
+
+    case .ciRuns, .pullRequest:
+      return
     }
     filesPanelStates[id] = state
   }

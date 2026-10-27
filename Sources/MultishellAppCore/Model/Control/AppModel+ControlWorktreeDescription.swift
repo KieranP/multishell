@@ -3,12 +3,13 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// Its row's status and badge and any stage under way, beside its list line.
+  /// Its row's status and badges and any stage under way, beside its list line.
   /// Git is read first: the poll pauses while the app is in the background.
   func replyToDescribeWorktree(_ id: String) async -> ControlReply {
     guard let asked = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     let isStatusFresh = await refreshStatus(of: asked.id, forced: true)
     guard let worktree = workspace.worktree(asked.id) else { return .refused(.noWorktree(id: id)) }
+    let services = services(of: worktree)
     let (merge, mergedInto): (String, String?) =
       switch mergeState(of: worktree) {
       case .merged(_, let into): ("merged", into)
@@ -41,6 +42,18 @@ extension AppModel {
             failure: operation.failure,
             didTimeOut: operation.didTimeOut,
           )
+        },
+        pullRequest: services.shownPullRequest.flatMap { pullRequest in
+          services.pullRequestIntegration.map { integration in
+            WorktreeDescription.PullRequest(
+              pullRequest,
+              integration: integration.rawValue,
+              isOutgrown: services.pullRequest == nil,
+            )
+          }
+        },
+        ciRun: services.ciRun.flatMap { run in
+          services.ciIntegration.map { WorktreeDescription.CIRun(run, integration: $0.rawValue) }
         },
       )
     )

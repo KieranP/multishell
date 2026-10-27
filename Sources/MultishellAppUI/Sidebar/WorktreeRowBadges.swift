@@ -9,7 +9,7 @@ struct WorktreeRowBadges: View {
   let operation: WorktreeOperation?
   let autoRename: AutoRenameState?
   let isLocked: Bool
-  let mergeState: WorktreeMergeState
+  let standing: BranchStanding
   let status: WorktreeStatus?
   /// Already zero where the pane rows list them; see `SidebarWorktree`.
   let terminalCount: Int
@@ -17,6 +17,7 @@ struct WorktreeRowBadges: View {
   let metrics: UIMetrics
   let showModifiedFiles: () -> Void
   let clearAutoRenameFailure: () -> Void
+  let servicesPopover: () -> ServicesPopover
 
   var body: some View {
     if let operation {
@@ -47,17 +48,15 @@ struct WorktreeRowBadges: View {
         .help(t("sidebar.locked"))
         .accessibilityLabel(t("sidebar.locked"))
     }
-    // Never beside the line counts or an unpushed count: work that is only
-    // here hides the badge. See `WorktreeMergeState.showsBadge`.
-    if mergeState.showsBadge(with: status) {
+    if standing.showsMergedBadge(with: status) {
       Image(systemName: "arrow.triangle.merge")
         .font(metrics.font(size: metrics.badge))
         .foregroundStyle(theme.mergedColor)
-        .help(mergeState.tooltip)
-        .accessibilityLabel(mergeState.tooltip)
+        .help(standing.mergeState.tooltip)
+        .accessibilityLabel(standing.mergeState.tooltip)
     }
-    // Git changes sit left of the terminal count, so the count stays at
-    // the row's right edge and lines up with rows that have no changes.
+    // Git changes and the services sit left of the terminal count, so the count
+    // stays at the row's right edge and lines up with rows that have neither.
     if let status = WorktreeStatus.badged(status) {
       Button(action: showModifiedFiles) {
         GitStatusBadge(
@@ -69,6 +68,14 @@ struct WorktreeRowBadges: View {
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
+    }
+    if standing.services.showsAnything {
+      WorktreeRowServicesButton(
+        services: standing.services,
+        theme: theme,
+        metrics: metrics,
+        popover: servicesPopover,
+      )
     }
     if terminalCount > 0 {
       Text("\(terminalCount)")

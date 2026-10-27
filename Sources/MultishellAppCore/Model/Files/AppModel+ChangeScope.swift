@@ -1,7 +1,7 @@
 import MultishellCore
 import MultishellGitKit
 
-/// Modified or Branch: one choice for the panel's Git list and every file
+/// Modified or Branch: one choice for the panel's Changes list and every file
 /// tab, which count a change against the same thing; see Docs/design/files.md.
 extension AppModel {
   /// The panel's switch and every file tab's, kept for the next launch.

@@ -8,7 +8,7 @@ extension AccessibilityText {
     var parts = [row.isFolder ? t("spoken.folder", row.name) : t("spoken.file", row.name)]
     if let folder = row.parentFolder { parts.append(t("spoken.in-folder", folder)) }
     if row.isFolder {
-      parts.append(row.isExpanded ? t("spoken.expanded") : t("spoken.collapsed"))
+      parts.append(disclosure(isExpanded: row.isExpanded))
       if row.showsChangeDot { parts.append(t("spoken.holds-changes")) }
     }
     if let kind = row.changeKind { parts.append(statusChange(kind)) }

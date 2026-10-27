@@ -13,4 +13,9 @@ struct PatchEquivalenceParserTests {
     #expect(!PatchEquivalenceParser.parse(""))
     #expect(!PatchEquivalenceParser.parse("\n  \n"))
   }
+
+  @Test func theUnmatchedCommitsAreThePlusLinesWhateverTheirSpacing() {
+    #expect(PatchEquivalenceParser.unmatchedCommits("- ab1\n+ cd2\n+ef3\n  \n") == ["cd2", "ef3"])
+    #expect(PatchEquivalenceParser.unmatchedCommits("- ab1\n").isEmpty)
+  }
 }

@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Modified or Branch: one switch drawn in the panel's Git list and in each
+/// Modified or Branch: one switch drawn in the panel's Changes list and in each
 /// file tab's bar, both setting the one choice they follow.
 struct ChangeScopeSwitch: View {
   let model: AppModel

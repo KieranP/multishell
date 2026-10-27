@@ -240,7 +240,7 @@ struct AppModelControlGlobalSettingsTests {
       await harness.messageSource.ask(.writeGlobalSetting(key: "filesPanelMode", value: "git"))
         == .done
     )
-    #expect(harness.model.workspace.filesPanelMode == .git)
+    #expect(harness.model.workspace.filesPanelMode == .changes)
     let read = await harness.messageSource.ask(.readGlobalSettings(key: "filesPanelMode"))
     #expect(read?.output == #""git""#)
     #expect(

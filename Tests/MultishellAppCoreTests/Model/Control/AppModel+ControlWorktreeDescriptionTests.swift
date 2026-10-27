@@ -5,6 +5,7 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellCore
 @testable import MultishellGitKit
+@testable import MultishellServices
 
 @Suite(.serialized) @MainActor
 struct AppModelControlWorktreeDescriptionTests {
@@ -23,6 +24,52 @@ struct AppModelControlWorktreeDescriptionTests {
     #expect(status["changedFiles"] as? Int == 1)
     #expect(reply.outputFields["isStatusFresh"] as? Bool == true)
     #expect(reply.outputFields["operation"] == nil)
+  }
+
+  @Test func aWorktreeIsShownWithItsPullRequestAndRun() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(.success([.sample(number: 9, review: .approved, headBranch: "feat")]))
+    provider.answer(recent: [.sample(branch: "feat", commit: "abc", status: .failed)])
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let reply = await harness.model.answer(.describeWorktree(id: ControlID.worktree(feat.id)))
+
+    let pullRequest = try #require(reply.outputFields["pullRequest"] as? [String: Any])
+    #expect(pullRequest["number"] as? Int == 9)
+    #expect(pullRequest["review"] as? String == "approved")
+    #expect(pullRequest["integration"] as? String == "github")
+    let run = try #require(reply.outputFields["ci"] as? [String: Any])
+    #expect(run["status"] as? String == "failed")
+    #expect(run["integration"] as? String == "circleci")
+  }
+
+  @Test func aMergedPullRequestTheBranchOutgrewIsShownAsItsRowShowsIt() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, state: .merged, headBranch: "feat", headCommit: tip)])
+    )
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "after"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let reply = await harness.model.answer(.describeWorktree(id: ControlID.worktree(feat.id)))
+
+    let pullRequest = try #require(reply.outputFields["pullRequest"] as? [String: Any])
+    #expect(pullRequest["number"] as? Int == 9)
+    #expect(pullRequest["isOutgrown"] as? Bool == true)
   }
 
   @Test func aWorktreeShownCountsEachFileInANewFolder() async throws {

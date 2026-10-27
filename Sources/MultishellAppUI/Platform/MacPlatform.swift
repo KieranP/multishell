@@ -109,6 +109,10 @@ final class MacPlatform: Platform {
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
 
+  func openWebPage(_ url: URL) {
+    NSWorkspace.shared.open(url)
+  }
+
   func copyToClipboard(_ text: String) {
     NSPasteboard.general.replaceContents(withText: text)
   }

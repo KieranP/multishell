@@ -7,6 +7,8 @@ public enum InterfaceColorKey: String, Sendable {
   case blockBackground = "block_background"
   case border
   case changed
+  case changesRequested = "changes_requested"
+  case conflicts
   case divider
   case done
   case failed
@@ -19,7 +21,12 @@ public enum InterfaceColorKey: String, Sendable {
   case hitch
   case knob
   case merged
+  case onHold = "on_hold"
+  case passed
+  case queued
+  case readyToMerge = "ready_to_merge"
   case removed
+  case running
   case selection
   case selectionBackground = "selection_background"
   case seriesApp = "series_app"
