@@ -14,71 +14,113 @@ jobs:
     # Headroom for a cold libghostty build, which a cache hit skips.
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out with submodules
+        uses: actions/checkout@v7
         with:
           submodules: true
-      # The build script reads the version and its fingerprint, so a cache hit
-      # is a build it would keep.
-      - id: zig
+      - name: Date files by their last commit
+        run: Scripts/restore-mtimes.sh
+      - name: Read Ghostty's Zig version
+        id: zig
         run: |
           version=$(Scripts/build-ghostty.sh --zig-version)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      - uses: mlugg/setup-zig@v2
+      # Its own cache saved 34 MB every run, Zig compiling only when libghostty's
+      # misses; the ghostty-zig cache below keeps what that rebuild needs.
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
         with:
           version: ${{ steps.zig.outputs.version }}
-      - id: ghostty
+          use-cache: false
+      # libghostty is keyed by its build script's own fingerprint, so a hit is a build
+      # it would keep, and the package by its toolchain, whose modules no other reads.
+      - name: Compute cache keys
+        id: keys
         run: |
           fingerprint=$(Scripts/build-ghostty.sh --fingerprint)
-          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
-      - id: cache
+          swift=$(swift --version 2>&1)
+          echo "ghostty=$fingerprint" >> "$GITHUB_OUTPUT"
+          echo "swift=$(printf %s "$swift" | shasum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+      # Each save names its restore's paths through an anchor: under other paths
+      # it is another cache, which the restore never finds.
+      - name: Restore libghostty
+        id: ghostty-cache
         uses: actions/cache/restore@v5
         with:
-          path: .build/ghostty
-          key: ghostty-${{ steps.ghostty.outputs.fingerprint }}
+          path: &ghostty-paths .build/ghostty
+          key: ghostty-${{ steps.keys.outputs.ghostty }}
       # On a miss, the last build's Zig packages and compile cache, from any
       # fingerprint, so a patch edit rebuilds only what it changed.
-      - if: steps.cache.outputs.cache-hit != 'true'
+      - name: Restore Zig's packages and compile cache
+        if: steps.ghostty-cache.outputs.cache-hit != 'true'
         id: zig-cache
         uses: actions/cache/restore@v5
         with:
-          path: |
+          path: &zig-cache-paths |
             ThirdParty/ghostty/zig-pkg
             ThirdParty/ghostty/.zig-cache
-          key: ghostty-zig-${{ steps.ghostty.outputs.fingerprint }}
+          key: ghostty-zig-${{ steps.keys.outputs.ghostty }}
           restore-keys: ghostty-zig-
       # libghostty's own shaders; only a build needs the compiler.
-      - if: steps.cache.outputs.cache-hit != 'true'
+      - name: Download the Metal toolchain
+        if: steps.ghostty-cache.outputs.cache-hit != 'true'
         run: xcodebuild -downloadComponent MetalToolchain
-      - run: Scripts/build-ghostty.sh
+      - name: Build libghostty
+        run: Scripts/build-ghostty.sh
       # Saved here rather than at the end, which a failing test would skip.
-      - if: steps.cache.outputs.cache-hit != 'true'
+      - name: Save libghostty
+        if: steps.ghostty-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
-          path: .build/ghostty
-          key: ${{ steps.cache.outputs.cache-primary-key }}
-      - if: steps.cache.outputs.cache-hit != 'true' && steps.zig-cache.outputs.cache-hit != 'true'
+          path: *ghostty-paths
+          key: ${{ steps.ghostty-cache.outputs.cache-primary-key }}
+      - name: Save Zig's packages and compile cache
+        if: steps.ghostty-cache.outputs.cache-hit != 'true' && steps.zig-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
-          path: |
-            ThirdParty/ghostty/zig-pkg
-            ThirdParty/ghostty/.zig-cache
+          path: *zig-cache-paths
           key: ${{ steps.zig-cache.outputs.cache-primary-key }}
-      - run: Scripts/fetch-grammars.sh
+      # The latest package build from any commit; with files dated by their
+      # commits, SwiftPM recompiles only what changed since.
+      - name: Restore the package build
+        id: swift-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: &swift-build-paths |
+            .build
+            !.build/ghostty
+          key: swift-build-${{ steps.keys.outputs.swift }}-${{ github.sha }}
+          restore-keys: swift-build-${{ steps.keys.outputs.swift }}-
+      - name: Fetch the tree-sitter grammars
+        run: Scripts/fetch-grammars.sh
       # No debug info: about a quarter off the build. Crash backtraces lose
       # their line numbers; a failed expectation still names its own.
-      - run: swift build --build-tests -Xswiftc -gnone
-      - run: Scripts/one-test-per-core.sh swift test --skip-build
+      - name: Build the package and its tests
+        run: swift build --build-tests --disable-index-store --manifest-cache local -Xswiftc -gnone
+      # Main's alone, which pull requests restore too: 400 MB a run would fill the
+      # repository's 10 GB and evict libghostty's cache.
+      - name: Save the package build
+        if: github.event_name == 'push'
+        uses: actions/cache/save@v5
+        with:
+          path: *swift-build-paths
+          key: ${{ steps.swift-cache.outputs.cache-primary-key }}
+      - name: Run the tests
+        run: Scripts/one-test-per-core.sh swift test --skip-build --manifest-cache local
 
   # swift-format ships in the toolchain. SwiftLint is the version
   # .swiftlint.yml names, which refuses to run under any other.
   lint:
     runs-on: xcode-27
     steps:
-      - uses: actions/checkout@v7
-      - run: |
+      - name: Check out
+        uses: actions/checkout@v7
+      - name: Install the pinned SwiftLint
+        run: |
           version=$(sed -n 's/^swiftlint_version: //p' .swiftlint.yml)
           curl -fsSL -o "$RUNNER_TEMP/swiftlint.zip" \
             "https://github.com/realm/SwiftLint/releases/download/$version/portable_swiftlint.zip"
           unzip -q "$RUNNER_TEMP/swiftlint.zip" -d "$RUNNER_TEMP/swiftlint"
           echo "$RUNNER_TEMP/swiftlint" >> "$GITHUB_PATH"
-      - run: make lint
+      - name: Lint
+        run: make lint

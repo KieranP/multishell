@@ -550,6 +550,17 @@ rule holds is in `Docs/design/`.
   release.** The pool is as wide as the cores.
   `LIBDISPATCH_COOPERATIVE_POOL_STRICT=1` cuts it to one thread, which turns
   such a wait into a hang on any machine.
+- **No test calls `Process.waitUntilExit()` after an await.** On a thread other
+  than the one that ran the process, as a resumed task often is, about one wait
+  in eighty never returned here, the child long reaped; `.timeLimit` cannot end
+  a blocked call either. `WaitingShell` waits on its termination handler, which
+  returned all 1,200 times; a launch and wait in one synchronous function is
+  safe, 1,200 of 1,200.
+- **No test thread waits on work sent to `DispatchQueue.global()`.** That queue
+  adds no thread while default-QoS threads fill the cores, so three
+  `SaveOrderTests` froze every CI run on a three-core runner. `HeldWrite` runs
+  on a `Thread` of its own; production code reaches Dispatch through
+  `runOnDispatch`, whose utility queue is another pool.
 - **At most one test runs per core**, through `Scripts/one-test-per-core.sh` in
   `make test` and CI. Without it, CI froze with all 1,550 tests started within
   1.4 s and none finished. A swift-testing from before the cap
