@@ -106,8 +106,8 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The scan reads the whole process table once a tick.** Asking per pid cost a
   `proc_listchildpids` per process, and each call walks the whole table. An
   interpreter's arguments are read only to name its script, at two sysctls each.
-- **Most of an idle app's footprint is Ghostty's three render targets**, which
-  scale with the panes on screen (develop/memory.md).
+- **The largest part of an idle app's footprint is Ghostty's three render
+  targets**, which scale with the panes on screen (develop/memory.md).
 - **Memory is RAM and GPU together, and the caption says so.** On Apple silicon
   the GPU draws from the same RAM, and the footprint counts both. Only Ghostty
   could report its own GPU part, through a patch, and nothing gives a figure for

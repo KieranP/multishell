@@ -33,6 +33,9 @@
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a
   keystroke meant for the window behind must not be what trusts it.
+- **Create Pull Request's push question is a SwiftUI dialog too, and Return
+  pushes.** A push removes nothing, so the blue default is right, and the
+  question answers the user's own click on Create.
 - **The quit and unsafe-paste alerts are AppKit's own.** `NSAlert` gives Return
   to its first button, and Escape only to one titled exactly "Cancel", so the
   app sets the key equivalent by hand, as `DestructiveAlert` does on its Cancel.

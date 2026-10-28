@@ -101,7 +101,8 @@
   scroller is an overlay, so what is below the fold says nothing, and forcing
   the indicators changes nothing there. Project Hooks shows Create, Delete or
   Environment, six editors being 973 pt of a 600 pt window; Agents shows the
-  preferred agent or the hooks, the hooks growing with every agent installed.
+  preferred agent and Auto Rename or the hooks, the hooks growing with every
+  agent installed.
 - **A hook file opens in a popover**, which inline added 166 pt a row.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something

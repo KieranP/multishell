@@ -253,9 +253,9 @@ command line's requests on the same socket. Newest at the bottom.
   regex keeps its escapes. Checked against zsh by random lines.
 - **A quote left open takes the rest of the line**, there being nobody to ask,
   and an opener carrying nothing passes no argument rather than an empty one.
-- **The placeholders are one list**, and only the custom command's row names
-  one, as an example: a reference page in a tooltip is what the documentation is
-  for.
+- **The placeholders are one list**, and only the custom command's row and the
+  starting port's name one, as an example: a reference page in a tooltip is what
+  the documentation is for.
 - **So unlike the hook variables the list is drawn nowhere**, and a new case
   reaches the docs by hand.
 - **An unknown placeholder is left as typed**, so the mistake shows in the tab
@@ -985,10 +985,11 @@ command line's requests on the same socket. Newest at the bottom.
   as a request rather than a report line, so the answer says what the pane then
   shows. It is how the dots, banners and board are tested without an agent.
 - **What is up on screen is listed and dismissed from the model**: the alert,
-  each confirmation, the shared-settings question, the New Worktree sheet and
-  the name fields, topmost first. Dismissing is each one's Cancel, so a script
-  stalled behind a dialog nobody sees can clear it without a click. The sheet is
-  only closed: a create running may be a request's, not the sheet's.
+  each confirmation, the shared-settings question, the New Worktree sheet, the
+  quick switcher and the name fields, topmost first. Dismissing is each one's
+  Cancel, so a script stalled behind a dialog nobody sees can clear it without a
+  click. The sheet is only closed: a create running may be a request's, not the
+  sheet's.
 - **A menu item is chosen by its titles, as a click would**: the menu validates
   first, so a greyed-out item is refused rather than run, and every action a
   shortcut reaches is reachable without one. Titles are in the app's language

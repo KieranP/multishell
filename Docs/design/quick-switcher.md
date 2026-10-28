@@ -70,17 +70,17 @@ menu command. Newest at the bottom.
   puts in the menu bar is left out: the Services, Window and Help menus it
   fills, matched by title too since SwiftUI's rebuilt bar can hold a copy of the
   menu registered, any submenu of the app menu, and the items it adds to the
-  others, Hide and Show All, AutoFill, Dictation, Emoji & Symbols and Enter Full
-  Screen, known by their actions since their titles are the user's language. So
-  are the app's own editing, Undo to Select All, Find, the theme picker's
-  choices and the switcher's own two items, known by their titles, as SwiftUI's
-  buttons all share one action. A command that cannot act, New Tab with no
-  worktree in view or over the Agents board, Split with no tab, Close with
-  nothing to close, is left out by asking the model per title
-  (`AppModel+MenuCommandAvailability`). The menu items stay enabled: a disabled
-  one gives its key to the pane, and Ctrl+Tab with one tab typed a Tab into the
-  shell. The app menu's items read as the application's. `ui menu` still lists
-  everything, as the command line drives the whole bar.
+  others, Hide, Hide Others and Show All, AutoFill, Dictation, Emoji & Symbols,
+  Enter Full Screen, Show Tab Bar and Show All Tabs, known by their actions
+  since their titles are the user's language. So are the app's own editing, Undo
+  to Select All, Find, the theme picker's choices and the switcher's own two
+  items, known by their titles, as SwiftUI's buttons all share one action. A
+  command that cannot act, New Tab with no worktree in view or over the Agents
+  board, Split with no tab, Close with nothing to close, is left out by asking
+  the model per title (`AppModel+MenuCommandAvailability`). The menu items stay
+  enabled: a disabled one gives its key to the pane, and Ctrl+Tab with one tab
+  typed a Tab into the shell. The app menu's items read as the application's.
+  `ui menu` still lists everything, as the command line drives the whole bar.
 - **The field is AppKit's.** SwiftUI's never shows a binding changed while it is
   edited, and the `>` rewrites the text; the arrows, Tab, Return and Escape go
   to the list through the field's own commands. Undo is off in it, because an
@@ -267,6 +267,9 @@ Raised by reviews and settled; a review need not raise these again.
   arrives, so no test found a pane the skipped marking would have cleared.
 - **A rename field taken down without its blur, its id left set at launch's
   end.** Unproven: every way a rename ends found so far clears the id.
+- **Files Panel listed under a cover while the panel is on.** Choosing it turns
+  the panel off, as View > Files Panel does there; leaving it out hid a command
+  that acts.
 
 ## Checked by hand
 
@@ -283,6 +286,3 @@ What tests cannot reach, to check in `make run` before a release:
 - Commands lists no Services, Window, Help, editing or theme item, and drops New
   Tab at first launch and over the Agents board.
 - It sits below the tab strip and, in the shortest window, inside it.
-- **Files Panel listed under a cover while the panel is on.** Choosing it turns
-  the panel off, as View > Files Panel does there; leaving it out hid a command
-  that acts.

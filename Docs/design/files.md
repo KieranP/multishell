@@ -83,7 +83,9 @@ Newest at the bottom.
   listing's bound counts every path it lists, a read submodule's and a staged
   deletion's included. What a status read still costs the main actor, the tree's
   kinds and counts and the shown rows, stays there by choice: 110 ms at 100,000
-  changed paths and 300 ms at 250,000, at most once in 10 s.
+  changed paths and 300 ms at 250,000. It is paid as often as the status read's
+  own pace allows, once a second for 100,000 new files, which git read in 95 ms,
+  and about once in two minutes for 100,000 edited ones, which took it 11 s.
 - **Only the panel's own worktree keeps its listing**, and the selected one's
   while the quick switcher is up, a Linux-sized one and its tree holding about
   80 MB; coming back reads it again, with each open folder git does not list. A
@@ -110,10 +112,10 @@ Newest at the bottom.
   its rows for this.
 - **A rename is a file gone and a file added**, renames being off everywhere, so
   the old path's tab becomes a deleted file's.
-- **The tab shows the file on disk against `HEAD` whatever the indicator says**,
-  staged changes drawn hollow in the gutter and unstaged filled, as Zed does.
-  Neither Zed nor VS Code has a staged-only view. Cost: under Staged Only a
-  tab's counts can differ from its row.
+- **The tab shows the file on disk against `HEAD` under Modified, whatever the
+  indicator says**, staged changes drawn hollow in the gutter and unstaged
+  filled, as Zed does. Neither Zed nor VS Code has a staged-only view. Cost:
+  under Staged Only a tab's counts can differ from its row.
 - **Staged lines are found by diffing the index too, with the same algorithm**,
   or one edit splits into different hunks and no line matches.
 - **The tab's diff uses the badge's algorithm**, so the two count an edit alike.
@@ -134,11 +136,11 @@ Newest at the bottom.
 - **A 75 ms settle and a pace of ten times the last re-read's cost**, so a save
   shows in about a quarter second and an agent rewriting a file in bursts costs
   at most a tenth of a core. A change during a read reads once after it.
-- **A file tab is capped at 1 MiB, on disk and in `HEAD`.** git diffs 1 MiB in
-  under 40 ms, but the forced view takes up to 186 MB laid out at that size.
-  `HEAD`'s size is asked first, so a small file whose last commit is huge never
-  diffs into memory. A line is cut at 10,000 characters, a 1 MiB file being able
-  to be one line.
+- **A file tab is capped at 1 MiB, on disk and on its committed side.** git
+  diffs 1 MiB in under 40 ms, but the forced view takes up to 186 MB laid out at
+  that size. That side's size is asked first, so a small file whose last commit
+  is huge never diffs into memory. A line is cut at 10,000 characters, a 1 MiB
+  file being able to be one line.
 - **Text is UTF-8, else the encoding a text editor would guess**, the open rule
   admitting any text-typed file; the diff is decoded the same way, git copying
   the file's bytes into it.
@@ -211,18 +213,19 @@ Newest at the bottom.
 - **Highlighting is tree-sitter through SwiftTreeSitter, with a small runner of
   our own, not Neon**: the view is read-only, so a whole-file parse and one
   query, and one more of each per injection, is all it needs. Two parses, the
-  file on disk and `HEAD`'s text, each side's ranges mapped onto its rows. Where
-  both are parsed `HEAD`'s colours its removed rows alone, so its queries read
-  from its first removed row to its last and keep what meets one, and of its
-  injections only those reaching one are parsed, a 4,500-line Svelte file
-  otherwise repeating every injection to colour one changed line. A cursor for
-  each run walked the tree again each: 800 runs in an 8,000-member class took
-  1.86 s in a release build, against 0.17 s for one cursor over them all. Its
-  attribute scan begins at a tag opened above one so a repeated attribute stays
-  a repeat; a Svelte file's `lang` is read from the whole text by the compiler's
-  own regex. About 54 ms for 5,000 lines of Swift, off the main thread. The
-  spans become runs in text order there too: applied in pattern order, 202,607
-  of a 1 MiB file took 1.2 s on the main thread, the runs 70 ms.
+  file on disk and the committed side's text, `HEAD`'s or the merge base's, each
+  side's ranges mapped onto its rows. Where both are parsed the committed side
+  colours its removed rows alone, so its queries read from its first removed row
+  to its last and keep what meets one, and of its injections only those reaching
+  one are parsed, a 4,500-line Svelte file otherwise repeating every injection
+  to colour one changed line. A cursor for each run walked the tree again each:
+  800 runs in an 8,000-member class took 1.86 s in a release build, against 0.17
+  s for one cursor over them all. Its attribute scan begins at a tag opened
+  above one so a repeated attribute stays a repeat; a Svelte file's `lang` is
+  read from the whole text by the compiler's own regex. About 54 ms for 5,000
+  lines of Swift, off the main thread. The spans become runs in text order there
+  too: applied in pattern order, 202,607 of a 1 MiB file took 1.2 s on the main
+  thread, the runs 70 ms.
 - **Roles, not colours**: each capture is a role, each role a `file` key, so a
   theme recolours highlighting without knowing the grammars. `spell` is a spell
   checker's mark and colours nothing, and `constructor` is Swift's `init` but a

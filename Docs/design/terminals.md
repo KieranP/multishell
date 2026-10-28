@@ -368,10 +368,11 @@ at the bottom.
 - **The find text is kept per pane across closes**, as the Mac's find field is,
   and reopening searches it again so the matches light up.
 - **Every find keystroke acts on the bar whose field has the keyboard**, else on
-  the focused pane of the tab in front, and next and previous are disabled while
-  that pane has no bar. A file tab in front takes them all (files.md). Clicking
-  into a field moves the store's focus nowhere, so without the field's case a
-  step typed in one pane's field stepped the other pane's search in a split.
+  the focused pane of the tab in front, and next, previous and close are
+  disabled while that pane has no bar. A file tab in front takes them all
+  (files.md). Clicking into a field moves the store's focus nowhere, so without
+  the field's case a step typed in one pane's field stepped the other pane's
+  search in a split.
 - **Escape, the close button and the menu's close all hand the keyboard to the
   bar's own pane**, not the focused one, as the sidebar filter hands it back.
   `panes find --close` moves no keyboard, even on the worktree in view, where a

@@ -255,7 +255,7 @@ What each addition needs beyond the code itself.
   function of that name. Nothing holds the three files to one list. The bash one
   must also run under macOS's bash 3.2, which
   ShellIntegrationScriptsTests+CommandWrappers runs beside Homebrew's.
-- **A second frontend.** A target in this package depending on the four
+- **A second frontend.** A target in this package depending on the five
   libraries, the package exporting no library product; fix the model to its view
   type once, and implement the platform, surface host and notifier ports. The
   directory watcher and the socket are AppCore's already.

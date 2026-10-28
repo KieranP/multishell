@@ -71,11 +71,11 @@ rather than from its hooks. Any other shell reports only what you send it with
 
 Waiting is a dot for an agent stopped at a permission prompt or a question,
 Workers the chip counting the subagents and background shells it has out, `@` a
-dropped file arriving as `@path` rather than a quoted one. Gemini has no
-subagent hooks, so its chip counts only the shells it backgrounded. Codex runs
-no hook until you trust it once with `/hooks`. OpenCode is given a plugin, and
-is the only one that reports your answer to a permission prompt, so its Waiting
-clears then rather than at the next tool call.
+dropped or pasted file arriving as `@path` rather than a quoted one. Gemini has
+no subagent hooks, so its chip counts only the shells it backgrounded. Codex
+runs no hook until you trust it once with `/hooks`. OpenCode is given a plugin,
+and is the only one that reports your answer to a permission prompt, so its
+Waiting clears then rather than at the next tool call.
 
 | Agent       | File                                      | Ours alone |
 | ----------- | ----------------------------------------- | ---------- |
@@ -97,10 +97,33 @@ tab resumes it, or runs the custom line again. Typing an agent at a supported
 shell's prompt marks the pane with no hooks installed, from the command alone:
 `codex` marks it, `npx codex` does not.
 
+Any of the five can be the Rename agent for Auto Rename, run once with no tool
+able to change the worktree. Gemini CLI and OpenCode take no effort flag, so
+they run at their own default. A custom command has no one-shot form, so with it
+as the project's agent Auto Rename is off until Settings > Agents names a Rename
+agent.
+
+## Pull requests and CI
+
+| Service  | Tool       | Version      | Read where                             |
+| -------- | ---------- | ------------ | -------------------------------------- |
+| GitHub   | `gh`       | No floor set | A remote `gh` says is its own          |
+| CircleCI | `circleci` | 1.0 or newer | A checkout with `.circleci/config.yml` |
+| Others   | None       | None         | Nowhere, the row shows no marks        |
+
+Both tools are optional and never shipped. They are found on the login shell's
+PATH and run with its environment, so `GH_TOKEN` or `CIRCLECI_CLI_TOKEN` set
+there reaches them; the app never reads or stores a token. A GitHub Enterprise
+host counts once `gh auth login` names it. Reads run one call per project while
+the app is in front. Only the newest hundred pull requests are listed, so an
+older one shows as none and the row falls back to the merged badge. Pushing for
+Create Pull Request is the only write to a remote, and it asks every time.
+
 ## Reporting from anything else
 
 Every terminal carries `MULTISHELL_SESSION`, `MULTISHELL_WORKTREE`,
-`MULTISHELL_SOCKET` and `MULTISHELL_APP_PID`, and the helper sits at
+`MULTISHELL_SOCKET` and `MULTISHELL_APP_PID`, plus `MULTISHELL_PORT` where its
+worktree holds a port block, and the helper sits at
 `~/Library/Application Support/Multishell/bin/multishell`. The states are
 `running`, `attention`, `done`, `error` and `idle`:
 

@@ -53,7 +53,7 @@
   (dependencies.md).
 - **`make-app.sh` keeps only the paths and the order of the steps**; its
   functions are in `build-lib.sh`, which it sources (and `build-ghostty.sh` and
-  `fetch-grammars.sh` its `die`).
+  `fetch-grammars.sh` its `die` and its lock).
 - **The Info.plist is a template filled in by placeholder**, and
   InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
@@ -148,18 +148,17 @@
   `Scripts/restore-mtimes.sh`. A checkout dates every file at the moment of
   checkout, so a restored `.build` would recompile everything. Dated, one
   commit's change rebuilt in 44 s against 136 s cold at three jobs here under
-  Swift Build, and in either direction through history; on CI a warm build
-  took 61 to 76 s against 4m45s cold. The compiler's
+  Swift Build, and in either direction through history; on CI a warm build took
+  61 to 76 s against 4m45s cold. The compiler's
   `-enable-incremental-file-hashing` is no substitute: undated, an unchanged
-  tree rebuilt in 31 s against 2 s dated. A shallow clone gives
-  every file one date, so the script deepens one first, and not the
-  submodule's 100 MB. A pull request's merge dates what it brought in by
-  itself, or a file both sides changed would keep main's date and go
-  unrebuilt. The toolchain's version keys the cache, and
-  only a push to main saves one: at 400 MB a run, pull requests saving theirs
-  had the repository at 8.9 of its 10 GB, where GitHub evicts the least
-  recently used, libghostty's included. setup-zig caches nothing for the same
-  reason.
+  tree rebuilt in 31 s against 2 s dated. A shallow clone gives every file one
+  date, so the script deepens one first, and not the submodule's 100 MB. A pull
+  request's merge dates what it brought in by itself, or a file both sides
+  changed would keep main's date and go unrebuilt. The toolchain's version keys
+  the cache, and only a push to main saves one: at 400 MB a run, pull requests
+  saving theirs had the repository at 8.9 of its 10 GB, where GitHub evicts the
+  least recently used, libghostty's included. setup-zig caches nothing for the
+  same reason.
 - **CI's test step is bound by the runner's three cores**, so the targets run
   one after another, as Swift Build runs them. AppCore beside the rest as two
   `swift test` processes took 3m48s against 3m52s, AppCore's own run going from

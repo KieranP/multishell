@@ -301,9 +301,9 @@ left as is".
 - **The pace is a multiple of how long the last read took**, so the disk spends
   a small fraction of its time on a badge and a quick read is unaffected. The
   badge is shown stale for that long rather than hidden.
-- **A change in the worktree reads at once where the pace has nothing against
-  it**; the same rule holds a slow one back, where bursts of changes would
-  otherwise arm that read constantly.
+- **A change in the worktree reads a quarter second later where the pace has
+  nothing against it**; the same rule holds a slow one back, where bursts of
+  changes would otherwise arm that read constantly.
 - **Only a read that badged a row is remembered.** One thrown away because its
   worktree went would pace the next read out, which is the stale badge the pace
   exists to avoid.
@@ -513,10 +513,12 @@ left as is".
   event or the poll are `rev-parse`, `worktree list`, `status`, `diff-index`,
   `diff --cached`, `hash-object` without `-w`, `ls-files`, `check-ignore`,
   `for-each-ref`, `branch --merged`, `log -g`, `reflog show`, `remote -v`,
-  `cherry`, `rev-list`, `cat-file` and `diff` between two commits; none writes.
-  `everyReadTheAppRunsByItselfLeavesGitsDirectoryAsItWas` calls each on a
-  repository with a touched, a changed, a staged and a new file and compares
-  every file under `.git` before and after; a new read joins it.
+  `cherry`, `rev-list`, `merge-base`, `cat-file` and `diff` between two commits;
+  none writes. `everyReadTheAppRunsByItselfLeavesGitsDirectoryAsItWas` calls
+  each on a repository with a touched, a changed, a staged and a new file and
+  compares every file under `.git` before and after; a new read joins it.
+  `hash-object` runs only before a first commit, so
+  `everyCountBeforeTheFirstCommitLeavesGitsDirectoryAsItWas` holds it instead.
 - **git's file monitor is the exception git makes for us**: with
   `core.fsmonitor` on, every query writes a cookie under the git directory it
   ran in: `.git/fsmonitor--daemon/`, or the same under a linked worktree's
@@ -629,7 +631,7 @@ left as is".
 - **An alert only when a created worktree gets no block**, raised by the create
   and never over another alert, the caption keeping the record.
 - **That alert belongs to no command line request.** Filed under the one that
-  caused it, a `worktree new` that succeeded answered "refused" and took the
+  caused it, a `worktrees add` that succeeded answered "refused" and took the
   alert down unread.
 - **A stored block no setting could fit is given again on load**, its first port
   being past any start: a hand-edited index of 10^18 overflowed the multiply and

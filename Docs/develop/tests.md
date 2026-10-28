@@ -358,12 +358,13 @@ rule holds is in `Docs/design/`.
   is the question**, on `/bin/sleep` and in no window on screen: the runtime
   outliving it, a closed session staying silent, the pane monitor's two events,
   a clicked link reaching the delegate after libghostty's click returns,
-  resolved in the pane's reported directory, and a clipboard read made inside
-  the user's key, click or Edit > Paste (GhosttySurfaceViewTests,
-  GhosttyTerminalHostTests, GhosttyPaneEventMonitorTests,
-  GhosttySurfaceViewClipboardTests). A failed expectation on a pane is read into
-  a Bool first, as describing one trips over AppKit's cursors, null pointers in
-  a test process. What libghostty is handed is otherwise tested as values: the
+  resolved in the pane's reported directory, a clipboard read made inside the
+  user's key, click or Edit > Paste, and a surface's terminal memory, none once
+  freed (GhosttySurfaceViewTests, GhosttyTerminalHostTests,
+  GhosttyPaneEventMonitorTests, GhosttySurfaceViewClipboardTests,
+  GhosttySurfaceViewMemoryTests). A failed expectation on a pane is read into a
+  Bool first, as describing one trips over AppKit's cursors, null pointers in a
+  test process. What libghostty is handed is otherwise tested as values: the
   key, modifier and mouse button mapping (GhosttyKeyInputTests,
   GhosttyModifiersTests, GhosttyMouseButtonTests), split surrogates
   (GhosttySurrogatePairingTests), the actions decoded
@@ -405,6 +406,8 @@ rule holds is in `Docs/design/`.
   over, starts no poll and writes no file.
 - **Two saves landing out of order**: WorkspaceStoreTests+OrderedSaves.
 - **A stalled write holding the main actor**: SaveOrderTests.
+- **A held write that needs a free pool thread**: HeldWriteTests blocks every
+  one first.
 - **Two exports landing out of order, and a poll between an export's write and
   its finish**: AppModel+SharedSettingsExportTests+Overlaps.
 - **What the git badge counts**: NumstatParserTests, NulPathListParserTests and
@@ -476,6 +479,8 @@ rule holds is in `Docs/design/`.
   and +AttributeInjections suites, ElementBodyLanguageTests and
   SvelteBlockHeadTests. **A `>` or bare `&` in Svelte text leaving the rest of
   the file uncoloured**: SvelteGrammarInputTests and SyntaxHighlighterTests.
+- **A Markdown fence left plain or coloured in a language it does not name, and
+  nested fences overflowing the stack**: FencedCodeBlockTests.
 - **A drag nothing takes or a drop refuses goes back between the neighbours it
   left, and one a drop took stays**: AppModelTabDragTests.
 - **A segmented picker drawn only as wide as its labels**:
@@ -513,9 +518,9 @@ rule holds is in `Docs/design/`.
   fixture commit. It rides on the runner, so a clone needs no step of its own.
 - **A fixture's `WorktreeGit` skips the wait before a new index is written**,
   `settlesNewIndex: false`, or each of the suites' hundreds of creates waits a
-  second. The three tests about that wait keep it on, one each in
-  WorktreeCoordinatorCreationTests, WorktreeCoordinatorStoppedAddTests and
-  WorktreeGitCreationTests.
+  second. The four tests about that wait keep it on, one each in
+  WorktreeCoordinatorCreationTests and WorktreeCoordinatorStoppedAddTests, two
+  in WorktreeGitCreationTests.
 - **Claude's subagent hooks replay from captured runs** in
   `Tests/MultishellAppCoreTests/Fixtures/ClaudeHookCaptures`, through
   SessionStatesTests+ClaudeCapture. Hand-written payloads held only the order we

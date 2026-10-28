@@ -69,13 +69,13 @@
   the four scanners copied under `ThirdParty/tree-sitter/` and gives Swift
   nothing (dependencies.md).
 - **Views sit under the part of the window they draw**: sidebar, detail area, a
-  group of tabs or a pane, the Files panel, a file tab, board, Debug Info, a
-  settings window, a dialog. Views that draw no part of one go under `Shared/`,
-  or `Settings/Controls/` where only the settings windows use them, beside the
-  agent marks, the AppKit modifiers and representables reaching under SwiftUI,
-  and the scene and menus. The engine host and the platform port each have a
-  folder, the host split by what each part is to libghostty: config, runtime,
-  surface, input, clipboard, links.
+  group of tabs or a pane, the Files panel, a file tab, board, Debug Info, the
+  quick switcher, a settings window, a dialog. Views that draw no part of one go
+  under `Shared/`, or `Settings/Controls/` where only the settings windows use
+  them, beside the agent marks, the AppKit modifiers and representables reaching
+  under SwiftUI, and the scene and menus. The engine host and the platform port
+  each have a folder, the host split by what each part is to libghostty: config,
+  runtime, surface, input, clipboard, links.
 - **What draws nothing sits under `Support/`**, the in-app drag under
   `Support/Drag/`, unless it is by nature a piece of one part: the mark parser
   with the marks, a dialog's AppKit alert with the dialogs, what both settings

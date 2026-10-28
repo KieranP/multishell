@@ -23,10 +23,11 @@ Under `~/Library/Application Support/Multishell`.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
   a file tab's text, whether the Files panel is open, its filter and the folders
-  opened in it, or anything about the Agents board or the debug tools. Those are
-  runtime state, so Show all terminals is off after a relaunch, the Files panel
-  starts shut, and the debug tools start off at every launch and write nothing
-  to disk or defaults.
+  opened in it, the pull requests and CI runs last read, the quick switcher's
+  recent worktrees, or anything about the Agents board or the debug tools. Those
+  are runtime state, so Show all terminals is off after a relaunch, the Files
+  panel starts shut, and the debug tools start off at every launch and write
+  nothing to disk or defaults.
 - **A file written before groups existed names no group**, and carries a key for
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.
@@ -91,11 +92,12 @@ Under `~/Library/Application Support/Multishell`.
 - **The sidebar's and the Files panel's widths live in user defaults**, in the
   `io.multishell.app` domain every build shares, debug ones included.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
-  with the same keys as a project's settings less the agent, its flags and the
-  shell. Read at launch, when a project's worktree records change, and when its
-  modification date has moved, which an event on the file or the project's
-  `.git` and each minute's round check. What it said is never saved in the state
-  file, where a restored copy would trust a file nobody looked at.
+  with the same keys as a project's settings less the agent, its flags, the
+  shell, the integrations and the trust answers. Read at launch, when a
+  project's worktree records change, and when its modification date has moved,
+  which an event on the file or the project's `.git` and each minute's round
+  check. What it said is never saved in the state file, where a restored copy
+  would trust a file nobody looked at.
 - **A field it ships needs a line in the layering**, a decode that costs the key
   and not the file, and an override section on the page (design/settings.md).
 - **A field naming a path on the reader's disk needs more**: confinement, the

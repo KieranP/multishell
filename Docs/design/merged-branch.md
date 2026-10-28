@@ -56,9 +56,10 @@
 - **Fetching on a timer is out**, being network, credentials and a git call that
   can hang. So a badge is only as fresh as the last fetch, and Fetch is a menu
   item with a timeout and a spinner.
-- **The check runs when a ref, the index, `HEAD` or the config in the project's
-  `.git` changes**, and on the backstop poll. Four projects are scanned at once
-  there, one after another having been the tick's longest wait at ten projects.
+- **The check runs when a ref, the index, `HEAD`, the config or another entry
+  worktrees.md counts changes in the project's `.git`**, and on the backstop
+  poll. Four projects are scanned at once there, one after another having been
+  the tick's longest wait at ten projects.
 - **Each verdict is memoised on base, base tip, branch, branch tip and whether
   the upstream was gone.** The branch because two may sit on one commit with
   only one gone upstream; the upstream because a first push puts one back
