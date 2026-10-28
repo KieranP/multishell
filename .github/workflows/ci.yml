@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    runs-on: macos-26
+    runs-on: xcode-27
     # A frozen run otherwise holds the runner for GitHub's six-hour default.
     # Headroom for a cold libghostty build, which a cache hit skips.
     timeout-minutes: 60
@@ -72,7 +72,7 @@ jobs:
   # swift-format ships in the toolchain. SwiftLint is the version
   # .swiftlint.yml names, which refuses to run under any other.
   lint:
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v7
       - run: |

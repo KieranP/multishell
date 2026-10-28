@@ -130,6 +130,9 @@
 - **Cost**: xcodebuild keeps a derived directory of its own, shared by the app's
   and the helper's schemes, so everything compiles twice for anyone running the
   tests and the build.
+- **CI runs on GitHub's `xcode-27` image**, a preview, for the toolchain
+  development uses; the `macos-26` default had Xcode 26.6. Nothing builds with
+  Xcode 26 any more, though COMPAT.md still names it as the floor.
 - **CI runs two jobs in parallel**: build and test, and the lint. It runs on a
   push to main and on a pull request, so a branch with no pull request goes
   untested and one with a pull request runs once per push. It calls `swift test`
