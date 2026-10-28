@@ -130,7 +130,7 @@ enum HighlightGrammars {
     for language: HighlightLanguage,
     in compiled: Language,
   ) -> InjectionQuery? {
-    guard let host = MarkupHost(language) else { return nil }
+    guard let host = InjectionHost(language) else { return nil }
     do {
       let query = try HighlightInjections.query(for: host, in: compiled)
       return InjectionQuery(host: host, query: query)

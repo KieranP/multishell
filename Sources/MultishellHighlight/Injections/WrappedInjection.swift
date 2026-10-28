@@ -14,7 +14,8 @@ struct WrappedInjection {
   /// that parses clean: CSS ends an open comment at the end of its input, JavaScript errs.
   static func parsed(_ body: String, in injection: Injection, parser: Parser) -> Self? {
     let wrapped = injection.prefix + body + injection.suffix
-    guard let tree = parser.parse(wrapped) else { return nil }
+    let input = SyntaxHighlighter.grammarInput(from: wrapped, language: injection.language)
+    guard let tree = parser.parse(input) else { return nil }
     guard injection.language == .css, tree.rootNode?.hasError == true, leavesCommentOpen(body)
     else { return Self(text: wrapped, tree: tree) }
     let closed = injection.prefix + body + commentCloser + injection.suffix

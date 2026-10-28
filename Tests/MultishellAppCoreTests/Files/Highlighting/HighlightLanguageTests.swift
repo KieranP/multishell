@@ -44,4 +44,21 @@ struct HighlightLanguageTests {
       HighlightLanguage.language(forPath: "bin/run", firstLine: "#!/usr/bin/env php") == .php
     )
   }
+
+  @Test(arguments: [
+    ("swift", HighlightLanguage.swift), ("JavaScript", .javaScript), ("JS", .javaScript),
+    ("shell", .bash), ("zsh", .bash), ("C#", .cSharp), ("jsonc", .json), ("Makefile", .makefile),
+    ("python3", .python), ("node", .javaScript),
+  ])
+  func aCodeFenceIsPickedByNameExtensionOrInterpreterInAnyCase(
+    name: String,
+    language: HighlightLanguage,
+  ) {
+    #expect(HighlightLanguage.language(forCodeFence: name) == language)
+  }
+
+  @Test func aCodeFenceNamingNoGrammarHereIsPlain() {
+    #expect(HighlightLanguage.language(forCodeFence: "text") == nil)
+    #expect(HighlightLanguage.language(forCodeFence: "") == nil)
+  }
 }

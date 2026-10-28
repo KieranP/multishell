@@ -388,6 +388,21 @@ Newest at the bottom.
   lands, not where the promise ends. `sum(a!/2) + b/2 then v` folds `then` into
   the last division, `p as Promise<X> then v` into the `as`, and
   `item, i (item.id)` reads as a call to `i`, the very key the cut finds.
+- **A Markdown fenced code block is parsed in the language its info string
+  names**, its first word read in any case by name, extension or interpreter:
+  `sh`, `shell`, `Python`, `python3`, `c#`. A fence naming no grammar here, or
+  none, keeps Markdown's colour. A Svelte fence is given its grammar as a Svelte
+  file is, and a PHP fence not starting `<?` is read after a `<?php ` of our
+  own, the grammar otherwise reading it all as HTML. A Markdown fence keeps
+  Markdown's colour, as each fence in it would be injected a level deeper, and
+  200 nested overflowed a worker thread's stack. A quote's `>` markers and a
+  list item's indent are parsed as spaces on every line of a fence, the first
+  included, YAML otherwise reading a `>` as a folded scalar and a line indented
+  past the first as nested; the markers keep the quote's colour. Python then
+  reads its first line as indented and recovers, `def` and `return` still
+  coloured. The grammar closes no fence on a last line with no newline after it,
+  so Markdown is parsed with one added. An HTML block and inline code stay
+  Markdown's.
 - **A language is picked by extension, then by name where the extension says
   nothing, then by shebang.** `Rakefile` and `Gemfile` are Ruby by name, and
   `Cargo.lock` TOML, `Package.resolved`, `.prettierrc` and `.swift-format` JSON.
@@ -538,3 +553,28 @@ Newest at the bottom.
 - **PR and CI are the panel's third and fourth pages**, kept in the same saved
   choice as Files and Changes; services.md has what they read and when. Changes
   is still `git` on the command line and `modified` in the state file.
+
+## Reviewed and left as is
+
+Raised by reviews and settled; a review need not raise these again.
+
+- **A fence closed where CommonMark would not.** The Markdown grammar closes a
+  fence on a closer indented four spaces, and on an unquoted line of `>` and a
+  fence. The injection follows the grammar so the code's colours and Markdown's
+  agree; rules of our own over its last line were tried and dropped.
+- **A fence indented one to three spaces keeping that indent in its code.**
+  CommonMark strips it; tried with Python, `def` and `return` still colour.
+- **Quote markers re-coloured from the host's own spans.** Those spans are the
+  markers' nodes exactly, and the filter runs only where a fence is quoted or in
+  a list, a blank line's empty marker dropped. Leaving the markers out of the
+  plain span and the injected spans would split both around every marker.
+- **Every GitHub alias.** The common names are listed; rarer ones such as
+  `shell-script` or `xhtml` are not.
+- **A private helper in `HighlightInjections.swift`.** A private function stays
+  in its type's file, as `body(of:)` does; a helper type gets its own.
+- **`lineFeed` kept in `SyntaxHighlighter` rather than `ASCIIUnits`.**
+  `ASCIIUnits` holds the units more than one scanner compares; this has one
+  reader.
+- **`"makefile"` in both `byCodeFenceName` and `byFileName`.** `byFileName`
+  matches a file's name in its own case; a fence's name is folded, so reading it
+  there would take `.bashrc` or `brewfile` as fence names by accident.

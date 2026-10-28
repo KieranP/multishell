@@ -55,6 +55,20 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
     "ruby": .ruby, "sh": .bash, "swift": .swift, "zsh": .bash,
   ]
 
+  /// Names a Markdown fence may give where no extension or interpreter says the same.
+  private static let byCodeFenceName: [String: Self] = [
+    "c#": .cSharp, "csharp": .cSharp, "golang": .golang, "javascript": .javaScript,
+    "jsonc": .json, "kotlin": .kotlin, "make": .makefile, "makefile": .makefile,
+    "rust": .rust, "shell": .bash, "typescript": .typeScript,
+  ]
+
+  /// A fenced code block's language from the first word of its info string, by name,
+  /// extension or interpreter in any case, as GitHub reads it.
+  public static func language(forCodeFence name: String) -> Self? {
+    let folded = name.lowercased()
+    return byCodeFenceName[folded] ?? byExtension[folded] ?? byInterpreter[folded]
+  }
+
   /// By extension, then by the file's name, then by a shebang; anything else
   /// is plain text.
   public static func language(forPath path: String, firstLine: String?) -> Self? {

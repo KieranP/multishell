@@ -8,6 +8,9 @@ import Synchronization
 final class SyntaxHighlighter: Sendable {
   static let shared = SyntaxHighlighter()
 
+  /// A unit, as `Character` reads `\r\n` as one that is not `\n`.
+  private static let lineFeed = UInt16(UInt8(ascii: "\n"))
+
   private let slots = Mutex<[HighlightLanguage: CompiledGrammarSlot]>([:])
   private let compile: GrammarCompiler
 
@@ -16,7 +19,14 @@ final class SyntaxHighlighter: Sendable {
   }
 
   static func grammarInput(from text: String, language: HighlightLanguage) -> String {
-    language == .svelte ? SvelteGrammarInput.text(from: text) : text
+    switch language {
+    case .svelte: SvelteGrammarInput.text(from: text)
+
+    // Markdown's grammar, unlike CommonMark, closes no fence on a last line without a newline.
+    case .markdown where text.utf16.last != lineFeed: text + "\n"
+
+    default: text
+    }
   }
 
   /// In pattern order so a later pattern wins, then each injection's, all from matches reaching
@@ -75,10 +85,15 @@ final class SyntaxHighlighter: Sendable {
     )
     let keywords = found.keywords.map { HighlightSpan(range: $0, role: .keyword) }
     var injected: [HighlightSpan] = []
+    var blanked: Set<Range<Int>> = []
     for injection in found.injections where keptRanges?.hasRange(meeting: injection.range) ?? true {
       injected += injectedSpans(of: injection, in: string, cache: &cache)
+      blanked.formUnion(injection.blankedRanges)
     }
-    return inPatternOrder + injected + keywords
+    // A quote's `>` inside a fence keeps the quote's colour over the injection's plain span.
+    let blankedHostSpans =
+      blanked.isEmpty ? [] : inPatternOrder.filter { blanked.contains($0.range) }
+    return inPatternOrder + injected + keywords + blankedHostSpans
   }
 
   /// An injection parsed on its own over a plain span, which clears a host's colour
@@ -91,7 +106,7 @@ final class SyntaxHighlighter: Sendable {
     guard let grammar = grammar(for: injection.language, in: &cache),
       let parser = parser(for: injection.language, grammar: grammar, in: &cache)
     else { return [] }
-    let source = text.substring(with: NSRange(injection.range))
+    let source = injection.source(in: text)
     let decodes = injection.decodesCharacterReferences && source.contains("&")
     let decoded = decodes ? CharacterReferences.decoded(source) : nil
     let body = decoded?.text ?? source

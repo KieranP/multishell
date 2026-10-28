@@ -2,10 +2,12 @@ import Foundation
 import MultishellAppCore
 import SwiftTreeSitter
 
-/// Where an HTML or Svelte tree holds another language. Our own query: Svelte's
+/// Where an HTML, Svelte or Markdown tree holds another language. Our own query: Svelte's
 /// injection file is Neovim's and inherits one no package ships.
 enum HighlightInjections {
   private static let htmlQuery = "(script_element) @script (style_element) @style"
+
+  private static let markdownQuery = "(fenced_code_block) @code_block"
 
   /// Each node a `{…}` expression sits in whole. An each's parameter and an
   /// await's head are cut apart, and a shorthand attribute keeps its colour.
@@ -28,11 +30,12 @@ enum HighlightInjections {
   private static let svelteQuery = ([htmlQuery] + expressionPatterns + sveltePatterns)
     .joined(separator: "\n")
 
-  static func query(for host: MarkupHost, in language: Language) throws -> Query {
+  static func query(for host: InjectionHost, in language: Language) throws -> Query {
     let source =
       switch host {
-      case .html: htmlQuery
-      case .svelte: svelteQuery
+      case .markup(.html): htmlQuery
+      case .markup(.svelte): svelteQuery
+      case .markdown: markdownQuery
       }
     return try Query(language: language, data: Data(source.utf8))
   }
@@ -45,15 +48,37 @@ enum HighlightInjections {
     using injectionQuery: InjectionQuery,
     within keptRanges: [Range<Int>]?,
   ) -> HostInjections {
-    var found = HostInjections()
-    guard let root = tree.rootNode else { return found }
-    let host = injectionQuery.host
-    lazy var language = expressionLanguage(in: text)
     let captures = injectionQuery.query.captures(
       in: tree,
       within: keptRanges,
       matching: Predicate.Context(string: text as String),
     )
+    switch injectionQuery.host {
+    case .markup(let host):
+      return markupInjections(
+        from: captures,
+        in: tree,
+        text: text,
+        host: host,
+        within: keptRanges,
+      )
+
+    case .markdown:
+      let blocks = captures.compactMap { FencedCodeBlock.injection(of: $0.node, in: text) }
+      return HostInjections(injections: blocks)
+    }
+  }
+
+  private static func markupInjections(
+    from captures: some Sequence<QueryCapture>,
+    in tree: MutableTree,
+    text: NSString,
+    host: MarkupHost,
+    within keptRanges: [Range<Int>]?,
+  ) -> HostInjections {
+    var found = HostInjections()
+    guard let root = tree.rootNode else { return found }
+    lazy var language = expressionLanguage(in: text)
     for capture in captures {
       let node = capture.node
       switch capture.name {

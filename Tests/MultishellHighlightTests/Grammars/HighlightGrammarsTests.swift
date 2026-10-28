@@ -13,7 +13,7 @@ struct HighlightGrammarsTests {
 
   @Test func everyInjectionQueryCompilesWhereALanguageHasOne() throws {
     for language in HighlightLanguage.allCases {
-      guard let host = MarkupHost(language) else { continue }
+      guard let host = InjectionHost(language) else { continue }
       let grammar = try HighlightGrammars.compile(language)
       _ = try HighlightInjections.query(for: host, in: grammar.language)
     }
