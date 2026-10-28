@@ -184,6 +184,10 @@ struct SyntaxHighlighterTests {
     #expect(HighlightProbe.role(of: "margin", in: text, spans: spans) == .attribute)
   }
 
+  @Test func markdownEndingInACRLFIsGivenToItsGrammarUnchanged() {
+    #expect(SyntaxHighlighter.grammarInput(from: "a\r\n", language: .markdown) == "a\r\n")
+  }
+
   @Test func aRangeCountsInUTF16SoAnEmojiBeforeItShiftsNothing() {
     let text = "let 🙂 = 1\nfunc f() {}"
     let spans = HighlightProbe.spans(in: text, language: .swift)

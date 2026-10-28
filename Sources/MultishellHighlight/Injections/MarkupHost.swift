@@ -1,5 +1,3 @@
-import MultishellAppCore
-
 /// A language whose files hold scripts and styles, and how it reads them. A new one
 /// is a case each reader's `switch` must answer for, not a check it may miss.
 enum MarkupHost {
@@ -12,18 +10,6 @@ enum MarkupHost {
     switch self {
     case .html: true
     case .svelte: false
-    }
-  }
-
-  init?(_ language: HighlightLanguage) {
-    switch language {
-    case .html: self = .html
-    case .svelte: self = .svelte
-
-    case .bash, .c, .cpp, .cSharp, .css, .golang, .java, .javaScript, .json, .kotlin, .makefile,
-      .markdown, .php, .python, .ruby, .rust, .scss, .sql, .swift, .toml, .tsx, .typeScript,
-      .yaml, .zig:
-      return nil
     }
   }
 

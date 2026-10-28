@@ -26,8 +26,11 @@ enum InjectionProbe {
     return found.injections
   }
 
-  static func languages(in text: String) throws -> [HighlightLanguage] {
-    try injections(in: text).map(\.language)
+  static func languages(
+    in text: String,
+    language: HighlightLanguage = .html,
+  ) throws -> [HighlightLanguage] {
+    try injections(in: text, language: language).map(\.language)
   }
 
   static func range(ofLine line: Int, in text: String) -> Range<Int> {

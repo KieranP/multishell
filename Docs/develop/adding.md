@@ -390,5 +390,9 @@ What each addition needs beyond the code itself.
   in `HighlightCaptureRoles`, under `exceptionsByLanguage` where only this
   grammar means it so; a case in `eachGrammarColoursAWordOfItsLanguage`; and its
   notice and licence text. One that holds other languages also needs a case in
-  `MarkupHost`, whose every `switch` then asks how that host reads its
-  attributes, its script and style languages and its injection query.
+  `InjectionHost`, whose `switch`es in `HighlightInjections.query` and `find`
+  ask for its injection query and how its captures become injections; a markup
+  language also needs one in `MarkupHost`, whose every `switch` asks how it
+  reads its attributes and its script and style languages. A name a Markdown
+  fence gives that no extension or interpreter says goes in
+  `HighlightLanguage.byCodeFenceName`.
