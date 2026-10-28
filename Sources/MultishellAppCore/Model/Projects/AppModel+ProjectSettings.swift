@@ -8,7 +8,11 @@ extension AppModel {
   }
 
   public func setSettings(_ settings: ProjectSettings, for project: Project) {
+    var settings = settings
+    settings.normalizeIntegrations()
+    let previous = ownSettings(of: project)
     store.setSettings(settings, forProject: project.id)
+    applyIntegrationChanges(from: previous, to: settings, of: project.id)
   }
 
   /// The project's settings with its repository's file filling the gaps, and

@@ -192,6 +192,18 @@
       "changed": "#8be9fd",
       "merged": "#bd93f9"
     },
+    "pull_requests": {
+      "ready_to_merge": "#50fa7b",
+      "changes_requested": "#ff5555",
+      "conflicts": "#8be9fd",
+      "queued": "#ffb86c"
+    },
+    "ci": {
+      "passed": "#50fa7b",
+      "failed": "#ff5555",
+      "running": "#8be9fd",
+      "on_hold": "#ffb86c"
+    },
     "project_icons": {
       "black": "#21222c",
       "red": "#ff5555",

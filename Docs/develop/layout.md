@@ -2,7 +2,7 @@
 
 ## Layout
 
-- **One package: four libraries, a highlighting library, the helper and the
+- **One package: five libraries, a highlighting library, the helper and the
   app.** MultishellCore holds the model, with user settings under
   `Model/Settings/`, a repository's `.multishell.json` under
   `Model/Settings/Shared/` and a worktree's tabs and panes under `Model/Tabs/`;
@@ -23,6 +23,12 @@
   WorktreeGit and WorktreeCoordinator sit at its root with their extensions
   under each concern, since eight concerns extend them and none owns them,
   beside the state every WorktreeGit a launch builds shares.
+- **MultishellServices**: the pull request hosts and CI providers, read through
+  each service's own tool. `SCM/Core/` and `CI/Core/` hold each kind's protocol
+  and the values it answers with, `SCM/GitHub/` and `CI/CircleCI/` the one
+  service of each there is, through `gh` and `circleci`. What both kinds share
+  sits beside them: `Runner/` times every call into git's log, `Tools/` holds a
+  tool's status and read failures, `Remotes/` a remote's owner and name.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited
   settings, what a tab runs, what each session is doing, when to read git and to
   notify, creates and removals under way, every decision a view makes, and what
@@ -56,7 +62,7 @@
   is given under `Grammars/`; what an HTML or Svelte file holds in another
   language under `Injections/`; the reading of a Svelte block's head under
   `SvelteBlockHeads/`; and `Support/`. Its own target keeps the grammars out of
-  the four libraries (Layering rules). **TreeSitterScanners** compiles the four
+  the five libraries (Layering rules). **TreeSitterScanners** compiles the four
   scanners copied under `ThirdParty/tree-sitter/` and gives Swift nothing
   (dependencies.md).
 - **Views sit under the part of the window they draw**: sidebar, detail area, a
@@ -117,7 +123,7 @@
 
 ## Layering rules
 
-- **The four libraries import only what Apple ships, Foundation, Darwin,
+- **The five libraries import only what Apple ships, Foundation, Darwin,
   Dispatch, System, Observation, Synchronization, CryptoKit, CoreGraphics and
   CoreServices, and one package**, swift-subprocess in the process layer
   (dependencies.md). CoreGraphics is there for the `CGRect` a pane's frame comes

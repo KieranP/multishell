@@ -59,6 +59,10 @@ struct ViewSettingsWindowTests {
         name: "Project Agents",
         view: AnyView(ProjectAgentsPage(model: model, project: project)),
       ),
+      Page(
+        name: "Project Integrations",
+        view: AnyView(ProjectIntegrationsPage(model: model, project: project)),
+      ),
     ]
   }
 

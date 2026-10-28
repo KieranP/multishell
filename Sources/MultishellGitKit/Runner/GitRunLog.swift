@@ -1,7 +1,9 @@
+import Foundation
+import MultishellProcess
 import Synchronization
 
-/// Every git run timed while debug tools are on, shared by the runners a
-/// launch builds. Off, it keeps nothing, so nothing grows undrained.
+/// Every git run timed while debug tools are on, and `gh`'s and `circleci`'s
+/// beside them; see services.md. Off, it keeps nothing, so nothing grows.
 public final class GitRunLog: Sendable {
   private struct State {
     var isRecording = false
@@ -21,6 +23,29 @@ public final class GitRunLog: Sendable {
       state.startedCount = 0
       state.finishedRuns = []
     }
+  }
+
+  /// `body`, `gh`'s and `circleci`'s too, timed as `command` while recording,
+  /// handed a probe for the child's usage as it exits then and `nil` otherwise.
+  public func timing<Result>(
+    _ command: String,
+    in directory: URL,
+    _ body: (ExitUsageProbe?) async throws -> Result,
+  ) async rethrows -> Result {
+    guard beginRunIfRecording() else { return try await body(nil) }
+    let started = ContinuousClock.now
+    let exitUsageProbe = ExitUsageProbe()
+    defer {
+      endRun(
+        GitRun(
+          command: command,
+          directory: directory,
+          duration: started.duration(to: .now),
+          exitUsage: exitUsageProbe.usage,
+        )
+      )
+    }
+    return try await body(exitUsageProbe)
   }
 
   /// Whether this run is timed. A `true` is answered by `endRun`.

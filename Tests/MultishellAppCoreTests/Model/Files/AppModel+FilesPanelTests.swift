@@ -44,7 +44,7 @@ struct AppModelFilesPanelTests {
 
     #expect(harness.model.showsFilesPanel)
     #expect(harness.model.workspace.selectedWorktreeID == main.id)
-    #expect(harness.model.filesPanelState(of: main.id).mode == .git)
+    #expect(harness.model.filesPanelState(of: main.id).mode == .changes)
     #expect(harness.model.workspace.changeScope == .modified, "what the badge counts")
     #expect(harness.model.filesPanelState(of: main.id).filterText == "")
   }
@@ -159,7 +159,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.git)
+    harness.model.setFilesPanelMode(.changes)
     var status = Self.modified(30_000)
     harness.model.statuses[main.id] = status
 
@@ -189,7 +189,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.git)
+    harness.model.setFilesPanelMode(.changes)
     harness.model.trackedFiles[main.id] = Self.tracked(30_000)
     harness.model.statuses[main.id] = Self.modified(30_000)
 
@@ -304,7 +304,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.git)
+    harness.model.setFilesPanelMode(.changes)
     harness.model.statuses[main.id] = Self.modified(3)
     _ = harness.model.fileTreeRows(of: main.id)
     harness.model.statuses[main.id] = Self.modified(30_000)
@@ -343,7 +343,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.git)
+    harness.model.setFilesPanelMode(.changes)
     harness.model.statuses[main.id] = Self.modified(30_000)
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
     try await waitUntil { renderer.rows.count > 30_000 }

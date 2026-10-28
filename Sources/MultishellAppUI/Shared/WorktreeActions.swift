@@ -22,6 +22,7 @@ struct WorktreeActions: View {
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(worktree.path) }
     Button(t("action.copy-path")) { model.copyToClipboard(worktree.path.path) }
     Button(t("action.copy-branch")) { model.copyToClipboard(worktree.name) }
+    WorktreeServiceActions(model: model, worktree: worktree)
     Divider()
     // Always a shell: the agent has its own item, so auto-start does not apply.
     Button(t("menu.new-shell-tab")) { model.newShellTab(selecting: worktree) }

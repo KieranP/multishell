@@ -1,19 +1,23 @@
 import MultishellCore
 
-/// What the command line calls the panel's lists: Files and Git, as drawn, where
-/// the state file keeps `all` and `modified`, `modified` now a change scope.
+/// What the command line calls the panel's pages; Changes is `git` there, and the
+/// state file keeps `all` and `modified`, `modified` now a change scope.
 extension FilesPanelMode {
   var commandName: String {
     switch self {
+    case .ciRuns: "ci"
     case .files: "files"
-    case .git: "git"
+    case .changes: "git"
+    case .pullRequest: "pull-request"
     }
   }
 
   init?(commandName: String) {
     switch commandName {
+    case "ci": self = .ciRuns
     case "files": self = .files
-    case "git": self = .git
+    case "git": self = .changes
+    case "pull-request": self = .pullRequest
     default: return nil
     }
   }

@@ -45,7 +45,10 @@ struct FileTabReaderTests {
     /// `main`, as a project with no remote resolves it.
     func base() async throws -> DefaultBranch {
       try #require(
-        DefaultBranch.resolve(from: await git.branchRefs(Project(path: path)) ?? [], override: nil)
+        DefaultBranch.resolve(
+          from: await git.branchRefs(Project(path: path))?.refs ?? [],
+          override: nil,
+        )
       )
     }
 

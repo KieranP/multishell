@@ -22,6 +22,19 @@ struct AppModelFilesPanelReadsTests {
     #expect(!harness.model.readsStatusInTheBackground(main.id))
   }
 
+  @Test func aServicesPageShownInTheBackgroundReadsNoStatus() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.connectServices()
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.ciRuns)
+    harness.platform.isActive = false
+
+    #expect(!harness.model.readsStatusInTheBackground(main.id))
+  }
+
   @Test func thePanelIsReadWhenItsWindowBecomesVisibleInTheBackground() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

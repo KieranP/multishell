@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import TestSupport
 import Testing
 
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 /// These dates come off the ref list the merge reads need anyway, so they cost no process
@@ -69,6 +69,124 @@ struct WorktreeCoordinatorBranchesTests {
     #expect(detached.branch == nil)
     #expect(Set(scan.lastCommitDates.keys) == ["main"], "no date filed under a name it lacks")
     #expect(detached.createdAt != nil, "the directory still has a creation date")
+  }
+
+  @Test func aPushedBranchNamesItsRemoteItsNameThereAndWhereThatPoints() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    _ = try await fixture.runner.run(
+      ["push", "-q", "-u", "origin", "feat:shared/feat"],
+      in: fixture.project.path,
+    )
+    let pushed = try await fixture.runner.run(["rev-parse", "feat"], in: fixture.project.path)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
+
+    #expect(
+      scan.upstreams?["feat"]
+        == BranchUpstream(remote: "origin", branch: "shared/feat", tip: pushed)
+    )
+  }
+
+  @Test func aBranchPushingToAnotherRemoteIsPublishedThereUnderItsOwnName() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    let repository = fixture.project.path
+    let fork = fixture.root.appendingPathComponent("fork.git")
+    _ = try await fixture.runner.run(["push", "-q", "-u", "origin", "feat"], in: repository)
+    _ = try await fixture.runner.run(
+      ["clone", "-q", "--bare", repository.path, fork.path],
+      in: fixture.root,
+    )
+    _ = try await fixture.runner.run(["remote", "add", "fork", fork.path], in: repository)
+    _ = try await fixture.runner.run(["push", "-q", "fork", "feat"], in: repository)
+    _ = try await fixture.runner.run(["config", "branch.feat.pushRemote", "fork"], in: repository)
+    let tip = try await fixture.tip(of: "feat")
+
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
+
+    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "fork", branch: "feat", tip: tip))
+  }
+
+  @Test func aBranchPushedWithoutTrackingIsPublishedUnderItsNameOnTheRemote() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    _ = try await fixture.runner.run(["push", "-q", "origin", "feat"], in: fixture.project.path)
+    let tip = try await fixture.tip(of: "feat")
+
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
+
+    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
+  }
+
+  @Test func aBranchFollowingTheTrunkButPushedUnderItsOwnNameIsPublishedThere() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    let repository = fixture.project.path
+    _ = try await fixture.runner.run(["push", "-q", "origin", "feat"], in: repository)
+    _ = try await fixture.runner.run(
+      ["branch", "-q", "--set-upstream-to", "origin/main", "feat"],
+      in: repository,
+    )
+    let tip = try await fixture.tip(of: "feat")
+
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
+
+    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
+  }
+
+  @Test func aScanReadWithoutTheUpstreamAtomsLeavesUpstreamsUnknown() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *remotename*) exit 129 ;;
+      esac
+      printf 'refs/heads/feat\\tabc\\trefs/remotes/origin/feat\\t\\t\\n'
+      """
+    )
+    defer { fake.tearDown() }
+
+    let scan = try #require(
+      await fake.coordinator.scanBranches(
+        of: Project(path: fake.directory),
+        defaultBranchOverride: nil,
+      )
+    )
+
+    #expect(scan.upstreams == nil)
+  }
+
+  @Test func anUpstreamWhoseRefHasGoneHasNoTip() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    let repository = fixture.project.path
+    _ = try await fixture.runner.run(["push", "-q", "-u", "origin", "feat"], in: repository)
+    _ = try await fixture.runner.run(["push", "-q", "origin", "--delete", "feat"], in: repository)
+
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
+
+    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: nil))
   }
 
   @Test func anOverrideNamingNoBranchBadgesNothingAndKeepsTheDates() async throws {

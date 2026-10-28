@@ -41,6 +41,13 @@ What each addition needs beyond the code itself.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
   follow. An agent's row names its mark; its colour is a `ui.agent_marks` key in
   every built-in theme, empty where the project's mark has no colour of its own.
+- **A pull request host or CI provider.** A case in `ServiceIntegration` with
+  its tool's name, a conformance to `PullRequestHost` or `CIProvider` in
+  MultishellServices under a folder of its own in `SCM/` or `CI/`, reading
+  through `ServiceToolRunner`, and an arm in `ServiceConnections`. The
+  Integrations page's label, help and install words follow, which the compiler
+  asks for. A second host also needs choosing between hosts that both say a
+  repository is theirs, which `pullRequestHost(for:)` does by `allCases` order.
 - **An agent's one-shot run**, for Auto Rename: the flags that run one prompt
   with no tool able to write, how the prompt goes, its model and effort flags,
   and its models with each one's efforts, in `AgentCatalogue+OneShots`.

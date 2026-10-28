@@ -145,6 +145,9 @@
   sidebar under a dark terminal keeps its idle dots.
 - **The agent and git colours are sections of their own**, `ui.states` and
   `ui.git`, read wherever a dot, a badge or a count is drawn.
+- **So are the pull request and CI marks'**, `ui.pull_requests` and `ui.ci`,
+  each built-in theme's seeded from its `ui.states`; their greys are the area's
+  (services.md).
 - **libghostty takes no alpha**, so a terminal colour's is dropped on the way to
   it; the focus ring, drawn by the app, keeps its own. `cursor_text` and
   `selection_foreground` left empty are not sent, leaving the user's own Ghostty

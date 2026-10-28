@@ -14,7 +14,7 @@ extension AccessibilityText {
   ) -> String {
     var parts = [
       t("spoken.project", name),
-      isExpanded ? t("spoken.expanded") : t("spoken.collapsed"),
+      disclosure(isExpanded: isExpanded),
     ]
     parts.append(t("count.worktrees", worktreeCount))
     if isMissing { parts.append(t("spoken.not-reachable")) }
@@ -33,7 +33,7 @@ extension AccessibilityText {
     terminalCount: Int,
     isSelected: Bool,
     customName: String?,
-    mergeState: WorktreeMergeState,
+    standing: BranchStanding,
     autoRename: AutoRenameState?,
   ) -> String {
     var parts = [
@@ -53,8 +53,9 @@ extension AccessibilityText {
     case nil: break
     }
     if worktree.isLocked { parts.append(t("spoken.locked")) }
-    if mergeState.showsBadge(with: status) { parts.append(mergeState.summary) }
+    if standing.showsMergedBadge(with: status) { parts.append(standing.mergeState.summary) }
     if let status = WorktreeStatus.badged(status) { parts.append(status.summary) }
+    if let spoken = standing.services.spokenSummary { parts.append(spoken) }
     if terminalCount > 0 { parts.append(t("count.terminals", terminalCount)) }
     return parts.joined(separator: ", ")
   }

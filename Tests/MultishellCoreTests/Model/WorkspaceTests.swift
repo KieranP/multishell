@@ -126,7 +126,8 @@ struct WorkspaceTests {
       try decodeJSON(Workspace.self, #"{ "filesPanelMode": "all" }"#).filesPanelMode == .files
     )
     #expect(
-      try decodeJSON(Workspace.self, #"{ "filesPanelMode": "modified" }"#).filesPanelMode == .git
+      try decodeJSON(Workspace.self, #"{ "filesPanelMode": "modified" }"#).filesPanelMode
+        == .changes
     )
   }
 

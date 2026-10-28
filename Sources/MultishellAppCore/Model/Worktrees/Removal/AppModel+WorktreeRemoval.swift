@@ -2,6 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 import MultishellProcess
+import MultishellServices
 
 extension AppModel {
   /// The pane shows each stage; `PresentedRemovalFailure` decides what a failed one does,
@@ -42,6 +43,8 @@ extension AppModel {
         port: workspace.port(of: worktree.id),
         deletesBranch: deletesBranch,
         forcesBranchDeletion: forcesBranchDeletion,
+        forcesBranchDeletionAtTip: deletesBranch
+          ? landedPullRequest(of: worktree)?.headCommit : nil,
         shellPath: workspace.effectiveShellPath(for: effective),
         timeout: workspace.projectHookTimeout,
         stopper: stopper,

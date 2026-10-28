@@ -33,19 +33,22 @@ Newest at the bottom.
 - **One per-file list feeds the badge, its tooltip, the removal dialog, the
   command line and the panel**, for every worktree, panel open or not, so no two
   can disagree; worktrees.md has the read.
-- **Files / Git, not a lettered toggle**, "M 4" not saying what it was. No count
-  on the switch, the footer carrying it, and no status letters anywhere: the
-  counts and the dot carry the change.
-- **Files or Git is one choice for every worktree, kept with the settings**
+- **Glyph tabs named in a tooltip, Files, Changes, PR and CI**, not a lettered
+  toggle, "M 4" not saying what it was. Changes is a document with a diff: a
+  branch glyph beside the pull request's arrow read as two of the same. The
+  tooltip is drawn in the theme, `.help`'s being the system's grey. No count on
+  the switch, the footer carrying it, and no status letters anywhere: the counts
+  and the dot carry the change.
+- **Files or Changes is one choice for every worktree, kept with the settings**
   under the `all` and `modified` earlier builds wrote, so an older build still
   reads it; the command line says `files` and `git`, `modified` being a scope,
   as Unified or Split is, so a relaunch or another worktree lists what the last
-  panel did. A click on a row's git badge sets it to Git under Modified.
+  panel did. A click on a row's git badge sets it to Changes under Modified.
 - **A zero side of a file's count is left out**, `+21 −0` on a new file reading
   as noise. The sidebar badge and the footer keep both, a badge changing shape
   having read as broken.
-- **Git merges single-child folders**, `Tests/AppCoreTests/Detail` one row, and
-  starts open where Files starts shut.
+- **Changes merges single-child folders**, `Tests/AppCoreTests/Detail` one row,
+  and starts open where Files starts shut.
 - **The filter folds as the sidebar's does**, over the whole path, matched as
   UTF-8 over paths folded and composed once: `contains` took 181 to 263 ms over
   200,000 paths, a byte search 7 to 11.
@@ -56,9 +59,9 @@ Newest at the bottom.
   edge resets its width. No keyboard shortcut yet; a View menu item.
 - **Both clamps leave the tabs one minimum**, so a wide sidebar beside a wide
   panel cannot squeeze the tabs to nothing.
-- **A click on a row's git badge opens the panel on Git under Modified**, what
-  the badge counts, with a named accessibility action on the row, whose children
-  VoiceOver cannot reach.
+- **A click on a row's git badge opens the panel on Changes under Modified**,
+  what the badge counts, with a named accessibility action on the row, whose
+  children VoiceOver cannot reach.
 - **A file opens in a tab by the clicked-link rule**: a regular file typed as
   text or whose start reads as text. A file gone from disk is judged on git's
   copy. A link inside the worktree opens the file it points at, git diffing a
@@ -392,8 +395,8 @@ Newest at the bottom.
   first line.
 - **A submodule's folder opens as a repository of its own**, listed and read
   apart, since the worktree's git lists the folder and nothing in it. Its rows
-  carry their own counts but stay out of the worktree's Git list, which is what
-  the worktree would commit, and a file tab inside it diffs against the
+  carry their own counts but stay out of the worktree's Changes list, which is
+  what the worktree would commit, and a file tab inside it diffs against the
   submodule's `HEAD`. One nobody has initialised lists empty: `git -C` there
   runs against the parent, so `rev-parse --show-toplevel` must name the folder.
 - **A new file git ignores shows as it is**, not every line added: the badge and
@@ -447,17 +450,17 @@ Newest at the bottom.
 - **The caret a file opens with counts as no selection**, so a step down from
   there lands on a change on the first row: a new or deleted file is one change
   from row 0, and counting from that caret left both arrows grey.
-- **Files and Git are glyphs on the panel's header, which reaches the window's
+- **The pages are glyphs on the panel's header, which reaches the window's
   top**, as Orca draws them: the worktree's header ends at the panel's edge, its
   actions menu beside it, and the panel's header carries the glyph that shuts
   it, where the worktree's header carries it while the panel is shut.
-- **Git counts against `HEAD` under Modified, and under Branch against where the
-  branch left its project's base branch**, committed or not, new files whole:
-  once an agent commits, Modified empties while Branch still shows its work. The
-  base is the merged badge's (merged-branch.md), and the count is `diff-index`
-  against `git merge-base HEAD <base>`, the working tree included.
-- **Modified or Branch is one choice for the Git list and every file tab, kept
-  with the settings**, its switch drawn in both, so a tab never counts from
+- **Changes counts against `HEAD` under Modified, and under Branch against where
+  the branch left its project's base branch**, committed or not, new files
+  whole: once an agent commits, Modified empties while Branch still shows its
+  work. The base is the merged badge's (merged-branch.md), and the count is
+  `diff-index` against `git merge-base HEAD <base>`, the working tree included.
+- **Modified or Branch is one choice for the Changes list and every file tab,
+  kept with the settings**, its switch drawn in both, so a tab never counts from
   somewhere other than the list it was opened from. Files counts against `HEAD`
   whatever it says, being what All was.
 - **Branch is read on every status read of the panel's worktree**, one that
@@ -532,3 +535,6 @@ Newest at the bottom.
   read after a relaunch comes before its project's scan; and a worktree whose
   status read keeps failing reads no Branch either, its new files coming from
   that read.
+- **PR and CI are the panel's third and fourth pages**, kept in the same saved
+  choice as Files and Changes; services.md has what they read and when. Changes
+  is still `git` on the command line and `modified` in the state file.

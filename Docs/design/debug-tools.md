@@ -26,6 +26,8 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   through. The log is shared by the runner a later PATH builds, and keeps
   nothing while off, so nothing grows undrained. A run still going is shown: a
   git hung on a dead mount stays running.
+- **`gh` and `circleci` are timed into the same log**, named with their program,
+  `gh pr list`, so the Git commands table counts them beside git's.
 - **Memory and CPU are `proc_pid_rusage`'s**: the footprint Activity Monitor's
   Memory column shows, and CPU time in mach ticks, not the nanoseconds the
   header says. A tick on Apple silicon is 125/3 ns, so read as nanoseconds it is

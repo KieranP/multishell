@@ -391,7 +391,8 @@ left as is".
   cost would pace out the read that does.
 - **One actions menu serves the detail header, the sidebar and a board card**,
   the last under a heading naming the worktree, since the card carries a Clear
-  Status of its own and two unlabelled ones would read alike.
+  Status of its own and two unlabelled ones would read alike. Its pull request
+  and CI items come and go with what the services say (services.md).
 - **New Worktree always opens, even with nothing selected**, and its decisions
   are a tested value because a cancelled branch load once re-enabled Create
   against the wrong project. Its existing-branch picker offers local branches

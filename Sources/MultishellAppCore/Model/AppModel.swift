@@ -295,9 +295,7 @@ public final class AppModel<Surface> {
   /// When each worktree's branch was last committed to. Runtime only: the
   /// workspace must not be rewritten because someone committed.
   var lastCommitDates: [Worktree.ID: Date] = [:]
-  /// Projects with a `git fetch` running, which the sidebar shows and a
-  /// second Fetch waits for. Runtime state, like the statuses beside it.
-  var fetchingProjects: Set<Project.ID> = []
+  @ObservationIgnored let remoteState = RemoteState()
   /// Projects whose directory has gone. Kept in the sidebar, dimmed, rather
   /// than dropped: an unmounted drive should not delete someone's setup.
   public internal(set) var missingProjects: Set<Project.ID> = []

@@ -19,6 +19,12 @@ extension AppModel {
     )
   }
 
+  /// The trunk only, as git would: another branch's upstream would hand the
+  /// new one its pull request and push into it; see services.md.
+  private func tracksAsUpstream(_ startPoint: String?, in project: Project) -> Bool {
+    startPoint == nil || startPoint == defaultBranch(of: project)?.shortName
+  }
+
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
   /// add takes back the branch and directories it made; see worktrees.md.
   public func cancelWorktreeCreation() {
@@ -77,6 +83,7 @@ extension AppModel {
           settings: settings,
           basedOn: startPoint,
           createsBranch: createsBranch,
+          tracksStartPoint: tracksAsUpstream(startPoint, in: project),
           shellPath: shellPath,
           timeout: workspace.projectHookTimeout,
           stopper: stopper,

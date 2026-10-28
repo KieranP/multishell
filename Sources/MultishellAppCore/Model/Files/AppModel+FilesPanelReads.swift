@@ -8,7 +8,12 @@ extension AppModel {
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, a status read and, under Branch, a branch read.
   public func readFilesPanel(of id: Worktree.ID) {
+    remoteState.lastReadPanelPage = shownFilesPanelMode
     forgetUnreadPanelListings()
+    guard shownFilesPanelMode.listsFiles else {
+      schedulePanelServicesRead(of: id)
+      return
+    }
     scheduleTrackedFilesRead(of: id)
     scheduleIgnoredEntriesRead(of: id)
     scheduleStatusRefresh(of: id)
@@ -20,11 +25,11 @@ extension AppModel {
     }
   }
 
-  /// Keeps only the listings something still reads: a shown panel's worktree's,
+  /// Keeps only the listings something still reads: a shown file page's worktree's,
   /// and the selected worktree's while the quick switcher is up.
   func forgetUnreadPanelListings() {
     var read = Set<Worktree.ID>()
-    if isFilesPanelOnScreen, let id = filesPanelWorktree?.id { read.insert(id) }
+    if isFileListOnScreen, let id = filesPanelWorktree?.id { read.insert(id) }
     if quickSwitcher != nil, let id = workspace.selectedWorktreeID { read.insert(id) }
     forgetPanelListings { !read.contains($0) }
   }
@@ -168,6 +173,6 @@ extension AppModel {
   /// The panel's worktree is read on its events while its window shows, front
   /// or not, so coming back never shows a stale list.
   func readsStatusInTheBackground(_ id: Worktree.ID) -> Bool {
-    showsFilesPanel && platform.isWorkspaceWindowVisible && filesPanelWorktree?.id == id
+    isFileListOnScreen && platform.isWorkspaceWindowVisible && filesPanelWorktree?.id == id
   }
 }

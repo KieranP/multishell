@@ -444,6 +444,11 @@ rule holds is in `Docs/design/`.
   it, and asked once**: AppModelWorktreeSelectionTests.
 - **The xcrun shim is looked past, and xcrun never asked with no developer
   directory**: GitExecutableTests.
+- **Pull requests and CI runs**: the tools' output in MultishellServicesTests,
+  `gh`'s from this repository and CircleCI's shaped from its help, through fake
+  executables on no account; the model's reads, matching, pacing and Create Pull
+  Request in AppModel+ServiceReadsTests and AppModel+PullRequestActionsTests
+  against fake hosts, never the developer's `gh` or `circleci`.
 - **The merge reads' round budget and their one shared width**:
   MergeReadLogTests, AppModelBranchScansTests for a lone project's refresh, and
   WorktreeCoordinator+MergesTests+ReadWidth across two projects.
@@ -495,7 +500,9 @@ rule holds is in `Docs/design/`.
 ## Conventions
 
 - **A new file goes in the folder its subject is in** (layout.md), and a value's
-  `<Type>+Sample.swift` builder stays at the suite's root with the harnesses.
+  `<Type>+Sample.swift` builder stays at the suite's root with the harnesses. A
+  service's fixtures, `GitHubFixtures` and `CircleCIFixtures`, sit with that
+  service's tests instead, each used by those alone.
 - **Git behaviour goes against a real repository**, never mocks:
   RepositoryFixture, a bare clone with worktrees beside it included. FakeGit
   only for what real git cannot do on demand. Parsers get fixture text, odd

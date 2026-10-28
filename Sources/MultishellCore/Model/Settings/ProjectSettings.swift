@@ -61,6 +61,10 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// own text colour. Applies to symbols and the folder alike.
   public var iconTint: Int?
 
+  /// The integrations turned off here; every other one is read wherever its
+  /// tool is installed and the repository uses its service.
+  var disabledIntegrations: [ServiceIntegration]
+
   /// One answer per `.multishell.json`, against the sha256 of its bytes; see
   /// settings.md.
   var trustDecisions: [TrustDecision]
@@ -86,6 +90,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     preferredShellID: String? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
+    disabledIntegrations: [ServiceIntegration] = [],
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -107,6 +112,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.preferredShellID = preferredShellID
     self.iconGlyph = iconGlyph
     self.iconTint = ProjectIcon.usableTint(iconTint)
+    self.disabledIntegrations = disabledIntegrations
     self.trustDecisions = []
   }
 }

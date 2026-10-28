@@ -1,13 +1,34 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import MultishellServices
 
 extension AppModel {
   private static var concurrentBranchScans: Int { 4 }
 
-  /// What the sidebar draws for one worktree.
+  /// What the sidebar draws for one worktree. git's own proof stands; a merged
+  /// pull request headed by the branch's tip is proof beside it; see services.md.
   public func mergeState(of worktree: Worktree) -> WorktreeMergeState {
-    mergeStates[worktree.id] ?? .unknown
+    let gitVerdict = mergeStates[worktree.id] ?? .unknown
+    if gitVerdict.isCertain { return gitVerdict }
+    // Named as git's evidence names it, `origin/main`, not the host's `main`.
+    guard let pullRequest = landedPullRequest(of: worktree),
+      let trunk = defaultBranchScans[worktree.projectID]?.branch
+    else { return gitVerdict }
+    return .merged(.pullRequest(number: pullRequest.number), into: trunk.shortName)
+  }
+
+  /// The shown pull request where it merged into the trunk: one merged into
+  /// another branch, as a stacked one is, has not landed.
+  func landedPullRequest(of worktree: Worktree) -> PullRequest? {
+    guard let services = remoteState.worktrees[worktree.id],
+      let pullRequest = services.pullRequest, pullRequest.state == .merged,
+      pullRequest.headCommit == services.localTip,
+      let trunk = defaultBranchScans[worktree.projectID]?.branch?.nameWithoutRemote,
+      pullRequest.baseBranch == trunk,
+      WorktreeMergeState.applies(to: worktree, defaultBranchName: trunk)
+    else { return nil }
+    return pullRequest
   }
 
   /// A burst of changes under a project's `.git` becomes one scan, once the
@@ -42,6 +63,8 @@ extension AppModel {
     // across a network call, so its copy can predate a read of the file.
     let project = currentCopy(of: project)
     let override = effectiveSettings(for: project).defaultBranch
+    let scanNumber = remoteState.branchScansBegun[project.id, default: 0] + 1
+    remoteState.branchScansBegun[project.id] = scanNumber
     let scan = await coordinator.scanBranches(of: project, defaultBranchOverride: override)
     // Gone, or renamed, while git ran.
     guard workspace.project(project.id) != nil else { return }
@@ -51,16 +74,19 @@ extension AppModel {
     // Before the base is resolved, and whether or not it can be: a
     // repository with no trunk still has branches to order.
     recordLastCommitDates(scan.lastCommitDates, of: project.id)
-    guard let inputs = scan.mergeInputs else {
-      // No branch to measure against: drop the badges rather than leave
-      // them about a base that no longer applies.
-      forgetMergeStates(ofProject: project.id)
-      recordDefaultBranch(nil, of: project.id)
-      recordScannedBranchTips(nil, of: project.id)
-      return
+    recordDefaultBranch(scan.mergeInputs?.defaultBranch, of: project.id)
+    recordScannedBranchTips(scan.branchTips, of: project.id)
+    // No branch to measure against: drop the badges, before any wait, rather
+    // than leave them about a base that no longer applies.
+    if scan.mergeInputs == nil { forgetMergeStates(ofProject: project.id) }
+    if let upstreams = scan.upstreams {
+      await recordUpstreams(upstreams, of: project, fromScan: scanNumber)
+    } else {
+      // The rows still take the tips moved, though no upstream was read.
+      recomputeWorktreeServices(ofProject: project.id)
     }
-    recordDefaultBranch(inputs.defaultBranch, of: project.id)
-    recordScannedBranchTips(inputs, of: project.id)
+    await readChangesPastHead(ofProject: project.id)
+    guard let inputs = scan.mergeInputs else { return }
 
     let plan = planMergeReads(of: project.id, against: inputs)
     forgetMergeStates(ofWorktrees: plan.unbadgeable)
@@ -140,10 +166,10 @@ extension AppModel {
 
   /// What Auto Rename's menu item reads, the scan seeing a commit as its ref
   /// moves where a worktree's listed `HEAD` waits for the next listing.
-  private func recordScannedBranchTips(_ inputs: MergeInputs?, of id: Project.ID) {
+  private func recordScannedBranchTips(_ tips: [String: String], of id: Project.ID) {
     var fresh = scannedBranchTips
     for worktree in workspace.worktrees(of: id) {
-      fresh[worktree.id] = worktree.branch.flatMap { inputs?.tip(of: $0) }
+      fresh[worktree.id] = worktree.branch.flatMap { tips[$0] }
     }
     setIfChanged(\.scannedBranchTips, fresh)
   }

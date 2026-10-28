@@ -3,8 +3,8 @@ import MultishellCore
 import MultishellProcess
 
 extension WorktreeCoordinator {
-  /// Pre-delete hook, the directory to `trash`, the record forgotten,
-  /// post-delete hook, the branch last. See worktrees.md and hooks.md.
+  /// Pre-delete hook, the directory to `trash`, the record forgotten, post-delete
+  /// hook, the branch last, with `-D` while it is still at `forcedTip`.
   public func remove(
     _ worktree: Worktree,
     in project: Project,
@@ -12,6 +12,7 @@ extension WorktreeCoordinator {
     port: Int?,
     deletesBranch: Bool = false,
     forcesBranchDeletion: Bool = false,
+    forcesBranchDeletionAtTip forcedTip: String? = nil,
     shellPath: String? = nil,
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
@@ -44,7 +45,12 @@ extension WorktreeCoordinator {
     }
     if deletesBranch, let branch = worktree.branch {
       onStep?(.deletingBranch)
-      try await deleteBranch(branch, in: project, force: forcesBranchDeletion)
+      // Read once the checkout is gone, so no commit can land after it.
+      var force = forcesBranchDeletion
+      if !force, let forcedTip {
+        force = await git.tip(ofBranch: branch, in: project) == forcedTip
+      }
+      try await deleteBranch(branch, in: project, force: force)
     }
   }
 

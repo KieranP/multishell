@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellProcess
 
 /// The login shell's environment, and what is looked up on its PATH: agents,
-/// shells, editors and git.
+/// shells, editors, git and the services' tools.
 extension AppModel {
   /// Which PATH the agents are looked up on, for the agent picker's (i).
   public var agentPathInfo: String {
@@ -24,6 +24,8 @@ extension AppModel {
     }
     await detectTools(on: environment)
     await adoptGit(on: environment.path)
+    await adoptServiceTools(on: environment.path, loginVariables: environment.variables)
+    startServicePoll()
     recordInstallState(await runOnDispatch { IntegrationInstallState.read() })
   }
 

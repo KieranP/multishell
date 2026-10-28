@@ -7,6 +7,6 @@ public struct FilesPanelState: Equatable, Sendable {
   public internal(set) var filterText = ""
   /// Folders opened in the Files list, which starts with every folder shut.
   var expandedFolders: Set<String> = []
-  /// Folders shut in the Git list, which starts with every folder open.
-  var collapsedGitFolders: Set<String> = []
+  /// Folders shut in the Changes list, which starts with every folder open.
+  var collapsedChangesFolders: Set<String> = []
 }

@@ -64,9 +64,16 @@ let package = Package(
       dependencies: [.product(name: "Subprocess", package: "swift-subprocess")],
     ),
     .target(name: "MultishellGitKit", dependencies: ["MultishellCore", "MultishellProcess"]),
+    // Pull request hosts and CI providers, read through their own tools.
+    .target(
+      name: "MultishellServices",
+      dependencies: ["MultishellCore", "MultishellProcess", "MultishellGitKit"],
+    ),
     .target(
       name: "MultishellAppCore",
-      dependencies: ["MultishellCore", "MultishellProcess", "MultishellGitKit"],
+      dependencies: [
+        "MultishellCore", "MultishellProcess", "MultishellGitKit", "MultishellServices",
+      ],
     ),
     // A file tab's highlighting, apart from the four libraries, which import
     // Apple's frameworks and swift-subprocess alone; see Docs/develop/layout.md.
@@ -123,8 +130,8 @@ let package = Package(
     .executableTarget(
       name: "MultishellAppUI",
       dependencies: [
-        "MultishellCore", "MultishellProcess", "MultishellGitKit", "MultishellAppCore",
-        "MultishellHighlight", "GhosttyKit",
+        "MultishellCore", "MultishellProcess", "MultishellGitKit", "MultishellServices",
+        "MultishellAppCore", "MultishellHighlight", "GhosttyKit",
       ],
       resources: [.process("Resources/en.lproj"), .process("Resources/Marks")],
       // libghostty's own link needs, which its static archive cannot declare.
@@ -159,8 +166,12 @@ let package = Package(
       dependencies: ["MultishellGitKit", "TestSupport", "TestScratch"],
     ),
     .testTarget(
+      name: "MultishellServicesTests",
+      dependencies: ["MultishellServices", "MultishellGitKit", "MultishellProcess", "TestScratch"],
+    ),
+    .testTarget(
       name: "MultishellAppCoreTests",
-      dependencies: ["MultishellAppCore", "TestSupport", "TestScratch"],
+      dependencies: ["MultishellAppCore", "MultishellServices", "TestSupport", "TestScratch"],
       resources: [.copy("Fixtures")],
     ),
     // Runs the built helper against a real socket; depends on the target so

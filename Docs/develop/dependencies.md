@@ -109,6 +109,11 @@
   echoes `--path-format=absolute` back and answers relative, and `WorktreeGit`
   resolves the answer
   (`aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat`).
+- **`gh` and `circleci` are optional**, found on the login shell's PATH and
+  never shipped: without one its integration shows nothing, and the Integrations
+  page says how to install it. `circleci` 1.0 is the floor, the first with the
+  run commands. Their output is read as JSON, any field optional, so a release
+  that drops one costs that record (services.md).
 - **prettier formats the Markdown** for `make format` and the Claude Code hook.
   From Homebrew rather than a `package.json`: there is no Node toolchain here,
   and a `node_modules` for one formatter is more than the docs are worth.

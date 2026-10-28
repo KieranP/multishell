@@ -114,10 +114,10 @@ struct FileTreeTests {
       )
     )
     var state = FilesPanelState()
-    state.mode = .git
+    state.mode = .changes
 
     #expect(tree.rows(state: state).map(\.name) == ["Tests/AppTests/Detail", "A.swift", "new.txt"])
-    state.collapsedGitFolders = ["Tests/AppTests/Detail"]
+    state.collapsedChangesFolders = ["Tests/AppTests/Detail"]
     #expect(tree.rows(state: state).map(\.name) == ["Tests/AppTests/Detail", "new.txt"])
     #expect(tree.changedFileCount == 2)
   }
@@ -141,7 +141,7 @@ struct FileTreeTests {
       )
     )
     var state = FilesPanelState()
-    state.mode = .git
+    state.mode = .changes
 
     let files = tree.rows(state: state).filter { !$0.isFolder }
     #expect(files.map(\.name) == ["View.swift", "Old.swift"])
@@ -260,7 +260,7 @@ struct FileTreeTests {
     let after = FileTree(sources, listing: before.listing, changes: before.changes)
 
     var state = FilesPanelState()
-    state.mode = .git
+    state.mode = .changes
     let rows = after.rows(state: state).filter { !$0.isFolder }
     #expect(rows.map(\.path) == ["new.txt", "Tests/AppTests/Detail/A.swift"].sorted())
     #expect(rows.allSatisfy { $0.lineCounts == FileLineCounts(insertions: 9, deletions: 9) })
@@ -278,7 +278,7 @@ struct FileTreeTests {
       lines: .counted(insertions: 1, deletions: 0),
     )
     var state = FilesPanelState()
-    state.mode = .git
+    state.mode = .changes
 
     let kinds = [[removed, new], [new, removed]].map { changes in
       FileTree(FileTreeSources(tracked: Self.tracked, branchChanges: changes))

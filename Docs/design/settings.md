@@ -89,6 +89,9 @@
   key this build has no field for, a `$schema` line, a newer build's order and a
   wrong-typed value all survive. Cost: the wrong type stays until someone who
   can read it changes it.
+- **Integrations is per project with no global and no repository file**: it
+  turns display-only reads off, and a repository without the service already
+  shows nothing (services.md).
 - **Help goes behind an (i).** Captions doubled every form's height and were
   read once. A caption is left only for a value computed live.
 - **An (i) holds at most 200 characters once filled in**, leaving what another

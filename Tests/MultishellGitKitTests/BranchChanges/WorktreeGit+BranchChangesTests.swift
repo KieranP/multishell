@@ -8,7 +8,7 @@ import Testing
 @Suite
 struct WorktreeGitBranchChangesTests {
   private static func base(of fixture: RepositoryFixture) async throws -> DefaultBranch {
-    let refs = await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project) ?? []
+    let refs = await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project)?.refs ?? []
     return try #require(DefaultBranch.resolve(from: refs, override: nil))
   }
 
@@ -169,7 +169,7 @@ struct WorktreeGitBranchChangesTests {
       in: fixture.root,
     )
     let git = WorktreeGit(runner: fixture.runner)
-    let refs = await git.branchRefs(Project(path: clone)) ?? []
+    let refs = await git.branchRefs(Project(path: clone))?.refs ?? []
     let base = try #require(DefaultBranch.resolve(from: refs, override: nil))
 
     await #expect(throws: (any Error).self) {

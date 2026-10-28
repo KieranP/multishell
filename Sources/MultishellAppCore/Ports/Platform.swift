@@ -40,6 +40,8 @@ public protocol Platform: AnyObject, Sendable {
   /// A directory picker, or `nil` when the user cancels.
   func chooseDirectory(prompt: String) async -> URL?
   func revealInFileBrowser(_ url: URL)
+  /// A web page in the default browser; the model hands it only http and https.
+  func openWebPage(_ url: URL)
   func copyToClipboard(_ text: String)
   /// The alert sound, for a click that does nothing, as a refused link's does.
   func beep()

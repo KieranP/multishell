@@ -15,7 +15,10 @@
 "action.fetch" = "Fetch";
 "action.more-info" = "More Info";
 "action.new-worktree" = "New Worktree…";
+"action.open-ci" = "Open in %@";
 "action.open-in-editor" = "Open in Editor";
+"action.open-job" = "Open %@ in the browser";
+"action.open-on" = "Open on %@";
 "action.project-settings" = "Project Settings…";
 "action.quit" = "Quit";
 "action.refresh" = "Refresh";
@@ -117,15 +120,17 @@
 "files-panel.branch" = "Branch";
 "files-panel.change-scope" = "What changes are counted against";
 "files-panel.change-scope-help" = "Modified counts against the last commit; Branch, everything since the base branch, committed or not";
+"files-panel.changes" = "Changes";
+"files-panel.ci" = "CI";
 "files-panel.clear-filter" = "Clear Filter";
 "files-panel.files" = "Files";
 "files-panel.filter" = "Filter files";
-"files-panel.git" = "Git";
 "files-panel.modified" = "Modified";
+"files-panel.pull-request" = "PR";
 "files-panel.title" = "Files";
 "files-panel.toggle" = "Files Panel";
 "files-panel.toggle-help" = "Show or hide the Files panel";
-"files-panel.which" = "Which files to list";
+"files-panel.which" = "What the panel shows";
 "find.close" = "Close Find";
 "find.next" = "Next Match";
 "find.previous" = "Previous Match";
@@ -193,6 +198,9 @@
 "menu.theme" = "Theme";
 "menu.undo" = "Undo";
 "notifications.header" = "Post a notification when a tab you are not looking at reports";
+"panel.branch-into-base" = "%1$@ → %2$@";
+"panel.latest-run" = "Latest run";
+"panel.required" = "Required";
 "paste.unsafe-message" = "The program in this pane could run this text as it lands, reading a line break or a sequence inside it as keys. Check it before pasting.";
 "paste.unsafe-paste" = "Paste";
 "paste.unsafe-title" = "Paste text that could run commands?";
@@ -240,6 +248,7 @@
 "project.worktree-path-info" = "Where this project's worktrees are created. {project} is the repository folder name, ~ is home. Relative paths start at the repository. A value the repository ships fills a blank one here.";
 "project.worktrees-discovered" = "%d discovered";
 "project.worktrees-label" = "Worktrees:";
+"pull-request.number" = "#%@";
 "quick-switcher.empty" = "Nothing to list here yet.";
 "quick-switcher.hint.close" = "esc  Close";
 "quick-switcher.hint.move" = "↑↓  Move";
@@ -273,6 +282,7 @@
 "settings.appearance" = "Appearance";
 "settings.general" = "General";
 "settings.hooks" = "Hooks";
+"settings.integrations" = "Integrations";
 "settings.notifications" = "Notifications";
 "settings.terminal" = "Terminal";
 "settings.worktrees" = "Worktrees";

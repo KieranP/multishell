@@ -72,6 +72,11 @@ struct RepositoryFixture {
     _ = try await runner.run(["checkout", "-q", "main"], in: project.path)
   }
 
+  func tip(of branch: String) async throws -> String {
+    try await runner.run(["rev-parse", RefName.local(branch)], in: project.path)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
   /// A linked worktree under `trees/` on a new branch, cut where `main` is unless
   /// told otherwise.
   func addWorktree(

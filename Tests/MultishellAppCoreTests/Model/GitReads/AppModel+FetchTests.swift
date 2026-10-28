@@ -1,13 +1,57 @@
 import Foundation
 import MultishellCore
 import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellGitKit
+@testable import MultishellServices
 
 @Suite(.serialized) @MainActor
 struct AppModelFetchTests {
+  @Test func anUpstreamAScanRecordedDuringTheFetchIsReadOnce() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let before = try await harness.tip(of: feat)
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
+    _ = try await harness.git.run(["push", "-q", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(
+      ["update-ref", "refs/remotes/origin/feat", before],
+      in: feat.path,
+    )
+    let fetched = harness.root.appendingPathComponent("fetched")
+    let gate = harness.root.appendingPathComponent("fetch-gate")
+    let wrapper = try Scratch.script(
+      """
+      case "$1" in
+        fetch) git "$@"; status=$?; /usr/bin/touch '\(fetched.path)'; \(harness.holdLine(until: gate)); exit $status ;;
+      esac
+      exec git "$@"
+      """,
+      at: harness.root.appendingPathComponent("fake-git"),
+    )
+    harness.model.coordinator = TestGit.coordinator(
+      runner: try GitRunner(executable: wrapper, configuration: ["commit.gpgsign": "false"])
+    )
+    let fetch = Task { await harness.model.fetch(harness.project) }
+    try await waitUntil { FileManager.default.fileExists(atPath: fetched.path) }
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    try await waitUntil { host.calls.count == 2 }
+    try Data().write(to: gate)
+    await fetch.value
+    try await waitUntil { harness.servicesAreSettled() }
+
+    #expect(host.calls == ["list", "list"])
+  }
+
   /// A fetch waits on a network, so the sidebar has to say it is happening
   /// and a second click must not start another one.
   @Test func aFetchMarksItsProjectForAllOfItAndRefusesASecond() async throws {
@@ -72,5 +116,68 @@ struct AppModelFetchTests {
 
     #expect(harness.model.statuses[main.id] != nil)
     #expect(harness.model.statuses[otherMain.id] == unread)
+  }
+
+  @Test func aFetchMovingAnUpstreamReadsTheServicesOnce() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
+    _ = try await harness.git.run(["push", "-q", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(
+      ["update-ref", "refs/remotes/origin/feat", "feat~1"],
+      in: feat.path,
+    )
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    await harness.model.fetch(harness.project)
+    try await waitUntil { harness.servicesAreSettled() }
+
+    #expect(host.calls == ["list", "list"])
+  }
+
+  @Test func aFetchMovingAnUpstreamBeforeAnyReadReadsTheServices() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
+    _ = try await harness.git.run(["push", "-q", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(
+      ["update-ref", "refs/remotes/origin/feat", "feat~1"],
+      in: feat.path,
+    )
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    await harness.model.fetch(harness.project)
+    try await waitUntil { harness.servicesAreSettled() }
+
+    #expect(host.calls == ["list"])
+  }
+
+  @Test func aFetchThatOnlyLosesAWorktreeStillReadsTheServices() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    _ = try await harness.git.run(
+      ["worktree", "remove", "--force", feat.path.path],
+      in: harness.project.path,
+    )
+
+    await harness.model.fetch(harness.project)
+    try await waitUntil { harness.servicesAreSettled() }
+
+    #expect(host.calls == ["list", "list"])
   }
 }

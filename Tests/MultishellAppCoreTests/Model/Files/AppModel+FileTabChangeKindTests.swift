@@ -143,7 +143,7 @@ struct AppModelFileTabChangeKindTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.setFilesPanelMode(.git)
+    harness.model.setFilesPanelMode(.changes)
     harness.model.setShowsFilesPanel(true)
     await harness.model.refreshBranchScan(of: harness.project)
     harness.model.setChangeScope(.branch)

@@ -1,0 +1,141 @@
+import Foundation
+import Testing
+
+@testable import MultishellGitKit
+@testable import MultishellServices
+
+@Suite
+struct GitHubHostTests {
+  private let pullRequest = PullRequest(
+    number: 44,
+    title: "Pull request 44",
+    url: URL(fileURLWithPath: "/pull/44"),
+    state: .open,
+    review: .notRequired,
+    blocker: nil,
+    hasConflictAnswer: true,
+    autoMergesWhenReady: false,
+    isReadyToMerge: false,
+    headBranch: "feat",
+    headCommit: "tip",
+    headRepository: RemoteRepository(owner: "me", name: "demo"),
+    baseBranch: "main",
+    updatedAt: Date(timeIntervalSince1970: 0),
+  )
+
+  @Test func oneListCallReadsEveryPullRequestWithNoPromptOnTheLoginPath() async throws {
+    let tool = try FakeTool(named: "gh", "cat <<'JSON'\n\(GitHubFixtures.open)\nJSON")
+    defer { tool.tearDown() }
+    let host = GitHubHost(
+      executable: tool.executable,
+      searchPath: "/login/bin:/usr/bin:/bin",
+      runLog: tool.runLog,
+    )
+
+    let pullRequests = try await host.pullRequests(in: tool.directory)
+
+    #expect(pullRequests.map(\.number) == [40, 42, 41, 36, 29])
+    let fields = GitHubPullRequestRecord.fields.joined(separator: ",")
+    #expect(
+      tool.calls == [
+        "pr list --state all --limit \(GitHubHost.listLimit) --json \(fields)",
+        "PATH=/login/bin:/usr/bin:/bin GH_PROMPT_DISABLED=1 NO_COLOR=1 GH_TOKEN=",
+      ]
+    )
+  }
+
+  /// A login kept in the shell's environment, `export GH_TOKEN=…`, as a
+  /// terminal's `gh` has it.
+  @Test func theLoginShellsVariablesReachTheTool() async throws {
+    let tool = try FakeTool(named: "gh", "echo '[]'")
+    defer { tool.tearDown() }
+    let host = GitHubHost(
+      executable: tool.executable,
+      searchPath: "/login/bin",
+      runLog: tool.runLog,
+      loginVariables: ["GH_TOKEN": "from-zshrc"],
+    )
+
+    _ = try await host.pullRequests(in: tool.directory)
+
+    #expect(tool.calls.contains { $0.hasSuffix("GH_TOKEN=from-zshrc") })
+  }
+
+  @Test func aRepositoryGhCannotPlaceOnGitHubFailsAsNotHosted() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      echo "none of the git remotes configured for this repository point to a known GitHub host." >&2
+      exit 1
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    await #expect(throws: ServiceReadFailure.notHosted) {
+      try await host.pullRequests(in: tool.directory)
+    }
+  }
+
+  @Test func aNewPullRequestOfAForkNamesItsOwnerAndIsOpenedOnTheWeb() async throws {
+    let tool = try FakeTool(named: "gh", "exit 0")
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    try await host.openNewPullRequest(
+      head: "k/tabs",
+      in: RemoteRepository(owner: "me", name: "multishell"),
+      base: "main",
+      directory: tool.directory,
+    )
+
+    #expect(tool.calls.first == "pr create --web --head me:k/tabs --base main")
+  }
+
+  @Test func checksAreReadPendingOrFailingAndNoRequiredOnesReadsAsNone() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *--required*) echo "no required checks reported on the 'feat' branch" >&2; exit 1 ;;
+      esac
+      echo '[{"name":"build","workflow":"CI","bucket":"pending"}]'
+      exit 8
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    let checks = try await host.checks(of: pullRequest, in: tool.directory)
+
+    #expect(
+      checks == [
+        PullRequestCheck(
+          name: "build",
+          workflow: "CI",
+          status: .running,
+          isRequired: false,
+          link: nil,
+        )
+      ]
+    )
+    let fields = GitHubCheckRecord.fields.joined(separator: ",")
+    #expect(
+      Set(tool.calls.filter { $0.hasPrefix("pr") }) == [
+        "pr checks 44 --required --json \(fields)",
+        "pr checks 44 --json \(fields)",
+      ]
+    )
+  }
+
+  @Test func aRunIsCountedInTheGitLogByItsProgramAndCommand() async throws {
+    let tool = try FakeTool(named: "gh", "echo '[]'")
+    defer { tool.tearDown() }
+    tool.runLog.setRecording(true)
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    _ = try await host.pullRequests(in: tool.directory)
+
+    #expect(tool.runLog.drain().finishedRuns.map(\.command) == ["gh pr list"])
+  }
+}

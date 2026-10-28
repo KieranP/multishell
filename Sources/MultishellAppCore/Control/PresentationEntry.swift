@@ -7,6 +7,7 @@ struct PresentationEntry: Encodable, Equatable {
     case worktreeRemoval = "worktree-removal"
     case projectRemoval = "project-removal"
     case sharedSettingsTrust = "shared-settings-trust"
+    case branchPublish = "branch-publish"
     case newWorktree = "new-worktree"
     case quickSwitcher = "quick-switcher"
     case tabRename = "tab-rename"

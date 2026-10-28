@@ -47,7 +47,7 @@ extension WorktreeGitTests {
     let worktrees = try await git.list(project)
     #expect(worktrees.count == 2)
     #expect(await git.isListed(side, in: project))
-    #expect(await git.branchRefs(project)?.isEmpty == false)
+    #expect(await git.branchRefs(project)?.refs.isEmpty == false)
     #expect(await git.branchNames(project)?.local.contains("side") == true)
     #expect(try await git.currentBranch(project) == "main")
     #expect(await git.lacksBranch("gone", in: project))
@@ -58,7 +58,7 @@ extension WorktreeGitTests {
     #expect(await git.changesAreOnBase("side", against: "main", in: project) == false)
     #expect(await git.ignoredPaths(["new.txt", "README.md"], in: project.path) == [])
     let base = try #require(
-      DefaultBranch.resolve(from: await git.branchRefs(project) ?? [], override: nil)
+      DefaultBranch.resolve(from: await git.branchRefs(project)?.refs ?? [], override: nil)
     )
     for worktree in worktrees {
       #expect(

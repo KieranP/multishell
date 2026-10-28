@@ -86,7 +86,7 @@ struct GitRunner: Sendable {
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
   ) async throws -> ProcessOutput {
-    try await logged(arguments, in: directory) { exitUsageProbe in
+    try await runLog.timing(GitCommandName.of(arguments), in: directory) { exitUsageProbe in
       try await processRunner.run(
         executable,
         arguments,
@@ -126,7 +126,7 @@ struct GitRunner: Sendable {
 
   /// The whole outcome, `nil` where the child could not be started.
   func capture(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
-    await logged(arguments, in: directory) { exitUsageProbe in
+    await runLog.timing(GitCommandName.of(arguments), in: directory) { exitUsageProbe in
       try? await processRunner.capture(
         executable,
         arguments,

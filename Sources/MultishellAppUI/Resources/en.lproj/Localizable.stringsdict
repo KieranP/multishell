@@ -16,5 +16,29 @@
       <key>other</key><string>%d terminals</string>
     </dict>
   </dict>
+  <key>panel.checks</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>Checks · %d</string>
+      <key>other</key><string>Checks · %d</string>
+    </dict>
+  </dict>
+  <key>panel.earlier-runs</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>Earlier runs · %d</string>
+      <key>other</key><string>Earlier runs · %d</string>
+    </dict>
+  </dict>
 </dict>
 </plist>

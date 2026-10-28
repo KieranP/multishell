@@ -4,6 +4,8 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
   case agentsCard = "agents_card"
   case agentsColumn = "agents_column"
   case agentsPanel = "agents_panel"
+  /// A worktree's latest CI run, on its row, its popover and the panel's pages.
+  case ciRuns = "ci"
   case debugInfo = "debug_info"
   /// What the detail area shows with no tab in it: a placeholder, or a
   /// worktree being created or removed.
@@ -15,6 +17,9 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
   /// The worktree's header and the board's, Debug Info's and the Files panel's.
   case header
   case projectsPanel = "projects_panel"
+  /// A worktree's pull request: ready to merge, changes requested, a conflict
+  /// and auto-merge. Its greys are those of the area it is drawn in.
+  case pullRequests = "pull_requests"
   case quickSwitcher = "quick_switcher"
   case states
   case tabBar = "tab_bar"
@@ -29,6 +34,8 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
     case .agentsColumn: [.background, .text, .textTertiary, .border]
 
     case .agentsPanel: [.background, .textTertiary, .border]
+
+    case .ciRuns: [.passed, .failed, .running, .onHold]
 
     case .debugInfo:
       [.background] + text + [.border, .fill, .blockBackground]
@@ -50,6 +57,8 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
       [.background] + text + [.border, .fill, .selectionBackground, .accent, .highlight, .knob]
 
     case .projectsPanel: [.background] + text + [.border, .fill, .selection, .selectionBackground]
+
+    case .pullRequests: [.changesRequested, .conflicts, .queued, .readyToMerge]
 
     case .quickSwitcher:
       [.background] + text + [.border, .selectionBackground]

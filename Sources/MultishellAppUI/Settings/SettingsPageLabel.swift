@@ -10,6 +10,9 @@ struct SettingsPageLabel {
   static var hooks: Self { Self(title: t("settings.hooks"), symbol: "bolt.horizontal") }
   static var terminal: Self { Self(title: t("settings.terminal"), symbol: "terminal") }
   static var agents: Self { Self(title: t("label.agents"), symbol: "sparkles") }
+  static var integrations: Self {
+    Self(title: t("settings.integrations"), symbol: "point.3.connected.trianglepath.dotted")
+  }
   static var notifications: Self { Self(title: t("settings.notifications"), symbol: "bell") }
   static var appearance: Self { Self(title: t("settings.appearance"), symbol: "paintpalette") }
 

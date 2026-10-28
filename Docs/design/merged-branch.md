@@ -40,6 +40,9 @@
 - **Sign 3 is inference**, a PR closed unmerged leaving it too, so `isCertain`
   separates the three. All three badge; only the two that are proof get a
   removal dialog led by the button that deletes the branch.
+- **A merged pull request headed by the branch's tip is a fourth sign**, and
+  proof, taken ahead of git's; its glyph is drawn instead of the badge
+  (services.md).
 - **The badge hides while the worktree holds uncommitted or unpushed work.**
 - **A failed read is not a verdict.** Nil rather than an empty set from the
   merged list, nil rather than false from the patch, behind and content reads,

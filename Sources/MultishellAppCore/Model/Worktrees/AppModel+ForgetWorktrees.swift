@@ -1,5 +1,6 @@
 import MultishellCore
 import MultishellGitKit
+import MultishellServices
 
 extension AppModel {
   /// The one place per-worktree runtime state is dropped, fed with what the
@@ -13,6 +14,19 @@ extension AppModel {
     setIfChanged(\.autoRenames, autoRenames.filter { !gone.contains($0.key) })
     oneShotRunner.stop(gone)
     setIfChanged(\.scannedBranchTips, scannedBranchTips.filter { !gone.contains($0.key) })
+    setIfChanged(\.remoteState.worktrees, remoteState.worktrees.filter { !gone.contains($0.key) })
+    setIfChanged(\.remoteState.upstreams, remoteState.upstreams.filter { !gone.contains($0.key) })
+    setIfChanged(
+      \.remoteState.publishingWorktrees,
+      remoteState.publishingWorktrees.subtracting(gone),
+    )
+    setIfChanged(\.remoteState.checks, remoteState.checks.filter { !gone.contains($0.key) })
+    setIfChanged(
+      \.remoteState.ciHistories,
+      remoteState.ciHistories.filter { !gone.contains($0.key) },
+    )
+    remoteState.panelReadLog.forget { gone.contains($0.worktree) }
+    pruneRunDetails()
     pathResolutions.forget(gone)
     removalRequests.forget(gone)
     // Their sessions went with them, so a worktree re-made at the path starts cold.
@@ -40,6 +54,9 @@ extension AppModel {
     if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
     if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {
       pendingWorktreeRemoval = nil
+    }
+    if let pending = pendingBranchPublish, gone.contains(pending.worktree.id) {
+      pendingBranchPublish = nil
     }
   }
 }

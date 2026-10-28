@@ -34,6 +34,9 @@ struct ProjectSettingsWindow: View {
           .init(.agents) {
             ProjectAgentsPage(model: model, project: project)
           },
+          .init(.integrations) {
+            ProjectIntegrationsPage(model: model, project: project)
+          },
         ],
         firstPageToken: firstPageToken,
       )

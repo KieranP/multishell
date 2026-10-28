@@ -20,6 +20,7 @@ public final class NullPlatform: Platform {
   public func closeKeyWindow() {}
   public func chooseDirectory(prompt: String) async -> URL? { nil }
   public func revealInFileBrowser(_ url: URL) {}
+  public func openWebPage(_ url: URL) {}
   public func copyToClipboard(_ text: String) {}
   public func beep() {}
   nonisolated public func opensAsText(_ file: URL) -> Bool { false }

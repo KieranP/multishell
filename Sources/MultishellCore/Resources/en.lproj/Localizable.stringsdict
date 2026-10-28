@@ -76,6 +76,30 @@
       <key>other</key><string>%d processes</string>
     </dict>
   </dict>
+  <key>count.required-checks-failed</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d required check failed</string>
+      <key>other</key><string>%d required checks failed</string>
+    </dict>
+  </dict>
+  <key>count.required-checks-running</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d required check running</string>
+      <key>other</key><string>%d required checks running</string>
+    </dict>
+  </dict>
   <key>count.runs</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -122,6 +146,18 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d terminal</string>
       <key>other</key><string>%d terminals</string>
+    </dict>
+  </dict>
+  <key>count.unpushed-commits</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d commit is</string>
+      <key>other</key><string>%d commits are</string>
     </dict>
   </dict>
   <key>count.waiting-on-you</key>
