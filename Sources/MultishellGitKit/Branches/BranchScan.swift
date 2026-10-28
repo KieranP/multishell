@@ -12,7 +12,7 @@ public struct BranchScan: Hashable, Sendable {
   /// `nil` for a repository with no branch to measure merges against; see
   /// `DefaultBranch.resolve`.
   public let mergeInputs: MergeInputs?
-  /// What each local branch follows, by its worktree's name for it; `nil`
+  /// Where each local branch is published, by its worktree's name for it; `nil`
   /// where the retried read did not ask, so none is known gone.
   public let upstreams: [String: BranchUpstream]?
 
@@ -46,7 +46,11 @@ public struct BranchScan: Hashable, Sendable {
     if pushedTo != followed || ref.upstreamBranch != name, let tip = tips[ownName] {
       return BranchUpstream(remote: pushedTo, branch: name, tip: tip)
     }
-    guard pushedTo == followed, let followed, let branch = ref.upstreamBranch else { return nil }
+    // Its own name followed elsewhere was pushed there; another name, pushed
+    // to another remote, is someone else's branch it was cut from.
+    guard pushedTo == followed || ref.upstreamBranch == name, let followed,
+      let branch = ref.upstreamBranch
+    else { return nil }
     return BranchUpstream(
       remote: followed,
       branch: branch,

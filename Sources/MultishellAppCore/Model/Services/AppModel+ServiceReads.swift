@@ -69,7 +69,12 @@ extension AppModel {
     defer {
       remoteState.readLog.finish(id)
       if let readsPullRequests = remoteState.rereads.removeValue(forKey: id) {
-        Task { await refreshServices(ofProject: id, readsPullRequests: readsPullRequests) }
+        // Gone behind while it read: the return to the front reads it.
+        if platform.isActive {
+          Task { await refreshServices(ofProject: id, readsPullRequests: readsPullRequests) }
+        } else {
+          remoteState.readLog.markDue(id)
+        }
       }
     }
     let changesBefore = remoteState.integrationChanges[id]
@@ -131,7 +136,7 @@ extension AppModel {
     }
   }
 
-  /// What each worktree's branch follows, from a branch scan. A move after
+  /// Where each worktree's branch is published, from a branch scan. A move after
   /// the first read re-reads the services: a push is what a run starts on.
   func recordBranchUpstreams(_ upstreams: [String: BranchUpstream], of id: Project.ID) {
     let trunk = workspace.project(id).map(defaultBranchName(of:))
@@ -197,6 +202,14 @@ extension AppModel {
     remoteState.reportsReadAt = remoteState.reportsReadAt.filter { shownRuns.contains($0.key) }
   }
 
+  /// What was matched to a worktree's branch: gone with the worktree, or with
+  /// a checkout onto another branch until the next scan matches that one.
+  func forgetBranchServices(of ids: Set<Worktree.ID>) {
+    guard !ids.isEmpty else { return }
+    setIfChanged(\.remoteState.worktrees, remoteState.worktrees.filter { !ids.contains($0.key) })
+    setIfChanged(\.remoteState.upstreams, remoteState.upstreams.filter { !ids.contains($0.key) })
+  }
+
   /// A project's services are its own and go with it.
   func forgetServices(ofProject id: Project.ID) {
     remoteState.branchStartPoints[id] = nil
@@ -214,12 +227,12 @@ extension AppModel {
   /// A reading goes with when it was answered, or a later failure would date
   /// itself by an answer no longer shown.
   func forgetPullRequestReading(ofProject id: Project.ID) {
-    remoteState.pullRequests[id] = nil
+    setIfChanged(\.remoteState.pullRequests[id], nil)
     remoteState.pullRequestsAnsweredAt[id] = nil
   }
 
   func forgetCIReading(ofProject id: Project.ID) {
-    remoteState.ciRuns[id] = nil
+    setIfChanged(\.remoteState.ciRuns[id], nil)
     remoteState.ciRunsAnsweredAt[id] = nil
     remoteState.ciBranchesAnsweredAt[id] = nil
   }

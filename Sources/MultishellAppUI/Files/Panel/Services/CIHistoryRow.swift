@@ -9,6 +9,8 @@ struct CIHistoryRow: View {
   let model: AppModel
   let worktree: Worktree
   let run: CIRun
+  /// The page's clock, which a run's age is told against.
+  let now: Date
   let theme: Theme
 
   @State private var isExpanded = false
@@ -31,7 +33,7 @@ struct CIHistoryRow: View {
               .font(metrics.font(size: metrics.caption))
               .foregroundStyle(theme.filesPanel.text)
               .lineLimit(1)
-            Text(run.startText(localTip: model.services(of: worktree).localTip))
+            Text(run.startText(localTip: model.services(of: worktree).localTip, now: now))
               .font(metrics.font(size: metrics.small))
               .foregroundStyle(theme.filesPanel.textTertiary)
               .lineLimit(1)
@@ -45,7 +47,7 @@ struct CIHistoryRow: View {
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      .accessibilityValue(AccessibilityText.disclosure(isExpanded: isExpanded))
+      .accessibilityValue(AccessibilityText.ciStatus(run.status, isExpanded: isExpanded))
       if isExpanded {
         CIWorkflowList(model: model, worktree: worktree, run: run, theme: theme)
       }

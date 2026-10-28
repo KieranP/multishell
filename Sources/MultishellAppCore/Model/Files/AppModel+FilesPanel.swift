@@ -75,8 +75,8 @@ extension AppModel {
     readFilesPanelIfItsKindChanged()
   }
 
-  /// Between a page that lists files and one that does not, the panel keeps
-  /// no listing or needs one; a tool coming or going changes the page too.
+  /// Only a move between two pages that list files keeps the listing as read;
+  /// a tool coming or going changes the page too.
   func readFilesPanelIfItsKindChanged() {
     let shown = shownFilesPanelMode
     let previous = remoteState.lastReadPanelPage ?? shown

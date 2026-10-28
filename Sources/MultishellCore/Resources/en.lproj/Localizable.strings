@@ -158,6 +158,7 @@
 "error.pre-delete-hook" = "Worktree not removed: its pre-delete hook %@";
 "error.printed-nothing" = "%@ and printed nothing.";
 "error.pull-request-not-started" = "No pull request started for %@";
+"error.remotes-unknown" = "git did not list the repository's remotes, so nothing was pushed or opened. Try again once it answers.";
 "error.removal-still-running-message" = "%@ is still being removed. Create it again once that removal has finished.";
 "error.removal-still-running-title" = "A removal is still running there";
 "error.said-then-ending" = "%1$@\n\n%2$@.";
@@ -307,7 +308,8 @@
 "panel.not-hosted" = "This repository is not on a pull request host";
 "panel.not-pushed" = "Nothing runs on a branch until it is pushed.";
 "panel.not-read" = "Not read yet";
-"panel.pull-request-not-applicable" = "The trunk has no pull request";
+"panel.pull-request-not-applicable" = "A worktree with no branch has no pull request";
+"panel.pull-request-trunk" = "The trunk has no pull request";
 "panel.pull-requests-off" = "Pull requests are turned off for this project";
 "panel.turned-off-detail" = "Turn it on in the project's Integrations settings.";
 "port-block.caption" = "No port block ending by %2$d is left for %1$@, so MULTISHELL_PORT is unset there.";
@@ -395,6 +397,11 @@
 "spoken.auto-renaming" = "Auto Rename running";
 "spoken.branch" = "branch %@";
 "spoken.checked" = "checked";
+"spoken.ci-cancelled" = "cancelled";
+"spoken.ci-failed" = "failed";
+"spoken.ci-on-hold" = "on hold";
+"spoken.ci-passed" = "passed";
+"spoken.ci-running" = "running";
 "spoken.collapsed" = "collapsed";
 "spoken.cpu" = "%@ CPU";
 "spoken.debug-info" = "Debug Info";

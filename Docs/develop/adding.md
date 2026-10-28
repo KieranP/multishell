@@ -46,8 +46,9 @@ What each addition needs beyond the code itself.
   MultishellServices under a folder of its own in `SCM/` or `CI/`, reading
   through `ServiceToolRunner`, and an arm in `ServiceConnections`. The
   Integrations page's label, help and install words follow, which the compiler
-  asks for. A second host also needs choosing between hosts that both say a
-  repository is theirs, which `pullRequestHost(for:)` does by `allCases` order.
+  asks for. A second host also needs a way to choose between hosts:
+  `pullRequestHost(for:)` takes the first turned on and installed, in `allCases`
+  order, before either is asked whether the repository is its own.
 - **An agent's one-shot run**, for Auto Rename: the flags that run one prompt
   with no tool able to write, how the prompt goes, its model and effort flags,
   and its models with each one's efforts, in `AgentCatalogue+OneShots`.

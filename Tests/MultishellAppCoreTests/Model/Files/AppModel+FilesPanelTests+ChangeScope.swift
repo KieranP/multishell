@@ -8,10 +8,10 @@ import Testing
 @testable import MultishellGitKit
 
 extension AppModelFilesPanelTests {
-  @Test func thePanelDrawsTheScopeSwitchOverItsGitListAlone() async throws {
+  @Test func thePanelDrawsTheScopeSwitchOverItsChangesListAlone() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    _ = try await harness.featureInGitList()
+    _ = try await harness.featureInChangesList()
     #expect(harness.model.filesPanelShowsChangeScopeSwitch)
 
     harness.model.setFilesPanelMode(.files)

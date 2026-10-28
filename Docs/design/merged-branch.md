@@ -53,9 +53,9 @@
 - **Base is `origin/HEAD`, then the usual trunk names, with a repo override.** A
   remote-tracking ref beats a local branch of the same name, and an override
   resolving to nothing means no badges rather than a guess.
-- **Fetching on a timer is out**, being network, credentials and the one git
-  call here that can hang. So a badge is only as fresh as the last fetch, and
-  Fetch is a menu item with a timeout and a spinner.
+- **Fetching on a timer is out**, being network, credentials and a git call that
+  can hang. So a badge is only as fresh as the last fetch, and Fetch is a menu
+  item with a timeout and a spinner.
 - **The check runs when a ref, the index, `HEAD` or the config in the project's
   `.git` changes**, and on the backstop poll. Four projects are scanned at once
   there, one after another having been the tick's longest wait at ten projects.

@@ -18,7 +18,17 @@ struct BranchStandingTests {
         remotes: [GitRemote(name: "origin", url: "git@github.com:me/demo.git")],
       ),
       ciRuns: nil,
+      changesPastHead: [
+        ChangesPastHead(
+          head: "older",
+          tip: "tip",
+          ownRemoteBranch: "origin/feat",
+          ownBranch: "feat",
+        ):
+          true
+      ],
     )
+    #expect(services.outgrownPullRequest != nil)
     let standing = BranchStanding(
       mergeState: .merged(.ancestor, into: "origin/main"),
       services: services,

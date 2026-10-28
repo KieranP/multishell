@@ -44,8 +44,6 @@ struct GitHubHostTests {
     )
   }
 
-  /// A login kept in the shell's environment, `export GH_TOKEN=…`, as a
-  /// terminal's `gh` has it.
   @Test func theLoginShellsVariablesReachTheTool() async throws {
     let tool = try FakeTool(named: "gh", "echo '[]'")
     defer { tool.tearDown() }
@@ -59,6 +57,22 @@ struct GitHubHostTests {
     _ = try await host.pullRequests(in: tool.directory)
 
     #expect(tool.calls.contains { $0.hasSuffix("GH_TOKEN=from-zshrc") })
+  }
+
+  @Test func aLoginShellForcingColourCannotColourTheJSON() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      #"[ "${CLICOLOR_FORCE:-0}" = 0 ] && echo '[]' || { echo forced >&2; exit 1; }"#,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(
+      executable: tool.executable,
+      searchPath: "/login/bin",
+      runLog: tool.runLog,
+      loginVariables: ["CLICOLOR_FORCE": "1"],
+    )
+
+    #expect(try await host.pullRequests(in: tool.directory).isEmpty)
   }
 
   @Test func aRepositoryGhCannotPlaceOnGitHubFailsAsNotHosted() async throws {

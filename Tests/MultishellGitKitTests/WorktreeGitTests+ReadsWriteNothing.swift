@@ -56,6 +56,17 @@ extension WorktreeGitTests {
     #expect(await git.isPatchEquivalent("side", against: "main", in: project) == false)
     #expect(await git.isBehind("side", of: "main", in: project) == true)
     #expect(await git.changesAreOnBase("side", against: "main", in: project) == false)
+    #expect(await git.remotes(project) == [])
+    #expect(try await git.startPoint(ofBranch: "side", in: project) != nil)
+    #expect(
+      await git.hasChanges(
+        on: "side",
+        pastHead: "main",
+        ownRemoteBranch: "origin/side",
+        ownBranch: "side",
+        in: project,
+      ) != nil
+    )
     #expect(await git.ignoredPaths(["new.txt", "README.md"], in: project.path) == [])
     let base = try #require(
       DefaultBranch.resolve(from: await git.branchRefs(project)?.refs ?? [], override: nil)

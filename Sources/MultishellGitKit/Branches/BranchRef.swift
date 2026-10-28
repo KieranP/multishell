@@ -11,8 +11,7 @@ struct BranchRef: Hashable, Sendable {
   let upstreamIsGone: Bool
   /// The remote-tracking ref this branch follows, `refs/remotes/origin/feat`.
   let upstreamRef: String?
-  /// The remote that ref belongs to, and the branch's own name there, which
-  /// is what a pull request and a CI run are known by.
+  /// The remote that ref belongs to, and the followed branch's name there.
   let upstreamRemote: String?
   let upstreamBranch: String?
   /// The remote its pushes go to, `branch.<name>.pushRemote` and

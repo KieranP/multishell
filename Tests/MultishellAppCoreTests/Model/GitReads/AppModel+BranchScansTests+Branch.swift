@@ -11,7 +11,7 @@ extension AppModelBranchScansTests {
   @Test func aScanThatFindsNothingMovedStartsNoBranchRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
     try await harness.statusReadsSettle(feature)
@@ -32,7 +32,7 @@ extension AppModelBranchScansTests {
   @Test func aFileTabUnderBranchReadsAgainOnceItsProjectsBaseResolves() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["README.md": "hello\ncommitted\n"],

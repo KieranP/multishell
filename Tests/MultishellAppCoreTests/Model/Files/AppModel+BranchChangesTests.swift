@@ -12,7 +12,7 @@ struct AppModelBranchChangesTests {
   @Test func aCommitEmptiesModifiedWhileBranchStillListsTheWork() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["work.txt": "one\ntwo\n"],
@@ -35,7 +35,7 @@ struct AppModelBranchChangesTests {
   @Test func branchListsAnUncommittedEditAsSoonAsItsStatusIsRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
     try #require(harness.model.branchChanges[feature.id]?.changes == [])
@@ -55,7 +55,7 @@ struct AppModelBranchChangesTests {
   @Test func theFilesListCountsAgainstHeadWhateverTheScope() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["work.txt": "work\n"],
@@ -79,7 +79,7 @@ struct AppModelBranchChangesTests {
   @Test func aProjectWithNoBaseBranchSaysSoUnderBranchAndListsNothing() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try harness.dirty(feature)
     await harness.model.refreshStatuses()
     _ = try await harness.git.run(["branch", "-m", "main", "trunk"], in: harness.project.path)
@@ -95,7 +95,7 @@ struct AppModelBranchChangesTests {
   @Test func beforeItsProjectsFirstScanBranchClaimsNoMissingBase() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.defaultBranchScans[harness.project.id] = nil
 
     harness.model.setChangeScope(.branch)
@@ -107,7 +107,7 @@ struct AppModelBranchChangesTests {
   @Test func branchWaitsForTheFirstStatusReadSoItsFirstListHasTheNewFiles() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try harness.dirty(feature)
     try await harness.statusReadsSettle(feature)
     harness.clearStatuses()
@@ -127,7 +127,7 @@ struct AppModelBranchChangesTests {
   @Test func aBranchReadThatFailsSaysSoInTheFooter() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     await harness.model.refreshStatuses()
     harness.model.defaultBranchScans[harness.project.id] = .found(
       DefaultBranch(
@@ -148,7 +148,7 @@ struct AppModelBranchChangesTests {
   @Test func branchIsNotReadWhereItsProjectIsMissingAsStatusIsNot() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
     try await waitUntil { !harness.model.branchChangesReads.isRunning(feature.id) }
@@ -162,7 +162,7 @@ struct AppModelBranchChangesTests {
   @Test func aFailureAgainstTheOldBaseIsNotSaidOfTheNewOne() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
     harness.model.failedBranchReads[feature.id] = "old"

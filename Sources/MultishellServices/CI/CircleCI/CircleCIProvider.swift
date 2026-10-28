@@ -10,7 +10,7 @@ public struct CircleCIProvider: CIProvider {
   /// is asked for alone.
   static let recentRunLimit = 50
 
-  /// No colour, and no update check.
+  /// No colour, and no update check, which asks GitHub for a release.
   private static let quietEnvironment = [
     "NO_COLOR": "1",
     "CIRCLECI_CLI_SKIP_UPDATE_CHECK": "true",

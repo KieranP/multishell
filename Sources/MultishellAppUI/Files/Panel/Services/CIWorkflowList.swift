@@ -33,6 +33,8 @@ struct CIWorkflowList: View {
         }
         .padding(.horizontal, UIMetrics.servicePageSideInset)
         .frame(height: metrics.paneRowHeight)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(AccessibilityText.ciStatus(workflow.status))
         ForEach(Array(workflow.jobs.enumerated()), id: \.offset) { _, job in
           CIJobRow(model: model, worktree: worktree, job: job, theme: theme)
           if let excerpt = report?.excerpt(ofJob: job.name, inWorkflow: workflow.name) {

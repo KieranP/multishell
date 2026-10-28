@@ -24,10 +24,10 @@ final class RemoteState {
   var ciRuns: [Project.ID: ProjectCIRuns] = [:]
   /// What each worktree's row, popover and the panel's pages draw.
   var worktrees: [Worktree.ID: WorktreeServices] = [:]
-  /// What each worktree's branch follows, from the branch scan: what its pull
-  /// request and runs are filed under, and whose move re-reads them.
+  /// Where each worktree's branch is published, from the branch scan: what its
+  /// pull request and runs are filed under, and whose move re-reads them.
   var upstreams: [Worktree.ID: BranchUpstream] = [:]
-  /// Each shown run's workflows, read when its popover opens.
+  /// Each shown run's workflows, read as its popover or the CI page shows it.
   var ciWorkflows: [CIRun.ID: CIRunDetail<[CIWorkflow]>] = [:]
   /// What each branch was made from, by project, read once per branch.
   @ObservationIgnored var branchStartPoints: [Project.ID: [String: String?]] = [:]

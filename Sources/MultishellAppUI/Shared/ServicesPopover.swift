@@ -3,8 +3,8 @@ import MultishellCore
 import MultishellServices
 import SwiftUI
 
-/// A row's pull request as the panel's card shows it and its CI run's
-/// workflows and jobs, each with a corner glyph that opens it on its site.
+/// A row's pull request as the panel's card shows it, and its CI run with its
+/// workflows and jobs; the two headers' corner glyphs open them on their sites.
 struct ServicesPopover: View {
   private static let width: Double = 280
 
@@ -39,7 +39,8 @@ struct ServicesPopover: View {
     }
     .padding(12)
     .frame(width: Self.width, alignment: .leading)
-    .task { await model.readCIWorkflows(of: worktree) }
+    // A new run, or the shown one ending, while open lists other jobs.
+    .task(id: services.ciRun) { await model.readCIWorkflows(of: worktree) }
   }
 
   @ViewBuilder
@@ -83,6 +84,8 @@ struct ServicesPopover: View {
         )
         Text(workflow.name).font(metrics.font(size: metrics.caption))
       }
+      .accessibilityElement(children: .combine)
+      .accessibilityValue(AccessibilityText.ciStatus(workflow.status))
       ForEach(Array(workflow.jobs.enumerated()), id: \.offset) { _, job in
         HStack(spacing: 6) {
           CIRunGlyph(status: job.status, theme: theme, palette: theme.header, size: metrics.small)
@@ -91,6 +94,8 @@ struct ServicesPopover: View {
             .foregroundStyle(.secondary)
         }
         .padding(.leading, metrics.small + 6)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(AccessibilityText.ciStatus(job.status))
       }
     }
   }

@@ -22,7 +22,7 @@ extension AppModel {
       let hasChanges = await git.hasChanges(
         on: question.tip,
         pastHead: question.head,
-        ownRemote: question.ownRemote,
+        ownRemoteBranch: question.ownRemoteBranch,
         ownBranch: question.ownBranch,
         in: project,
       )

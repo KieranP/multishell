@@ -58,14 +58,14 @@ struct WorktreeGitBranchesTests {
     )
     _ = try await commit(file: "base.txt", content: "c\n", in: fixture)
     _ = try await fixture.runner.run(["cherry-pick", work], in: fixture.project.path)
-    let rebased = try await head(in: fixture)
+    let rebased = try await fixture.head(of: fixture.project.path)
 
     let project = fixture.project
     #expect(
       await git.hasChanges(
         on: work,
         pastHead: later,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: project,
       )
@@ -75,7 +75,7 @@ struct WorktreeGitBranchesTests {
       await git.hasChanges(
         on: work,
         pastHead: rebased,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: project,
       ) == false
@@ -98,14 +98,14 @@ struct WorktreeGitBranchesTests {
       ["commit", "-q", "-a", "--amend", "-m", "reworked"],
       in: fixture.project.path,
     )
-    let amended = try await head(in: fixture)
+    let amended = try await fixture.head(of: fixture.project.path)
 
     let project = fixture.project
     #expect(
       await git.hasChanges(
         on: later,
         pastHead: work,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: project,
       )
@@ -115,7 +115,7 @@ struct WorktreeGitBranchesTests {
       await git.hasChanges(
         on: amended,
         pastHead: work,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: project,
       ) == true
@@ -138,13 +138,13 @@ struct WorktreeGitBranchesTests {
     )
     _ = try await fixture.runner.run(["checkout", "-q", "feat"], in: path)
     _ = try await fixture.runner.run(["merge", "-q", "--no-edit", "origin/main"], in: path)
-    let tip = try await head(in: fixture)
+    let tip = try await fixture.head(of: fixture.project.path)
 
     #expect(
       await git.hasChanges(
         on: tip,
         pastHead: mergedHead,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "feat",
         in: fixture.project,
       )
@@ -165,7 +165,7 @@ struct WorktreeGitBranchesTests {
       await git.hasChanges(
         on: later,
         pastHead: work,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: fixture.project,
       )
@@ -185,7 +185,7 @@ struct WorktreeGitBranchesTests {
       await git.hasChanges(
         on: later,
         pastHead: work,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: project,
       )
@@ -196,7 +196,7 @@ struct WorktreeGitBranchesTests {
       await git.hasChanges(
         on: later,
         pastHead: work,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: project,
       )
@@ -208,14 +208,14 @@ struct WorktreeGitBranchesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let git = WorktreeGit(runner: fixture.runner)
-    let tip = try await head(in: fixture)
+    let tip = try await fixture.head(of: fixture.project.path)
     let unknown = String(repeating: "1", count: 40)
 
     #expect(
       await git.hasChanges(
         on: tip,
         pastHead: unknown,
-        ownRemote: "origin/feat",
+        ownRemoteBranch: "origin/feat",
         ownBranch: "main",
         in: fixture.project,
       ) == nil
@@ -229,18 +229,7 @@ struct WorktreeGitBranchesTests {
   ) async throws
     -> String
   {
-    try content.write(
-      to: fixture.project.path.appendingPathComponent(file),
-      atomically: true,
-      encoding: .utf8,
-    )
-    _ = try await fixture.runner.run(["add", file], in: fixture.project.path)
-    _ = try await fixture.runner.run(["commit", "-q", "-m", file], in: fixture.project.path)
-    return try await head(in: fixture)
-  }
-
-  private func head(in fixture: RepositoryFixture) async throws -> String {
-    try await fixture.runner.run(["rev-parse", "HEAD"], in: fixture.project.path)
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    try await fixture.commit(file, file: file, content: content)
+    return try await fixture.head(of: fixture.project.path)
   }
 }

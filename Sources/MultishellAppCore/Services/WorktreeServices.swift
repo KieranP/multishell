@@ -9,7 +9,7 @@ public struct WorktreeServices: Equatable, Sendable {
 
   /// The branch's pull request: an open one over the rest, then the newest.
   /// A merged one is proof the branch landed only while its head is the tip.
-  public internal(set) var pullRequest: PullRequest?
+  var pullRequest: PullRequest?
   /// A merged pull request the branch has changes of its own past: said, but
   /// no longer standing for the branch having landed.
   var outgrownPullRequest: PullRequest?

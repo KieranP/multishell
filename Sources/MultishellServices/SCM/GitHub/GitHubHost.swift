@@ -10,8 +10,10 @@ public struct GitHubHost: PullRequestHost {
   /// closed ones; an older one past it reads as no pull request.
   static let listLimit = 100
 
-  /// No prompt, no colour and no update check, which writes a state file.
+  /// No prompt, no colour and no update check, which writes a state file. A
+  /// login shell's `CLICOLOR_FORCE` outranks `NO_COLOR` and colours `--json`.
   private static let quietEnvironment = [
+    "CLICOLOR_FORCE": "0",
     "GH_NO_UPDATE_NOTIFIER": "1",
     "GH_NO_EXTENSION_UPDATE_NOTIFIER": "1",
     "GH_PROMPT_DISABLED": "1",

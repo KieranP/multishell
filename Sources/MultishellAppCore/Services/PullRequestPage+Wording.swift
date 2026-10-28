@@ -20,6 +20,8 @@ extension PullRequestPage {
 
     case .pullRequest: nil
 
+    case .trunk: PanelEmptyText(title: t("panel.pull-request-trunk"), detail: nil)
+
     case .turnedOff:
       PanelEmptyText(title: t("panel.pull-requests-off"), detail: t("panel.turned-off-detail"))
     }

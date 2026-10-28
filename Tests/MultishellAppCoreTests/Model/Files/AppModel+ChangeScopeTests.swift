@@ -12,7 +12,7 @@ struct AppModelChangeScopeTests {
   @Test func switchingScopeReadsAgainOnlyTheTabsWhoseProjectHasABase() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     let other = try await harness.addSecondProject()
     let otherMain = try #require(harness.model.workspace.worktrees(of: other.id).first)
     let baseless = try #require(harness.model.openFileTab("README.md", in: otherMain))
@@ -31,7 +31,7 @@ struct AppModelChangeScopeTests {
   @Test func aFileTabUnderBranchShowsWhatTheBranchCommittedAndOffersTheSwitch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["README.md": "hello\ncommitted\n"],
@@ -62,7 +62,7 @@ struct AppModelChangeScopeTests {
   @Test func leavingBranchLetsGoOfItsReadSoComingBackDrawsNoneAsCurrent() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
     try #require(harness.model.branchChanges[feature.id] != nil)
@@ -75,7 +75,7 @@ struct AppModelChangeScopeTests {
   @Test func switchingScopeWakesATabReadWaitingOutItsOldPace() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     let tab = try #require(harness.model.openFileTab("README.md", in: feature))
     _ = try await harness.rowsArrive(in: tab.id)
     harness.model.fileTabReadLog.begin(tab.id)

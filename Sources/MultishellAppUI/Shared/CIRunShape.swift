@@ -12,22 +12,20 @@ struct CIRunShape: Shape {
   let status: CIRunStatus
 
   func path(in rect: CGRect) -> Path {
-    let unit = min(rect.width, rect.height) / 16
-    func point(_ x: Double, _ y: Double) -> CGPoint {
-      CGPoint(x: rect.minX + x * unit, y: rect.minY + y * unit)
-    }
+    let grid = GlyphGrid(fitting: rect)
+    let unit = grid.unit
     var path = Path()
     func stroke(_ from: (Double, Double), _ to: (Double, Double)) {
-      path.move(to: point(from.0, from.1))
-      path.addLine(to: point(to.0, to.1))
+      path.move(to: grid.point(from.0, from.1))
+      path.addLine(to: grid.point(to.0, to.1))
     }
     guard status != .running else {
       // A move to each arc's start: an arc otherwise joins the last with a line.
       for arc in Self.runningArcs {
         let start = Angle.degrees(arc.start).radians
-        path.move(to: point(8 + 6.5 * cos(start), 8 + 6.5 * sin(start)))
+        path.move(to: grid.point(8 + 6.5 * cos(start), 8 + 6.5 * sin(start)))
         path.addRelativeArc(
-          center: point(8, 8),
+          center: grid.point(8, 8),
           radius: 6.5 * unit,
           startAngle: .degrees(arc.start),
           delta: .degrees(arc.end - arc.start),
@@ -36,13 +34,13 @@ struct CIRunShape: Shape {
       return path
     }
     path.addEllipse(
-      in: CGRect(origin: point(1.5, 1.5), size: CGSize(width: 13 * unit, height: 13 * unit))
+      in: CGRect(origin: grid.point(1.5, 1.5), size: CGSize(width: 13 * unit, height: 13 * unit))
     )
     switch status {
     case .passed:
-      path.move(to: point(5.3, 8.3))
-      path.addLine(to: point(7.1, 10))
-      path.addLine(to: point(10.7, 6.2))
+      path.move(to: grid.point(5.3, 8.3))
+      path.addLine(to: grid.point(7.1, 10))
+      path.addLine(to: grid.point(10.7, 6.2))
 
     case .failed:
       stroke((5.8, 5.8), (10.2, 10.2))

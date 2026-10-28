@@ -34,6 +34,7 @@ struct WorktreeGitRemotesTests {
     #expect(scan.upstreams?["feat"]?.remote == "origin")
     #expect(scan.upstreams?["feat"]?.branch == "feat")
     #expect(scan.upstreams?["feat"]?.tip != nil, "the remote has the branch now")
+    #expect(try await followed(by: "feat", in: fixture) == "origin/feat")
   }
 
   @Test func publishingABranchThatFollowsTheTrunkOnTheSameRemoteMakesItTrackItsOwn()

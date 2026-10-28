@@ -11,7 +11,7 @@ extension AppModelStatusReadsTests {
   @Test func anEditThatLeavesTheStatusAsItWasStillMovesBranch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["README.md": "b\n"],
@@ -36,7 +36,7 @@ extension AppModelStatusReadsTests {
   @Test func underStagedOnlyAFurtherEditOnDiskStillMovesBranch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setGitStatusIndicator(.stagedOnly)
     harness.model.setChangeScope(.branch)
     let readme = feature.path.appending(path: "README.md")
@@ -56,7 +56,7 @@ extension AppModelStatusReadsTests {
   @Test func aNewDiffAlgorithmReadsBranchAgain() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
     try await harness.statusReadsSettle(feature)

@@ -512,8 +512,8 @@ left as is".
   once a second for as long as the app is in front. The reads that run on an
   event or the poll are `rev-parse`, `worktree list`, `status`, `diff-index`,
   `diff --cached`, `hash-object` without `-w`, `ls-files`, `check-ignore`,
-  `for-each-ref`, `branch --merged`, `log -g`, `cherry`, `rev-list`, `cat-file`
-  and `diff` between two commits; none writes.
+  `for-each-ref`, `branch --merged`, `log -g`, `reflog show`, `remote -v`,
+  `cherry`, `rev-list`, `cat-file` and `diff` between two commits; none writes.
   `everyReadTheAppRunsByItselfLeavesGitsDirectoryAsItWas` calls each on a
   repository with a touched, a changed, a staged and a new file and compares
   every file under `.git` before and after; a new read joins it.
@@ -528,9 +528,9 @@ left as is".
   Turning the monitor off for the app's reads would end the write but cost the
   speed-up on the large repositories that turn it on.
 - **What writes does so once, on a request**: add, remove, prune, a branch
-  delete and Fetch, each followed by one round of reads that write nothing. The
-  one write the app makes unasked is the index refresh a second after a create,
-  once per worktree.
+  delete, Fetch and the push before a new pull request, each followed by one
+  round of reads that write nothing. The one write the app makes unasked is the
+  index refresh a second after a create, once per worktree.
 - **A change in a git directory inside another's is the inner project's.** A
   submodule added as a project keeps its git directory under the outer one's
   `modules/`, and the first match a dictionary yielded picked between them.
@@ -687,8 +687,8 @@ Raised by reviews and settled; a review need not raise these again.
 
 ### Asked both ways
 
-Reviews have asked for each of these and for its opposite. The side below is
-the one kept; a review that would argue the other side need not raise it.
+Reviews have asked for each of these and for its opposite. The side below is the
+one kept; a review that would argue the other side need not raise it.
 
 - **A typed pane-or-tab target for `select`, or a closure.** Round 3 asked for
   one entry point that turns before the reconcile; round 4 for a typed target

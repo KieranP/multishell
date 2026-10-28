@@ -10,6 +10,9 @@ extension PresentedError {
     case let failure as NoRemoteToPublishTo:
       return (t("error.branch-not-pushed", failure.branch), t("error.no-remote-to-push-to"))
 
+    case let failure as RemotesUnknown:
+      return (t("error.pull-request-not-started", failure.branch), t("error.remotes-unknown"))
+
     case let failure as UnpushedCommitsUnknown:
       return (
         t("error.pull-request-not-started", failure.branch), t("error.unpushed-commits-unknown"),

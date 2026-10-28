@@ -56,59 +56,26 @@ extension AppModel {
       remoteState.publishingWorktrees.insert(worktree.id).inserted
     else { return }
     defer { remoteState.publishingWorktrees.remove(worktree.id) }
-    var upstream = remoteState.upstreams[worktree.id]
-    // Asked now, not trusted from the last read: the page would open against
-    // a branch the remote has since deleted, or without a commit made since.
-    if let tracked = upstream, tracked.tip != nil,
-      await coordinator.git.remoteHasBranch(tracked.branch, on: tracked.remote, in: worktree.path)
-        == false
-    {
-      upstream = tracked.goneFromRemote
-    }
-    // Counted against where it is published, which it may not track.
-    var unpushed: Int?
-    if let tip = upstream?.tip {
-      unpushed = await coordinator.git.commitCount(ofBranch: branch, past: tip, in: worktree.path)
-      if unpushed == nil {
-        present(UnpushedCommitsUnknown(branch: branch))
-        return
-      }
-    }
-    if let upstream, upstream.tip != nil, unpushed == 0 {
-      await openNewPullRequest(of: worktree, head: upstream.branch, on: upstream.remote)
-      return
-    }
-    let remote: String
-    if let upstream {
-      remote = upstream.remote
-    } else {
-      let remotes = await coordinator.git.remotes(project) ?? []
-      let pushRemote = await coordinator.git.pushRemote(ofBranch: branch, in: worktree.path)
-      guard
-        let chosen = remotes.first(where: { $0.name == pushRemote })
-          ?? remotes.first(where: { $0.name == Self.preferredRemoteName }) ?? remotes.first
-      else {
-        present(NoRemoteToPublishTo(branch: branch))
-        return
-      }
-      remote = chosen.name
-    }
-    // A branch with no upstream of its own may still share a name with one
-    // the remote has, which the question must not call new.
-    let remoteHasBranch =
-      upstream == nil
-      ? await coordinator.git.remoteHasBranch(branch, on: remote, in: worktree.path) == true
-      : false
-    // One question at a time: another worktree's still waits on its answer.
-    guard pendingBranchPublish == nil else { return }
-    pendingBranchPublish = PendingBranchPublish(
-      worktree: worktree,
+    let step = await pullRequestCreationStep(
+      for: worktree,
       branch: branch,
-      remote: remote,
-      remoteBranch: upstream?.branch ?? branch,
-      unpushedCommits: unpushed,
-      remoteHasBranch: remoteHasBranch,
+      in: project,
+      using: coordinator.git,
     )
+    // One removed while git asked has nothing left to push, open or report.
+    guard workspace.worktree(worktree.id) != nil else { return }
+    switch step {
+    case .ask(let question):
+      // One question at a time: another worktree's still waits on its answer.
+      guard pendingBranchPublish == nil else { return }
+      pendingBranchPublish = question
+
+    case .fail(let error):
+      present(error)
+
+    case .open(let head, let remote):
+      await openNewPullRequest(of: worktree, head: head, on: remote)
+    }
   }
 
   /// Push, then the new pull request page; No leaves the branch as it is.
@@ -133,6 +100,69 @@ extension AppModel {
 
   func isPublishing(_ worktree: Worktree) -> Bool {
     remoteState.publishingWorktrees.contains(worktree.id)
+  }
+
+  /// What Create does once git says what the remote lacks.
+  private func pullRequestCreationStep(
+    for worktree: Worktree,
+    branch: String,
+    in project: Project,
+    using git: WorktreeGit,
+  ) async -> PullRequestCreationStep {
+    var upstream = remoteState.upstreams[worktree.id]
+    // Asked now, not trusted from the last read: the page would open against
+    // a branch the remote has since deleted, or without a commit made since.
+    if let tracked = upstream, tracked.tip != nil,
+      await git.remoteHasBranch(tracked.branch, on: tracked.remote, in: worktree.path) == false
+    {
+      upstream = tracked.goneFromRemote
+    }
+    // Counted against where it is published, which it may not track.
+    var unpushed: Int?
+    if let tip = upstream?.tip {
+      unpushed = await git.commitCount(ofBranch: branch, past: tip, in: worktree.path)
+      if unpushed == nil { return .fail(UnpushedCommitsUnknown(branch: branch)) }
+    }
+    if let upstream, upstream.tip != nil, unpushed == 0 {
+      return .open(head: upstream.branch, remote: upstream.remote)
+    }
+    let remotes = await git.remotes(project)
+    let pushRemote = await git.pushRemote(ofBranch: branch, in: worktree.path)
+    // git pushes to a remote config names apart from what is followed, which
+    // lacks the branch or the scan would have found it; an unread list fails.
+    if let followed = upstream?.remote, let pushRemote, pushRemote != followed,
+      remotes?.contains(where: { $0.name == pushRemote }) != false
+    {
+      upstream = nil
+      unpushed = nil
+    }
+    let remote: String
+    if let upstream {
+      remote = upstream.remote
+    } else {
+      guard let remotes else { return .fail(RemotesUnknown(branch: branch)) }
+      guard
+        let chosen = remotes.first(where: { $0.name == pushRemote })
+          ?? remotes.first(where: { $0.name == Self.preferredRemoteName }) ?? remotes.first
+      else { return .fail(NoRemoteToPublishTo(branch: branch)) }
+      remote = chosen.name
+    }
+    // A branch with no upstream of its own may still share a name with one
+    // the remote has, which the question must not call new.
+    let remoteHasBranch =
+      upstream == nil
+      ? await git.remoteHasBranch(branch, on: remote, in: worktree.path) == true
+      : false
+    return .ask(
+      PendingBranchPublish(
+        worktree: worktree,
+        branch: branch,
+        remote: remote,
+        remoteBranch: upstream?.branch ?? branch,
+        unpushedCommits: unpushed,
+        remoteHasBranch: remoteHasBranch,
+      )
+    )
   }
 
   private func publishThenCreatePullRequest(_ pending: PendingBranchPublish) async {

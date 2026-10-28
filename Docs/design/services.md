@@ -136,7 +136,8 @@ command-line tool.
   global and no repository file: the reads are display only, and a repository
   without the service already shows nothing. A list of what is off, in case
   order, so an unknown id costs itself and the state file does not churn.
-- **A worktree with no branch has no runs to find**, not "not pushed".
+- **A worktree with no branch has no runs to find**, not "not pushed", and no
+  pull request to head, which its page says rather than calling it the trunk.
 - **`gh auth status` failing for one host while another is logged in reads as
   logged in**, as the reads for that host work.
 - **The page asks each tool's version and login as it opens, never on the
@@ -147,9 +148,9 @@ command-line tool.
   read once the tool is found, and only one known to be older gets no reads and
   no tab: a version that fails to run or read is no verdict. It is asked aside,
   the provider passed over until it answers, so a cold start waits on nothing;
-  found able, its runs alone are read at once, a few projects at a time, and its
-  page shown where it was the one saved. The same tools found again rebuild
-  nothing.
+  found able, its runs are read at once, a few projects at a time, with the pull
+  requests only where no list has answered yet, and its page shown where it was
+  the one saved. The same tools found again rebuild nothing.
 - **Create Pull Request is busy while it reads the status and the remote**, so a
   second click on a slow network asks nothing again.
 - **A closed pull request stays shown, and Create Pull Request is offered**
@@ -255,6 +256,11 @@ command-line tool.
   read at, so a push leaves the verdict waiting on the new head's. The host's
   own "blocked" is said only where none of those accounts for it, such as a rule
   for signed commits.
+- **A pull request waiting on a person is on hold, not running**: a required
+  review, and a banner held back only by that or its draft state, draw the
+  pause, as a CI run on hold does, since either may wait days. The ring turns
+  only while a machine works: a check running, conflicts not worked out, checks
+  not read. The user chose this on 2026-10-28.
 - **A check opens its own link, http or https only**; a CI job opens through
   `circleci job open`, which knows the server. The CI card's link opens the
   branch by its upstream name, the page showing a run the row may not have.
@@ -372,6 +378,49 @@ command-line tool.
 - **A project removed and re-added at its path mid-read** may take that read's
   answer. Unproven: the fake host cannot tell the two reads apart, and the
   window is the read's few seconds.
+- **CircleCI words no fixture has shown keep the rules they have.** An unknown
+  current outcome falls back to the outcome, as an unknown phase does; a
+  `succeed…` word other than `succeeded`, a phase on hold over a failing
+  outcome, and an `authentication.` error code are guesses at output 1.11 has
+  never printed.
+- **A panel tab's tooltip stays up after a click until the pointer leaves.**
+  Hiding it on the click needs a gesture beside the button's own, which no test
+  here can drive.
+- **`ExternalLinkButton`, `CreatePullRequestButton` and `View+CornerLink` stay
+  in `Files/Panel/Services/`** though the popover draws them: a file's folder
+  follows what it is, not who calls it.
+- **`ProjectSettings.init` takes `disabledIntegrations`** though no caller
+  passes it: the init lists every setting a user sets, as it does the rest.
+- **`aSlowCheckOfAnEarlierToolCannotOverwriteTheNewOnesVerdict` waits three
+  seconds for a verdict that must not come.** A check that nothing happened
+  needs a window; under load it can pass without reaching the guard, never fail
+  with the guard in place.
+- **VoiceOver reaches the row's popover only through the actions menu's Open and
+  Create.** The popover adds the run's workflows and jobs, which the CI page
+  lists with each status spoken; the row reads out the stale note itself.
+- **`ExternalLinkButton`'s stroke and `PullRequestGlyph`'s are each written
+  out.** Both are 1.5 in 16, each glyph's own design stroke, and only the pull
+  request's keeps a one-point floor; a shared width would tie them.
+- **The row's popover lists a run's jobs as they stood when it opened or the run
+  last changed.** The CI page follows a run under way through its poll; a
+  popover is a glance, and following it would take a timer of its own.
+- **A run whose status changes while its workflows are read for the popover may
+  keep that read's answer.** Unproven: the new read waits on the one in flight,
+  and the window is one `circleci` call.
+- **A rerun that starts and fails between two reads keeps the first attempt's
+  report.** Unproven: it holds only if `circleci` keeps a run's id across a
+  rerun, which no output here has shown.
+- **A checkout onto another branch shows no pull request until the next scan
+  matches the new branch**, a quarter second and a scan in front, with Create
+  offered meanwhile. Showing the old branch's, as before, was worse; Create asks
+  before it pushes.
+- **A branch pushed from a single-branch or shallow clone has no upstream.**
+  Such a clone fetches no ref for it, so git names none, and a branch nobody
+  pushed looks the same; telling them apart would ask the remote on each scan.
+- **A branch following its own name elsewhere than it pushes opens the page on
+  the branch it follows when nothing is unpushed**, and asks to push to the push
+  remote once something is. The scan calls a same-named followed branch the
+  branch's own, so its commits are already where the page reads them.
 
 ### Asked both ways
 
@@ -391,3 +440,7 @@ command-line tool.
   fetch once it merged, leave the branch merged. git sees the same thing in
   both, a commit no branch holds but this one. Kept: such a commit is the
   branch's own, and Create asks before it pushes.
+- **Where `UIMetrics.serviceGlyphSize` lives.** Round 1 moved it from
+  `UIMetrics.swift` into `UIMetrics+ServicePages.swift`; round 3 asked it back,
+  the sidebar row using it too. Kept in `+ServicePages`: that file holds the
+  services' glyph sizes, the row's included.

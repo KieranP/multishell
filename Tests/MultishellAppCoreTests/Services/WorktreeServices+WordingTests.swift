@@ -27,7 +27,7 @@ struct WorktreeServicesWordingTests {
         failure: failure,
       ),
       ciRuns: ProjectCIRuns(integration: .circleCI, runsByBranch: run.map { ["feat": $0] } ?? [:]),
-      answeredAt: (Date(timeIntervalSince1970: 0), nil),
+      answeredAt: (Date(timeIntervalSince1970: 1_700_000_000), nil),
       changesPastHead: changesPastHead,
     )
   }
@@ -56,16 +56,31 @@ struct WorktreeServicesWordingTests {
     #expect(text.hasSuffix("GitHub is not logged in"))
   }
 
+  @Test func aScreenReaderHearsWhatTheTooltipSaysMakesTheRowOld() throws {
+    let stale = services(.sample(), failure: .loggedOut)
+    let problem = try #require(stale.readProblemText)
+    #expect(stale.spokenSummary?.hasSuffix(problem) == true)
+  }
+
+  @Test func aRowDrawingNoServicesSaysNothingOfAFailedRead() {
+    #expect(services(failure: .loggedOut).spokenSummary == nil)
+  }
+
   @Test func anAnswerFromAnotherDaySaysItsDate() throws {
     let text = try #require(services(.sample(), failure: .loggedOut).readProblemText)
-    #expect(text.contains("1970"), "the shown answer dates from 1 January 1970")
+    #expect(text.contains("2023"), "the shown answer dates from November 2023")
   }
 
   @Test func aMergedPullRequestTheBranchWentPastIsSaidAsSuch() {
     let outgrown = services(
       .sample(number: 33, state: .merged, headCommit: "older"),
       changesPastHead: [
-        ChangesPastHead(head: "older", tip: "tip", ownRemote: "origin/feat", ownBranch: "feat"):
+        ChangesPastHead(
+          head: "older",
+          tip: "tip",
+          ownRemoteBranch: "origin/feat",
+          ownBranch: "feat",
+        ):
           true
       ],
     )

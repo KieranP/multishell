@@ -108,7 +108,7 @@ struct WorktreeServicesMatchingTests {
     let pastOrRewritten = ChangesPastHead(
       head: "older",
       tip: "tip",
-      ownRemote: "origin/feat",
+      ownRemoteBranch: "origin/feat",
       ownBranch: "feat",
     )
     let found = services([merged], localTip: "tip", changesPastHead: [pastOrRewritten: true])
@@ -122,7 +122,7 @@ struct WorktreeServicesMatchingTests {
     let behind = ChangesPastHead(
       head: "newer",
       tip: "tip",
-      ownRemote: "origin/feat",
+      ownRemoteBranch: "origin/feat",
       ownBranch: "feat",
     )
     let found = services([merged], localTip: "tip", changesPastHead: [behind: false])

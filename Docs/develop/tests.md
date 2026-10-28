@@ -445,10 +445,11 @@ rule holds is in `Docs/design/`.
 - **The xcrun shim is looked past, and xcrun never asked with no developer
   directory**: GitExecutableTests.
 - **Pull requests and CI runs**: the tools' output in MultishellServicesTests,
-  `gh`'s from this repository and CircleCI's shaped from its help, through fake
-  executables on no account; the model's reads, matching, pacing and Create Pull
-  Request in AppModel+ServiceReadsTests and AppModel+PullRequestActionsTests
-  against fake hosts, never the developer's `gh` or `circleci`.
+  `gh`'s from this repository and CircleCI 1.11's from a work project, scrubbed,
+  through fake executables on no account; matching in
+  WorktreeServices+MatchingTests; the model's reads, pacing and Create Pull
+  Request in the suites under `Model/Services/` against fake hosts, never the
+  developer's `gh` or `circleci`.
 - **The merge reads' round budget and their one shared width**:
   MergeReadLogTests, AppModelBranchScansTests for a lone project's refresh, and
   WorktreeCoordinator+MergesTests+ReadWidth across two projects.

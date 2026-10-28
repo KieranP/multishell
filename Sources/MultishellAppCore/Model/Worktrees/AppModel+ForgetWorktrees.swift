@@ -14,8 +14,7 @@ extension AppModel {
     setIfChanged(\.autoRenames, autoRenames.filter { !gone.contains($0.key) })
     oneShotRunner.stop(gone)
     setIfChanged(\.scannedBranchTips, scannedBranchTips.filter { !gone.contains($0.key) })
-    setIfChanged(\.remoteState.worktrees, remoteState.worktrees.filter { !gone.contains($0.key) })
-    setIfChanged(\.remoteState.upstreams, remoteState.upstreams.filter { !gone.contains($0.key) })
+    forgetBranchServices(of: gone)
     setIfChanged(
       \.remoteState.publishingWorktrees,
       remoteState.publishingWorktrees.subtracting(gone),

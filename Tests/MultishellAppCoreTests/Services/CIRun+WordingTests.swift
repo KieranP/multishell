@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import MultishellAppCore
@@ -30,7 +31,21 @@ struct CIRunWordingTests {
 
   @Test func aRunSaysNothingOfTheLocalTipWhereItIsUnknown() {
     let run = CIRun.sample(commit: "9f2bcef611")
-    #expect(run.startText(localTip: nil) == "")
-    #expect(run.startText(localTip: "other0000") == "not the local tip")
+    #expect(run.startText(localTip: nil, now: .now) == "")
+    #expect(run.startText(localTip: "other0000", now: .now) == "not the local tip")
+  }
+
+  @Test func whenARunStartedIsToldAgainstTheTimeGiven() {
+    let started = Date(timeIntervalSince1970: 1_700_000_000)
+    let run = CIRun.sample(commit: "9f2bcef611", createdAt: started)
+    let later = started.addingTimeInterval(4 * 60)
+    #expect(run.startText(localTip: nil, now: later) == "Started 4 minutes ago")
+  }
+
+  @Test func aRunReadAfterTheClockLastTickedIsNeverSaidToStartInTheFuture() {
+    let started = Date(timeIntervalSince1970: 1_700_000_000)
+    let run = CIRun.sample(commit: "9f2bcef611", createdAt: started)
+    let staleClock = started.addingTimeInterval(-10)
+    #expect(!run.startText(localTip: nil, now: staleClock).contains("in "))
   }
 }

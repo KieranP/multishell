@@ -11,7 +11,7 @@ extension AppModelFilesPanelWatchTests {
   @Test func aCommitDroppedWithTheStatusUnmovedLeavesBranchOnItsGitEvent() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["work.txt": "work\n"],

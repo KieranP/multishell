@@ -10,6 +10,7 @@ extension CIRun {
     status: CIRunStatus = .passed,
     isFinished: Bool? = nil,
     repository: RemoteRepository? = nil,
+    createdAt: Date? = nil,
   ) -> Self {
     CIRun(
       id: id,
@@ -18,7 +19,7 @@ extension CIRun {
       subject: nil,
       status: status,
       isFinished: isFinished ?? (status != .running && status != .onHold),
-      createdAt: nil,
+      createdAt: createdAt,
       repository: repository,
     )
   }

@@ -55,8 +55,8 @@ struct GitRunner: Sendable {
     self.baseEnvironment = overrides
   }
 
-  /// `environment` and `timeout` are for the one call that talks to a network,
-  /// `WorktreeGit.fetch`; `stopper` for the checkout a user may end, `add`.
+  /// `environment` and `timeout` are for the calls that talk to a network:
+  /// fetch, push and `ls-remote`; `stopper` for the checkout a user may end, `add`.
   func run(
     _ arguments: [String],
     in directory: URL,

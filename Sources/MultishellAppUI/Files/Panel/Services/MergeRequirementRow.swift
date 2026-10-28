@@ -66,5 +66,6 @@ struct MergeRequirementRow: View {
     .frame(height: metrics.paneRowHeight)
     .help(name)
     .accessibilityElement(children: .combine)
+    .accessibilityValue(AccessibilityText.requirementStatus(requirement) ?? "")
   }
 }

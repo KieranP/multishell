@@ -31,7 +31,7 @@ struct AppModelAutoRenameTests {
     answering reply: ProcessOutput,
     requests: Recorder<OneShotRequest> = Recorder(),
   ) async throws -> Worktree {
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "Add CSV export for billing",
       files: ["export.txt": "csv\n"],
@@ -253,7 +253,7 @@ struct AppModelAutoRenameTests {
   @Test func aNewBranchWithNothingCommittedOrStagedCannotBeAutoRenamed() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.agentDetection = AgentDetection(found: ["claude": Self.claude])
     harness.model.setPreferredAgent("claude")
     try "unstaged\n".write(
@@ -427,7 +427,7 @@ struct AppModelAutoRenameTests {
   @Test func aCommitOnABranchAtItsBaseEnablesAutoRenameOnceItsRefIsScanned() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.agentDetection = AgentDetection(found: ["claude": Self.claude])
     harness.model.setPreferredAgent("claude")
     await harness.model.refreshStatuses()

@@ -69,9 +69,6 @@ struct UIMetrics: Equatable {
   var panePositionGlyphSize: Double { badge - 2 }
   /// The chevron between project and worktree on a board card's location line.
   var cardBreadcrumbChevronSize: Double { badge - 3 }
-  /// A pull request's and a CI run's glyph, on a row, in the header and in
-  /// their popover, a touch over the badge text beside them.
-  var serviceGlyphSize: Double { badge + 2 }
 
   var rowHeight: Double { (bodySize * 2.15).rounded() }
 

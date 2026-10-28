@@ -19,24 +19,27 @@
   readers; what a branch is, where it points and whether it landed; what a
   branch changed since its base, for the Branch list and Auto Rename, under
   `BranchChanges/`; status; the paths an index tracks and one file's patches and
-  stored copies, for the Files panel and a file tab; the runner; and `Support/`.
-  WorktreeGit and WorktreeCoordinator sit at its root with their extensions
-  under each concern, since eight concerns extend them and none owns them,
-  beside the state every WorktreeGit a launch builds shares.
+  stored copies, for the Files panel and a file tab; a remote and a push to it
+  under `Remotes/`; the runner; and `Support/`. WorktreeGit and
+  WorktreeCoordinator sit at its root with their extensions under each concern,
+  since nine concerns extend them and none owns them, beside the state every
+  WorktreeGit a launch builds shares.
 - **MultishellServices**: the pull request hosts and CI providers, read through
   each service's own tool. `SCM/Core/` and `CI/Core/` hold each kind's protocol
   and the values it answers with, `SCM/GitHub/` and `CI/CircleCI/` the one
   service of each there is, through `gh` and `circleci`. What both kinds share
   sits beside them: `Runner/` times every call into git's log, `Tools/` holds a
-  tool's status and read failures, `Remotes/` a remote's owner and name.
+  tool's status and read failures, `Remotes/` a remote's owner and name, and
+  `Support/` what belongs to no concern.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited
   settings, what a tab runs, what each session is doing, when to read git and to
   notify, creates and removals under way, every decision a view makes, and what
   a screen reader is told. What it needs from the app and its own
   implementations of Core's ports go under `Ports/`, what Debug Info measures
   and shows under `Debug/`, the JSON the command line prints, its settings keys
-  and what a request keeps while it runs under `Control/`, the rest under
-  `Support/`.
+  and what a request keeps while it runs under `Control/`, the pull request and
+  CI values the row, its popover, the menus and the panel's pages all read under
+  `Services/`, the rest under `Support/`.
 - **AppModel's extensions sit under `Model/` by concern**, what spans them all
   at the root beside the type: the concerns are too many for one alphabetical
   listing to keep a concern's files together.

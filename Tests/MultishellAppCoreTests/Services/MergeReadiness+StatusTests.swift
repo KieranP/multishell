@@ -18,8 +18,18 @@ struct MergeReadinessStatusTests {
     )
   }
 
-  @Test func aDraftWithNothingElseWrongReadsAsWaitingNotFailed() {
-    #expect(MergeReadiness(.sample(state: .draft), checks: [check(.passed)]).status == .running)
+  @Test func aDraftWithNothingElseWrongIsOnHoldNotFailed() {
+    #expect(MergeReadiness(.sample(state: .draft), checks: [check(.passed)]).status == .onHold)
+  }
+
+  @Test func aReviewAloneIsOnHoldAndItsRowWaitsOnAPersonToo() {
+    let readiness = MergeReadiness(.sample(review: .required), checks: [check(.passed)])
+    #expect(readiness.status == .onHold)
+    #expect(readiness.requirements.first { $0.kind == .review }?.status == .onHold)
+  }
+
+  @Test func aDraftWithAPendingCheckStillReadsAsRunning() {
+    #expect(MergeReadiness(.sample(state: .draft), checks: [check(.running)]).status == .running)
   }
 
   @Test func aReadyPullRequestReadsAsPassedAndAClosedOneAsCancelled() {

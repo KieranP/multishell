@@ -86,7 +86,7 @@ extension WorktreeGit {
   public func hasChanges(
     on tip: String,
     pastHead head: String,
-    ownRemote: String,
+    ownRemoteBranch: String,
     ownBranch: String,
     in project: Project,
   ) async
@@ -95,7 +95,7 @@ extension WorktreeGit {
     // A commit some other branch holds came with a sync, as from the trunk; a
     // sync's merge commit is no change `git cherry` would weigh.
     let otherBranches = [
-      "--exclude=\(ownRemote)", "--remotes", "--exclude=\(ownBranch)", "--branches",
+      "--exclude=\(ownRemoteBranch)", "--remotes", "--exclude=\(ownBranch)", "--branches",
     ]
     guard
       let unpublished = await runner.output(

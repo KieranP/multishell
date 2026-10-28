@@ -9,6 +9,8 @@ struct CIRunCard: View {
   let model: AppModel
   let worktree: Worktree
   let run: CIRun
+  /// The page's clock, which a run's age is told against.
+  let now: Date
   let theme: Theme
 
   var body: some View {
@@ -39,7 +41,7 @@ struct CIRunCard: View {
           }
           .foregroundStyle(theme.header.textSecondary)
           .lineLimit(1)
-          Text(run.startText(localTip: services.localTip))
+          Text(run.startText(localTip: services.localTip, now: now))
             .font(metrics.font(size: metrics.caption))
             .foregroundStyle(theme.header.textTertiary)
         }

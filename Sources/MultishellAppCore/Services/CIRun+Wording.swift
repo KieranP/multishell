@@ -18,10 +18,15 @@ extension CIRun {
     }
   }
 
-  /// "Started 4 minutes ago · the local tip", saying nothing of a tip unknown.
-  public func startText(localTip: String?) -> String {
+  /// "Started 4 minutes ago · the local tip", saying nothing of a tip unknown;
+  /// `now` is the page's clock, which ticks so the age moves.
+  public func startText(localTip: String?, now: Date) -> String {
     let tip = localTip.map { ran($0) ? t("ci.the-local-tip") : t("ci.not-the-local-tip") }
-    let started = createdAt.map { t("ci.started", $0.formatted(.relative(presentation: .named))) }
+    let started = createdAt.map { createdAt in
+      let age = Date.AnchoredRelativeFormatStyle(anchor: createdAt, presentation: .named)
+      // A run read after the clock last ticked started no later than now.
+      return t("ci.started", age.format(max(now, createdAt)))
+    }
     switch (started, tip) {
     case (let started?, let tip?): return t("ci.when-on-tip", started, tip)
     case (let started?, nil): return started

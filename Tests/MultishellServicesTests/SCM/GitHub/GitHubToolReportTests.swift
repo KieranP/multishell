@@ -37,6 +37,18 @@ struct GitHubToolReportTests {
     #expect(GitHubToolReport.status(versionOutput: version, authStatus: auth) == .loggedOut)
   }
 
+  @Test func aLoginThatFailsForAnotherReasonSaysThatReasonNotTheHost() {
+    let auth = ProcessOutput.sample(
+      output:
+        "github.com\n  X Timeout trying to log in to github.com account KieranP (keyring)\n  - Active account: true\n",
+      status: 1,
+    )
+    #expect(
+      GitHubToolReport.status(versionOutput: version, authStatus: auth)
+        == .unreadable("Timeout trying to log in to github.com account KieranP (keyring)")
+    )
+  }
+
   @Test func aVersionLineOfAnotherShapeIsPassedOn() {
     #expect(
       GitHubToolReport.status(versionOutput: "hub version 2.14.2\n", authStatus: .sample())

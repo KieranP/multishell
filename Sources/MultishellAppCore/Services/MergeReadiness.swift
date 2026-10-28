@@ -28,6 +28,13 @@ public struct MergeReadiness: Equatable, Sendable {
     case reviewRequired
   }
 
+  /// Who a blocker that is only a wait is waiting on: a machine finishes on its
+  /// own, a person perhaps days later, as a CI run on hold does.
+  enum Waiter {
+    case machine
+    case person
+  }
+
   /// A row of the panel's list: a review or conflict requirement, or a check.
   public struct Requirement: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
@@ -115,7 +122,7 @@ public struct MergeReadiness: Equatable, Sendable {
       switch pullRequest.review {
       case .approved: .passed
       case .changesRequested: .failed
-      case .required: .running
+      case .required: .onHold
       case .notRequired: nil
       }
     if let reviewStatus {

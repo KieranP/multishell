@@ -17,7 +17,7 @@ struct ServiceReadLog<Key: Hashable & Sendable>: Sendable {
 
   func isAsking(_ id: Key) -> Bool { asking.contains(id) }
 
-  /// Whether it was ever asked, which a move of its upstreams
+  /// Whether it was asked since it last went due; a move of its upstreams
   /// before then has no answer of its own to correct.
   func hasAsked(_ id: Key) -> Bool { lastAsked[id] != nil }
 

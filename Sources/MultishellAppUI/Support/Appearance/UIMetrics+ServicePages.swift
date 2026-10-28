@@ -7,6 +7,9 @@ extension UIMetrics {
   /// Between a card's leading glyph and its title.
   static let serviceCardGlyphSpacing: Double = 8
 
+  /// A pull request's and a CI run's glyph, on a row, on a page's card and in
+  /// their popover, a touch over the badge text beside them.
+  var serviceGlyphSize: Double { badge + 2 }
   /// The status glyph leading a check, job or earlier run.
   var servicePageRowGlyphSize: Double { badge + 1 }
   /// How far a job, and what failed in it, sits inside its workflow's name.

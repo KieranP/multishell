@@ -179,7 +179,27 @@ struct AppModelServicePagesTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     await harness.model.refreshBranchScan(of: harness.project)
 
-    #expect(harness.model.pullRequestPage(of: main) == .notApplicable)
+    #expect(harness.model.pullRequestPage(of: main) == .trunk)
+  }
+
+  @Test func aWorktreeWithNoBranchSaysSoRatherThanCallingItTheTrunk() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.connectServices()
+    let directory = harness.root.appendingPathComponent("detached", isDirectory: true)
+    _ = try await harness.git.run(
+      ["worktree", "add", "-q", "--detach", directory.path],
+      in: harness.project.path,
+    )
+    await harness.model.refreshWorktrees(of: harness.project)
+    let detached = try #require(
+      harness.model.workspace.worktrees(of: harness.project.id).first { $0.branch == nil }
+    )
+
+    #expect(
+      harness.model.pullRequestPage(of: detached).emptyText?.title
+        == "A worktree with no branch has no pull request"
+    )
   }
 
   @Test func anIntegrationTurnedOffSaysSoOnItsPage() async throws {

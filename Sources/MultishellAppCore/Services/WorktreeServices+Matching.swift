@@ -69,7 +69,7 @@ extension WorktreeServices {
     return ChangesPastHead(
       head: pullRequest.headCommit,
       tip: localTip,
-      ownRemote: "\(upstream.remote)/\(upstream.branch)",
+      ownRemoteBranch: "\(upstream.remote)/\(upstream.branch)",
       ownBranch: localBranch,
     )
   }

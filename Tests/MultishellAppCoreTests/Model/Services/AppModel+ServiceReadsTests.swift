@@ -567,6 +567,25 @@ struct AppModelServiceReadsTests {
     #expect(host.calls == ["list", "list"])
   }
 
+  @Test func aWorktreeCheckedOutOntoAnotherBranchKeepsNoneOfTheOldOnesServices() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(.success([.sample(number: 9, headBranch: "feat")]))
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    _ = try await harness.git.run(["checkout", "-q", "-b", "other"], in: feat.path)
+    await harness.model.refreshWorktrees(of: harness.project)
+
+    let other = try #require(harness.worktree(onBranch: "other"))
+    #expect(!harness.model.services(of: other).showsAnything)
+    #expect(harness.model.remoteState.upstreams[other.id] == nil)
+  }
+
   @Test func turningAnIntegrationOffDropsWhatItReadAtOnce() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -584,6 +603,28 @@ struct AppModelServiceReadsTests {
     #expect(harness.model.ownSettings(of: harness.project).disabledIntegrations == [.gitHub])
     await harness.model.refreshServices(ofProject: harness.project.id)
     #expect(host.calls == ["list"], "nothing asked of a host turned off")
+  }
+
+  @Test func aReadUnderAnIntegrationTurnedOffDisturbsNoOtherProjectsPage() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    host.answer(.success([]))
+    let other = try await harness.addSecondProject()
+    let otherMain = try #require(harness.model.workspace.worktrees(of: other.id).first)
+    harness.model.setIntegration(.circleCI, isEnabled: false, for: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let model = harness.model
+    let fired = AtomicFlag()
+    withObservationTracking {
+      _ = model.ciPage(of: otherMain)
+    } onChange: {
+      fired.raise()
+    }
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(!fired.raised)
   }
 
   @Test func settingsWrittenWithAnIntegrationOffDropWhatItReadAtOnce() async throws {
@@ -1148,10 +1189,11 @@ struct AppModelServiceReadsTests {
     await harness.model.refreshWorktrees(of: harness.project)
     let slow = harness.root.appendingPathComponent("reflog-slow")
     let started = harness.root.appendingPathComponent("reflog-started")
+    let gate = harness.root.appendingPathComponent("reflog-gate")
     try Data().write(to: slow)
     let wrapper = try Scratch.script(
       """
-      case "$*" in *reflog*) [ -e '\(slow.path)' ] && /usr/bin/touch '\(started.path)' && /bin/sleep 1 ;; esac
+      case "$*" in *reflog*) [ -e '\(slow.path)' ] && /usr/bin/touch '\(started.path)' && \(harness.holdLine(until: gate)) ;; esac
       exec git "$@"
       """,
       at: harness.root.appendingPathComponent("fake-git"),
@@ -1171,6 +1213,7 @@ struct AppModelServiceReadsTests {
     _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
     _ = try await harness.git.run(["push", "-q", "origin", "feat"], in: feat.path)
     await harness.model.refreshBranchScan(of: harness.project)
+    try Data().write(to: gate)
     await older.value
 
     #expect(harness.model.remoteState.upstreams[feat.id]?.tip == (try await harness.tip(of: feat)))
@@ -1227,6 +1270,21 @@ struct AppModelServiceReadsTests {
     await harness.model.checkToolsCanRead()
     try await waitUntil { provider.calls.contains("recent") }
     await harness.model.remoteState.servicePoll?.value
+
+    #expect(host.calls == ["list"])
+  }
+
+  @Test func aProviderFoundAbleToReadBeforeAnyListAnsweredReadsThePullRequestsToo() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    provider.refuseReads()
+    await harness.model.checkToolsCanRead()
+
+    provider.allowReads()
+    await harness.model.checkToolsCanRead()
+    try await waitUntil { provider.calls.contains("recent") && harness.servicesAreSettled() }
 
     #expect(host.calls == ["list"])
   }
@@ -1346,6 +1404,25 @@ struct AppModelServiceReadsTests {
 
     try await waitUntil({ host.calls.count == 2 }, seconds: 3)
     #expect(host.calls == ["list", "list"], "what moved during the first is read after it")
+  }
+
+  @Test func aReadAskedForDuringAnotherWaitsForTheFrontWhereTheAppWentBehind() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    defer { host.releaseHeldReads() }
+    host.holdList()
+    let first = Task { await harness.model.refreshServices(ofProject: harness.project.id) }
+    try await waitUntil { host.calls == ["list"] }
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    harness.platform.isActive = false
+    host.releaseHeldReads()
+    await first.value
+
+    #expect(harness.model.remoteState.readLog.isDue(harness.project.id, at: .now))
+    try await waitUntil { harness.servicesAreSettled() }
+    #expect(host.calls == ["list"])
   }
 
   @Test func aHungReadHoldsUpNoPollRound() async throws {

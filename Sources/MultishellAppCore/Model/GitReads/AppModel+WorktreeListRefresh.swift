@@ -55,6 +55,9 @@ extension AppModel {
     do {
       let discovered = try await coordinator.git.list(project)
       guard forgetCacheUnlessListed(project.id) else { return }
+      let branchesBefore = Dictionary(
+        keepingFirst: workspace.worktrees(of: project.id).map { ($0.id, $0.branch) }
+      )
       forgetWorktrees(
         store.replaceWorktrees(
           discovered,
@@ -62,6 +65,10 @@ extension AppModel {
           keeping: worktreeOperations.removalsOutlivingTheirRecord,
         )
       )
+      let checkedOutElsewhere = workspace.worktrees(of: project.id).filter { worktree in
+        branchesBefore[worktree.id].map { $0 != worktree.branch } ?? false
+      }
+      forgetBranchServices(of: Set(checkedOutElsewhere.map(\.id)))
       worktreeRecords[project.id] = records
       let wasMissing = missingProjects.remove(project.id) != nil
       applySharedSettingsReading(shared, for: project)

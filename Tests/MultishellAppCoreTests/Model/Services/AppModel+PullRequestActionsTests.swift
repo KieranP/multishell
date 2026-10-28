@@ -80,6 +80,84 @@ struct AppModelPullRequestActionsTests {
     #expect(host.calls == ["create feat into main"])
   }
 
+  @Test func aWorktreeGoneWhileCreateAsksTheRemoteRaisesNoQuestion() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+
+    let (model, _) = try await createPullRequestWhileTheWorktreeGoes(in: harness, upstreamTip: nil)
+
+    #expect(model.pendingBranchPublish == nil)
+  }
+
+  @Test func aWorktreeGoneWhileCreateAsksTheRemoteRaisesNoAlert() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+
+    let (model, _) = try await createPullRequestWhileTheWorktreeGoes(
+      in: harness,
+      upstreamTip: "abc",
+      revList: "exit 1",
+    )
+
+    #expect(model.presentedError == nil)
+  }
+
+  @Test func aWorktreeGoneWhileCreateAsksTheRemoteOpensNoPage() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+
+    let (_, host) = try await createPullRequestWhileTheWorktreeGoes(
+      in: harness,
+      upstreamTip: "abc",
+      revList: "echo 0",
+    )
+
+    #expect(host.calls.isEmpty)
+  }
+
+  private func createPullRequestWhileTheWorktreeGoes(
+    in harness: GitHarness,
+    upstreamTip: String?,
+    revList: String = "exit 1",
+  ) async throws -> (model: AppModel<FakeSurface>, host: FakePullRequestHost) {
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    let gate = harness.root.appendingPathComponent("gate")
+    let model = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *"remote -v"*) printf 'origin\\t/elsewhere (fetch)\\norigin\\t/elsewhere (push)\\n' ;;
+        *ls-remote*) touch "$SCRATCH/asked"; \(harness.holdLine(until: gate)) ;;
+        *rev-list*) \(revList) ;;
+        *config*) exit 1 ;;
+      esac
+      """
+    )
+    let host = FakePullRequestHost()
+    model.remoteState.connections = ServiceConnections(
+      pullRequestHosts: [.gitHub: host],
+      ciProviders: [:],
+    )
+    if let upstreamTip {
+      model.remoteState.upstreams[feat.id] = BranchUpstream(
+        remote: "origin",
+        branch: "feat",
+        tip: upstreamTip,
+      )
+    }
+    let asked = harness.root.appendingPathComponent("asked")
+
+    let create = Task { await model.createPullRequest(for: feat) }
+    try await waitUntil { FileManager.default.fileExists(atPath: asked.path) }
+    harness.store.replaceWorktrees(
+      model.workspace.worktrees(of: harness.project.id).filter { $0.id != feat.id },
+      forProject: harness.project.id,
+    )
+    model.forgetWorktrees([feat.id])
+    try Data().write(to: gate)
+    await create.value
+    return (model, host)
+  }
+
   @Test func aBranchTheRemoteAlreadyHasUnderItsNameIsSaidToHaveIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -110,6 +188,74 @@ struct AppModelPullRequestActionsTests {
     await harness.model.createPullRequest(for: feat)
 
     #expect(harness.model.pendingBranchPublish?.remote == "fork")
+  }
+
+  @Test func aBranchFollowingItsOwnNameWhosePushesGoToAForkIsPushedToTheFork() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(["remote", "add", "fork", "../fork.git"], in: feat.path)
+    _ = try await harness.git.run(["config", "remote.pushDefault", "fork"], in: feat.path)
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    await harness.model.createPullRequest(for: feat)
+
+    #expect(harness.model.pendingBranchPublish?.remote == "fork")
+    #expect(harness.model.pendingBranchPublish?.remoteBranch == "feat")
+  }
+
+  @Test func aPushDefaultNamingNoRemoteLeavesTheBranchItsUpstream() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(["config", "remote.pushDefault", "nosuch"], in: feat.path)
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    await harness.model.createPullRequest(for: feat)
+
+    let pending = try #require(harness.model.pendingBranchPublish)
+    #expect(pending.remote == "origin")
+    #expect(pending.unpushedCommits == 1)
+    #expect(!pending.remoteHasBranch)
+  }
+
+  @Test func remotesGitCouldNotListBesideAPushRemoteAskNothing() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *"remote -v"*) exit 128 ;;
+        *branch.feat.pushRemote*) exit 1 ;;
+        *remote.pushDefault*) echo fork ;;
+        *rev-list*) echo 1 ;;
+        *ls-remote*) exit 0 ;;
+      esac
+      """
+    )
+    fake.remoteState.connections = ServiceConnections(
+      pullRequestHosts: [.gitHub: FakePullRequestHost()],
+      ciProviders: [:],
+    )
+    fake.remoteState.upstreams[feat.id] = BranchUpstream(
+      remote: "origin",
+      branch: "feat",
+      tip: "a",
+    )
+
+    await fake.createPullRequest(for: feat)
+
+    #expect(fake.pendingBranchPublish == nil)
+    #expect(fake.presentedError?.title == t("error.pull-request-not-started", "feat"))
   }
 
   @Test func aBranchPushedWithoutTrackingAndNothingNewOpensThePage() async throws {
@@ -257,6 +403,22 @@ struct AppModelPullRequestActionsTests {
 
     #expect(harness.model.pendingBranchPublish == nil)
     #expect(harness.model.presentedError?.title == t("error.branch-not-pushed", "feat"))
+  }
+
+  @Test func remotesGitCouldNotListAreNotCalledNone() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    let fake = try harness.modelOnFakeGit("case \"$*\" in *\"remote -v\"*) exit 128;; esac")
+    fake.remoteState.connections = ServiceConnections(
+      pullRequestHosts: [.gitHub: FakePullRequestHost()],
+      ciProviders: [:],
+    )
+
+    await fake.createPullRequest(for: feat)
+
+    #expect(fake.pendingBranchPublish == nil)
+    #expect(fake.presentedError?.title == t("error.pull-request-not-started", "feat"))
   }
 
   @Test func commitsAStatusHasNotCountedYetAreAskedAboutFirst() async throws {

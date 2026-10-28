@@ -95,10 +95,12 @@ extension AppModel {
       for id in projects { remoteState.readLog.markDue(id) }
       return
     }
-    // Its runs at once, a few projects at a time; the pull requests are current.
+    // Its runs at once, a few projects at a time; the pull requests too where
+    // none answered yet, as this read marks the project asked.
+    let unanswered = Set(projects.filter { remoteState.pullRequests[$0]?.hasAnswered != true })
     Task {
       await projects.mapConcurrentlyUnordered(width: Self.concurrentServiceReads) { id in
-        await self.refreshServices(ofProject: id, readsPullRequests: false)
+        await self.refreshServices(ofProject: id, readsPullRequests: unanswered.contains(id))
       }
     }
   }

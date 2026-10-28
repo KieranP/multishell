@@ -38,6 +38,7 @@ struct CIJobRow: View {
     }
     .buttonStyle(.plain)
     .disabled(job.id == nil)
+    .accessibilityValue(AccessibilityText.ciStatus(job.status))
     .help(t("action.open-job", job.name))
   }
 }

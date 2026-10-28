@@ -3,6 +3,8 @@ import MultishellProcess
 /// What `gh --version` and `gh auth status` say, as one status. Older `gh`
 /// writes the login to stderr and says "as"; newer to stdout and "account".
 enum GitHubToolReport {
+  private static let failureMark = "X "
+
   static func status(versionOutput: String, authStatus: ProcessOutput) -> ServiceToolStatus {
     let words = versionOutput.split(whereSeparator: \.isWhitespace)
     guard words.count >= 3, words[0] == "gh", words[1] == "version" else {
@@ -14,9 +16,19 @@ enum GitHubToolReport {
     if let account = account(in: text) { return .ready(version: version, account: account) }
     guard authStatus.succeeded else {
       let failure = GitHubErrorText.failure(from: text)
-      return failure == .loggedOut ? .loggedOut : .unreadable(text.firstLine)
+      return failure == .loggedOut ? .loggedOut : .unreadable(failureReason(in: text))
     }
     return .ready(version: version, account: nil)
+  }
+
+  /// The line `gh` marks failed, without its mark; the first line is the host's
+  /// name when it reports per host.
+  private static func failureReason(in text: String) -> String {
+    for line in text.split(whereSeparator: \.isNewline) {
+      let trimmed = line.drop(while: \.isWhitespace)
+      if trimmed.hasPrefix(failureMark) { return String(trimmed.dropFirst(failureMark.count)) }
+    }
+    return text.firstLine
   }
 
   /// The first login named, `KieranP` of "Logged in to github.com account

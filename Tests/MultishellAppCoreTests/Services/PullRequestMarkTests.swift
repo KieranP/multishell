@@ -37,6 +37,7 @@ struct PullRequestMarkTests {
         == PullRequestMark(.sample(state: .draft))
     )
     #expect(PullRequestMark(.sample(state: .draft)).tone == .tertiary)
+    #expect(PullRequestMark(.sample(state: .draft)).shape == .draft)
   }
 
   @Test func aConflictWinsTheCornerOverAutoMerge() {

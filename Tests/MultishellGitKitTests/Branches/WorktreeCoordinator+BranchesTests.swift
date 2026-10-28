@@ -80,8 +80,7 @@ struct WorktreeCoordinatorBranchesTests {
       ["push", "-q", "-u", "origin", "feat:shared/feat"],
       in: fixture.project.path,
     )
-    let pushed = try await fixture.runner.run(["rev-parse", "feat"], in: fixture.project.path)
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let pushed = try await fixture.tip(of: "feat")
 
     let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
@@ -115,6 +114,26 @@ struct WorktreeCoordinatorBranchesTests {
     )
 
     #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "fork", branch: "feat", tip: tip))
+  }
+
+  @Test func aBranchFollowingItsOwnNameIsPublishedThereThoughItsPushRemoteLacksIt() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    let repository = fixture.project.path
+    let fork = fixture.root.appendingPathComponent("fork.git")
+    _ = try await fixture.runner.run(["init", "-q", "--bare", fork.path], in: fixture.root)
+    _ = try await fixture.runner.run(["remote", "add", "fork", fork.path], in: repository)
+    _ = try await fixture.runner.run(["config", "remote.pushDefault", "fork"], in: repository)
+    _ = try await fixture.runner.run(["push", "-q", "-u", "origin", "feat"], in: repository)
+    let tip = try await fixture.tip(of: "feat")
+
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
+    )
+
+    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
   }
 
   @Test func aBranchPushedWithoutTrackingIsPublishedUnderItsNameOnTheRemote() async throws {

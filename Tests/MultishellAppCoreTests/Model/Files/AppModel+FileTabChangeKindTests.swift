@@ -123,7 +123,7 @@ struct AppModelFileTabChangeKindTests {
   @Test func underBranchABinaryFileTheBranchAddedWearsTheBranchListsDot() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try Data([0, 1, 2, 0]).write(to: feature.path.appending(path: "blob.bin"))
     _ = try await harness.git.run(["add", "blob.bin"], in: feature.path)
     _ = try await harness.git.run(["commit", "-q", "-m", "blob"], in: feature.path)
@@ -169,7 +169,7 @@ struct AppModelFileTabChangeKindTests {
   @Test func aHiddenTabsDotFollowsANewScope() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["work.txt": "work\n"],
@@ -214,7 +214,7 @@ struct AppModelFileTabChangeKindTests {
   @Test func underBranchWithThePanelOnFilesANewFileEditedSinceIsStillAdded() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "add",
       files: ["new.txt": "one\n"],
@@ -241,7 +241,7 @@ struct AppModelFileTabChangeKindTests {
   @Test func underBranchWithNoSharedHistoryAHiddenTabTakesItsDotFromTheStatus() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     let tab = try #require(harness.store.openFileTab(path: "a.txt", in: feature.id))
     harness.model.statuses[feature.id] = Self.status("a.txt", .modified)
@@ -262,7 +262,7 @@ struct AppModelFileTabChangeKindTests {
   @Test func aHiddenTabsDotFollowsTheBaseOnceItResolves() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     try await TestRepository.commit(
       "work",
       files: ["work.txt": "work\n"],
@@ -288,7 +288,7 @@ struct AppModelFileTabChangeKindTests {
   @Test func aNewDiffAlgorithmLeavesAHiddenTabsDotAsItWas() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let feature = try await harness.featureInGitList()
+    let feature = try await harness.featureInChangesList()
     harness.model.setFilesPanelMode(.files)
     harness.model.setChangeScope(.branch)
     let tab = try #require(harness.store.openFileTab(path: "README.md", in: feature.id))

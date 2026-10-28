@@ -5,8 +5,8 @@ import Testing
 @testable import MultishellAppCore
 
 extension GitHarness {
-  /// A worktree on `feature` with the panel open on its Git list, the base resolved.
-  func featureInGitList() async throws -> Worktree {
+  /// A worktree on `feature` with the panel open on its Changes list, the base resolved.
+  func featureInChangesList() async throws -> Worktree {
     let feature = try await createWorktree(onBranch: "feature")
     await model.refreshBranchScan(of: project)
     model.select(feature)

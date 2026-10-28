@@ -6,12 +6,16 @@ import SwiftUI
 /// The panel's CI page: the branch's newest run in a card, its workflows and
 /// jobs under Latest Run, and its earlier runs; see Docs/design/services.md.
 struct CIPanelPage: View {
+  /// Often enough that a run's "Started 4 minutes ago" is never a minute out.
+  private static let ageTickInterval: Duration = .seconds(30)
+
   let model: AppModel
   let worktree: Worktree
   let theme: Theme
 
   @State private var showsLatestRun = true
   @State private var showsEarlierRuns = false
+  @State private var now = Date()
 
   var body: some View {
     let metrics = model.metrics
@@ -19,7 +23,7 @@ struct CIPanelPage: View {
     if case .run(let run) = page {
       ScrollView {
         VStack(alignment: .leading, spacing: 0) {
-          CIRunCard(model: model, worktree: worktree, run: run, theme: theme)
+          CIRunCard(model: model, worktree: worktree, run: run, now: now, theme: theme)
           PanelSectionHeader(
             title: t("panel.latest-run"),
             isExpanded: $showsLatestRun,
@@ -39,7 +43,7 @@ struct CIPanelPage: View {
             )
             if showsEarlierRuns {
               ForEach(earlier) { run in
-                CIHistoryRow(model: model, worktree: worktree, run: run, theme: theme)
+                CIHistoryRow(model: model, worktree: worktree, run: run, now: now, theme: theme)
               }
             }
           }
@@ -49,6 +53,7 @@ struct CIPanelPage: View {
         }
         .padding(.bottom, 8)
       }
+      .ticking($now, every: Self.ageTickInterval)
     } else if let text = page.emptyText {
       PanelEmptyState(
         text: text,

@@ -11,7 +11,9 @@ extension AppModel {
     if let pullRequest = services(of: worktree).shownPullRequest {
       return .pullRequest(pullRequest)
     }
-    guard let branch = pullRequestBranch(of: worktree, in: project) else { return .notApplicable }
+    guard let branch = pullRequestBranch(of: worktree, in: project) else {
+      return worktree.branch == nil || worktree.isBare ? .notApplicable : .trunk
+    }
     guard reading?.hasAnswered == true else {
       return .notRead(problem: reading.flatMap { $0.failure?.reason(integration: $0.integration) })
     }
@@ -90,7 +92,7 @@ extension AppModel {
     Array(ciHistory(of: worktree)?.runs.dropFirst() ?? [])
   }
 
-  /// The history read, where it is of the branch the worktree follows now.
+  /// The history read, where it is of the branch the worktree is published at now.
   func ciHistory(of worktree: Worktree) -> CIRunHistory? {
     guard let history = remoteState.ciHistories[worktree.id],
       history.branch == remoteState.upstreams[worktree.id]?.branch

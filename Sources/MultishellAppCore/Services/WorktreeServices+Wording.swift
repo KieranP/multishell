@@ -41,14 +41,15 @@ extension WorktreeServices {
     return lines.joined(separator: "\n")
   }
 
-  /// What a screen reader says of the row's glyphs.
+  /// What a screen reader says of the row's glyphs, and what the tooltip says
+  /// makes them old, as it has no tooltip to hover; nothing where none is drawn.
   public var spokenSummary: String? {
+    guard showsAnything else { return nil }
     var parts: [String] = []
     if let pullRequest {
       parts.append(t("spoken.pull-request", String(pullRequest.number), pullRequest.stateText))
     }
-    if let outgrownText { parts.append(outgrownText) }
-    if let ciRunText { parts.append(ciRunText) }
+    parts += [outgrownText, ciRunText, readProblemText].compactMap(\.self)
     return parts.isEmpty ? nil : parts.joined(separator: ", ")
   }
 }

@@ -1,5 +1,5 @@
-/// The remote branch a local branch is set to follow, by the names the
-/// remote knows it by: what a pull request and a CI run are filed under.
+/// The remote branch a local branch is published at, by the names the remote
+/// knows it by: what a pull request and a CI run are filed under.
 public struct BranchUpstream: Hashable, Sendable {
   /// `origin`.
   public let remote: String

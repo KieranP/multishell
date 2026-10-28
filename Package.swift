@@ -75,7 +75,7 @@ let package = Package(
         "MultishellCore", "MultishellProcess", "MultishellGitKit", "MultishellServices",
       ],
     ),
-    // A file tab's highlighting, apart from the four libraries, which import
+    // A file tab's highlighting, apart from the five libraries, which import
     // Apple's frameworks and swift-subprocess alone; see Docs/develop/layout.md.
     .target(
       name: "MultishellHighlight",
