@@ -25,14 +25,14 @@ There is no notarised release yet, so you build it from source. You need:
 
 - macOS 26 Tahoe or later
 - Xcode 26 or later (Swift 6.2), not only the command line tools
-- the Zig version Ghostty pins, `zig@0.16` today
+- the Zig version Ghostty pins, `zig@0.17` today
 - `git` on your `PATH`
 
 Set up the toolchain once, and again after each Xcode update. Skip
 `xcode-select` if Xcode is already the active developer directory:
 
 ```sh
-brew install zig@0.16                          # Scripts/build-ghostty.sh --zig-version names the version
+brew install zig@0.17                          # Scripts/build-ghostty.sh --zig-version names the version
 sudo xcode-select -s /Applications/Xcode.app
 sudo xcodebuild -license
 sudo xcodebuild -runFirstLaunch
