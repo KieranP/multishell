@@ -2,6 +2,15 @@ import Foundation
 
 /// A payload turned into the report the helper sends.
 extension AgentHookIntegration {
+  /// The payload on stdin in this agent's spelling; `eventName` is what the
+  /// hook line names, for an agent whose payload does not.
+  public func payload(json data: Data, eventName: String?) -> AgentHookPayload? {
+    switch payloadSpelling {
+    case .hookEventName: AgentHookPayload(json: data)
+    case .antigravity: eventName.flatMap { AgentHookPayload(antigravityJSON: data, eventName: $0) }
+    }
+  }
+
   /// Whether a payload is one of the asked-for events, which the helper asks
   /// before it walks its ancestry for a pid.
   public func asksFor(_ payload: AgentHookPayload) -> Bool {

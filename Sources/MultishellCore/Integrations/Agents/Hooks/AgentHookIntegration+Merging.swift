@@ -9,7 +9,7 @@ extension AgentHookIntegration {
   /// Whether any hook of ours is in there at all, so a half-written file
   /// still counts.
   func holdsAnyOfOurHooks(_ settings: [String: Any]) -> Bool {
-    events.contains { holdsOurHook(under: $0, in: settings) }
+    writtenEvents.contains { holdsOurHook(under: $0, in: settings) }
   }
 
   func holdsOurHook(under event: AgentHookEvent, in settings: [String: Any]) -> Bool {
@@ -27,14 +27,25 @@ extension AgentHookIntegration {
   {
     var result = settings
     guard var hooks = hooksSection(settings) else { return result }
-    for event in events {
+    for event in writtenEvents {
       guard var existing = existingGroups(hooks[event.name]) else { continue }
       if !existing.contains(where: holdsOurHook) {
         existing.append(ourGroup(for: event, helper: helper))
       }
       hooks[event.name] = existing
     }
-    result["hooks"] = hooks
+    result[sectionKey] = hooks
+    return result
+  }
+
+  /// Ours out first, so an install over an older build's is an update. A named
+  /// set the user switched off stays off.
+  func replacingOurs(in settings: [String: Any], helper: String) -> [String: Any] {
+    var result = adding(to: removing(from: settings), helper: helper)
+    guard isNamedHookSet, var section = hooksSection(result) else { return result }
+    let enabled = hooksSection(settings)?["enabled"]
+    section["enabled"] = enabled is NSNull ? true : enabled ?? true
+    result[sectionKey] = section
     return result
   }
 
@@ -42,7 +53,7 @@ extension AgentHookIntegration {
   /// empty. Remove takes back what Add put in and nothing else.
   func removing(from settings: [String: Any]) -> [String: Any] {
     var result = settings
-    guard var hooks = settings["hooks"] as? [String: Any] else { return result }
+    guard var hooks = settings[sectionKey] as? [String: Any] else { return result }
     for (event, value) in hooks {
       guard let groups = existingGroups(value) else { continue }
       var changed = false
@@ -58,7 +69,7 @@ extension AgentHookIntegration {
       guard changed else { continue }
       hooks[event] = kept.isEmpty ? nil : kept
     }
-    result["hooks"] = hooks.isEmpty ? nil : hooks
+    result[sectionKey] = isLeftEmpty(hooks) ? nil : hooks
     return result
   }
 
@@ -73,14 +84,21 @@ extension AgentHookIntegration {
   /// answer for every file the agents themselves write.
   func eventsOfUnexpectedShape(in settings: [String: Any]) -> [String] {
     let hooks = hooksSection(settings) ?? [:]
-    return events.filter { existingGroups(hooks[$0.name]) == nil }.map(\.name)
+    return writtenEvents.filter { existingGroups(hooks[$0.name]) == nil }.map(\.name)
   }
 
-  /// The file's `hooks`, `nil` where it is not an object of events. Absent
-  /// reads as empty, and so does `null`, that being the key spelled out.
+  /// The file's `hooks`, or our named set, `nil` where it is not an object of
+  /// events. Absent reads as empty, and so does `null`, that being the key spelled out.
   func hooksSection(_ settings: [String: Any]) -> [String: Any]? {
-    guard let value = settings["hooks"], !(value is NSNull) else { return [:] }
+    guard let value = settings[sectionKey], !(value is NSNull) else { return [:] }
     return value as? [String: Any]
+  }
+
+  /// A named set's `enabled` is its switch, not a hook, so a set left holding
+  /// only that goes; under `hooks` the key would be the user's.
+  private func isLeftEmpty(_ section: [String: Any]) -> Bool {
+    guard isNamedHookSet else { return section.isEmpty }
+    return section.keys.allSatisfy { $0 == "enabled" }
   }
 
   /// One entry of the file, whichever of the two shapes it is in: a group

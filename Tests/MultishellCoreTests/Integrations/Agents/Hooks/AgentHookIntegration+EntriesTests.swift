@@ -53,4 +53,24 @@ struct AgentHookIntegrationEntriesTests: AgentHookFixtures {
     }
     return Set(collect(try JSONSerialization.jsonObject(with: Data(snippet.utf8))))
   }
+
+  @Test func antigravitysToolEventsAreGroupsAndTheRestAreBareHooksNamingTheirEvent() throws {
+    let set = try #require(
+      AgentHookCatalogue.antigravity.hooksObject(helper: helper)["multishell"] as? [String: Any]
+    )
+    #expect(Set(set.keys) == ["enabled", "SessionStart", "PreInvocation", "PreToolUse", "Stop"])
+    let tool = try #require((set["PreToolUse"] as? [[String: Any]])?.first)
+    #expect(tool["matcher"] as? String == "*")
+    let toolHook = try #require((tool["hooks"] as? [[String: Any]])?.first)
+    #expect((toolHook["command"] as? String)?.contains("--event PreToolUse") == true)
+    let stop = try #require((set["Stop"] as? [[String: Any]]))
+    #expect(stop.count == 1, "one hook however many states the Stop stands for")
+    #expect(stop[0]["timeout"] as? Int == 5, "in seconds")
+    for event in ["SessionStart", "PreInvocation", "Stop"] {
+      let hooks = try #require(set[event] as? [[String: Any]])
+      #expect(hooks.count == 1, "\(event)")
+      #expect(hooks[0]["hooks"] == nil && hooks[0]["matcher"] == nil, "\(event) is a bare hook")
+      #expect((hooks[0]["command"] as? String)?.contains("--event \(event)") == true, "\(event)")
+    }
+  }
 }

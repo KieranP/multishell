@@ -4,6 +4,8 @@ extension AgentCatalogue {
   private static let claudeEfforts = ["low", "medium", "high", "xhigh", "max"]
   private static let copilotEfforts = ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
   private static let codexEfforts = ["low", "medium", "high", "xhigh", "max"]
+  private static let antigravityGeminiEfforts = ["low", "medium", "high"]
+  private static let antigravityClaudeEfforts = ["low", "medium", "high", "max"]
 
   // Aliases follow each release. No MCP server, and user settings only: `-p`
   // skips the trust prompt a repository's hooks wait behind. See agents.md.
@@ -42,6 +44,21 @@ extension AgentCatalogue {
     leadingArguments: ["--approval-mode", "plan"],
     promptArgument: .option("--prompt"),
     models: ["pro", "flash", "flash-lite"].map { AgentModel($0) },
+  )
+
+  // `agy --help` and the models its 1.4.8 binary names, each with the efforts
+  // it lists. Plan mode makes no edit; it has no flag taking a tool away.
+  static let antigravityOneShot = AgentOneShot(
+    leadingArguments: ["--mode", "plan"],
+    promptArgument: .option("--print"),
+    models: [
+      AgentModel("gemini-4-argon", efforts: antigravityGeminiEfforts),
+      AgentModel("gemini-3.8-flash", efforts: antigravityGeminiEfforts),
+      AgentModel("gemini-3.7-flash", efforts: antigravityGeminiEfforts),
+      AgentModel("claude-opus-5-5", efforts: antigravityClaudeEfforts),
+      AgentModel("claude-sonnet-5-5", efforts: antigravityClaudeEfforts),
+    ],
+    effortFlag: AgentOption(name: "--effort"),
   )
 
   // Copilot 1.0.98's `help config` list. Its effort flag names one set for

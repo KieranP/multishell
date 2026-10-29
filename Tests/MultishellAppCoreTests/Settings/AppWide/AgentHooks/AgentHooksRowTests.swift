@@ -61,6 +61,17 @@ struct AgentHooksRowTests {
     for row in rows { #expect(row.info.contains(row.name)) }
   }
 
+  @Test func onlyAnAgentWhoseHooksReportWaitingIsSaidToReportIt() throws {
+    let rows = AgentHooksRow.rows(
+      detection: detection(["claude", "antigravity", "opencode"]),
+      installed: [],
+    )
+    let waiting = Dictionary(
+      uniqueKeysWithValues: rows.map { ($0.id, $0.info.contains("Waiting")) }
+    )
+    #expect(waiting == ["claude": true, "antigravity": false, "opencode": true])
+  }
+
   @Test func aRowSaysWhereItsHooksAreAndOffersWhatItsStateAllows() throws {
     let rows = AgentHooksRow.rows(
       detection: detection(["claude", "codex", "gemini"]),

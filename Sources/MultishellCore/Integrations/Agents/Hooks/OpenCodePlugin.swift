@@ -1,8 +1,21 @@
 /// The plugin OpenCode is given, since it runs no hook command. Here and not
 /// in `Resources`, which the helper cannot reach; see Docs/design/agents.md.
 enum OpenCodePlugin {
+  /// OpenCode 2 loads a plugin only from a default export with an id and a
+  /// `setup`, and runs no plugin written for 1.x.
   static func source(helper: String) -> String {
-    javaScript(helperExpression: helperExpression(helper))
+    """
+    // Written by Multishell so its tabs can show what a session is doing.
+    // Remove it from Settings > Agents, or delete this file.
+    import { spawn } from "node:child_process"
+    import { homedir } from "node:os"
+
+    const helper = \(helperExpression(helper))
+
+    """ + latestMap + ancestry + within + reporter + tracker + directorySessions + setup + """
+      export default { id: "multishell", setup }
+
+      """
   }
 
   /// `$HOME` is the shell's, not JavaScript's, so the plugin asks the

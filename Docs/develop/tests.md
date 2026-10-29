@@ -159,8 +159,12 @@ rule holds is in `Docs/design/`.
   quotes or out: ShellLineTests under five real shells and each installed fish.
 - **A hook variable renamed under hooks already written**: HookVariableTests.
 - **The plugin follows a child session**: OpenCodePluginTests runs the generated
-  JavaScript with spawn replaced, since a source test passes whatever it was
-  rewritten to.
+  JavaScript's `setup` against a fake context with spawn replaced, since a
+  source test passes whatever it was rewritten to. Its bus queues events as
+  OpenCode's does, waiting on no handler, and each step waits one turn of the
+  loop, so a step's reports land before the next. A lookup answered late waits
+  for a step that lets it land, not a timer, and a hook marked unawaited lets
+  the next step run during it.
 - **The chip reads the same roster on the row and on the card**, and a Done
   gives way to a worker and comes back once: AppModelSessionReportsTests.
 - **Export keeps a hook the user refused** without trusting it, and keeps the

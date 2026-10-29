@@ -11,6 +11,7 @@ public enum AgentCatalogue {
   public static var startableIDs: [String] { agents.map(\.id) + [customID] }
   static let codexID = "codex"
   static let geminiID = "gemini"
+  static let antigravityID = "antigravity"
   static let copilotID = "copilot"
   static let openCodeID = "opencode"
   /// Agents a build before this one offered, which a state file may still name.
@@ -44,6 +45,15 @@ public enum AgentCatalogue {
       mark: .gemini,
       oneShot: geminiOneShot,
       resumeArguments: ["--resume", "latest"],
+    ),
+    AgentDescriptor(
+      id: antigravityID,
+      name: "Antigravity CLI",
+      executable: "agy",
+      taskArgument: .option("--prompt-interactive"),
+      mark: .monogram("Ag"),
+      oneShot: antigravityOneShot,
+      resumeArguments: ["--continue"],
     ),
     AgentDescriptor(
       id: copilotID,

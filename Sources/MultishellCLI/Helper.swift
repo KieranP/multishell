@@ -44,7 +44,12 @@ enum Helper {
 
       // The retired line names no agent, so it reports nothing and exits 0.
       case AgentHookCatalogue.subcommand, AgentHookCatalogue.retiredSubcommand:
-        reportAgentHook(agentID(in: arguments), environment: environment, input: standardInput)
+        reportAgentHook(
+          agentID(in: arguments),
+          event: hookEventName(in: arguments),
+          environment: environment,
+          input: standardInput,
+        )
         return 0
 
       case installHooksName:

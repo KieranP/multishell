@@ -30,7 +30,7 @@ extension AgentHookIntegration {
   /// none is under an event it no longer asks for.
   func isCurrent(in settings: [String: Any], helper: String) -> Bool {
     guard let hooks = hooksSection(settings),
-      let wanted = hooksObject(helper: helper)["hooks"] as? [String: Any]
+      let wanted = hooksObject(helper: helper)[sectionKey] as? [String: Any]
     else { return false }
     // Rendered, as a file's numbers are read as marked literals.
     return Set(hooks.keys).union(wanted.keys).allSatisfy { event in

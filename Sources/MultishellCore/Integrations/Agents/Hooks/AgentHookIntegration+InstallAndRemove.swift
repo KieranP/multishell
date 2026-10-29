@@ -12,12 +12,13 @@ extension AgentHookIntegration {
       try AgentHookFile.writeWhole(snippet(helper: helper), to: file)
     } else {
       let settings = try AgentHookFile.read(file)
-      guard hooksSection(settings) != nil else { throw UnexpectedHookSectionShape(file: file) }
-      if let event = eventsOfUnexpectedShape(in: settings).first {
-        throw UnexpectedHookEntriesShape(file: file, event: event)
+      guard hooksSection(settings) != nil else {
+        throw UnexpectedHookSectionShape(file: file, section: sectionKey)
       }
-      // Ours out first, so an install over an older build's is an update.
-      try AgentHookFile.write(adding(to: removing(from: settings), helper: helper), to: file)
+      if let event = eventsOfUnexpectedShape(in: settings).first {
+        throw UnexpectedHookEntriesShape(file: file, section: sectionKey, event: event)
+      }
+      try AgentHookFile.write(replacingOurs(in: settings, helper: helper), to: file)
     }
   }
 

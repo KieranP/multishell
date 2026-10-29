@@ -7,12 +7,14 @@ extension Helper {
   /// stdout, and an event that stands for nothing costs one silent process.
   static func reportAgentHook(
     _ id: String?,
+    event: String?,
     environment: [String: String],
     input: FileHandle,
   ) {
     let payloadJSON = input.readDataToEndOfFile()
     guard let integration = id.flatMap(AgentHookCatalogue.integration),
-      let payload = AgentHookPayload(json: payloadJSON), integration.asksFor(payload)
+      let payload = integration.payload(json: payloadJSON, eventName: event),
+      integration.asksFor(payload)
     else { return }
     let pid = reportingPID(in: environment)
     guard
@@ -37,7 +39,16 @@ extension Helper {
   /// Which agent a hook line names; one naming none reports nothing, as
   /// every line written names one. Read by hand, as a hook must never fail.
   static func agentID(in arguments: [String]) -> String? {
-    guard let flagIndex = arguments.firstIndex(of: "--agent"), flagIndex + 1 < arguments.count
+    value(of: "--agent", in: arguments)
+  }
+
+  /// The event a hook line names, for an agent whose payload does not.
+  static func hookEventName(in arguments: [String]) -> String? {
+    value(of: "--event", in: arguments)
+  }
+
+  private static func value(of flag: String, in arguments: [String]) -> String? {
+    guard let flagIndex = arguments.firstIndex(of: flag), flagIndex + 1 < arguments.count
     else {
       return nil
     }

@@ -12,7 +12,7 @@ struct AgentHookCatalogueTests {
     #expect(AgentHookCatalogue.integration("nonesuch") == nil)
     #expect(
       AgentHookCatalogue.integrations.map(\.id) == [
-        "claude", "codex", "gemini", "copilot", "opencode",
+        "claude", "codex", "gemini", "antigravity", "copilot", "opencode",
       ]
     )
   }
