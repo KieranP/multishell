@@ -15,7 +15,7 @@ public protocol CIProvider: Sendable {
   /// newest of a branch the recent runs left out.
   func runs(onBranch branch: String, limit: Int, in directory: URL) async throws -> [CIRun]
 
-  /// The run's workflows and their jobs, for the popover.
+  /// The run's workflows and their jobs, for the CI page.
   func workflows(of run: CIRun, in directory: URL) async throws -> [CIWorkflow]
 
   /// What failed in the run, condensed, as the provider words it, by job.

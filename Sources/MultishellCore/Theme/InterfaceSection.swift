@@ -4,7 +4,7 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
   case agentsCard = "agents_card"
   case agentsColumn = "agents_column"
   case agentsPanel = "agents_panel"
-  /// A worktree's latest CI run, on its row, its popover and the panel's pages.
+  /// A worktree's latest CI run, on its row and the panel's pages.
   case ciRuns = "ci"
   case debugInfo = "debug_info"
   /// What the detail area shows with no tab in it: a placeholder, or a

@@ -41,6 +41,14 @@ extension AppModel {
         \.remoteState.checks,
         remoteState.checks.filter { !withoutHost.contains($0.key) },
       )
+      setIfChanged(
+        \.remoteState.pendingMerges,
+        remoteState.pendingMerges.filter { !withoutHost.contains($0.key) },
+      )
+      setIfChanged(
+        \.remoteState.autoMergeCancellations,
+        remoteState.autoMergeCancellations.filter { !withoutHost.contains($0.key) },
+      )
     }
     if !withoutProvider.isEmpty {
       setIfChanged(
@@ -106,6 +114,7 @@ extension AppModel {
       let pullRequest = services(of: worktree).shownPullRequest
     else {
       setIfChanged(\.remoteState.checks[worktree.id], nil)
+      reconcileMerges(of: [worktree.id])
       return
     }
     var reading =
@@ -134,6 +143,7 @@ extension AppModel {
       pullRequestHost(for: project)?.0 == integration
     else { return }
     setIfChanged(\.remoteState.checks[worktree.id], reading)
+    reconcileMerges(of: [worktree.id])
   }
 
   private func readCIHistory(of worktree: Worktree) async {

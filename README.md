@@ -131,10 +131,12 @@ terminals, with the diff unified or side by side.
 
 ### Pull requests and CI
 
-- **Read through `gh` and `circleci`**, both optional, with a popover on the row
-  and full pages in the side panel.
+- **Read through `gh` and `circleci`**, both optional. A row's pull request or
+  CI mark opens its full page in the side panel.
 - **Create Pull Request** pushes the branch after asking, then opens GitHub's
   page for it.
+- **Merge from the pull request page**, with GitHub's own commit message to edit
+  first, or turn auto-merge on while required checks still run.
 - **Settings > Integrations** shows each tool's version and login, and turns
   either off per project.
 

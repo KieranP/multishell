@@ -3,22 +3,8 @@ import MultishellCore
 import MultishellServices
 
 extension AppModel {
-  /// The shown run's workflows, as its popover lists them; `nil` until read.
-  public func ciWorkflows(of worktree: Worktree) -> [CIWorkflow]? {
-    services(of: worktree).ciRun.flatMap(ciWorkflows(ofRun:))
-  }
-
   public func ciWorkflows(ofRun run: CIRun) -> [CIWorkflow]? {
     remoteState.ciWorkflows[run.id]?.value
-  }
-
-  /// Read as the popover opens. A failure leaves the popover with the run's
-  /// own status, which it already shows.
-  public func readCIWorkflows(of worktree: Worktree) async {
-    guard let project = workspace.project(worktree.projectID),
-      let run = services(of: worktree).ciRun
-    else { return }
-    await readCIWorkflows(of: run, in: project)
   }
 
   /// A run of the panel's history, read as its row opens.

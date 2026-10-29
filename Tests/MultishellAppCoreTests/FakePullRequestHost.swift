@@ -1,4 +1,5 @@
 import Foundation
+import MultishellProcess
 import Synchronization
 
 @testable import MultishellServices
@@ -13,10 +14,16 @@ final class FakePullRequestHost: PullRequestHost {
     var holdsList = false
     var holdsChecks = false
     var holdsToolStatus = false
+    var mergeOptions: Result<PullRequestMergeOptions, ServiceReadFailure>?
+    var mergeFailure: ProcessFailure?
+    var holdsMerges = false
+    var holdsMergeOptions = false
+    var heldOptionsReads: [AsyncStream<Void>.Continuation] = []
   }
 
   private let state = Mutex(State())
   private let heldReads = AsyncStream<Void>.makeStream()
+  private let heldWrites = AsyncStream<Void>.makeStream()
 
   var calls: [String] { state.withLock { $0.calls } }
 
@@ -75,6 +82,88 @@ final class FakePullRequestHost: PullRequestHost {
   ) async throws {
     let owner = headRepository.map { "\($0.owner):" } ?? ""
     state.withLock { $0.calls.append("create \(owner)\(head) into \(base)") }
+  }
+
+  func answerMergeOptions(_ options: Result<PullRequestMergeOptions, ServiceReadFailure>) {
+    state.withLock { $0.mergeOptions = options }
+  }
+
+  /// Every merge after this fails as `gh` would, with `message` on stderr.
+  func failMerges(saying message: String) {
+    state.withLock { state in
+      state.mergeFailure = ProcessFailure(
+        executable: "gh",
+        arguments: ["pr", "merge"],
+        status: 1,
+        message: message,
+      )
+    }
+  }
+
+  /// Every merge and auto-merge cancelling waits, as one on a slow network
+  /// would, until `releaseHeldWrites`.
+  func holdMerges() {
+    state.withLock { $0.holdsMerges = true }
+  }
+
+  func releaseHeldWrites() {
+    heldWrites.continuation.finish()
+  }
+
+  /// Each options read answers what was set as it began, once
+  /// `releaseMergeOptionsRead` lets that one go, in the order they began.
+  func holdMergeOptions() {
+    state.withLock { $0.holdsMergeOptions = true }
+  }
+
+  func releaseMergeOptionsRead(_ index: Int) {
+    state.withLock { $0.heldOptionsReads[index].finish() }
+  }
+
+  func mergeOptions(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> PullRequestMergeOptions {
+    let held = AsyncStream<Void>.makeStream()
+    let (answer, holds) = state.withLock { state in
+      state.calls.append("merge options #\(pullRequest.number)")
+      if state.holdsMergeOptions { state.heldOptionsReads.append(held.continuation) }
+      return (state.mergeOptions, state.holdsMergeOptions)
+    }
+    if holds {
+      for await _ in held.stream {}
+    }
+    guard let answer else { throw ServiceReadFailure.failed("no merge options set") }
+    return try answer.get()
+  }
+
+  func merge(
+    _ pullRequest: PullRequest,
+    as merge: PullRequestMerge,
+    in directory: URL,
+  ) async throws {
+    let message = merge.message.map { " \($0.subject)|\($0.body)" } ?? ""
+    let auto = merge.waitsForChecks ? " auto" : ""
+    let (holds, failure) = state.withLock { state in
+      state.calls.append(
+        "merge #\(pullRequest.number) \(merge.method) at \(merge.headCommit)\(message)\(auto)"
+      )
+      return (state.holdsMerges, state.mergeFailure)
+    }
+    if holds {
+      for await _ in heldWrites.stream {}
+    }
+    if let failure { throw failure }
+  }
+
+  func disableAutoMerge(of pullRequest: PullRequest, in directory: URL) async throws {
+    let holds = state.withLock { state in
+      state.calls.append("disable auto-merge #\(pullRequest.number)")
+      return state.holdsMerges
+    }
+    if holds {
+      for await _ in heldWrites.stream {}
+    }
   }
 
   func holdToolStatus() {

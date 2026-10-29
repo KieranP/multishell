@@ -49,6 +49,30 @@ struct AppModelFilesPanelTests {
     #expect(harness.model.filesPanelState(of: main.id).filterText == "")
   }
 
+  @Test func aClickOnTheRowsPullRequestGlyphOpensThePanelOnThePullRequestPage() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+
+    harness.model.showPanelPage(.pullRequest, of: main)
+
+    #expect(harness.model.showsFilesPanel)
+    #expect(harness.model.workspace.selectedWorktreeID == main.id)
+    #expect(harness.model.workspace.filesPanelMode == .pullRequest)
+  }
+
+  @Test func aClickOnTheRowsCIGlyphOpensThePanelOnTheCIPage() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+
+    harness.model.showPanelPage(.ciRuns, of: main)
+
+    #expect(harness.model.showsFilesPanel)
+    #expect(harness.model.workspace.selectedWorktreeID == main.id)
+    #expect(harness.model.workspace.filesPanelMode == .ciRuns)
+  }
+
   @Test func theOpenPanelListsTheIndexAndNewFiles() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

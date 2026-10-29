@@ -11,6 +11,18 @@ enum GitHubFixtures {
     "updatedAt":"2026-10-22T06:25:49Z","url":"https://github.com/KieranP/multishell/pull/3"}]
     """
 
+  /// What `gh api graphql` printed for the merge options of this repository's
+  /// pull request 26, its squash body cut to two lines.
+  static let mergeOptions = """
+    {"data":{"repository":{"mergeCommitAllowed":false,"squashMergeAllowed":true,\
+    "rebaseMergeAllowed":true,"autoMergeAllowed":true,"viewerPermission":"ADMIN",\
+    "viewerDefaultMergeMethod":"SQUASH","pullRequest":{\
+    "mergeHeadline":"Merge pull request #26 from KieranP/agents",\
+    "mergeBody":"Add Antigravity CLI hooks and port the OpenCode plugin to OpenCode 2",\
+    "squashHeadline":"Add Antigravity CLI hooks and port the OpenCode plugin to OpenCode 2 (#26)",\
+    "squashBody":"Google stopped serving Gemini CLI on personal plans.\\n\\nCo-authored-by: Claude"}}}}
+    """
+
   static var open: String {
     """
     [\(record(number: 40, reviewDecision: "APPROVED", mergeable: "CONFLICTING", mergeStateStatus: "DIRTY")),

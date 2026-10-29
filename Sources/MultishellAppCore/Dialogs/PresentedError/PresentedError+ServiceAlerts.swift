@@ -18,6 +18,16 @@ extension PresentedError {
         t("error.pull-request-not-started", failure.branch), t("error.unpushed-commits-unknown"),
       )
 
+    case let failure as PullRequestMergeFailure:
+      let number = String(failure.number)
+      let title =
+        switch failure.action {
+        case .merge: t("error.pull-request-not-merged", number)
+        case .mergeWhenReady: t("error.auto-merge-not-turned-on", number)
+        case .cancelAutoMerge: t("error.auto-merge-not-cancelled", number)
+        }
+      return (title, describe(failure.underlying))
+
     case let failure as ServiceOpenFailure:
       return (
         t("error.service-not-opened", failure.integration.displayName),

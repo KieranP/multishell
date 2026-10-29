@@ -61,11 +61,13 @@ public struct MergeReadiness: Equatable, Sendable {
   let verdict: Verdict
   let blockers: [Blocker]
   public let requirements: [Requirement]
+  let mergeAction: MergeAction?
 
   /// `checks` is `nil` until a read answers: none read is not none failing.
   init(_ pullRequest: PullRequest, checks: [PullRequestCheck]?) {
     let blockers = Self.blockers(of: pullRequest, checks: checks)
     self.blockers = blockers
+    mergeAction = Self.mergeAction(of: pullRequest, blockers: blockers)
     requirements = Self.requirements(of: pullRequest, checks: checks)
     verdict =
       switch pullRequest.state {

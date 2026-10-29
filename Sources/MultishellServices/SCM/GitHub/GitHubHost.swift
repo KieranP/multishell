@@ -38,6 +38,14 @@ public struct GitHubHost: PullRequestHost {
     )
   }
 
+  private static func flag(of method: PullRequestMergeMethod) -> String {
+    switch method {
+    case .merge: "--merge"
+    case .rebase: "--rebase"
+    case .squash: "--squash"
+    }
+  }
+
   public func pullRequests(in directory: URL) async throws -> [PullRequest] {
     let json = try await runner.read(
       [
@@ -87,6 +95,56 @@ public struct GitHubHost: PullRequestHost {
     _ = try await runner.run(
       ["pr", "create", "--web", "--head", qualifiedHead, "--base", base],
       in: directory,
+    )
+  }
+
+  /// No `gh pr` command prints GitHub's own merge messages, so this asks its
+  /// GraphQL API through `gh api`, which still keeps the login and the host.
+  public func mergeOptions(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> PullRequestMergeOptions {
+    guard let address = GitHubPullRequestAddress(pullRequest.url) else {
+      throw ServiceReadFailure.failed(
+        t("integration.page-names-no-repository", pullRequest.url.absoluteString)
+      )
+    }
+    // `-f`, not `-F`, so an owner named all in digits stays a string.
+    let json = try await runner.read(
+      [
+        "api", "graphql", "--hostname", address.host,
+        "-f", "owner=\(address.repository.owner)", "-f", "name=\(address.repository.name)",
+        "-F", "number=\(pullRequest.number)", "-f", "query=\(GitHubMergeOptionsRecord.query)",
+      ],
+      in: directory,
+      failure: GitHubErrorText.failure(from:),
+    )
+    return try GitHubMergeOptionsRecord.options(from: json)
+  }
+
+  /// Named by its page, the repository the options were read of, not by its
+  /// number in whichever `gh repo set-default` names. Each value joins its flag.
+  public func merge(
+    _ pullRequest: PullRequest,
+    as merge: PullRequestMerge,
+    in directory: URL,
+  ) async throws {
+    var arguments = [
+      "pr", "merge", pullRequest.url.absoluteString, Self.flag(of: merge.method),
+      "--match-head-commit=\(merge.headCommit)",
+    ]
+    if let message = merge.message {
+      arguments += ["--subject=\(message.subject)", "--body=\(message.body)"]
+    }
+    if merge.waitsForChecks { arguments.append("--auto") }
+    try await runner.run(arguments, in: directory, timeout: ServiceToolRunner.writeTimeout)
+  }
+
+  public func disableAutoMerge(of pullRequest: PullRequest, in directory: URL) async throws {
+    try await runner.run(
+      ["pr", "merge", pullRequest.url.absoluteString, "--disable-auto"],
+      in: directory,
+      timeout: ServiceToolRunner.writeTimeout,
     )
   }
 

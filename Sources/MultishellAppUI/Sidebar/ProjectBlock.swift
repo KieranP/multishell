@@ -108,7 +108,8 @@ struct ProjectBlock: View {
       cancelRename: { model.cancelRenamingWorktree() },
       showModifiedFiles: { model.showModifiedFiles(of: worktree) },
       clearAutoRenameFailure: { model.clearAutoRenameFailure(of: worktree.id) },
-      servicesPopover: { ServicesPopover(model: model, worktree: worktree, theme: theme) },
+      showPullRequest: { model.showPanelPage(.pullRequest, of: worktree) },
+      showCIRuns: { model.showPanelPage(.ciRuns, of: worktree) },
     )
     .equatable()
     .onTapGesture { model.select(worktree) }

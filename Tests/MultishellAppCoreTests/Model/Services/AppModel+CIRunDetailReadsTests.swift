@@ -9,6 +9,16 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelCIRunDetailReadsTests {
+  private static func readShownRunDetails(
+    of worktree: Worktree,
+    in harness: GitHarness,
+  )
+    async throws
+  {
+    let run = try #require(harness.model.services(of: worktree).ciRun)
+    await harness.model.readCIRunDetails(of: run, for: worktree)
+  }
+
   @Test func aRunThatIsNoLongerShownTakesItsWorkflowsWithIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -20,7 +30,7 @@ struct AppModelCIRunDetailReadsTests {
     provider.answer(recent: [.sample(id: "r1", branch: "feat")], workflows: [])
     await harness.model.refreshBranchScan(of: harness.project)
     await harness.model.refreshServices(ofProject: harness.project.id)
-    await harness.model.readCIWorkflows(of: feat)
+    try await Self.readShownRunDetails(of: feat, in: harness)
 
     provider.answer(recent: [.sample(id: "r2", branch: "feat")])
     await harness.model.refreshServices(ofProject: harness.project.id)
@@ -41,7 +51,8 @@ struct AppModelCIRunDetailReadsTests {
     await harness.model.refreshBranchScan(of: harness.project)
     await harness.model.refreshServices(ofProject: harness.project.id)
     provider.holdWorkflows()
-    let read = Task { await harness.model.readCIWorkflows(of: feat) }
+    let run = try #require(harness.model.services(of: feat).ciRun)
+    let read = Task { await harness.model.readCIRunDetails(of: run, for: feat) }
     try await waitUntil { provider.calls.contains("workflows r1") }
 
     harness.model.setIntegration(.circleCI, isEnabled: false, for: harness.project)
@@ -67,7 +78,7 @@ struct AppModelCIRunDetailReadsTests {
     )
     await harness.model.refreshBranchScan(of: harness.project)
     await harness.model.refreshServices(ofProject: harness.project.id)
-    await harness.model.readCIWorkflows(of: feat)
+    try await Self.readShownRunDetails(of: feat, in: harness)
 
     let passed = CIWorkflow(name: "build", status: .passed, jobs: [])
     provider.answer(
@@ -75,9 +86,10 @@ struct AppModelCIRunDetailReadsTests {
       workflows: [passed],
     )
     await harness.model.refreshServices(ofProject: harness.project.id)
-    await harness.model.readCIWorkflows(of: feat)
+    try await Self.readShownRunDetails(of: feat, in: harness)
 
-    #expect(harness.model.ciWorkflows(of: feat) == [passed])
+    let run = try #require(harness.model.services(of: feat).ciRun)
+    #expect(harness.model.ciWorkflows(ofRun: run) == [passed])
   }
 
   @Test func aRunUnderWayIsNotAskedAgainEachTimeItsListAppears() async throws {
