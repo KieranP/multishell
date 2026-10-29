@@ -76,6 +76,12 @@
   first libghostty build starts with no `.zig-cache/` or `zig-pkg/`. A debug
   bundle built in one names it in its state file and socket, so two can run at
   once (state-on-disk.md).
+- **A worktree the app creates gets libghostty and the grammars copied in**,
+  through `.multishell.json`'s `copiedPaths`, so its first build skips Zig: 10 s
+  for the submodule clone against about 80 s. The package build is not copied.
+  Swift Build recompiles everything when the checkout's path changes: a clone of
+  main's `.build` built in 78 s, 82 s with every mtime matched, against 90 s
+  from nothing, as measured here on 2026-10-29.
 - **Bundle builds of one tree run one at a time**, under a lock file in
   `build/`. A debug build's opening `rm -rf` once emptied `Contents/MacOS` in a
   release build that went on to sign and install the bundle with no binary. The
