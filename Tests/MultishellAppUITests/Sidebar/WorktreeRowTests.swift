@@ -11,7 +11,6 @@ import Testing
 struct WorktreeRowTests {
   private let project = Project(path: URL(fileURLWithPath: "/w/acme"))
   private let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
-  private let harness = ModelHarness()
 
   private func row(
     status: WorktreeStatus? = nil,
@@ -44,9 +43,8 @@ struct WorktreeRowTests {
       cancelRename: {},
       showModifiedFiles: {},
       clearAutoRenameFailure: {},
-      servicesPopover: { [harness] in
-        ServicesPopover(model: harness.model, worktree: worktree, theme: .multishellDark)
-      },
+      showPullRequest: {},
+      showCIRuns: {},
     )
   }
 

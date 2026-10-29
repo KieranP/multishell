@@ -50,13 +50,26 @@ extension AppModel {
   /// A click on a worktree row's git badge: that worktree, the panel open on
   /// what the badge counts, its Changes list under Modified.
   public func showModifiedFiles(of worktree: Worktree) {
-    if workspace.selectedWorktreeID != worktree.id || detailCover != nil {
-      guard select(worktree) else { return }
-    }
+    guard selectForPanel(worktree) else { return }
     setChangeScope(.modified)
     setFilesPanelMode(.changes)
     filesPanelStates[worktree.id]?.filterText = ""
     setShowsFilesPanel(true)
+  }
+
+  /// A click on a worktree row's pull request or CI glyph: that worktree,
+  /// the panel open on the glyph's page.
+  public func showPanelPage(_ mode: FilesPanelMode, of worktree: Worktree) {
+    guard selectForPanel(worktree) else { return }
+    setFilesPanelMode(mode)
+    setShowsFilesPanel(true)
+  }
+
+  private func selectForPanel(_ worktree: Worktree) -> Bool {
+    if workspace.selectedWorktreeID != worktree.id || detailCover != nil {
+      return select(worktree)
+    }
+    return true
   }
 
   public func filesPanelState(of id: Worktree.ID) -> FilesPanelState {

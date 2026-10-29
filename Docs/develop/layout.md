@@ -38,8 +38,8 @@
   implementations of Core's ports go under `Ports/`, what Debug Info measures
   and shows under `Debug/`, the JSON the command line prints, its settings keys
   and what a request keeps while it runs under `Control/`, the pull request and
-  CI values the row, its popover, the menus and the panel's pages all read under
-  `Services/`, the rest under `Support/`.
+  CI values the row, the menus and the panel's pages all read under `Services/`,
+  the rest under `Support/`.
 - **AppModel's extensions sit under `Model/` by concern**, what spans them all
   at the root beside the type: the concerns are too many for one alphabetical
   listing to keep a concern's files together.

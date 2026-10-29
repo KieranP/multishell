@@ -2,7 +2,10 @@
    `t("the.key")`; see Docs/design/translation.md. */
 
 "action.add-project" = "Add Project";
+"action.cancel-auto-merge" = "Cancel Auto-Merge";
 "action.create-pull-request" = "Create Pull Request…";
+"action.merge" = "Merge…";
+"action.merge-when-ready" = "Merge When Ready…";
 "action.open-pull-request" = "Open Pull Request #%@";
 "agent-hooks.codex-trust" = "Run /hooks in Codex once to trust Multishell's.";
 "agent-hooks.installed-in" = "Installed in %@";
@@ -114,6 +117,8 @@
 "error.agent-not-installed-message" = "The tab opened as a plain shell. Install %@, or choose another agent in Settings > Agents, then use Refresh.";
 "error.another-app-message" = "It holds %@, so agent state reports go to it and this window's dots will not change. Quit one of them.";
 "error.another-app-title" = "Another Multishell is running";
+"error.auto-merge-not-cancelled" = "Auto-merge for #%@ was not cancelled";
+"error.auto-merge-not-turned-on" = "Auto-merge was not turned on for #%@";
 "error.branch-not-deleted" = "Worktree removed, but branch %@ was not deleted";
 "error.branch-not-pushed" = "%@ was not pushed";
 "error.command-failed-title" = "%1$@ %2$@ failed";
@@ -158,6 +163,7 @@
 "error.pre-create-hook" = "Worktree not created: its pre-create hook %@";
 "error.pre-delete-hook" = "Worktree not removed: its pre-delete hook %@";
 "error.printed-nothing" = "%@ and printed nothing.";
+"error.pull-request-not-merged" = "#%@ was not merged";
 "error.pull-request-not-started" = "No pull request started for %@";
 "error.remotes-unknown" = "git did not list the repository's remotes, so nothing was pushed or opened. Try again once it answers.";
 "error.removal-still-running-message" = "%@ is still being removed. Create it again once that removal has finished.";
@@ -233,6 +239,7 @@
 "integration.no-auth-status" = "It did not say whether it is logged in.";
 "integration.no-version" = "It did not say which version it is.";
 "integration.not-run" = "%@ could not be run";
+"integration.page-names-no-repository" = "The pull request's page, %@, names no repository to ask how it may merge.";
 "integration.timed-out" = "It did not answer in time.";
 "integration.unreadable-answer" = "Its answer could not be read.";
 "integrations.checking" = "Asking %@…";
@@ -266,6 +273,24 @@
 "lane.waiting-in-sentence" = "waiting for you";
 "lane.working" = "Working";
 "lane.working-in-sentence" = "working";
+"merge-form.accepted" = "%1$@ took the merge. Reading #%2$@ again.";
+"merge-form.accepted-when-ready" = "%1$@ took it: it merges now, or once its checks pass. Reading #%2$@ again.";
+"merge-form.auto-merge-off" = "Auto-merge is turned off for this repository on %@. Merge once the checks pass.";
+"merge-form.cancel" = "Cancel";
+"merge-form.confirm-auto-merge" = "Enable Auto-Merge";
+"merge-form.confirm-merge" = "Merge";
+"merge-form.confirm-rebase" = "Rebase and Merge";
+"merge-form.confirm-squash" = "Squash and Merge";
+"merge-form.done" = "Done";
+"merge-form.heading" = "Merge #%1$@ into %2$@";
+"merge-form.heading-when-ready" = "Merge #%@ when checks pass";
+"merge-form.lede-when-ready" = "%@ merges it once its required checks pass, or at once if they have, with Multishell closed or not and with anything pushed before then.";
+"merge-form.reading" = "Asking %@ how it may be merged";
+"merge-form.rebase-note" = "Each commit lands on %@ with its own message, so there is nothing to write here.";
+"merge-form.viewer-may-not-merge" = "Your account on %@ cannot merge into this repository.";
+"merge-method.merge" = "Merge";
+"merge-method.rebase" = "Rebase";
+"merge-method.squash" = "Squash";
 "merged.into" = "Merged into %@";
 "merged.into-pull-request" = "Merged into %1$@ by pull request #%2$@";
 "merged.into-rebased" = "Merged into %@, rebased";

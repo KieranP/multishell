@@ -11,22 +11,24 @@ struct MonospacedEditor: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       InfoLabel(label, info: info)
-      TextEditor(text: $text)
-        .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
-        .scrollContentBackground(.hidden)
-        .frame(minHeight: 48, maxHeight: 96)
-        .padding(4)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
-        .overlay(alignment: .topLeading) {
-          if text.isEmpty, let placeholder {
-            Text(placeholder)
-              .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
-              .foregroundStyle(.tertiary)
-              .padding(.horizontal, 9)
-              .padding(.vertical, 4)
-              .allowsHitTesting(false)
-          }
+      MonospacedTextEditor(
+        text: $text,
+        fontSize: UIMetrics.unscaledMonospacedSize,
+        fill: HierarchicalShapeStyle.quaternary.opacity(0.5),
+        border: nil,
+        minHeight: 48,
+        maxHeight: 96,
+      )
+      .overlay(alignment: .topLeading) {
+        if text.isEmpty, let placeholder {
+          Text(placeholder)
+            .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
+            .foregroundStyle(.tertiary)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .allowsHitTesting(false)
         }
+      }
     }
     .padding(.vertical, 2)
   }

@@ -184,7 +184,12 @@ struct WorktreeServicesMatchingTests {
     #expect(found.pullRequest?.number == 44, "the last answer still shows")
     #expect(
       found.readProblem
-        == ServiceReadProblem(integration: .gitHub, failure: .loggedOut, lastAnsweredAt: read)
+        == ServiceReadProblem(
+          source: .pullRequests,
+          integration: .gitHub,
+          failure: .loggedOut,
+          lastAnsweredAt: read,
+        )
     )
   }
 

@@ -13,9 +13,15 @@ struct WorktreeServicesWordingTests {
     run: CIRun? = nil,
     localTip: String = "tip",
     failure: ServiceReadFailure? = nil,
+    ciFailure: ServiceReadFailure? = nil,
     changesPastHead: [ChangesPastHead: Bool] = [:],
   ) -> WorktreeServices {
-    WorktreeServices(
+    var ciRuns = ProjectCIRuns(
+      integration: .circleCI,
+      runsByBranch: run.map { ["feat": $0] } ?? [:],
+    )
+    ciRuns.failure = ciFailure
+    return WorktreeServices(
       upstream: BranchUpstream(remote: "origin", branch: "feat", tip: localTip),
       localTip: localTip,
       localBranch: "feat",
@@ -26,7 +32,7 @@ struct WorktreeServicesWordingTests {
         hasAnswered: true,
         failure: failure,
       ),
-      ciRuns: ProjectCIRuns(integration: .circleCI, runsByBranch: run.map { ["feat": $0] } ?? [:]),
+      ciRuns: ciRuns,
       answeredAt: (Date(timeIntervalSince1970: 1_700_000_000), nil),
       changesPastHead: changesPastHead,
     )
@@ -36,6 +42,21 @@ struct WorktreeServicesWordingTests {
     let tooltip = services(.sample(number: 44, review: .required), run: .sample(status: .passed))
       .tooltip
     #expect(tooltip == "#44 Pull request 44\nReview required\nCircleCI passed")
+  }
+
+  @Test func thePullRequestPageSaysOnlyThePullRequestListsOwnFailure() {
+    let listFailed = services(.sample(), failure: .loggedOut)
+    let ciFailed = services(.sample(), ciFailure: .loggedOut)
+
+    #expect(listFailed.pullRequestReadProblemText != nil)
+    #expect(ciFailed.pullRequestReadProblemText == nil)
+    #expect(ciFailed.readProblemText != nil, "the tooltip still says it")
+  }
+
+  @Test func eachGlyphIsSpokenAsItselfAlone() {
+    let both = services(.sample(number: 44, review: .required), run: .sample(status: .passed))
+    #expect(both.spokenPullRequest == t("spoken.pull-request", "44", "Review required"))
+    #expect(both.ciRunText == "CircleCI passed")
   }
 
   @Test func aRunOfAnotherCommitNamesIt() {
@@ -86,5 +107,6 @@ struct WorktreeServicesWordingTests {
     )
     #expect(outgrown.outgrownText == "#33 was merged before this branch's last commits")
     #expect(outgrown.spokenSummary == outgrown.outgrownText, "the row draws it, so says it")
+    #expect(outgrown.spokenPullRequest == outgrown.outgrownText, "its glyph is drawn")
   }
 }

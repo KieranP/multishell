@@ -8,6 +8,9 @@ import MultishellProcess
 struct ServiceToolRunner: Sendable {
   /// Each is a network call; one hung on a dead connection must end.
   private static let timeout: Duration = .seconds(30)
+  /// A merge waits on the host's own; killed early, one that landed reads as
+  /// refused. Two minutes, as a push has.
+  static let writeTimeout: Duration = .seconds(120)
   /// Where a call that needs no repository runs, a version or a login.
   static let noRepository = URL(fileURLWithPath: "/", isDirectory: true)
 
@@ -34,8 +37,13 @@ struct ServiceToolRunner: Sendable {
 
   /// What the tool printed where it exited 0. Any other exit throws
   /// `ProcessFailure`, whose message is its stderr.
-  func run(_ arguments: [String], in directory: URL) async throws -> String {
-    try await capture(arguments, in: directory)
+  @discardableResult
+  func run(
+    _ arguments: [String],
+    in directory: URL,
+    timeout: Duration = Self.timeout,
+  ) async throws -> String {
+    try await capture(arguments, in: directory, timeout: timeout)
       .requiringSuccess(of: executable, arguments: arguments).standardOutput
   }
 
@@ -86,14 +94,18 @@ struct ServiceToolRunner: Sendable {
   }
 
   /// The whole outcome, for the reads whose failure says something.
-  private func capture(_ arguments: [String], in directory: URL) async throws -> ProcessOutput {
+  private func capture(
+    _ arguments: [String],
+    in directory: URL,
+    timeout: Duration = Self.timeout,
+  ) async throws -> ProcessOutput {
     try await runLog.timing(commandName(of: arguments), in: directory) { exitUsageProbe in
       try await processRunner.capture(
         executable,
         arguments,
         in: directory,
         environment: environment,
-        timeout: Self.timeout,
+        timeout: timeout,
         exitUsageProbe: exitUsageProbe,
       )
     }

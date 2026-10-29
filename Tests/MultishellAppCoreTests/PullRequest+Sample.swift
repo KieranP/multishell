@@ -15,12 +15,13 @@ extension PullRequest {
     headCommit: String = "tip",
     owner: String = "me",
     baseBranch: String = "main",
+    baseRepository: String = "me/demo",
     updatedAt: Date = Date(timeIntervalSince1970: 1_800_000_000),
   ) -> Self {
     PullRequest(
       number: number,
       title: "Pull request \(number)",
-      url: URL(string: "https://github.com/me/demo/pull/\(number)")!,
+      url: URL(string: "https://github.com/\(baseRepository)/pull/\(number)")!,
       state: state,
       review: review,
       blocker: blocker,

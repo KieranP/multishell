@@ -33,7 +33,10 @@ struct WorktreeRow: View, @MainActor Equatable {
   let showModifiedFiles: () -> Void
   /// The warning of a failed Auto Rename clicked: its reason has been read.
   let clearAutoRenameFailure: () -> Void
-  let servicesPopover: () -> ServicesPopover
+  /// A click on the pull request or CI glyph, or the row's named action: the
+  /// panel opened on that page.
+  let showPullRequest: () -> Void
+  let showCIRuns: () -> Void
 
   private var kind: String { worktree.kindText() }
 
@@ -68,7 +71,8 @@ struct WorktreeRow: View, @MainActor Equatable {
         metrics: metrics,
         showModifiedFiles: showModifiedFiles,
         clearAutoRenameFailure: clearAutoRenameFailure,
-        servicesPopover: servicesPopover,
+        showPullRequest: showPullRequest,
+        showCIRuns: showCIRuns,
       )
     }
     .padding(.leading, metrics.worktreeRowIndent)
@@ -98,6 +102,12 @@ struct WorktreeRow: View, @MainActor Equatable {
     // The row ignores its children, so the badge's button is reached here.
     .accessibilityAction(named: t("action.show-modified-files"), showModifiedFiles)
     .accessibilityActions {
+      if standing.services.shownPullRequest != nil {
+        Button(t("action.show-pull-request"), action: showPullRequest)
+      }
+      if standing.services.ciRun != nil {
+        Button(t("action.show-ci-runs"), action: showCIRuns)
+      }
       if autoRename?.failureMessage != nil {
         Button(t("action.clear-auto-rename-failure"), action: clearAutoRenameFailure)
       }

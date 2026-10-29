@@ -113,6 +113,7 @@ extension WorktreeServices {
   ) -> ServiceReadProblem? {
     if let pullRequests, let failure = pullRequests.failure, failure != .notHosted {
       return ServiceReadProblem(
+        source: .pullRequests,
         integration: pullRequests.integration,
         failure: failure,
         lastAnsweredAt: answeredAt.pullRequests,
@@ -123,6 +124,7 @@ extension WorktreeServices {
       failure != .notHosted
     {
       return ServiceReadProblem(
+        source: .ciRuns,
         integration: ciRuns.integration,
         failure: failure,
         lastAnsweredAt: answeredAt.ciRuns,

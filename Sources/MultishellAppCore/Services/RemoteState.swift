@@ -22,12 +22,15 @@ final class RemoteState {
   /// `worktrees`, made from these; the panel's pages and menus read these.
   var pullRequests: [Project.ID: ProjectPullRequests] = [:]
   var ciRuns: [Project.ID: ProjectCIRuns] = [:]
-  /// What each worktree's row, popover and the panel's pages draw.
+  /// What each worktree's row and the panel's pages draw.
   var worktrees: [Worktree.ID: WorktreeServices] = [:]
   /// Where each worktree's branch is published, from the branch scan: what its
   /// pull request and runs are filed under, and whose move re-reads them.
   var upstreams: [Worktree.ID: BranchUpstream] = [:]
-  /// Each shown run's workflows, read as its popover or the CI page shows it.
+  /// The merge form each worktree's pull request page shows in its place.
+  var pendingMerges: [Worktree.ID: PendingMerge] = [:]
+  var autoMergeCancellations: [Worktree.ID: AutoMergeCancellation] = [:]
+  /// Each shown run's workflows, read as the CI page shows it.
   var ciWorkflows: [CIRun.ID: CIRunDetail<[CIWorkflow]>] = [:]
   /// What each branch was made from, by project, read once per branch.
   @ObservationIgnored var branchStartPoints: [Project.ID: [String: String?]] = [:]

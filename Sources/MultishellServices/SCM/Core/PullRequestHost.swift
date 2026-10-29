@@ -22,5 +22,21 @@ public protocol PullRequestHost: Sendable {
     directory: URL,
   ) async throws
 
+  /// The methods the repository allows, the default and the host's messages.
+  /// Throws `ServiceReadFailure`.
+  func mergeOptions(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> PullRequestMergeOptions
+
+  /// Merges it, or turns auto-merge on; the app's second write to a remote.
+  func merge(
+    _ pullRequest: PullRequest,
+    as merge: PullRequestMerge,
+    in directory: URL,
+  ) async throws
+
+  func disableAutoMerge(of pullRequest: PullRequest, in directory: URL) async throws
+
   func toolStatus() async -> ServiceToolStatus
 }

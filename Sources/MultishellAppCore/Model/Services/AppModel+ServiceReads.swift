@@ -6,7 +6,7 @@ import MultishellServices
 extension AppModel {
   static var concurrentServiceReads: Int { 4 }
 
-  /// What a row, its popover and the panel's pages draw of the services.
+  /// What a row and the panel's pages draw of the services.
   public func services(of worktree: Worktree) -> WorktreeServices {
     remoteState.worktrees[worktree.id] ?? .empty
   }
@@ -62,7 +62,8 @@ extension AppModel {
     guard let project = workspace.project(id), !missingProjects.contains(id),
       hasServiceToAsk(project)
     else { return }
-    guard remoteState.readLog.begin(id, at: .now) else {
+    let began = ContinuousClock.now
+    guard remoteState.readLog.begin(id, at: began) else {
       remoteState.rereads[id] = remoteState.rereads[id] == true || readsPullRequests
       return
     }
@@ -78,6 +79,7 @@ extension AppModel {
       }
     }
     let changesBefore = remoteState.integrationChanges[id]
+    let listAnsweredBefore = remoteState.pullRequestsAnsweredAt[id]
     let remotes = await coordinator?.git.remotes(project)
     let previousPullRequests = remoteState.pullRequests[id]
     async let pullRequests =
@@ -110,6 +112,10 @@ extension AppModel {
     if keptPullRequests == nil { forgetPullRequestReading(ofProject: id) }
     if keptCIRuns == nil { forgetCIReading(ofProject: id) }
     recomputeWorktreeServices(ofProject: id)
+    // Only a list this read answered; one kept from before says nothing new.
+    if let answeredAt = remoteState.pullRequestsAnsweredAt[id], answeredAt != listAnsweredBefore {
+      settleMerges(ofProject: id, listReadBegunAt: began)
+    }
     await readChangesPastHead(ofProject: id, asksAgain: true)
   }
 
@@ -182,14 +188,15 @@ extension AppModel {
       .filter { asked.contains($0.key) }
     remoteState.unanswerableChangesPastHead[id]?.formIntersection(asked)
     pruneRunDetails()
+    reconcileMerges(of: ids)
   }
 
-  /// A run's workflows and report are kept while a row or the panel's own
-  /// history shows it; another worktree's history keeps only its list.
+  /// A run's workflows and report are kept while the CI page shows it: its
+  /// history, or the row's run it falls back on. Other worktrees keep their lists.
   func pruneRunDetails() {
     let panelHistory = filesPanelWorktree.flatMap { remoteState.ciHistories[$0.id] }
-    let shownRuns = Set(remoteState.worktrees.values.compactMap(\.ciRun?.id))
-      .union(panelHistory?.runs.map(\.id) ?? [])
+    let panelRun = filesPanelWorktree.flatMap { remoteState.worktrees[$0.id]?.ciRun?.id }
+    let shownRuns = Set(panelHistory?.runs.map(\.id) ?? []).union([panelRun].compactMap(\.self))
     setIfChanged(
       \.remoteState.ciWorkflows,
       remoteState.ciWorkflows.filter { shownRuns.contains($0.key) },
@@ -208,6 +215,7 @@ extension AppModel {
     guard !ids.isEmpty else { return }
     setIfChanged(\.remoteState.worktrees, remoteState.worktrees.filter { !ids.contains($0.key) })
     setIfChanged(\.remoteState.upstreams, remoteState.upstreams.filter { !ids.contains($0.key) })
+    reconcileMerges(of: ids)
   }
 
   /// A project's services are its own and go with it.

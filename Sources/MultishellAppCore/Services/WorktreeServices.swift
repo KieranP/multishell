@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellServices
 
-/// What the services say about one worktree's branch, as its row, its popover
-/// and the panel's pages draw it. Runtime only; see Docs/design/services.md.
+/// What the services say about one worktree's branch, as its row and the
+/// panel's pages draw it. Runtime only; see Docs/design/services.md.
 public struct WorktreeServices: Equatable, Sendable {
   static let empty = Self()
 

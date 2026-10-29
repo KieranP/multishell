@@ -17,7 +17,8 @@ struct WorktreeRowBadges: View {
   let metrics: UIMetrics
   let showModifiedFiles: () -> Void
   let clearAutoRenameFailure: () -> Void
-  let servicesPopover: () -> ServicesPopover
+  let showPullRequest: () -> Void
+  let showCIRuns: () -> Void
 
   var body: some View {
     if let operation {
@@ -70,11 +71,12 @@ struct WorktreeRowBadges: View {
       .buttonStyle(.plain)
     }
     if standing.services.showsAnything {
-      WorktreeRowServicesButton(
+      WorktreeRowServicesButtons(
         services: standing.services,
         theme: theme,
         metrics: metrics,
-        popover: servicesPopover,
+        showPullRequest: showPullRequest,
+        showCIRuns: showCIRuns,
       )
     }
     if terminalCount > 0 {
