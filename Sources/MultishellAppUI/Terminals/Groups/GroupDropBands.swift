@@ -16,7 +16,7 @@ struct GroupDropBands: View {
       // groups nobody can read; the release reaches the area beneath.
       let canHalve = SplitMath.canHalve(
         Double(proxy.size.width),
-        minimumPane: UIMetrics.minimumPaneLength,
+        minimumPane: SplitMath.minimumPaneLength,
         divider: UIMetrics.splitDividerThickness,
       )
       ZStack {

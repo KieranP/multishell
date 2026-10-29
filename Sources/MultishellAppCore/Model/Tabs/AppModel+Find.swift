@@ -103,8 +103,8 @@ extension AppModel {
     search(text, in: id, replacing: searched)
   }
 
-  /// The command line's: the pane's bar up on `text`, as typing it there.
-  func openFind(on text: String, in id: TerminalSession.ID) {
+  /// The command line's: a pane's or file tab's bar up on `text`, as typing it there.
+  func openFind(on text: String, in id: FindTargetID) {
     let wasUp = !findBarTargetIDs.insert(id).inserted
     replaceFindText(with: text, in: id, barWasUp: wasUp)
   }

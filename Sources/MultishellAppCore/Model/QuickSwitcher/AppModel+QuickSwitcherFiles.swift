@@ -6,11 +6,30 @@ extension AppModel {
   /// The most a search keeps, which the Files scope lists in full.
   static var quickSwitcherFilesKept: Int { 100 }
 
+  /// The Files scope, or text in All: what lists the selected worktree's files.
+  private var quickSwitcherListsFiles: Bool {
+    guard let state = quickSwitcher else { return false }
+    return state.scope == .files || (state.scope == .all && !QuickSwitcherQuery(state.text).isEmpty)
+  }
+
+  /// Returns once the selected worktree's files it lists are read and built, so a
+  /// request lists or chooses what a person would see.
+  func quickSwitcherFilesRead() async {
+    guard quickSwitcherListsFiles, let id = workspace.selectedWorktreeID else { return }
+    await pendingTrackedFilesReads[id]?.value
+    // A landed listing starts the change set built over its repositories, so the
+    // tree is asked again until neither is building.
+    while true {
+      _ = fileTree(of: id)
+      guard let building = pendingFileTreeListings[id] ?? pendingFileTreeChanges[id] else { return }
+      await building.value
+    }
+  }
+
   /// Once the Files scope or text in All lists them; see quick-switcher.md.
   func readQuickSwitcherFilesOnceListed() {
-    guard let state = quickSwitcher, let id = workspace.selectedWorktreeID,
-      state.scope == .files || (state.scope == .all && !QuickSwitcherQuery(state.text).isEmpty),
-      trackedFiles[id] == nil, state.filesAskedFor != id
+    guard quickSwitcherListsFiles, let state = quickSwitcher,
+      let id = workspace.selectedWorktreeID, trackedFiles[id] == nil, state.filesAskedFor != id
     else { return }
     // Once an opening: a read that failed would fail again on every key.
     quickSwitcher?.filesAskedFor = id

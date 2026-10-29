@@ -9,8 +9,10 @@ struct RootView: View {
   let platform: MacPlatform
 
   /// Remembered per machine, not in the workspace: they are about this screen.
-  @AppStorage("sidebarWidth") private var sidebarWidth = SidebarWidth.initial
-  @AppStorage(FilesPanelStorage.widthKey) private var filesPanelWidth = FilesPanelWidth.initial
+  @AppStorage(PanelWidthStorage.sidebarKey, store: PanelWidthStorage.defaults)
+  private var sidebarWidth = SidebarWidth.initial
+  @AppStorage(PanelWidthStorage.filesPanelKey, store: PanelWidthStorage.defaults)
+  private var filesPanelWidth = FilesPanelWidth.initial
 
   var body: some View {
     let theme = model.currentTheme

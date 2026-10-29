@@ -15,6 +15,13 @@ struct ControlRefusalWordingTests {
     )
   }
 
+  @Test func aWidthOutOfRangeSaysTheRange() {
+    #expect(
+      ControlRefusal.widthOutOfRange(minimum: 200, maximum: 560).wording
+        == "the width takes 200 to 560 points"
+    )
+  }
+
   @Test func eachCommandARefusalPointsToIsOneTheHelperParses() async throws {
     let app = try ControlListener(reply: .output("{}"))
     defer { app.stop() }
@@ -24,7 +31,8 @@ struct ControlRefusalWordingTests {
       .noMenuItem(path: "x"),
       .noPane(id: pane), .noProject(id: "p-00000000"), .noSetting(key: "x"), .noTab(id: pane),
       .noWorktree(id: "w-00000000"), .paneNotLive(id: pane), .windowInFullScreen,
-      .worktreeNotRemovable(id: "w-00000000"),
+      .worktreeNotRemovable(id: "w-00000000"), .filesPanelListsNoFiles,
+      .noFilesFolder(path: "src"), .noSplit(id: pane, path: [1]), .tabNotShown(id: pane),
     ]
     let placeholders = ["PROJECT_ID": "p-0123abcd", "WORKTREE_ID": "w-89abcdef", "TEXT": "x"]
 

@@ -4,6 +4,7 @@ enum ControlCommand: String, CaseIterable {
   case board
   case config
   case debug
+  case files
   case info
   case open
   case panes

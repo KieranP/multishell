@@ -14,7 +14,7 @@ extension AppModel {
   }
 
   // One case a request, exhaustive so a new one cannot go unanswered.
-  // swiftlint:disable:next cyclomatic_complexity
+  // swiftlint:disable:next cyclomatic_complexity function_body_length
   private func reply(to request: ControlRequest) async -> ControlReply {
     switch request {
     case .info: replyToInfo()
@@ -82,6 +82,38 @@ extension AppModel {
     case .markDebugSample(let name): replyToMarkDebugSample(name)
     case .debugGitRuns(let last): replyToDebugGitRuns(last: last)
     case .screenshot(let pane): replyToScreenshot(pane: pane)
+    case .openFileTab(let worktree, let path): await replyToOpenFileTab(path, in: worktree)
+    case .stepToChange(let tab, let direction): replyToStepToChange(direction, in: tab)
+    case .findInFileTab(let id, let action): await replyToFindInFileTab(action, in: id)
+    case .listFiles: replyToListFiles()
+    case .filterFiles(let text): replyToFilterFiles(text)
+
+    case .setFilesFolderExpanded(let path, let expanded):
+      replyToSetFilesFolderExpanded(path, expanded: expanded)
+
+    case .setProjectExpanded(let id, let expanded):
+      replyToSetProjectExpanded(id, expanded: expanded)
+
+    case .moveProject(let id, let placement, let anchor):
+      replyToMoveProject(id, placement, anchor: anchor)
+
+    case .refreshProject(let id): await replyToRefreshProject(id)
+    case .fetchProject(let id): await replyToFetchProject(id)
+    case .autoRenameWorktree(let id): replyToAutoRenameWorktree(id)
+    case .clearPaneState(let id): replyToClearPaneState(id)
+    case .clearTabState(let id): replyToClearTabState(id)
+    case .clearWorktreeState(let id): replyToClearWorktreeState(id)
+    case .moveTabToWorktree(let id, let worktree): replyToMoveTabToWorktree(id, to: worktree)
+    case .moveTabToNewGroup(let id): replyToMoveTabToNewGroup(id)
+
+    case .resizeSplit(let tab, let path, let shares):
+      replyToResizeSplit(shares, at: path, ofTab: tab)
+
+    case .resizeGroups(let worktree, let shares): replyToResizeGroups(shares, in: worktree)
+    case .setPanelWidth(let panel, let width): replyToSetPanelWidth(panel, to: width)
+    case .showServices(let worktree): replyToShowServices(of: worktree)
+    case .standInServices(let json): await replyToStandInServices(json)
+    case .quickSwitcher(let order): await replyToQuickSwitcher(order)
     }
   }
 }

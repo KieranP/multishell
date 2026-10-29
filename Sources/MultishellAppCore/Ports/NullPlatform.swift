@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// A desktop with nothing on it: for tests, and for a headless run.
 @MainActor
@@ -14,6 +15,7 @@ public final class NullPlatform: Platform {
   public var menuItems: [PlatformMenuItem] { [] }
   public var commandMenuItems: [PlatformMenuItem] { [] }
   public var isWorkspaceWindowFullScreen: Bool { false }
+  public var workspaceWindowWidth: Double? { nil }
 
   public init() {}
 
@@ -46,10 +48,13 @@ public final class NullPlatform: Platform {
   public func show(_ window: AuxiliaryWindow) {}
   public func close(_ window: AuxiliaryWindow) {}
   public func resizeWorkspaceWindow(width: Double, height: Double) -> Bool { false }
+  public func width(of panel: ResizablePanel) -> Double { panel.initialWidth }
+  public func setWidth(of panel: ResizablePanel, to width: Double) -> Bool { false }
   public func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool { false }
   public func screenshotWorkspaceWindow() -> Data? { nil }
   public func signpost(_ name: String) {}
   public func performMenuItem(_ path: [String]) -> PlatformMenuOutcome { .notFound }
+  public func performMenuItemOnItsTurn(_ path: [String]) async -> PlatformMenuOutcome { .notFound }
   public func chooseMenuItem(_ path: [String]) {}
   public func hasFontFamily(_ family: String) -> Bool { false }
 }

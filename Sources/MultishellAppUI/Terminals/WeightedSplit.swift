@@ -45,7 +45,7 @@ struct WeightedSplit<Content: View>: View {
       by: Double(translation),
       over: weights,
       available: Double(available),
-      minimumPane: UIMetrics.minimumPaneLength,
+      minimumPane: SplitMath.minimumPaneLength,
     )
   }
 }

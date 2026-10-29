@@ -1,5 +1,6 @@
 import AppKit
 import MultishellAppCore
+import MultishellCore
 
 extension MacPlatform {
   /// What SwiftUI names the `Settings` scene's window; it offers no way to ask.
@@ -24,6 +25,11 @@ extension MacPlatform {
     workspaceWindow?.styleMask.contains(.fullScreen) ?? false
   }
 
+  var workspaceWindowWidth: Double? {
+    guard let window = workspaceWindow, window.isVisible else { return nil }
+    return window.frame.width
+  }
+
   /// Through the scene's own opener, which `registeringWindowOpeners` hands over.
   func show(_ window: AuxiliaryWindow) {
     openAuxiliaryWindow?(window)
@@ -43,6 +49,18 @@ extension MacPlatform {
       within: window.screen?.visibleFrame,
     )
     window.setFrame(frame, display: true)
+    return true
+  }
+
+  func width(of panel: ResizablePanel) -> Double {
+    PanelWidthStorage.defaults.object(forKey: PanelWidthStorage.key(of: panel)) as? Double
+      ?? panel.initialWidth
+  }
+
+  /// Written where the views' `@AppStorage` reads, which redraws them.
+  func setWidth(of panel: ResizablePanel, to width: Double) -> Bool {
+    guard let window = workspaceWindow, window.isVisible else { return false }
+    PanelWidthStorage.defaults.set(width, forKey: PanelWidthStorage.key(of: panel))
     return true
   }
 

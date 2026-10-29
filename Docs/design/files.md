@@ -558,6 +558,10 @@ Newest at the bottom.
 
 Raised by reviews and settled; a review need not raise these again.
 
+- **`files expand`, `collapse` and `filter` build the rows twice**, once to find
+  the folder or under the old filter, once to answer. The two are of different
+  panel states, the second the one the reply lists, and each is the one the
+  panel would build on its next draw.
 - **A fence closed where CommonMark would not.** The Markdown grammar closes a
   fence on a closer indented four spaces, and on an unquoted line of `>` and a
   fence. The injection follows the grammar so the code's colours and Markdown's

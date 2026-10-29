@@ -13,6 +13,8 @@ extension AppModel {
     if pendingSharedSettingsTrust != nil { up.append(PresentationEntry(.sharedSettingsTrust)) }
     if pendingBranchPublish != nil { up.append(PresentationEntry(.branchPublish)) }
     if newWorktreeRequest != nil { up.append(PresentationEntry(.newWorktree)) }
+    // A popover is a window of its own, over the switcher drawn in the main one.
+    if servicesPopoverWorktreeID != nil { up.append(PresentationEntry(.servicesPopover)) }
     if quickSwitcher != nil { up.append(PresentationEntry(.quickSwitcher)) }
     if renamingTabID != nil { up.append(PresentationEntry(.tabRename)) }
     if renamingWorktreeID != nil { up.append(PresentationEntry(.worktreeRename)) }
@@ -26,6 +28,8 @@ extension AppModel {
     return .json(top)
   }
 
+  // One case a kind, exhaustive so a new one cannot stand undismissable.
+  // swiftlint:disable:next cyclomatic_complexity
   private func dismiss(_ kind: PresentationEntry.Kind) {
     switch kind {
     case .alert:
@@ -49,6 +53,7 @@ extension AppModel {
     case .newWorktree: newWorktreeRequest = nil
 
     case .quickSwitcher: closeQuickSwitcher()
+    case .servicesPopover: closeServicesPopover()
 
     case .tabRename: cancelRenamingTab()
     case .worktreeRename: cancelRenamingWorktree()

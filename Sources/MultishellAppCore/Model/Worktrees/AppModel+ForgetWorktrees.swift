@@ -51,6 +51,9 @@ extension AppModel {
     setIfChanged(\.submoduleReadings, submoduleReadings.filter { !gone.contains($0.key) })
     setIfChanged(\.ignoredFolderEntries, ignoredFolderEntries.filter { !gone.contains($0.key) })
     if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
+    if let popover = servicesPopoverWorktreeID, gone.contains(popover) {
+      servicesPopoverWorktreeID = nil
+    }
     if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {
       pendingWorktreeRemoval = nil
     }

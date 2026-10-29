@@ -9,7 +9,7 @@ extension AppModel {
   private static var fileTabSettleDelay: Duration { .milliseconds(75) }
 
   /// In front of its group, in the worktree in view.
-  private func isFileTabShown(_ id: FileTab.ID) -> Bool {
+  func isFileTabShown(_ id: FileTab.ID) -> Bool {
     guard let tab = workspace.fileTab(id), tab.worktreeID == worktreeIDInView else { return false }
     return workspace.group(tab.groupID)?.shownTabID == id
   }
@@ -61,7 +61,8 @@ extension AppModel {
     }
   }
 
-  private func holdsContent(_ id: FileTab.ID) -> Bool {
+  /// Its rows in hand: read, and not let go since it was hidden.
+  func holdsContent(_ id: FileTab.ID) -> Bool {
     fileTabReadings[id].map { !$0.content.isReleased } ?? false
   }
 
@@ -69,6 +70,10 @@ extension AppModel {
   /// it showed; see files.md. Its waiting read is owed instead.
   func releaseHiddenFileTabs() {
     for tab in workspace.fileTabs where !isFileTabShown(tab.id) {
+      // Its view goes with it, and the next one says afresh where its arrows lead;
+      // a step queued for a view that never drew would jump the next one.
+      if fileTabChangeSteps[tab.id] != nil { fileTabChangeSteps[tab.id] = nil }
+      if changeStepRequests[tab.id] != nil { changeStepRequests[tab.id] = nil }
       if let task = pendingFileTabReads.removeValue(forKey: tab.id) {
         task.cancel()
         fileTabReadLog.owe(tab.id)

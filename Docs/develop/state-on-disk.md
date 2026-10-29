@@ -88,8 +88,10 @@ Under `~/Library/Application Support/Multishell`.
 - **Gemini's own settings are read where Gemini reads them** (design/agents.md);
   the hook file does not follow them to the temporary directory under an empty
   `HOME`.
-- **The sidebar's and the Files panel's widths live in user defaults**, in the
-  `io.multishell.app` domain every build shares, debug ones included.
+- **The sidebar's and the Files panel's widths live in user defaults**: a
+  release's in the `io.multishell.app` domain, a debug build's in one named for
+  its variant, so `window sidebar-width` on a scratch run never moves the
+  installed app's. Cost: a debug build starts at the initial widths.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
   with the same keys as a project's settings less the agent, its flags and the
   shell. Read at launch, when a project's worktree records change, and when its

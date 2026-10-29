@@ -17,25 +17,12 @@ extension Helper {
     _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32 {
-    let topic = ControlCommand.panes.rawValue
-    let options = try CommandOptions(
+    let action = try findAction(
+      text: text,
       optionWords,
-      valued: [],
-      flags: ["next", "previous", "close"],
-      topic: topic,
+      command: "panes find",
+      topic: ControlCommand.panes.rawValue,
     )
-    let flaggedActions: [(flag: String, action: PaneFindAction)] = [
-      ("next", .next), ("previous", .previous), ("close", .close),
-    ]
-    let asked =
-      flaggedActions.filter { options.has($0.flag) }.map(\.action)
-      + (text.map { [.open($0)] } ?? [])
-    guard asked.count == 1, let action = asked.first else {
-      throw UsageError("panes find needs TEXT or one of --next, --previous, --close", topic: topic)
-    }
-    if case .open(let text) = action, text.isEmpty {
-      throw UsageError("panes find needs TEXT to find", topic: topic)
-    }
     let answer = try output(of: .findInPane(id: id, action: action), environment: environment)
     let bar: [String: Any]? =
       switch action {
@@ -59,7 +46,7 @@ extension Helper {
     field: String,
     environment: [String: String],
   ) throws -> [String: Any]? {
-    var bar = find(in: answer)
+    var bar = findBar(in: answer)
     var held: (value: Int, looks: Int)?
     let settled = try poll(every: findCountInterval, for: findCountTimeout) { remaining in
       try notYetWhereCutShort { () -> [String: Any]? in
@@ -76,9 +63,5 @@ extension Helper {
       }
     }
     return settled ?? bar
-  }
-
-  private static func find(in details: String?) -> [String: Any]? {
-    (jsonValue(details) as? [String: Any])?["find"] as? [String: Any]
   }
 }

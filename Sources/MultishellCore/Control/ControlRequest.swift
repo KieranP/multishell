@@ -4,6 +4,12 @@ import Foundation
 /// project or worktree named by its `ControlID`. Cases are only ever added.
 public enum ControlRequest: Codable, Equatable, Sendable {
   case addProject(path: String)
+  /// Auto Rename, started; the row says when it is done.
+  case autoRenameWorktree(id: String)
+  /// Clear Status on one pane, a tab's panes or a worktree's.
+  case clearPaneState(id: UUID)
+  case clearTabState(id: UUID)
+  case clearWorktreeState(id: String)
   case closePane(id: UUID, force: Bool)
   case closeTab(id: UUID, force: Bool)
   /// The newest `last` git runs, each on its own.
@@ -21,12 +27,19 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case describeWorktree(id: String)
   /// The alert, dialog, sheet or field on top, as its Cancel would.
   case dismissPresentation
+  case fetchProject(id: String)
+  /// The Files panel's filter field, on the worktree it lists.
+  case filterFiles(text: String)
   case filterSidebar(text: String)
-  case findInPane(id: UUID, action: PaneFindAction)
+  /// The find bar over a file tab on screen.
+  case findInFileTab(id: UUID, action: FindBarAction)
+  case findInPane(id: UUID, action: FindBarAction)
   case hideView(ControlView)
   case info
   /// The Agents board's columns and cards, as it would draw them now.
   case listBoard
+  /// The Files panel's rows as drawn.
+  case listFiles
   /// Every item of the menu bar, by its titles from the bar down.
   case listMenuItems
   case listProjects
@@ -37,19 +50,27 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case listWorktrees(project: String?)
   /// A name put into the next debug sample and the signpost log.
   case markDebugSample(name: String)
+  case moveProject(id: String, placement: WorkspaceTab.Placement, anchor: String)
   case moveTab(id: UUID, placement: WorkspaceTab.Placement, anchor: UUID)
+  case moveTabToNewGroup(id: UUID)
+  /// A terminal tab onto another worktree's row, shells and all.
+  case moveTabToWorktree(id: UUID, worktree: String)
   case newTab(NewTabOrder)
   case newWorktree(NewWorktreeOrder)
+  /// A file of the worktree as a tab, as a click on its Files panel row.
+  case openFileTab(worktree: String, path: String)
   /// Text put in as a paste, bracketed where the program asked.
   case pasteIntoPane(id: UUID, text: String)
   /// A menu item by its titles, as a click on it.
   case performMenuItem(path: [String])
   case pressKeys(id: UUID, keys: [ControlKey])
+  case quickSwitcher(QuickSwitcherOrder)
   case quit(force: Bool)
   /// `nil` reads every key.
   case readGlobalSettings(key: String?)
   case readPane(id: UUID, includingScrollback: Bool)
   case readProjectSettings(project: String, key: String?)
+  case refreshProject(id: String)
   case removeProject(id: String, force: Bool)
   case removeWorktree(WorktreeRemovalOrder)
   /// `nil` hands the title back to the shell.
@@ -58,6 +79,10 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case renameWorktree(id: String, name: String?)
   /// A state for the pane its session names, as a hook reporting it would.
   case reportPaneState(SessionStateReport)
+  /// A worktree's groups' shares of the width, left to right.
+  case resizeGroups(worktree: String, shares: [Double])
+  /// The shares of the split at `path` down the tab's pane tree, `[]` its root.
+  case resizeSplit(tab: UUID, path: [Int], shares: [Double])
   case resizeWindow(width: Double, height: Double)
   /// The main window as drawn, or one pane, as a PNG screenshot.
   case screenshot(pane: UUID?)
@@ -66,10 +91,21 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case selectWorktree(id: String)
   case setDebugInfo(shown: Bool)
   case setDebugTools(enabled: Bool)
+  /// A folder of the Files panel's list opened or shut, as its chevron does.
+  case setFilesFolderExpanded(path: String, expanded: Bool)
   case setFullScreen(on: Bool)
+  case setPanelWidth(ResizablePanel, width: Double)
+  case setProjectExpanded(id: String, expanded: Bool)
+  /// The row's pull request and CI popover; `nil` is the worktree in view's.
+  case showServices(worktree: String?)
   /// `project` names the one project settings shows.
   case showView(ControlView, project: String?)
   case splitPane(axis: SplitAxis, tab: UUID?)
+  /// Pull requests and CI runs answered from this JSON in place of the
+  /// tools, until a `nil` hands back to them.
+  case standInServices(json: String?)
+  /// A file tab's bar arrow, to the next or previous change.
+  case stepToChange(tab: UUID, direction: CycleDirection)
   case typeIntoPane(id: UUID, text: String, pressingReturn: Bool)
   case writeGlobalSetting(key: String, value: String)
   case writeProjectSetting(project: String, key: String, value: String)

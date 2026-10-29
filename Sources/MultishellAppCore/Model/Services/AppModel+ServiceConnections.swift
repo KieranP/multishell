@@ -9,6 +9,19 @@ extension AppModel {
     remoteState.connections.ciProviders.filter { !remoteState.unreadableProviders.contains($0.key) }
   }
 
+  /// The stand-in's where there is one, else the adopted tools'; none before
+  /// the login shell's PATH has been adopted, nor without git.
+  private var connectionsToInstall: ServiceConnections {
+    if let standIn = remoteState.standIn { return ServiceConnections(standIn: standIn) }
+    guard let adoption = remoteState.adoption, let coordinator else { return .empty }
+    return ServiceConnections(
+      detection: adoption.detection,
+      searchPath: adoption.searchPath,
+      runLog: coordinator.git.runLog,
+      loginVariables: adoption.loginVariables,
+    )
+  }
+
   /// A connection for each tool on the login shell's PATH, sharing git's run
   /// log. None without git: both tools find the repository through it.
   func adoptServiceTools(on searchPath: String?, loginVariables: [String: String] = [:]) async {
@@ -22,26 +35,30 @@ extension AppModel {
     // The same tools found again: nothing to rebuild, and nothing redrawn.
     guard adoption != remoteState.adoption else { return }
     remoteState.adoption = adoption
-    let connections =
-      coordinator.map { coordinator in
-        ServiceConnections(
-          detection: detection,
-          searchPath: searchPath,
-          runLog: coordinator.git.runLog,
-          loginVariables: loginVariables,
-        )
-      } ?? .empty
+    installServiceConnections(checksToolsAside: true)
+  }
+
+  /// `connectionsToInstall` in place of the last. `checksToolsAside` false leaves
+  /// `checkToolsCanRead` to a caller that waits on it.
+  func installServiceConnections(checksToolsAside: Bool) {
+    let connections = connectionsToInstall
     // A provider new to this adoption is passed over until its version says
     // it can read, asked aside: a cold `circleci version` can take seconds.
+    let isSameKind = connections.isStandIn == remoteState.connections.isStandIn
     let unchecked = Set(connections.ciProviders.keys)
-      .subtracting(remoteState.connections.ciProviders.keys)
-    remoteState.toolDetection = detection
+      .subtracting(isSameKind ? Set(remoteState.connections.ciProviders.keys) : [])
+    remoteState.toolDetection = remoteState.adoption?.detection ?? .empty
     remoteState.connections = connections
+    remoteState.connectionsInstalled += 1
+    // A read under way asked the tools these replace, so its answer is dropped.
+    for project in workspace.projects {
+      remoteState.integrationChanges[project.id, default: 0] += 1
+    }
     setIfChanged(
       \.remoteState.unreadableProviders,
       remoteState.unreadableProviders.union(unchecked),
     )
-    Task { await checkToolsCanRead() }
+    if checksToolsAside { Task { await checkToolsCanRead() } }
     setIfChanged(\.remoteState.toolStatuses, [:])
     remoteState.toolStatusAsk += 1
     // A page opened before the login shell's PATH arrived would wait forever;
@@ -76,19 +93,19 @@ extension AppModel {
 
   /// A provider found able to read is read at once, and the panel turns to
   /// its page where that was the one asked for.
-  func checkToolsCanRead() async {
-    let adoption = remoteState.adoption
+  func checkToolsCanRead(readsWhatTurnsReadable: Bool = true) async {
+    let installed = remoteState.connectionsInstalled
     let connections = remoteState.connections
     let unreadable = await unreadableProviders(of: connections)
-    // An adoption during the check asks its own tools, perhaps other binaries
-    // under the same names; this answer is about the ones it replaced.
-    guard remoteState.adoption == adoption else { return }
+    // An install during the check, an adoption's or a stand-in's, asks its own
+    // providers; this answer is about the ones it replaced.
+    guard remoteState.connectionsInstalled == installed else { return }
     let wasUnreadable = remoteState.unreadableProviders
     let fresh = wasUnreadable.subtracting(connections.ciProviders.keys).union(unreadable)
     guard setIfChanged(\.remoteState.unreadableProviders, fresh) else { return }
     dropReadingsWithoutATool()
     readFilesPanelIfItsKindChanged()
-    guard !wasUnreadable.subtracting(fresh).isEmpty else { return }
+    guard readsWhatTurnsReadable, !wasUnreadable.subtracting(fresh).isEmpty else { return }
     let projects = Array(projectsWithRowsInView())
     // In the background nothing is asked; the return to the front reads them.
     guard platform.isActive else {

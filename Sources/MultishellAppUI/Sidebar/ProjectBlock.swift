@@ -108,6 +108,8 @@ struct ProjectBlock: View {
       cancelRename: { model.cancelRenamingWorktree() },
       showModifiedFiles: { model.showModifiedFiles(of: worktree) },
       clearAutoRenameFailure: { model.clearAutoRenameFailure(of: worktree.id) },
+      isShowingServices: { model.servicesPopoverWorktreeID == worktree.id },
+      setShowsServices: { model.setShowsServicesPopover($0, of: worktree.id) },
       servicesPopover: { ServicesPopover(model: model, worktree: worktree, theme: theme) },
     )
     .equatable()

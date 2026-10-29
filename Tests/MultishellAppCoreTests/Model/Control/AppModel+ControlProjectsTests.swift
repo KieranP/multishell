@@ -82,4 +82,94 @@ struct AppModelControlProjectsTests {
     #expect(harness.model.presentedError == nil)
     #expect(harness.model.workspace.projects.count == 1)
   }
+
+  @Test func collapsingAndExpandingSetTheRowAsItsChevronDoes() async {
+    let harness = Harness()
+    let id = ControlID.project(harness.project.id)
+
+    let collapsed = await harness.messageSource.ask(.setProjectExpanded(id: id, expanded: false))
+    let collapsedAgain = await harness.messageSource.ask(
+      .setProjectExpanded(id: id, expanded: false)
+    )
+    #expect(!harness.project.isExpanded)
+    let expanded = await harness.messageSource.ask(.setProjectExpanded(id: id, expanded: true))
+
+    #expect([collapsed, collapsedAgain, expanded] == [.done, .done, .done])
+    #expect(harness.project.isExpanded)
+  }
+
+  @Test func aProjectMovesAboveOrBelowAnother() async throws {
+    let harness = Harness()
+    let other = harness.root.appendingPathComponent("other", isDirectory: true)
+    try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+    let added = harness.store.addProject(at: other)
+    let original = harness.project.id
+
+    let reply = await harness.messageSource.ask(
+      .moveProject(
+        id: ControlID.project(added.id),
+        placement: .before,
+        anchor: ControlID.project(original),
+      )
+    )
+
+    #expect(reply == .done)
+    #expect(harness.model.workspace.projects.map(\.id) == [added.id, original])
+  }
+
+  @Test func aMoveNamingNoProjectIsRefused() async {
+    let harness = Harness()
+    let id = ControlID.project(harness.project.id)
+
+    let reply = await harness.messageSource.ask(
+      .moveProject(id: id, placement: .after, anchor: "p-00000000")
+    )
+
+    #expect(reply == .refused(.noProject(id: "p-00000000")))
+  }
+
+  @Test func collapsingAProjectTheFilterHidesSetsTheFlagItKeepsAfter() async {
+    let harness = Harness()
+    harness.model.sidebarFilterText = "nothing-matches"
+    let id = ControlID.project(harness.project.id)
+
+    let reply = await harness.messageSource.ask(.setProjectExpanded(id: id, expanded: false))
+    harness.model.sidebarFilterText = ""
+
+    #expect(reply == .done)
+    #expect(!harness.project.isExpanded)
+  }
+
+  @Test func aProjectMovedBesideItselfIsRefused() async {
+    let harness = Harness()
+    let id = ControlID.project(harness.project.id)
+
+    let reply = await harness.messageSource.ask(
+      .moveProject(id: id, placement: .after, anchor: id)
+    )
+
+    #expect(reply == .refused(.projectBesideItself(id: id)))
+  }
+
+  @Test func aFetchOrRefreshWithNoGitIsRefused() async {
+    let harness = Harness()
+    let id = ControlID.project(harness.project.id)
+
+    let fetch = await harness.messageSource.ask(.fetchProject(id: id))
+    let refresh = await harness.messageSource.ask(.refreshProject(id: id))
+
+    #expect(fetch == .refused(.gitNotFound))
+    #expect(refresh == .refused(.gitNotFound))
+  }
+
+  @Test func refreshingAProjectWhoseFolderIsGoneIsRefused() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let id = ControlID.project(harness.project.id)
+    try FileManager.default.removeItem(at: harness.project.path)
+
+    let reply = await harness.model.answer(.refreshProject(id: id))
+
+    #expect(reply == .refused(.projectFolderMissing(id: id)))
+  }
 }

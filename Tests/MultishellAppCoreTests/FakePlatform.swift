@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 @testable import MultishellAppCore
 
@@ -51,6 +52,8 @@ final class FakePlatform: Platform {
   var closedWindows: [AuxiliaryWindow] = []
   /// `nil` stands for a closed main window.
   var workspaceWindowSize: (width: Double, height: Double)? = (1_200, 800)
+  var panelWidths: [ResizablePanel: Double] = [:]
+  var workspaceWindowWidth: Double? { workspaceWindowSize?.width }
   var workspaceWindowScreenshot: Data?
   var signposts: [String] = []
   var openedWebPages: [URL] = []
@@ -104,6 +107,12 @@ final class FakePlatform: Platform {
     workspaceWindowSize = (width, height)
     return true
   }
+  func width(of panel: ResizablePanel) -> Double { panelWidths[panel] ?? panel.initialWidth }
+  func setWidth(of panel: ResizablePanel, to width: Double) -> Bool {
+    guard workspaceWindowSize != nil else { return false }
+    panelWidths[panel] = width
+    return true
+  }
   func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool {
     guard workspaceWindowSize != nil else { return false }
     isWorkspaceWindowFullScreen = isOn
@@ -117,6 +126,9 @@ final class FakePlatform: Platform {
     guard item.isEnabled else { return .disabled }
     performedMenuItems.append(path)
     return .performed
+  }
+  func performMenuItemOnItsTurn(_ path: [String]) async -> PlatformMenuOutcome {
+    performMenuItem(path)
   }
   func chooseMenuItem(_ path: [String]) { chosenMenuItems.append(path) }
 }

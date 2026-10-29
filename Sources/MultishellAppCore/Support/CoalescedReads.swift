@@ -6,6 +6,8 @@ struct CoalescedReads<Key: Hashable> {
 
   func isRunning(_ key: Key) -> Bool { running[key] != nil }
 
+  func isRunning(where matches: (Key) -> Bool) -> Bool { running.keys.contains(where: matches) }
+
   mutating func start(_ key: Key, _ read: () -> Task<Void, Never>) {
     guard running[key] == nil else {
       askedAgain.insert(key)

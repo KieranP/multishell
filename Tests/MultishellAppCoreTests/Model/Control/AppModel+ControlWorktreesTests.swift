@@ -81,4 +81,14 @@ struct AppModelControlWorktreesTests {
     #expect(await harness.messageSource.ask(.renameWorktree(id: main, name: "Trunk")) == .done)
     #expect(harness.model.renamingWorktreeID == harness.feature.id)
   }
+
+  @Test func autoRenameWhereItsMenuItemIsGreyedOutIsRefused() async {
+    let harness = Harness()
+    let id = ControlID.worktree(harness.feature.id)
+
+    let reply = await harness.messageSource.ask(.autoRenameWorktree(id: id))
+
+    #expect(reply == .refused(.autoRenameUnavailable(id: id)))
+    #expect(harness.model.autoRenames.isEmpty)
+  }
 }

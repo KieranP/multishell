@@ -1,6 +1,6 @@
 /// A split's or a group's relative share. Zero, or one that is not a
 /// number, is a pane nothing can be laid out in.
-enum LayoutWeight {
+public enum LayoutWeight {
   private static func isUsable(_ weight: Double) -> Bool {
     weight.isFinite && weight > 0
   }
@@ -11,8 +11,9 @@ enum LayoutWeight {
     isUsable(weight) ? weight : 1
   }
 
-  static func allUsable(_ weights: [Double]) -> Bool {
-    weights.allSatisfy(isUsable)
+  /// Each usable, and their sum a number too, or every side lays out at zero.
+  public static func allUsable(_ weights: [Double]) -> Bool {
+    weights.allSatisfy(isUsable) && weights.reduce(0, +).isFinite
   }
 
   /// `weights` where there is one per child, else equal shares: indexed by

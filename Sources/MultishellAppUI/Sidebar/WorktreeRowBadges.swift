@@ -17,6 +17,8 @@ struct WorktreeRowBadges: View {
   let metrics: UIMetrics
   let showModifiedFiles: () -> Void
   let clearAutoRenameFailure: () -> Void
+  let isShowingServices: @MainActor @Sendable () -> Bool
+  let setShowsServices: @MainActor @Sendable (Bool) -> Void
   let servicesPopover: () -> ServicesPopover
 
   var body: some View {
@@ -74,6 +76,8 @@ struct WorktreeRowBadges: View {
         services: standing.services,
         theme: theme,
         metrics: metrics,
+        isShowingServices: isShowingServices,
+        setShowsServices: setShowsServices,
         popover: servicesPopover,
       )
     }

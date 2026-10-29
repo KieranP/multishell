@@ -303,4 +303,20 @@ struct WorkspaceRepairTests {
     #expect(again == workspace, "seed \(seed): repair is not idempotent")
     #expect(workspace.projects.count == 1, "seed \(seed): repair must never drop a project")
   }
+
+  @Test func groupsWhoseWidthsSumPastANumberAreGivenEqualShares() {
+    var (workspace, _) = consistentWorkspace()
+    let other = session()
+    let second = TabGroup(worktreeID: worktree.id, weight: 1e308)
+    workspace.sessions.append(other)
+    workspace.tabGroups[0].weight = 1e308
+    workspace.tabGroups.append(second)
+    workspace.tabs.append(
+      TerminalTab(worktreeID: worktree.id, groupID: second.id, session: other.id)
+    )
+
+    workspace.repair()
+
+    #expect(workspace.tabGroups.map(\.weight) == [1, 1])
+  }
 }

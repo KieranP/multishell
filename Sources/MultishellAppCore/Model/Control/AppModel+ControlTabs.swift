@@ -23,6 +23,7 @@ extension AppModel {
           name: displayName(of: worktree),
           isInView: isInView(worktree),
           activeTab: workspace.activeWorkspaceTab(in: worktree.id)?.id,
+          groupShares: SplitMath.sizes(of: groups.map(\.weight), sharing: 1),
           tabs: groups.flatMap { workspace.workspaceTabs(inGroup: $0.id) }.map { tab in
             listing(of: tab, isShown: shown.contains(tab.id))
           },
@@ -139,8 +140,7 @@ extension AppModel {
   }
 
   func replyToRenameTab(_ id: WorkspaceTab.ID, to title: String?) -> ControlReply {
-    if workspace.fileTab(id) != nil { return .refused(.tabShowsAFile(id: id)) }
-    guard workspace.tab(id) != nil else { return .refused(.noTab(id: id)) }
+    do { _ = try reachTerminalTab(id) } catch { return .refused(error) }
     renameTab(id, to: title)
     return .done
   }

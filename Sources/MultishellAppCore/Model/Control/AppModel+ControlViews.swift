@@ -16,6 +16,8 @@ extension AppModel {
         requestSettings(for: project)
       }
       platform.show(.projectSettings)
+
+    case .services: return replyToShowServices(of: nil)
     }
     return .done
   }
@@ -26,6 +28,7 @@ extension AppModel {
     case .allTerminals: setShowsAllTerminals(false)
     case .settings: platform.close(.settings)
     case .projectSettings: platform.close(.projectSettings)
+    case .services: closeServicesPopover()
     }
     return .done
   }

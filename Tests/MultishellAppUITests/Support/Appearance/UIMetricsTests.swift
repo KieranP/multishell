@@ -142,7 +142,7 @@ struct UIMetricsTests {
       )
       #expect(metrics.menuChevronSize < metrics.glyph, "the chevron reads as a mark at \(size)")
       #expect(
-        !metrics.tabStripWidths.showsSplits(in: UIMetrics.minimumPaneLength),
+        !metrics.tabStripWidths.showsSplits(in: SplitMath.minimumPaneLength),
         "a group at its floor has no room for the splits at \(size)",
       )
       // The width they first show at has to leave the scroller its gutters,

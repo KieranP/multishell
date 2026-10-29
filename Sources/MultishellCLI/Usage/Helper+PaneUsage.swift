@@ -48,6 +48,8 @@ extension Helper {
         match, or close it, and print the bar once the terminal's count has
         settled: its text, the matches in all, and which is selected, from 0.
         TEXT that starts with a dash goes after --.
+    usage: multishell panes clear-status PANE_ID
+        Clear the pane's dot, as a board card's Clear Status does.
 
     """
 }

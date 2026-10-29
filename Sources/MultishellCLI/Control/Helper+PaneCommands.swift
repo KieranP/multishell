@@ -38,6 +38,13 @@ extension Helper {
         environment: environment,
       )
 
+    case ("clear-status", 1):
+      try noOptions(optionWords, topic: topic)
+      return try ask(
+        .clearPaneState(id: try tabOrPaneID(words[0], topic: topic)),
+        environment: environment,
+      )
+
     default:
       let status = try runPaneTerminal(
         arguments.first,
@@ -47,7 +54,8 @@ extension Helper {
       )
       guard let status else {
         throw UsageError(
-          "panes needs: split, select, close, type, paste, key, show, read, wait or find",
+          "panes needs: split, select, close, type, paste, key, show, read, wait, find "
+            + "or clear-status",
           topic: topic,
         )
       }

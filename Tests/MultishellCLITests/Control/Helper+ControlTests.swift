@@ -172,6 +172,74 @@ struct HelperControlTests {
       (["debug", "samples", "--last", "5"], .debugSamples(last: 5)),
       (["debug", "samples"], .debugSamples(last: 1)),
       (["debug", "memory"], .debugMemory),
+      (
+        ["tabs", "open-file", "w-89abcdef", "Sources/App.swift"],
+        .openFileTab(worktree: "w-89abcdef", path: "Sources/App.swift"),
+      ),
+      (["tabs", "step", id.uuidString, "--next"], .stepToChange(tab: id, direction: .next)),
+      (["tabs", "find", id.uuidString, "TODO"], .findInFileTab(id: id, action: .open("TODO"))),
+      (["tabs", "find", id.uuidString, "--close"], .findInFileTab(id: id, action: .close)),
+      (
+        ["tabs", "move", id.uuidString, "--worktree", "w-89abcdef"],
+        .moveTabToWorktree(id: id, worktree: "w-89abcdef"),
+      ),
+      (["tabs", "move", id.uuidString, "--new-group"], .moveTabToNewGroup(id: id)),
+      (
+        ["tabs", "resize", id.uuidString, "1", "2", "--at", "1,0"],
+        .resizeSplit(tab: id, path: [1, 0], shares: [1, 2]),
+      ),
+      (
+        ["tabs", "resize", id.uuidString, "1", "1"],
+        .resizeSplit(tab: id, path: [], shares: [1, 1]),
+      ),
+      (["tabs", "clear-status", id.uuidString], .clearTabState(id: id)),
+      (["panes", "clear-status", id.uuidString], .clearPaneState(id: id)),
+      (["worktrees", "auto-rename", "w-89abcdef"], .autoRenameWorktree(id: "w-89abcdef")),
+      (["worktrees", "clear-status", "w-89abcdef"], .clearWorktreeState(id: "w-89abcdef")),
+      (
+        ["worktrees", "resize-groups", "w-89abcdef", "2", "1"],
+        .resizeGroups(worktree: "w-89abcdef", shares: [2, 1]),
+      ),
+      (
+        ["projects", "expand", "p-0123abcd"],
+        .setProjectExpanded(id: "p-0123abcd", expanded: true),
+      ),
+      (
+        ["projects", "collapse", "p-0123abcd"],
+        .setProjectExpanded(id: "p-0123abcd", expanded: false),
+      ),
+      (
+        ["projects", "move", "p-0123abcd", "--after", "p-89abcdef"],
+        .moveProject(id: "p-0123abcd", placement: .after, anchor: "p-89abcdef"),
+      ),
+      (["projects", "refresh", "p-0123abcd"], .refreshProject(id: "p-0123abcd")),
+      (["projects", "fetch", "p-0123abcd"], .fetchProject(id: "p-0123abcd")),
+      (["files", "list"], .listFiles),
+      (["files", "filter", "swift"], .filterFiles(text: "swift")),
+      (["files", "filter"], .filterFiles(text: "")),
+      (["files", "expand", "Sources"], .setFilesFolderExpanded(path: "Sources", expanded: true)),
+      (
+        ["files", "collapse", "Sources"],
+        .setFilesFolderExpanded(path: "Sources", expanded: false),
+      ),
+      (["ui", "show", "services"], .showServices(worktree: nil)),
+      (["ui", "show", "services", "w-89abcdef"], .showServices(worktree: "w-89abcdef")),
+      (["ui", "hide", "services"], .hideView(.services)),
+      (
+        ["ui", "switcher", "split", "--scope", "commands", "--next", "--choose"],
+        .quickSwitcher(
+          QuickSwitcherOrder(scope: "commands", text: "split", step: .next, choosesSelected: true)
+        ),
+      ),
+      (
+        ["ui", "switcher"],
+        .quickSwitcher(
+          QuickSwitcherOrder(scope: nil, text: nil, step: nil, choosesSelected: false)
+        ),
+      ),
+      (["window", "sidebar-width", "320"], .setPanelWidth(.sidebar, width: 320)),
+      (["window", "panel-width", "400"], .setPanelWidth(.filesPanel, width: 400)),
+      (["debug", "services", "clear"], .standInServices(json: nil)),
     ]
     for (line, _) in lines {
       let output = try await HelperBinary.run(line, environment: app.environment)
@@ -206,6 +274,33 @@ struct HelperControlTests {
       task: "fix the build",
     )
     #expect(app.requests.received == [.newWorktree(expected)])
+  }
+
+  @Test func aStandInIsReadFromTheFileAndSentAsItsText() async throws {
+    let app = try ControlListener(reply: .done)
+    defer { app.stop() }
+    let file = Scratch.path("stand-in.json")
+    defer { Scratch.remove(file) }
+    let json = #"{"ciRuns": []}"#
+    try json.write(to: file, atomically: true, encoding: .utf8)
+
+    let output = try await HelperBinary.run(
+      ["debug", "services", "stand-in", file.path],
+      environment: app.environment,
+    )
+
+    #expect(output.succeeded, "\(output.standardError)")
+    #expect(app.requests.received == [.standInServices(json: json)])
+  }
+
+  @Test func aShareBelowZeroIsSaidToBeOne() async throws {
+    let output = try await HelperBinary.run(["tabs", "resize", UUID().uuidString, "1", "-1"])
+
+    #expect(output.status == 2)
+    #expect(
+      output.standardError.contains("shares are numbers above zero"),
+      "\(output.standardError)",
+    )
   }
 
   @Test func aRefusalIsSaidInWordsAndExitsOne() async throws {
@@ -292,6 +387,24 @@ struct HelperControlTests {
       ["window", "full-screen", "maybe"],
       ["open", "a"],
       ["info", "extra"],
+      ["tabs", "open-file", "w-89abcdef"],
+      ["tabs", "step", UUID().uuidString],
+      ["tabs", "step", UUID().uuidString, "--next", "--previous"],
+      ["tabs", "find", UUID().uuidString],
+      ["tabs", "move", UUID().uuidString, "--new-group", "--worktree", "w-89abcdef"],
+      ["tabs", "resize", UUID().uuidString, "1"],
+      ["tabs", "resize", UUID().uuidString, "1", "0"],
+      ["tabs", "resize", UUID().uuidString, "1e308", "1e308"],
+      ["tabs", "resize", UUID().uuidString, "1", "1", "--at", "a"],
+      ["worktrees", "resize-groups", "w-89abcdef", "-1", "1"],
+      ["projects", "move", "p-0123abcd"],
+      ["files", "expand"],
+      ["ui", "show", "board", "w-89abcdef"],
+      ["ui", "switcher", "a", "b"],
+      ["ui", "switcher", "--next", "--previous"],
+      ["window", "sidebar-width", "wide"],
+      ["debug", "services", "stand-in"],
+      ["debug", "services", "stand-in", "--json"],
     ]
     for line in lines {
       let output = try await HelperBinary.run(line, environment: app.environment)

@@ -27,19 +27,7 @@ extension Helper {
       return try ask(.newWorktree(order), environment: environment, timeout: nil)
 
     case ("remove", 1):
-      let options = try CommandOptions(
-        optionWords,
-        valued: [],
-        flags: ["delete-branch", "force-delete-branch", "force"],
-        topic: topic,
-      )
-      let forcesBranchDeletion = options.has("force-delete-branch")
-      let order = WorktreeRemovalOrder(
-        worktreeID: try worktreeID(words[0], topic: topic),
-        deletesBranch: forcesBranchDeletion || options.has("delete-branch"),
-        forcesBranchDeletion: forcesBranchDeletion,
-        force: options.has("force"),
-      )
+      let order = try removalOrder(try worktreeID(words[0], topic: topic), optionWords)
       return try ask(.removeWorktree(order), environment: environment, timeout: nil)
 
     case ("show", 1):
@@ -64,9 +52,47 @@ extension Helper {
         environment: environment,
       )
 
+    case ("auto-rename", 1), ("clear-status", 1):
+      try noOptions(optionWords, topic: topic)
+      let id = try worktreeID(words[0], topic: topic)
+      let request: ControlRequest =
+        arguments.first == "auto-rename" ? .autoRenameWorktree(id: id) : .clearWorktreeState(id: id)
+      return try ask(request, environment: environment)
+
+    case ("resize-groups", 2...):
+      try noOptions(optionWords, topic: topic)
+      let request = ControlRequest.resizeGroups(
+        worktree: try worktreeID(words[0], topic: topic),
+        shares: try shares(words.dropFirst(), topic: topic),
+      )
+      return try ask(request, environment: environment)
+
     default:
-      throw UsageError("worktrees needs: list, add, show, rename, remove or select", topic: topic)
+      throw UsageError(
+        "worktrees needs: list, add, show, rename, remove, select, auto-rename, clear-status "
+          + "or resize-groups",
+        topic: topic,
+      )
     }
+  }
+
+  private static func removalOrder(
+    _ id: String,
+    _ optionWords: ArraySlice<String>,
+  ) throws -> WorktreeRemovalOrder {
+    let options = try CommandOptions(
+      optionWords,
+      valued: [],
+      flags: ["delete-branch", "force-delete-branch", "force"],
+      topic: ControlCommand.worktrees.rawValue,
+    )
+    let forcesBranchDeletion = options.has("force-delete-branch")
+    return WorktreeRemovalOrder(
+      worktreeID: id,
+      deletesBranch: forcesBranchDeletion || options.has("delete-branch"),
+      forcesBranchDeletion: forcesBranchDeletion,
+      force: options.has("force"),
+    )
   }
 
   private static func worktreeOrder(

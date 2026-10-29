@@ -10,6 +10,7 @@ struct PresentationEntry: Encodable, Equatable {
     case branchPublish = "branch-publish"
     case newWorktree = "new-worktree"
     case quickSwitcher = "quick-switcher"
+    case servicesPopover = "services-popover"
     case tabRename = "tab-rename"
     case worktreeRename = "worktree-rename"
   }

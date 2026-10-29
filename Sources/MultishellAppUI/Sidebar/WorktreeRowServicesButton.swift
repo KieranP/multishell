@@ -9,13 +9,16 @@ struct WorktreeRowServicesButton: View {
   let services: WorktreeServices
   let theme: Theme
   let metrics: UIMetrics
+  /// Read in this body, not the row's, so a popover opening redraws the rows'
+  /// buttons and not the rows.
+  let isShowingServices: @MainActor @Sendable () -> Bool
+  let setShowsServices: @MainActor @Sendable (Bool) -> Void
   let popover: () -> ServicesPopover
 
-  @State private var isShowingPopover = false
-
   var body: some View {
+    let isShowing = isShowingServices()
     Button {
-      isShowingPopover = true
+      setShowsServices(true)
     } label: {
       HStack(spacing: 4) {
         if let pullRequest = services.shownPullRequest {
@@ -40,6 +43,13 @@ struct WorktreeRowServicesButton: View {
     .buttonStyle(.plain)
     .help(services.tooltip)
     .accessibilityLabel(services.spokenSummary ?? "")
-    .popover(isPresented: $isShowingPopover, arrowEdge: .bottom, content: popover)
+    .popover(
+      isPresented: Binding(get: { isShowing }, set: setShowsServices),
+      arrowEdge: .bottom,
+      content: popover,
+    )
+    // A row collapsed, filtered or scrolled away takes its popover with it, so
+    // the model stops saying one is up.
+    .onDisappear { setShowsServices(false) }
   }
 }

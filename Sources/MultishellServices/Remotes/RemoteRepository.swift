@@ -7,6 +7,9 @@ public struct RemoteRepository: Hashable, Sendable {
   let owner: String
   let name: String
 
+  /// `owner/name` folded, as hosts compare them: what makes two the same.
+  var identity: String { "\(owner)/\(name)".lowercased() }
+
   init(owner: String, name: String) {
     self.owner = owner
     self.name = name
@@ -37,6 +40,6 @@ public struct RemoteRepository: Hashable, Sendable {
   }
 
   public func isSame(as other: Self) -> Bool {
-    owner.lowercased() == other.owner.lowercased() && name.lowercased() == other.name.lowercased()
+    identity == other.identity
   }
 }

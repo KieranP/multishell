@@ -49,7 +49,8 @@ extension AppModel {
 
   public func integrationAvailability(_ integration: ServiceIntegration) -> IntegrationAvailability
   {
-    guard remoteState.toolDetection.isInstalled(integration) else { return .notInstalled }
+    guard remoteState.connections.isStandIn || remoteState.toolDetection.isInstalled(integration)
+    else { return .notInstalled }
     guard coordinator != nil else { return .needsGit }
     return remoteState.toolStatuses[integration].map(IntegrationAvailability.tool) ?? .checking
   }

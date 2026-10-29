@@ -14,8 +14,12 @@ final class RemoteState {
   var fetchingProjects: Set<Project.ID> = []
   /// What the tools were last adopted from.
   @ObservationIgnored var adoption: ServiceToolAdoption?
+  /// What `debug services stand-in` answers with in place of the tools, until cleared.
+  @ObservationIgnored var standIn: ServiceStandIn?
   /// Which integrations' tools the login shell's PATH has.
   var toolDetection = ServiceToolDetection.empty
+  /// Counts each install of `connections`, so a check of the ones before is not kept.
+  @ObservationIgnored var connectionsInstalled = 0
   /// A host or provider per integration detection found; tests stand fakes in.
   var connections = ServiceConnections.empty
   /// What each project's host and provider last answered. Rows read
@@ -69,8 +73,8 @@ final class RemoteState {
   /// Runs whose workflows are being read, which a second ask leaves to that read.
   @ObservationIgnored var workflowReads: Set<CIRun.ID> = []
   @ObservationIgnored var reportReads: Set<CIRun.ID> = []
-  /// Bumped as a project's integrations change, so a read spanning a change is
-  /// not kept: it began from what was read before.
+  /// Bumped as a project's integrations or the tools change, so a read spanning
+  /// a change is not kept: it began from what was read before.
   @ObservationIgnored var integrationChanges: [Project.ID: Int] = [:]
   /// Whether each row's tip has a change its merged pull request's head lacks,
   /// and the questions git is being asked, per project: two clones answer apart.

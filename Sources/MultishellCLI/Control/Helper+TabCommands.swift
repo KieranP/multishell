@@ -44,17 +44,7 @@ extension Helper {
       )
 
     case ("move", 1):
-      let options = try CommandOptions(optionWords, valued: ["before", "after"], topic: topic)
-      guard let anchor = options["before"] ?? options["after"],
-        (options["before"] == nil) != (options["after"] == nil)
-      else {
-        throw UsageError("tabs move needs one of --before TAB_ID or --after TAB_ID", topic: topic)
-      }
-      let request = ControlRequest.moveTab(
-        id: try tabOrPaneID(words[0], topic: topic),
-        placement: options["before"] != nil ? .before : .after,
-        anchor: try tabOrPaneID(anchor, topic: topic),
-      )
+      let request = try tabMove(try tabOrPaneID(words[0], topic: topic), optionWords)
       return try ask(request, environment: environment)
 
     case ("rename", 1...2):
@@ -66,8 +56,50 @@ extension Helper {
       )
 
     default:
-      throw UsageError("tabs needs: list, open, show, select, close, move or rename", topic: topic)
+      guard
+        let status = try runTabContents(
+          arguments.first,
+          words,
+          optionWords,
+          environment: environment,
+        )
+      else {
+        throw UsageError(
+          "tabs needs: list, open, open-file, show, select, close, move, rename, resize, "
+            + "clear-status, step or find",
+          topic: topic,
+        )
+      }
+      return status
     }
+  }
+
+  /// One of `--before TAB_ID`, `--after TAB_ID`, `--worktree WORKTREE_ID` and
+  /// `--new-group`, as the drag or the menu item it stands for.
+  private static func tabMove(
+    _ id: UUID,
+    _ optionWords: ArraySlice<String>,
+  ) throws -> ControlRequest {
+    let topic = ControlCommand.tabs.rawValue
+    let usage =
+      "tabs move needs one of --before TAB_ID, --after TAB_ID, --worktree WORKTREE_ID "
+      + "or --new-group"
+    let options = try CommandOptions(
+      optionWords,
+      valued: ["before", "after", "worktree"],
+      flags: ["new-group"],
+      topic: topic,
+    )
+    let beside = try placement(in: options, usage: usage, topic: topic)
+    let asked = [beside != nil, options["worktree"] != nil, options.has("new-group")]
+    guard asked.filter(\.self).count == 1 else { throw UsageError(usage, topic: topic) }
+    if let (placement, anchor) = beside {
+      return .moveTab(id: id, placement: placement, anchor: try tabOrPaneID(anchor, topic: topic))
+    }
+    if let worktree = options["worktree"] {
+      return .moveTabToWorktree(id: id, worktree: try worktreeID(worktree, topic: topic))
+    }
+    return .moveTabToNewGroup(id: id)
   }
 
   private static func tabOrder(_ arguments: ArraySlice<String>) throws -> NewTabOrder {

@@ -59,6 +59,9 @@ public final class AppModel<Surface> {
   public internal(set) var showsSidebarFilter = false
   /// The quick switcher while it is up; see `toggleQuickSwitcher`.
   public internal(set) var quickSwitcher: QuickSwitcherState?
+  /// The worktree row whose pull request and CI popover is open: here, not in
+  /// the row, so a request can open it and `ui dismiss` close it.
+  public internal(set) var servicesPopoverWorktreeID: Worktree.ID?
   /// Worktrees by when they were last selected, newest first, for the
   /// switcher's Recent. Unobserved, as the selection writing it redraws anyway.
   @ObservationIgnored var recentWorktreeIDs: [Worktree.ID] = []

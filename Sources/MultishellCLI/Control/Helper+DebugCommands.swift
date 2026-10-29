@@ -37,11 +37,12 @@ extension Helper {
     case ("report", _, _): return try runDebugReport(rest, environment: environment)
     case ("screenshot", _, _): return try runDebugScreenshot(rest, environment: environment)
     case ("log", _, _): return try runDebugLog(rest, environment: environment)
+    case ("services", _, _): return try runDebugServices(rest, environment: environment)
 
     default:
       throw UsageError(
         "debug needs one of: tools, info, samples, memory, notifications, git, mark, report, "
-          + "screenshot, log",
+          + "screenshot, log, services",
         topic: topic,
       )
     }

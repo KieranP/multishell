@@ -1010,6 +1010,40 @@ command line's requests on the same socket. Newest at the bottom.
 - **The settings windows open through SwiftUI's own openers**, which only a view
   can reach, so the root view hands them to the platform. AppKit cannot open a
   SwiftUI scene, and closing one goes by the window's identifier.
+- **`tabs open-file` opens a file by the Files panel click's rule**, so a file
+  that would not open as text is refused where the click beeps. In a worktree
+  out of view it opens without switching to it, as `tabs open` does.
+- **`tabs find` waits for the count from the helper**, as `panes find` does: a
+  tab just shown has its rows read a turn later, behind any read already
+  running, and the app answers at once.
+- **A file tab's arrows and find need the tab on screen.** A hidden tab lets its
+  rows go, and its view is what steps, so a step would wait for a show and a
+  count would be of nothing; the refusal names `tabs select`. A step the view
+  last said its arrow cannot take is refused; one it can is queued and answered
+  at once, the view taking it on its next update.
+- **`files` acts on the panel on screen and names no worktree.** Its list is
+  read only while it shows, so another worktree's would be of nothing read.
+- **`ui switcher` opens the quick switcher without Cmd+P's key-window check**: a
+  request comes from no window. The check stays on the keys. Cost: over a window
+  that is not key, its field has no keyboard until a click.
+- **The services popover's open state is the model's**, not the row's, so a
+  request can open it and `info` and `ui dismiss` see it. One row's popover
+  closing leaves another's up, and a row leaving the screen closes its own.
+  Cost: a row scrolled out of the sidebar shows the popover only once scrolled
+  to.
+- **Moves and resizes go through the calls the drags make.** A share count that
+  does not match the split or the groups is refused, where the tree's own guard
+  would quietly keep the old shares, and so is a share leaving a pane narrower
+  than a drag would. That length is known only on screen, from the panes'
+  frames. Cost: shares for a tab out of view, or groups beside a file tab, are
+  taken unchecked.
+- **A panel's width is written where the views read it**, a debug build's own
+  user defaults (develop/state-on-disk.md), so a scratch run never moves the
+  installed app's edges. Below the drag's minimum is refused; wider than the
+  window has room for is kept and drawn narrower, as after a drag.
+- **Fetch and Refresh answer once done; Auto Rename once started.** A script
+  waits on the first two's reads; a rename runs an agent for seconds, and
+  `sidebar list` says while it runs and how it ended.
 - **Auto Rename runs an agent's own CLI once, not an API.** No key to store, and
   the user's own sign-in and plan pay. Cost: an agent's start-up on every run.
 - **It sets the display name only**, as Rename does. The branch is what a
@@ -1127,3 +1161,21 @@ command line's requests on the same socket. Newest at the bottom.
   seconds, and past that nobody is watching the row. Cost: the bound and a
   removal's stop cover the agent, not the git reads before it, which take no
   stopper; a hung volume holds the row's spinner until git returns.
+
+## Reviewed and left as is
+
+Raised by reviews and settled; a review need not raise these again.
+
+- **The helper's parse helpers sit beside the command they parse**, `tabMove`,
+  `switcherOrder` and `removalOrder` as `tabOrder` and `worktreeOrder` always
+  have, each private to its command's file.
+- **`projects fetch` and `refresh` run on after the helper hangs up**, as the
+  menu's Fetch and Refresh do: neither holds a stopper to stop, and a fetch left
+  to finish only brings the remote's refs up to date.
+- **`reachTerminalTab` throws the tab it reached, `refusalToReachFileTab`
+  returns only a refusal**: the terminal tab's callers use the tab, the file
+  tab's use none, and a throw needs no `?? .noTab` that cannot run.
+- **`ui show services` sends `showServices`, and `showView(.services)` stands
+  for the worktree in view**: `showView` names a project, the only other view
+  taking an id, and a popover is a worktree's; the case answers a client that
+  sends the view alone, its project unread.

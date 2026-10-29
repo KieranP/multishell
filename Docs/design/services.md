@@ -287,7 +287,83 @@ command-line tool.
 - **A word for a job or workflow neither list knows leaves it out**, as a run's
   does, rather than drawing it as running for good.
 
+- **`debug services stand-in` answers for both tools, not for a worktree's
+  state.** Rows, popovers, pages, checks and run details each read the host or
+  provider, so their answers are the one place every reader sees; a stand-in set
+  on a worktree would need a copy for each, and the poll would write over it.
+  Cost: a scratch repository still needs what the tools would, a remote whose
+  URL names the pull request's repository and the branch pushed to it.
+- **A stand-in fills GitHub's and CircleCI's slots whatever is installed**, so a
+  project's toggles still apply. Every repository runs on its CI, the
+  configuration path being the checkout, so a scratch one needs no config file.
+- **Standing in or clearing drops what either side read**, and before it answers
+  reads again the projects with rows in view and an open services page, the rest
+  when next due, as the poll would. A read under way is waited out and its
+  answer dropped, so a stand-in answer never shows beside a tool's. Cleared, the
+  last adopted tools come back without searching again; none where the login
+  shell's PATH was never adopted, so the app's own PATH, which a test runner's
+  real `gh` is on, is never searched. A relaunch clears it too.
+- **A stand-in is JSON keyed as the domain types name their fields, raw values
+  as `worktrees show` prints them**: `pullRequests`, each with `number`,
+  `title`, `state`, `headBranch`, `headCommit` and `headRepository` (a remote
+  URL or `owner/name`), and optionally `url` (its GitHub page by default),
+  `review`, `blocker`, `isReadyToMerge`, `autoMergesWhenReady`, `baseBranch`,
+  `updatedAt` and `checks` (`name`, `status`, `workflow`, `isRequired`, `link`);
+  and `ciRuns`, each with `id`, `branch`, `commit` and `status`, and optionally
+  `subject`, `isFinished`, `createdAt`, `repository` (where it ran; none matches
+  every project), `workflows` (`name`, `status`, `jobs` of `id`, `name`,
+  `status`) and `failures` (`workflow`, `job`, `text`). Dates are ISO 8601.
+- **A tool adoption drops every read under way**, bumping each project's
+  integration count as the toggles do: such a read asked the tools just
+  replaced. Panel reads check the count too.
+- **`refreshServices` answers `false` where a read under way takes the request
+  for after it, or the integrations or tools changed while it ran**; `true`
+  otherwise, a project gone or asking no service included, nothing being left to
+  read. The stand-in waits on such a read's end, which resumes it, and asks
+  again until its own read is kept.
+- **A value the stand-in cannot read refuses all of it**, a key no record takes
+  or one missing included, naming the key path, rather than dropping one run
+  unseen. The helper reads the file and sends its text, so the app opens no path
+  a request names; the socket's line, the JSON's quotes escaped, is the limit.
+
 ## Reviewed and left as is
+
+- **`debug services stand-in` works with the debug tools off**, as
+  `debug report` does: both set what the app shows for a scripted run, the
+  socket is the user's own at mode 0600, and a relaunch clears it.
+- **A stand-in's dates may carry fractional seconds**: `.iso8601` reads them, as
+  `aDateWithFractionalSecondsIsRead` shows.
+- **A run's workflows or report read across a tool change are dropped**, not
+  read again at once: the CI page's poll or the popover's next open asks again.
+- **The model can list a services popover the screen dropped.** Unproven: one a
+  request opens on a row inserted that same turn may not be presented, and
+  nothing resets the model; `ui dismiss` clears it.
+- **Every tool adoption drops the reads under way**, a login-shell re-adoption
+  included: they asked tools since replaced, and each is read again at once.
+- **`Asker` is threaded down to the beep and the keyboard**, rather than a
+  click's wrapper beeping on a `nil`: the file opens a turn later, past the
+  wrapper, and one name for who asked reads plainer than a beep flag beside a
+  focus flag.
+- **The stand-in's waits live in the shared reads**: `refreshServices` and
+  `readPanelServices` say whether their read was kept, and the read logs resume
+  waiters. A request answering before the stand-in shows sent scripts to poll.
+- **Each reader takes the integration count before its tool and compares it
+  after**, seven of them, as the toggles' reads always have: a token type would
+  wrap one `Int` and one comparison.
+- **A stand-in recomputes each project's services in turn**, each pass over the
+  worktrees' services: a debug command, at a sidebar's few dozen rows.
+- **A stand-in's recent runs are every project's**, as it cannot tell which
+  repository a directory is; the reads trust a tool to list the project's own.
+  Runs of two repositories on one branch name show the newer on both; a stand-in
+  gives each its own branch names, or the history page, filtered by repository,
+  shows each its own.
+- **A file open's listing is dropped by its callers**, not inside
+  `openFileAsTab`: the switcher's open drops it only once the cover it was
+  chosen over has come down, so the panel that cover hid keeps the one it shows.
+- **A stand-in may read a shown project twice.** The read it outwaits schedules
+  its own re-read, and a provider turning readable schedules another; the
+  stand-in's own read runs beside them. Its answers are instant, and the extra
+  cost is a `git remote` and a past-head check per project, on a debug command.
 
 - **The branch scan's ref query has one retry, not two.** A review asked for a
   tier keeping the dates where the upstream atoms fail, but

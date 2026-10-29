@@ -62,8 +62,9 @@ extension AppModel {
       remoteState.reportReads.insert(run.id).inserted
     else { return }
     defer { remoteState.reportReads.remove(run.id) }
+    let changesBefore = remoteState.integrationChanges[project.id]
     guard let report = try? await provider.failureReport(of: run, in: project.path),
-      stillReads(integration, for: project)
+      stillReads(integration, for: project, changedSince: changesBefore)
     else { return }
     remoteState.reportsReadAt[run.id] = .now
     setIfChanged(
@@ -81,8 +82,9 @@ extension AppModel {
       remoteState.workflowReads.insert(run.id).inserted
     else { return }
     defer { remoteState.workflowReads.remove(run.id) }
+    let changesBefore = remoteState.integrationChanges[project.id]
     guard let workflows = try? await provider.workflows(of: run, in: project.path),
-      stillReads(integration, for: project)
+      stillReads(integration, for: project, changedSince: changesBefore)
     else { return }
     remoteState.workflowsReadAt[run.id] = .now
     setIfChanged(
@@ -91,9 +93,14 @@ extension AppModel {
     )
   }
 
-  /// Gone, or its provider turned off or gone, while `circleci` ran: what it
-  /// read is kept by nothing that asks.
-  private func stillReads(_ integration: ServiceIntegration, for project: Project) -> Bool {
+  /// Gone, or its provider turned off, gone or replaced, while `circleci` ran:
+  /// what it read is kept by nothing that asks.
+  private func stillReads(
+    _ integration: ServiceIntegration,
+    for project: Project,
+    changedSince changesBefore: Int?,
+  ) -> Bool {
     workspace.project(project.id) != nil && ciProvider(for: project)?.0 == integration
+      && remoteState.integrationChanges[project.id] == changesBefore
   }
 }

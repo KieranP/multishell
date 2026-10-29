@@ -16,10 +16,6 @@ struct UIMetrics: Equatable {
   static let splitDividerThickness: Double = 6
   static let splitLineThickness: Double = 1
   static let hairlineThickness: Double = 0.5
-  /// The least a split gives one pane, read by the layout and by the drop
-  /// that would make a group.
-  static let minimumPaneLength: Double = 80
-
   /// How wide a drop band down a group's edge is; see `GroupDropBands`. Wide
   /// enough to aim at without hiding what is under it.
   static let dropBandWidth: Double = 74

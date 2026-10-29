@@ -84,20 +84,27 @@ extension AppModel {
     await readPanelServices(of: worktree.id)
   }
 
-  /// The pull request's checks or the branch's runs, whichever page shows;
-  /// one read at a time per worktree and page.
-  private func readPanelServices(of id: Worktree.ID) async {
+  /// The page's checks or runs, one read at a time per worktree and page; `false`
+  /// where one under way took it, or a tool change dropped it and left the page due.
+  @discardableResult
+  func readPanelServices(of id: Worktree.ID) async -> Bool {
     let page = shownFilesPanelMode
     let read = PanelRead(worktree: id, page: page)
     guard let worktree = workspace.worktree(id), remoteState.panelReadLog.begin(read, at: .now)
-    else { return }
+    else { return false }
     defer { remoteState.panelReadLog.finish(read) }
     pruneRunDetails()
+    let changesBefore = remoteState.integrationChanges[worktree.projectID]
     switch page {
     case .pullRequest: await readChecks(of: worktree)
     case .ciRuns: await readCIHistory(of: worktree)
     case .files, .changes: break
     }
+    guard remoteState.integrationChanges[worktree.projectID] == changesBefore else {
+      remoteState.panelReadLog.markDue(read)
+      return false
+    }
+    return true
   }
 
   private func readChecks(of worktree: Worktree) async {
@@ -117,6 +124,7 @@ extension AppModel {
         headCommit: pullRequest.headCommit,
         checks: nil,
       )
+    let changesBefore = remoteState.integrationChanges[project.id]
     let isSettled = pullRequest.state == .merged || pullRequest.state == .closed
     // A merged or closed one's checks no longer change once read at its head.
     if isSettled, reading.checks != nil, reading.headCommit == pullRequest.headCommit { return }
@@ -129,14 +137,17 @@ extension AppModel {
     } catch {
       reading.failure = ServiceReadFailure(error)
     }
-    // Gone, or its host turned off, while `gh` ran: nothing asks for it now.
+    // Gone, or its host turned off or replaced, while `gh` ran: nothing asks for it now.
     guard workspace.worktree(worktree.id) != nil,
-      pullRequestHost(for: project)?.0 == integration
+      pullRequestHost(for: project)?.0 == integration,
+      remoteState.integrationChanges[project.id] == changesBefore
     else { return }
     setIfChanged(\.remoteState.checks[worktree.id], reading)
   }
 
   private func readCIHistory(of worktree: Worktree) async {
+    // Taken before any await, the provider chosen below among them.
+    let changesBefore = remoteState.integrationChanges[worktree.projectID]
     guard let project = workspace.project(worktree.projectID),
       let (integration, provider) = ciProvider(for: project),
       let upstream = remoteState.upstreams[worktree.id],
@@ -162,7 +173,8 @@ extension AppModel {
     } catch {
       history.failure = ServiceReadFailure(error)
     }
-    guard workspace.worktree(worktree.id) != nil, ciProvider(for: project)?.0 == integration
+    guard workspace.worktree(worktree.id) != nil, ciProvider(for: project)?.0 == integration,
+      remoteState.integrationChanges[project.id] == changesBefore
     else { return }
     setIfChanged(\.remoteState.ciHistories[worktree.id], history)
     guard let newest = history.runs.first else { return }

@@ -30,6 +30,16 @@ extension Helper {
         Name its row; no NAME hands the name back to the branch.
     usage: multishell worktrees select WORKTREE_ID
         Select it, as a click on its row does.
+    usage: multishell worktrees auto-rename WORKTREE_ID
+        Start Auto Rename, as its menu item does, and return once it starts.
+        `sidebar list` says while it runs and why it left the name where it
+        did. Refused where the item is greyed out.
+    usage: multishell worktrees clear-status WORKTREE_ID
+        Clear the dots of all its panes, as its Clear Status does.
+    usage: multishell worktrees resize-groups WORKTREE_ID SHARE...
+        Set its tab groups' shares of the width, left to right, as dragging
+        the dividers between them does: one SHARE a group, relative.
+        `tabs list` prints them as groupShares.
 
     """
 }

@@ -5,5 +5,7 @@ public enum ControlView: String, Codable, CaseIterable, Sendable {
   /// The board's Show all terminals, not only agents' panes.
   case allTerminals = "all-terminals"
   case projectSettings = "project-settings"
+  /// A worktree row's pull request and CI popover.
+  case services
   case settings
 }

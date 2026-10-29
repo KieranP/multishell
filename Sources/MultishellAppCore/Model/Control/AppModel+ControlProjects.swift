@@ -45,4 +45,48 @@ extension AppModel {
     removeProject(project)
     return .done
   }
+
+  /// The chevron, where the row is not already drawn that way. A project the
+  /// filter hides has no chevron, so its stored flag is set, for after.
+  func replyToSetProjectExpanded(_ id: String, expanded: Bool) -> ControlReply {
+    guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
+    guard let entry = sidebarEntries.first(where: { $0.project.id == project.id }) else {
+      setExpanded(expanded, for: project)
+      return .done
+    }
+    if entry.isExpanded != expanded { toggleExpansion(of: project) }
+    return .done
+  }
+
+  /// A drop on the edge of another project's block.
+  func replyToMoveProject(
+    _ id: String,
+    _ placement: WorkspaceTab.Placement,
+    anchor: String,
+  ) -> ControlReply {
+    guard let moving = project(withControlID: id) else { return .refused(.noProject(id: id)) }
+    guard let target = project(withControlID: anchor) else {
+      return .refused(.noProject(id: anchor))
+    }
+    guard moving.id != target.id else { return .refused(.projectBesideItself(id: id)) }
+    moveProject(moving.id, placement == .before ? .above : .below, of: target.id)
+    return .done
+  }
+
+  /// The project menu's Refresh, answered once git has listed it again.
+  func replyToRefreshProject(_ id: String) async -> ControlReply {
+    guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
+    guard coordinator != nil else { return .refused(.gitNotFound) }
+    await refreshWorktreesOnRequest(of: project)
+    // A folder gone is dimmed on its row, with no alert to answer by.
+    return missingProjects.contains(project.id) ? .refused(.projectFolderMissing(id: id)) : .done
+  }
+
+  /// The project menu's Fetch; asked while one runs, it answers at once.
+  func replyToFetchProject(_ id: String) async -> ControlReply {
+    guard let project = project(withControlID: id) else { return .refused(.noProject(id: id)) }
+    guard coordinator != nil else { return .refused(.gitNotFound) }
+    await fetch(project)
+    return .done
+  }
 }

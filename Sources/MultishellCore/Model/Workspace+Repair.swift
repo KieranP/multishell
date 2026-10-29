@@ -118,6 +118,13 @@ extension Workspace {
     let occupied = Set(tabs.map(\.groupID) + fileTabs.map(\.groupID))
     tabGroups.removeAll { !occupied.contains($0.id) }
 
+    // Widths summing past a number lay every group out at zero; equal shares stand in.
+    for worktreeID in Set(tabGroups.map(\.worktreeID)) {
+      let indices = tabGroups.indices.filter { tabGroups[$0].worktreeID == worktreeID }
+      guard !LayoutWeight.allUsable(indices.map { tabGroups[$0].weight }) else { continue }
+      for index in indices { tabGroups[index].weight = 1 }
+    }
+
     for index in tabGroups.indices {
       // A width of zero is a group nothing can be laid out in. Decoding
       // makes the same substitution; a half-written save can leave one.

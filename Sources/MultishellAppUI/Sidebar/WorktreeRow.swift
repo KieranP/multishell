@@ -33,6 +33,8 @@ struct WorktreeRow: View, @MainActor Equatable {
   let showModifiedFiles: () -> Void
   /// The warning of a failed Auto Rename clicked: its reason has been read.
   let clearAutoRenameFailure: () -> Void
+  let isShowingServices: @MainActor @Sendable () -> Bool
+  let setShowsServices: @MainActor @Sendable (Bool) -> Void
   let servicesPopover: () -> ServicesPopover
 
   private var kind: String { worktree.kindText() }
@@ -68,6 +70,8 @@ struct WorktreeRow: View, @MainActor Equatable {
         metrics: metrics,
         showModifiedFiles: showModifiedFiles,
         clearAutoRenameFailure: clearAutoRenameFailure,
+        isShowingServices: isShowingServices,
+        setShowsServices: setShowsServices,
         servicesPopover: servicesPopover,
       )
     }

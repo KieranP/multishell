@@ -25,6 +25,12 @@ extension AppModel {
       }
       return
     }
+    openQuickSwitcher(scope)
+  }
+
+  /// Up over the workspace window whichever window has the keyboard, which
+  /// only the keys check: a request comes from no window.
+  func openQuickSwitcher(_ scope: QuickSwitcherScope) {
     quickSwitcher = QuickSwitcherState(
       scope: scope,
       commands: Self.choosableCommands(platform.commandMenuItems),
@@ -119,48 +125,67 @@ extension AppModel {
 
   /// A click on a row.
   public func chooseQuickSwitcherRow(_ target: QuickSwitcherTarget) {
-    guard dismissQuickSwitcher() else { return }
+    chooseQuickSwitcherRow(target, as: .click)
+  }
+
+  /// A click takes a menu item on the menu's own turn and beeps at a row leading
+  /// nowhere; a request has the menu validate the item, and is answered.
+  @discardableResult
+  func chooseQuickSwitcherRow(
+    _ target: QuickSwitcherTarget,
+    as asker: Asker,
+  ) -> QuickSwitcherChoice {
+    // A request is told what the menu would say of the item before anything closes.
+    if case .command(let path) = target, asker == .request {
+      let item = platform.menuItems.first { $0.path == path }
+      if item?.isEnabled != true {
+        return .menuItemRefused(path: path, item == nil ? .notFound : .disabled)
+      }
+    }
+    guard dismissQuickSwitcher() else { return .notUp }
     switch target {
     case .command(let path):
       focusActivePane()
-      platform.chooseMenuItem(path)
+      // On the menu's own turn, once the field has let the keyboard go; a request's
+      // as the command line's, and answered once it has run.
+      guard asker == .request else {
+        platform.chooseMenuItem(path)
+        return .done
+      }
+      let platform = self.platform
+      return .menuItem(path: path, Task { await platform.performMenuItemOnItsTurn(path) })
 
     case .file(let path, let worktreeID):
-      focusActivePane()
-      let coverChosenOver = detailCover
-      Task {
-        let opened = await openFileAsTab(path, in: worktreeID)
-        if opened, let worktree = workspace.worktree(worktreeID) {
-          expandProject(holding: worktree)
-        }
-        // The cover it was chosen over comes down once it opens, without the
-        // first tab or trust question a select asks; one raised since stays.
-        if opened, coverChosenOver != nil, detailCover == coverChosenOver {
-          uncoverDetailAndReadItsTabs()
-          focusActivePane()
-        }
-        // The open read the file tree again, after the dismiss let it go.
-        forgetUnreadPanelListings()
-      }
+      let opening = chooseFileRow(path, in: worktreeID, as: asker)
+      return .openingFile(path: path, worktree: worktreeID, opening)
 
     case .fileTab(let id):
-      let worktree = workspace.fileTab(id).flatMap { workspace.worktree($0.worktreeID) }
-      goTo(worktree) { store.activateTab(id) }
+      return goTo(worktreeChosen(by: target), as: asker) { store.activateTab(id) }
 
     case .pane(let id):
-      let worktree = workspace.session(id).flatMap { workspace.worktree($0.worktreeID) }
-      goTo(worktree) { store.focusSession(id) }
+      return goTo(worktreeChosen(by: target), as: asker) { store.focusSession(id) }
 
-    case .project(let id):
-      guard let worktree = preferredWorktree(ofProject: id) else {
-        platform.beep()
-        focusActivePane()
-        return
-      }
-      goTo(worktree)
+    case .project(let id)
+    where workspace.project(id) != nil && preferredWorktree(ofProject: id) == nil:
+      if asker == .click { platform.beep() }
+      focusActivePane()
+      return .projectWithNoWorktree(id)
 
-    case .worktree(let id):
-      goTo(workspace.worktree(id))
+    case .project, .worktree:
+      return goTo(worktreeChosen(by: target), as: asker)
+    }
+  }
+
+  /// Where a row leads, `nil` where that has gone since it was listed; a
+  /// command leads to no worktree.
+  private func worktreeChosen(by target: QuickSwitcherTarget) -> Worktree? {
+    switch target {
+    case .command: nil
+    case .file(_, let worktreeID): workspace.worktree(worktreeID)
+    case .fileTab(let id): workspace.fileTab(id).flatMap { workspace.worktree($0.worktreeID) }
+    case .pane(let id): workspace.session(id).flatMap { workspace.worktree($0.worktreeID) }
+    case .project(let id): preferredWorktree(ofProject: id)
+    case .worktree(let id): workspace.worktree(id)
     }
   }
 
@@ -177,14 +202,22 @@ extension AppModel {
 
   /// Its project opens in the sidebar so its row shows. A worktree that cannot
   /// be selected leaves the keyboard where it was; one gone since beeps.
-  private func goTo(_ worktree: Worktree?, turning turn: () -> Void = {}) {
-    guard let worktree, select(worktree, openingFirstTab: .onSelect, turning: turn)
-    else {
-      if worktree == nil { platform.beep() }
+  private func goTo(
+    _ worktree: Worktree?,
+    as asker: Asker,
+    turning turn: () -> Void = {},
+  ) -> QuickSwitcherChoice {
+    guard let worktree else {
+      if asker == .click { platform.beep() }
       focusActivePane()
-      return
+      return .rowGone
+    }
+    guard select(worktree, openingFirstTab: .onSelect, turning: turn) else {
+      focusActivePane()
+      return .worktreeNotReady(worktree.id)
     }
     expandProject(holding: worktree)
+    return .done
   }
 
   /// The project's worktree turned to last, else its main one.
@@ -194,5 +227,39 @@ extension AppModel {
       worktrees.first { $0.id == recentID }
     }.first
     return recent ?? worktrees.first(where: \.isPrimary) ?? worktrees.first
+  }
+
+  /// A file row chosen, once the switcher is down: the keyboard back on the pane
+  /// at once, and the file's tab once read, `nil` where it would not open.
+  private func chooseFileRow(
+    _ path: String,
+    in worktreeID: Worktree.ID,
+    as asker: Asker,
+  ) -> Task<FileTab?, Never> {
+    focusActivePane()
+    let coverChosenOver = detailCover
+    return Task { await openChosenFile(path, in: worktreeID, over: coverChosenOver, as: asker) }
+  }
+
+  /// Its project opened, and the cover it was chosen over taken down.
+  private func openChosenFile(
+    _ path: String,
+    in worktreeID: Worktree.ID,
+    over coverChosenOver: DetailCover?,
+    as asker: Asker,
+  ) async -> FileTab? {
+    let opened = await openFileAsTab(path, in: worktreeID, as: asker)
+    if opened != nil, let worktree = workspace.worktree(worktreeID) {
+      expandProject(holding: worktree)
+    }
+    // The cover it was chosen over comes down once it opens, without the
+    // first tab or trust question a select asks; one raised since stays.
+    if opened != nil, coverChosenOver != nil, detailCover == coverChosenOver {
+      uncoverDetailAndReadItsTabs()
+      focusActivePane()
+    }
+    // After the cover comes down, so the panel it hid keeps the listing it shows.
+    forgetUnreadPanelListings()
+    return opened
   }
 }

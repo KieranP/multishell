@@ -44,6 +44,8 @@ struct WorktreeRowTests {
       cancelRename: {},
       showModifiedFiles: {},
       clearAutoRenameFailure: {},
+      isShowingServices: { false },
+      setShowsServices: { _ in },
       servicesPopover: { [harness] in
         ServicesPopover(model: harness.model, worktree: worktree, theme: .multishellDark)
       },

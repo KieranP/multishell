@@ -56,15 +56,22 @@ extension AppModel {
     await pollPanelServices()
   }
 
-  /// The project's pull requests and runs, read at once; one already being
-  /// read reads again after, that read having begun before what moved.
-  func refreshServices(ofProject id: Project.ID, readsPullRequests: Bool = true) async {
+  /// The project's pull requests and runs, read at once, or again after one under
+  /// way; `false` where that one took it or a tool change dropped its answer.
+  @discardableResult
+  func refreshServices(
+    ofProject id: Project.ID,
+    readsPullRequests: Bool = true,
+    queuesBehindOneUnderWay: Bool = true,
+  ) async -> Bool {
     guard let project = workspace.project(id), !missingProjects.contains(id),
       hasServiceToAsk(project)
-    else { return }
+    else { return true }
     guard remoteState.readLog.begin(id, at: .now) else {
-      remoteState.rereads[id] = remoteState.rereads[id] == true || readsPullRequests
-      return
+      if queuesBehindOneUnderWay {
+        remoteState.rereads[id] = remoteState.rereads[id] == true || readsPullRequests
+      }
+      return false
     }
     defer {
       remoteState.readLog.finish(id)
@@ -88,7 +95,7 @@ extension AppModel {
     let (readPullRequests, readCIRuns) = await (pullRequests, ciRuns)
     // Gone while the tools ran, or its integrations changed: what was read
     // began from what is no longer asked, so a re-read reads afresh.
-    guard let current = workspace.project(id) else { return }
+    guard let current = workspace.project(id) else { return true }
     guard remoteState.integrationChanges[id] == changesBefore else {
       // As every read: in the background, the return to the front reads it.
       if platform.isActive {
@@ -96,7 +103,7 @@ extension AppModel {
       } else {
         remoteState.readLog.markDue(id)
       }
-      return
+      return false
     }
     let keptPullRequests = readPullRequests.flatMap { reading in
       pullRequestHost(for: current)?.0 == reading.integration ? reading : nil
@@ -111,6 +118,7 @@ extension AppModel {
     if keptCIRuns == nil { forgetCIReading(ofProject: id) }
     recomputeWorktreeServices(ofProject: id)
     await readChangesPastHead(ofProject: id, asksAgain: true)
+    return true
   }
 
   /// A burst of upstream moves, a push or a pull, becomes one read once it

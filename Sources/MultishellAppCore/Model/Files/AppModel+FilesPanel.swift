@@ -137,7 +137,12 @@ extension AppModel {
 
   /// The row of the file whose tab is in front of the focused group.
   public func isShownFile(_ row: FileTreeRow, in id: Worktree.ID) -> Bool {
-    !row.isFolder && workspace.activeWorkspaceTab(in: id)?.fileTab?.path == row.path
+    row.isShown(whenFileInFrontIs: shownFilePath(in: id))
+  }
+
+  /// The file whose tab is in front of the focused group, which its row lights.
+  func shownFilePath(in id: Worktree.ID) -> String? {
+    workspace.activeWorkspaceTab(in: id)?.fileTab?.path
   }
 
   /// Built only where something it is built from moved since the last; the

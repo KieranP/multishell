@@ -11,8 +11,10 @@ extension Helper {
     PROJECT_ID and WORKTREE_ID are the ids `projects list` and `worktrees
     list` print, such as p-3f9a2c1d and w-8b1e04aa; TAB_ID and PANE_ID the
     ones `tabs list` prints. Of the commands that drive the app, only
-    `projects add` and `debug screenshot` take a path. Whatever a command
-    prints is JSON; `panes read` and `debug log` take --plain for text.
+    `projects add`, `debug screenshot` and `debug services stand-in` take a
+    path from where they run; `tabs open-file` and `files` take one inside
+    the worktree. Whatever a command prints is JSON; `panes read` and
+    `debug log` take --plain for text.
 
       open                       Start the app, or bring it forward
       quit [--force]             Quit the app without its confirmation
@@ -20,21 +22,29 @@ extension Helper {
                                  is up on screen, as JSON
       config global list|get|set           Read or change a setting
       config project PROJECT_ID list|get|set
-      projects list|add|remove   The sidebar's projects
-      worktrees list|add|show|rename|remove|select
-      tabs list|open|show|select|close|move|rename
-      panes split|select|close|type|paste|key|show|read|wait|find
+      projects list|add|remove|expand|collapse|move|refresh|fetch
+                                 The sidebar's projects
+      worktrees list|add|show|rename|remove|select|auto-rename|clear-status|
+                resize-groups
+      tabs list|open|open-file|show|select|close|move|rename|resize|
+           clear-status|step|find
+      panes split|select|close|type|paste|key|show|read|wait|find|clear-status
+      files list|filter|expand|collapse
+                                 The Files panel's list
       board list                 The Agents board's columns and cards
       sidebar list               The sidebar's rows as drawn
-      ui show|hide|filter|dismiss|menu
-                                 The board, settings, filter, dialogs, menus
-      window size|full-screen    Size the main window, or fill the screen
+      ui show|hide|filter|dismiss|menu|switcher
+                                 The board, settings, filter, dialogs, menus,
+                                 the quick switcher
+      window size|full-screen|sidebar-width|panel-width
+                                 Size the main window and its panels
       debug tools on|off         Turn Debug Tools on or off
       debug info show|hide       Show or hide Debug Info
       debug samples|memory|git|notifications
                                  Print Debug Info's readings, or the banners
-      debug mark|report|screenshot|log
-                                 Mark a sample, report a state, draw, read logs
+      debug mark|report|screenshot|log|services
+                                 Mark a sample, report a state, draw, read logs,
+                                 stand in for gh and circleci
 
     For hooks and the shell integration, which report to the app:
       state, command-started, command-finished, relay, agent-hook
@@ -76,6 +86,7 @@ extension Helper {
     case .board: boardUsage
     case .config: configUsage
     case .debug: debugUsage
+    case .files: filesUsage
     case .panes: paneUsage
     case .projects: projectUsage
     case .sidebar: sidebarUsage
