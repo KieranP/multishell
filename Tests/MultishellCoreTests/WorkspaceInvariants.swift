@@ -55,6 +55,10 @@ enum WorkspaceInvariants {
         "\(context): a blank custom name",
       )
     }
+    #expect(
+      workspace.hiddenWorktreeIDs.isSubset(of: worktreeIDs),
+      "\(context): a hidden mark for a missing worktree",
+    )
     checkPortBlocks(workspace, context)
     if let selected = workspace.selectedWorktreeID {
       #expect(worktreeIDs.contains(selected), "\(context): selection of a missing worktree")

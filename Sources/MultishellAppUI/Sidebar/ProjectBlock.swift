@@ -10,8 +10,13 @@ struct ProjectBlock: View {
   let project: Project
   /// The rows of the block, in the order its settings ask for.
   let worktrees: [Worktree]
+  /// The rows the user hid, in that same order, under a Hidden row of their own.
+  let hiddenWorktrees: [Worktree]
   /// What the chevron shows, the filter's word over the project's own.
   let isExpanded: Bool
+  let isHiddenSectionExpanded: Bool
+  let showsHiddenSectionRow: Bool
+  let showsHiddenWorktrees: Bool
   let sessions: SessionIDsByWorktree
   let theme: Theme
   @Binding var projectInsertion: ProjectInsertion?
@@ -20,6 +25,7 @@ struct ProjectBlock: View {
 
   var body: some View {
     let metrics = model.metrics
+    let hiddenRows = showsHiddenWorktrees ? hiddenWorktrees.map(model.sidebarWorktree) : []
     let rows = isExpanded ? worktrees.map(model.sidebarWorktree) : []
     let insertion = projectInsertion?.insertionPlacement(
       on: project.id,
@@ -28,11 +34,17 @@ struct ProjectBlock: View {
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
       projectRow(metrics: metrics)
-      ForEach(rows) { row in
-        worktreeRow(row, metrics: metrics)
-        if !row.panes.isEmpty {
-          SelectedWorktreePanes(model: model, panes: row.panes, theme: theme, metrics: metrics)
-        }
+      worktreeRows(rows, metrics: metrics)
+      if showsHiddenSectionRow {
+        HiddenSectionRow(
+          isExpanded: isHiddenSectionExpanded,
+          worktreeCount: hiddenWorktrees.count,
+          theme: theme,
+          metrics: metrics,
+          toggleExpansion: { model.toggleHiddenSectionExpansion(of: project) },
+        )
+        .equatable()
+        worktreeRows(hiddenRows, metrics: metrics)
       }
     }
     .overlay(alignment: insertion == .below ? .bottom : .top) {
@@ -48,7 +60,10 @@ struct ProjectBlock: View {
       of: [.text],
       delegate: ProjectBlockDropDelegate(
         projectID: project.id,
-        blockHeight: metrics.projectBlockHeight(worktreeRows: rows),
+        blockHeight: metrics.projectBlockHeight(
+          worktreeRows: rows + hiddenRows,
+          showsHiddenSectionRow: showsHiddenSectionRow,
+        ),
         target: $projectInsertion,
         drop: { moving, placement in
           // `moveProject` looks the id up, so a drop carrying anything but a
@@ -85,6 +100,15 @@ struct ProjectBlock: View {
       onEnded: endProjectDrag,
       onSourceLeft: { model.projectDragSourceLeft(project.id, isPressed: $0) },
     )
+  }
+
+  private func worktreeRows(_ rows: [SidebarWorktree], metrics: UIMetrics) -> some View {
+    ForEach(rows) { row in
+      worktreeRow(row, metrics: metrics)
+      if !row.panes.isEmpty {
+        SelectedWorktreePanes(model: model, panes: row.panes, theme: theme, metrics: metrics)
+      }
+    }
   }
 
   private func worktreeRow(_ row: SidebarWorktree, metrics: UIMetrics) -> some View {

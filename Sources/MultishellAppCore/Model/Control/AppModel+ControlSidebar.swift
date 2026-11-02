@@ -6,15 +6,18 @@ extension AppModel {
     let sessions = sessionIDsByWorktree
     let entries = sidebarEntries
     let projects = entries.map { entry in
-      let worktrees =
-        entry.isExpanded
-        ? orderedWorktrees(entry.worktrees, in: entry.project, sessions: sessions) : []
+      let ordered = orderedWorktrees(of: entry, sessions: sessions)
+      let worktrees = entry.isExpanded ? ordered.worktrees : []
+      let hiddenWorktrees = entry.showsHiddenWorktrees ? ordered.hiddenWorktrees : []
       return SidebarRowListing.ProjectRow(
         id: ControlID.project(entry.project.id),
         name: entry.project.name,
         isExpanded: entry.isExpanded,
         state: projectRowState(entry.project.id, isExpanded: entry.isExpanded, sessions: sessions),
         worktrees: worktrees.map { sidebarWorktreeRow($0, sessions: sessions) },
+        hiddenWorktreeCount: entry.hiddenWorktrees.count,
+        isHiddenSectionExpanded: entry.isHiddenSectionExpanded,
+        hiddenWorktrees: hiddenWorktrees.map { sidebarWorktreeRow($0, sessions: sessions) },
       )
     }
     return .json(

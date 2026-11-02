@@ -38,6 +38,8 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// What the menu offers Remove on and the coordinator agrees to take: the
   /// main worktree is the repository itself, and a bare one has no checkout.
   public var isRemovable: Bool { !isPrimary && !isBare }
+  /// The main worktree is the project's own row, so it is never hidden.
+  public var isHideable: Bool { !isPrimary }
 
   /// Synthesized decoding would keep whatever URL was written, so the
   /// directory normalisation from `init` is applied here too.

@@ -23,6 +23,16 @@ extension AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
+  /// The Hidden row under a project's worktrees: whether it is expanded and how
+  /// many it holds.
+  public static func hiddenSection(isExpanded: Bool, worktreeCount: Int) -> String {
+    [
+      t("spoken.hidden-section"),
+      disclosure(isExpanded: isExpanded),
+      t("count.worktrees", worktreeCount),
+    ].joined(separator: ", ")
+  }
+
   /// A worktree row: what its glyphs mean, in drawing order. A renamed row
   /// reads its name first and its branch after, the two lines it shows.
   public static func worktree(

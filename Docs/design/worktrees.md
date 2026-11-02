@@ -677,6 +677,25 @@ left as is".
   read with one `config --get` first, the runner's config beating theirs. A git
   before 2.32 ignores the key; git stays sequential below 100 files.
 
+- **A hidden worktree moves to a Hidden row under its project's others**,
+  collapsed until clicked, rather than leaving the sidebar behind a global
+  toggle. The rows stay one click from where they were, and the row's count says
+  what is there. Hide Worktree and Show Worktree are in the actions menu.
+- **The main worktree cannot be hidden**, so every project keeps a row and the
+  trunk every other row is read against stays in sight. A hand-edited file
+  marking it is ignored.
+- **Which rows are hidden is saved; whether a section is expanded is not.** Kept
+  beside the custom names, for the reason those are, and dropped with the
+  worktree. Each launch starts with hidden rows out of sight.
+- **A collapsed section's rows are not polled**, as a collapsed project's are
+  not. Expanding it, or showing a worktree again, reads those rows at once.
+  Hidden and shown rows are sorted as one list and split, so the sort cache
+  keeps one entry per project.
+- **The filter narrows the Hidden section and leaves it collapsed**; its count
+  says what the text found inside. Holding it expanded would mean a second
+  collapse-while-filtering, and a match in a hidden row alone still lists the
+  project. Rename expands the section, the field being on the row.
+
 ## Reviewed and left as is
 
 Raised by reviews and settled; a review need not raise these again.

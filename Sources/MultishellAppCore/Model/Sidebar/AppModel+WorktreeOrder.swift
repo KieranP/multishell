@@ -5,7 +5,7 @@ import MultishellGitKit
 extension AppModel {
   /// Orders a project's rows as its settings ask. Takes the worktrees rather
   /// than reading them, so a filtered list orders like a whole one.
-  public func orderedWorktrees(
+  func orderedWorktrees(
     _ worktrees: [Worktree],
     in project: Project,
     sessions: SessionIDsByWorktree,
@@ -18,6 +18,24 @@ extension AppModel {
       lastCommit: { self.lastCommitDates[$0.id] },
     )
     return worktreeSortCache.rows(of: project.id, keys: keys, rule: rule)
+  }
+
+  /// An entry's worktrees and its hidden ones, ordered as one list and then
+  /// split, so the sort cache holds one entry per project.
+  public func orderedWorktrees(
+    of entry: SidebarListing.Entry,
+    sessions: SessionIDsByWorktree,
+  ) -> (worktrees: [Worktree], hiddenWorktrees: [Worktree]) {
+    let ordered = orderedWorktrees(
+      entry.worktrees + entry.hiddenWorktrees,
+      in: entry.project,
+      sessions: sessions,
+    )
+    let hiddenIDs = Set(entry.hiddenWorktrees.map(\.id))
+    return (
+      ordered.filter { !hiddenIDs.contains($0.id) },
+      ordered.filter { hiddenIDs.contains($0.id) },
+    )
   }
 
   /// The rule in force for a project, measured against the merge badges'

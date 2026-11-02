@@ -54,6 +54,17 @@ struct AccessibilityTextSidebarTests {
     )
   }
 
+  @Test func theHiddenRowSaysWhetherItIsOpenAndHowManyItHolds() {
+    #expect(
+      AccessibilityText.hiddenSection(isExpanded: false, worktreeCount: 2)
+        == "Hidden worktrees, collapsed, 2 worktrees"
+    )
+    #expect(
+      AccessibilityText.hiddenSection(isExpanded: true, worktreeCount: 1)
+        == "Hidden worktrees, expanded, 1 worktree"
+    )
+  }
+
   @Test func aFailedAutoRenamesReasonIsTheRowsHint() {
     #expect(AccessibilityText.worktreeHint(autoRename: .failed("Not logged in")) == "Not logged in")
     #expect(AccessibilityText.worktreeHint(autoRename: .running) == "")

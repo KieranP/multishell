@@ -13,6 +13,7 @@
 "action.dismiss" = "Dismiss";
 "action.export" = "Export";
 "action.fetch" = "Fetch";
+"action.hide-worktree" = "Hide Worktree";
 "action.more-info" = "More Info";
 "action.new-worktree" = "New Worktree…";
 "action.open-ci" = "Open in %@";
@@ -31,6 +32,7 @@
 "action.show-ci-runs" = "Show CI Runs";
 "action.show-modified-files" = "Show Modified Files";
 "action.show-pull-request" = "Show Pull Request";
+"action.show-worktree" = "Show Worktree";
 "action.update" = "Update";
 "action.use-branch-name" = "Use Branch Name";
 "action.worktree-actions" = "Worktree actions";
@@ -321,6 +323,7 @@
 "sidebar.fetching" = "Fetching from the remote";
 "sidebar.filter" = "Filter";
 "sidebar.filter-projects" = "Filter Projects";
+"sidebar.hidden" = "Hidden";
 "sidebar.kind-and-state" = "%1$@ · %2$@";
 "sidebar.locked" = "Locked worktree";
 "sidebar.name-prompt" = "Name";

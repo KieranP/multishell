@@ -140,6 +140,15 @@ struct WorkspaceRepairTests {
     #expect(workspace.customWorktreeNames == [worktree.id: "Checkout"])
   }
 
+  @Test func aHiddenMarkForAMissingWorktreeGoes() {
+    var (workspace, _) = consistentWorkspace()
+    workspace.hiddenWorktreeIDs = [worktree.id, "/repos/nowhere"]
+
+    workspace.repair()
+
+    #expect(workspace.hiddenWorktreeIDs == [worktree.id])
+  }
+
   /// The store writes a session's worktree with its tab's, so a file where they disagree was
   /// written by something else; the sidebar lists it under the tab, so the tab decides.
   @Test func aSessionSaidToBeInAnotherWorktreeThanItsTabIsPutBack() {
@@ -262,6 +271,7 @@ struct WorkspaceRepairTests {
       { $0.selectedWorktreeID = "/nowhere" },
       { $0.customWorktreeNames["/nowhere"] = "Ghost" },
       { $0.customWorktreeNames[$0.worktrees[0].id] = "  " },
+      { $0.hiddenWorktreeIDs.insert("/nowhere") },
       { damaged in
         damaged.worktrees.append(
           Worktree(path: URL(fileURLWithPath: "/x"), projectID: "/gone", head: "h")

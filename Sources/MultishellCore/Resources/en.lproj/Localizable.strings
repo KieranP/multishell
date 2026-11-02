@@ -444,6 +444,7 @@
 "spoken.find-match" = "match %1$d of %2$d";
 "spoken.focused" = "focused";
 "spoken.folder" = "folder %@";
+"spoken.hidden-section" = "Hidden worktrees";
 "spoken.holds-changes" = "holds changes";
 "spoken.in-folder" = "in %@";
 "spoken.lane-count" = "%1$d %2$@";

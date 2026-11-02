@@ -17,6 +17,12 @@ struct WorktreeActions: View {
     if model.customName(of: worktree) != nil {
       Button(t("action.use-branch-name")) { model.renameWorktree(worktree.id, to: nil) }
     }
+    if worktree.isHideable {
+      let isHidden = model.isHidden(worktree)
+      Button(isHidden ? t("action.show-worktree") : t("action.hide-worktree")) {
+        model.setHidden(!isHidden, worktree: worktree)
+      }
+    }
     Divider()
     Button(t("action.open-in-editor")) { model.openInEditor(worktree) }
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(worktree.path) }

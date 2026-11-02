@@ -23,12 +23,13 @@ extension AppModel {
     Task { await refreshStatuses(inProject: project.id) }
   }
 
-  /// Opens the project holding `worktree`, so its row shows: by the chevron's
-  /// flag, or by the filter's own, the filter cleared where its text hides the row.
+  /// Expands the project holding `worktree`, and its Hidden section if it is hidden, so
+  /// its row shows. The filter is cleared where its text hides the row.
   func expandProject(holding worktree: Worktree) {
+    if workspace.isHidden(worktree) { expandHiddenSection(of: worktree.projectID) }
     if isFilteringSidebar {
       let isListed = sidebarEntries.contains { entry in
-        entry.worktrees.contains { $0.id == worktree.id }
+        (entry.worktrees + entry.hiddenWorktrees).contains { $0.id == worktree.id }
       }
       guard isListed else {
         sidebarFilterText = ""

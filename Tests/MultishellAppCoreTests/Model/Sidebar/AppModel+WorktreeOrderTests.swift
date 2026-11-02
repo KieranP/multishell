@@ -35,6 +35,47 @@ struct AppModelWorktreeOrderTests {
     #expect(rows.first?.id == harness.main.id, "the trunk holds the top")
   }
 
+  @Test func hiddenRowsAreSortedByTheSameRuleAndSplitOffTheRest() {
+    let (harness, extra) = harnessWithThreeWorktrees()
+    harness.model.setHidden(true, worktree: harness.feature)
+    harness.model.setHidden(true, worktree: extra)
+    let entry = harness.model.sidebarEntries[0]
+
+    let rows = harness.model.orderedWorktrees(
+      of: entry,
+      sessions: harness.model.sessionIDsByWorktree,
+    )
+
+    #expect(rows.worktrees.map(\.name) == ["main"])
+    #expect(rows.hiddenWorktrees.map(\.name) == ["aardvark", "feature"])
+  }
+
+  @Test func theSidebarAndTheCommandLineShareOneSortOfAProjectWithHiddenRows() {
+    let (harness, _) = harnessWithThreeWorktrees()
+    harness.model.setHidden(true, worktree: harness.feature)
+    let entry = harness.model.sidebarEntries[0]
+    let sessions = harness.model.sessionIDsByWorktree
+    let before = harness.model.worktreeSortCache.sortCount
+
+    _ = harness.model.orderedWorktrees(of: entry, sessions: sessions)
+    _ = harness.model.orderedWorktrees(of: entry, sessions: sessions)
+
+    #expect(harness.model.worktreeSortCache.sortCount == before + 1)
+  }
+
+  @Test func aProjectWithNothingHiddenOrdersEveryRowAndHidesNone() {
+    let (harness, _) = harnessWithThreeWorktrees()
+    let entry = harness.model.sidebarEntries[0]
+
+    let rows = harness.model.orderedWorktrees(
+      of: entry,
+      sessions: harness.model.sessionIDsByWorktree,
+    )
+
+    #expect(rows.worktrees.map(\.name) == ["main", "aardvark", "feature"])
+    #expect(rows.hiddenWorktrees.isEmpty)
+  }
+
   /// The project's override beats the global, and the whole way through:
   /// the setting is written as the form writes it.
   @Test func aProjectsOverrideChangesItsRows() {

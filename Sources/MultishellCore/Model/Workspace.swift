@@ -7,6 +7,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case projects, worktrees, sessions, tabs, fileTabs, tabGroups
     case selectedWorktreeID, focusedGroupByWorktree
     case customWorktreeNames = "worktreeNames"
+    case hiddenWorktreeIDs = "hiddenWorktrees"
     case appearance, worktreeDefaults
     case notificationPreference = "notifications"
     case preferredAgentID, customAgentCommand, agentFlags
@@ -48,6 +49,9 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// The user's own name for a worktree. Here and not on `Worktree`, whose
   /// records git replaces wholesale on every refresh.
   var customWorktreeNames: [Worktree.ID: String] = [:]
+  /// Worktrees the user moved into their project's Hidden section. Here for
+  /// the reason `customWorktreeNames` is.
+  var hiddenWorktreeIDs: Set<Worktree.ID> = []
   /// Each worktree's port block, by index from `portBlockStart`. Here for the
   /// reason `customWorktreeNames` is; see Docs/design/worktrees.md.
   var portBlocks: [Worktree.ID: Int] = [:]
@@ -156,6 +160,12 @@ public struct Workspace: Codable, Hashable, Sendable {
       [Worktree.ID: String].self,
       forKey: .customWorktreeNames,
       or: [:],
+    )
+    // Tolerated: a malformed list costs which rows were hidden, not the file.
+    hiddenWorktreeIDs = container.decodeTolerantly(
+      Set<Worktree.ID>.self,
+      forKey: .hiddenWorktreeIDs,
+      or: [],
     )
     appearance = try container.decode(Appearance.self, forKey: .appearance, or: Appearance())
     worktreeDefaults = try container.decode(

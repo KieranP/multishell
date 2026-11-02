@@ -10,6 +10,11 @@ struct SidebarRowListing: Encodable, Equatable {
     /// The dot the row stands in with for its worktrees, collapsed.
     let state: SessionState?
     let worktrees: [WorktreeRow]
+    /// What the Hidden row counts, drawn while the project is expanded.
+    let hiddenWorktreeCount: Int
+    let isHiddenSectionExpanded: Bool
+    /// Empty while the section is collapsed, as the rows are under a collapsed project.
+    let hiddenWorktrees: [WorktreeRow]
   }
 
   struct WorktreeRow: Encodable, Equatable {

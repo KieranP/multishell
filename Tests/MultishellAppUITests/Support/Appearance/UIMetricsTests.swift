@@ -82,12 +82,18 @@ struct UIMetricsTests {
       agentName: nil,
     )
 
-    let height = metrics.projectBlockHeight(worktreeRows: [
+    let rows = [
       SidebarWorktree(worktree: plain, customName: nil, isRenaming: false, panes: []),
       SidebarWorktree(worktree: named, customName: "B", isRenaming: false, panes: [pane, pane]),
-    ])
+    ]
+    let height = metrics.projectBlockHeight(worktreeRows: rows, showsHiddenSectionRow: false)
 
     #expect(height == 148)
+    #expect(
+      metrics.projectBlockHeight(worktreeRows: rows, showsHiddenSectionRow: true)
+        == 148 + UIMetrics.sidebarRowSpacing + metrics.rowHeight,
+      "the Hidden row is one plain row more",
+    )
   }
 
   @Test func aCornerBadgeIsSixTenthsOfItsGlyphInWholePointsAndNeverUnderSeven() {

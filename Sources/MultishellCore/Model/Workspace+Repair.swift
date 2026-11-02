@@ -30,6 +30,7 @@ extension Workspace {
     customWorktreeNames = customWorktreeNames.filter { id, name in
       worktreeIDs.contains(id) && name.trimmedOrNil != nil
     }
+    hiddenWorktreeIDs.formIntersection(worktreeIDs)
 
     repairGroups()
     repairPortBlocks()

@@ -114,4 +114,88 @@ struct SidebarListingTests {
   @Test func aFilterNothingMatchesShowsNoRows() {
     #expect(SidebarListing(filterText: "zzz").entries(in: workspace).isEmpty)
   }
+
+  @Test func aHiddenWorktreeIsListedInItsProjectsHiddenSectionAndNotWithTheRest() {
+    var sample = workspace
+    sample.hiddenWorktreeIDs = [sample.worktrees[1].id]
+
+    let entries = SidebarListing(filterText: "").entries(in: sample)
+
+    #expect(entries[0].worktrees.map(\.name) == ["main"])
+    #expect(entries[0].hiddenWorktrees.map(\.name) == ["feat/checkout"])
+    #expect(!entries[0].isHiddenSectionExpanded, "collapsed until asked")
+    #expect(entries[1].hiddenWorktrees.isEmpty)
+  }
+
+  @Test func aHiddenSectionExpandsForItsOwnProjectAlone() {
+    var sample = workspace
+    sample.hiddenWorktreeIDs = [sample.worktrees[1].id, sample.worktrees[3].id]
+
+    let entries = SidebarListing(filterText: "").entries(
+      in: sample,
+      expandingHiddenSectionsOf: [sample.projects[0].id],
+    )
+
+    #expect(entries.map(\.isHiddenSectionExpanded) == [true, false])
+  }
+
+  @Test func theFilterNarrowsTheHiddenSectionAndAMatchThereAloneKeepsTheProject() {
+    var sample = workspace
+    sample.hiddenWorktreeIDs = [sample.worktrees[3].id]
+
+    let entries = SidebarListing(filterText: "rate").entries(in: sample)
+
+    #expect(entries.map(\.project.name) == ["acme-api"])
+    #expect(entries[0].worktrees.isEmpty)
+    #expect(entries[0].hiddenWorktrees.map(\.name) == ["kieran/rate-limits"])
+  }
+
+  @Test func aMainWorktreeMarkedHiddenByAHandEditedFileStillShows() {
+    var sample = workspace
+    sample.hiddenWorktreeIDs = [sample.worktrees[0].id]
+
+    let entries = SidebarListing(filterText: "").entries(in: sample)
+
+    #expect(entries[0].worktrees.map(\.name) == ["main", "feat/checkout"])
+    #expect(entries[0].hiddenWorktrees.isEmpty)
+  }
+
+  @Test func aCollapsedProjectDrawsNeitherItsHiddenRowNorItsHiddenWorktrees() {
+    var sample = workspace
+    sample.hiddenWorktreeIDs = [sample.worktrees[1].id]
+    sample.projects[0].isExpanded = false
+
+    let entry = SidebarListing(filterText: "").entries(
+      in: sample,
+      expandingHiddenSectionsOf: [sample.projects[0].id],
+    )[0]
+
+    #expect(entry.isHiddenSectionExpanded)
+    #expect(!entry.showsHiddenSectionRow)
+    #expect(!entry.showsHiddenWorktrees)
+  }
+
+  @Test func aProjectWithNothingHiddenDrawsNoHiddenRowEvenWithItsSectionExpanded() {
+    let entry = SidebarListing(filterText: "").entries(
+      in: workspace,
+      expandingHiddenSectionsOf: [workspace.projects[0].id],
+    )[0]
+
+    #expect(!entry.showsHiddenSectionRow)
+    #expect(!entry.showsHiddenWorktrees)
+  }
+
+  @Test func anExpandedProjectDrawsItsHiddenRowAndItsWorktreesOnlyOnceExpanded() {
+    var sample = workspace
+    sample.hiddenWorktreeIDs = [sample.worktrees[1].id]
+
+    let collapsed = SidebarListing(filterText: "").entries(in: sample)[0]
+    let expanded = SidebarListing(filterText: "").entries(
+      in: sample,
+      expandingHiddenSectionsOf: [sample.projects[0].id],
+    )[0]
+
+    #expect(collapsed.showsHiddenSectionRow && !collapsed.showsHiddenWorktrees)
+    #expect(expanded.showsHiddenSectionRow && expanded.showsHiddenWorktrees)
+  }
 }

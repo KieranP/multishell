@@ -54,6 +54,9 @@ public final class AppModel<Surface> {
   /// Projects collapsed by their chevron while the filter holds them open.
   /// That lasts until the text changes; the stored flag is left alone.
   var projectsCollapsedWhileFiltering: Set<Project.ID> = []
+  /// Projects whose Hidden section is expanded. Runtime, so each launch
+  /// starts with hidden rows out of sight.
+  var expandedHiddenSections: Set<Project.ID> = []
   /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false

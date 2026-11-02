@@ -191,11 +191,23 @@ extension WorkspaceStore {
     workspace.customWorktreeNames[id] = name?.trimmedOrNil
   }
 
+  /// Moves a worktree into its project's Hidden section or back out. The main
+  /// worktree stays out, so every project keeps a row.
+  public func setHidden(_ hidden: Bool, worktree id: Worktree.ID) {
+    guard let worktree = workspace.worktree(id), worktree.isHideable else { return }
+    if hidden {
+      workspace.hiddenWorktreeIDs.insert(id)
+    } else {
+      workspace.hiddenWorktreeIDs.remove(id)
+    }
+  }
+
   /// Forgets a worktree and everything hanging off it. Removing the
   /// directory itself is git's job, not the store's.
   private func discardWorktree(_ id: Worktree.ID) {
     workspace.worktrees.removeAll { $0.id == id }
     workspace.customWorktreeNames[id] = nil
+    workspace.hiddenWorktreeIDs.remove(id)
     workspace.portBlocks[id] = nil
     workspace.tabs.removeAll { $0.worktreeID == id }
     workspace.fileTabs.removeAll { $0.worktreeID == id }

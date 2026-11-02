@@ -103,6 +103,38 @@ extension AppModelStatusReadsTests {
     #expect(harness.model.statuses[side.id]?.changedFiles == 1)
   }
 
+  @Test func aHiddenRowIsNotReadUntilItsSectionExpands() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let side = try await harness.createWorktree(onBranch: "side")
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setHidden(true, worktree: side)
+    try harness.dirty(side)
+    harness.clearStatuses()
+
+    await harness.model.refreshStatuses()
+    #expect(harness.model.statuses[side.id] == nil)
+
+    harness.model.toggleHiddenSectionExpansion(of: harness.project)
+    try await waitUntil { harness.model.statuses[side.id] != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
+  }
+
+  @Test func showingAHiddenWorktreeReadsItsRow() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let side = try await harness.createWorktree(onBranch: "side")
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setHidden(true, worktree: side)
+    try harness.dirty(side)
+    harness.clearStatuses()
+
+    harness.model.setHidden(false, worktree: side)
+
+    try await waitUntil { harness.model.statuses[side.id] != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
+  }
+
   @Test func anExpandedProjectsRowTheFilterHidesIsNotRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

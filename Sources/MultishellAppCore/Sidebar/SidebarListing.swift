@@ -7,9 +7,20 @@ public struct SidebarListing: Sendable {
   public struct Entry: Equatable, Sendable {
     public let project: Project
     public let worktrees: [Worktree]
+    /// Those the user hid, listed in a section of their own under the rest.
+    /// The filter narrows them as it does the others.
+    public let hiddenWorktrees: [Worktree]
     /// What the chevron and the rows show: while the filter has text it holds
     /// every project open, bar those collapsed under it.
     public let isExpanded: Bool
+    /// Collapsed by default, and the filter leaves it so, the section's row
+    /// counting what the text found inside.
+    public let isHiddenSectionExpanded: Bool
+
+    /// The Hidden row is drawn under an expanded project holding hidden rows.
+    public var showsHiddenSectionRow: Bool { isExpanded && !hiddenWorktrees.isEmpty }
+    /// The hidden rows are drawn under that row.
+    public var showsHiddenWorktrees: Bool { showsHiddenSectionRow && isHiddenSectionExpanded }
   }
 
   private let filterText: String
@@ -20,21 +31,26 @@ public struct SidebarListing: Sendable {
     filterText = text.trimmingCharacters(in: .whitespaces)
   }
 
-  func entries(in workspace: Workspace, collapsing collapsed: Set<Project.ID> = []) -> [Entry] {
+  func entries(
+    in workspace: Workspace,
+    collapsing collapsed: Set<Project.ID> = [],
+    expandingHiddenSectionsOf expandedHiddenSections: Set<Project.ID> = [],
+  ) -> [Entry] {
     // One pass over the worktrees, not one per project; grouping keeps order.
     let byProject = Dictionary(grouping: workspace.worktrees, by: \.projectID)
     return workspace.projects.compactMap { project in
-      let worktrees = byProject[project.id] ?? []
-      guard isFiltering else {
-        return Entry(project: project, worktrees: worktrees, isExpanded: project.isExpanded)
+      var listed = byProject[project.id] ?? []
+      if isFiltering, !project.name.foldedContains(filterText) {
+        listed = listed.filter { matches($0, in: workspace) }
+        guard !listed.isEmpty else { return nil }
       }
-      let isExpanded = !collapsed.contains(project.id)
-      if project.name.foldedContains(filterText) {
-        return Entry(project: project, worktrees: worktrees, isExpanded: isExpanded)
-      }
-      let matching = worktrees.filter { matches($0, in: workspace) }
-      return matching.isEmpty
-        ? nil : Entry(project: project, worktrees: matching, isExpanded: isExpanded)
+      return Entry(
+        project: project,
+        worktrees: listed.filter { !workspace.isHidden($0) },
+        hiddenWorktrees: listed.filter(workspace.isHidden),
+        isExpanded: isFiltering ? !collapsed.contains(project.id) : project.isExpanded,
+        isHiddenSectionExpanded: expandedHiddenSections.contains(project.id),
+      )
     }
   }
 

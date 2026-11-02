@@ -34,6 +34,7 @@ extension AppModel {
       \.projectsCollapsedWhileFiltering,
       projectsCollapsedWhileFiltering.subtracting([project.id]),
     )
+    expandedHiddenSections.remove(project.id)
     // Or a project re-added while git still cannot read it would be dimmed
     // with no alert: the first failure is what reports one.
     missingProjects.remove(project.id)

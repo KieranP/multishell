@@ -56,6 +56,10 @@ extension AppModel {
       filteredBy: text ?? sidebarFilterText,
       collapsing: collapsed ?? projectsCollapsedWhileFiltering,
     )
-    return Set(entries.filter(\.isExpanded).flatMap { $0.worktrees.map(\.id) })
+    return Set(
+      entries.filter(\.isExpanded).flatMap { entry in
+        (entry.worktrees + (entry.showsHiddenWorktrees ? entry.hiddenWorktrees : [])).map(\.id)
+      }
+    )
   }
 }

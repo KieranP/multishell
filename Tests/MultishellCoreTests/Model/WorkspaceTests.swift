@@ -250,6 +250,21 @@ struct WorkspaceTests {
     #expect(named.customWorktreeNames == ["/repos/demo": "Checkout flow"])
   }
 
+  @Test func aWorkspaceWithoutHiddenWorktreesHidesNone() throws {
+    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).hiddenWorktreeIDs.isEmpty)
+    let hidden = try decodeJSON(Workspace.self, #"{ "hiddenWorktrees": ["/repos/spike"] }"#)
+    #expect(hidden.hiddenWorktreeIDs == ["/repos/spike"])
+  }
+
+  @Test func aMalformedHiddenListCostsTheListNotTheFile() throws {
+    let workspace = try decodeJSON(
+      Workspace.self,
+      #"{ "hiddenWorktrees": "/repos/spike", "projects": [ { "path": "file:///repos/demo/" } ] }"#,
+    )
+    #expect(workspace.hiddenWorktreeIDs.isEmpty)
+    #expect(workspace.projects.map(\.name) == ["demo"])
+  }
+
   @Test func aSavedLayoutIsWrittenUnderTheTabGroupKeysAndComesBackExactly() throws {
     let (workspace, _) = consistentWorkspace()
 

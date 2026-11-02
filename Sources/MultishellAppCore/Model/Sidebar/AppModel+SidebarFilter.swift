@@ -28,7 +28,11 @@ extension AppModel {
   )
     -> [SidebarListing.Entry]
   {
-    SidebarListing(filterText: text).entries(in: workspace, collapsing: collapsed)
+    SidebarListing(filterText: text).entries(
+      in: workspace,
+      collapsing: collapsed,
+      expandingHiddenSectionsOf: expandedHiddenSections,
+    )
   }
 
   /// What the list says in place of rows, `nil` while it shows some.

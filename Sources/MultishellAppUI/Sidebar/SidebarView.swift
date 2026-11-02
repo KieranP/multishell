@@ -53,15 +53,16 @@ struct SidebarView: View {
           ProjectsSectionHeader(model: model, theme: theme, metrics: metrics)
 
           ForEach(entries, id: \.project.id) { entry in
+            let ordered = model.orderedWorktrees(of: entry, sessions: sessions)
             ProjectBlock(
               model: model,
               project: entry.project,
-              worktrees: model.orderedWorktrees(
-                entry.worktrees,
-                in: entry.project,
-                sessions: sessions,
-              ),
+              worktrees: ordered.worktrees,
+              hiddenWorktrees: ordered.hiddenWorktrees,
               isExpanded: entry.isExpanded,
+              isHiddenSectionExpanded: entry.isHiddenSectionExpanded,
+              showsHiddenSectionRow: entry.showsHiddenSectionRow,
+              showsHiddenWorktrees: entry.showsHiddenWorktrees,
               sessions: sessions,
               theme: theme,
               projectInsertion: $projectInsertion,
