@@ -7,7 +7,8 @@ enum CircleCIStatusWords {
     "infrastructure_fail": .failed, "timedout": .failed, "unauthorized": .failed,
     "canceled": .cancelled, "cancelled": .cancelled, "not_run": .cancelled,
     "on_hold": .onHold, "needs_approval": .onHold,
-    "running": .running, "queued": .running, "not_running": .running, "blocked": .running,
+    "running": .running, "started": .running, "queued": .running, "not_running": .running,
+    "blocked": .running,
     "pending": .running, "created": .running, "setup": .running, "setup-pending": .running,
   ]
   private static let looseWords: [(fragment: String, status: CIRunStatus)] = [
@@ -34,6 +35,7 @@ enum CircleCIStatusWords {
     return phaseStatus.map(isSettled) ?? isSettled(status)
   }
 
+  /// `.unknown` is settled, or a word this build lacks would poll every minute.
   private static func isSettled(_ status: CIRunStatus) -> Bool {
     status != .running && status != .onHold
   }

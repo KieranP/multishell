@@ -10,6 +10,7 @@ extension AccessibilityText {
     case .onHold: t("spoken.ci-on-hold")
     case .passed: t("spoken.ci-passed")
     case .running: t("spoken.ci-running")
+    case .unknown: t("spoken.ci-unknown")
     }
   }
 

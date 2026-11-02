@@ -62,7 +62,7 @@ struct WorktreeDescription: Encodable, Equatable {
   /// The newest CI run of its branch.
   struct CIRun: Encodable, Equatable {
     let integration: String
-    /// passed, failed, running, on-hold or cancelled.
+    /// passed, failed, running, on-hold, cancelled or unknown.
     let status: String
     let branch: String
     let commit: String

@@ -29,6 +29,12 @@ struct CIRunWordingTests {
     #expect(unnamed.headline == "9f2bcef")
   }
 
+  @Test func aRunInWordsTheProviderDidNotExplainSaysItsStatusIsUnknown() {
+    #expect(
+      CIRun.sample(status: .unknown).statusText(provider: "CircleCI") == "CircleCI status unknown"
+    )
+  }
+
   @Test func aRunSaysNothingOfTheLocalTipWhereItIsUnknown() {
     let run = CIRun.sample(commit: "9f2bcef611")
     #expect(run.startText(localTip: nil, now: .now) == "")

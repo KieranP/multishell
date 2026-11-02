@@ -30,13 +30,37 @@ struct CircleCIRunRecordTests {
     #expect(!run.isFinished)
   }
 
-  @Test func aTagRunAndARunOfAnUnknownStatusAreLeftOut() throws {
+  @Test func aStartedRunWithNoOutcomeYetIsRunningAndUnderWay() throws {
+    let json = "[\(CircleCIFixtures.run(id: "a", phase: "started", currentOutcome: nil))]"
+    let run = try #require(try CircleCIRunRecord.runs(from: Data(json.utf8)).first)
+    #expect(run.status == .running)
+    #expect(run.isUnderWay)
+  }
+
+  @Test func aStartedWorkflowWithNoOutcomeYetIsListedAsRunning() throws {
+    let json = """
+      {"id":"r","phase":"started","branch":"main","revision":"aaa1111",\
+      "workflows":[{"name":"build","phase":"started","jobs":[\
+      {"id":"1","name":"test","phase":"queued"}]}]}
+      """
+    let workflows = try CircleCIRunRecord.workflows(from: Data(json.utf8))
+    #expect(workflows.map(\.status) == [.running])
+    #expect(workflows.first?.jobs.map(\.status) == [.running])
+  }
+
+  @Test func aTagRunIsLeftOut() throws {
     let json = """
       [\(CircleCIFixtures.run(id: "a", branch: nil)),
-       \(CircleCIFixtures.run(id: "b", currentOutcome: "mystery")),
        \(CircleCIFixtures.run(id: "c"))]
       """
     #expect(try CircleCIRunRecord.runs(from: Data(json.utf8)).map(\.id) == ["c"])
+  }
+
+  @Test func aRunInWordsNeitherListKnowsIsKeptAsUnknownAndNotUnderWay() throws {
+    let json = "[\(CircleCIFixtures.run(id: "b", phase: "mystery", currentOutcome: "mystery"))]"
+    let run = try #require(try CircleCIRunRecord.runs(from: Data(json.utf8)).first)
+    #expect(run.status == .unknown)
+    #expect(!run.isUnderWay)
   }
 
   @Test func aTimeThatWillNotParseCostsTheTimeAlone() throws {
@@ -65,7 +89,7 @@ struct CircleCIRunRecordTests {
     }
   }
 
-  @Test func aJobOfAnUnknownStatusIsLeftOutRatherThanCalledRunning() throws {
+  @Test func aWorkflowAndAJobOfAnUnknownStatusAreListedAsUnknownRatherThanCalledRunning() throws {
     let json = """
       {"id":"r","phase":"ended","current_outcome":"succeeded","branch":"main","revision":"aaa1111",\
       "workflows":[{"name":"build","phase":"ended","outcome":"succeeded","jobs":[\
@@ -73,6 +97,13 @@ struct CircleCIRunRecordTests {
       {"id":"2","name":"new-kind","phase":"ended","outcome":"mystery"}]}]}
       """
     let workflows = try CircleCIRunRecord.workflows(from: Data(json.utf8))
-    #expect(workflows.first?.jobs.map(\.name) == ["test"])
+    #expect(workflows.first?.jobs.map(\.status) == [.passed, .unknown])
+    let unknownWorkflow = """
+      {"id":"r","phase":"ended","branch":"main","revision":"aaa1111",\
+      "workflows":[{"name":"build","phase":"mystery","outcome":"mystery"}]}
+      """
+    #expect(
+      try CircleCIRunRecord.workflows(from: Data(unknownWorkflow.utf8)).map(\.status) == [.unknown]
+    )
   }
 }

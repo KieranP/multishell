@@ -134,10 +134,11 @@ extension AppModel {
     failures: [String: ServiceReadFailure],
     askedAndAnswered: Set<String>
   ) {
+    let now = Date.now
     var lookups: [String: BranchRunLookup] = [:]
     var asking: [(branch: String, tip: String?)] = []
     for (branch, tip) in branches {
-      if let kept = previous[branch], kept.stillAnswers(upstreamTip: tip) {
+      if let kept = previous[branch], kept.stillAnswers(upstreamTip: tip, now: now) {
         lookups[branch] = kept
       } else {
         asking.append((branch, tip))
@@ -158,7 +159,12 @@ extension AppModel {
     for (branch, tip, result) in answers {
       switch result {
       case .success(let run):
-        lookups[branch] = BranchRunLookup(upstreamTip: tip, run: run)
+        let askedBefore = previous[branch].flatMap { $0.upstreamTip == tip ? $0 : nil }
+        lookups[branch] = BranchRunLookup(
+          upstreamTip: tip,
+          run: run,
+          tipAskedSince: askedBefore?.tipAskedSince ?? now,
+        )
         askedAndAnswered.insert(branch)
 
       case .failure(let error):

@@ -40,6 +40,13 @@ command-line tool.
   Otherwise every round paid a call for each old or never-run branch. Cost: a
   run started on a branch by another trigger, a schedule or an API call, is seen
   only once its branch moves or the recent runs list it.
+- **After a push, a branch asked alone is asked each round until a run of the
+  pushed tip appears, for ten minutes at most.** The read straight after a push
+  can beat CircleCI to making the run, and its answer, the run before or none,
+  stood until the next push in a repository busy enough that fifty runs never
+  named the branch. Past ten minutes the tip is taken never to run, a
+  `[skip ci]` commit say, and the answer stands. A run whose status is unknown
+  is asked each round, as one under way is.
 - **A pull request found alone is asked again while it is open**, as its review,
   checks and merge move with no push; one merged or closed stands until the
   branch moves. A branch the hundred names drops what it was asked alone, so its
@@ -295,8 +302,15 @@ command-line tool.
   1.11's real output, `ended` with `succeeded`, `failed` or `canceled`. The
   current outcome is read first, then the outcome, then the phase, each in full,
   its API's words exactly and any other loosely, so a rerun's new word still
-  outranks the first attempt's; a word neither knows is no status, not a guess.
-  A job's `(execution …)` note is dropped from its name, and only that.
+  outranks the first attempt's. A word neither knows is not guessed: the run,
+  workflow or job reads as unknown, a grey ring holding a question mark, said
+  "status unknown". Dropping it, as builds before 2026-11-03 did, showed the run
+  before it as the branch's newest, or nothing. A job's `(execution …)` note is
+  dropped from its name, and only that.
+- **A run or workflow under way says `started` and no outcome at all**, as 1.13
+  prints it. Until 2026-11-03 that word was unknown, so a running run was
+  dropped: its row showed the run before it, often the failure being fixed, or
+  nothing, and a branch asked alone kept "never run" until its next push.
 - **1.11 prints a run's commit as seven characters**, so a run matches the local
   tip by prefix, seven characters at least, and a longer one exactly.
 - **An empty run list may come as `null`**, Go's nil slice, read as no runs.

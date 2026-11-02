@@ -2,7 +2,7 @@ import MultishellServices
 import SwiftUI
 
 /// A CI status as the design's strokes in a 16-unit square, scaled to the
-/// frame: a ring holding a check, a cross, a pause or a slash.
+/// frame: a ring holding a check, a cross, a pause, a slash or a question mark.
 struct CIRunShape: Shape {
   /// Where a running ring breaks, in degrees from three o'clock: four arcs.
   private static let runningArcs: [(start: Double, end: Double)] = [
@@ -52,6 +52,19 @@ struct CIRunShape: Shape {
 
     case .cancelled:
       stroke((3.6, 12.4), (12.4, 3.6))
+
+    case .unknown:
+      path.move(to: grid.point(6, 6.4))
+      path.addRelativeArc(
+        center: grid.point(8, 6.4),
+        radius: 2 * unit,
+        startAngle: .degrees(180),
+        delta: .degrees(225),
+      )
+      path.addLine(to: grid.point(8, 8.7))
+      path.addLine(to: grid.point(8, 9.3))
+      // A round cap turns the zero-length stroke into the question mark's dot.
+      stroke((8, 11.4), (8, 11.4))
 
     case .running:
       break

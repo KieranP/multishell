@@ -20,6 +20,60 @@ struct CircleCIProviderTests {
     #expect(tool.calls.first == "run list --json --limit \(CircleCIProvider.recentRunLimit)")
   }
 
+  @Test func aStartedRunHeadsItsBranchAheadOfTheFailureBeforeIt() async throws {
+    let tool = try FakeTool(
+      named: "circleci",
+      "cat <<'JSON'\n\(CircleCIFixtures.startedThenFailedRunList)\nJSON",
+    )
+    defer { tool.tearDown() }
+    let provider = CircleCIProvider(
+      executable: tool.executable,
+      searchPath: nil,
+      runLog: tool.runLog,
+    )
+
+    let runs = try await provider.recentRuns(in: tool.directory)
+
+    #expect(runs.map(\.id) == ["started", "failed"])
+    #expect(runs.map(\.status) == [.running, .failed])
+    #expect(runs.map(\.isUnderWay) == [true, false])
+  }
+
+  @Test func aBranchAskedAloneWhoseOnlyRunHasStartedAnswersWithThatRun() async throws {
+    let tool = try FakeTool(
+      named: "circleci",
+      "cat <<'JSON'\n\(CircleCIFixtures.startedRun)\nJSON",
+    )
+    defer { tool.tearDown() }
+    let provider = CircleCIProvider(
+      executable: tool.executable,
+      searchPath: nil,
+      runLog: tool.runLog,
+    )
+
+    let runs = try await provider.runs(onBranch: "feat", limit: 1, in: tool.directory)
+
+    #expect(runs.map(\.id) == ["started"])
+    #expect(runs.first?.status == .running)
+  }
+
+  @Test func aBranchAskedAloneWhoseRunIsInUnknownWordsAnswersWithThatRunAsUnknown() async throws {
+    let tool = try FakeTool(
+      named: "circleci",
+      "echo '[\(CircleCIFixtures.run(id: "x", branch: "feat", phase: "paused", currentOutcome: nil))]'",
+    )
+    defer { tool.tearDown() }
+    let provider = CircleCIProvider(
+      executable: tool.executable,
+      searchPath: nil,
+      runLog: tool.runLog,
+    )
+
+    let runs = try await provider.runs(onBranch: "feat", limit: 1, in: tool.directory)
+
+    #expect(runs.map(\.status) == [.unknown])
+  }
+
   @Test func aBranchLeftOutOfTheRecentRunsIsAskedForByName() async throws {
     let tool = try FakeTool(
       named: "circleci",

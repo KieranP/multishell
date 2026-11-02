@@ -11,6 +11,9 @@ public enum CIRunStatus: String, Hashable, Sendable {
   case passed
   /// Queued or under way.
   case running
+  /// Said in words this build does not know, drawn as a question mark rather
+  /// than guessed; see services.md.
+  case unknown
 
   /// Whether a check or job with this status may still change by itself,
   /// which reads it again sooner; a whole run's is `CIRun.isUnderWay`.

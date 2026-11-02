@@ -11,6 +11,7 @@ struct AccessibilityTextServicesTests {
     #expect(AccessibilityText.ciStatus(.onHold) == "on hold")
     #expect(AccessibilityText.ciStatus(.passed) == "passed")
     #expect(AccessibilityText.ciStatus(.running) == "running")
+    #expect(AccessibilityText.ciStatus(.unknown) == "status unknown")
   }
 
   @Test func anEarlierRunSaysItsStatusThenWhetherItIsOpen() {

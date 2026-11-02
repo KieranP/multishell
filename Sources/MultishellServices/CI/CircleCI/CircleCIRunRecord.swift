@@ -37,16 +37,11 @@ struct CircleCIRunRecord: Decodable {
   let repositoryUrl: String?
   let workflows: LossyArray<Workflow>?
 
-  /// `nil` where a field the row needs is missing or its status is a word
-  /// this build does not know.
+  /// `nil` where a field the row needs is missing. A status in words this
+  /// build does not know is `.unknown`, so the run before it is not shown.
   var run: CIRun? {
-    guard let id, let branch, let revision,
-      let status = CircleCIStatusWords.status(
-        phase: phase,
-        outcome: outcome,
-        currentOutcome: currentOutcome,
-      )
-    else { return nil }
+    guard let id, let branch, let revision else { return nil }
+    let status = Self.status(phase, outcome, currentOutcome)
     return CIRun(
       id: id,
       branch: branch,
@@ -59,30 +54,35 @@ struct CircleCIRunRecord: Decodable {
     )
   }
 
-  /// Every workflow and job with a name and a status this build knows; a word
-  /// neither list knows is left out, as a run's is, rather than guessed.
+  /// Every workflow and job with a name; a word neither list knows is
+  /// `.unknown`, as a run's is, rather than guessed.
   var ciWorkflows: [CIWorkflow] {
     (workflows?.elements ?? []).compactMap { workflow in
-      guard let name = workflow.name,
-        let status = CircleCIStatusWords.status(
-          phase: workflow.phase,
-          outcome: workflow.outcome,
-          currentOutcome: workflow.currentOutcome,
-        )
-      else { return nil }
+      guard let name = workflow.name else { return nil }
       let jobs = (workflow.jobs?.elements ?? []).compactMap { job in
-        job.name.flatMap { name in
-          CircleCIStatusWords.status(
-            phase: job.phase,
-            outcome: job.outcome,
-            currentOutcome: job.currentOutcome,
-          ).map { status in
-            CIJob(id: job.id, name: name, status: status)
-          }
+        job.name.map { name in
+          CIJob(
+            id: job.id,
+            name: name,
+            status: Self.status(job.phase, job.outcome, job.currentOutcome),
+          )
         }
       }
-      return CIWorkflow(name: name, status: status, jobs: jobs)
+      return CIWorkflow(
+        name: name,
+        status: Self.status(workflow.phase, workflow.outcome, workflow.currentOutcome),
+        jobs: jobs,
+      )
     }
+  }
+
+  private static func status(
+    _ phase: String?,
+    _ outcome: String?,
+    _ currentOutcome: String?,
+  ) -> CIRunStatus {
+    CircleCIStatusWords.status(phase: phase, outcome: outcome, currentOutcome: currentOutcome)
+      ?? .unknown
   }
 
   /// `run list`'s answer, `null` being Go's empty list. Output that is not a

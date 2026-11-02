@@ -62,6 +62,7 @@
 "ci.running" = "%@ running";
 "ci.started" = "Started %@";
 "ci.the-local-tip" = "the local tip";
+"ci.unknown" = "%@ status unknown";
 "ci.when-on-tip" = "%1$@ · %2$@";
 "close.pane-button" = "Close Pane";
 "close.pane-title" = "Close this pane?";
@@ -428,6 +429,7 @@
 "spoken.ci-on-hold" = "on hold";
 "spoken.ci-passed" = "passed";
 "spoken.ci-running" = "running";
+"spoken.ci-unknown" = "status unknown";
 "spoken.collapsed" = "collapsed";
 "spoken.cpu" = "%@ CPU";
 "spoken.debug-info" = "Debug Info";

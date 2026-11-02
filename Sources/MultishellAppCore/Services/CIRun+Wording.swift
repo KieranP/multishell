@@ -15,6 +15,7 @@ extension CIRun {
     case .onHold: t("ci.on-hold", provider)
     case .passed: t("ci.passed", provider)
     case .running: t("ci.running", provider)
+    case .unknown: t("ci.unknown", provider)
     }
   }
 

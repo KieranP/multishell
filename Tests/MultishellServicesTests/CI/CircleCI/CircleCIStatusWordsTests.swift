@@ -13,6 +13,7 @@ struct CircleCIStatusWordsTests {
       ("on_hold", nil, nil, .onHold),
       ("running", nil, nil, .running),
       ("created", nil, nil, .running),
+      ("started", nil, nil, .running),
       ("completed", "infrastructure_fail", nil, .failed),
       ("completed", "not_run", nil, .cancelled),
       ("queued", "not_running", nil, .running),
@@ -75,6 +76,11 @@ struct CircleCIStatusWordsTests {
     #expect(!CircleCIStatusWords.isFinished(phase: "running", status: .failed))
     #expect(!CircleCIStatusWords.isFinished(phase: "failing", status: .failed))
     #expect(!CircleCIStatusWords.isFinished(phase: "created", status: .running))
+  }
+
+  @Test func aRunWhoseWordsNoListKnowsIsNotPolledAsUnderWay() {
+    #expect(CircleCIStatusWords.isFinished(phase: "mystery", status: .unknown))
+    #expect(CircleCIStatusWords.isFinished(phase: nil, status: .unknown))
   }
 
   @Test func aPhaseNeitherListKnowsLeavesTheOutcomeToSayWhetherItEnded() {

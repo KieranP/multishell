@@ -11,7 +11,7 @@ extension MergeReadiness.Requirement {
     case .conflicts:
       switch status {
       case .failed: return t("pull-request.conflicts", base)
-      case .running: return t("readiness.checking-conflicts", base)
+      case .running, .unknown: return t("readiness.checking-conflicts", base)
       case .cancelled, .onHold, .passed: return t("readiness.no-conflicts", base)
       }
 
@@ -19,7 +19,7 @@ extension MergeReadiness.Requirement {
       switch status {
       case .failed: return t("pull-request.changes-requested")
       case .passed: return t("readiness.review-approved")
-      case .cancelled, .onHold, .running: return t("pull-request.review-required")
+      case .cancelled, .onHold, .running, .unknown: return t("pull-request.review-required")
       }
     }
   }

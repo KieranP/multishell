@@ -64,6 +64,14 @@ struct WorktreeServicesWordingTests {
     #expect(text == "CircleCI running on 9f8e7d6, not the local tip")
   }
 
+  @Test func aRunOfUnknownStatusIsSaidAsUnknownOnTheTipAndOnAnotherCommit() {
+    #expect(services(run: .sample(status: .unknown)).ciRunText == "CircleCI status unknown")
+    #expect(
+      services(run: .sample(commit: "9f8e7d6c5b", status: .unknown)).ciRunText
+        == "CircleCI status unknown on 9f8e7d6, not the local tip"
+    )
+  }
+
   @Test func aRunNamingTheLocalTipByItsShortFormIsTheLocalTip() {
     let tip = "9f2bcef611313c5e74b18f3fa2ea96498e378cde"
     #expect(

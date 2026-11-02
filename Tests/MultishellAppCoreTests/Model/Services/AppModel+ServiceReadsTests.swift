@@ -1003,17 +1003,252 @@ struct AppModelServiceReadsTests {
     try await harness.addOrigin()
     let feat = try await harness.createWorktree(onBranch: "feat")
     try await harness.pushToGitHubOrigin(feat)
-    provider.answer(recent: [], byBranch: ["feat": .sample(id: "old", branch: "feat")])
     await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    provider.answer(
+      recent: [],
+      byBranch: ["feat": .sample(id: "old", branch: "feat", commit: tip)],
+    )
 
     await harness.model.refreshServices(ofProject: harness.project.id)
     #expect(harness.model.services(of: feat).ciRun?.id == "old")
     await harness.model.refreshServices(ofProject: harness.project.id)
 
-    #expect(
-      provider.calls.sorted() == ["branch feat", "branch main", "recent", "recent"],
-      "the settled answers stand",
+    #expect(provider.calls.filter { $0 == "branch feat" } == ["branch feat"])
+  }
+
+  @Test func aBranchAskedAloneBeforeItsPushedTipRanIsAskedAgainUntilThatRunAppears() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    let before = CIRun.sample(id: "before", branch: "feat", commit: "0000000", status: .failed)
+    provider.answer(recent: [], byBranch: ["feat": before])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    provider.answer(
+      recent: [],
+      byBranch: ["feat": .sample(id: "fix", branch: "feat", commit: tip)],
     )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.services(of: feat).ciRun?.id == "fix")
+  }
+
+  @Test func aRunOfThePushedTipNamedByItsSevenCharactersEndsTheWait() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    let run = CIRun.sample(id: "fix", branch: "feat", commit: String(tip.prefix(7)))
+    provider.answer(recent: [], byBranch: ["feat": run])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(provider.calls.filter { $0 == "branch feat" } == ["branch feat"])
+  }
+
+  @Test func aBranchAskedAloneBeforeItsFirstRunIsAskedAgainUntilThatRunAppears() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    provider.answer(recent: [])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    provider.answer(
+      recent: [],
+      byBranch: ["feat": .sample(id: "first", branch: "feat", commit: tip)],
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.services(of: feat).ciRun?.id == "first")
+  }
+
+  @Test func askingABranchAgainAtTheSameTipKeepsWhenThatTipWasFirstAsked() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    provider.answer(recent: [])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let lookups = { harness.model.remoteState.ciRuns[harness.project.id]?.lookups }
+    let firstAsked = try #require(lookups()?["feat"]?.tipAskedSince)
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(provider.calls.filter { $0 == "branch feat" }.count == 2)
+    #expect(lookups()?["feat"]?.tipAskedSince == firstAsked)
+  }
+
+  @Test func aPushedTipWithNoRunIsNotAskedAgainOnceItHasHadTimeToRun() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    provider.answer(recent: [])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.remoteState.ciRuns[harness.project.id]?.lookups["feat"] = BranchRunLookup(
+      upstreamTip: tip,
+      run: nil,
+      tipAskedSince: .distantPast,
+    )
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(provider.calls.filter { $0 == "branch feat" }.count == 1)
+  }
+
+  @Test func aNewerRunOfUnknownStatusInTheRecentRunsIsShownOverTheFailureBeforeIt() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    provider.answer(recent: [
+      .sample(id: "new", branch: "feat", status: .unknown),
+      .sample(id: "old", branch: "feat", status: .failed),
+    ])
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.services(of: feat).ciRun?.id == "new")
+    #expect(harness.model.services(of: feat).ciRun?.status == .unknown)
+  }
+
+  @Test func aBranchAskedAloneWhoseRunIsOfUnknownStatusIsAskedAgainEachRound() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    let unknown = CIRun.sample(id: "r", branch: "feat", commit: tip, status: .unknown)
+    provider.answer(recent: [], byBranch: ["feat": unknown])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let ended = CIRun.sample(id: "r", branch: "feat", commit: tip, status: .passed)
+    provider.answer(recent: [], byBranch: ["feat": ended])
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.services(of: feat).ciRun?.status == .passed)
+  }
+
+  @Test func aPushDuringTheWaitStartsTheWaitAgainForTheNewTip() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    provider.answer(recent: [])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let lookup = { harness.model.remoteState.ciRuns[harness.project.id]?.lookups["feat"] }
+    let firstAsked = try #require(lookup()?.tipAskedSince)
+
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "fix"], in: feat.path)
+    _ = try await harness.git.run(["push", "-q", "origin", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let newTip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    try await waitUntil({ lookup()?.upstreamTip == newTip }, seconds: 5)
+
+    #expect(try #require(lookup()?.tipAskedSince) > firstAsked)
+  }
+
+  @Test func aLookupFailingDuringTheWaitKeepsWhenTheTipWasFirstAsked() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    provider.answer(recent: [])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let lookup = { harness.model.remoteState.ciRuns[harness.project.id]?.lookups["feat"] }
+    let firstAsked = try #require(lookup()?.tipAskedSince)
+    provider.failLookUp(ofBranch: "feat")
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    provider.answerLookUp(ofBranch: "feat")
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(provider.calls.filter { $0 == "branch feat" }.count == 3)
+    #expect(lookup()?.tipAskedSince == firstAsked)
+  }
+
+  @Test func aShownRunUnderWayHastensThePoll() async throws {
+    let (harness, provider) = try await harnessReadNinetySecondsAgo(showing: .running)
+    defer { harness.tearDown() }
+    let callsBefore = provider.calls.count
+
+    await harness.model.pollServices(interval: .seconds(3600))
+
+    #expect(provider.calls.count > callsBefore)
+  }
+
+  @Test func aShownRunOfUnknownStatusLeavesThePollAtItsOwnPace() async throws {
+    let (harness, provider) = try await harnessReadNinetySecondsAgo(showing: .unknown)
+    defer { harness.tearDown() }
+    let callsBefore = provider.calls.count
+
+    await harness.model.pollServices(interval: .seconds(3600))
+
+    #expect(provider.calls.count == callsBefore)
+  }
+
+  private func harnessReadNinetySecondsAgo(
+    showing status: CIRunStatus
+  ) async throws -> (GitHarness, FakeCIProvider) {
+    let harness = try await GitHarness()
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    provider.answer(recent: [.sample(branch: "feat", status: status)])
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let id = harness.project.id
+    let backdated = harness.model.remoteState.readLog.begin(id, at: .now - .seconds(90))
+    try #require(backdated)
+    harness.model.remoteState.readLog.finish(id)
+    return (harness, provider)
   }
 
   @Test func oneBranchFailingToAnswerKeepsItsRunAndTakesTheOthersNewOnes() async throws {
@@ -1076,8 +1311,12 @@ struct AppModelServiceReadsTests {
     _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    provider.answer(recent: [], byBranch: ["feat": .sample(id: "old", branch: "feat")])
     await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    provider.answer(
+      recent: [],
+      byBranch: ["feat": .sample(id: "old", branch: "feat", commit: tip)],
+    )
     await harness.model.refreshServices(ofProject: harness.project.id)
 
     harness.model.sidebarFilterText = "main"
@@ -1127,7 +1366,7 @@ struct AppModelServiceReadsTests {
     )
     await harness.model.refreshServices(ofProject: harness.project.id)
     harness.model.remoteState.ciRuns[harness.project.id]?.lookups["feat"] =
-      BranchRunLookup(upstreamTip: "older", run: nil)
+      BranchRunLookup(upstreamTip: "older", run: nil, tipAskedSince: .now)
 
     provider.failLookUp(ofBranch: "feat")
     await harness.model.refreshServices(ofProject: harness.project.id)
@@ -1603,7 +1842,11 @@ struct AppModelServiceReadsTests {
     let feat = try await harness.createWorktree(onBranch: "feat")
     _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
     await harness.model.refreshBranchScan(of: harness.project)
-    provider.answer(recent: [], byBranch: ["feat": .sample(id: "old", branch: "feat")])
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    provider.answer(
+      recent: [],
+      byBranch: ["feat": .sample(id: "old", branch: "feat", commit: tip)],
+    )
     await harness.model.refreshServices(ofProject: harness.project.id)
     harness.model.remoteState.ciBranchesAnsweredAt[harness.project.id]?["feat"] = .distantPast
 

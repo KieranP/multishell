@@ -70,6 +70,10 @@ final class FakeCIProvider: CIProvider {
     state.withLock { _ = $0.failingBranches.insert(branch) }
   }
 
+  func answerLookUp(ofBranch branch: String) {
+    state.withLock { _ = $0.failingBranches.remove(branch) }
+  }
+
   func runs(onBranch branch: String, limit: Int, in directory: URL) async throws -> [CIRun] {
     try state.withLock { state in
       state.calls.append(limit == 1 ? "branch \(branch)" : "history \(branch)")

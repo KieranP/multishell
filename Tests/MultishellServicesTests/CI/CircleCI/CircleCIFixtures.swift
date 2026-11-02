@@ -1,5 +1,5 @@
-/// What `circleci` 1.11 prints: real output from a work project, scrubbed,
-/// and `run(…)` varying one record of that shape.
+/// What `circleci` 1.11 and 1.13 print: real output from a work project,
+/// scrubbed, and `run(…)` varying one record of that shape.
 enum CircleCIFixtures {
   static let runList = """
     [
@@ -16,6 +16,22 @@ enum CircleCIFixtures {
     "commit":{"subject":"Try the keys","url":"https://github.com/acme/app/commit/ccc3333000",\
     "author_name":"Someone","author_login":"someone"},"created_at":"2026-10-26 21:06 UTC"}
     ]
+    """
+
+  /// 1.13's shape for a run under way: `started`, with no outcome keys at all.
+  static let startedRun = """
+    [{"id":"started","phase":"started","branch":"feat","revision":"ddd4444",\
+    "repository_url":"https://github.com/acme/app","commit":{"subject":"Fix the test"},\
+    "created_at":"2026-11-02 19:04 UTC"}]
+    """
+
+  static let startedThenFailedRunList = """
+    [{"id":"started","phase":"started","branch":"feat","revision":"ddd4444",\
+    "repository_url":"https://github.com/acme/app","commit":{"subject":"Fix the test"},\
+    "created_at":"2026-11-02 19:04 UTC"},
+    {"id":"failed","phase":"ended","current_outcome":"failed","branch":"feat","revision":"eee5555",\
+    "repository_url":"https://github.com/acme/app","commit":{"subject":"Break the test"},\
+    "created_at":"2026-11-02 18:10 UTC"}]
     """
 
   static let runGet = """

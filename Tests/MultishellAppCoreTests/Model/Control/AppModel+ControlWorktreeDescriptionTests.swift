@@ -50,6 +50,24 @@ struct AppModelControlWorktreeDescriptionTests {
     #expect(run["integration"] as? String == "circleci")
   }
 
+  @Test func aRunOfUnknownStatusIsShownAsUnknown() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    provider.answer(recent: [.sample(branch: "feat", commit: "abc", status: .unknown)])
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let reply = await harness.model.answer(.describeWorktree(id: ControlID.worktree(feat.id)))
+
+    let run = try #require(reply.outputFields["ci"] as? [String: Any])
+    #expect(run["status"] as? String == "unknown")
+  }
+
   @Test func aMergedPullRequestTheBranchOutgrewIsShownAsItsRowShowsIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

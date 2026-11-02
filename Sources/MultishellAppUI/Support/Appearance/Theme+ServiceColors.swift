@@ -26,7 +26,7 @@ extension Theme {
 
   func color(for status: CIRunStatus, on palette: AreaPalette) -> Color {
     switch status {
-    case .cancelled: palette.textSecondary
+    case .cancelled, .unknown: palette.textSecondary
     case .failed: color(.failed, in: .ciRuns)
     case .onHold: color(.onHold, in: .ciRuns)
     case .passed: color(.passed, in: .ciRuns)

@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import MultishellAppCore
@@ -5,31 +6,53 @@ import Testing
 
 @Suite
 struct BranchRunLookupTests {
-  @Test func aSettledAnswerStandsUntilTheBranchIsPushedTo() {
-    let lookup = BranchRunLookup(upstreamTip: "a", run: .sample(status: .passed))
-    #expect(lookup.stillAnswers(upstreamTip: "a"))
-    #expect(!lookup.stillAnswers(upstreamTip: "b"))
+  private let tip = "9f2bcef611aa"
+
+  private func lookup(_ run: CIRun?, askedSince: Date = .now) -> BranchRunLookup {
+    BranchRunLookup(upstreamTip: tip, run: run, tipAskedSince: askedSince)
   }
 
-  @Test func aBranchThatNeverRanIsNotAskedAgainUntilPushedTo() {
-    #expect(BranchRunLookup(upstreamTip: "a", run: nil).stillAnswers(upstreamTip: "a"))
+  @Test func aSettledRunOfTheTipStandsUntilTheBranchIsPushedTo() {
+    let settled = lookup(.sample(commit: "9f2bcef", status: .passed))
+    #expect(settled.stillAnswers(upstreamTip: tip, now: .now))
+    #expect(!settled.stillAnswers(upstreamTip: "b", now: .now))
+  }
+
+  @Test func aSettledRunOfAnEarlierCommitIsAskedAgainWhileTheTipsRunMayStillBeComing() {
+    let earlier = lookup(.sample(commit: "0000000", status: .failed))
+    #expect(!earlier.stillAnswers(upstreamTip: tip, now: .now))
+  }
+
+  @Test func aSettledRunOfAnEarlierCommitStandsOnceTheTipHasHadTimeToRun() {
+    let earlier = lookup(.sample(commit: "0000000", status: .failed), askedSince: .distantPast)
+    #expect(earlier.stillAnswers(upstreamTip: tip, now: .now))
+  }
+
+  @Test func aBranchWithNoRunYetIsAskedAgainWhileItsFirstRunMayStillBeComing() {
+    #expect(!lookup(nil).stillAnswers(upstreamTip: tip, now: .now))
+  }
+
+  @Test func aBranchThatNeverRanStandsOnceItsFirstRunHasHadTimeToCome() {
+    #expect(lookup(nil, askedSince: .distantPast).stillAnswers(upstreamTip: tip, now: .now))
   }
 
   @Test func aRunUnderWayIsAskedAgainEveryRound() {
-    #expect(
-      !BranchRunLookup(upstreamTip: "a", run: .sample(status: .running)).stillAnswers(
-        upstreamTip: "a"
-      )
-    )
+    let running = lookup(.sample(commit: "9f2bcef", status: .running), askedSince: .distantPast)
+    #expect(!running.stillAnswers(upstreamTip: tip, now: .now))
   }
 
   @Test func aRunWithAFailedJobThatHasNotEndedIsAskedAgain() {
-    let failing = CIRun.sample(status: .failed, isFinished: false)
-    #expect(!BranchRunLookup(upstreamTip: "a", run: failing).stillAnswers(upstreamTip: "a"))
+    let failing = CIRun.sample(commit: "9f2bcef", status: .failed, isFinished: false)
+    #expect(!lookup(failing, askedSince: .distantPast).stillAnswers(upstreamTip: tip, now: .now))
   }
 
   @Test func aRunOnHoldIsAskedAgainSoItsApprovalIsSeen() {
-    let onHold = CIRun.sample(status: .onHold)
-    #expect(!BranchRunLookup(upstreamTip: "a", run: onHold).stillAnswers(upstreamTip: "a"))
+    let onHold = CIRun.sample(commit: "9f2bcef", status: .onHold)
+    #expect(!lookup(onHold, askedSince: .distantPast).stillAnswers(upstreamTip: tip, now: .now))
+  }
+
+  @Test func aRunOfUnknownStatusIsAskedAgainEveryRound() {
+    let unknown = CIRun.sample(commit: "9f2bcef", status: .unknown)
+    #expect(!lookup(unknown, askedSince: .distantPast).stillAnswers(upstreamTip: tip, now: .now))
   }
 }
