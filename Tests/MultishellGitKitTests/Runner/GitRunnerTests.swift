@@ -33,6 +33,48 @@ struct GitRunnerTests {
     #expect(first.trimmingCharacters(in: .whitespacesAndNewlines) == TestRepository.committerName)
   }
 
+  @Test func aCallsOwnConfigurationBeatsTheRunnersForThatCallAlone() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let git = try TestGit.runner(configuration: ["ms.test": "runner"])
+
+    let asked = try await git.run(
+      ["config", "--get", "ms.test"],
+      in: fixture.project.path,
+      configuration: ["ms.test": "call"],
+    )
+    let after = try await git.run(["config", "--get", "ms.test"], in: fixture.project.path)
+
+    #expect(asked.trimmingCharacters(in: .whitespacesAndNewlines) == "call")
+    #expect(after.trimmingCharacters(in: .whitespacesAndNewlines) == "runner")
+  }
+
+  @Test func aCallsOwnConfigurationKeepsWhatTheRunnerForcesAndItsSearchPath() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let bin = try Scratch.directory("gitcallpath")
+    defer { Scratch.remove(bin) }
+    try Scratch.script("printf 'found\\n'", at: bin.appendingPathComponent("ms-call-helper"))
+    let git = try TestGit.runner(
+      searchPath: bin.path + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? ""),
+      configuration: ["alias.helped": "!ms-call-helper"],
+    )
+
+    let forced = try await git.run(
+      ["config", "--get", "log.showSignature"],
+      in: fixture.project.path,
+      configuration: ["ms.test": "call"],
+    )
+    let helped = try await git.run(
+      ["helped"],
+      in: fixture.project.path,
+      configuration: ["ms.test": "call"],
+    )
+
+    #expect(forced.trimmingCharacters(in: .whitespacesAndNewlines) == "false")
+    #expect(helped.contains("found"))
+  }
+
   /// Config of the user's that changes what a read means rather than how it
   /// is worded; see Docs/design/merged-branch.md.
   @Test func everyRunnerSilencesTheConfigThatWouldChangeWhatAReadMeans() async throws {

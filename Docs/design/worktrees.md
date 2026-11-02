@@ -671,6 +671,11 @@ left as is".
   reads back as given or not at all.
 - **No UI shows the port**; the variable is enough. Cost: nothing checks whether
   another program already holds a port in the block.
+- **The add checks out with one worker per core** (`checkout.workers=0`), git's
+  default being one. Nearly all of an add is writing files: on 9,467 files it
+  went from 2.8s to 1.2s cold and 1.4s to 0.9s warm. A count the user set wins,
+  read with one `config --get` first, the runner's config beating theirs. A git
+  before 2.32 ignores the key; git stays sequential below 100 files.
 
 ## Reviewed and left as is
 

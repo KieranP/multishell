@@ -19,7 +19,22 @@ extension WorktreeGit {
     if createsBranch, !tracksStartPoint { arguments.append("--no-track") }
     arguments.append(path.path)
     arguments.append(createsBranch ? (startPoint ?? "HEAD") : branch)
-    _ = try await runner.run(arguments, in: project.path, stopper: stopper)
+    _ = try await runner.run(
+      arguments,
+      in: project.path,
+      configuration: await checkoutWorkers(in: project),
+      stopper: stopper,
+    )
+  }
+
+  /// One worker per core, where git's default is one in all, unless the user
+  /// chose a count. See Docs/design/worktrees.md.
+  private func checkoutWorkers(in project: Project) async -> [String: String] {
+    let isUserSet = await runner.succeeds(
+      ["config", "--get", "checkout.workers"],
+      in: project.path,
+    )
+    return isUserSet ? [:] : ["checkout.workers": "0"]
   }
 
   /// Written once, a second after the checkout: git trusts no stat data from the

@@ -13,9 +13,9 @@ struct GitRunner: Sendable {
 
   private let executable: URL
   private let processRunner = ProcessRunner()
-  /// `GIT_CONFIG_*`, which git reads as config of the highest precedence,
-  /// and the login shell's PATH where one was captured.
-  private let baseEnvironment: [String: String]
+  private let configuration: [String: String]
+  /// The login shell's PATH where one was captured.
+  private let searchPath: String?
   /// Shared with the runner a later PATH builds, so Debug Info's counts
   /// carry across it.
   let runLog: GitRunLog
@@ -45,14 +45,21 @@ struct GitRunner: Sendable {
     guard let executable else { throw GitUnavailable() }
     self.executable = executable
     self.runLog = runLog
-    let configuration = Self.forcedConfiguration.merging(configuration) { _, callers in callers }
+    self.configuration = Self.forcedConfiguration.merging(configuration) { _, callers in callers }
+    self.searchPath = searchPath
+  }
+
+  /// `GIT_CONFIG_*`, which git reads as config of the highest precedence, with
+  /// `callConfiguration` beating the runner's own.
+  private func environment(adding callConfiguration: [String: String]) -> [String: String] {
+    let configuration = configuration.merging(callConfiguration) { _, callers in callers }
     var overrides = ["GIT_CONFIG_COUNT": String(configuration.count)]
     for (index, entry) in configuration.sorted(by: { $0.key < $1.key }).enumerated() {
       overrides["GIT_CONFIG_KEY_\(index)"] = entry.key
       overrides["GIT_CONFIG_VALUE_\(index)"] = entry.value
     }
     if let searchPath { overrides["PATH"] = searchPath }
-    self.baseEnvironment = overrides
+    return overrides
   }
 
   /// `environment` and `timeout` are for the calls that talk to a network:
@@ -60,6 +67,7 @@ struct GitRunner: Sendable {
   func run(
     _ arguments: [String],
     in directory: URL,
+    configuration: [String: String] = [:],
     environment: [String: String] = [:],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
@@ -67,6 +75,7 @@ struct GitRunner: Sendable {
     try await succeededOutput(
       arguments,
       in: directory,
+      configuration: configuration,
       environment: environment,
       timeout: timeout,
       stopper: stopper,
@@ -82,6 +91,7 @@ struct GitRunner: Sendable {
   private func succeededOutput(
     _ arguments: [String],
     in directory: URL,
+    configuration: [String: String] = [:],
     environment: [String: String] = [:],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
@@ -91,7 +101,8 @@ struct GitRunner: Sendable {
         executable,
         arguments,
         in: directory,
-        environment: baseEnvironment.merging(environment) { _, callers in callers },
+        environment: self.environment(adding: configuration)
+          .merging(environment) { _, callers in callers },
         timeout: timeout,
         stopper: stopper,
         exitUsageProbe: exitUsageProbe,
@@ -131,7 +142,7 @@ struct GitRunner: Sendable {
         executable,
         arguments,
         in: directory,
-        environment: baseEnvironment,
+        environment: environment(adding: [:]),
         exitUsageProbe: exitUsageProbe,
       )
     }
