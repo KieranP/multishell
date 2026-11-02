@@ -1,9 +1,15 @@
+import Darwin
 import Foundation
 
 enum WorktreeFileCopy {
-  /// A directory entry by entry, asking `isStopRequested` before each, so a large
-  /// one ends at the next file on Cancel; `copyItem` alone takes it whole.
-  static func copy(_ source: URL, to destination: URL, isStopRequested: () -> Bool) throws {
+  /// A directory as one APFS clone, else entry by entry. Ten times faster on a
+  /// `node_modules`, at the cost of a Cancel. See Docs/design/hooks.md.
+  static func copy(
+    _ source: URL,
+    to destination: URL,
+    isStopRequested: () -> Bool,
+    clone: (URL, URL) -> Bool = cloneWhole,
+  ) throws {
     let manager = FileManager.default
     var isDirectory: ObjCBool = false
     guard manager.fileExists(atPath: source.path, isDirectory: &isDirectory), isDirectory.boolValue,
@@ -12,6 +18,23 @@ enum WorktreeFileCopy {
       try manager.copyItem(at: source, to: destination)
       return
     }
+    guard !clone(source, destination) else { return }
+    try copyEntryByEntry(source, to: destination, isStopRequested: isStopRequested)
+  }
+
+  /// Fails on another volume, a disk not APFS, or anything unreadable.
+  private static func cloneWhole(_ source: URL, to destination: URL) -> Bool {
+    clonefile(source.path, destination.path, UInt32(CLONE_NOFOLLOW)) == 0
+  }
+
+  /// Asks `isStopRequested` before each entry, so a large directory ends at
+  /// the next file on Cancel.
+  private static func copyEntryByEntry(
+    _ source: URL,
+    to destination: URL,
+    isStopRequested: () -> Bool,
+  ) throws {
+    let manager = FileManager.default
     // Modes go on last, deepest first: a 0555 folder made first takes no children.
     var made: [(directory: URL, source: URL)] = []
     defer { for (directory, source) in made.reversed() { copyMode(of: source, to: directory) } }

@@ -66,11 +66,11 @@
   names them, the typo being no less one for the stop.
 - **Lists and hook are one pane operation in stages**, begun once the worktree
   exists. A failed list stops what follows; Cancel waits for the file in flight
-  then ends the lot, a copied directory being copied file by file so that its
-  next file is where Cancel lands. The half copied is taken away, after a Cancel
-  or a file it could not read, or it reads as placed and nothing places over it.
-  No timeout: a list is no shell to wedge, and a large one takes as long as its
-  files.
+  then ends the lot. A directory walked file by file (see the clone below) has
+  its next file as where Cancel lands. The half copied is taken away, after a
+  Cancel or a file it could not read, or it reads as placed and nothing places
+  over it. No timeout: a list is no shell to wedge, and a large one takes as
+  long as its files.
 - **A hook runs in the worktree only where one exists at its stage**, since in a
   missing directory it fails at its `cd`. Pre-create and post-delete run in the
   repository, as does the pre-delete of a worktree removed by hand.
@@ -91,3 +91,19 @@
   block**, in the script's prologue, so neither the app's environment nor an rc
   file gives a port it has not. A set port is not pinned the same way: the
   prologue would carry it as shell text, which no value ever is (agents.md).
+- **A copied directory is one APFS clone** (`clonefile`), the walk only its
+  fallback: another volume, a disk not APFS, or something unreadable, where the
+  walk names the failure. A 60,304-entry `node_modules` took 12.9s walked and
+  1.3s cloned. Cost: one syscall takes no Cancel, so Cancel waits for the
+  clone, as it waits for any file in flight. Blocks are shared until written.
+- **The clone is all or nothing**, per `man 2 clonefile`, so a failed one
+  leaves nothing for the walk to trip over.
+- **`clonefile` over the `copyfile(3)` its man page asks for on a directory.**
+  `COPYFILE_RECURSIVE | COPYFILE_CLONE` clones file by file and took 12.3s on
+  the same `node_modules`, no faster than the walk. Cost, per Apple DTS: the
+  kernel holds every write to the source tree until the clone ends, so a dev
+  server or `npm install` in the checkout waits. The tree is one the user
+  listed inside their repository, never a system folder.
+- **A clone drops a nested file's ACL**, with or without `CLONE_ACL`, where the
+  walk's `copyItem` kept it. Checking for one would cost the walk's time, and
+  the walk already dropped a folder's.

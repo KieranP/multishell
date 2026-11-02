@@ -62,28 +62,31 @@ extension WorktreeFilesTests {
     #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "after.txt").path))
   }
 
-  /// Left behind, the half a Cancel stopped at read as placed: a later
-  /// placement passes over anything already at the destination.
-  @Test func aCancelEndsTheCopyOfALargeDirectoryPartWayAndTakesTheHalfAway() throws {
+  @Test func aStopAskedDuringACloneKeepsTheWholeDirectoryAndEndsTheListAtTheNextPath() throws {
     let (repository, worktree) = try repositoryAndWorktree()
     let cache = repository.appending(path: "cache")
     try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
     for index in 0..<200 {
       try "x".write(to: cache.appending(path: "f\(index)"), atomically: true, encoding: .utf8)
     }
+    try "two".write(to: repository.appending(path: "later.txt"), atomically: true, encoding: .utf8)
     let asked = CallCounter()
 
     #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
-        "cache",
+        "cache\nlater.txt",
         as: .copy,
         from: repository,
         to: worktree,
-        isStopRequested: { asked.next() > 20 },
+        isStopRequested: { asked.next() > 0 },
       )
     }
 
-    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "cache").path))
+    let copied = try FileManager.default.contentsOfDirectory(
+      atPath: worktree.appending(path: "cache").path
+    )
+    #expect(copied.count == 200)
+    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "later.txt").path))
   }
 
   @Test func aStopCarriesTheEntriesItAlreadySkipped() throws {
