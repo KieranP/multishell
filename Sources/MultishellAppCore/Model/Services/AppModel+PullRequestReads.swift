@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellServices
 
 extension AppModel {
-  /// One list call for the whole project. A failure keeps the list before it,
+  /// One read for the whole project. A failure keeps the list before it,
   /// so a row keeps what it showed; see Docs/design/services.md.
   func readPullRequests(
     of project: Project,
@@ -27,7 +27,10 @@ extension AppModel {
     }
     reading.remotes = remotes
     do {
-      reading.pullRequests = try await host.pullRequests(in: project.path)
+      reading.pullRequests = try await host.pullRequests(
+        in: project.path,
+        headedBy: pushedBranches(of: project),
+      )
       reading.hasAnswered = true
       // Gone, or its integrations changed, while `gh` ran: nothing stands to date.
       if workspace.project(project.id) != nil,
@@ -45,5 +48,14 @@ extension AppModel {
       }
     }
     return reading
+  }
+
+  /// Each worktree's branch on the remote, where the remote still has it. Not the
+  /// trunk: forks open pull requests from a branch of that name too.
+  private func pushedBranches(of project: Project) -> Set<String> {
+    let branches = workspace.worktrees(of: project.id).compactMap { worktree in
+      remoteState.upstreams[worktree.id].flatMap { $0.tip == nil ? nil : $0.branch }
+    }
+    return Set(branches).subtracting([defaultBranchName(of: project)])
   }
 }

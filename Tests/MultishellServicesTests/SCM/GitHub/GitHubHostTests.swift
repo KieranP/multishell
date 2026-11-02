@@ -25,7 +25,7 @@ struct GitHubHostTests {
     updatedAt: Date(timeIntervalSince1970: 0),
   )
 
-  @Test func oneListCallReadsEveryPullRequestWithNoPromptOnTheLoginPath() async throws {
+  @Test func theNewestAndTheOpenListsAreReadOnceEachWithNoPromptOnTheLoginPath() async throws {
     let tool = try FakeTool(named: "gh", "cat <<'JSON'\n\(GitHubFixtures.open)\nJSON")
     defer { tool.tearDown() }
     let host = GitHubHost(
@@ -34,16 +34,160 @@ struct GitHubHostTests {
       runLog: tool.runLog,
     )
 
-    let pullRequests = try await host.pullRequests(in: tool.directory)
+    let pullRequests = try await host.pullRequests(in: tool.directory, headedBy: ["feature"])
 
     #expect(pullRequests.map(\.number) == [40, 42, 41, 36, 29])
     let fields = GitHubPullRequestRecord.fields.joined(separator: ",")
+    let environment = "PATH=/login/bin:/usr/bin:/bin GH_PROMPT_DISABLED=1 NO_COLOR=1 GH_TOKEN="
+    #expect(tool.calls.filter { $0 == environment }.count == 2)
     #expect(
-      tool.calls == [
+      Set(tool.calls.filter { $0.hasPrefix("pr") }) == [
         "pr list --state all --limit \(GitHubHost.listLimit) --json \(fields)",
-        "PATH=/login/bin:/usr/bin:/bin GH_PROMPT_DISABLED=1 NO_COLOR=1 GH_TOKEN=",
+        "pr list --state open --limit \(GitHubHost.openListLimit) --json number,headRefName",
       ]
     )
+  }
+
+  @Test func anOldOpenPullRequestIsReadInFullOnlyWhereItHeadsABranchAskedFor() async throws {
+    let recent = "[\(GitHubFixtures.record(number: 120)), \(GitHubFixtures.record(number: 119))]"
+    let openHeads =
+      #"[{"number":120,"headRefName":"feature"},{"number":7,"headRefName":"old"},"#
+      + #"{"number":8,"headRefName":"theirs"}]"#
+    let old = GitHubFixtures.record(number: 7, headRefName: "old")
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *"--state open"*) echo '\(openHeads)' ;;
+        "pr view 7 "*) echo '\(old)' ;;
+        *) echo '\(recent)' ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    let pullRequests = try await host.pullRequests(
+      in: tool.directory,
+      headedBy: ["old", "feature"],
+    )
+
+    #expect(pullRequests.map(\.number).sorted() == [7, 119, 120])
+    let fields = GitHubPullRequestRecord.fields.joined(separator: ",")
+    #expect(tool.calls.filter { $0.hasPrefix("pr view") } == ["pr view 7 --json \(fields)"])
+  }
+
+  @Test func oldOpenPullRequestsKeepTheOpenListsOrderHoweverTheirReadsFinish() async throws {
+    let recent = "[\(GitHubFixtures.record(number: 120))]"
+    let openHeads = #"[{"number":8,"headRefName":"a"},{"number":7,"headRefName":"b"}]"#
+    let eight = GitHubFixtures.record(number: 8, headRefName: "a")
+    let seven = GitHubFixtures.record(number: 7, headRefName: "b")
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *"--state open"*) echo '\(openHeads)' ;;
+        "pr view 8 "*) sleep 0.5; echo '\(eight)' ;;
+        "pr view 7 "*) echo '\(seven)' ;;
+        *) echo '\(recent)' ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    let pullRequests = try await host.pullRequests(in: tool.directory, headedBy: ["a", "b"])
+
+    #expect(pullRequests.map(\.number) == [120, 8, 7])
+  }
+
+  @Test func aFailedOpenListFailsTheReadWithWhatGhSaid() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *"--state open"*) echo 'HTTP 502: Bad Gateway' >&2; exit 1 ;;
+        *) echo '[]' ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    await #expect(throws: ServiceReadFailure.failed("HTTP 502: Bad Gateway")) {
+      try await host.pullRequests(in: tool.directory, headedBy: ["feature"])
+    }
+  }
+
+  @Test func aFailedFullReadOfAnOldPullRequestFailsTheRead() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *"--state open"*) echo '[{"number":7,"headRefName":"old"}]' ;;
+        "pr view"*) echo 'Could not resolve to a PullRequest' >&2; exit 1 ;;
+        *) echo '[]' ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    await #expect(throws: ServiceReadFailure.failed("Could not resolve to a PullRequest")) {
+      try await host.pullRequests(in: tool.directory, headedBy: ["old"])
+    }
+  }
+
+  @Test func anOldPullRequestMissingAFieldTheRowNeedsCostsOnlyItself() async throws {
+    let recent = "[\(GitHubFixtures.record(number: 120))]"
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *"--state open"*) echo '[{"number":7,"headRefName":"old"},{"headRefName":"nameless"}]' ;;
+        "pr view"*) echo '{"number":7}' ;;
+        *) echo '\(recent)' ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    let pullRequests = try await host.pullRequests(
+      in: tool.directory,
+      headedBy: ["old", "nameless"],
+    )
+
+    #expect(pullRequests.map(\.number) == [120])
+    #expect(tool.calls.filter { $0.hasPrefix("pr view") }.count == 1)
+  }
+
+  @Test func anOpenListThatIsNotJSONFailsTheRead() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *"--state open"*) echo 'not json' ;;
+        *) echo '[]' ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    await #expect(throws: ServiceReadFailure.failed(t("integration.unreadable-answer"))) {
+      try await host.pullRequests(in: tool.directory, headedBy: ["feature"])
+    }
+  }
+
+  @Test func noBranchAskedForAsksNoOpenPullRequests() async throws {
+    let tool = try FakeTool(named: "gh", "echo '[]'")
+    defer { tool.tearDown() }
+    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+
+    _ = try await host.pullRequests(in: tool.directory, headedBy: [])
+
+    #expect(!tool.calls.contains { $0.contains("--state open") })
   }
 
   @Test func theLoginShellsVariablesReachTheTool() async throws {
@@ -56,7 +200,7 @@ struct GitHubHostTests {
       loginVariables: ["GH_TOKEN": "from-zshrc"],
     )
 
-    _ = try await host.pullRequests(in: tool.directory)
+    _ = try await host.pullRequests(in: tool.directory, headedBy: ["feature"])
 
     #expect(tool.calls.contains { $0.hasSuffix("GH_TOKEN=from-zshrc") })
   }
@@ -74,7 +218,7 @@ struct GitHubHostTests {
       loginVariables: ["CLICOLOR_FORCE": "1"],
     )
 
-    #expect(try await host.pullRequests(in: tool.directory).isEmpty)
+    #expect(try await host.pullRequests(in: tool.directory, headedBy: ["feature"]).isEmpty)
   }
 
   @Test func aRepositoryGhCannotPlaceOnGitHubFailsAsNotHosted() async throws {
@@ -89,7 +233,7 @@ struct GitHubHostTests {
     let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
 
     await #expect(throws: ServiceReadFailure.notHosted) {
-      try await host.pullRequests(in: tool.directory)
+      try await host.pullRequests(in: tool.directory, headedBy: ["feature"])
     }
   }
 
@@ -264,8 +408,8 @@ struct GitHubHostTests {
     tool.runLog.setRecording(true)
     let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
 
-    _ = try await host.pullRequests(in: tool.directory)
+    _ = try await host.pullRequests(in: tool.directory, headedBy: ["feature"])
 
-    #expect(tool.runLog.drain().finishedRuns.map(\.command) == ["gh pr list"])
+    #expect(tool.runLog.drain().finishedRuns.map(\.command) == ["gh pr list", "gh pr list"])
   }
 }

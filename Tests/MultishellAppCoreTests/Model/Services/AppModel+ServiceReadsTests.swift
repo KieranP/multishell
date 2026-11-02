@@ -31,6 +31,88 @@ struct AppModelServiceReadsTests {
     #expect(host.calls == ["list"], "one call for the whole project")
   }
 
+  @Test func theListAsksForOlderOpenPullRequestsOfEachPushedBranch() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.createWorktree(onBranch: "unpushed")
+    try await harness.pushToGitHubOrigin(feat)
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let asked = try #require(host.askedHeads.last)
+    #expect(asked.contains("feat"))
+    #expect(!asked.contains("unpushed"))
+  }
+
+  @Test func aBranchPushedUnderAnotherNameIsAskedForByItsNameOnTheRemote() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat:published"], in: feat.path)
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(host.askedHeads.last == ["published"])
+  }
+
+  @Test func aBranchTheRemoteDeletedIsNotAskedForOlderOpenPullRequests() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    _ = try await harness.git.run(["push", "-q", "origin", "--delete", "feat"], in: feat.path)
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.remoteState.upstreams[feat.id]?.branch == "feat")
+    #expect(host.askedHeads.last?.isEmpty == true)
+  }
+
+  @Test func upstreamsFirstSeenAfterAReadAreAskedForOnTheNextRead() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    try await harness.pushToGitHubOrigin(feat)
+
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    try await waitUntil { host.askedHeads.last == ["feat"] && harness.servicesAreSettled() }
+    #expect(host.askedHeads.first?.isEmpty == true)
+  }
+
+  @Test func theTrunkIsNotAskedForOlderOpenPullRequests() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    _ = try await harness.git.run(
+      ["push", "-q", "-u", "origin", "main"],
+      in: harness.project.path,
+    )
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let main = try #require(harness.model.workspace.worktrees(of: harness.project.id).first)
+    #expect(harness.model.remoteState.upstreams[main.id]?.branch == "main")
+    #expect(host.askedHeads.last == ["feat"])
+  }
+
   @Test func aMergedPullRequestHeadedByTheTipIsProofTheBranchLanded() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

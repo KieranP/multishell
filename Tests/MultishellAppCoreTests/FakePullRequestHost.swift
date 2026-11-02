@@ -11,6 +11,7 @@ final class FakePullRequestHost: PullRequestHost {
     var answer: Result<[PullRequest], ServiceReadFailure> = .success([])
     var checks: [PullRequestCheck] = []
     var calls: [String] = []
+    var askedHeads: [Set<String>] = []
     var holdsList = false
     var holdsChecks = false
     var holdsToolStatus = false
@@ -26,6 +27,8 @@ final class FakePullRequestHost: PullRequestHost {
   private let heldWrites = AsyncStream<Void>.makeStream()
 
   var calls: [String] { state.withLock { $0.calls } }
+  /// The branches each list read asked for older open pull requests of.
+  var askedHeads: [Set<String>] { state.withLock { $0.askedHeads } }
 
   func answer(_ answer: Result<[PullRequest], ServiceReadFailure>) {
     state.withLock { $0.answer = answer }
@@ -44,9 +47,15 @@ final class FakePullRequestHost: PullRequestHost {
     heldReads.continuation.finish()
   }
 
-  func pullRequests(in directory: URL) async throws -> [PullRequest] {
+  func pullRequests(
+    in directory: URL,
+    headedBy branches: Set<String>,
+  ) async throws
+    -> [PullRequest]
+  {
     let holds = state.withLock { state in
       state.calls.append("list")
+      state.askedHeads.append(branches)
       return state.holdsList
     }
     if holds {

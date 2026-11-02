@@ -16,17 +16,30 @@ command-line tool.
   keychain and `circleci auth login` likewise, so the app never reads or stores
   a token. Calling the API would mean reading the CLI's keychain item, a prompt
   and a tie to its storage, for no fewer calls.
-- **Every read is one call per project.** `gh pr list --state all` lists the
-  newest hundred, open or not; `circleci run list` the newest fifty runs on any
-  branch. A shown, pushed branch the recent runs left out is asked alone.
+- **Every read lists the whole project at once.** `gh pr list --state all` lists
+  the newest hundred, open or not; `circleci run list` the newest fifty runs on
+  any branch. A shown, pushed branch the recent runs left out is asked alone.
+- **An open pull request older than the hundred is found by its branch.** A busy
+  repository's hundred covers only weeks, and a branch whose open pull request
+  was older read "No pull request". Beside the hundred,
+  `gh pr list --state open --json number,headRefName` lists up to five hundred
+  open ones, and `gh pr view` reads in full each the hundred left out whose
+  branch a worktree has pushed. The trunk is not asked: forks open pull requests
+  from their own `main`, and each would cost a call every round.
+- **The open list asks for number and branch alone.** Five hundred took 3 s on
+  rails/rails on 2026-11-02, the head's owner 8 s, and the hundred's own fields
+  failed GitHub at a hundred open: `mergeStateStatus` is worked out per open
+  pull request. A same-named fork branch costs a `gh pr view` the match then
+  drops.
 - **A branch asked alone is not asked again until it is pushed to**, or until
   its run ends, on hold included: an approval raises no event, and a row stuck
   on "on hold" after one cost more than a call per such branch each round.
   Otherwise every round paid a call for each old or never-run branch. Cost: a
   run started on a branch by another trigger, a schedule or an API call, is seen
   only once its branch moves or the recent runs list it.
-- **Cost of the hundred**: a pull request older than the hundred newest reads as
-  none, and the row falls back to the merged badge.
+- **Cost of the hundred**: a closed or merged pull request older than the
+  hundred newest reads as none, and the row falls back to the merged badge. So
+  does an open one past the five hundred open.
 - **Matched by the branch's upstream**, its name on the remote and the owner and
   name the remote's URL gives, never its local name: a local branch can track
   another name, and a fork's branch of the same name is someone else's. A run is

@@ -98,10 +98,19 @@ struct GitHubPullRequestRecord: Decodable {
   /// Each record that names everything the row needs; one that does not
   /// costs itself. Output that is not a JSON array fails the read.
   static func pullRequests(from json: Data) throws -> [PullRequest] {
+    try ToolAnswer.decode(LossyArray<Self>.self, from: json, with: decoder).elements
+      .compactMap(\.pullRequest)
+  }
+
+  /// What `gh pr view --json` prints, one record rather than a list.
+  static func pullRequest(from json: Data) throws -> PullRequest? {
+    try ToolAnswer.decode(Self.self, from: json, with: decoder).pullRequest
+  }
+
+  private static var decoder: JSONDecoder {
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
-    return try ToolAnswer.decode(LossyArray<Self>.self, from: json, with: decoder).elements
-      .compactMap(\.pullRequest)
+    return decoder
   }
 
   /// Either field may be the first to see a conflict, as for `blocker`.
