@@ -53,25 +53,17 @@ extension AppModel {
     guard !Task.isCancelled else { return nil }
     let (local, remote) = await branches(of: project)
     guard !Task.isCancelled else { return nil }
-    let current = await currentBranch(of: project)
+    let base = await suggestedBase(of: project, local: local, remote: remote)
     guard !Task.isCancelled else { return nil }
     return NewWorktreeBranches(
       hasCommits: hasCommits,
       localBranches: local,
       remoteBranches: remote,
-      currentBranch: current,
+      suggestedBase: base,
     )
   }
 
   private func hasCommits(_ project: Project) async -> Bool {
     await coordinator?.git.hasCommits(project) ?? false
-  }
-
-  private func branches(of project: Project) async -> (local: [String], remote: [String]) {
-    await coordinator?.git.branchNames(project) ?? ([], [])
-  }
-
-  private func currentBranch(of project: Project) async -> String {
-    (try? await coordinator?.git.currentBranch(project)) ?? "HEAD"
   }
 }

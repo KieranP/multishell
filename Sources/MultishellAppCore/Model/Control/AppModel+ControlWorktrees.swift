@@ -54,10 +54,15 @@ extension AppModel {
     case .failure(let refusal): return .refused(refusal)
     case .success(let agentID): firstTab = agentID.map { .agent($0, task: order.task ?? "") }
     }
+    var startPoint: String?
+    if order.createsBranch {
+      startPoint = order.startPoint
+      if startPoint == nil { startPoint = await suggestedBase(of: project) }
+    }
     guard
       let created = await createWorktree(
         branch: branch,
-        basedOn: order.createsBranch ? order.startPoint : nil,
+        basedOn: startPoint,
         createsBranch: order.createsBranch,
         in: project,
         firstTab: firstTab,

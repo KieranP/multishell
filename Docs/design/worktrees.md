@@ -248,6 +248,14 @@ left as is".
 - **The rules are git's own, in Swift, less the ones about slashes** that apply
   only to a full refname, the sheet asking on every keystroke.
   `GitBranchNameTests` holds it against real git over a table of names.
+- **"Based on" starts on the default branch**, the one the merged badge measures
+  against, its local branch where the picker lists one. The main checkout's
+  branch was the start, and a checkout switched to other work cut every new
+  worktree from it. That branch is the start only where no default branch
+  resolves. A sheet opened before the project's first branch scan, which at
+  launch waits behind every status read, runs that scan itself rather than fall
+  back. `multishell worktrees add` without `--from` starts where the sheet
+  would, since an agent calling it has no picker to correct.
 - **The sheet's field turns unusual characters into dashes as they arrive**, a
   pasted `Admin::UsersController#index` reading `Admin-UsersController-index`.
   Anything but a letter, digit, `.`, `_`, `/` or `-` counts, wider than git's

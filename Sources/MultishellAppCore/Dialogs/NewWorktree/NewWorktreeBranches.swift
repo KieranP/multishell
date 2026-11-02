@@ -6,5 +6,5 @@ public struct NewWorktreeBranches: Equatable, Sendable {
   let hasCommits: Bool
   let localBranches: [String]
   let remoteBranches: [String]
-  let currentBranch: String
+  let suggestedBase: String
 }

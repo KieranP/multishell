@@ -22,7 +22,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["main", "release", "spike"],
         remoteBranches: ["origin/main"],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: ["main"],
     )
@@ -43,7 +43,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["main"],
         remoteBranches: [],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: ["main"],
     )
@@ -66,7 +66,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["old"],
         remoteBranches: [],
-        currentBranch: "old",
+        suggestedBase: "old",
       ),
       checkedOut: [],
     )
@@ -84,7 +84,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["dev"],
         remoteBranches: [],
-        currentBranch: "dev",
+        suggestedBase: "dev",
       ),
       checkedOut: [],
     )
@@ -165,7 +165,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["main", "release"],
         remoteBranches: [],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: ["main"],
     )
@@ -182,7 +182,7 @@ struct NewWorktreeDraftTests {
         hasCommits: false,
         localBranches: [],
         remoteBranches: [],
-        currentBranch: "HEAD",
+        suggestedBase: "HEAD",
       ),
       checkedOut: [],
     )
@@ -200,7 +200,7 @@ struct NewWorktreeDraftTests {
         hasCommits: false,
         localBranches: [],
         remoteBranches: [],
-        currentBranch: "HEAD",
+        suggestedBase: "HEAD",
       ),
       checkedOut: [],
     )
@@ -229,7 +229,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["main"],
         remoteBranches: ["origin/main", "origin/feature"],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: ["main"],
     )
@@ -264,7 +264,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["main"],
         remoteBranches: [],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: [],
     )
@@ -293,7 +293,7 @@ struct NewWorktreeDraftTests {
         hasCommits: true,
         localBranches: ["main"],
         remoteBranches: [],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: ["main"],
     )

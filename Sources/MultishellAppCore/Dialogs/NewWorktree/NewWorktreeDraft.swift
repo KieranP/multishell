@@ -76,7 +76,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     hasCommits = read.hasCommits
     localBranches = read.localBranches
     remoteBranches = read.remoteBranches
-    baseBranch = read.currentBranch
+    baseBranch = read.suggestedBase
     // Recorded before the fix-up below, which reads the available branches
     // and sees none for a project not yet marked loaded.
     loadedProjectID = id

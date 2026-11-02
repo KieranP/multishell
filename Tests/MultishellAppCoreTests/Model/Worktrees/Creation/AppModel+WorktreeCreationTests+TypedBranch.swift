@@ -14,7 +14,7 @@ extension AppModelWorktreeCreationTests {
         hasCommits: true,
         localBranches: ["main"],
         remoteBranches: [],
-        currentBranch: "main",
+        suggestedBase: "main",
       ),
       checkedOut: ["main"],
     )

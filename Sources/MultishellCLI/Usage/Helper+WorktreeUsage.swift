@@ -7,7 +7,7 @@ extension Helper {
                                   [--agent ID] [--prompt TEXT]
         Create a worktree on a new branch, as the New Worktree sheet does,
         and print its id once it exists, however long the hooks take.
-        --from REF   start the branch at REF rather than HEAD
+        --from REF   start the branch at REF rather than the default branch
         --existing   check out BRANCH, which already exists, instead
         --agent ID   start that agent in the first tab, by catalogue id
         --prompt     give the agent TEXT as its task; without --agent, the
