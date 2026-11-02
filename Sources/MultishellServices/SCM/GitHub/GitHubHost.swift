@@ -6,11 +6,11 @@ import MultishellProcess
 /// Pull requests on GitHub, read through `gh`, which keeps the login and
 /// knows an Enterprise host from the repository's remotes.
 public struct GitHubHost: PullRequestHost {
-  /// The newest pull requests, open or not; a closed one past it reads as none.
+  /// The newest pull requests, open or not; a branch whose own are older is
+  /// asked alone. Why in Docs/design/services.md.
   static let listLimit = 100
-  /// Every open pull request of a busy repository, number and branch only, to
-  /// find one older than the hundred. Why in Docs/design/services.md.
-  static let openListLimit = 500
+  /// Every pull request one branch has headed, reopened as new ones included.
+  static let branchListLimit = 10
 
   /// No prompt, no colour and no update check, which writes a state file. A
   /// login shell's `CLICOLOR_FORCE` outranks `NO_COLOR` and colours `--json`.
@@ -48,68 +48,28 @@ public struct GitHubHost: PullRequestHost {
     }
   }
 
+  public func pullRequests(in directory: URL) async throws -> [PullRequest] {
+    try await list(["--limit", String(Self.listLimit)], in: directory)
+  }
+
+  /// `--head` matches the branch's name in any repository, a fork's too.
   public func pullRequests(
+    headedBy branch: String,
     in directory: URL,
-    headedBy branches: Set<String>,
   ) async throws
     -> [PullRequest]
   {
-    async let recent = list(in: directory)
-    async let openHeads = branches.isEmpty ? [] : self.openHeads(in: directory)
-    let newest = try await recent
-    let listed = Set(newest.map(\.number))
-    let older = try await openHeads.filter { head in
-      !listed.contains(head.number) && branches.contains(head.branch)
-    }
-    return try await newest + view(older.map(\.number), in: directory)
+    try await list(["--head", branch, "--limit", String(Self.branchListLimit)], in: directory)
   }
 
-  private func list(in directory: URL) async throws -> [PullRequest] {
+  private func list(_ filter: [String], in directory: URL) async throws -> [PullRequest] {
     let json = try await runner.read(
-      [
-        "pr", "list", "--state", "all", "--limit", String(Self.listLimit),
-        "--json", GitHubPullRequestRecord.fields.joined(separator: ","),
-      ],
+      ["pr", "list", "--state", "all"] + filter
+        + ["--json", GitHubPullRequestRecord.fields.joined(separator: ",")],
       in: directory,
       failure: GitHubErrorText.failure(from:),
     )
     return try GitHubPullRequestRecord.pullRequests(from: json)
-  }
-
-  private func openHeads(in directory: URL) async throws -> [(number: Int, branch: String)] {
-    let json = try await runner.read(
-      [
-        "pr", "list", "--state", "open", "--limit", String(Self.openListLimit),
-        "--json", GitHubOpenPullRequestHead.fields.joined(separator: ","),
-      ],
-      in: directory,
-      failure: GitHubErrorText.failure(from:),
-    )
-    return try GitHubOpenPullRequestHead.heads(from: json)
-  }
-
-  /// In the order asked: a list differing only in order reads as changed.
-  private func view(_ numbers: [Int], in directory: URL) async throws -> [PullRequest] {
-    try await withThrowingTaskGroup(of: (Int, PullRequest?).self) { group in
-      for (index, number) in numbers.enumerated() {
-        group.addTask {
-          let json = try await runner.read(
-            [
-              "pr", "view", String(number),
-              "--json", GitHubPullRequestRecord.fields.joined(separator: ","),
-            ],
-            in: directory,
-            failure: GitHubErrorText.failure(from:),
-          )
-          return (index, try GitHubPullRequestRecord.pullRequest(from: json))
-        }
-      }
-      var found: [(Int, PullRequest)] = []
-      for try await (index, pullRequest) in group {
-        if let pullRequest { found.append((index, pullRequest)) }
-      }
-      return found.sorted { $0.0 < $1.0 }.map(\.1)
-    }
   }
 
   /// Every check on its head, and which the base branch requires: two calls,

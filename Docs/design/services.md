@@ -18,28 +18,36 @@ command-line tool.
   and a tie to its storage, for no fewer calls.
 - **Every read lists the whole project at once.** `gh pr list --state all` lists
   the newest hundred, open or not; `circleci run list` the newest fifty runs on
-  any branch. A shown, pushed branch the recent runs left out is asked alone.
-- **An open pull request older than the hundred is found by its branch.** A busy
-  repository's hundred covers only weeks, and a branch whose open pull request
-  was older read "No pull request". Beside the hundred,
-  `gh pr list --state open --json number,headRefName` lists up to five hundred
-  open ones, and `gh pr view` reads in full each the hundred left out whose
-  branch a worktree has pushed. The trunk is not asked: forks open pull requests
-  from their own `main`, and each would cost a call every round.
-- **The open list asks for number and branch alone.** Five hundred took 3 s on
-  rails/rails on 2026-11-02, the head's owner 8 s, and the hundred's own fields
-  failed GitHub at a hundred open: `mergeStateStatus` is worked out per open
-  pull request. A same-named fork branch costs a `gh pr view` the match then
-  drops.
+  any branch. A branch either list left out is asked alone: for pull requests
+  every worktree's pushed branch but the trunk, its remote branch gone or not;
+  for runs a shown, pushed one.
+- **A branch's pull requests are asked alone with `gh pr list --head`**, every
+  state, ten at most. A busy repository's hundred covers only weeks, and a
+  branch whose pull request was older, open or merged, read "No pull request".
+  GitHub deletes a merged branch, so a gone branch is still asked: its merged
+  pull request is the proof the removal dialog leads with.
+- **Not one list of every open pull request.** Asking all of them in full failed
+  GitHub at a hundred open on rails/rails on 2026-11-02: `mergeStateStatus` is
+  worked out per open pull request. Numbers and branches alone answered, but
+  found no closed or merged one.
+- **The trunk is not asked alone**: forks open pull requests from their own
+  `main`, and each would be read every round. `--head` matches a branch name in
+  any repository; the match then drops a fork's. A fork's same-named pull
+  request in the hundred is not the branch's, so the branch is still asked.
 - **A branch asked alone is not asked again until it is pushed to**, or until
   its run ends, on hold included: an approval raises no event, and a row stuck
   on "on hold" after one cost more than a call per such branch each round.
   Otherwise every round paid a call for each old or never-run branch. Cost: a
   run started on a branch by another trigger, a schedule or an API call, is seen
   only once its branch moves or the recent runs list it.
+- **A pull request found alone is asked again while it is open**, as its review,
+  checks and merge move with no push; one merged or closed stands until the
+  branch moves. A branch the hundred names drops what it was asked alone, so its
+  pull request falling out of the hundred later is asked afresh.
+- **A branch that fails alone fails the pull request read**, which keeps the
+  list and lookups before it.
 - **Cost of the hundred**: a closed or merged pull request older than the
-  hundred newest reads as none, and the row falls back to the merged badge. So
-  does an open one past the five hundred open.
+  hundred newest, on a branch no worktree has out, reads as none.
 - **Matched by the branch's upstream**, its name on the remote and the owner and
   name the remote's URL gives, never its local name: a local branch can track
   another name, and a fork's branch of the same name is someone else's. A run is

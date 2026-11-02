@@ -3,13 +3,13 @@ import Foundation
 /// Where a repository's pull requests live, read through the host's own
 /// tool. GitHub's is the one there is; see Docs/design/services.md.
 public protocol PullRequestHost: Sendable {
-  /// Pull requests of the repository at `directory`: the newest, open or not,
-  /// and any older open one headed by one of `branches`. Throws `ServiceReadFailure`.
-  func pullRequests(
-    in directory: URL,
-    headedBy branches: Set<String>,
-  ) async throws
-    -> [PullRequest]
+  /// Pull requests of the repository at `directory`, open or not, newest
+  /// first, as many as one call returns. Throws `ServiceReadFailure`.
+  func pullRequests(in directory: URL) async throws -> [PullRequest]
+
+  /// Every pull request `branch` heads, however old, by its name on the remote.
+  /// Throws `ServiceReadFailure`.
+  func pullRequests(headedBy branch: String, in directory: URL) async throws -> [PullRequest]
 
   /// The checks on the pull request's head, each once, and which are required.
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck]

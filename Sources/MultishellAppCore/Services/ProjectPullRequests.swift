@@ -7,8 +7,11 @@ import MultishellServices
 /// rows are matched against. Runtime only; see Docs/design/services.md.
 struct ProjectPullRequests: Equatable {
   let integration: ServiceIntegration
-  /// The last list the host gave, kept through a failed read after it.
+  /// The last list the host gave, then each lookup's, kept through a failed
+  /// read after them.
   var pullRequests: [PullRequest]
+  /// The branches the list left out, by their name on the remote.
+  var lookups: [String: BranchPullRequestLookup] = [:]
   var remotes: [GitRemote]
   /// Whether any read has answered; when is `RemoteState`'s, unobserved.
   var hasAnswered = false

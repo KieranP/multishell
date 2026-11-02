@@ -11,20 +11,6 @@ enum GitHubFixtures {
     "updatedAt":"2026-10-22T06:25:49Z","url":"https://github.com/KieranP/multishell/pull/3"}]
     """
 
-  /// What `gh pr view 3 --json` printed for the same pull request: one record.
-  static let viewed = """
-    {"autoMergeRequest":null,"baseRefName":"main","headRefName":"more-highlighting",\
-    "headRefOid":"b315c8c4fa48dea06f0c9f19388c0bd949879949","headRepository":{"id":"R_kgDOUOHsXQ",\
-    "name":"multishell","nameWithOwner":"KieranP/multishell"},"headRepositoryOwner":{"id":"MDQ6VXNlcjE2NjIw",\
-    "name":"Kieran Pilkington","login":"KieranP"},"isDraft":false,"mergeStateStatus":"UNKNOWN",\
-    "mergeable":"UNKNOWN","number":3,"reviewDecision":"","state":"MERGED",\
-    "title":"Highlight Svelte, HTML, CSS and SCSS, with embedded code injected",\
-    "updatedAt":"2026-10-22T06:25:49Z","url":"https://github.com/KieranP/multishell/pull/3"}
-    """
-
-  /// What `gh pr list --state open --json number,headRefName` printed here.
-  static let openHeads = #"[{"headRefName":"cli-tweaks","number":35}]"#
-
   /// What `gh api graphql` printed for the merge options of this repository's
   /// pull request 26, its squash body cut to two lines.
   static let mergeOptions = """

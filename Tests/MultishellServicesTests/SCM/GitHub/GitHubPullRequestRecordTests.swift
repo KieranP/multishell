@@ -113,24 +113,6 @@ struct GitHubPullRequestRecordTests {
     #expect(numbers == [1, 4])
   }
 
-  @Test func onePullRequestGhPrViewPrintsReadsAsTheListsDoes() throws {
-    let viewed = try GitHubPullRequestRecord.pullRequest(from: Data(GitHubFixtures.viewed.utf8))
-    let listed = try GitHubPullRequestRecord.pullRequests(from: Data(GitHubFixtures.merged.utf8))
-
-    #expect(viewed != nil)
-    #expect(viewed == listed.first)
-  }
-
-  @Test func aViewedRecordMissingAFieldTheRowNeedsReadsAsNone() throws {
-    #expect(try GitHubPullRequestRecord.pullRequest(from: Data(#"{"number":3}"#.utf8)) == nil)
-  }
-
-  @Test func aViewThatIsNotAJsonObjectFailsTheRead() {
-    #expect(throws: ServiceReadFailure.self) {
-      try GitHubPullRequestRecord.pullRequest(from: Data(GitHubFixtures.merged.utf8))
-    }
-  }
-
   @Test func outputThatIsNotAJsonArrayFailsTheReadRatherThanListingNone() {
     #expect(throws: ServiceReadFailure.self) {
       try GitHubPullRequestRecord.pullRequests(from: Data("Welcome to GitHub CLI!".utf8))
