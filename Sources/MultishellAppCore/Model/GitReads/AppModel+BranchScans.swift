@@ -80,7 +80,13 @@ extension AppModel {
     // than leave them about a base that no longer applies.
     if scan.mergeInputs == nil { forgetMergeStates(ofProject: project.id) }
     if let upstreams = scan.upstreams {
-      await recordUpstreams(upstreams, of: project, fromScan: scanNumber)
+      await recordUpstreams(
+        upstreams,
+        fallbacks: scan.fallbackUpstreams,
+        branchTips: scan.branchTips,
+        of: project,
+        fromScan: scanNumber,
+      )
     } else {
       // The rows still take the tips moved, though no upstream was read.
       recomputeWorktreeServices(ofProject: project.id)
@@ -166,6 +172,25 @@ extension AppModel {
 
   /// What Auto Rename's menu item reads, the scan seeing a commit as its ref
   /// moves where a worktree's listed `HEAD` waits for the next listing.
+  /// A scan's upstreams, unless a newer scan began while its reflog reads ran.
+  private func recordUpstreams(
+    _ upstreams: [String: BranchUpstream],
+    fallbacks: [String: BranchUpstream?],
+    branchTips: [String: String],
+    of project: Project,
+    fromScan scanNumber: Int,
+  ) async {
+    let pushed = await upstreamsPushedByTheirBranches(
+      upstreams,
+      fallbacks: fallbacks,
+      branchTips: branchTips,
+      of: project,
+    )
+    let ownUpstreams = await upstreamsOfTheirOwn(pushed, of: project)
+    guard remoteState.branchScansBegun[project.id] == scanNumber else { return }
+    recordBranchUpstreams(ownUpstreams, of: project.id)
+  }
+
   private func recordScannedBranchTips(_ tips: [String: String], of id: Project.ID) {
     var fresh = scannedBranchTips
     for worktree in workspace.worktrees(of: id) {

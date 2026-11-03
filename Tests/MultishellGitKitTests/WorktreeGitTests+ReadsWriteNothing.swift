@@ -58,6 +58,7 @@ extension WorktreeGitTests {
     #expect(await git.changesAreOnBase("side", against: "main", in: project) == false)
     #expect(await git.remotes(project) == [])
     #expect(try await git.startPoint(ofBranch: "side", in: project) != nil)
+    #expect(try await git.tipsHeld(byBranch: "side", in: project).isEmpty == false)
     #expect(
       await git.hasChanges(
         on: "side",

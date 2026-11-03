@@ -3,20 +3,9 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// A scan's upstreams, unless a newer scan began while its reflog reads ran.
-  func recordUpstreams(
-    _ upstreams: [String: BranchUpstream],
-    of project: Project,
-    fromScan scanNumber: Int,
-  ) async {
-    let ownUpstreams = await upstreamsOfTheirOwn(upstreams, of: project)
-    guard remoteState.branchScansBegun[project.id] == scanNumber else { return }
-    recordBranchUpstreams(ownUpstreams, of: project.id)
-  }
-
   /// A worktree's branch following the remote one it was made from, under
   /// another name, follows someone else's; see Docs/design/services.md.
-  private func upstreamsOfTheirOwn(
+  func upstreamsOfTheirOwn(
     _ upstreams: [String: BranchUpstream],
     of project: Project,
   ) async -> [String: BranchUpstream] {

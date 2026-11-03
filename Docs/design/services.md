@@ -66,6 +66,13 @@ command-line tool.
   git's `%(push:remotename)`, where that remote has it; else the branch it
   follows. A fork's push remote then finds the fork's pull request, and a branch
   pushed without `-u` its own, its unpushed commits counted against that.
+- **Its own name that git does not track for it counts once the branch held that
+  tip**, as its reflog says; else it is the branch it follows. A new branch
+  reusing the name of one whose pull request was merged or closed took the old
+  remote branch, left undeleted, and with it the old pull request and runs. Read
+  again only when either tip moves. A branch with no reflog, or a read that
+  fails, keeps its own name. Cost: a teammate's push to a branch this clone
+  pushed without `-u` hides its pull request until the branch is pulled.
 - **A branch nobody pushed has no pull request or run to find**, so it is asked
   about for neither.
 - **An upstream that is the trunk, on a branch that is not, is no upstream**: a

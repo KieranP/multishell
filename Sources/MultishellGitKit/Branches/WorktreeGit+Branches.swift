@@ -67,6 +67,16 @@ extension WorktreeGit {
     return String(first.dropFirst(prefix.count))
   }
 
+  /// Every commit the branch has pointed at, as its reflog keeps them; empty
+  /// where git keeps none for it, and a throw where git failed.
+  public func tipsHeld(byBranch branch: String, in project: Project) async throws -> Set<String> {
+    let output = try await runner.run(
+      ["reflog", "show", "--format=%H", RefName.local(branch)],
+      in: project.path,
+    )
+    return Set(output.split(whereSeparator: \.isNewline).map(String.init))
+  }
+
   /// The commits the local branch has past `tip`, a remote branch's: those a
   /// push would send. `nil` where git failed.
   public func commitCount(

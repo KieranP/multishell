@@ -34,6 +34,8 @@ final class RemoteState {
   var ciWorkflows: [CIRun.ID: CIRunDetail<[CIWorkflow]>] = [:]
   /// What each branch was made from, by project, read once per branch.
   @ObservationIgnored var branchStartPoints: [Project.ID: [String: String?]] = [:]
+  /// Whether each branch pushed its same-named remote branch, by project.
+  @ObservationIgnored var publishedTipChecks: [Project.ID: [String: PublishedTipCheck]] = [:]
   /// Providers found too old to read, which the reads and tabs pass over.
   var unreadableProviders: Set<ServiceIntegration> = []
   /// Whether an Integrations page has asked, so tools found later are asked too.

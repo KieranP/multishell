@@ -221,6 +221,7 @@ extension AppModel {
   /// A project's services are its own and go with it.
   func forgetServices(ofProject id: Project.ID) {
     remoteState.branchStartPoints[id] = nil
+    remoteState.publishedTipChecks[id] = nil
     remoteState.branchScansBegun[id] = nil
     forgetPullRequestReading(ofProject: id)
     forgetCIReading(ofProject: id)
