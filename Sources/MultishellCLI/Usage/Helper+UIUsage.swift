@@ -4,6 +4,10 @@ extension Helper {
     usage: multishell ui show project-settings [PROJECT_ID]
         Open what the menu item or click opens: the Agents board, its Show
         all terminals, the Settings window, or a project's settings.
+    usage: multishell ui show pull-request|ci [WORKTREE_ID]
+        Open the Files panel on the worktree's pull request or CI page, the
+        one in view's by default, as a click on its row's glyph does.
+        Refused where the row draws no such glyph.
     usage: multishell ui hide board|all-terminals|settings|project-settings
     usage: multishell ui filter [TEXT]
         Filter the sidebar as typing in its field does; no TEXT clears it.
@@ -20,6 +24,13 @@ extension Helper {
     usage: multishell ui menu TITLE TITLE...
         Choose the item, as a click on it: `ui menu "View > Enable Debug
         Tools"`, or each title a word. Refused where it is greyed out.
+    usage: multishell ui switcher [TEXT] [--scope SCOPE] [--next | --previous]
+                                [--choose]
+        Open the quick switcher where it is shut, then, in this order, turn
+        it to SCOPE (all, agents, worktrees, tabs, files or commands), type
+        TEXT into its field, press an arrow, and press Return on the row
+        selected. Prints its sections and rows as JSON, the selected one
+        marked, or nothing once a row is chosen. `ui dismiss` closes it.
 
     """
 }

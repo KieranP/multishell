@@ -23,7 +23,7 @@ struct FileTabView: View {
             }
           }
 
-      case .some(let content) where FileTabNoticeText.message(for: content) != nil:
+      case .some(let content) where content.isNotice:
         FileTabNotice(model: model, tab: tab, content: content, theme: theme)
 
       case .some, nil:

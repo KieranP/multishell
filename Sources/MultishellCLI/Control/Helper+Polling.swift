@@ -2,8 +2,8 @@ import Foundation
 import MultishellProcess
 
 extension Helper {
-  /// Looks until `look` finds something or `timeout` runs out. `look` is
-  /// handed the time left, so a look waiting on an answer cannot outlast it.
+  /// Looks until `look` finds something or `timeout` runs out. `look` is handed
+  /// the time left, which bounds it only where it passes that on to its ask.
   static func poll<Found>(
     every interval: Duration,
     for timeout: Duration,

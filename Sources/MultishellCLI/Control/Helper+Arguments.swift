@@ -9,7 +9,9 @@ extension Helper {
   ) -> (words: [String], optionWords: ArraySlice<String>) {
     let end = arguments.firstIndex(of: "--")
     let head = arguments[..<(end ?? arguments.endIndex)]
-    let firstOption = head.firstIndex { $0.hasPrefix("-") && $0 != "-" } ?? head.endIndex
+    // A negative number is a word, a share or a count, as no option is named for one.
+    let firstOption =
+      head.firstIndex { $0.hasPrefix("-") && $0 != "-" && Double($0) == nil } ?? head.endIndex
     let afterEnd = end.map { arguments[($0 + 1)...] } ?? []
     return (Array(head[..<firstOption]) + afterEnd, head[firstOption...])
   }
@@ -70,5 +72,30 @@ extension Helper {
   /// A rename's second word; none, or an empty one, hands the name back.
   static func givenName(in words: [String]) -> String? {
     words.count == 2 && !words[1].isEmpty ? words[1] : nil
+  }
+
+  /// A divider's shares, relative, as `tabs show` prints them: numbers above zero
+  /// whose sum a number can hold, the store's own rule.
+  static func shares(_ words: some Collection<String>, topic: String) throws -> [Double] {
+    let shares = try words.map { word in
+      guard let share = Double(word) else {
+        throw UsageError("a share is a number above zero, not \(word)", topic: topic)
+      }
+      return share
+    }
+    guard LayoutWeight.allUsable(shares) else {
+      throw UsageError("shares are numbers above zero, and not so large", topic: topic)
+    }
+    return shares
+  }
+
+  /// `1,0`: each split's child, from the root down, as `tabs show` nests them.
+  static func splitPath(_ text: String, topic: String) throws -> [Int] {
+    try text.split(separator: ",", omittingEmptySubsequences: false).map { step in
+      guard let index = Int(step), index >= 0 else {
+        throw UsageError("--at takes child indices such as 1,0, not \(text)", topic: topic)
+      }
+      return index
+    }
   }
 }

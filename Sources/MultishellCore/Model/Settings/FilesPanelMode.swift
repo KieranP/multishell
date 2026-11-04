@@ -1,6 +1,6 @@
 /// What the Files panel shows, one saved choice for every worktree; the raw
 /// values are what earlier builds wrote.
-public enum FilesPanelMode: String, Codable, Hashable, Sendable {
+public enum FilesPanelMode: String, CaseIterable, Codable, Hashable, Sendable {
   case changes = "modified"
   case ciRuns = "ci"
   case files = "all"

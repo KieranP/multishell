@@ -249,3 +249,10 @@ bottom.
 - **A file view reports its own focus**, a surface's report reaching the store
   only for a pane, so a click into one in another group moves Cmd+W and the
   menus there; the reconcile hands it the keyboard as it would a pane.
+
+## Reviewed and left as is
+
+- **The least a split gives a pane is `SplitMath.minimumPaneLength`, not
+  `UIMetrics`'s.** The views' measurements live in `UIMetrics`, but a request's
+  shares are checked against it in AppCore, which cannot reach the app's
+  `UIMetrics`; it sits beside the drag arithmetic that already takes it.

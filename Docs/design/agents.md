@@ -1020,6 +1020,57 @@ command line's requests on the same socket. Newest at the bottom.
 - **The settings windows open through SwiftUI's own openers**, which only a view
   can reach, so the root view hands them to the platform. AppKit cannot open a
   SwiftUI scene, and closing one goes by the window's identifier.
+- **`tabs open-file` opens a file by the Files panel click's rule**, so a file
+  that would not open as text is refused where the click beeps. In a worktree
+  out of view it opens without switching to it, as `tabs open` does.
+- **`tabs find` answers with its count**, unlike `panes find`, whose engine
+  counts later: the app answers only once the tab's rows are in hand, and a file
+  is searched as it is asked.
+- **A file tab's arrows and find need the tab on screen.** A hidden tab lets its
+  rows go, and its view is what steps, so a step would wait for a show and a
+  count would be of nothing; the refusal names `tabs select`. A step the view
+  last said its arrow cannot take is refused; one it can is queued and answered
+  at once, the view taking it on its next update. Rows not yet in hand, the
+  tab's read waited on or another read running, refuse a step or find as not
+  read, and the helper asks again for five seconds, each ask given the usual
+  thirty: an ask cut short may still act in the app, and asking again would act
+  twice. A tab under a worktree's operation is refused as that worktree not
+  ready, as `tabs select` would not bring it back.
+- **`files` acts on the panel on screen and names no worktree.** Its list is
+  read only while it shows, so another worktree's would be of nothing read.
+- **`ui switcher` opens the quick switcher without Cmd+P's key-window check**: a
+  request comes from no window. The check stays on the keys. Cost: over a window
+  that is not key, its field has no keyboard until a click.
+- **`ui show pull-request` and `ci` go through the glyph click's call**, and
+  are refused where the row draws no such glyph, as there is nothing to click.
+  They take no `ui hide`: the panel's own toggle shuts it.
+- **A request drawn in the main window asks that it is open, not on screen**:
+  the switcher and a panel page draw behind another window or in a minimized
+  one, shown once it is back. `tabs step`,
+  `tabs find` and `files` also refuse a covered or minimized window, which reads
+  no file tab or panel list (files.md), though `tabs find --close` shuts a bar
+  anyway; `window size` and `full-screen` refuse a minimized one. A tab drawn
+  as a notice, its file too large, binary, missing or unreadable, takes no step
+  or find, having no arrows or bar, and is refused as not read while a read of
+  it runs, which may bring rows. A file with no changes draws no arrows either.
+  A request's own words are checked before the window, so a bad one is named.
+- **`worktrees hide` refuses the project's own checkout, and
+  `projects expand-hidden` a project hiding none**: the menu has no Hide item
+  for the one, and the sidebar no Hidden row for the other.
+- **Moves and resizes go through the calls the drags make.** A share count that
+  does not match the split or the groups is refused, where the tree's own guard
+  would quietly keep the old shares, and so is a share leaving a pane narrower
+  than a drag would. That length is known only on screen, from the panes'
+  frames. Cost: shares for a tab out of view, or groups beside a file tab, are
+  taken unchecked.
+- **A panel's width is written where the views read it**, a debug build's own
+  user defaults (develop/state-on-disk.md), so a scratch run never moves the
+  installed app's edges. A width past what a drag reaches is refused: the
+  sidebar's reach shrinks with the window and an open Files panel, as its drag
+  does, while the panel's is fixed and a narrow window draws it narrower.
+- **Fetch and Refresh answer once done; Auto Rename once started.** A script
+  waits on the first two's reads; a rename runs an agent for seconds, and
+  `sidebar list` says while it runs and how it ended.
 - **Auto Rename runs an agent's own CLI once, not an API.** No key to store, and
   the user's own sign-in and plan pay. Cost: an agent's start-up on every run.
 - **It sets the display name only**, as Rename does. The branch is what a
@@ -1550,3 +1601,34 @@ command line's requests on the same socket. Newest at the bottom.
   it to any quoted state, round 13 restored the calls so a state no call sends
   fails it, and round 21 asked to drop it as rename churn. Kept round 13's, the
   behaviour suite not checking each state is spelled as the helper takes it.
+- **The helper's parse helpers sit beside the command they parse**, `tabMove`,
+  `switcherOrder` and `removalOrder` as `tabOrder` and `worktreeOrder` always
+  have, each private to its command's file.
+- **`projects fetch` and `refresh` run on after the helper hangs up**, as the
+  menu's Fetch and Refresh do: neither holds a stopper to stop, and a fetch left
+  to finish only brings the remote's refs up to date.
+- **`reachTerminalTab` throws the tab it reached, `refusalToReachFileTab`
+  returns only a refusal**: the terminal tab's callers use the tab, the file
+  tab's use none, and a throw needs no `?? .noTab` that cannot run.
+- **`ui show pull-request` and `ci` send `showServicePage`, not `showView`**:
+  `showView` names a project, the only other view taking an id, and a page is a
+  worktree's.
+- **`ui show pull-request` and `ci` test the row's glyphs as `ciRun` and
+  `shownPullRequest` being set**, the values the glyphs draw: the view needs each
+  value to draw it, so a shared Bool would sit beside an unwrap anyway.
+- **A hidden app's window counted as closed.** Unproven: AppKit may say a
+  window of an app hidden with Cmd+H is not visible, which would refuse
+  requests needing it open as `noWindow`; not run, as hiding needs the desktop.
+- **A step or find under another read of the tab is refused for the helper to
+  ask again**, not waited on in the app: the read log holds no waiter, and one
+  would need resuming on a close as well as a finish. Cost: up to fifty asks in
+  the five seconds, and a read landing later is reported as still reading.
+- **`FileTabContent.isNotice` and `FileTabNoticeText.message` each switch over
+  the content**, asked for both ways: one shared test built a localized string
+  per request, and a separate notice type is more than two short switches need.
+- **`tabs find --close` ends a find kept over a tab drawn as a notice**, though
+  `tabs show` lists no bar there: the find would come back with the rows, and a
+  refusal would leave no way to drop it.
+- **A negative number before the options is a word for every command**, not
+  only for shares: no option is spelled as a number, so `panes type P -1` types
+  it rather than refusing an option that cannot exist.

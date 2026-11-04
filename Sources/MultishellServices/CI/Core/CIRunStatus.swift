@@ -1,6 +1,6 @@
 /// Where a CI run, or one of its workflows or jobs, stands. Raw values are
 /// what `worktrees show` prints.
-public enum CIRunStatus: String, Hashable, Sendable {
+public enum CIRunStatus: String, Decodable, Hashable, Sendable {
   /// Stopped before it finished, or never run.
   case cancelled
   /// Something in it failed or errored, or the service rejected its config.

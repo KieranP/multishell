@@ -81,4 +81,37 @@ struct AppModelControlWorktreesTests {
     #expect(await harness.messageSource.ask(.renameWorktree(id: main, name: "Trunk")) == .done)
     #expect(harness.model.renamingWorktreeID == harness.feature.id)
   }
+
+  @Test func autoRenameWhereItsMenuItemIsGreyedOutIsRefused() async {
+    let harness = Harness()
+    let id = ControlID.worktree(harness.feature.id)
+
+    let reply = await harness.messageSource.ask(.autoRenameWorktree(id: id))
+
+    #expect(reply == .refused(.autoRenameUnavailable(id: id)))
+    #expect(harness.model.autoRenames.isEmpty)
+  }
+
+  @Test func hidingAWorktreeMovesItIntoItsProjectsHiddenSectionAndUnhidingBack() async {
+    let harness = Harness()
+    let id = ControlID.worktree(harness.feature.id)
+
+    let hidden = await harness.messageSource.ask(.setWorktreeHidden(id: id, hidden: true))
+    let isHiddenAfterHide = harness.model.isHidden(harness.feature)
+    let unhidden = await harness.messageSource.ask(.setWorktreeHidden(id: id, hidden: false))
+
+    #expect([hidden, unhidden] == [.done, .done])
+    #expect(isHiddenAfterHide)
+    #expect(!harness.model.isHidden(harness.feature))
+  }
+
+  @Test func theMainWorktreeCannotBeHidden() async {
+    let harness = Harness()
+    let id = ControlID.worktree(harness.main.id)
+
+    let reply = await harness.messageSource.ask(.setWorktreeHidden(id: id, hidden: true))
+
+    #expect(reply == .refused(.worktreeNotHideable(id: id)))
+    #expect(!harness.model.isHidden(harness.main))
+  }
 }

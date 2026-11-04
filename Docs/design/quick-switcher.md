@@ -270,6 +270,12 @@ Raised by reviews and settled; a review need not raise these again.
 - **Files Panel listed under a cover while the panel is on.** Choosing it turns
   the panel off, as View > Files Panel does there; leaving it out hid a command
   that acts.
+- **`ui switcher` waiting on file-tree builds with no bound.** Unproven: a
+  listing starts its change set and both end; a build that never settles under
+  steady status changes was not reproduced.
+- **`ui switcher --choose` on a command row checking the menu with the
+  switcher's field focused.** Unproven: no menu item found enables only with a
+  pane focused.
 
 ## Checked by hand
 

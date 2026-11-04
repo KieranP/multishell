@@ -10,6 +10,8 @@ struct TabListing: Encodable, Equatable {
     let name: String
     let isInView: Bool
     let activeTab: WorkspaceTab.ID?
+    /// Each group's part of the width, left to right, summing to 1.
+    let groupShares: [Double]
     let tabs: [Tab]
   }
 

@@ -19,6 +19,14 @@ public enum FileTabContent: Equatable, Sendable {
   /// Git could not say what the file is counted from, nor any rows kept.
   case unreadable
 
+  /// Drawn as a notice in place of rows, with no arrows or find bar.
+  public var isNotice: Bool {
+    switch self {
+    case .binary, .missing, .tooLarge, .unreadable: true
+    case .released, .releasedFollowingStatus, .text: false
+    }
+  }
+
   /// Rows let go while hidden, either way.
   var isReleased: Bool {
     switch self {

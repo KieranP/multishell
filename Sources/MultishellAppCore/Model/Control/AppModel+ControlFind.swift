@@ -3,7 +3,7 @@ import MultishellCore
 extension AppModel {
   /// The bar's own field, Return and arrows, and close, on that pane; the
   /// answer is the pane, whose `find` the engine fills in as it counts.
-  func replyToFindInPane(_ action: PaneFindAction, in id: TerminalSession.ID) -> ControlReply {
+  func replyToFindInPane(_ action: FindBarAction, in id: TerminalSession.ID) -> ControlReply {
     if let refusal = refusalToReachLivePane(id) { return .refused(refusal) }
     if let refusal = refusalToFind(action, in: id) { return .refused(refusal) }
     switch action {
@@ -16,10 +16,7 @@ extension AppModel {
   }
 
   /// Opening needs text; the rest need the bar open, and a step its text.
-  private func refusalToFind(
-    _ action: PaneFindAction,
-    in id: TerminalSession.ID,
-  ) -> ControlRefusal? {
+  func refusalToFind(_ action: FindBarAction, in id: FindTargetID) -> ControlRefusal? {
     if case .open(let text) = action {
       return text.isEmpty ? .noFindText(id: id) : nil
     }

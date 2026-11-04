@@ -17,10 +17,16 @@ extension Helper {
     case ("full-screen", 2) where ["on", "off"].contains(arguments.last):
       return try ask(.setFullScreen(on: arguments.last == "on"), environment: environment)
 
+    case ("sidebar-width", 2), ("panel-width", 2):
+      guard let width = points(arguments.last) else { break }
+      let panel: ResizablePanel = arguments.first == "sidebar-width" ? .sidebar : .filesPanel
+      return try ask(.setPanelWidth(panel, width: width), environment: environment)
+
     default: break
     }
     throw UsageError(
-      "window needs: size WIDTH HEIGHT, in points, or full-screen on|off",
+      "window needs: size WIDTH HEIGHT, sidebar-width WIDTH or panel-width WIDTH, in points, "
+        + "or full-screen on|off",
       topic: topic,
     )
   }

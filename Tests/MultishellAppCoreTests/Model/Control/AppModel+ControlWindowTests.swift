@@ -41,4 +41,15 @@ struct AppModelControlWindowTests {
     harness.platform.workspaceWindowSize = nil
     #expect(await harness.messageSource.ask(.setFullScreen(on: true)) == .refused(.noWindow))
   }
+
+  @Test func aMinimizedWindowIsRefusedAsOffScreenNotAsClosed() async {
+    let harness = Harness()
+    harness.platform.isWorkspaceWindowMinimized = true
+
+    let resized = await harness.messageSource.ask(.resizeWindow(width: 900, height: 600))
+    let fullScreen = await harness.messageSource.ask(.setFullScreen(on: true))
+
+    #expect(resized == .refused(.windowMinimized))
+    #expect(fullScreen == .refused(.windowMinimized))
+  }
 }

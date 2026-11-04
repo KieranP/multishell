@@ -51,7 +51,7 @@ struct AppModelPullRequestMergeTests {
   ) async throws -> Task<Void, Never> {
     let lists = host.calls.filter { $0 == "list" }.count
     host.holdList()
-    let poll = Task { await harness.model.refreshServices(ofProject: harness.project.id) }
+    let poll = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls.filter { $0 == "list" }.count > lists }
     return poll
   }

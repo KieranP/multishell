@@ -4,6 +4,10 @@ import MultishellCore
 /// The arithmetic behind a divider drag: the two panes trade weight, both
 /// staying at or above the minimum where there is room.
 public enum SplitMath {
+  /// The least a split gives one pane, read by the layout, by the drop that
+  /// would make a group, and by a request's shares.
+  public static let minimumPaneLength: Double = 80
+
   /// `translation` is the pointer's movement since the drag began and
   /// `available` the length shared. Unchanged where either is invalid.
   static func transferring(

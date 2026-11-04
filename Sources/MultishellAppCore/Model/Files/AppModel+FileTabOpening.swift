@@ -5,16 +5,24 @@ import MultishellGitKit
 /// A file tab opened from the Files panel or the quick switcher, by the
 /// clicked-link rule; see Docs/design/files.md.
 extension AppModel {
-  /// A tab where a clicked link would open the file as text, `true`, else a
-  /// beep; a file gone from disk is judged on git's copy.
-  @discardableResult
-  public func openFileAsTab(_ clicked: String, in id: Worktree.ID) async -> Bool {
-    guard let worktree = workspace.worktree(id), FileTab.isContained(clicked) else { return false }
+  /// A click on a file's row: its tab, else a beep.
+  public func openFileAsTab(_ clicked: String, in id: Worktree.ID) async {
+    _ = await openFileAsTab(clicked, in: id, as: .click)
+  }
+
+  /// The tab where a clicked link would open the file as text, else `nil`; a file
+  /// gone from disk is judged on git's copy. The caller drops the listing it built.
+  func openFileAsTab(
+    _ clicked: String,
+    in id: Worktree.ID,
+    as asker: Asker,
+  ) async -> FileTab? {
+    guard let worktree = workspace.worktree(id), FileTab.isContained(clicked) else { return nil }
     guard fileTree(of: id).isOpenable(clicked),
       let path = await runOnDispatch({ WorktreeLinkTarget.path(of: clicked, in: worktree.path) })
     else {
-      platform.beep()
-      return false
+      if asker == .click { platform.beep() }
+      return nil
     }
     let url = worktree.path.appending(path: path)
     let platform = self.platform
@@ -30,11 +38,11 @@ extension AppModel {
       opens = platform.opensAsText(named: url.lastPathComponent, startingWith: start)
     }
     guard opens, workspace.worktree(id) != nil else {
-      platform.beep()
-      return false
+      if asker == .click { platform.beep() }
+      return nil
     }
-    store.openFileTab(path: path, in: id)
-    reconcileSessions(takingFocus: true)
-    return true
+    let tab = store.openFileTab(path: path, in: id)
+    reconcileSessions(takingFocus: asker == .click || worktreeIDInView == id)
+    return tab
   }
 }
