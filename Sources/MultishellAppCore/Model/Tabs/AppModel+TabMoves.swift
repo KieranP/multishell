@@ -71,9 +71,10 @@ extension AppModel {
     _ id: WorkspaceTab.ID,
     _ placement: WorkspaceTab.Placement,
     toNewGroupOf group: TabGroup.ID,
+    takingFocus: Bool = true,
   ) -> Bool {
     guard store.moveTab(id, placement, toNewGroupOf: group) != nil else { return false }
-    reconcileSessions(takingFocus: true)
+    reconcileSessions(takingFocus: takingFocus)
     return true
   }
 

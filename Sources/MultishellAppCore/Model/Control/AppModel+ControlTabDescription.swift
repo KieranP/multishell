@@ -20,6 +20,7 @@ extension AppModel {
           focusedPane: nil,
           state: nil,
           layout: nil,
+          find: fileFindBar(of: file.id),
         )
       )
 
@@ -36,9 +37,21 @@ extension AppModel {
           focusedPane: terminal.focusedSessionID,
           state: state(of: terminal),
           layout: layout(of: terminal.root),
+          find: nil,
         )
       )
     }
+  }
+
+  /// A notice draws no bar, though the find stays for rows read again.
+  private func fileFindBar(of id: FileTab.ID) -> FindBarDescription? {
+    guard findBarTargetIDs.contains(id), !holdsNotice(id) else { return nil }
+    let count = holdsContent(id) ? findMatchCount(of: id) : nil
+    return FindBarDescription(
+      text: findText(of: id),
+      total: count?.total,
+      selected: count?.position.map { $0 - 1 },
+    )
   }
 
   private func layout(of node: PaneNode) -> TabDescription.Layout {

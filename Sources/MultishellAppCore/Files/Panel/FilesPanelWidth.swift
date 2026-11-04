@@ -3,8 +3,8 @@ import MultishellCore
 /// How wide the Files panel may be dragged in a detail area of a given width,
 /// from its left edge.
 public enum FilesPanelWidth {
-  private static let minimum = 200.0
-  private static let maximum = 560.0
+  static let minimum = 200.0
+  static let maximum = 560.0
   /// Where a machine that has never moved the edge starts, and where a
   /// double-click on it puts it back.
   public static let initial = 280.0

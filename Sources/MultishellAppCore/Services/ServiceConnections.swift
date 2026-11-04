@@ -10,6 +10,8 @@ struct ServiceConnections: Sendable {
 
   var pullRequestHosts: [ServiceIntegration: any PullRequestHost]
   var ciProviders: [ServiceIntegration: any CIProvider]
+  /// Answering from `debug services stand-in`, not the tools.
+  private(set) var isStandIn = false
 
   init(
     pullRequestHosts: [ServiceIntegration: any PullRequestHost],
@@ -46,5 +48,14 @@ struct ServiceConnections: Sendable {
         )
       }
     }
+  }
+
+  /// The stand-in for both integrations, whichever tools are installed.
+  init(standIn: ServiceStandIn) {
+    self.init(
+      pullRequestHosts: [.gitHub: standIn.pullRequestHost],
+      ciProviders: [.circleCI: standIn.ciProvider],
+    )
+    isStandIn = true
   }
 }

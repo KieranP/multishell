@@ -5,7 +5,8 @@ import SwiftUI
 struct DetailView: View {
   let model: AppModel
 
-  @AppStorage(FilesPanelStorage.widthKey) private var filesPanelWidth = FilesPanelWidth.initial
+  @AppStorage(PanelWidthStorage.filesPanelKey, store: PanelWidthStorage.defaults)
+  private var filesPanelWidth = FilesPanelWidth.initial
 
   var body: some View {
     let theme = model.currentTheme

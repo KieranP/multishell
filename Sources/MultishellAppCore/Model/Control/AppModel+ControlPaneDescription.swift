@@ -18,7 +18,7 @@ extension AppModel {
         state: state(ofPane: id),
         workers: workers(ofPane: id).map(PaneDescription.WorkerRecord.init),
         find: findBarTargetIDs.contains(id)
-          ? PaneDescription.Find(
+          ? FindBarDescription(
             text: findText(of: id),
             total: searchCounts[id]?.total,
             selected: searchCounts[id]?.selected,

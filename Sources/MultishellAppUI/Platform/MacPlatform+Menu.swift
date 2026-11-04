@@ -70,6 +70,14 @@ extension MacPlatform {
     return .performed
   }
 
+  /// On a timer, as `chooseMenuItem`, then as the command line's own.
+  func performMenuItemOnItsTurn(_ path: [String]) async -> PlatformMenuOutcome {
+    await withCheckedContinuation { turn in
+      Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { _ in turn.resume() }
+    }
+    return performMenuItem(path)
+  }
+
   /// On a timer, which fires only after the run loop has waited and SwiftUI
   /// has taken the switcher's field down; a queued block ran before that.
   func chooseMenuItem(_ path: [String]) {

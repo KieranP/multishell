@@ -1,3 +1,5 @@
+import MultishellProcess
+
 extension Helper {
   static let debugUsage = """
     usage: multishell debug tools on|off
@@ -34,6 +36,19 @@ extension Helper {
         Print the running app's own log lines from the last SPAN, 5m by
         default, or follow them as they come: one JSON object a line, or
         with --plain the log tool's compact text.
+
+    usage: multishell debug services stand-in FILE
+    usage: multishell debug services stand-in -
+        Answer every pull request and CI read from FILE's JSON, or standard
+        input's, in place of gh and circleci, until `debug services clear` or
+        the app quits, and return once the projects in view are read through
+        it. The JSON holds "pullRequests" and "ciRuns", keyed as `worktrees
+        show` prints them; Docs/design/services.md gives the whole shape. A
+        worktree matches as with the tools: its branch pushed to a remote
+        whose URL names the pull request's headRepository. A request holds
+        \(UnixSocketServer.maximumLineLength / 1024) KB, the JSON's quotes and newlines escaped.
+    usage: multishell debug services clear
+        Hand back to gh and circleci, and read the projects in view again.
 
     Debug info, samples, memory, git and the marks need the debug tools on,
     which sample once a second.

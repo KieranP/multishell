@@ -15,6 +15,13 @@ extension Paths {
     #endif
   }
 
+  /// The user defaults a debug build keeps the panels' widths in, beside the
+  /// shared domain a release's go to; `nil` for a release.
+  public static var userDefaultsSuiteName: String? {
+    guard !variant.isEmpty, let domain = Bundle.main.bundleIdentifier else { return nil }
+    return domain + variant
+  }
+
   static let bundledVariantName: String? = {
     guard let executable = Bundle.main.executableURL,
       let name = variantName(ofBundleHolding: executable)

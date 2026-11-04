@@ -24,15 +24,6 @@ struct PaneDescription: Encodable, Equatable {
     }
   }
 
-  /// Its find bar, as the engine last counted its matches.
-  struct Find: Encodable, Equatable {
-    let text: String
-    /// `nil` until the engine has counted.
-    let total: Int?
-    /// Which match is selected, from 0; `nil` before a step.
-    let selected: Int?
-  }
-
   let id: TerminalSession.ID
   let tab: TerminalTab.ID
   /// Its worktree's `ControlID`.
@@ -46,5 +37,5 @@ struct PaneDescription: Encodable, Equatable {
   /// What its agent has out, oldest first, as its chip lists them.
   let workers: [WorkerRecord]
   /// `nil` while its find bar is down.
-  let find: Find?
+  let find: FindBarDescription?
 }

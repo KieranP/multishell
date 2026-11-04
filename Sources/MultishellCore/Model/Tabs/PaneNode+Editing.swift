@@ -55,6 +55,15 @@ extension PaneNode {
     }
   }
 
+  /// The split at `path`, each step a child's index from this node down, as
+  /// `settingWeights(_:at:)` walks it; `nil` where a pane or nothing is.
+  public func split(at path: [Int]) -> (axis: SplitAxis, children: [PaneNode])? {
+    guard case .split(let axis, let children, _) = self else { return nil }
+    guard let head = path.first else { return (axis, children) }
+    guard children.indices.contains(head) else { return nil }
+    return children[head].split(at: Array(path.dropFirst()))
+  }
+
   /// Replaces the weights of the split at `path` (child indices from the
   /// root). Anything else is returned unchanged.
   func settingWeights(_ newWeights: [Double], at path: [Int]) -> PaneNode {

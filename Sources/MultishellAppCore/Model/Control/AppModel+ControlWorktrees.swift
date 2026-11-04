@@ -101,6 +101,23 @@ extension AppModel {
     return .done
   }
 
+  /// The menu's Auto Rename, answered once it starts; `sidebar list` says
+  /// while it runs and why it left the name, as the row does.
+  func replyToAutoRenameWorktree(_ id: String) -> ControlReply {
+    guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
+    guard canAutoRename(worktree) else { return .refused(.autoRenameUnavailable(id: id)) }
+    autoRename(worktree)
+    return .done
+  }
+
+  /// Hide Worktree or Show Worktree; the main checkout's menu has neither.
+  func replyToSetWorktreeHidden(_ id: String, hidden: Bool) -> ControlReply {
+    guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
+    guard worktree.isHideable else { return .refused(.worktreeNotHideable(id: id)) }
+    setHidden(hidden, worktree: worktree)
+    return .done
+  }
+
   /// A click on the row.
   func replyToSelectWorktree(_ id: String) -> ControlReply {
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }

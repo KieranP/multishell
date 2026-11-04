@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// What the model needs from the desktop and nothing more, so it compiles
 /// and is tested without a window, a pasteboard or a workspace API.
@@ -15,6 +16,8 @@ public protocol Platform: AnyObject, Sendable {
   /// Whether any of the workspace window is on screen, frontmost or not: file
   /// tabs and the Files panel stay current while it is; see files.md.
   var isWorkspaceWindowVisible: Bool { get }
+  /// In the Dock, which `isWorkspaceWindowVisible` alone cannot tell from covered.
+  var isWorkspaceWindowMinimized: Bool { get }
   /// Called when the workspace window comes back on screen, for the reads
   /// held back while it was covered.
   var onWorkspaceWindowDidBecomeVisible: (@MainActor () -> Void)? { get set }
@@ -34,6 +37,8 @@ public protocol Platform: AnyObject, Sendable {
   /// The app's own of those, without what macOS adds, for the quick switcher.
   var commandMenuItems: [PlatformMenuItem] { get }
   var isWorkspaceWindowFullScreen: Bool { get }
+  /// The main window's width in points, `nil` where it is closed.
+  var workspaceWindowWidth: Double? { get }
 
   func closeKeyWindow()
 
@@ -90,9 +95,14 @@ public protocol Platform: AnyObject, Sendable {
 
   func show(_ window: AuxiliaryWindow)
   func close(_ window: AuxiliaryWindow)
-  /// `false` where the main window is closed.
+  /// `false` where the main window is closed or minimized.
   func resizeWorkspaceWindow(width: Double, height: Double) -> Bool
-  /// `false` where the main window is closed; the change animates in after.
+  /// The panel's width as last dragged or set, open or not.
+  func width(of panel: ResizablePanel) -> Double
+  /// The width a drag of the panel's edge would leave; `false` where the main
+  /// window is closed.
+  func setWidth(of panel: ResizablePanel, to width: Double) -> Bool
+  /// `false` where the main window is closed or minimized; the change animates in after.
   func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool
   /// The main window as drawn, its panes included, as a PNG; `nil` where it
   /// is closed or has not drawn.
@@ -101,6 +111,9 @@ public protocol Platform: AnyObject, Sendable {
   func signpost(_ name: String)
   /// The item at `path`, titles from the bar down, chosen as a click would.
   func performMenuItem(_ path: [String]) -> PlatformMenuOutcome
+  /// As `performMenuItem`, on the menu's own turn once a closing switcher's field
+  /// has let the keyboard go, which a request is answered after.
+  func performMenuItemOnItsTurn(_ path: [String]) async -> PlatformMenuOutcome
   /// The user's own choice of the item, once the window has redrawn and the
   /// keyboard is back where the item acts; a beep where it cannot be chosen.
   func chooseMenuItem(_ path: [String])

@@ -1420,7 +1420,7 @@ struct AppModelServiceReadsTests {
     defer { host.releaseHeldReads() }
     host.holdList()
     let id = harness.project.id
-    let read = Task { await harness.model.refreshServices(ofProject: id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
 
     harness.model.removeProject(harness.project)
@@ -1463,7 +1463,7 @@ struct AppModelServiceReadsTests {
     defer { host.releaseHeldReads() }
     host.holdList()
     let id = harness.project.id
-    let read = Task { await harness.model.refreshServices(ofProject: id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
@@ -1481,7 +1481,7 @@ struct AppModelServiceReadsTests {
     defer { host.releaseHeldReads() }
     host.holdList()
     let id = harness.project.id
-    let read = Task { await harness.model.refreshServices(ofProject: id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
 
     await harness.model.refreshServices(ofProject: id, readsPullRequests: false)
@@ -1500,7 +1500,7 @@ struct AppModelServiceReadsTests {
     defer { host.releaseHeldReads() }
     host.holdList()
     let id = harness.project.id
-    let read = Task { await harness.model.refreshServices(ofProject: id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
 
     harness.model.remoteState.connections = .empty
@@ -1518,7 +1518,7 @@ struct AppModelServiceReadsTests {
     defer { provider.releaseHeldReads() }
     provider.holdRecent()
     let id = harness.project.id
-    let read = Task { await harness.model.refreshServices(ofProject: id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { provider.calls.contains("recent") }
 
     harness.model.remoteState.connections = .empty
@@ -1591,7 +1591,7 @@ struct AppModelServiceReadsTests {
     await harness.model.refreshServices(ofProject: harness.project.id)
     host.holdList()
     host.answer(.failure(.failed("offline")))
-    let read = Task { await harness.model.refreshServices(ofProject: harness.project.id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls.count == 2 }
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
@@ -1617,7 +1617,7 @@ struct AppModelServiceReadsTests {
     host.answer(.success([.sample(number: 9, headBranch: "feat")]))
     await harness.model.refreshBranchScan(of: harness.project)
     provider.holdRecent()
-    let read = Task { await harness.model.refreshServices(ofProject: harness.project.id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { provider.calls.contains("recent") }
 
     harness.model.setIntegration(.circleCI, isEnabled: false, for: harness.project)
@@ -1636,7 +1636,7 @@ struct AppModelServiceReadsTests {
     defer { provider.releaseHeldReads() }
     provider.holdRecent()
     let id = harness.project.id
-    let read = Task { await harness.model.refreshServices(ofProject: id) }
+    let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { provider.calls.contains("recent") }
 
     harness.platform.isActive = false
@@ -1927,7 +1927,7 @@ struct AppModelServiceReadsTests {
     let (host, _) = harness.connectServices()
     defer { host.releaseHeldReads() }
     host.holdList()
-    let first = Task { await harness.model.refreshServices(ofProject: harness.project.id) }
+    let first = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls == ["list"] }
 
     await harness.model.refreshServices(ofProject: harness.project.id)
@@ -1944,7 +1944,7 @@ struct AppModelServiceReadsTests {
     let (host, _) = harness.connectServices()
     defer { host.releaseHeldReads() }
     host.holdList()
-    let first = Task { await harness.model.refreshServices(ofProject: harness.project.id) }
+    let first = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls == ["list"] }
     await harness.model.refreshServices(ofProject: harness.project.id)
 

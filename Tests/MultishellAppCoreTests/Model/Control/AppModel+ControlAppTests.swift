@@ -26,6 +26,7 @@ struct AppModelControlAppTests {
         width: 1_200,
         height: 800,
         isFullScreen: false,
+        isMinimized: true,
         sheet: nil,
       )
     ]
@@ -35,6 +36,7 @@ struct AppModelControlAppTests {
     let windows = try #require(reply.outputFields["windows"] as? [[String: Any]])
     #expect(windows.compactMap { $0["identifier"] as? String } == ["main"])
     #expect(windows.first?["width"] as? Double == 1_200)
+    #expect(windows.first?["isMinimized"] as? Bool == true)
   }
 
   @Test func aQuitSkipsTheConfirmationButIsRefusedOverAWorkingAgentUnlessForced() async throws {

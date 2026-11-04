@@ -7,6 +7,8 @@ public struct PlatformWindow: Encodable, Equatable, Sendable {
   let width: Double
   let height: Double
   let isFullScreen: Bool
+  /// In the Dock: open, as every request counts it, but drawn nowhere.
+  let isMinimized: Bool
   /// The title of a sheet over it, `nil` for none.
   let sheet: String?
 
@@ -17,6 +19,7 @@ public struct PlatformWindow: Encodable, Equatable, Sendable {
     width: Double,
     height: Double,
     isFullScreen: Bool,
+    isMinimized: Bool,
     sheet: String?,
   ) {
     self.identifier = identifier
@@ -25,6 +28,7 @@ public struct PlatformWindow: Encodable, Equatable, Sendable {
     self.width = width
     self.height = height
     self.isFullScreen = isFullScreen
+    self.isMinimized = isMinimized
     self.sheet = sheet
   }
 }
