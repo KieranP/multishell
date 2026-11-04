@@ -19,10 +19,8 @@ struct GhosttyAppLayerTests {
         (TerminalColorKey.searchForeground, TerminalColorKey.searchBackground),
         (.searchSelectedForeground, .searchSelectedBackground),
       ] {
-        let ratio = try contrast(
-          #require(theme.terminalRGB(text)),
-          #require(theme.terminalRGB(background)),
-        )
+        let ratio = try #require(theme.terminalRGB(text))
+          .contrast(with: #require(theme.terminalRGB(background)))
         #expect(ratio >= 3, "\(theme.name) \(text): \(ratio)")
       }
       let diagnostics = try libghosttyDiagnostics(rendered)
@@ -64,18 +62,5 @@ struct GhosttyAppLayerTests {
     #expect(!rendered.contains("selection-foreground"))
     let diagnostics = try libghosttyDiagnostics(rendered)
     #expect(diagnostics.isEmpty, "\(diagnostics)")
-  }
-
-  private func contrast(_ first: RGB, _ second: RGB) -> Double {
-    func luminance(_ colour: RGB) -> Double {
-      func channel(_ value: UInt8) -> Double {
-        let linear = Double(value) / 255
-        return linear <= 0.03928 ? linear / 12.92 : pow((linear + 0.055) / 1.055, 2.4)
-      }
-      return 0.2126 * channel(colour.red) + 0.7152 * channel(colour.green)
-        + 0.0722 * channel(colour.blue)
-    }
-    let luminances = [luminance(first), luminance(second)]
-    return (luminances.max()! + 0.05) / (luminances.min()! + 0.05)
   }
 }

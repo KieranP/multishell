@@ -249,9 +249,35 @@ bottom.
 - **A file view reports its own focus**, a surface's report reaching the store
   only for a pane, so a click into one in another group moves Cmd+W and the
   menus there; the reconcile hands it the keyboard as it would a pane.
+- **A reported title is drawn without an agent's leading status glyph**: Claude
+  Code's `✳` and its working `◐ ◑ ◒ ◓` (2.1.318, read off a live tab), Gemini
+  CLI's `✋ ⏲ ◇ ✦` (read in 0.66's bundle) and braille spinner frames, each only
+  when a space follows. The mark and its state dot already say it, and at the
+  strip's shared width it took two of about twelve characters. Trailing blanks
+  go too, Gemini padding its title to 80. The strip, the sidebar, the board, the
+  switcher, a banner and Debug Info draw it so; the command line reports the
+  title raw. Cost: a glyph an agent adds later shows until it is listed.
+- **A shell titled with a directory inside its worktree is drawn relative to
+  it**, `src/routes`, and as a plain shell at the root: the row already sits
+  under that worktree, and `…/demo/acme-worktrees/feat-auth` said nothing new.
+  Read from the title alone, in the three forms shells write (whole, from `~`,
+  `…/` and the last parts), since the directory reports stop at the surface.
+  Cost: a `…/` title is read against the worktree's own last parts, so another
+  folder sharing them, or one inside the worktree named as it is, is drawn from
+  the wrong root. The title kept only its last parts; nothing says which.
 
 ## Reviewed and left as is
 
+- **A tab's name field starts from its shown title** (round 1, 2026-11-04), and
+  a field abandoned by a click elsewhere stores what it holds, as it stored the
+  raw title before. The field starts from what the tab says.
+- **A tab face looks its worktree up for every shown title** (round 2,
+  2026-11-05): one search over a few dozen worktrees per tab drawn, and the face
+  holds no worktree to pass in. The pane rows, board and switcher pass it.
+- **A directory title is matched by its exact spelling** (round 3, 2026-11-05),
+  so a `cd` typed in another case, or through a symlink, keeps its full path.
+  Folding case would match wrong folders on a case-sensitive volume, and
+  resolving links means reading the disk for every title drawn.
 - **The least a split gives a pane is `SplitMath.minimumPaneLength`, not
   `UIMetrics`'s.** The views' measurements live in `UIMetrics`, but a request's
   shares are checked against it in AppCore, which cannot reach the app's

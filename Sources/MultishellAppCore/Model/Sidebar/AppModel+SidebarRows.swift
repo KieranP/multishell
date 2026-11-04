@@ -33,10 +33,11 @@ extension AppModel {
           let agentID = agentIDAtThePrompt(of: session)
           return SidebarPane(
             id: id,
-            title: title(ofPane: session, in: tab),
+            title: shownTitle(ofPane: session, in: tab, of: worktree),
             position: .of(paneAt: offset, in: tab),
             isFocused: id == focused,
             state: state(ofPane: id),
+            since: sessionStates.since(.session(id)),
             workers: workers(ofPane: id),
             agentID: agentID,
             agentName: agentID.map(agentDisplayName),

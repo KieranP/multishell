@@ -116,10 +116,11 @@ extension AppModel {
     _ session: TerminalSession,
     agentID: String?,
     in tab: TerminalTab,
+    of worktree: Worktree,
     at offset: Int,
     place: String,
   ) -> QuickSwitcherItem {
-    let paneTitle = title(ofPane: session, in: tab)
+    let paneTitle = shownTitle(ofPane: session, in: tab, of: worktree)
     return QuickSwitcherItem(
       target: .pane(session.id),
       kind: agentID.map { .agent(id: $0) } ?? .shell,
@@ -157,6 +158,7 @@ extension AppModel {
               session,
               agentID: agentID,
               in: tab,
+              of: worktree,
               at: offset,
               place: place,
             )

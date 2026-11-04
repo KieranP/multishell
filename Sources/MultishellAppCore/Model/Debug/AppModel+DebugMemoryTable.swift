@@ -14,7 +14,7 @@ extension AppModel {
       let terminalReadings = liveSessions.compactMap { terminalMemoryBySession[$0] }
       return DebugTabMemory(
         id: tab.id,
-        title: title(of: tab),
+        title: shownTitle(of: tab),
         location: debugLocation(of: worktree),
         terminalMemory: terminalReadings.isEmpty ? nil : terminalReadings.reduce(0, +),
         processes: liveSessions.flatMap { processesBySession[$0] ?? [] }.heaviestFirst(),

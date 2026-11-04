@@ -1041,19 +1041,19 @@ command line's requests on the same socket. Newest at the bottom.
 - **`ui switcher` opens the quick switcher without Cmd+P's key-window check**: a
   request comes from no window. The check stays on the keys. Cost: over a window
   that is not key, its field has no keyboard until a click.
-- **`ui show pull-request` and `ci` go through the glyph click's call**, and
-  are refused where the row draws no such glyph, as there is nothing to click.
-  They take no `ui hide`: the panel's own toggle shuts it.
+- **`ui show pull-request` and `ci` go through the glyph click's call**, and are
+  refused where the row draws no such glyph, as there is nothing to click. They
+  take no `ui hide`: the panel's own toggle shuts it.
 - **A request drawn in the main window asks that it is open, not on screen**:
   the switcher and a panel page draw behind another window or in a minimized
-  one, shown once it is back. `tabs step`,
-  `tabs find` and `files` also refuse a covered or minimized window, which reads
-  no file tab or panel list (files.md), though `tabs find --close` shuts a bar
-  anyway; `window size` and `full-screen` refuse a minimized one. A tab drawn
-  as a notice, its file too large, binary, missing or unreadable, takes no step
-  or find, having no arrows or bar, and is refused as not read while a read of
-  it runs, which may bring rows. A file with no changes draws no arrows either.
-  A request's own words are checked before the window, so a bad one is named.
+  one, shown once it is back. `tabs step`, `tabs find` and `files` also refuse a
+  covered or minimized window, which reads no file tab or panel list (files.md),
+  though `tabs find --close` shuts a bar anyway; `window size` and `full-screen`
+  refuse a minimized one. A tab drawn as a notice, its file too large, binary,
+  missing or unreadable, takes no step or find, having no arrows or bar, and is
+  refused as not read while a read of it runs, which may bring rows. A file with
+  no changes draws no arrows either. A request's own words are checked before
+  the window, so a bad one is named.
 - **`worktrees hide` refuses the project's own checkout, and
   `projects expand-hidden` a project hiding none**: the menu has no Hide item
   for the one, and the sidebar no Hidden row for the other.
@@ -1432,9 +1432,19 @@ command line's requests on the same socket. Newest at the bottom.
   prompt as its value, models and efforts as named in the 1.4.8 binary. Cost:
   plan mode makes no edit but no flag takes a tool away, and the list is not
   checked against `agy models`, which reads the account.
+- **A pane row says its state on its right edge, with how long**, as a board
+  card's rail does, and its mark carries no corner dot. The corner dot was small
+  beside the mark and said nothing of time. An idle pane leaves the edge empty,
+  most shells resting there. The tab strip and the cards keep the corner dot.
+  Cost: the selected worktree's pane rows keep a ten-second clock of their own,
+  board open or not; a row drawing no time sits each tick out, and a time under
+  a minute lags by up to the tick, as a card's does.
 
 ## Reviewed and left as is
 
+- **The pane rows' clock runs while every pane is idle** (round 1, 2026-11-04):
+  one body run every ten seconds, each idle row comparing equal and skipping its
+  redraw. Gating the task on a rail would restart it as panes change state.
 - **`--subagent-wakes` with nothing in the repository sending `false`** (round
   1, 2026-10-28): it is an option of the helper's `state` command, which a
   user's own script or plugin may send, and fields are only ever added. The rule
@@ -1564,10 +1574,11 @@ command line's requests on the same socket. Newest at the bottom.
 - **"child" and "worker" in the plugin** (round 12): a child is OpenCode's
   session relation, by `parentID`; a worker is the roster's entry the app
   counts. `isWorker(parentID)` asks whether the parent is on the roster.
-- **The tracker's `report(…, worker, …)` parameter shadowing `worker(id,
-  phase)`, and its `child` locals for a roster entry** (2026-11-04 review).
-  Renaming them changes the plugin text, so every installed plugin reads stale
-  and offers Update; they go with the next plugin change that is needed anyway.
+- **The tracker's `report(…, worker, …)` parameter shadowing
+  `worker(id, phase)`, and its `child` locals for a roster entry** (2026-11-04
+  review). Renaming them changes the plugin text, so every installed plugin
+  reads stale and offers Update; they go with the next plugin change that is
+  needed anyway.
 
 ### Asked both ways
 
@@ -1618,11 +1629,11 @@ command line's requests on the same socket. Newest at the bottom.
   `showView` names a project, the only other view taking an id, and a page is a
   worktree's.
 - **`ui show pull-request` and `ci` test the row's glyphs as `ciRun` and
-  `shownPullRequest` being set**, the values the glyphs draw: the view needs each
-  value to draw it, so a shared Bool would sit beside an unwrap anyway.
-- **A hidden app's window counted as closed.** Unproven: AppKit may say a
-  window of an app hidden with Cmd+H is not visible, which would refuse
-  requests needing it open as `noWindow`; not run, as hiding needs the desktop.
+  `shownPullRequest` being set**, the values the glyphs draw: the view needs
+  each value to draw it, so a shared Bool would sit beside an unwrap anyway.
+- **A hidden app's window counted as closed.** Unproven: AppKit may say a window
+  of an app hidden with Cmd+H is not visible, which would refuse requests
+  needing it open as `noWindow`; not run, as hiding needs the desktop.
 - **A step or find under another read of the tab is refused for the helper to
   ask again**, not waited on in the app: the read log holds no waiter, and one
   would need resuming on a close as well as a finish. Cost: up to fifty asks in
@@ -1633,6 +1644,6 @@ command line's requests on the same socket. Newest at the bottom.
 - **`tabs find --close` ends a find kept over a tab drawn as a notice**, though
   `tabs show` lists no bar there: the find would come back with the rows, and a
   refusal would leave no way to drop it.
-- **A negative number before the options is a word for every command**, not
-  only for shares: no option is spelled as a number, so `panes type P -1` types
-  it rather than refusing an option that cannot exist.
+- **A negative number before the options is a word for every command**, not only
+  for shares: no option is spelled as a number, so `panes type P -1` types it
+  rather than refusing an option that cannot exist.

@@ -8,9 +8,11 @@ import Testing
 @Suite @MainActor
 struct PaneRowTests {
   private let paneID = UUID()
+  private let start = Date(timeIntervalSince1970: 1_000_000)
 
   private func row(
     state: SessionState? = nil,
+    now: Date? = nil,
     select: @escaping () -> Void = {},
   ) -> PaneRow {
     PaneRow(
@@ -20,10 +22,12 @@ struct PaneRowTests {
         position: nil,
         isFocused: false,
         state: state,
+        since: start,
         workers: [],
         agentID: nil,
         agentName: nil,
       ),
+      now: now ?? start,
       theme: .multishellDark,
       metrics: UIMetrics(fontSize: 13, fontFamily: nil),
       select: select,
@@ -36,5 +40,13 @@ struct PaneRowTests {
 
   @Test func aPaneRowWhoseStateChangedIsADifferentRow() {
     #expect(row() != row(state: .running))
+  }
+
+  @Test func aWorkingPaneRowWhoseClockTickedIsADifferentRow() {
+    #expect(row(state: .running) != row(state: .running, now: start.addingTimeInterval(10)))
+  }
+
+  @Test func anIdlePaneRowIsTheSameRowAfterATick() {
+    #expect(row(state: .idle) == row(state: .idle, now: start.addingTimeInterval(10)))
   }
 }

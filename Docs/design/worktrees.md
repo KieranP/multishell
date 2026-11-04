@@ -695,10 +695,20 @@ left as is".
   says what the text found inside. Holding it expanded would mean a second
   collapse-while-filtering, and a match in a hidden row alone still lists the
   project. Rename expands the section, the field being on the row.
+- **A cramped name gives up the part before its last `/` first**, drawn fainter,
+  then `…/` and the leaf, then the leaf's middle. Middle truncation of the whole
+  name made `feat/dashboard` `feat…oard`, keeping the prefix half the branches
+  share and cutting what told them apart. The leaf keeps both its ends, so
+  `fix-login-v2` and `-v3` still differ. The tooltip names it whole. The badge
+  still keeps both counts, zeroes included.
 
 ## Reviewed and left as is
 
 Raised by reviews and settled; a review need not raise these again.
+
+- **A renamed row's branch tooltip sits inside its name's** (round 2,
+  2026-11-05): the outer one covers the custom name, the inner one the branch
+  line, so neither repeats the other's area.
 
 - **`select` taking a `turning` closure rather than a typed pane or tab.** A
   menu's New Shell Tab and New Agent Tab open a tab there, which is neither. The

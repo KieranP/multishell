@@ -19,7 +19,7 @@ struct TerminalTabFace: View {
     let textColor = isActive ? palette.text : palette.textSecondary
     let state = model.state(of: tab)
     let agentID = model.agentIDAtThePrompt(of: tab)
-    let title = model.title(of: tab)
+    let title = model.shownTitle(of: tab)
     return HStack(spacing: UIMetrics.tabItemGap) {
       leadingGlyph(state, agentID: agentID, textColor: textColor)
 

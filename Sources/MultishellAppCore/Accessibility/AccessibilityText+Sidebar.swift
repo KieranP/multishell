@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 import MultishellGitKit
 
@@ -76,9 +77,9 @@ extension AccessibilityText {
     autoRename?.failureMessage ?? ""
   }
 
-  /// A pane's row in the sidebar: its title, which pane of a split it is,
-  /// whether it is the one with the keyboard, its state and its workers.
-  public static func pane(_ pane: SidebarPane) -> String {
+  /// A pane's row in the sidebar: its title, which pane of a split it is, whether
+  /// it has the keyboard, its state, its workers and how long, as of `now`.
+  public static func pane(_ pane: SidebarPane, at now: Date) -> String {
     // One pane of a split is not a tab, so only a whole tab is read as one.
     var parts = [pane.position == nil ? t("spoken.tab", pane.title) : pane.title]
     parts.append(contentsOf: spokenAgent(pane.agentName, title: pane.title))
@@ -86,6 +87,7 @@ extension AccessibilityText {
     if pane.isFocused { parts.append(t("spoken.selected")) }
     if let state = pane.state { parts.append(state.displayName) }
     if !pane.workers.isEmpty { parts.append(pane.workers.countText) }
+    if let elapsed = pane.elapsed(at: now) { parts.append(t("spoken.elapsed", elapsed)) }
     return parts.joined(separator: ", ")
   }
 }

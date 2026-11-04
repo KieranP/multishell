@@ -5,10 +5,6 @@ import SwiftUI
 /// The Agents board: every open pane as a card. It decides nothing;
 /// `AgentBoard` and `AgentBoardLayout` do, and this draws the answer.
 struct AgentBoardView: View {
-  /// One clock for every card's corner. A card's seconds lag by up to ten;
-  /// past a minute the lag barely shows.
-  private static let tickInterval: TimeInterval = 10
-
   let model: AppModel
   let theme: Theme
 
@@ -29,7 +25,7 @@ struct AgentBoardView: View {
       }
     }
     .background(theme.agentsPanel.background)
-    .ticking($now, every: .seconds(Self.tickInterval))
+    .ticking($now, every: .elapsedTick)
   }
 
   private func scrollingColumns(_ board: AgentBoard, metrics: UIMetrics) -> some View {

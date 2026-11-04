@@ -93,10 +93,12 @@ struct AccessibilityTextAgentBoardTests {
           position: nil,
           isFocused: false,
           state: .running,
+          since: nil,
           workers: out,
           agentID: nil,
           agentName: "Claude Code",
-        )
+        ),
+        at: now,
       )
         == "claude, tab, Claude Code, agent, Working, 2 subagents"
     )

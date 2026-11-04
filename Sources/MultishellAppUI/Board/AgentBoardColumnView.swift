@@ -39,7 +39,12 @@ struct AgentBoardColumnView: View {
 
   private var header: some View {
     HStack(spacing: 7) {
-      StateDot(state: column.lane.headerState, theme: theme, palette: theme.agentsColumn)
+      StateDot(
+        state: column.lane.headerState,
+        theme: theme,
+        palette: theme.agentsColumn,
+        isAnimated: column.animatesHeader,
+      )
       Text(column.lane.title())
         .font(metrics.font(size: metrics.badge, weight: .semibold))
         .foregroundStyle(theme.agentsColumn.text)

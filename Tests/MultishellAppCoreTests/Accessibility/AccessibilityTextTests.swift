@@ -24,10 +24,12 @@ struct AccessibilityTextTests {
           position: nil,
           isFocused: false,
           state: .running,
+          since: nil,
           workers: out,
           agentID: nil,
           agentName: nil,
-        )
+        ),
+        at: Date(),
       )
         == "claude, tab, Working, 1 subagent, 2 background shells"
     )

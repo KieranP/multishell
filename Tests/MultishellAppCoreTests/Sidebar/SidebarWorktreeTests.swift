@@ -29,6 +29,7 @@ struct SidebarWorktreeTests {
       position: nil,
       isFocused: true,
       state: nil,
+      since: nil,
       workers: [],
       agentID: nil,
       agentName: nil,

@@ -195,3 +195,44 @@
   checks for every built-in. It overrides a source that fails it: Catppuccin's
   guide puts Text on Teal, about 1:1 in the dark flavours, so its own rule for
   text on an accent, Base, is used instead.
+- **Each state's dot has a shape of its own as well as a colour**: done fills,
+  idle is an empty ring, working is a fifth of the ring going round a faint
+  track, waiting is a ring round a centre dot, and failed is an upright rounded
+  square. The base themes' waiting is their selection blue, and the dots were
+  told apart by colour alone, the Agents counts included.
+- **Working's arc turns and waiting's ring pulses, by Core Animation** as the CI
+  running ring turns, so neither costs the app a frame, and every glyph of one
+  kind starts on a shared cycle so they move in step. Reduce Motion keeps both
+  still; an empty board column's header never moves.
+- **The working arc was picked over a half fill, a hollow ring, a sweep, a
+  breathing dot, a triangle and an orbiting dot** (mockups, 2026-11-05). The
+  half fill read as a level, and the breathing dot pulsed too like waiting.
+- **Failed's square was picked over a diamond, a cross, a warning triangle, a
+  stop octagon and a struck ring**, and idle's empty ring over a filled, small,
+  dashed, dotted or missing dot (mockups, 2026-11-05). A filled grey idle shared
+  done's shape, and the triangle is the row's mark for a failed stage.
+- **A selected sidebar row is a wash with no outline.** The pane in front rings
+  itself in the same blue, and two rings answered where the keyboard was twice;
+  the sidebar never holds the keyboard, so an outline following it would never
+  show. The base themes' wash went from 12% to 20% (18% light) to carry the
+  selection alone, and the quick switcher's with it, taking its selection from
+  the sidebar. A tab dragged over a row keeps its dashed outline.
+- **Every built-in theme's wash reads at 1.25:1 or more on its sidebar**, the
+  faintest the 18% light wash gives (View+RowSelectionTests). GitHub Light's
+  source wash, 20%, gave 1.12:1 with no outline beside it, so it is 40% there,
+  sidebar and switcher, departing from the published theme for that one key.
+
+## Reviewed and left as is
+
+- **A state dot works out its own line widths** (round 2, 2026-11-05) rather
+  than in `UIMetrics`: the dot is their only user, and the CI glyph's stroke is
+  another design's, not a shared measurement.
+- **A dragged collapsed project's preview may drop the turning arc** (round 3,
+  2026-11-05). Unproven: SwiftUI's drag snapshot of an `NSViewRepresentable`
+  could not be checked without driving the desktop.
+
+### Asked both ways
+
+- **`AnimatedGlyphView.motion` takes a new motion** (round 2 asked for it, round
+  3 to drop it, as no caller changes one today). Kept: a representable that
+  ignores a changed input is a trap for the next caller, at a few lines.

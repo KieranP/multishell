@@ -27,7 +27,7 @@ extension AppModel {
     let worktreeName = workspace.displayName(of: worktree)
     let subject: String
     if case .session(let id) = key, let tab = workspace.tab(owning: id) {
-      subject = title(of: tab)
+      subject = shownTitle(of: tab)
     } else {
       subject = worktreeName
     }

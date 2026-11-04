@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The entry above Projects that opens the board, carrying the waiting,
-/// working and done counts. Selected is the worktree rows' own outline.
+/// working and done counts. Selected is the worktree rows' own wash.
 struct SidebarAgentsRow: View, @MainActor Equatable {
   let counts: [AgentBoardLaneCount]
   let isSelected: Bool

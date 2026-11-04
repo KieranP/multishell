@@ -70,10 +70,7 @@ struct AgentBoardCardView: View {
         )
       }
       if let elapsed = card.elapsed(at: now) {
-        Text(elapsed)
-          .font(.system(size: metrics.badge, design: .monospaced))
-          .monospacedDigit()
-          .foregroundStyle(theme.agentsCard.textTertiary)
+        ElapsedLabel(text: elapsed, color: theme.agentsCard.textTertiary, metrics: metrics)
       }
     }
   }

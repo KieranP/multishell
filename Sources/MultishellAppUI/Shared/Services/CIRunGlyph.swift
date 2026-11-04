@@ -17,7 +17,7 @@ struct CIRunGlyph: View {
     let lineWidth = UIMetrics.statusGlyphLineWidth(side: size)
     Group {
       if status == .running, !reducesMotion {
-        SpinningRunRing(color: color, lineWidth: lineWidth)
+        AnimatedGlyph(motion: .turn, color: color, lineWidth: lineWidth)
       } else {
         CIRunShape(status: status)
           .stroke(

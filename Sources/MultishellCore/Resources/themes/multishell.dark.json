@@ -67,7 +67,7 @@
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
       "selection": "#5aa9f8",
-      "selection_background": "#5aa9f81f"
+      "selection_background": "#5aa9f833"
     },
     "quick_switcher": {
       "background": "#27272a",
@@ -75,7 +75,7 @@
       "text_secondary": "#e4e4e799",
       "text_tertiary": "#e4e4e761",
       "border": "#e4e4e717",
-      "selection_background": "#5aa9f81f",
+      "selection_background": "#5aa9f833",
       "field_background": "#121215",
       "field_text": "#e4e4e7eb",
       "field_text_secondary": "#e4e4e799",

@@ -28,7 +28,7 @@ extension AppModel {
         tabID: tab.id,
         worktreeID: worktree.id,
         occupant: occupant(of: session, in: worktree),
-        title: title(ofPane: session, in: tab),
+        title: shownTitle(ofPane: session, in: tab, of: worktree),
         projectName: projectNames[worktree.projectID] ?? "",
         worktreeName: workspace.displayName(of: worktree),
         state: sessionStates[key],

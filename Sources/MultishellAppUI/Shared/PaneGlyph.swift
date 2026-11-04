@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// What a pane is running, with its state badged on the mark's corner; drawn
-/// by the strip, the sidebar's pane rows and a card. See Docs/design/agents.md.
+/// by the strip, a card and a switcher row. See Docs/design/agents.md.
 struct PaneGlyph: View {
   let agentID: String?
   var unmarkedSymbol = PaneSymbol.terminal

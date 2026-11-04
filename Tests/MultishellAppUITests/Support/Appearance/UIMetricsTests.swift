@@ -77,6 +77,7 @@ struct UIMetricsTests {
       position: nil,
       isFocused: false,
       state: nil,
+      since: nil,
       workers: [],
       agentID: nil,
       agentName: nil,

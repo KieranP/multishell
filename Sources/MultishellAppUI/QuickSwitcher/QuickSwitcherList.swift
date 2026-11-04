@@ -6,8 +6,6 @@ import SwiftUI
 /// The sections under their titles, scrolled to keep the selected row in sight.
 struct QuickSwitcherList: View {
   private static let listTop = "listTop"
-  /// A wait's seconds lag by up to ten; past a minute the lag barely shows.
-  private static let tickInterval: Duration = .seconds(10)
 
   let results: QuickSwitcherResults
   let theme: Theme
@@ -54,7 +52,7 @@ struct QuickSwitcherList: View {
         .id(Self.listTop)
       }
       .scrollIndicators(.automatic)
-      .ticking($now, every: Self.tickInterval)
+      .ticking($now, every: .elapsedTick)
       .onAppear { pointer = QuickSwitcherPointer(location: NSEvent.mouseLocation) }
       .onChange(of: results) { previous, current in
         scroll(to: current.scrollTarget(after: previous), with: proxy)

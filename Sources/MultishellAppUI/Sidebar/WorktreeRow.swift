@@ -46,8 +46,6 @@ struct WorktreeRow: View, @MainActor Equatable {
 
   var body: some View {
     HStack(spacing: 7) {
-      // Always a dot, grey when nothing is running, and keeping its colour
-      // when selected, which is why selection is an outline.
       StateDot(state: state.shownState, theme: theme, palette: theme.projectsPanel)
         .frame(width: metrics.sidebarGlyphColumn)
         .help(t("sidebar.kind-and-state", kind, state.shownState.displayName))
@@ -129,11 +127,12 @@ struct WorktreeRow: View, @MainActor Equatable {
       }
       .help(worktree.name)
     } else {
-      Text(worktree.name)
-        .font(.system(size: metrics.monospaced, design: .monospaced))
-        .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
-        .lineLimit(1)
-        .truncationMode(.middle)
+      BranchNameText(
+        name: worktree.name,
+        font: .system(size: metrics.monospaced, design: .monospaced),
+        color: theme.rowNameColor(isSelected: isSelected),
+        prefixColor: theme.projectsPanel.textTertiary,
+      )
     }
   }
 
@@ -156,11 +155,12 @@ struct WorktreeRow: View, @MainActor Equatable {
   /// The branch under a custom name or a name field, in the smaller of the
   /// two sizes: what the row is called is above it.
   private var branchLine: some View {
-    Text(worktree.name)
-      .font(.system(size: metrics.badge, design: .monospaced))
-      .foregroundStyle(theme.projectsPanel.textTertiary)
-      .lineLimit(1)
-      .truncationMode(.middle)
+    BranchNameText(
+      name: worktree.name,
+      font: .system(size: metrics.badge, design: .monospaced),
+      color: theme.projectsPanel.textTertiary,
+      prefixColor: theme.projectsPanel.textTertiary,
+    )
   }
 
   /// Everything but the closures, which are rebuilt on every sidebar render and

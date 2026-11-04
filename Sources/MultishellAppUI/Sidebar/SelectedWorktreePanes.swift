@@ -9,15 +9,23 @@ struct SelectedWorktreePanes: View {
   let theme: Theme
   let metrics: UIMetrics
 
+  /// The clock the rows' times read, held as the board holds its own.
+  @State private var now = Date()
+
+  // A stack rather than a bare ForEach, whose modifiers would start one clock per row.
   var body: some View {
-    ForEach(panes) { pane in
-      PaneRow(
-        pane: pane,
-        theme: theme,
-        metrics: metrics,
-        select: { [model] in model.show(pane: pane.id) },
-      )
-      .equatable()
+    VStack(spacing: UIMetrics.sidebarRowSpacing) {
+      ForEach(panes) { pane in
+        PaneRow(
+          pane: pane,
+          now: now,
+          theme: theme,
+          metrics: metrics,
+          select: { [model] in model.show(pane: pane.id) },
+        )
+        .equatable()
+      }
     }
+    .ticking($now, every: .elapsedTick)
   }
 }
