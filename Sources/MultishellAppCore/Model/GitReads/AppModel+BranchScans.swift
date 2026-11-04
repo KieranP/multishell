@@ -170,8 +170,6 @@ extension AppModel {
     noteDefaultBranchMoved(from: previous?.branch, to: scan.branch, ofProject: id)
   }
 
-  /// What Auto Rename's menu item reads, the scan seeing a commit as its ref
-  /// moves where a worktree's listed `HEAD` waits for the next listing.
   /// A scan's upstreams, unless a newer scan began while its reflog reads ran.
   private func recordUpstreams(
     _ upstreams: [String: BranchUpstream],
@@ -180,17 +178,19 @@ extension AppModel {
     of project: Project,
     fromScan scanNumber: Int,
   ) async {
-    let pushed = await upstreamsPushedByTheirBranches(
+    let published = await upstreamsPublishedByTheirBranches(
       upstreams,
       fallbacks: fallbacks,
       branchTips: branchTips,
       of: project,
     )
-    let ownUpstreams = await upstreamsOfTheirOwn(pushed, of: project)
+    let ownUpstreams = await upstreamsOfTheirOwn(published, of: project)
     guard remoteState.branchScansBegun[project.id] == scanNumber else { return }
     recordBranchUpstreams(ownUpstreams, of: project.id)
   }
 
+  /// What Auto Rename's menu item reads, the scan seeing a commit as its ref
+  /// moves where a worktree's listed `HEAD` waits for the next listing.
   private func recordScannedBranchTips(_ tips: [String: String], of id: Project.ID) {
     var fresh = scannedBranchTips
     for worktree in workspace.worktrees(of: id) {

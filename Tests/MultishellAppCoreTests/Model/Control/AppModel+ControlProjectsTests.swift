@@ -105,16 +105,25 @@ struct AppModelControlProjectsTests {
     let added = harness.store.addProject(at: other)
     let original = harness.project.id
 
-    let reply = await harness.messageSource.ask(
+    let above = await harness.messageSource.ask(
       .moveProject(
         id: ControlID.project(added.id),
-        placement: .before,
+        placement: .above,
+        anchor: ControlID.project(original),
+      )
+    )
+    let orderAbove = harness.model.workspace.projects.map(\.id)
+    let below = await harness.messageSource.ask(
+      .moveProject(
+        id: ControlID.project(added.id),
+        placement: .below,
         anchor: ControlID.project(original),
       )
     )
 
-    #expect(reply == .done)
-    #expect(harness.model.workspace.projects.map(\.id) == [added.id, original])
+    #expect([above, below] == [.done, .done])
+    #expect(orderAbove == [added.id, original])
+    #expect(harness.model.workspace.projects.map(\.id) == [original, added.id])
   }
 
   @Test func aMoveNamingNoProjectIsRefused() async {
@@ -122,7 +131,7 @@ struct AppModelControlProjectsTests {
     let id = ControlID.project(harness.project.id)
 
     let reply = await harness.messageSource.ask(
-      .moveProject(id: id, placement: .after, anchor: "p-00000000")
+      .moveProject(id: id, placement: .below, anchor: "p-00000000")
     )
 
     #expect(reply == .refused(.noProject(id: "p-00000000")))
@@ -145,7 +154,7 @@ struct AppModelControlProjectsTests {
     let id = ControlID.project(harness.project.id)
 
     let reply = await harness.messageSource.ask(
-      .moveProject(id: id, placement: .after, anchor: id)
+      .moveProject(id: id, placement: .below, anchor: id)
     )
 
     #expect(reply == .refused(.projectBesideItself(id: id)))

@@ -20,12 +20,7 @@ struct FilesPanelFooterTextTests {
   }
 
   @Test func whatThePanelLeftOutIsSaidAfterTheCountsAsASentenceOfItsOwn() {
-    let tracked = TrackedFiles(
-      paths: ["a.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: true,
-    )
+    let tracked = TrackedFiles.sample(paths: ["a.txt"], isCapped: true)
     let summary = Self.summary(.head, tracked: tracked)
 
     #expect(FilesPanelFooterText.changes(summary) == "No modified files")

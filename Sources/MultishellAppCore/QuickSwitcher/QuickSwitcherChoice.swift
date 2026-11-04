@@ -10,7 +10,7 @@ enum QuickSwitcherChoice {
   /// The switcher was already down, so nothing was chosen.
   case notUp
   /// A file being opened as a tab, `nil` once it would not open.
-  case openingFile(path: String, worktree: Worktree.ID, Task<FileTab?, Never>)
+  case openingFile(path: String, worktreeID: Worktree.ID, Task<FileTab?, Never>)
   /// A project row whose project has no worktree to show.
   case projectWithNoWorktree(Project.ID)
   /// The row led to a worktree, tab or pane gone since it was listed.

@@ -7,7 +7,7 @@ struct ThemeTests {
   private let dark = Theme.multishellDark
   private let mint = RGB(red: 0xa0, green: 0xf0, blue: 0xc0)
 
-  @Test func aThemeWithOnlyAnIdAndNameDrawsAsMultishellDark() throws {
+  @Test func aThemeWithOnlyAnIDAndNameDrawsAsMultishellDark() throws {
     let bare = try theme("")
     #expect(bare.isDark)
     for key in FileColorKey.allCases { #expect(bare.fileRGB(key) == dark.fileRGB(key), "\(key)") }

@@ -13,22 +13,13 @@ struct MonospacedEditor: View {
       InfoLabel(label, info: info)
       MonospacedTextEditor(
         text: $text,
+        placeholder: placeholder,
         fontSize: UIMetrics.unscaledMonospacedSize,
         fill: HierarchicalShapeStyle.quaternary.opacity(0.5),
         border: nil,
         minHeight: 48,
         maxHeight: 96,
       )
-      .overlay(alignment: .topLeading) {
-        if text.isEmpty, let placeholder {
-          Text(placeholder)
-            .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
-            .foregroundStyle(.tertiary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .allowsHitTesting(false)
-        }
-      }
     }
     .padding(.vertical, 2)
   }

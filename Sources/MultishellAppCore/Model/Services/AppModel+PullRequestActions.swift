@@ -127,7 +127,7 @@ extension AppModel {
       return .open(head: upstream.branch, remote: upstream.remote)
     }
     let remotes = await git.remotes(project)
-    let pushRemote = await git.pushRemote(ofBranch: branch, in: worktree.path)
+    let pushRemote = await git.configuredPushRemote(ofBranch: branch, in: worktree.path)
     // git pushes to a remote config names apart from what is followed, which
     // lacks the branch or the scan would have found it; an unread list fails.
     if let followed = upstream?.remote, let pushRemote, pushRemote != followed,

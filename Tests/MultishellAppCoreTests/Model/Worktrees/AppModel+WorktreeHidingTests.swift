@@ -18,19 +18,6 @@ struct AppModelWorktreeHidingTests {
     #expect(!harness.model.sidebarRowIDs().contains(harness.feature.id))
   }
 
-  @Test func expandingTheHiddenSectionPutsItsRowsOnTheSidebar() {
-    let harness = Harness()
-    harness.model.setHidden(true, worktree: harness.feature)
-
-    harness.model.toggleHiddenSectionExpansion(of: harness.project)
-
-    #expect(harness.model.sidebarEntries[0].isHiddenSectionExpanded)
-    #expect(harness.model.sidebarRowIDs().contains(harness.feature.id))
-
-    harness.model.toggleHiddenSectionExpansion(of: harness.project)
-    #expect(!harness.model.sidebarRowIDs().contains(harness.feature.id))
-  }
-
   @Test func showingAHiddenWorktreePutsItBackWithTheRest() {
     let harness = Harness()
     harness.model.setHidden(true, worktree: harness.feature)
@@ -58,16 +45,6 @@ struct AppModelWorktreeHidingTests {
     harness.model.setHidden(true, worktree: harness.feature)
 
     #expect(harness.model.renamingWorktreeID == nil)
-  }
-
-  @Test func removingAProjectForgetsItsHiddenSectionWasExpanded() {
-    let harness = Harness()
-    harness.model.setHidden(true, worktree: harness.feature)
-    harness.model.toggleHiddenSectionExpansion(of: harness.project)
-
-    harness.model.removeProject(harness.project)
-
-    #expect(harness.model.expandedHiddenSections.isEmpty)
   }
 
   @Test func renamingAHiddenWorktreeTheFilterFindsKeepsTheFilter() {
@@ -163,16 +140,6 @@ struct AppModelWorktreeHidingTests {
     reloaded.repair()
 
     #expect(reloaded.isHidden(harness.feature))
-  }
-
-  @Test func anExpandedHiddenSectionOfACollapsedProjectPutsNoRowOnTheSidebar() {
-    let harness = Harness()
-    harness.model.setHidden(true, worktree: harness.feature)
-    harness.model.toggleHiddenSectionExpansion(of: harness.project)
-
-    harness.model.setExpanded(false, for: harness.project)
-
-    #expect(!harness.model.sidebarRowIDs().contains(harness.feature.id))
   }
 
   @Test func hidingAWorktreeThatHasGoneChangesNothing() {

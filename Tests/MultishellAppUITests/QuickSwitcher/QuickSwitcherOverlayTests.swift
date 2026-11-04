@@ -73,6 +73,9 @@ struct QuickSwitcherOverlayTests {
     OffscreenWindow.settle(until: { scrollView.contentView.bounds.origin.y == top }, within: 2)
 
     #expect(scrollView.contentView.bounds.origin.y == top)
+    let results = models.model.quickSwitcherResults
+    #expect(results.selection != nil)
+    #expect(results.selection == results.rows.first)
   }
 
   @Test func arrowsBackUpToTheFirstRowShowItsSectionTitle() throws {

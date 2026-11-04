@@ -28,7 +28,7 @@ struct RemoteRepositoryTests {
     "/srv/git/repo.git", "../sibling", "https://host/only", "git@host:repo.git", "",
     "file:///srv/git/team/app.git",
   ])
-  func aPathOrAUrlWithoutAnOwnerNamesNoRepository(url: String) {
+  func aPathOrAURLWithoutAnOwnerNamesNoRepository(url: String) {
     #expect(RemoteRepository(remoteURL: url) == nil)
   }
 

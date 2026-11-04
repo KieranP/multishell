@@ -3,8 +3,6 @@ import MultishellAppCore
 
 /// The sizes of the sidebar's rows and the blocks they stack into.
 extension UIMetrics {
-  /// Round a sidebar row's selection and hover fill and the filter field.
-  static let rowCornerRadius: Double = 6
   static let sidebarRowSpacing: Double = 1
   /// One inset for every sidebar row's sides, so the sort menu stays in the
   /// project row's + column and the trailing badges line up.
@@ -14,7 +12,8 @@ extension UIMetrics {
   static let sidebarListSideInset: Double = 8
   /// The + on a project's row, and the sort menu above it sharing its column.
   static let sidebarRowButtonWidth: Double = 24
-  /// The Projects header, and the sort menu inside it.
+  /// The Projects header and the sort menu inside it, and the quick
+  /// switcher's section titles.
   static let sectionHeaderHeight: Double = 22
 
   /// A sidebar row carrying a user's name over its branch. Two lines of

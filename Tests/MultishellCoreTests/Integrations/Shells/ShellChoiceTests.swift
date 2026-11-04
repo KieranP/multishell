@@ -20,7 +20,7 @@ struct ShellChoiceTests {
     #expect(ShellChoice.effectivePath(global: "", override: nil) == nil)
   }
 
-  @Test func theCustomIdResolvesToTheTypedPathOrToTheLoginShellWhenBlank() {
+  @Test func theCustomIDResolvesToTheTypedPathOrToTheLoginShellWhenBlank() {
     let custom = ShellChoice.customID
     #expect(
       ShellChoice.effectivePath(global: custom, override: nil, customPath: " /opt/nu ")

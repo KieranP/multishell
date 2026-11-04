@@ -17,7 +17,7 @@ extension View {
       titleVisibility: .visible,
       presenting: model.pendingBranchPublish,
     ) { pending in
-      Button(pending.confirmLabel) { model.answerBranchPublish(pending, publishes: true) }
+      Button(pending.pushLabel) { model.answerBranchPublish(pending, publishes: true) }
         .keyboardShortcut(.defaultAction)
       Button(t("action.cancel"), role: .cancel) {
         model.answerBranchPublish(pending, publishes: false)

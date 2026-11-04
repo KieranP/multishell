@@ -105,7 +105,7 @@ public protocol Platform: AnyObject, Sendable {
   /// `false` where the main window is closed or minimized; the change animates in after.
   func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool
   /// The main window as drawn, its panes included, as a PNG; `nil` where it
-  /// is closed or has not drawn.
+  /// is closed, minimized or has not drawn.
   func screenshotWorkspaceWindow() -> Data?
   /// A named instant in the platform's trace, where a profiler lines it up.
   func signpost(_ name: String)

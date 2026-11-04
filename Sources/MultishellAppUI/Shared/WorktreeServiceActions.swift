@@ -21,7 +21,7 @@ struct WorktreeServiceActions: View {
           }
         }
       }
-      .disabled(item == .create(isPublishing: true))
+      .disabled(!item.isEnabled)
     }
     if let ciIntegration {
       Button(t("action.open-ci", ciIntegration.displayName)) {

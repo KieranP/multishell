@@ -17,13 +17,8 @@ extension AppModelControlWorktreesTests {
     )
   }
 
-  private func tip(of ref: String, in harness: GitHarness) async throws -> String {
-    try await harness.git.run(["rev-parse", ref], in: harness.project.path)
-  }
-
   private func head(of branch: String, in harness: GitHarness) async throws -> String {
-    let created = try #require(harness.worktree(onBranch: branch))
-    return try await harness.git.run(["rev-parse", "HEAD"], in: created.path)
+    try await harness.tip(of: try #require(harness.worktree(onBranch: branch)))
   }
 
   @Test func withoutFromTheBranchStartsAtTheDefaultBranchNotTheCheckoutsOwn() async throws {
@@ -33,7 +28,7 @@ extension AppModelControlWorktreesTests {
 
     _ = await harness.model.answer(.newWorktree(order("fix", in: harness)))
 
-    #expect(try await head(of: "fix", in: harness) == tip(of: "main", in: harness))
+    #expect(try await head(of: "fix", in: harness) == harness.tip(ofBranch: "main"))
   }
 
   @Test func fromStillNamesWhereTheBranchStarts() async throws {
@@ -51,7 +46,7 @@ extension AppModelControlWorktreesTests {
 
     _ = await harness.model.answer(.newWorktree(order))
 
-    #expect(try await head(of: "fix", in: harness) == tip(of: "upgrade-deps", in: harness))
+    #expect(try await head(of: "fix", in: harness) == harness.tip(ofBranch: "upgrade-deps"))
   }
 
   @Test func existingChecksOutThatBranchRatherThanTheDefaultOne() async throws {
@@ -71,7 +66,7 @@ extension AppModelControlWorktreesTests {
     _ = await harness.model.answer(.newWorktree(order))
 
     #expect(
-      try await head(of: "upgrade-deps", in: harness) == tip(of: "upgrade-deps", in: harness)
+      try await head(of: "upgrade-deps", in: harness) == harness.tip(ofBranch: "upgrade-deps")
     )
   }
 }

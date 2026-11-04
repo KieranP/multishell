@@ -113,7 +113,7 @@ struct GitHubPullRequestRecordTests {
     #expect(numbers == [1, 4])
   }
 
-  @Test func outputThatIsNotAJsonArrayFailsTheReadRatherThanListingNone() {
+  @Test func outputThatIsNotAJSONArrayFailsTheReadRatherThanListingNone() {
     #expect(throws: ServiceReadFailure.self) {
       try GitHubPullRequestRecord.pullRequests(from: Data("Welcome to GitHub CLI!".utf8))
     }

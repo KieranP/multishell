@@ -26,7 +26,7 @@ extension MacPlatform {
     return NSApp.mainMenu.map { bar in
       Self.commandItems(
         in: bar,
-        skippingMenus: menusMacOSFills.compactMap(\.self),
+        leavingOutMenus: menusMacOSFills.compactMap(\.self),
         isAvailable: isAvailable,
       )
     } ?? []
@@ -34,14 +34,14 @@ extension MacPlatform {
 
   static func commandItems(
     in bar: NSMenu,
-    skippingMenus: [NSMenu],
+    leavingOutMenus: [NSMenu],
     isAvailable: (String) -> Bool = { _ in true },
   ) -> [PlatformMenuItem] {
     let appMenu = bar.items.first?.submenu
     return items(
       in: bar,
       under: [],
-      skipping: { isLeftOut($0, appMenu: appMenu, skippingMenus: skippingMenus) },
+      leavingOut: { isLeftOut($0, appMenu: appMenu, leavingOutMenus: leavingOutMenus) },
       isAvailable: { isAvailable($0.title) },
     )
   }
@@ -49,14 +49,14 @@ extension MacPlatform {
   private static func isLeftOut(
     _ item: NSMenuItem,
     appMenu: NSMenu?,
-    skippingMenus: [NSMenu],
+    leavingOutMenus: [NSMenu],
   ) -> Bool {
     if ownItemsLeftOut.contains(item.title) { return true }
     if let submenu = item.submenu {
       // The app menu's own are About, Settings and Quit; any submenu is Services.
       if let appMenu, item.menu === appMenu { return true }
       // SwiftUI rebuilds the bar, which can hold a copy of the menu registered.
-      return skippingMenus.contains { $0 === submenu || $0.title == submenu.title }
+      return leavingOutMenus.contains { $0 === submenu || $0.title == submenu.title }
     }
     guard let action = item.action.map(NSStringFromSelector) else { return false }
     return actionsMacOSAdds.contains(action) || action.hasPrefix(autoFillActionStem)

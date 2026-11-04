@@ -92,6 +92,22 @@ extension Workspace {
     }
   }
 
+  /// Every worktree's tabs of both kinds, group by group in strip order, in one
+  /// pass: a lookup per worktree grows with the square of the worktrees.
+  public func workspaceTabsByWorktree() -> [Worktree.ID: [WorkspaceTab]] {
+    let terminals = tabs.keyedByID()
+    let files = fileTabs.keyedByID()
+    var tabsByWorktree: [Worktree.ID: [WorkspaceTab]] = [:]
+    for group in tabGroups {
+      tabsByWorktree[group.worktreeID, default: []] += group.tabOrder.compactMap { id in
+        if let tab = terminals[id], tab.groupID == group.id { return .terminal(tab) }
+        if let tab = files[id], tab.groupID == group.id { return .file(tab) }
+        return nil
+      }
+    }
+    return tabsByWorktree
+  }
+
   /// The group two tabs are both in, `nil` where they are in two or one is gone.
   public func sharedGroup(
     of tab: WorkspaceTab.ID,

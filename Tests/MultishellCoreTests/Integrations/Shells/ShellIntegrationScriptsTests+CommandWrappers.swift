@@ -80,7 +80,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("users-own-sudo"), "\(output)")
   }
 
-  @Test func zshSshEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName() async throws {
+  @Test func zshSSHEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName() async throws {
     let output = try await zshOutput(
       features: "ssh-env",
       input: "ssh host\nexit\n",
@@ -95,7 +95,7 @@ extension ShellIntegrationScriptsTests {
     )
   }
 
-  @Test func zshSshTerminfoSendsATermEveryHostKnows() async throws {
+  @Test func zshSSHTerminfoSendsATermEveryHostKnows() async throws {
     let output = try await zshOutput(
       features: "ssh-terminfo",
       input: "ssh host\nexit\n",
@@ -104,7 +104,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("ssh TERM=xterm-256color host"), "\(output)")
   }
 
-  @Test func zshSshIsLeftAloneWhereTheUsersFeaturesLeaveItOut() async throws {
+  @Test func zshSSHIsLeftAloneWhereTheUsersFeaturesLeaveItOut() async throws {
     let output = try await zshOutput(
       features: "sudo",
       input: "ssh host\nexit\n",
@@ -195,7 +195,7 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test(arguments: InstalledBashes.all)
-  func bashSshEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName(bash: String) async throws {
+  func bashSSHEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName(bash: String) async throws {
     let output = try await bashOutput(
       bash,
       features: "ssh-env",
@@ -212,7 +212,7 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test(arguments: InstalledBashes.all)
-  func bashSshIsLeftAloneWhereTheUsersFeaturesLeaveItOut(bash: String) async throws {
+  func bashSSHIsLeftAloneWhereTheUsersFeaturesLeaveItOut(bash: String) async throws {
     let output = try await bashOutput(
       bash,
       features: "sudo",
@@ -306,7 +306,7 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test(arguments: InstalledShells.fishes)
-  func fishSshEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName(fish: String) async throws {
+  func fishSSHEnvSendsATermEveryHostKnowsAndTheTerminalsColourAndName(fish: String) async throws {
     let output = try await fishOutput(
       fish,
       features: "ssh-env",
@@ -323,7 +323,7 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test(arguments: InstalledShells.fishes)
-  func fishSshTerminfoSendsATermEveryHostKnows(fish: String) async throws {
+  func fishSSHTerminfoSendsATermEveryHostKnows(fish: String) async throws {
     let output = try await fishOutput(
       fish,
       features: "ssh-terminfo",
@@ -334,7 +334,7 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test(arguments: InstalledShells.fishes)
-  func fishSshIsLeftAloneWhereTheUsersFeaturesLeaveItOut(fish: String) async throws {
+  func fishSSHIsLeftAloneWhereTheUsersFeaturesLeaveItOut(fish: String) async throws {
     let output = try await fishOutput(
       fish,
       features: "sudo",

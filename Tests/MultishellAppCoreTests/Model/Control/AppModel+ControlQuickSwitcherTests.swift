@@ -91,12 +91,7 @@ struct AppModelControlQuickSwitcherTests {
   @Test func choosingAFileThatWouldNotOpenIsRefusedWithNoBeep() async throws {
     let harness = harnessWithCommands()
     try Data([0x00]).write(to: harness.main.path.appending(path: "image.bin"))
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["image.bin"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["image.bin"])
 
     let reply = await harness.messageSource.ask(
       .quickSwitcher(
@@ -166,12 +161,7 @@ struct AppModelControlQuickSwitcherTests {
 
   @Test func aChoiceWaitsForAListingStillBeingBuilt() async {
     let harness = harnessWithCommands()
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: (0..<30_000).map { "src/file\($0).txt" },
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(count: 30_000)
 
     let reply = await harness.messageSource.ask(
       .quickSwitcher(

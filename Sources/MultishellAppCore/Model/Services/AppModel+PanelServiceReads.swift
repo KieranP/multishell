@@ -134,9 +134,12 @@ extension AppModel {
         checks: nil,
       )
     let changesBefore = remoteState.integrationChanges[project.id]
-    let isSettled = pullRequest.state == .merged || pullRequest.state == .closed
     // A merged or closed one's checks no longer change once read at its head.
-    if isSettled, reading.checks != nil, reading.headCommit == pullRequest.headCommit { return }
+    if pullRequest.state.isSettled, reading.checks != nil,
+      reading.headCommit == pullRequest.headCommit
+    {
+      return
+    }
     // A failed read after a push must not leave the old head's checks standing.
     if reading.headCommit != pullRequest.headCommit { reading.checks = nil }
     reading.headCommit = pullRequest.headCommit

@@ -88,6 +88,7 @@ struct MergeForm: View {
             get: { pending.message?.body ?? "" },
             set: { model.setMergeBody($0, for: worktree) },
           ),
+          placeholder: nil,
           fontSize: model.metrics.caption,
           fill: theme.header.background,
           border: theme.filesPanel.border,
@@ -106,10 +107,10 @@ struct MergeForm: View {
       if pending.isSending {
         ProgressView().controlSize(.small)
       }
-      Button(pending.dismissTitle) { model.dismissMergeForm(of: worktree) }
+      Button(pending.dismissLabel) { model.dismissMergeForm(of: worktree) }
         .disabled(pending.isSending)
-      if let confirmTitle = pending.confirmTitle {
-        Button(confirmTitle) {
+      if let confirmLabel = pending.confirmLabel {
+        Button(confirmLabel) {
           Task { await model.confirmMerge(of: worktree) }
         }
         .buttonStyle(.borderedProminent)

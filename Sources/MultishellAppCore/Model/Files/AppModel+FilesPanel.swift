@@ -39,7 +39,7 @@ extension AppModel {
     if shows, let worktree = filesPanelWorktree {
       readFilesPanel(of: worktree.id)
     } else if !shows {
-      forgetUnreadPanelListings()
+      forgetUnreadFileListings()
     }
   }
 
@@ -59,7 +59,7 @@ extension AppModel {
 
   /// A click on a worktree row's pull request or CI glyph: that worktree,
   /// the panel open on the glyph's page.
-  public func showPanelPage(_ mode: FilesPanelMode, of worktree: Worktree) {
+  public func showFilesPanel(_ mode: FilesPanelMode, of worktree: Worktree) {
     guard selectForPanel(worktree) else { return }
     setFilesPanelMode(mode)
     setShowsFilesPanel(true)
@@ -92,7 +92,7 @@ extension AppModel {
   /// a tool coming or going changes the page too.
   func readFilesPanelIfItsKindChanged() {
     let shown = shownFilesPanelMode
-    let previous = remoteState.lastReadPanelPage ?? shown
+    let previous = remoteState.lastReadFilesPanelMode ?? shown
     if shown != previous, !(shown.listsFiles && previous.listsFiles), isFilesPanelOnScreen,
       let worktree = filesPanelWorktree
     {

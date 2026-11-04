@@ -15,12 +15,26 @@ extension WorktreeGit {
 
   /// The remote the branch's pushes go to by git's own config, its
   /// `pushRemote` or `remote.pushDefault`; `nil` where none names one.
-  public func pushRemote(ofBranch branch: String, in directory: URL) async -> String? {
+  public func configuredPushRemote(ofBranch branch: String, in directory: URL) async -> String? {
     // Not `%(push:remotename)`: it falls back to the remote the branch follows.
     if let named = await configValue("branch.\(branch).pushRemote", in: directory) {
       return named
     }
     return await configValue("remote.pushDefault", in: directory)
+  }
+
+  /// The commits the local branch has past `tip`, a remote branch's: those a
+  /// push would send. `nil` where git failed.
+  public func commitCount(
+    ofBranch branch: String,
+    past tip: String,
+    in directory: URL,
+  ) async -> Int? {
+    await runner.output(
+      ["rev-list", "--count", "\(tip)..\(RefName.local(branch))", "--"],
+      in: directory,
+    )
+    .flatMap { Int($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
   }
 
   /// `git push` to `remoteBranch`, the upstream's own name where there is
@@ -31,8 +45,8 @@ extension WorktreeGit {
     to remote: String,
     in directory: URL,
   ) async throws {
-    let followed = await followedRemote(ofBranch: branch, in: directory)
-    let pushedTo = await pushRemote(ofBranch: branch, in: directory)
+    let followed = await configuredFollowedRemote(ofBranch: branch, in: directory)
+    let pushedTo = await configuredPushRemote(ofBranch: branch, in: directory)
     // A triangular setup, pushes named to go elsewhere than it follows, keeps
     // what it follows; anywhere else the scan finds the push by its upstream.
     let isTriangular =
@@ -44,7 +58,7 @@ extension WorktreeGit {
         remote, "\(RefName.local(branch)):\(RefName.local(remoteBranch))",
       ],
       in: directory,
-      environment: ["GIT_TERMINAL_PROMPT": "0"],
+      environment: Self.networkEnvironment,
       timeout: Self.pushTimeout,
     )
   }
@@ -60,7 +74,7 @@ extension WorktreeGit {
       _ = try await runner.run(
         ["ls-remote", "--exit-code", "--heads", remote, RefName.local(branch)],
         in: directory,
-        environment: ["GIT_TERMINAL_PROMPT": "0"],
+        environment: Self.networkEnvironment,
         timeout: Self.lookupTimeout,
       )
       return true
@@ -71,7 +85,12 @@ extension WorktreeGit {
     }
   }
 
-  private func followedRemote(ofBranch branch: String, in directory: URL) async -> String? {
+  private func configuredFollowedRemote(
+    ofBranch branch: String,
+    in directory: URL,
+  ) async
+    -> String?
+  {
     await configValue("branch.\(branch).remote", in: directory)
   }
 

@@ -6,6 +6,8 @@ import SwiftUI
 /// The sections under their titles, scrolled to keep the selected row in sight.
 struct QuickSwitcherList: View {
   private static let listTop = "listTop"
+  /// A wait's seconds lag by up to ten; past a minute the lag barely shows.
+  private static let tickInterval: Duration = .seconds(10)
 
   let results: QuickSwitcherResults
   let theme: Theme
@@ -16,6 +18,9 @@ struct QuickSwitcherList: View {
 
   /// Made once on appearing; an initial value here is built on every render.
   @State private var pointer: QuickSwitcherPointer?
+  /// Held rather than taken from a `TimelineView`, which stands still under a
+  /// body re-evaluated on every key and pane change.
+  @State private var now = Date()
 
   private var palette: AreaPalette { theme.quickSwitcher }
 
@@ -35,6 +40,7 @@ struct QuickSwitcherList: View {
               QuickSwitcherRow(
                 item: item,
                 isSelected: item.target == results.selection,
+                now: now,
                 theme: theme,
                 metrics: metrics,
                 choose: { choose(item.target) },
@@ -48,6 +54,7 @@ struct QuickSwitcherList: View {
         .id(Self.listTop)
       }
       .scrollIndicators(.automatic)
+      .ticking($now, every: Self.tickInterval)
       .onAppear { pointer = QuickSwitcherPointer(location: NSEvent.mouseLocation) }
       .onChange(of: results) { previous, current in
         scroll(to: current.scrollTarget(after: previous), with: proxy)

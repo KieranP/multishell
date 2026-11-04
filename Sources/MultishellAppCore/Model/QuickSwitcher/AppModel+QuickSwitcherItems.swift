@@ -143,28 +143,27 @@ extension AppModel {
     agentsOnly: Bool,
   ) -> [QuickSwitcherItem] {
     let sessions = workspace.sessions.keyedByID()
+    let tabsByWorktree = workspace.workspaceTabsByWorktree()
     return order.flatMap { project, worktree in
       let place = quickSwitcherPlace(of: worktree, in: project)
-      return workspace.groups(in: worktree.id).flatMap { group in
-        workspace.workspaceTabs(inGroup: group.id).flatMap { tab -> [QuickSwitcherItem] in
-          switch tab {
-          case .terminal(let tab):
-            tab.sessionIDs.enumerated().compactMap { offset, id in
-              guard let session = sessions[id] else { return nil }
-              let agentID = agentIDAtThePrompt(of: session)
-              guard !agentsOnly || agentID != nil else { return nil }
-              return quickSwitcherPane(
-                session,
-                agentID: agentID,
-                in: tab,
-                at: offset,
-                place: place,
-              )
-            }
-
-          case .file(let tab):
-            agentsOnly ? [] : [quickSwitcherFileTab(tab, at: place)]
+      return (tabsByWorktree[worktree.id] ?? []).flatMap { tab -> [QuickSwitcherItem] in
+        switch tab {
+        case .terminal(let tab):
+          tab.sessionIDs.enumerated().compactMap { offset, id in
+            guard let session = sessions[id] else { return nil }
+            let agentID = agentIDAtThePrompt(of: session)
+            guard !agentsOnly || agentID != nil else { return nil }
+            return quickSwitcherPane(
+              session,
+              agentID: agentID,
+              in: tab,
+              at: offset,
+              place: place,
+            )
           }
+
+        case .file(let tab):
+          agentsOnly ? [] : [quickSwitcherFileTab(tab, at: place)]
         }
       }
     }

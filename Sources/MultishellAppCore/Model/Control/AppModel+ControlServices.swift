@@ -26,7 +26,7 @@ extension AppModel {
     guard hasGlyph else {
       return .refused(.noServicePage(page, id: ControlID.worktree(shown.id)))
     }
-    showPanelPage(page.filesPanelMode, of: shown)
+    showFilesPanel(page.filesPanelMode, of: shown)
     return .done
   }
 

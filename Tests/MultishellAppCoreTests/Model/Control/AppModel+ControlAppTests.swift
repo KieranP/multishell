@@ -6,7 +6,7 @@ import Testing
 
 @Suite @MainActor
 struct AppModelControlAppTests {
-  @Test func theAppDescribesItselfByPidAndStateFile() async throws {
+  @Test func theAppDescribesItselfByPIDAndStateFile() async throws {
     let harness = Harness()
 
     let reply = try #require(await harness.messageSource.ask(.info))

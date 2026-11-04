@@ -8,31 +8,44 @@ import Testing
 
 @Suite
 struct GitHubHostTests {
-  private let pullRequest = PullRequest(
-    number: 44,
-    title: "Pull request 44",
-    url: URL(fileURLWithPath: "/pull/44"),
-    state: .open,
-    review: .notRequired,
-    blocker: nil,
-    hasConflictAnswer: true,
-    autoMergesWhenReady: false,
-    isReadyToMerge: false,
-    headBranch: "feat",
-    headCommit: "tip",
-    headRepository: RemoteRepository(owner: "me", name: "demo"),
-    baseBranch: "main",
-    updatedAt: Date(timeIntervalSince1970: 0),
-  )
+  private let pullRequest = Self.pullRequest(at: URL(fileURLWithPath: "/pull/44"))
+
+  private static func pullRequest(at url: URL) -> PullRequest {
+    PullRequest(
+      number: 44,
+      title: "Pull request 44",
+      url: url,
+      state: .open,
+      review: .notRequired,
+      blocker: nil,
+      hasConflictAnswer: true,
+      autoMergesWhenReady: false,
+      isReadyToMerge: false,
+      headBranch: "feat",
+      headCommit: "tip",
+      headRepository: RemoteRepository(owner: "me", name: "demo"),
+      baseBranch: "main",
+      updatedAt: Date(timeIntervalSince1970: 0),
+    )
+  }
+
+  private func host(
+    for tool: FakeTool,
+    searchPath: String? = nil,
+    loginVariables: [String: String] = [:],
+  ) -> GitHubHost {
+    GitHubHost(
+      executable: tool.executable,
+      searchPath: searchPath,
+      runLog: tool.runLog,
+      loginVariables: loginVariables,
+    )
+  }
 
   @Test func oneListCallReadsEveryPullRequestWithNoPromptOnTheLoginPath() async throws {
     let tool = try FakeTool(named: "gh", "cat <<'JSON'\n\(GitHubFixtures.open)\nJSON")
     defer { tool.tearDown() }
-    let host = GitHubHost(
-      executable: tool.executable,
-      searchPath: "/login/bin:/usr/bin:/bin",
-      runLog: tool.runLog,
-    )
+    let host = host(for: tool, searchPath: "/login/bin:/usr/bin:/bin")
 
     let pullRequests = try await host.pullRequests(in: tool.directory)
 
@@ -40,8 +53,10 @@ struct GitHubHostTests {
     let fields = GitHubPullRequestRecord.fields.joined(separator: ",")
     #expect(
       tool.calls == [
-        "pr list --state all --limit \(GitHubHost.listLimit) --json \(fields)",
-        "PATH=/login/bin:/usr/bin:/bin GH_PROMPT_DISABLED=1 NO_COLOR=1 GH_TOKEN=",
+        FakeToolCall(
+          arguments: "pr list --state all --limit \(GitHubHost.listLimit) --json \(fields)",
+          variables: "PATH=/login/bin:/usr/bin:/bin GH_PROMPT_DISABLED=1 NO_COLOR=1 GH_TOKEN=",
+        )
       ]
     )
   }
@@ -50,7 +65,7 @@ struct GitHubHostTests {
     let merged = GitHubFixtures.record(number: 7, state: "MERGED", headRefName: "old")
     let tool = try FakeTool(named: "gh", "echo '[\(merged)]'")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     let pullRequests = try await host.pullRequests(headedBy: "old", in: tool.directory)
 
@@ -58,7 +73,7 @@ struct GitHubHostTests {
     #expect(pullRequests.first?.state == .merged)
     let fields = GitHubPullRequestRecord.fields.joined(separator: ",")
     #expect(
-      tool.calls.first
+      tool.calls.first?.arguments
         == "pr list --state all --head old --limit \(GitHubHost.branchListLimit) --json \(fields)"
     )
   }
@@ -66,7 +81,7 @@ struct GitHubHostTests {
   @Test func aBranchAskedAloneThatGhRefusesFailsWithWhatGhSaid() async throws {
     let tool = try FakeTool(named: "gh", "echo 'HTTP 502: Bad Gateway' >&2; exit 1")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     await #expect(throws: ServiceReadFailure.failed("HTTP 502: Bad Gateway")) {
       try await host.pullRequests(headedBy: "old", in: tool.directory)
@@ -76,16 +91,15 @@ struct GitHubHostTests {
   @Test func theLoginShellsVariablesReachTheTool() async throws {
     let tool = try FakeTool(named: "gh", "echo '[]'")
     defer { tool.tearDown() }
-    let host = GitHubHost(
-      executable: tool.executable,
+    let host = host(
+      for: tool,
       searchPath: "/login/bin",
-      runLog: tool.runLog,
       loginVariables: ["GH_TOKEN": "from-zshrc"],
     )
 
     _ = try await host.pullRequests(in: tool.directory)
 
-    #expect(tool.calls.contains { $0.hasSuffix("GH_TOKEN=from-zshrc") })
+    #expect(tool.calls.first?.variables.hasSuffix("GH_TOKEN=from-zshrc") == true)
   }
 
   @Test func aLoginShellForcingColourCannotColourTheJSON() async throws {
@@ -94,10 +108,9 @@ struct GitHubHostTests {
       #"[ "${CLICOLOR_FORCE:-0}" = 0 ] && echo '[]' || { echo forced >&2; exit 1; }"#,
     )
     defer { tool.tearDown() }
-    let host = GitHubHost(
-      executable: tool.executable,
+    let host = host(
+      for: tool,
       searchPath: "/login/bin",
-      runLog: tool.runLog,
       loginVariables: ["CLICOLOR_FORCE": "1"],
     )
 
@@ -113,7 +126,7 @@ struct GitHubHostTests {
       """,
     )
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     await #expect(throws: ServiceReadFailure.notHosted) {
       try await host.pullRequests(in: tool.directory)
@@ -123,7 +136,7 @@ struct GitHubHostTests {
   @Test func aNewPullRequestOfAForkNamesItsOwnerAndIsOpenedOnTheWeb() async throws {
     let tool = try FakeTool(named: "gh", "exit 0")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     try await host.openNewPullRequest(
       head: "k/tabs",
@@ -132,35 +145,22 @@ struct GitHubHostTests {
       directory: tool.directory,
     )
 
-    #expect(tool.calls.first == "pr create --web --head me:k/tabs --base main")
+    #expect(tool.calls.first?.arguments == "pr create --web --head me:k/tabs --base main")
   }
 
   @Test func mergeOptionsAreAskedOfTheRepositoryAndHostThePullRequestsPageNames() async throws {
     let tool = try FakeTool(named: "gh", "cat <<'JSON'\n\(GitHubFixtures.mergeOptions)\nJSON")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
-    let onEnterprise = PullRequest(
-      number: 44,
-      title: "Pull request 44",
-      url: URL(string: "https://git.example.com/upstream/demo/pull/44")!,
-      state: .open,
-      review: .notRequired,
-      blocker: nil,
-      hasConflictAnswer: true,
-      autoMergesWhenReady: false,
-      isReadyToMerge: false,
-      headBranch: "feat",
-      headCommit: "tip",
-      headRepository: RemoteRepository(owner: "me", name: "demo"),
-      baseBranch: "main",
-      updatedAt: Date(timeIntervalSince1970: 0),
+    let host = host(for: tool)
+    let onEnterprise = Self.pullRequest(
+      at: URL(string: "https://git.example.com/upstream/demo/pull/44")!
     )
 
     let options = try await host.mergeOptions(of: onEnterprise, in: tool.directory)
 
     #expect(options.methods == [.squash, .rebase])
     #expect(
-      tool.calls.first?.hasPrefix(
+      tool.calls.first?.arguments.hasPrefix(
         "api graphql --hostname git.example.com -f owner=upstream -f name=demo -F number=44 "
           + "-f query=query("
       ) == true
@@ -170,7 +170,7 @@ struct GitHubHostTests {
   @Test func aPullRequestWhosePageNamesNoRepositoryAsksNothing() async throws {
     let tool = try FakeTool(named: "gh", "exit 0")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     await #expect(
       throws: ServiceReadFailure.failed(
@@ -185,7 +185,7 @@ struct GitHubHostTests {
   @Test func aSquashIsHeldToTheHeadSeenAndCarriesTheEditedMessage() async throws {
     let tool = try FakeTool(named: "gh", "exit 0")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     try await host.merge(
       pullRequest,
@@ -199,7 +199,7 @@ struct GitHubHostTests {
     )
 
     #expect(
-      tool.calls.first
+      tool.calls.first?.arguments
         == "pr merge file:///pull/44 --squash --match-head-commit=tip --subject=-x looks like a flag "
         + "--body=Why"
     )
@@ -208,7 +208,7 @@ struct GitHubHostTests {
   @Test func aRebaseWaitingForChecksTurnsAutoMergeOnWithNoMessage() async throws {
     let tool = try FakeTool(named: "gh", "exit 0")
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     try await host.merge(
       pullRequest,
@@ -217,9 +217,8 @@ struct GitHubHostTests {
     )
     try await host.disableAutoMerge(of: pullRequest, in: tool.directory)
 
-    let commands = tool.calls.filter { !$0.hasPrefix("PATH=") }
     #expect(
-      commands == [
+      tool.calls.map(\.arguments) == [
         "pr merge file:///pull/44 --rebase --match-head-commit=tip --auto",
         "pr merge file:///pull/44 --disable-auto",
       ]
@@ -232,7 +231,7 @@ struct GitHubHostTests {
       "echo 'Head branch was modified. Review and try the merge again.' >&2; exit 1",
     )
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     let error = await #expect(throws: ProcessFailure.self) {
       try await host.merge(
@@ -261,7 +260,7 @@ struct GitHubHostTests {
       """,
     )
     defer { tool.tearDown() }
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     let checks = try await host.checks(of: pullRequest, in: tool.directory)
 
@@ -278,18 +277,18 @@ struct GitHubHostTests {
     )
     let fields = GitHubCheckRecord.fields.joined(separator: ",")
     #expect(
-      Set(tool.calls.filter { $0.hasPrefix("pr") }) == [
+      Set(tool.calls.map(\.arguments)) == [
         "pr checks 44 --required --json \(fields)",
         "pr checks 44 --json \(fields)",
       ]
     )
   }
 
-  @Test func aRunIsCountedInTheGitLogByItsProgramAndCommand() async throws {
+  @Test func aRunIsTimedInTheRunLogByItsProgramAndCommand() async throws {
     let tool = try FakeTool(named: "gh", "echo '[]'")
     defer { tool.tearDown() }
     tool.runLog.setRecording(true)
-    let host = GitHubHost(executable: tool.executable, searchPath: nil, runLog: tool.runLog)
+    let host = host(for: tool)
 
     _ = try await host.pullRequests(in: tool.directory)
 

@@ -118,7 +118,8 @@ public final class AppModel<Surface> {
   /// Each worktree's opened submodules, read as repositories of their own.
   var submoduleReadings: [Worktree.ID: [String: SubmoduleReading]] = [:]
   @ObservationIgnored var panelFolderReads = CoalescedReads<PanelFolderRead>()
-  /// The tree each panel last drew, rebuilt only when what it was built from changed.
+  /// The tree each panel or the quick switcher last read, rebuilt only when what
+  /// it was built from changed.
   @ObservationIgnored var fileTreeCache: [Worktree.ID: FileTreeCacheEntry] = [:]
   /// Listings too large to build in a render, held until a render takes one.
   @ObservationIgnored var fileTreeListings: [Worktree.ID: FileTreeListing] = [:]

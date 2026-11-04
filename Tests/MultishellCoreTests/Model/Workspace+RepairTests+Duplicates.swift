@@ -8,7 +8,7 @@ import Testing
 extension WorkspaceRepairTests {
   /// The same as the tab case below, one collection up: the dead copy is the
   /// one kept, the prune then drops it, and its tabs and sessions go too.
-  @Test func aWorktreeIdListedTwiceKeepsTheCopyWhoseProjectIsStillThere() throws {
+  @Test func aWorktreeIDListedTwiceKeepsTheCopyWhoseProjectIsStillThere() throws {
     var workspace = try decodeJSON(
       Workspace.self,
       #"""
@@ -31,7 +31,7 @@ extension WorkspaceRepairTests {
 
   /// First entry wins, so deduping before the dangling prune can keep the
   /// copy naming a worktree that has gone and lose the live one with it.
-  @Test func aTabIdListedTwiceKeepsTheCopyWhoseWorktreeIsStillThere() throws {
+  @Test func aTabIDListedTwiceKeepsTheCopyWhoseWorktreeIsStillThere() throws {
     let tab = UUID()
     let dead = UUID()
     let live = UUID()

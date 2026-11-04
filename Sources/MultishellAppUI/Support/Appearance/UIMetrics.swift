@@ -10,6 +10,9 @@ struct UIMetrics: Equatable {
   /// sits in, a step inside it.
   static let floatingPanelCornerRadius: Double = 10
   static let floatingPanelWellCornerRadius: Double = floatingPanelCornerRadius - 3
+  /// Round a row's selection and hover fill (sidebar, Files panel, quick
+  /// switcher), the filter field, a tooltip and a CI failure's excerpt.
+  static let rowCornerRadius: Double = 6
 
   /// Layout space a split's divider takes, wider than its line: the panes are
   /// NSViews and take mouse events before a SwiftUI overlay.

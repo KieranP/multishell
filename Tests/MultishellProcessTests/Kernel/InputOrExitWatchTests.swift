@@ -45,7 +45,7 @@ struct InputOrExitWatchTests {
     writer.waitUntilExit()
   }
 
-  @Test func noProcessIdGivesNoWatch() {
+  @Test func noProcessIDGivesNoWatch() {
     #expect(InputOrExitWatch(descriptor: 0, pid: 0) == nil)
   }
 }

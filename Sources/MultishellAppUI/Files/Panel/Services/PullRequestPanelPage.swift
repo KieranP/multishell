@@ -26,7 +26,7 @@ struct PullRequestPanelPage: View {
       } else {
         ScrollView {
           VStack(alignment: .leading, spacing: 0) {
-            PanelCard(theme: theme) {
+            ServicePageCard(theme: theme) {
               PullRequestSummary(
                 model: model,
                 worktree: worktree,
@@ -48,16 +48,16 @@ struct PullRequestPanelPage: View {
             }
             let services = model.services(of: worktree)
             if let outgrown = services.outgrownText {
-              PanelNote(text: outgrown, theme: theme, metrics: model.metrics)
+              ServicePageNote(text: outgrown, theme: theme, metrics: model.metrics)
             }
             if let problem = services.pullRequestReadProblemText {
-              PanelNote(text: problem, theme: theme, metrics: model.metrics)
+              ServicePageNote(text: problem, theme: theme, metrics: model.metrics)
             }
             CreatePullRequestButton(model: model, worktree: worktree)
               .controlSize(.small)
               .padding(.horizontal, UIMetrics.servicePageSideInset)
               .padding(.bottom, 6)
-            PanelSectionHeader(
+            ServicePageSectionHeader(
               title: t("panel.checks", readiness.requirements.count),
               isExpanded: $showsChecks,
               theme: theme,
@@ -73,7 +73,7 @@ struct PullRequestPanelPage: View {
                 )
               }
               if let problem = model.panelReadProblem(of: worktree) {
-                PanelNote(text: problem, theme: theme, metrics: model.metrics)
+                ServicePageNote(text: problem, theme: theme, metrics: model.metrics)
               }
             }
           }
@@ -81,7 +81,7 @@ struct PullRequestPanelPage: View {
         }
       }
     } else if let text = page.emptyText {
-      PanelEmptyState(
+      ServicePageEmptyState(
         text: text,
         theme: theme,
         metrics: model.metrics,

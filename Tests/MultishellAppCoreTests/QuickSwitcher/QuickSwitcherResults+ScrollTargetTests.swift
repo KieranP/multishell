@@ -29,7 +29,7 @@ struct QuickSwitcherResultsScrollTargetTests {
       selected: selected,
       isSelectedByPointer: isSelectedByPointer,
       arrowPresses: arrowPresses,
-      query: QuickSwitcherResults.Query(scope: .all, text: text),
+      basis: QuickSwitcherResults.Basis(scope: .all, text: text),
     )
   }
 

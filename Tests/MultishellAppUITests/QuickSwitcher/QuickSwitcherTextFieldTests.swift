@@ -43,7 +43,7 @@ struct QuickSwitcherTextFieldTests {
     #expect(try harness.field().stringValue == "")
   }
 
-  @Test func aGreaterThanSignPastedWithTextLeavesTheCaretAfterTheRest() throws {
+  @Test func aGreaterThanSignTypedWithTextInOneInsertLeavesTheCaretAfterTheRest() throws {
     let harness = QuickSwitcherFieldHarness(scope: .all)
 
     try harness.type(">split")

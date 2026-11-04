@@ -62,9 +62,10 @@ extension WorktreeGit {
       ["reflog", "show", "--format=%gs", RefName.local(branch)],
       in: project.path,
     )
-    guard let first = output.split(whereSeparator: \.isNewline).last, first.hasPrefix(prefix)
+    guard let creationEntry = output.split(whereSeparator: \.isNewline).last,
+      creationEntry.hasPrefix(prefix)
     else { return nil }
-    return String(first.dropFirst(prefix.count))
+    return String(creationEntry.dropFirst(prefix.count))
   }
 
   /// Every commit the branch has pointed at, as its reflog keeps them; empty
@@ -75,50 +76,6 @@ extension WorktreeGit {
       in: project.path,
     )
     return Set(output.split(whereSeparator: \.isNewline).map(String.init))
-  }
-
-  /// The commits the local branch has past `tip`, a remote branch's: those a
-  /// push would send. `nil` where git failed.
-  public func commitCount(
-    ofBranch branch: String,
-    past tip: String,
-    in directory: URL,
-  ) async -> Int? {
-    await runner.output(
-      ["rev-list", "--count", "\(tip)..\(RefName.local(branch))", "--"],
-      in: directory,
-    )
-    .flatMap { Int($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
-  }
-
-  /// Whether `tip` has a commit of its own whose change `head` lacks: by patch,
-  /// so a rebased head still holds it, and on no branch but its own.
-  public func hasChanges(
-    on tip: String,
-    pastHead head: String,
-    ownRemoteBranch: String,
-    ownBranch: String,
-    in project: Project,
-  ) async
-    -> Bool?
-  {
-    // A commit some other branch holds came with a sync, as from the trunk; a
-    // sync's merge commit is no change `git cherry` would weigh.
-    let otherBranches = [
-      "--exclude=\(ownRemoteBranch)", "--remotes", "--exclude=\(ownBranch)", "--branches",
-    ]
-    guard
-      let unpublished = await runner.output(
-        ["rev-list", "--no-merges", tip, "--not", head] + otherBranches,
-        in: project.path,
-      )
-    else { return nil }
-    let ownCommits = Set(unpublished.split(whereSeparator: \.isNewline).map(String.init))
-    // Patching is the dear half, and a branch with no commit of its own needs none.
-    guard !ownCommits.isEmpty else { return false }
-    guard let unmatched = await runner.output(["cherry", head, tip], in: project.path)
-    else { return nil }
-    return !PatchEquivalenceParser.unmatchedCommits(unmatched).isDisjoint(with: ownCommits)
   }
 
   /// `nil` where the branch is gone or git failed.

@@ -28,7 +28,7 @@ extension AppModel {
     // scheduled already; a worktree that only went schedules nothing.
     let moved = upstreams(ofProject: project.id).contains { upstreamsBefore[$0.key] != $0.value }
     let hasScheduledRead = moved && remoteState.readLog.hasAsked(project.id)
-    if !hasScheduledRead { scheduleServicesRead(of: project.id) }
+    if !hasScheduledRead { scheduleServicesRefresh(of: project.id) }
   }
 
   private func upstreams(ofProject id: Project.ID) -> [Worktree.ID: BranchUpstream] {

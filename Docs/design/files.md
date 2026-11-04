@@ -585,3 +585,8 @@ Raised by reviews and settled; a review need not raise these again.
 - **`"makefile"` in both `byCodeFenceName` and `byFileName`.** `byFileName`
   matches a file's name in its own case; a fence's name is folded, so reading it
   there would take `.bashrc` or `brewfile` as fence names by accident.
+- **The panel's page named "mode" in code** (2026-11-04 review): the type is
+  `FilesPanelMode`, the UI and these docs say page. AppModel says mode for the
+  value throughout (`setFilesPanelMode`, `showFilesPanel(_ mode:of:)`,
+  `lastReadFilesPanelMode`); renaming the type would touch the persisted
+  `filesPanelMode` key, the command line's setting name and about 140 sites.

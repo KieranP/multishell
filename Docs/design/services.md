@@ -576,10 +576,6 @@ command-line tool.
   here can drive.
 - **`ProjectSettings.init` takes `disabledIntegrations`** though no caller
   passes it: the init lists every setting a user sets, as it does the rest.
-- **`aSlowCheckOfAnEarlierToolCannotOverwriteTheNewOnesVerdict` waits three
-  seconds for a verdict that must not come.** A check that nothing happened
-  needs a window; under load it can pass without reaching the guard, never fail
-  with the guard in place.
 - **`ExternalLinkButton`'s stroke and `PullRequestGlyph`'s are each written
   out.** Both are 1.5 in 16, each glyph's own design stroke, and only the pull
   request's keeps a one-point floor; a shared width would tie them.
@@ -638,6 +634,8 @@ command-line tool.
   two callers.
 - **`GitHubMergeOptionsRecord`'s fields are internal**, as
   `GitHubPullRequestRecord`'s are; the records keep one form.
+- **`CIJobRow` greys out a job with no id itself.** It reads one field of the
+  job, which `openCIJob` guards again; no rule chooses between rows.
 
 ### Asked both ways
 

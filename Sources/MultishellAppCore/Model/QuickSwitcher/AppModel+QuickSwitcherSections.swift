@@ -57,8 +57,8 @@ extension AppModel {
       selected: state.selected,
       isSelectedByPointer: state.isSelectedByPointer,
       arrowPresses: state.arrowPresses,
-      emptyReason: emptyReason(query, in: state.scope),
-      query: QuickSwitcherResults.Query(scope: state.scope, text: state.text),
+      emptyReason: emptyReason(query, of: state),
+      basis: QuickSwitcherResults.Basis(scope: state.scope, text: state.text),
     )
   }
 
@@ -66,13 +66,12 @@ extension AppModel {
   /// not missed them yet.
   private func emptyReason(
     _ query: QuickSwitcherQuery,
-    in scope: QuickSwitcherScope,
+    of state: QuickSwitcherState,
   ) -> QuickSwitcherEmptyReason {
     // Read so a read or build ending redraws this, the pending reads and the
     // cache below being unobserved.
     _ = fileTreeBuildLandings
-    let listsFiles = scope == .files || (scope == .all && !query.isEmpty)
-    if listsFiles, let id = workspace.selectedWorktreeID,
+    if state.listsFiles, let id = workspace.selectedWorktreeID,
       isReadingQuickSwitcherFiles(of: id, searching: !query.isEmpty)
     {
       return .readingFiles

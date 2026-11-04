@@ -42,15 +42,13 @@ enum GitHubFixtures {
     mergeStateStatus: String = "CLEAN",
     autoMerge: Bool = false,
     headRefName: String = "feature",
-    headRefOid: String = "abc123",
-    owner: String = "KieranP",
   ) -> String {
     let autoMergeRequest =
       autoMerge ? #"{"enabledAt":"2026-10-20T01:00:00Z","mergeMethod":"SQUASH"}"# : "null"
     return """
       {"autoMergeRequest":\(autoMergeRequest),"baseRefName":"main","headRefName":"\(headRefName)",\
-      "headRefOid":"\(headRefOid)","headRepository":{"name":"multishell"},\
-      "headRepositoryOwner":{"login":"\(owner)"},"isDraft":\(isDraft),\
+      "headRefOid":"abc123","headRepository":{"name":"multishell"},\
+      "headRepositoryOwner":{"login":"KieranP"},"isDraft":\(isDraft),\
       "mergeStateStatus":"\(mergeStateStatus)","mergeable":"\(mergeable)","number":\(number),\
       "reviewDecision":"\(reviewDecision)","state":"\(state)","title":"Pull request \(number)",\
       "updatedAt":"2026-10-20T01:00:00Z","url":"https://github.com/KieranP/multishell/pull/\(number)"}

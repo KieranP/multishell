@@ -74,7 +74,7 @@ enum OpenCodePluginScripts {
     // or never under `heldBounds`, holding node open while it runs.
     const timeout = globalThis.setTimeout
     globalThis.setTimeout = (callback, delay) => {
-      if (delay !== \(OpenCodePlugin.lookupBoundMilliseconds)) return timeout(callback, delay)
+      if (delay !== \(OpenCodePlugin.waitBoundMilliseconds)) return timeout(callback, delay)
       if (flags.heldBounds) return { unref: () => {} }
       const timer = timeout(callback, flags.realBounds ? delay : 0)
       timer.unref = () => timer

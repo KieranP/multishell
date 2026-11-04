@@ -19,10 +19,6 @@ struct AppModelQuickSwitcherSectionsTests {
     model.quickSwitcherResults.sections.first { $0.kind == kind }?.items.map(\.target) ?? []
   }
 
-  private static func tracked(_ paths: [String]) -> TrackedFiles {
-    TrackedFiles(paths: paths, submodulePaths: [], notCheckedOutPaths: [], isCapped: false)
-  }
-
   @Test func emptyItListsWaitingAgentsLongestWaitFirstThenRecentWorktrees() throws {
     let harness = Harness()
     harness.model.select(harness.feature)
@@ -61,7 +57,9 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func aSearchKeptForTheFilesScopeAnswersAllsFewerWithoutSearchingAgain() throws {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift", "src/app.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [
+      "src/main.swift", "src/app.swift",
+    ])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("swift")
     _ = harness.model.quickSwitcherResults
@@ -82,7 +80,9 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func aSearchKeptForAllAnswersTheFilesScopeWithoutSearchingAgain() throws {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift", "src/app.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [
+      "src/main.swift", "src/app.swift",
+    ])
     harness.model.toggleQuickSwitcher(.all)
     harness.model.setQuickSwitcherText("swift")
     _ = harness.model.quickSwitcherResults
@@ -216,7 +216,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func whatChangedListsAPathOnceThoughGitListsItAsRemovedAndNew() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked([])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [])
     var status = WorktreeStatus()
     status.setChanges([
       StatusChange(path: "a.txt", kind: .deleted, lines: .notCounted),
@@ -235,7 +235,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func whatChangedListsAHundredAtMostAsASearchKeeps() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked([])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [])
     var status = WorktreeStatus()
     status.setChanges(
       (0..<150).map { StatusChange(path: "out/\($0).txt", kind: .added, lines: .notCounted) }
@@ -364,7 +364,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func typedTextFindsTheSelectedWorktreesFilesAfterThePlaces() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["README.md", "src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["README.md", "src/main.swift"])
     harness.model.toggleQuickSwitcher(.all)
 
     harness.model.setQuickSwitcherText("main")
@@ -379,7 +379,9 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func aRenderWithTheSameTextAndListingReusesTheLastFileSearch() throws {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift", "src/app.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [
+      "src/main.swift", "src/app.swift",
+    ])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("swift")
     _ = harness.model.quickSwitcherResults
@@ -395,7 +397,7 @@ struct AppModelQuickSwitcherSectionsTests {
         == [.file(path: "src/app.swift", worktreeID: harness.main.id)]
     )
 
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     #expect(
       Self.targets(harness.model, in: files)
         == [.file(path: "src/main.swift", worktreeID: harness.main.id)]
@@ -405,7 +407,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func closingDropsTheKeptFileSearch() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("main")
     _ = harness.model.quickSwitcherResults
@@ -424,7 +426,7 @@ struct AppModelQuickSwitcherSectionsTests {
       StatusChange(path: "a.txt", kind: .added, lines: .counted(insertions: 2, deletions: 0)),
     ])
     harness.model.statuses[harness.main.id] = status
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["a.txt", "b.txt"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["a.txt", "b.txt"])
 
     harness.model.toggleQuickSwitcher(.files)
 
@@ -439,11 +441,9 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func whatChangedLeavesOutASubmoduleAndANestedRepositoryNeitherOfWhichOpens() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
+    harness.model.trackedFiles[harness.main.id] = .sample(
       paths: ["vendor/lib", "a.txt"],
       submodulePaths: ["vendor/lib"],
-      notCheckedOutPaths: [],
-      isCapped: false,
     )
     var status = WorktreeStatus()
     status.setChanges(
@@ -475,7 +475,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func aLargeListingStillBeingBuiltIsSaidToBeReadNotMissing() throws {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("readme")
     _ = harness.model.quickSwitcherResults
@@ -509,7 +509,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func anEmptyFilesScopeIsNotHeldUpByAListingBuiltForTextSinceDeleted() throws {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("readme")
     _ = harness.model.quickSwitcherResults
@@ -561,12 +561,12 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func aKeptFileSearchIsLetGoOnceItsWorktreesTreeTakesAnotherListing() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     harness.model.toggleQuickSwitcher(.all)
     harness.model.setQuickSwitcherText("main")
     _ = harness.model.quickSwitcherResults
     harness.model.setQuickSwitcherScope(.commands)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift", "a.txt"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift", "a.txt"])
 
     _ = harness.model.fileTree(of: harness.main.id)
 
@@ -576,7 +576,9 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func tabbingFromAllRoundToFilesReusesTheSearchKept() throws {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift", "src/app.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [
+      "src/main.swift", "src/app.swift",
+    ])
     harness.model.toggleQuickSwitcher(.all)
     harness.model.setQuickSwitcherText("swift")
     _ = harness.model.quickSwitcherResults
@@ -601,7 +603,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func whatChangedIsListedWithoutBuildingTheWholeListing() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["a.txt"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["a.txt"])
     var status = WorktreeStatus()
     status.setChanges([StatusChange(path: "a.txt", kind: .modified, lines: .notCounted)])
     harness.model.statuses[harness.main.id] = status
@@ -615,7 +617,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func whatChangedLeavesOutAFileThatCannotBeOpened() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["a.txt"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["a.txt"])
     var status = WorktreeStatus()
     status.setChanges(
       ["a.txt", "caf\u{FFFD}.txt"].map { path in
@@ -635,7 +637,7 @@ struct AppModelQuickSwitcherSectionsTests {
   @Test func filesReadOnceAndBeingReadAgainMatchNothingRatherThanAwaitAnything() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = Self.tracked(["src/main.swift"])
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("readme")
 

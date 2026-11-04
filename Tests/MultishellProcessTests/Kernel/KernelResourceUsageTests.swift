@@ -26,7 +26,7 @@ struct KernelResourceUsageTests {
     #expect(usage.footprint > 1 << 20)
   }
 
-  @Test func aPidNothingHoldsHasNoUsage() {
+  @Test func aPIDNothingHoldsHasNoUsage() {
     #expect(KernelResourceUsage.of(deadPID()) == nil)
   }
 }

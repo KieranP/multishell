@@ -55,12 +55,12 @@ extension AppModel {
     return remoteState.toolStatuses[integration].map(IntegrationAvailability.tool) ?? .checking
   }
 
-  /// Asked as the page opens: each asks the service, so never on the poll.
   /// The page has closed: tools found later wait for it to open again.
   public func stopAskingToolStatuses() {
     remoteState.wantsToolStatuses = false
   }
 
+  /// Asked as the page opens: each asks the service, so never on the poll.
   public func refreshServiceToolStatuses() async {
     remoteState.wantsToolStatuses = true
     remoteState.toolStatusAsk += 1

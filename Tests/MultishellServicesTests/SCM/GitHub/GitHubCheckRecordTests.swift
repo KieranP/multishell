@@ -30,7 +30,7 @@ struct GitHubCheckRecordTests {
   @Test func aCheckTheRequiredListNamesIsRequired() throws {
     let checks = try GitHubCheckRecord.checks(
       from: Data(rerun.utf8),
-      required: [CheckKey(workflow: "CI", name: "lint")],
+      required: [GitHubCheckKey(workflow: "CI", name: "lint")],
     )
     #expect(checks.map(\.isRequired) == [false, true])
   }

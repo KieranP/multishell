@@ -24,7 +24,7 @@ struct AppModelPullRequestMergeTests {
       pullRequestNumber: 44,
       headCommit: "tip",
       checks: [
-        PullRequestCheck(name: "test", workflow: "CI", status: status, isRequired: true, link: nil)
+        .sample(name: "test", status: status)
       ],
     )
   }
@@ -67,7 +67,7 @@ struct AppModelPullRequestMergeTests {
     #expect(pending.method == .squash)
     #expect(pending.message == Self.options.messages[.squash])
     #expect(!pending.waitsForChecks)
-    #expect(pending.confirmTitle == "Squash and Merge")
+    #expect(pending.confirmLabel == "Squash and Merge")
   }
 
   @Test func confirmingSendsTheEditedMessageHeldToThePagesHeadThenListsAgain() async throws {
@@ -100,7 +100,7 @@ struct AppModelPullRequestMergeTests {
     await harness.model.confirmMerge(of: feat)
     let sent = try #require(harness.model.pendingMerge(of: feat))
     #expect(sent.wasAccepted)
-    #expect(sent.confirmTitle == nil, "nothing to merge again")
+    #expect(sent.confirmLabel == nil, "nothing to merge again")
     host.releaseHeldReads()
     await poll.value
 
@@ -156,7 +156,7 @@ struct AppModelPullRequestMergeTests {
     await harness.model.beginMerge(of: feat)
     let pending = try #require(harness.model.pendingMerge(of: feat))
     #expect(pending.waitsForChecks)
-    #expect(pending.confirmTitle == "Enable Auto-Merge")
+    #expect(pending.confirmLabel == "Enable Auto-Merge")
 
     await harness.model.confirmMerge(of: feat)
 

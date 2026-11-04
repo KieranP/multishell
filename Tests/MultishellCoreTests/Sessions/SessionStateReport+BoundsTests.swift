@@ -37,7 +37,7 @@ struct SessionStateReportBoundsTests {
     #expect(line.utf8.count < 2_000)
   }
 
-  @Test func aWorkersTypeAndIdAreBoundedGoingOntoTheChannelAsComingOffIt() throws {
+  @Test func aWorkersTypeAndIDAreBoundedGoingOntoTheChannelAsComingOffIt() throws {
     let long = String(repeating: "x", count: 70_000)
     let worker = WorkerReport(id: long, phase: .working, type: long)
     #expect(worker.id == WorkerReport.anonymousID)
@@ -125,7 +125,7 @@ struct SessionStateReportBoundsTests {
     #expect(message.hasSuffix("…"))
   }
 
-  @Test func aConversationIdLongerThanAnyAgentsIsDroppedComingOffTheChannel() throws {
+  @Test func aConversationIDLongerThanAnyAgentsIsDroppedComingOffTheChannel() throws {
     let long = String(repeating: "c", count: SessionStateReport.maximumIdentifierLength + 1)
     let dropped = try #require(
       SessionStateReport.parse(#"{"v":1,"state":"running","conversation":"\#(long)"}"#)

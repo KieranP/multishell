@@ -6,7 +6,7 @@ import Testing
 
 @Suite @MainActor
 struct AppModelTabOpeningTests {
-  @Test func newAgentTabRecordsTheIdAndOpensTheAgentThroughTheLoginShell() {
+  @Test func newAgentTabRecordsTheIDAndOpensTheAgentThroughTheLoginShell() {
     let harness = Harness()
     harness.model.setPreferredAgent("claude")
     harness.model.select(harness.main)

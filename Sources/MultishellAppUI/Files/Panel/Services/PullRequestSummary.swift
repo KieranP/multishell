@@ -21,7 +21,7 @@ struct PullRequestSummary: View {
   var body: some View {
     let metrics = model.metrics
     VStack(alignment: .leading, spacing: 6) {
-      HStack(alignment: .firstTextBaseline, spacing: UIMetrics.serviceCardGlyphSpacing) {
+      HStack(alignment: .firstTextBaseline, spacing: UIMetrics.servicePageCardGlyphSpacing) {
         PullRequestGlyph(
           mark: PullRequestMark(pullRequest),
           theme: theme,
@@ -46,7 +46,7 @@ struct PullRequestSummary: View {
           .foregroundStyle(theme.header.textSecondary)
           .fixedSize(horizontal: false, vertical: true)
       }
-      .padding(.leading, metrics.serviceCardTextIndent)
+      .padding(.leading, metrics.servicePageCardTextIndent)
     }
     .cornerLink(
       help: t("action.open-on", model.pullRequestHostName(of: worktree) ?? ""),

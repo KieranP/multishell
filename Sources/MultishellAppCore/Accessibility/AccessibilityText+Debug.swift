@@ -31,8 +31,7 @@ extension AccessibilityText {
     parts.append(t("spoken.total-memory", row.totalMemoryText))
     switch disclosure {
     case .notExpandable: break
-    case .collapsed: parts.append(t("spoken.collapsed"))
-    case .expanded: parts.append(t("spoken.expanded"))
+    case .collapsed, .expanded: parts.append(Self.disclosure(isExpanded: disclosure == .expanded))
     }
     return parts.joined(separator: ", ")
   }

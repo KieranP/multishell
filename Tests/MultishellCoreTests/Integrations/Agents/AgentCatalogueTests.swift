@@ -63,7 +63,7 @@ struct AgentCatalogueTests {
 
   /// A workspace written by a newer build names agents this one has never
   /// heard of; the tab still has to draw something.
-  @Test func anUnknownIdGetsLettersFromTheIdItself() {
+  @Test func anUnknownIDGetsLettersFromTheIDItself() {
     #expect(AgentCatalogue.mark("wezterm-agent") == .monogram("Wa"))
   }
 }

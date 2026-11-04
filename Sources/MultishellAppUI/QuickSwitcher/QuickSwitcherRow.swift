@@ -8,6 +8,7 @@ import SwiftUI
 struct QuickSwitcherRow: View {
   let item: QuickSwitcherItem
   let isSelected: Bool
+  let now: Date
   let theme: Theme
   let metrics: UIMetrics
   let choose: () -> Void
@@ -46,7 +47,7 @@ struct QuickSwitcherRow: View {
     }
     .onTapGesture(perform: choose)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(AccessibilityText.quickSwitcherRow(item, at: .now))
+    .accessibilityLabel(AccessibilityText.quickSwitcherRow(item, at: now))
     .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(.default, choose)
   }
@@ -81,12 +82,10 @@ struct QuickSwitcherRow: View {
           Text(state.displayName)
             .font(metrics.font(size: metrics.caption, weight: .semibold))
             .foregroundStyle(theme.color(for: state, on: palette))
-          TimelineView(.periodic(from: .now, by: 30)) { context in
-            if let elapsed = item.elapsed(at: context.date) {
-              Text(elapsed)
-                .font(metrics.font(size: metrics.caption).monospacedDigit())
-                .foregroundStyle(palette.textTertiary)
-            }
+          if let elapsed = item.elapsed(at: now) {
+            Text(elapsed)
+              .font(metrics.font(size: metrics.caption).monospacedDigit())
+              .foregroundStyle(palette.textTertiary)
           }
         }
       }

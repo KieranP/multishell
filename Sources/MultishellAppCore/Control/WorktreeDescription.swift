@@ -31,7 +31,7 @@ struct WorktreeDescription: Encodable, Equatable {
   }
 
   /// The pull request its row shows, as `worktrees show` prints it.
-  struct PullRequest: Encodable, Equatable {
+  struct PullRequestRecord: Encodable, Equatable {
     let integration: String
     let number: Int
     let title: String
@@ -46,7 +46,7 @@ struct WorktreeDescription: Encodable, Equatable {
     /// Merged at a head the branch has since moved past, so no proof it landed.
     let isOutgrown: Bool
 
-    init(_ pullRequest: MultishellServices.PullRequest, integration: String, isOutgrown: Bool) {
+    init(_ pullRequest: PullRequest, integration: String, isOutgrown: Bool) {
       self.integration = integration
       self.isOutgrown = isOutgrown
       number = pullRequest.number
@@ -60,14 +60,14 @@ struct WorktreeDescription: Encodable, Equatable {
   }
 
   /// The newest CI run of its branch.
-  struct CIRun: Encodable, Equatable {
+  struct CIRunRecord: Encodable, Equatable {
     let integration: String
     /// passed, failed, running, on-hold, cancelled or unknown.
     let status: String
     let branch: String
     let commit: String
 
-    init(_ run: MultishellServices.CIRun, integration: String) {
+    init(_ run: CIRun, integration: String) {
       self.integration = integration
       status = run.status.rawValue
       branch = run.branch
@@ -86,8 +86,8 @@ struct WorktreeDescription: Encodable, Equatable {
   let mergedInto: String?
   let lastCommit: Date?
   let operation: Operation?
-  let pullRequest: PullRequest?
-  let ciRun: CIRun?
+  let pullRequest: PullRequestRecord?
+  let ciRun: CIRunRecord?
 
   /// The entry's own keys, then these, in one object.
   func encode(to encoder: any Encoder) throws {

@@ -19,7 +19,7 @@ enum ServiceStandInFields {
   private static let failure: Set = ["workflow", "job", "text"]
 
   /// What is not an object or a list of them is left to the decoder to refuse.
-  static func check(_ data: Data) throws(ServiceStandInUnreadable) {
+  static func refuseUnknownKeys(in data: Data) throws(ServiceStandInUnreadable) {
     guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
       return
     }

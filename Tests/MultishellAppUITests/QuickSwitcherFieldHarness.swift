@@ -8,7 +8,7 @@ import Testing
 
 @MainActor
 final class QuickSwitcherFieldHarness {
-  let models = ModelHarness()
+  private let models = ModelHarness()
   let worktree: Worktree
   private let host: NSHostingView<QuickSwitcherLayer>
   private let otherField = NSTextField(frame: NSRect(x: 0, y: 0, width: 100, height: 20))

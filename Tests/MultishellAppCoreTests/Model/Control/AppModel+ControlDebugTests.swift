@@ -45,7 +45,7 @@ struct AppModelControlDebugTests {
     #expect(samples.allSatisfy { $0["takenAt"] is String })
   }
 
-  @Test func theMemoryAnswerHasEachLiveTabByTheIdTheListingGives() async throws {
+  @Test func theMemoryAnswerHasEachLiveTabByTheIDTheListingGives() async throws {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))

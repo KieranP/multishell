@@ -87,8 +87,7 @@ extension WorktreeServices {
     let headed = pullRequests.filter { pullRequest in
       pullRequest.headBranch == upstream.branch && pullRequest.headRepository.isSame(as: repository)
     }
-    let isOpen: (PullRequest) -> Bool = { $0.state == .open || $0.state == .draft }
-    return headed.filter(isOpen).max(by: { $0.updatedAt < $1.updatedAt })
+    return headed.filter { !$0.state.isSettled }.max(by: { $0.updatedAt < $1.updatedAt })
       ?? headed.max(by: { $0.updatedAt < $1.updatedAt })
   }
 

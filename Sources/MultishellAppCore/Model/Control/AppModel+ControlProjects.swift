@@ -73,7 +73,7 @@ extension AppModel {
   /// A drop on the edge of another project's block.
   func replyToMoveProject(
     _ id: String,
-    _ placement: WorkspaceTab.Placement,
+    _ placement: ProjectPlacement,
     anchor: String,
   ) -> ControlReply {
     guard let moving = project(withControlID: id) else { return .refused(.noProject(id: id)) }
@@ -81,7 +81,7 @@ extension AppModel {
       return .refused(.noProject(id: anchor))
     }
     guard moving.id != target.id else { return .refused(.projectBesideItself(id: id)) }
-    moveProject(moving.id, placement == .before ? .above : .below, of: target.id)
+    moveProject(moving.id, placement, of: target.id)
     return .done
   }
 

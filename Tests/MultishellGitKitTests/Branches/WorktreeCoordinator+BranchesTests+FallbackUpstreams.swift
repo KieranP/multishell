@@ -74,14 +74,9 @@ extension WorktreeCoordinatorBranchesTests {
     try await fixture.addOrigin()
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     let repository = fixture.project.path
-    let fork = fixture.root.appendingPathComponent("fork.git")
     _ = try await fixture.runner.run(["push", "-q", "-u", "origin", "feat:feat"], in: repository)
-    _ = try await fixture.runner.run(
-      ["clone", "-q", "--bare", repository.path, fork.path],
-      in: fixture.root,
-    )
-    _ = try await fixture.runner.run(["remote", "add", "fork", fork.path], in: repository)
-    _ = try await fixture.runner.run(["fetch", "-q", "fork"], in: repository)
+    try await fixture.addFork()
+    _ = try await fixture.runner.run(["push", "-q", "fork", "feat"], in: repository)
     _ = try await fixture.runner.run(["config", "branch.feat.pushRemote", "fork"], in: repository)
     let tip = try await fixture.tip(of: "feat")
 

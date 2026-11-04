@@ -17,7 +17,7 @@ extension AppModelWorktreeRemovalRequestTests {
     let (host, _) = harness.connectServices()
     try await harness.addOrigin()
     let feat = try await harness.createWorktree(onBranch: "feat")
-    try await commitWork(named: "work", in: feat, harness)
+    try await harness.commitFile("work.txt", in: feat)
     _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
     _ = try await harness.git.run(["push", "-q", "origin", "--delete", "feat"], in: feat.path)
     _ = try await harness.git.run(["fetch", "-q", "--prune", "origin"], in: feat.path)
@@ -42,22 +42,6 @@ extension AppModelWorktreeRemovalRequestTests {
     return feat
   }
 
-  private func commitWork(
-    named name: String,
-    in worktree: Worktree,
-    _ harness: GitHarness,
-  )
-    async throws
-  {
-    try "\(name)\n".write(
-      to: worktree.path.appendingPathComponent("\(name).txt"),
-      atomically: true,
-      encoding: .utf8,
-    )
-    _ = try await harness.git.run(["add", "."], in: worktree.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", name], in: worktree.path)
-  }
-
   @Test func removingASquashMergedPullRequestsWorktreeDeletesItsBranch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -80,7 +64,7 @@ extension AppModelWorktreeRemovalRequestTests {
     await harness.model.requestWorktreeRemoval(of: feat)?.value
     let pending = try #require(harness.model.pendingWorktreeRemoval)
 
-    try await commitWork(named: "late", in: feat, harness)
+    try await harness.commitFile("late.txt", in: feat)
     await harness.model.answerWorktreeRemoval(pending, choice: 0)?.value
     await harness.awaitOperationEnd(on: feat.id)
 

@@ -12,7 +12,7 @@ struct MergeRequirementRow: View {
   let theme: Theme
 
   var body: some View {
-    if case .check(let check) = requirement.kind, check.webPage != nil {
+    if let check = requirement.openableCheck {
       Button {
         model.openCheck(check)
       } label: {

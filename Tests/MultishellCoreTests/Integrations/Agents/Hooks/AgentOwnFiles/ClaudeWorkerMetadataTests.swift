@@ -22,7 +22,7 @@ struct ClaudeWorkerMetadataTests {
     )
   }
 
-  @Test func aParentThatCouldNotBeAnIdIsNoParentAndAFileThatIsNotJSONIsNoMetadata() {
+  @Test func aParentThatCouldNotBeAnIDIsNoParentAndAFileThatIsNotJSONIsNoMetadata() {
     #expect(metadata(#"{"parentAgentId":"../x"}"#)?.parentID == nil)
     #expect(metadata(#"{"name":"","description":""}"#) == ClaudeWorkerMetadata())
     #expect(metadata("not json") == nil)
@@ -35,7 +35,7 @@ struct ClaudeWorkerMetadataTests {
     )
   }
 
-  @Test func aWorkerIdThatWouldLeaveTheFolderIsNeverRead() throws {
+  @Test func aWorkerIDThatWouldLeaveTheFolderIsNeverRead() throws {
     let directory = try Scratch.directory("worker-metadata")
     defer { Scratch.remove(directory) }
     try Data(#"{"name":"planted"}"#.utf8).write(to: directory.appendingPathComponent("x.meta.json"))

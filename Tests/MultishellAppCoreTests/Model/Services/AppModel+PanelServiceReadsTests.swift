@@ -50,13 +50,7 @@ struct AppModelPanelServiceReadsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (feat, host, _) = try await showingFeat(harness)
-    let required = PullRequestCheck(
-      name: "build",
-      workflow: "CI",
-      status: .failed,
-      isRequired: true,
-      link: nil,
-    )
+    let required = PullRequestCheck.sample(status: .failed)
     host.answerChecks([required])
 
     harness.model.setFilesPanelMode(.pullRequest)
@@ -466,10 +460,24 @@ struct AppModelPanelServiceReadsTests {
     defer { harness.tearDown() }
     harness.store.setFilesPanelMode(.pullRequest)
     let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.trackedFiles[main.id] = .sample(paths: ["src/app.swift"])
+    let rows = { harness.model.fileTreeRows(of: main.id) }
+    try await waitUntil { rows().contains { $0.path == "src" } }
+    let folder = try #require(rows().first { $0.path == "src" })
 
-    #expect(
-      harness.model.filesPanelState(of: main.id).mode == .files,
-      "no host's tool, so Files shows",
-    )
+    harness.model.toggleFolder(folder, in: main.id)
+
+    #expect(harness.model.filesPanelState(of: main.id).mode == .files)
+    #expect(harness.model.filesPanelState(of: main.id).expandedFolders.contains("src"))
+  }
+
+  @Test func aServicesPageWhoseToolIsGoneShowsFilesUntilOneConnects() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.store.setFilesPanelMode(.ciRuns)
+
+    #expect(harness.model.shownFilesPanelMode == .files)
+    harness.connectServices()
+    #expect(harness.model.shownFilesPanelMode == .ciRuns)
   }
 }

@@ -60,24 +60,24 @@ struct WorktreeGitRemotesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.addOrigin()
-    try await addFork(to: fixture)
+    try await fixture.addFork()
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     try await follow("origin/main", from: "feat", in: fixture)
     let git = fixture.coordinator.git
     let path = fixture.project.path
 
-    #expect(await git.pushRemote(ofBranch: "feat", in: path) == nil)
+    #expect(await git.configuredPushRemote(ofBranch: "feat", in: path) == nil)
     _ = try await fixture.runner.run(["config", "remote.pushDefault", "fork"], in: path)
-    #expect(await git.pushRemote(ofBranch: "feat", in: path) == "fork")
+    #expect(await git.configuredPushRemote(ofBranch: "feat", in: path) == "fork")
     _ = try await fixture.runner.run(["config", "branch.feat.pushRemote", "origin"], in: path)
-    #expect(await git.pushRemote(ofBranch: "feat", in: path) == "origin")
+    #expect(await git.configuredPushRemote(ofBranch: "feat", in: path) == "origin")
   }
 
   @Test func publishingToTheBranchsOwnPushRemoteKeepsWhatItFollows() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.addOrigin()
-    try await addFork(to: fixture)
+    try await fixture.addFork()
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     try await follow("origin/main", from: "feat", in: fixture)
     _ = try await fixture.runner.run(
@@ -105,7 +105,7 @@ struct WorktreeGitRemotesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.addOrigin()
-    try await addFork(to: fixture)
+    try await fixture.addFork()
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     try await follow("origin/main", from: "feat", in: fixture)
 
@@ -117,15 +117,6 @@ struct WorktreeGitRemotesTests {
     )
 
     #expect(try await followed(by: "feat", in: fixture) == "fork/feat")
-  }
-
-  private func addFork(to fixture: RepositoryFixture) async throws {
-    let fork = fixture.root.appendingPathComponent("fork.git", isDirectory: true)
-    _ = try await fixture.runner.run(["init", "-q", "--bare", fork.path], in: fixture.root)
-    _ = try await fixture.runner.run(
-      ["remote", "add", "fork", fork.path],
-      in: fixture.project.path,
-    )
   }
 
   private func follow(

@@ -12,24 +12,24 @@ struct QuickSwitcherScopeBar: View {
   var body: some View {
     HStack(spacing: UIMetrics.segmentSpacing * 2) {
       ForEach(QuickSwitcherScope.allCases) { candidate in
-        let isInForce = candidate == scope
+        let isSelected = candidate == scope
         Button {
           setScope(candidate)
         } label: {
           Text(candidate.title)
-            .font(metrics.font(size: metrics.caption, weight: isInForce ? .semibold : .regular))
-            .foregroundStyle(isInForce ? palette.text : palette.textSecondary)
+            .font(metrics.font(size: metrics.caption, weight: isSelected ? .semibold : .regular))
+            .foregroundStyle(isSelected ? palette.text : palette.textSecondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 3)
             .background(
-              isInForce ? palette.color(.selectionBackground) : .clear,
+              isSelected ? palette.color(.selectionBackground) : .clear,
               in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius),
             )
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .selectableButtonTraits(isSelected: isInForce)
+        .selectableButtonTraits(isSelected: isSelected)
       }
       Spacer(minLength: 0)
     }

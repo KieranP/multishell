@@ -6,11 +6,8 @@ extension AppModel {
   /// Two items of the same titles, "…" or not, are one path, which only ever
   /// chooses the first, so a later one is never listed, nor the first if greyed out.
   private static func choosableCommands(_ items: [PlatformMenuItem]) -> [PlatformMenuItem] {
-    var seen = Set<[String]>()
-    return items.filter { item in
-      seen.insert(item.path.map(\.withoutTrailingEllipsis)).inserted && item.isEnabled
-        && !(item.path.last ?? "").isEmpty
-    }
+    items.uniqued { $0.path.map(\.withoutTrailingEllipsis) }
+      .filter { $0.isEnabled && !($0.path.last ?? "").isEmpty }
   }
 
   /// Cmd+P and Shift+Cmd+P. Its own key again closes it; the other key
@@ -157,7 +154,7 @@ extension AppModel {
 
     case .file(let path, let worktreeID):
       let opening = chooseFileRow(path, in: worktreeID, as: asker)
-      return .openingFile(path: path, worktree: worktreeID, opening)
+      return .openingFile(path: path, worktreeID: worktreeID, opening)
 
     case .fileTab(let id):
       return goTo(worktreeChosen(by: target), as: asker) { store.activateTab(id) }
@@ -196,7 +193,7 @@ extension AppModel {
     guard quickSwitcher != nil else { return false }
     quickSwitcher = nil
     forgetQuickSwitcherFileSearches()
-    forgetUnreadPanelListings()
+    forgetUnreadFileListings()
     return true
   }
 
@@ -259,7 +256,7 @@ extension AppModel {
       focusActivePane()
     }
     // After the cover comes down, so the panel it hid keeps the listing it shows.
-    forgetUnreadPanelListings()
+    forgetUnreadFileListings()
     return opened
   }
 }

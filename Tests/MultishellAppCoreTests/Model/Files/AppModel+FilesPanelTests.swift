@@ -24,16 +24,7 @@ struct AppModelFilesPanelTests {
     return status
   }
 
-  private static func tracked(_ count: Int) -> TrackedFiles {
-    TrackedFiles(
-      paths: (0..<count).map { "src/file\($0).txt" },
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
-  }
-
-  @Test func aClickOnTheGitBadgeOpensThePanelOnItsGitListUnderModified() async throws {
+  @Test func aClickOnTheGitBadgeOpensThePanelOnItsChangesListUnderModified() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
@@ -54,7 +45,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
 
-    harness.model.showPanelPage(.pullRequest, of: main)
+    harness.model.showFilesPanel(.pullRequest, of: main)
 
     #expect(harness.model.showsFilesPanel)
     #expect(harness.model.workspace.selectedWorktreeID == main.id)
@@ -66,7 +57,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
 
-    harness.model.showPanelPage(.ciRuns, of: main)
+    harness.model.showFilesPanel(.ciRuns, of: main)
 
     #expect(harness.model.showsFilesPanel)
     #expect(harness.model.workspace.selectedWorktreeID == main.id)
@@ -163,13 +154,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    let paths = (0..<30_000).map { "src/file\($0).txt" }
-    harness.model.trackedFiles[main.id] = TrackedFiles(
-      paths: paths,
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
 
     let first = harness.model.fileTreeRows(of: main.id)
     try await waitUntil { !harness.model.fileTreeRows(of: main.id).isEmpty }
@@ -214,7 +199,7 @@ struct AppModelFilesPanelTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
     harness.model.setFilesPanelMode(.changes)
-    harness.model.trackedFiles[main.id] = Self.tracked(30_000)
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
     harness.model.statuses[main.id] = Self.modified(30_000)
 
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
@@ -229,7 +214,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(30_000)
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
 
     harness.model.setFilesPanelFilterText("file1", in: main.id)
@@ -256,9 +241,9 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(10)
+    harness.model.trackedFiles[main.id] = .sample(count: 10)
     harness.model.submoduleReadings[main.id] = [
-      "sub": SubmoduleReading(tracked: Self.tracked(30_000), status: nil)
+      "sub": SubmoduleReading(tracked: .sample(count: 30_000), status: nil)
     ]
 
     _ = harness.model.fileTreeRows(of: main.id)
@@ -271,7 +256,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(10)
+    harness.model.trackedFiles[main.id] = .sample(count: 10)
     harness.model.statuses[main.id] = Self.modified(30_000, kind: .deleted)
 
     _ = harness.model.fileTreeRows(of: main.id)
@@ -284,7 +269,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(30_000)
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
 
     let first = harness.model.fileTreeRows(of: main.id)
     let kept = harness.model.fileTreeCache[main.id]
@@ -302,7 +287,7 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(30_000)
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
     try await waitUntil { !harness.model.fileTreeRows(of: main.id).isEmpty }
     let clean = harness.model.statuses[main.id]
     var dirty = WorktreeStatus()
@@ -384,11 +369,11 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(30_000)
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
     try await waitUntil { !renderer.rows.isEmpty }
 
-    harness.model.trackedFiles[main.id] = Self.tracked(3)
+    harness.model.trackedFiles[main.id] = .sample(count: 3)
     try await waitUntil { harness.model.fileTreeCache[main.id]?.tree.listing.filePaths.count == 3 }
 
     #expect(harness.model.fileTreeCache[main.id]?.tree.listing.filePaths.count == 3)
@@ -400,10 +385,10 @@ struct AppModelFilesPanelTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
-    harness.model.trackedFiles[main.id] = Self.tracked(30_000)
+    harness.model.trackedFiles[main.id] = .sample(count: 30_000)
     _ = harness.model.fileTreeRows(of: main.id)
 
-    harness.model.trackedFiles[main.id] = Self.tracked(3)
+    harness.model.trackedFiles[main.id] = .sample(count: 3)
     _ = harness.model.fileTreeRows(of: main.id)
 
     try await waitUntil { harness.model.pendingFileTreeListings[main.id] == nil }

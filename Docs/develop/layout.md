@@ -39,7 +39,8 @@
   and shows under `Debug/`, the JSON the command line prints, its settings keys
   and what a request keeps while it runs under `Control/`, the pull request and
   CI values the row, the menus and the panel's pages all read under `Services/`,
-  the rest under `Support/`.
+  grouped as `PullRequests/`, `Merge/`, `CI/` and `Publish/` with what spans
+  them at its root, and the rest under `Support/`.
 - **AppModel's extensions sit under `Model/` by concern**, what spans them all
   at the root beside the type: the concerns are too many for one alphabetical
   listing to keep a concern's files together.
@@ -54,11 +55,12 @@
   one agent's own files under `Agents/Hooks/AgentOwnFiles/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed as
   `multishell`, since it and the app would share one products path on a
-  case-insensitive disk. Commands that drive the app sit under `Control/` by
-  command group with the parsing, polling and errors they share, every usage
-  text under `Usage/`, and the reports hooks and shells send under `Reports/`.
-  **MultishellAppUI is the app**, built as `Multishell`: views, the engine host,
-  the Mac platform port and its own word lookup.
+  case-insensitive disk. Commands that drive the app sit under `Control/`, a
+  group of several files in a folder of its own (`Debug/`, `Panes/`, `Tabs/`)
+  and a one-file group at the root with the parsing, polling and errors they
+  share, every usage text under `Usage/`, and the reports hooks and shells send
+  under `Reports/`. **MultishellAppUI is the app**, built as `Multishell`:
+  views, the engine host, the Mac platform port and its own word lookup.
 - **MultishellHighlight is a file tab's colouring**: the tree-sitter parse and
   query over each grammar package, and the spans laid onto a diff's rows, at its
   root; a grammar's compile, our query corrections and the text Svelte's grammar

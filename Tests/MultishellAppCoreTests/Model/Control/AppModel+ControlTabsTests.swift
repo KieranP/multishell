@@ -18,7 +18,7 @@ struct AppModelControlTabsTests {
     NewTabOrder(worktreeID: worktree, agentID: agentID, task: task, command: command)
   }
 
-  @Test func theListingNamesEachWorktreesTabsAndPanesByTheIdsTheOtherRequestsTake() async throws {
+  @Test func theListingNamesEachWorktreesTabsAndPanesByTheIDsTheOtherRequestsTake() async throws {
     let harness = Harness()
     harness.model.select(harness.main)
     harness.model.splitActivePane(.horizontal)

@@ -177,7 +177,7 @@ extension SessionStatesTests {
     #expect(report(&states, .done) == .done)
   }
 
-  @Test func theRosterIsKeptByIdInOrderOfArrival() {
+  @Test func theRosterIsKeptByIDInOrderOfArrival() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     _ = report(&states, .running, started("w1"))

@@ -6,6 +6,7 @@ import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellGitKit
+@testable import MultishellServices
 
 /// The merged badge: what each worktree is measured against, and what a
 /// pass that finds nothing moved costs.
@@ -394,5 +395,132 @@ struct AppModelBranchScansTests {
     harness.model.forgetMergeStates(ofProject: harness.project.id)
     #expect(harness.model.mergeStates.isEmpty, "the badges go")
     #expect(harness.model.lastCommitDates.count == 1, "the dates stay")
+  }
+
+  @Test func aMergedPullRequestHeadedByTheTipIsProofTheBranchLanded() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: feat.path)
+    try await harness.pushToGitHubOrigin(feat)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, state: .merged, headBranch: "feat", headCommit: tip)])
+    )
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let state = harness.model.mergeState(of: feat)
+    #expect(state == .merged(.pullRequest(number: 9), into: "origin/main"), "named as git's are")
+    #expect(state.isCertain, "the removal dialog leads with deleting the branch")
+  }
+
+  @Test func anOlderScanLandingLastLeavesTheNewerOnesUpstreams() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.connectServices()
+    try await harness.addOrigin()
+    let project = harness.project.path
+    _ = try await harness.git.run(
+      ["push", "-q", "origin", "HEAD:refs/heads/release"],
+      in: project,
+    )
+    _ = try await harness.git.run(["fetch", "-q", "origin"], in: project)
+    _ = try await harness.git.run(
+      ["branch", "-q", "--track", "side", "origin/release"],
+      in: project,
+    )
+    let sidePath = harness.model.effectiveWorktreeSettings(for: harness.project)
+      .worktreePath(forBranch: "side", in: harness.project)
+    _ = try await harness.git.run(["worktree", "add", "-q", sidePath.path, "side"], in: project)
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    await harness.model.refreshWorktrees(of: harness.project)
+    let slow = harness.root.appendingPathComponent("reflog-slow")
+    let started = harness.root.appendingPathComponent("reflog-started")
+    let gate = harness.root.appendingPathComponent("reflog-gate")
+    try Data().write(to: slow)
+    try harness.wrapGit(
+      in: """
+        case "$*" in *reflog*) [ -e '\(slow.path)' ] && /usr/bin/touch '\(started.path)' && \(harness.holdLine(until: gate)) ;; esac
+        """
+    )
+    harness.model.remoteState.branchStartPoints = [:]
+    let older = Task { await harness.model.refreshBranchScan(of: harness.project) }
+    try await waitUntil { FileManager.default.fileExists(atPath: started.path) }
+    #expect(
+      FileManager.default.fileExists(atPath: started.path),
+      "the older scan reads the reflog",
+    )
+
+    try FileManager.default.removeItem(at: slow)
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "more"], in: feat.path)
+    _ = try await harness.git.run(["push", "-q", "origin", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    try Data().write(to: gate)
+    await older.value
+
+    #expect(harness.model.remoteState.upstreams[feat.id]?.tip == (try await harness.tip(of: feat)))
+  }
+
+  @Test func gitsOwnProofStandsOverAMergedPullRequest() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: feat.path)
+    _ = try await harness.git.run(
+      ["merge", "-q", "--no-ff", "-m", "merge", "feat"],
+      in: harness.project.path,
+    )
+    _ = try await harness.git.run(["push", "-q", "origin", "main"], in: harness.project.path)
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(
+      .success([
+        .sample(
+          number: 9,
+          state: .merged,
+          headBranch: "feat",
+          headCommit: try await harness.tip(of: feat),
+        )
+      ])
+    )
+
+    await harness.model.refreshBranchScans()
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.mergeState(of: feat) == .merged(.ancestor, into: "origin/main"))
+  }
+
+  @Test func aMergedPullRequestNeverCallsTheTrunkMerged() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try await harness.pushToGitHubOrigin(main)
+    host.answer(
+      .success([
+        .sample(
+          number: 3,
+          state: .merged,
+          headBranch: "main",
+          headCommit: try await harness.tip(of: main),
+        )
+      ])
+    )
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(
+      harness.model.services(of: main).pullRequest?.number == 3,
+      "its row may show the pull request",
+    )
+    #expect(harness.model.mergeState(of: main) == .unknown, "but the trunk is never merged")
   }
 }

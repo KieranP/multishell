@@ -12,5 +12,5 @@ extension PendingBranchPublish {
     return t("publish.message-unpushed", remote, t("count.unpushed-commits", unpushedCommits))
   }
 
-  public var confirmLabel: String { t("publish.push") }
+  public var pushLabel: String { t("publish.push") }
 }

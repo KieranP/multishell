@@ -72,7 +72,7 @@ final class RemoteState {
   @ObservationIgnored var nextPollInterval: Duration?
   /// The page the panel last read for, which a change of page or of tools is
   /// measured against.
-  @ObservationIgnored var lastReadPanelPage: FilesPanelMode?
+  @ObservationIgnored var lastReadFilesPanelMode: FilesPanelMode?
   /// The panel's read for the row the selection rests on, once it settles.
   @ObservationIgnored var pendingPanelRead: Task<Void, Never>?
   /// Runs whose workflows are being read, which a second ask leaves to that read.

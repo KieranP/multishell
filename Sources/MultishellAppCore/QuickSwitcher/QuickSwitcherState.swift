@@ -15,4 +15,9 @@ public struct QuickSwitcherState: Equatable, Sendable {
   let commands: [PlatformMenuItem]
   /// The worktree whose files it has asked to read since it opened.
   var filesAskedFor: Worktree.ID?
+
+  /// The Files scope, or text in All: what lists the selected worktree's files.
+  var listsFiles: Bool {
+    scope == .files || (scope == .all && !QuickSwitcherQuery(text).isEmpty)
+  }
 }

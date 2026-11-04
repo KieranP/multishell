@@ -2,7 +2,7 @@
 /// row the keyboard is on.
 public struct QuickSwitcherResults: Equatable, Sendable {
   /// What the rows were listed for.
-  public struct Query: Equatable, Sendable {
+  public struct Basis: Equatable, Sendable {
     let scope: QuickSwitcherScope
     let text: String
   }
@@ -14,7 +14,7 @@ public struct QuickSwitcherResults: Equatable, Sendable {
   public let emptyReason: QuickSwitcherEmptyReason?
   /// Every row's target, top to bottom, for the arrow keys.
   let rows: [QuickSwitcherTarget]
-  let query: Query
+  let basis: Basis
   /// Counts every arrow press, one that moves nothing at either end included.
   public let arrowPresses: Int
   /// The row last moved to is no longer listed, so the selection is the first;
@@ -29,10 +29,10 @@ public struct QuickSwitcherResults: Equatable, Sendable {
     isSelectedByPointer: Bool = false,
     arrowPresses: Int = 0,
     emptyReason: QuickSwitcherEmptyReason? = nil,
-    query: Query = Query(scope: .all, text: ""),
+    basis: Basis = Basis(scope: .all, text: ""),
   ) {
     self.sections = sections
-    self.query = query
+    self.basis = basis
     self.arrowPresses = arrowPresses
     let rows = sections.flatMap(\.items).map(\.target)
     self.rows = rows

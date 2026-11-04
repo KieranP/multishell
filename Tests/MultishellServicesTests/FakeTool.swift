@@ -14,8 +14,8 @@ struct FakeTool {
   let executable: URL
   let runLog = GitRunLog()
 
-  /// Each run's arguments and then its variables, oldest run first.
-  var calls: [String] {
+  /// Oldest run first.
+  var calls: [FakeToolCall] {
     let files =
       (try? FileManager.default.contentsOfDirectory(
         at: directory,
@@ -26,7 +26,7 @@ struct FakeTool {
       .filter { $0.lastPathComponent.hasPrefix(Self.callFilePrefix) }
       .sorted { modified($0) < modified($1) }
       .compactMap { try? String(contentsOf: $0, encoding: .utf8) }
-      .flatMap { $0.split(whereSeparator: \.isNewline).map(String.init) }
+      .compactMap(Self.call(recordedAs:))
   }
 
   init(named name: String, _ body: String) throws {
@@ -40,6 +40,13 @@ struct FakeTool {
       """,
       at: directory.appendingPathComponent(name),
     )
+  }
+
+  /// Empty lines count: a run given no arguments writes an empty first line.
+  private static func call(recordedAs text: String) -> FakeToolCall? {
+    let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+    guard lines.count >= 2 else { return nil }
+    return FakeToolCall(arguments: String(lines[0]), variables: String(lines[1]))
   }
 
   func tearDown() {

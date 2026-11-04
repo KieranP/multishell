@@ -24,7 +24,7 @@ struct CPUUsageMeterTests {
     #expect(shares[2] == 0, "first seen, with nothing to measure from")
   }
 
-  @Test func aPidReusedWithLessTimeThanBeforeReadsNothingRatherThanBelowZero() {
+  @Test func aPIDReusedWithLessTimeThanBeforeReadsNothingRatherThanBelowZero() {
     var meter = CPUUsageMeter()
     _ = meter.takeReading(of: [.sample(pid: 1, cpuTime: .seconds(5))], at: start)
     let shares = meter.takeReading(

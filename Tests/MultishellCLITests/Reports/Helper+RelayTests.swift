@@ -360,7 +360,7 @@ struct HelperRelayTests {
     )
   }
 
-  @Test func aPidThatIsNoNumberIsAUsageErrorThatRelaysNothing() async throws {
+  @Test func aPIDThatIsNoNumberIsAUsageErrorThatRelaysNothing() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
 

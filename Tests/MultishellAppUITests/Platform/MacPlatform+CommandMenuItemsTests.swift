@@ -66,7 +66,7 @@ struct MacPlatformCommandMenuItemsTests {
 
     let items = MacPlatform.commandItems(
       in: bar,
-      skippingMenus: [services.submenu, window.submenu, help.submenu].compactMap(\.self),
+      leavingOutMenus: [services.submenu, window.submenu, help.submenu].compactMap(\.self),
     )
 
     #expect(items.map(\.path) == [["Multishell", "Settings…"], ["View", "Files Panel"]])
@@ -80,7 +80,7 @@ struct MacPlatformCommandMenuItemsTests {
     bar.addItem(app)
     let registered = NSMenu(title: "Services")
 
-    let items = MacPlatform.commandItems(in: bar, skippingMenus: [registered])
+    let items = MacPlatform.commandItems(in: bar, leavingOutMenus: [registered])
 
     #expect(items.map(\.path) == [["Multishell", "Settings…"]])
   }
@@ -92,12 +92,12 @@ struct MacPlatformCommandMenuItemsTests {
     bar.addItem(app)
     bar.addItem(Self.menu("View", [("Files Panel", "toggleFiles:")]))
 
-    let items = MacPlatform.commandItems(in: bar, skippingMenus: [])
+    let items = MacPlatform.commandItems(in: bar, leavingOutMenus: [])
 
     #expect(items.map(\.path) == [["Multishell", "Settings…"], ["View", "Files Panel"]])
   }
 
-  @Test func theThemePickerIsASettingAndACommandThatCannotActIsLeftOff() {
+  @Test func theThemePickerIsASettingAndACommandThatCannotActIsGreyedOut() {
     let bar = NSMenu()
     bar.addItem(Self.menu("Multishell", [("Settings…", "showSettings:")]))
     let terminal = Self.menu(
@@ -107,7 +107,7 @@ struct MacPlatformCommandMenuItemsTests {
     terminal.submenu?.addItem(Self.menu(t("menu.theme"), [("Nord", "swiftUIAction:")]))
     bar.addItem(terminal)
 
-    let items = MacPlatform.commandItems(in: bar, skippingMenus: []) { title in
+    let items = MacPlatform.commandItems(in: bar, leavingOutMenus: []) { title in
       title != t("menu.next-tab")
     }
 

@@ -6,7 +6,7 @@ import Testing
 
 @Suite
 struct WorkerRosterTests {
-  @Test func aWorkerForgottenPastTheRosterLimitTakesEveryStartUnderItsId() {
+  @Test func aWorkerForgottenPastTheRosterLimitTakesEveryStartUnderItsID() {
     let capacity = SessionStateReport.rosterCapacity
     var roster = WorkerRoster()
     for index in 0..<capacity {

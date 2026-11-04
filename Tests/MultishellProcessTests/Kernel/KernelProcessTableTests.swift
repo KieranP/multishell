@@ -12,7 +12,7 @@ struct KernelProcessTableTests {
     #expect(KernelProcessTable.name(of: ownPID)?.isEmpty == false)
   }
 
-  @Test func launchdIsKnownAndAPidNothingHoldsIsNot() {
+  @Test func launchdIsKnownAndAPIDNothingHoldsIsNot() {
     let pid = deadPID()
     #expect(KernelProcessTable.name(of: 1) != nil)
     #expect(KernelProcessTable.name(of: pid) == nil)

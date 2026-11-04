@@ -12,7 +12,13 @@ struct ExternalLinkButton: View {
   var body: some View {
     PlainGlyphButton(help: help, action: action) {
       ExternalLinkShape()
-        .stroke(style: StrokeStyle(lineWidth: size * 1.5 / 16, lineCap: .round, lineJoin: .round))
+        .stroke(
+          style: StrokeStyle(
+            lineWidth: size * 1.5 / GlyphGrid.side,
+            lineCap: .round,
+            lineJoin: .round,
+          )
+        )
         .frame(width: size, height: size)
         .frame(width: size + Self.hitPadding, height: size + Self.hitPadding)
         .accessibilityHidden(true)

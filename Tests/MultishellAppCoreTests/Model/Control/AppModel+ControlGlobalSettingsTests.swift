@@ -233,7 +233,7 @@ struct AppModelControlGlobalSettingsTests {
     #expect(harness.model.workspace.appearance.uiFontName == "Menlo")
   }
 
-  @Test func theFilesPanelIsNamedFilesOrGitOnTheCommandLineAsInThePanel() async {
+  @Test func theFilesPanelIsNamedFilesOrGitOnTheCommandLine() async {
     let harness = Harness()
 
     #expect(

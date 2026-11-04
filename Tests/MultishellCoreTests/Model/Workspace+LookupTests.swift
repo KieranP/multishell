@@ -58,6 +58,25 @@ struct WorkspaceLookupTests {
     )
   }
 
+  @Test func everyWorktreesTabsInOnePassMatchItsGroupsInStripOrder() {
+    let (store, main, feature) = twoWorktreeStore()
+    let a = store.openTab(in: main.id)!
+    let b = store.openTab(in: main.id)!
+    let c = store.openTab(in: main.id)!
+    let elsewhere = store.openTab(in: feature.id)!
+    let first = store.workspace.groups(in: main.id)[0]
+    store.moveTab(a.id, .after, toNewGroupOf: first.id)
+
+    let tabsByWorktree = store.workspace.workspaceTabsByWorktree()
+
+    let perGroup = store.workspace.groups(in: main.id).flatMap { group in
+      store.workspace.workspaceTabs(inGroup: group.id)
+    }
+    #expect(tabsByWorktree[main.id]?.map(\.id) == perGroup.map(\.id))
+    #expect(tabsByWorktree[main.id]?.map(\.id) == [b.id, c.id, a.id])
+    #expect(tabsByWorktree[feature.id]?.map(\.id) == [elsewhere.id])
+  }
+
   @Test func twoTabsShareAGroupOnlyWhileBothAreInIt() {
     let (store, _, worktree) = demoStore()
     let a = store.openTab(in: worktree.id)!

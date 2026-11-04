@@ -50,7 +50,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case listWorktrees(project: String?)
   /// A name put into the next debug sample and the signpost log.
   case markDebugSample(name: String)
-  case moveProject(id: String, placement: WorkspaceTab.Placement, anchor: String)
+  case moveProject(id: String, placement: ProjectPlacement, anchor: String)
   case moveTab(id: UUID, placement: WorkspaceTab.Placement, anchor: UUID)
   case moveTabToNewGroup(id: UUID)
   /// A terminal tab onto another worktree's row, shells and all.

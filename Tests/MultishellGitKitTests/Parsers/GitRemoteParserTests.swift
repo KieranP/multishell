@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct GitRemoteParserTests {
-  @Test func eachRemoteIsListedOnceWithTheUrlItFetchesFrom() {
+  @Test func eachRemoteIsListedOnceWithTheURLItFetchesFrom() {
     let remotes = GitRemoteParser.parse(
       """
       origin\tgit@github.com:KieranP/multishell.git (fetch)

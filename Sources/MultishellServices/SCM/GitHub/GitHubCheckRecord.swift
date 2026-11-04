@@ -13,8 +13,8 @@ struct GitHubCheckRecord: Decodable {
   let bucket: String?
   let link: String?
 
-  private var key: CheckKey? {
-    name.map { CheckKey(workflow: workflow?.trimmedOrNil, name: $0) }
+  private var key: GitHubCheckKey? {
+    name.map { GitHubCheckKey(workflow: workflow?.trimmedOrNil, name: $0) }
   }
 
   /// A rerun's job sits at a higher number in its link, `…/job/119668904437`.
@@ -34,8 +34,8 @@ struct GitHubCheckRecord: Decodable {
 
   /// Each check once, its newest run kept: `gh` lists a rerun beside the run it
   /// replaced. `required` is what `--required` listed, by workflow and name.
-  static func checks(from json: Data, required: Set<CheckKey>) throws -> [PullRequestCheck] {
-    var newest: [CheckKey: (order: Int, record: Self)] = [:]
+  static func checks(from json: Data, required: Set<GitHubCheckKey>) throws -> [PullRequestCheck] {
+    var newest: [GitHubCheckKey: (order: Int, record: Self)] = [:]
     for record in try records(from: json) {
       guard let key = record.key else { continue }
       if let kept = newest[key], kept.record.jobNumber >= record.jobNumber { continue }
@@ -47,7 +47,7 @@ struct GitHubCheckRecord: Decodable {
   }
 
   /// The workflow and name `--required` answered with.
-  static func keys(from json: Data) throws -> Set<CheckKey> {
+  static func keys(from json: Data) throws -> Set<GitHubCheckKey> {
     Set(try records(from: json).compactMap(\.key))
   }
 

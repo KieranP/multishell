@@ -11,15 +11,15 @@ extension MacPlatform {
     in menu: NSMenu,
     under path: [String],
     isInAppMenu: Bool = false,
-    skipping isSkipped: (NSMenuItem) -> Bool = { _ in false },
+    leavingOut isLeftOut: (NSMenuItem) -> Bool = { _ in false },
     isAvailable: (NSMenuItem) -> Bool = { _ in true },
   ) -> [PlatformMenuItem] {
     menu.update()
-    let appMenu = path.isEmpty ? menu.items.first : nil
-    return menu.items.filter { !$0.isSeparatorItem && !$0.isHidden && !isSkipped($0) }.flatMap {
+    let appMenuItem = path.isEmpty ? menu.items.first : nil
+    return menu.items.filter { !$0.isSeparatorItem && !$0.isHidden && !isLeftOut($0) }.flatMap {
       item in
       let itemPath = path + [item.title]
-      let isInAppMenu = isInAppMenu || item === appMenu
+      let isInAppMenu = isInAppMenu || item === appMenuItem
       guard let submenu = item.submenu else {
         return [
           PlatformMenuItem(
@@ -35,7 +35,7 @@ extension MacPlatform {
         in: submenu,
         under: itemPath,
         isInAppMenu: isInAppMenu,
-        skipping: isSkipped,
+        leavingOut: isLeftOut,
         isAvailable: isAvailable,
       )
     }

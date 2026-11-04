@@ -24,7 +24,7 @@ struct CIPanelPage: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 0) {
           CIRunCard(model: model, worktree: worktree, run: run, now: now, theme: theme)
-          PanelSectionHeader(
+          ServicePageSectionHeader(
             title: t("panel.latest-run"),
             isExpanded: $showsLatestRun,
             theme: theme,
@@ -35,7 +35,7 @@ struct CIPanelPage: View {
           }
           let earlier = model.earlierCIRuns(of: worktree)
           if !earlier.isEmpty {
-            PanelSectionHeader(
+            ServicePageSectionHeader(
               title: t("panel.earlier-runs", earlier.count),
               isExpanded: $showsEarlierRuns,
               theme: theme,
@@ -48,14 +48,14 @@ struct CIPanelPage: View {
             }
           }
           if let problem = model.panelReadProblem(of: worktree) {
-            PanelNote(text: problem, theme: theme, metrics: metrics)
+            ServicePageNote(text: problem, theme: theme, metrics: metrics)
           }
         }
         .padding(.bottom, 8)
       }
       .ticking($now, every: Self.ageTickInterval)
     } else if let text = page.emptyText {
-      PanelEmptyState(
+      ServicePageEmptyState(
         text: text,
         theme: theme,
         metrics: metrics,

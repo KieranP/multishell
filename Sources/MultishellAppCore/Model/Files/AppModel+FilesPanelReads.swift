@@ -8,8 +8,8 @@ extension AppModel {
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, a status read and, under Branch, a branch read.
   public func readFilesPanel(of id: Worktree.ID) {
-    remoteState.lastReadPanelPage = shownFilesPanelMode
-    forgetUnreadPanelListings()
+    remoteState.lastReadFilesPanelMode = shownFilesPanelMode
+    forgetUnreadFileListings()
     guard shownFilesPanelMode.listsFiles else {
       schedulePanelServicesRead(of: id)
       return
@@ -27,16 +27,16 @@ extension AppModel {
 
   /// Keeps only the listings something still reads: a shown file page's worktree's,
   /// and the selected worktree's while the quick switcher is up.
-  func forgetUnreadPanelListings() {
+  func forgetUnreadFileListings() {
     var read = Set<Worktree.ID>()
     if isFileListOnScreen, let id = filesPanelWorktree?.id { read.insert(id) }
     if quickSwitcher != nil, let id = workspace.selectedWorktreeID { read.insert(id) }
-    forgetPanelListings { !read.contains($0) }
+    forgetFileListings { !read.contains($0) }
   }
 
   /// Linux's tracked files and their tree hold about 80 MB, so only the listings
-  /// `forgetUnreadPanelListings` names are kept; coming back reads them again.
-  func forgetPanelListings(where isForgotten: (Worktree.ID) -> Bool) {
+  /// `forgetUnreadFileListings` names are kept; coming back reads them again.
+  func forgetFileListings(where isForgotten: (Worktree.ID) -> Bool) {
     for (id, task) in pendingTrackedFilesReads where isForgotten(id) {
       task.cancel()
       pendingTrackedFilesReads[id] = nil

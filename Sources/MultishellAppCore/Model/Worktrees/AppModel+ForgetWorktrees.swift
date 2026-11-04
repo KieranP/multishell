@@ -46,7 +46,7 @@ extension AppModel {
       ignoreVerdicts[id] = nil
       filesPanelStates[id] = nil
     }
-    forgetPanelListings(where: gone.contains)
+    forgetFileListings(where: gone.contains)
     panelFolderReads.cancel { gone.contains($0.worktreeID) }
     setIfChanged(\.submoduleReadings, submoduleReadings.filter { !gone.contains($0.key) })
     setIfChanged(\.ignoredFolderEntries, ignoredFolderEntries.filter { !gone.contains($0.key) })

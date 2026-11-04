@@ -22,7 +22,7 @@ struct ThemeServiceColorsTests {
   }
 
   private func hex(_ color: Color) throws -> Int {
-    let srgb = try #require(NSColor(color).usingColorSpace(.sRGB))
+    let srgb = try color.inSRGB()
     let channel = { (value: CGFloat) in Int((value * 255).rounded()) }
     return channel(srgb.redComponent) << 16 | channel(srgb.greenComponent) << 8
       | channel(srgb.blueComponent)

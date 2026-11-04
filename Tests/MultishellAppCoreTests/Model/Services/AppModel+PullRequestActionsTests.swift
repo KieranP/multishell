@@ -60,11 +60,7 @@ struct AppModelPullRequestActionsTests {
     defer { harness.tearDown() }
     let feat = try await harness.createWorktree(onBranch: "feat")
     let fake = try harness.modelOnFakeGit("case \"$*\" in *for-each-ref*) exit 1;; esac")
-    let host = FakePullRequestHost()
-    fake.remoteState.connections = ServiceConnections(
-      pullRequestHosts: [.gitHub: host],
-      ciProviders: [:],
-    )
+    let (host, _) = harness.connectServices(to: fake)
     let pending = PendingBranchPublish(
       worktree: feat,
       branch: "feat",
@@ -132,11 +128,7 @@ struct AppModelPullRequestActionsTests {
       esac
       """
     )
-    let host = FakePullRequestHost()
-    model.remoteState.connections = ServiceConnections(
-      pullRequestHosts: [.gitHub: host],
-      ciProviders: [:],
-    )
+    let (host, _) = harness.connectServices(to: model)
     if let upstreamTip {
       model.remoteState.upstreams[feat.id] = BranchUpstream(
         remote: "origin",
@@ -242,10 +234,7 @@ struct AppModelPullRequestActionsTests {
       esac
       """
     )
-    fake.remoteState.connections = ServiceConnections(
-      pullRequestHosts: [.gitHub: FakePullRequestHost()],
-      ciProviders: [:],
-    )
+    harness.connectServices(to: fake)
     fake.remoteState.upstreams[feat.id] = BranchUpstream(
       remote: "origin",
       branch: "feat",
@@ -410,10 +399,7 @@ struct AppModelPullRequestActionsTests {
     defer { harness.tearDown() }
     let feat = try await harness.createWorktree(onBranch: "feat")
     let fake = try harness.modelOnFakeGit("case \"$*\" in *\"remote -v\"*) exit 128;; esac")
-    fake.remoteState.connections = ServiceConnections(
-      pullRequestHosts: [.gitHub: FakePullRequestHost()],
-      ciProviders: [:],
-    )
+    harness.connectServices(to: fake)
 
     await fake.createPullRequest(for: feat)
 
@@ -442,11 +428,7 @@ struct AppModelPullRequestActionsTests {
     defer { harness.tearDown() }
     let feat = try await harness.createWorktree(onBranch: "feat")
     let fake = try harness.modelOnFakeGit("case \"$*\" in *status*) exit 128;; esac")
-    let host = FakePullRequestHost()
-    fake.remoteState.connections = ServiceConnections(
-      pullRequestHosts: [.gitHub: host],
-      ciProviders: [:],
-    )
+    let (host, _) = harness.connectServices(to: fake)
     fake.remoteState.upstreams[feat.id] = BranchUpstream(
       remote: "origin",
       branch: "feat",
@@ -631,10 +613,10 @@ struct AppModelPullRequestActionsTests {
     let local = URL(string: "file:///etc/passwd")
 
     harness.model.openCheck(
-      PullRequestCheck(name: "a", workflow: nil, status: .passed, isRequired: false, link: web)
+      .sample(name: "a", workflow: nil, isRequired: false, link: web)
     )
     harness.model.openCheck(
-      PullRequestCheck(name: "b", workflow: nil, status: .passed, isRequired: false, link: local)
+      .sample(name: "b", workflow: nil, isRequired: false, link: local)
     )
 
     #expect(harness.platform.openedWebPages == [web].compactMap(\.self))

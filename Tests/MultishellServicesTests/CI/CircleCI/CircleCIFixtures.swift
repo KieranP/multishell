@@ -79,16 +79,14 @@ enum CircleCIFixtures {
   static func run(
     id: String,
     branch: String? = "main",
-    revision: String = "abc1234",
     phase: String = "ended",
-    outcome: String? = nil,
     currentOutcome: String? = "succeeded",
     createdAt: String = "2026-10-27 05:20 UTC",
   ) -> String {
     func json(_ value: String?) -> String { value.map { "\"\($0)\"" } ?? "null" }
     return """
-      {"id":"\(id)","phase":"\(phase)","outcome":\(json(outcome)),"current_outcome":\(json(currentOutcome)),\
-      "branch":\(json(branch)),"revision":"\(revision)","repository_url":"https://github.com/acme/app",\
+      {"id":"\(id)","phase":"\(phase)","outcome":null,"current_outcome":\(json(currentOutcome)),\
+      "branch":\(json(branch)),"revision":"abc1234","repository_url":"https://github.com/acme/app",\
       "commit":{"subject":"work","author_name":"Someone"},"created_at":"\(createdAt)"}
       """
   }

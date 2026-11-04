@@ -54,7 +54,7 @@ extension WorkspaceRepairTests {
     #expect(workspace.focusedGroupByWorktree[other.id] == group.id)
   }
 
-  @Test func aFileTabIsDroppedForAGoneWorktreeAnEscapingPathATakenIdOrARepeatedPath() {
+  @Test func aFileTabIsDroppedForAGoneWorktreeAnEscapingPathATakenIDOrARepeatedPath() {
     var (workspace, tab) = consistentWorkspace()
     let kept = FileTab(worktreeID: tab.worktreeID, groupID: tab.groupID, path: "a.txt")
     workspace.fileTabs = [

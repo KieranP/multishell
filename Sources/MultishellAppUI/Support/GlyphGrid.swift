@@ -1,9 +1,9 @@
 import CoreGraphics
 
-/// The design's 16-unit square that the services' glyphs are drawn on, fitted
+/// The design's 16-unit square that its hand-drawn glyphs are drawn on, fitted
 /// to the shape's rect.
 struct GlyphGrid {
-  private static let side: Double = 16
+  static let side: Double = 16
 
   let unit: Double
   private let origin: CGPoint

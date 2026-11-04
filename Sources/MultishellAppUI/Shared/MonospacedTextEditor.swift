@@ -5,8 +5,12 @@ import SwiftUI
 struct MonospacedTextEditor<Fill: ShapeStyle>: View {
   private static var inset: Double { 4 }
   private static var cornerRadius: Double { 5 }
+  /// The text view's own line padding, which a placeholder has to match.
+  private static var linePadding: Double { 5 }
 
   @Binding var text: String
+  /// Drawn while the text is empty; `nil` draws none.
+  let placeholder: String?
   let fontSize: Double
   let fill: Fill
   /// `nil` draws none.
@@ -20,6 +24,16 @@ struct MonospacedTextEditor<Fill: ShapeStyle>: View {
       .scrollContentBackground(.hidden)
       .frame(minHeight: minHeight, maxHeight: maxHeight)
       .padding(Self.inset)
+      .overlay(alignment: .topLeading) {
+        if text.isEmpty, let placeholder {
+          Text(placeholder)
+            .font(.system(size: fontSize, design: .monospaced))
+            .foregroundStyle(.tertiary)
+            .padding(.horizontal, Self.inset + Self.linePadding)
+            .padding(.vertical, Self.inset)
+            .allowsHitTesting(false)
+        }
+      }
       .background(fill, in: RoundedRectangle(cornerRadius: Self.cornerRadius))
       .overlay {
         if let border {

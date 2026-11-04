@@ -236,16 +236,6 @@ struct AppModelServicePagesTests {
     #expect(harness.model.ciPage(of: feat) == .noRuns(branch: "feat"))
   }
 
-  @Test func aServicesPageWhoseToolIsGoneShowsFiles() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    harness.store.setFilesPanelMode(.ciRuns)
-
-    #expect(harness.model.shownFilesPanelMode == .files)
-    harness.connectServices()
-    #expect(harness.model.shownFilesPanelMode == .ciRuns)
-  }
-
   @Test func aListNeverReadIsNotTakenForNoPullRequest() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

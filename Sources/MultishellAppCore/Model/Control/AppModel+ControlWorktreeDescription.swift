@@ -45,7 +45,7 @@ extension AppModel {
         },
         pullRequest: services.shownPullRequest.flatMap { pullRequest in
           services.pullRequestIntegration.map { integration in
-            WorktreeDescription.PullRequest(
+            WorktreeDescription.PullRequestRecord(
               pullRequest,
               integration: integration.rawValue,
               isOutgrown: services.pullRequest == nil,
@@ -53,7 +53,9 @@ extension AppModel {
           }
         },
         ciRun: services.ciRun.flatMap { run in
-          services.ciIntegration.map { WorktreeDescription.CIRun(run, integration: $0.rawValue) }
+          services.ciIntegration.map { integration in
+            WorktreeDescription.CIRunRecord(run, integration: integration.rawValue)
+          }
         },
       )
     )

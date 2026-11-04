@@ -12,12 +12,7 @@ struct QuickSwitcherFileMatchesTests {
   ) -> FileTree {
     FileTree(
       FileTreeSources(
-        tracked: TrackedFiles(
-          paths: paths,
-          submodulePaths: [],
-          notCheckedOutPaths: notCheckedOut,
-          isCapped: false,
-        ),
+        tracked: .sample(paths: paths, notCheckedOutPaths: notCheckedOut),
         ignoredEntries: ignored,
       )
     )
@@ -71,12 +66,7 @@ struct QuickSwitcherFileMatchesTests {
   @Test func aGitignoredFolderOpenedInTheFilesPanelStillHasItsFilesLeftOut() {
     let tree = FileTree(
       FileTreeSources(
-        tracked: TrackedFiles(
-          paths: ["src/react-app.tsx"],
-          submodulePaths: [],
-          notCheckedOutPaths: [],
-          isCapped: false,
-        ),
+        tracked: .sample(paths: ["src/react-app.tsx"]),
         ignoredEntries: ["node_modules/"],
         ignoredFolderEntries: [
           "node_modules": [
@@ -93,20 +83,10 @@ struct QuickSwitcherFileMatchesTests {
   @Test func anOpenedSubmodulesFilesAreLeftOut() {
     let tree = FileTree(
       FileTreeSources(
-        tracked: TrackedFiles(
-          paths: ["vendor/lib", "src/lib.swift"],
-          submodulePaths: ["vendor/lib"],
-          notCheckedOutPaths: [],
-          isCapped: false,
-        ),
+        tracked: .sample(paths: ["vendor/lib", "src/lib.swift"], submodulePaths: ["vendor/lib"]),
         submodules: [
           "vendor/lib": SubmoduleReading(
-            tracked: TrackedFiles(
-              paths: ["lib.c"],
-              submodulePaths: [],
-              notCheckedOutPaths: [],
-              isCapped: false,
-            ),
+            tracked: .sample(paths: ["lib.c"]),
             status: nil,
           )
         ],

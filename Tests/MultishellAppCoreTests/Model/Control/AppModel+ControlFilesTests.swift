@@ -17,12 +17,9 @@ struct AppModelControlFilesTests {
     harness.model.select(harness.main)
     harness.model.setFilesPanelMode(.files)
     harness.model.setShowsFilesPanel(true)
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["README.md", "src/app.swift", "src/build.swift"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: [
+      "README.md", "src/app.swift", "src/build.swift",
+    ])
     return harness
   }
 
@@ -89,12 +86,7 @@ struct AppModelControlFilesTests {
 
   @Test func aListingStillBeingBuiltSaysSo() async {
     let harness = panelListingFiles()
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: (0..<30_000).map { "src/file\($0).txt" },
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(count: 30_000)
 
     let reply = await harness.messageSource.ask(.listFiles)
 

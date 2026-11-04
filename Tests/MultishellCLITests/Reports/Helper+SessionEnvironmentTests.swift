@@ -11,7 +11,7 @@ import Testing
 struct HelperSessionEnvironmentTests {
   /// The pid reported is the program that ran the hook, past any shells
   /// between: here the test process, two `sh -c` layers up.
-  @Test func thePidReportedIsTheFirstNonShellAncestor() async throws {
+  @Test func thePIDReportedIsTheFirstNonShellAncestor() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let path = listener.path
@@ -32,7 +32,7 @@ struct HelperSessionEnvironmentTests {
 
   /// At a prompt in the app's own tab the first non-shell ancestor is the app,
   /// whose pid never goes, so the walk names the shell underneath instead.
-  @Test func thePidReportedStopsShortOfTheAppItself() async throws {
+  @Test func thePIDReportedStopsShortOfTheAppItself() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let path = listener.path

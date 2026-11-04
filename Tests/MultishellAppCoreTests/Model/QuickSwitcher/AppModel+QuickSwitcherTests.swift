@@ -73,12 +73,7 @@ struct AppModelQuickSwitcherTests {
     harness.model.select(harness.main)
     try Data("hello\n".utf8).write(to: harness.main.path.appendingPathComponent("notes.txt"))
     harness.model.toggleQuickSwitcher(.files)
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["notes.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["notes.txt"])
 
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
     try await waitUntil { harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" } }
@@ -92,12 +87,7 @@ struct AppModelQuickSwitcherTests {
     let harness = Harness()
     harness.model.select(harness.main)
     try Data("hello\n".utf8).write(to: harness.main.path.appendingPathComponent("notes.txt"))
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["notes.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["notes.txt"])
     harness.model.showAgentBoard()
     harness.model.toggleQuickSwitcher(.files)
 
@@ -113,12 +103,7 @@ struct AppModelQuickSwitcherTests {
     harness.model.closeActiveTab()
     try #require(harness.model.workspace.tabs(in: harness.main.id).isEmpty)
     try Data("hello\n".utf8).write(to: harness.main.path.appendingPathComponent("notes.txt"))
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["notes.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["notes.txt"])
     harness.model.toggleQuickSwitcher(.files)
 
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
@@ -140,12 +125,7 @@ struct AppModelQuickSwitcherTests {
       atPath: root.appendingPathComponent("docs/guide.md").path,
       withDestinationPath: "../GUIDE.md",
     )
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["GUIDE.md", "docs/guide.md"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["GUIDE.md", "docs/guide.md"])
     harness.model.showAgentBoard()
     harness.model.toggleQuickSwitcher(.files)
 
@@ -160,12 +140,7 @@ struct AppModelQuickSwitcherTests {
     let harness = Harness()
     harness.model.select(harness.main)
     try Data("hello\n".utf8).write(to: harness.main.path.appendingPathComponent("notes.txt"))
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["notes.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["notes.txt"])
     harness.model.toggleQuickSwitcher(.files)
 
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
@@ -180,12 +155,7 @@ struct AppModelQuickSwitcherTests {
     let harness = Harness()
     harness.model.select(harness.main)
     try Data([0, 1, 2]).write(to: harness.main.path.appendingPathComponent("image.bin"))
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["image.bin"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["image.bin"])
     harness.model.showAgentBoard()
     harness.model.toggleQuickSwitcher(.files)
 
@@ -212,17 +182,12 @@ struct AppModelQuickSwitcherTests {
   @Test func aKeptFileSearchGoesWithTheListingItRanOver() {
     let harness = Harness()
     harness.model.select(harness.main)
-    harness.model.trackedFiles[harness.main.id] = TrackedFiles(
-      paths: ["src/main.swift"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    harness.model.trackedFiles[harness.main.id] = .sample(paths: ["src/main.swift"])
     harness.model.toggleQuickSwitcher(.files)
     harness.model.setQuickSwitcherText("main")
     _ = harness.model.quickSwitcherResults
 
-    harness.model.forgetPanelListings { _ in true }
+    harness.model.forgetFileListings { _ in true }
 
     #expect(harness.model.fileTreeCache[harness.main.id]?.quickSwitcherSearch == nil)
   }

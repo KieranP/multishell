@@ -9,6 +9,12 @@ extension RepositoryFixture {
     try await TestRepository.addOrigin(to: project.path, in: root, using: runner)
   }
 
+  func addFork() async throws {
+    let fork = root.appendingPathComponent("fork.git", isDirectory: true)
+    _ = try await runner.run(["init", "-q", "--bare", fork.path], in: root)
+    _ = try await runner.run(["remote", "add", "fork", fork.path], in: project.path)
+  }
+
   /// Two commits, so the one the forge squashes them into shares a patch id with neither and
   /// `git cherry` cannot answer. The squash is one commit of the whole tree, then the branch goes.
   func pushThenSquashMergeOnTheRemote(

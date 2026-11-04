@@ -9,12 +9,7 @@ struct FileTreeListingTests {
     var status = WorktreeStatus()
     status.setChanges(changes)
     return FileTreeSources(
-      tracked: TrackedFiles(
-        paths: ["a.txt", "b.txt"],
-        submodulePaths: [],
-        notCheckedOutPaths: [],
-        isCapped: false,
-      ),
+      tracked: .sample(paths: ["a.txt", "b.txt"]),
       status: status,
     )
   }
@@ -44,12 +39,7 @@ struct FileTreeListingTests {
       )
     ])
     let sources = FileTreeSources(
-      tracked: TrackedFiles(
-        paths: ["a.txt"],
-        submodulePaths: [],
-        notCheckedOutPaths: [],
-        isCapped: true,
-      ),
+      tracked: .sample(paths: ["a.txt"], isCapped: true),
       status: status,
     )
 

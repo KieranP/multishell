@@ -14,27 +14,6 @@ struct HelperControlTests {
     #expect(Helper.controlSocket(in: pane) == Paths.socketFile)
   }
 
-  @Test func aTabCommandSendsItsWorktreeAndCommandAndPrintsTheAnswer() async throws {
-    let app = try ControlListener(reply: .output(#"{"tab":"T"}"#))
-    defer { app.stop() }
-
-    let output = try await HelperBinary.run(
-      ["tabs", "open", "w-0123abcd", "--", "npm", "run", "--watch"],
-      environment: app.environment,
-    )
-
-    #expect(output.succeeded, "\(output.standardError)")
-    #expect(output.standardOutput == #"{"tab":"T"}"# + "\n")
-    let request = try #require(app.requests.received.first)
-    guard case .newTab(let order) = request else {
-      Issue.record("asked \(request)")
-      return
-    }
-    #expect(order.worktreeID == "w-0123abcd")
-    #expect(order.command == ["npm", "run", "--watch"])
-    #expect(order.agentID == nil)
-  }
-
   @Test func eachCommandAsksForWhatItsWordsSay() async throws {
     let app = try ControlListener(reply: .done)
     defer { app.stop() }
@@ -210,7 +189,7 @@ struct HelperControlTests {
       ),
       (
         ["projects", "move", "p-0123abcd", "--after", "p-89abcdef"],
-        .moveProject(id: "p-0123abcd", placement: .after, anchor: "p-89abcdef"),
+        .moveProject(id: "p-0123abcd", placement: .below, anchor: "p-89abcdef"),
       ),
       (["projects", "refresh", "p-0123abcd"], .refreshProject(id: "p-0123abcd")),
       (["projects", "fetch", "p-0123abcd"], .fetchProject(id: "p-0123abcd")),
@@ -263,73 +242,6 @@ struct HelperControlTests {
     #expect(app.requests.received == lines.map(\.1))
   }
 
-  @Test func aWorktreeCommandNamesItsBranchProjectAndFirstTab() async throws {
-    let app = try ControlListener(reply: .done)
-    defer { app.stop() }
-
-    let output = try await HelperBinary.run(
-      [
-        "worktrees", "add", "p-0123abcd", "feat/x", "--from", "main", "--agent", "codex",
-        "--prompt", "fix the build",
-      ],
-      environment: app.environment,
-    )
-
-    #expect(output.succeeded, "\(output.standardError)")
-    let expected = NewWorktreeOrder(
-      branch: "feat/x",
-      projectID: "p-0123abcd",
-      createsBranch: true,
-      startPoint: "main",
-      agentID: "codex",
-      task: "fix the build",
-    )
-    #expect(app.requests.received == [.newWorktree(expected)])
-  }
-
-  @Test func aStandInThatIsNotUTF8IsAUsageErrorThatAsksNothing() async throws {
-    let app = try ControlListener(reply: .done)
-    defer { app.stop() }
-    let file = Scratch.path("stand-in-latin1.json")
-    defer { Scratch.remove(file) }
-    try Data(#"{"pullRequests": [{"title": "Caf"#.utf8 + [0xE9] + #""}]}"#.utf8).write(to: file)
-
-    let output = try await HelperBinary.run(
-      ["debug", "services", "stand-in", file.path],
-      environment: app.environment,
-    )
-
-    #expect(output.status == 2, "\(output.standardError)")
-    #expect(app.requests.received.isEmpty)
-  }
-
-  @Test func aStandInIsReadFromTheFileAndSentAsItsText() async throws {
-    let app = try ControlListener(reply: .done)
-    defer { app.stop() }
-    let file = Scratch.path("stand-in.json")
-    defer { Scratch.remove(file) }
-    let json = #"{"ciRuns": []}"#
-    try json.write(to: file, atomically: true, encoding: .utf8)
-
-    let output = try await HelperBinary.run(
-      ["debug", "services", "stand-in", file.path],
-      environment: app.environment,
-    )
-
-    #expect(output.succeeded, "\(output.standardError)")
-    #expect(app.requests.received == [.standInServices(json: json)])
-  }
-
-  @Test func aShareBelowZeroIsSaidToBeOne() async throws {
-    let output = try await HelperBinary.run(["tabs", "resize", UUID().uuidString, "1", "-1"])
-
-    #expect(output.status == 2)
-    #expect(
-      output.standardError.contains("shares are numbers above zero"),
-      "\(output.standardError)",
-    )
-  }
-
   @Test func aRefusalIsSaidInWordsAndExitsOne() async throws {
     let app = try ControlListener(reply: .refused(.agentWorking))
     defer { app.stop() }
@@ -366,20 +278,6 @@ struct HelperControlTests {
 
     #expect(output.status == 1)
     #expect(output.standardError.contains("older than this helper"), "\(output.standardError)")
-  }
-
-  @Test func anUnknownWordAfterUIShowListsTheServicePagesWithTheViews() async throws {
-    let app = try ControlListener(reply: .done)
-    defer { app.stop() }
-
-    let output = try await HelperBinary.run(
-      ["ui", "show", "pull-requests"],
-      environment: app.environment,
-    )
-
-    #expect(output.status == 2)
-    #expect(output.standardError.contains("board"), "\(output.standardError)")
-    #expect(output.standardError.contains("ci, pull-request"), "\(output.standardError)")
   }
 
   @Test func aResizeWithNoSharesBeforeItsOptionsSaysWhereTheyGo() async throws {

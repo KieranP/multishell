@@ -19,13 +19,7 @@ struct AccessibilityTextServicesTests {
   }
 
   @Test func aCheckSaysItsStatusWhereAReviewOrConflictsNameItAlready() {
-    let check = PullRequestCheck(
-      name: "build",
-      workflow: "ci",
-      status: .failed,
-      isRequired: true,
-      link: nil,
-    )
+    let check = PullRequestCheck.sample(workflow: "ci", status: .failed)
     let failingCheck = MergeReadiness.Requirement(
       kind: .check(check),
       status: .failed,

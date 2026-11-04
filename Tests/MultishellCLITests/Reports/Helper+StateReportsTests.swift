@@ -115,7 +115,7 @@ struct HelperStateReportsTests {
 
   /// OpenCode's plugin has no payload to hand over and names a worker by flags.
   /// A phase without a worker, or a worker without a phase, is a usage error.
-  @Test func stateNamesAWorkerOnlyWithItsIdAndPhaseTogether() async throws {
+  @Test func stateNamesAWorkerOnlyWithItsIDAndPhaseTogether() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let path = listener.path
@@ -174,7 +174,7 @@ struct HelperStateReportsTests {
     #expect(output.standardError.contains("could not reach Multishell"))
   }
 
-  @Test func aPidThatIsNoNumberIsAUsageErrorThatReportsNothing() async throws {
+  @Test func aPIDThatIsNoNumberIsAUsageErrorThatReportsNothing() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
 

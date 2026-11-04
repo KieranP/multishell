@@ -8,7 +8,7 @@ extension AppModel {
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     let opened = await openFileAsTab(path, in: worktree.id, as: .request)
     // Opened or not, the check built a listing the panel may not show.
-    forgetUnreadPanelListings()
+    forgetUnreadFileListings()
     guard let tab = opened else {
       let isGone = workspace.worktree(worktree.id) == nil
       return .refused(isGone ? .noWorktree(id: id) : .fileNotOpenable(path: path))

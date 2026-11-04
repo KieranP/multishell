@@ -17,7 +17,7 @@ public struct RemoteRepository: Hashable, Sendable {
 
   /// `git@host:owner/name.git`, `ssh://…/owner/name` or `https://host/owner/name`;
   /// `nil` for a path or fewer than two components after the host.
-  public init?(remoteURL: String) {
+  init?(remoteURL: String) {
     let path: Substring
     // A file URL is a path written as a URL, on no host.
     if remoteURL.lowercased().hasPrefix("file://") { return nil }

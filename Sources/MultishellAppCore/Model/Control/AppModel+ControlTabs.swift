@@ -13,7 +13,8 @@ extension AppModel {
   }
 
   private func tabListing(of worktrees: [Worktree]) -> TabListing {
-    TabListing(
+    let tabsByWorktree = workspace.workspaceTabsByWorktree()
+    return TabListing(
       worktreeInView: worktreeInView.map { ControlID.worktree($0.id) },
       worktrees: worktrees.map { worktree in
         let groups = workspace.groups(in: worktree.id)
@@ -24,7 +25,7 @@ extension AppModel {
           isInView: isInView(worktree),
           activeTab: workspace.activeWorkspaceTab(in: worktree.id)?.id,
           groupShares: SplitMath.sizes(of: groups.map(\.weight), sharing: 1),
-          tabs: groups.flatMap { workspace.workspaceTabs(inGroup: $0.id) }.map { tab in
+          tabs: (tabsByWorktree[worktree.id] ?? []).map { tab in
             listing(of: tab, isShown: shown.contains(tab.id))
           },
         )

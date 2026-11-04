@@ -4,7 +4,7 @@ import Testing
 @testable import MultishellCore
 
 extension ProjectSettingsTests {
-  @Test func projectSettingsKeepAnUnknownAgentIdAndFollowTheGlobalWhereAbsent() throws {
+  @Test func projectSettingsKeepAnUnknownAgentIDAndFollowTheGlobalWhereAbsent() throws {
     let unknown = try decodeJSON(ProjectSettings.self, #"{ "preferredAgentID": "future-agent" }"#)
     #expect(unknown.preferredAgentID == "future-agent")
     #expect(try decodeJSON(ProjectSettings.self, "{}").preferredAgentID == nil)

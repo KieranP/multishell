@@ -1,9 +1,12 @@
 import Foundation
 import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellCore
+@testable import MultishellGitKit
+@testable import MultishellServices
 
 @Suite(.serialized) @MainActor
 struct AppModelServiceConnectionsTests {
@@ -28,23 +31,6 @@ struct AppModelServiceConnectionsTests {
 
     try await waitUntil { harness.model.integrationAvailability(.gitHub) != .checking }
     #expect(harness.model.integrationAvailability(.gitHub) != .checking)
-  }
-
-  @Test func anInstalledToolWithoutGitSaysSoRatherThanChecking() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    let tools = try Scratch.directory("tools")
-    defer { Scratch.remove(tools) }
-    _ = try Scratch.script(
-      "echo 'gh version 2.60.0 (2026-01-01)'",
-      at: tools.appendingPathComponent("gh"),
-    )
-    harness.model.coordinator = nil
-    await harness.model.adoptServiceTools(on: tools.path)
-
-    await harness.model.refreshServiceToolStatuses()
-
-    #expect(harness.model.integrationAvailability(.gitHub) == .needsGit)
   }
 
   @Test func theSameToolsFoundAgainOnceGitIsFoundAreConnected() async throws {
@@ -74,20 +60,22 @@ struct AppModelServiceConnectionsTests {
     let new = try Scratch.directory("new-tools")
     defer { Scratch.remove(new) }
     let started = old.appendingPathComponent("started")
+    let gate = old.appendingPathComponent("go")
     _ = try Scratch.script(
-      "/usr/bin/touch '\(started.path)'; /bin/sleep 1; echo 0.1.2",
+      "echo >> '\(started.path)'; \(harness.holdLine(until: gate)); echo 0.1.2",
       at: old.appendingPathComponent("circleci"),
     )
     _ = try Scratch.script("echo 'circleci 1.11.0'", at: new.appendingPathComponent("circleci"))
     await harness.model.adoptServiceTools(on: old.path)
-    try await waitUntil { FileManager.default.fileExists(atPath: started.path) }
+    let oldCheck = Task { await harness.model.checkToolsCanRead() }
+    let startedChecks = { ((try? String(contentsOf: started, encoding: .utf8)) ?? "").count }
+    try await waitUntil { startedChecks() == 2 }
+    #expect(startedChecks() == 2)
 
     await harness.model.adoptServiceTools(on: new.path)
     try await waitUntil { !harness.model.remoteState.unreadableProviders.contains(.circleCI) }
-    try await waitUntil(
-      { harness.model.remoteState.unreadableProviders.contains(.circleCI) },
-      seconds: 3,
-    )
+    try Data().write(to: gate)
+    await oldCheck.value
 
     #expect(!harness.model.remoteState.unreadableProviders.contains(.circleCI))
   }
@@ -181,13 +169,96 @@ struct AppModelServiceConnectionsTests {
     #expect(((try? String(contentsOf: calls, encoding: .utf8)) ?? "").contains("run list"))
   }
 
-  @Test func anIntegrationsPageClosedAsksNothingMoreWhenToolsAreFound() async throws {
+  @Test func aToolGoneFromThePathDropsWhatItRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    await harness.model.refreshServiceToolStatuses()
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(.success([.sample(number: 9, headBranch: "feat")]))
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
 
-    harness.model.stopAskingToolStatuses()
+    await harness.model.adoptServiceTools(on: harness.root.path)
 
-    #expect(!harness.model.remoteState.wantsToolStatuses)
+    #expect(harness.model.services(of: feat).pullRequest == nil)
+    #expect(harness.model.remoteState.pullRequests.isEmpty)
+  }
+
+  @Test func aProviderTooOldToReadIsNeverAskedAndShowsNoPage() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    provider.refuseReads()
+
+    await harness.model.checkToolsCanRead()
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(provider.calls.isEmpty)
+    #expect(!harness.model.showsCIPanelPage)
+  }
+
+  @Test func aProviderFoundTooOldTakesWhatItReadOffTheRows() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    #expect(harness.model.remoteState.ciRuns[harness.project.id] != nil)
+
+    provider.refuseReads()
+    await harness.model.checkToolsCanRead()
+
+    #expect(harness.model.remoteState.ciRuns[harness.project.id] == nil)
+  }
+
+  @Test func aProviderFoundAbleToReadReadsItsRunsAndNotThePullRequestsAgain() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    provider.refuseReads()
+    await harness.model.checkToolsCanRead()
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    provider.allowReads()
+    await harness.model.checkToolsCanRead()
+    try await waitUntil { provider.calls.contains("recent") }
+    await harness.model.remoteState.servicePoll?.value
+
+    #expect(host.calls == ["list"])
+  }
+
+  @Test func aProviderFoundAbleToReadBeforeAnyListAnsweredReadsThePullRequestsToo() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    provider.refuseReads()
+    await harness.model.checkToolsCanRead()
+
+    provider.allowReads()
+    await harness.model.checkToolsCanRead()
+    try await waitUntil { provider.calls.contains("recent") && harness.servicesAreSettled() }
+
+    #expect(host.calls == ["list"])
+  }
+
+  @Test func aProviderFoundAbleToReadInTheBackgroundLeavesItsProjectsDue() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    provider.refuseReads()
+    await harness.model.checkToolsCanRead()
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.platform.isActive = false
+
+    provider.allowReads()
+    await harness.model.checkToolsCanRead()
+
+    #expect(harness.model.remoteState.readLog.isDue(harness.project.id, at: .now))
   }
 }

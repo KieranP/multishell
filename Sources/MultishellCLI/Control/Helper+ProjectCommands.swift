@@ -43,7 +43,7 @@ extension Helper {
       else { throw UsageError(usage, topic: topic) }
       let request = ControlRequest.moveProject(
         id: try projectID(words[0], topic: topic),
-        placement: placement,
+        placement: placement == .before ? .above : .below,
         anchor: try projectID(anchor, topic: topic),
       )
       return try ask(request, environment: environment)

@@ -6,7 +6,7 @@ import Testing
 
 @Suite
 struct ProcessTableSnapshotTests {
-  @Test func oneReadAnswersAsTheReadsPerPidDo() async throws {
+  @Test func oneReadAnswersAsTheReadsPerPIDDo() async throws {
     let shell = try WaitingShell()
     defer { shell.terminate() }
     let ownPID = ProcessInfo.processInfo.processIdentifier
@@ -22,7 +22,7 @@ struct ProcessTableSnapshotTests {
     )
   }
 
-  @Test func aPidNothingHoldsHasNoChildrenNameOrTerminal() {
+  @Test func aPIDNothingHoldsHasNoChildrenNameOrTerminal() {
     let table = ProcessTableSnapshot.take()
     let pid = deadPID()
     #expect(table.children(of: pid).isEmpty)

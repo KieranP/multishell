@@ -153,7 +153,7 @@ struct AppModelSessionReportsTests {
 
   /// `multishell state` typed at a prompt in one of our own tabs walks up
   /// to the app itself. A claim about our own pid would never clear.
-  @Test func aReportNamingTheAppsOwnPidIsTakenAsNamingNone() {
+  @Test func aReportNamingTheAppsOwnPIDIsTakenAsNamingNone() {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!

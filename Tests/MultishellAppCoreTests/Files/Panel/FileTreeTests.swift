@@ -7,15 +7,13 @@ import Testing
 
 @Suite
 struct FileTreeTests {
-  private static let tracked = TrackedFiles(
+  private static let tracked = TrackedFiles.sample(
     paths: [
       "README.md", "Sources/App/main.swift", "Sources/App/View.swift",
       "Tests/AppTests/Detail/A.swift",
       "vendor",
     ],
     submodulePaths: ["vendor"],
-    notCheckedOutPaths: [],
-    isCapped: false,
   )
 
   private static let changes = [
@@ -32,12 +30,7 @@ struct FileTreeTests {
   ]
 
   private static var unopenableRow: FileTreeRow {
-    let tracked = TrackedFiles(
-      paths: ["gone.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: ["gone.txt"],
-      isCapped: false,
-    )
+    let tracked = TrackedFiles.sample(paths: ["gone.txt"], notCheckedOutPaths: ["gone.txt"])
     return FileTree(FileTreeSources(tracked: tracked, status: nil)).rows(state: FilesPanelState())[
       0
     ]
@@ -106,7 +99,7 @@ struct FileTreeTests {
     #expect(rows.map(\.depth).prefix(4) == [0, 1, 2, 2])
   }
 
-  @Test func theGitListListsOnlyChangesWithEachChainOfSingleChildFoldersMerged() {
+  @Test func theChangesListShowsOnlyChangesWithEachChainOfSingleChildFoldersMerged() {
     let tree = FileTree(
       FileTreeSources(
         tracked: Self.tracked,
@@ -175,12 +168,7 @@ struct FileTreeTests {
   }
 
   @Test func aPathThatIsNotUTF8ListsButDoesNotOpen() {
-    let tracked = TrackedFiles(
-      paths: ["caf\u{FFFD}.txt", "plain.txt"],
-      submodulePaths: [],
-      notCheckedOutPaths: [],
-      isCapped: false,
-    )
+    let tracked = TrackedFiles.sample(paths: ["caf\u{FFFD}.txt", "plain.txt"])
 
     let rows = FileTree(FileTreeSources(tracked: tracked, status: nil)).rows(
       state: FilesPanelState()

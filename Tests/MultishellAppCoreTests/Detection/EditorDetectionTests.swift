@@ -6,7 +6,7 @@ import Testing
 
 @Suite
 struct EditorDetectionTests {
-  @Test func editorsAreFoundByBundleIdOrByShimAndTerminalOnesByShimOnly() throws {
+  @Test func editorsAreFoundByBundleIDOrByShimAndTerminalOnesByShimOnly() throws {
     let bin = try fakeBin(["code", "nvim"])
     defer { Scratch.remove(bin) }
     let apps = ["dev.zed.Zed": URL(fileURLWithPath: "/Applications/Zed.app")]

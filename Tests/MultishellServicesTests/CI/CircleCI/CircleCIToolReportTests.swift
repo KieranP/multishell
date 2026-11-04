@@ -5,7 +5,7 @@ import Testing
 
 @Suite
 struct CircleCIToolReportTests {
-  @Test func aLoggedInCliOfVersionOneIsReady() {
+  @Test func aLoggedInCLIOfVersionOneIsReady() {
     #expect(
       CircleCIToolReport.status(
         versionOutput: "circleci 1.11.0 (cee106974671)\n",
@@ -15,14 +15,14 @@ struct CircleCIToolReportTests {
     )
   }
 
-  @Test func theCliBeforeOneHasNoRunCommandsAndIsTooOld() {
+  @Test func theCLIBeforeOneHasNoRunCommandsAndIsTooOld() {
     #expect(
       CircleCIToolReport.status(versionOutput: "0.1.31425+7ba21d2\n", authMe: .sample())
         == .unsupportedVersion("0.1.31425+7ba21d2")
     )
   }
 
-  @Test func aCliWithNoLoginIsLoggedOut() {
+  @Test func aCLIWithNoLoginIsLoggedOut() {
     #expect(
       CircleCIToolReport.status(
         versionOutput: "circleci 1.11.0 (cee106974671)",

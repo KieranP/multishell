@@ -101,7 +101,7 @@ struct AppModelServiceStandInTests {
     let tip = try await harness.tip(of: feat)
     host.answer(.success([.sample(number: 7, headBranch: "feat", headCommit: tip)]))
     host.answerChecks([
-      PullRequestCheck(name: "tool", workflow: nil, status: .passed, isRequired: false, link: nil)
+      .sample(name: "tool", workflow: nil, isRequired: false)
     ])
     await harness.model.refreshServices(ofProject: harness.project.id)
     harness.model.select(feat)

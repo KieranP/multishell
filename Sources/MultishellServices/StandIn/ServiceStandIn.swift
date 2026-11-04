@@ -23,7 +23,7 @@ public struct ServiceStandIn: Sendable {
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
     let data = Data(json.utf8)
-    try ServiceStandInFields.check(data)
+    try ServiceStandInFields.refuseUnknownKeys(in: data)
     let record: ServiceStandInRecord
     do {
       record = try decoder.decode(ServiceStandInRecord.self, from: data)

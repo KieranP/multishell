@@ -28,17 +28,12 @@ struct AppModelFetchTests {
     )
     let fetched = harness.root.appendingPathComponent("fetched")
     let gate = harness.root.appendingPathComponent("fetch-gate")
-    let wrapper = try Scratch.script(
-      """
-      case "$1" in
-        fetch) git "$@"; status=$?; /usr/bin/touch '\(fetched.path)'; \(harness.holdLine(until: gate)); exit $status ;;
-      esac
-      exec git "$@"
-      """,
-      at: harness.root.appendingPathComponent("fake-git"),
-    )
-    harness.model.coordinator = TestGit.coordinator(
-      runner: try GitRunner(executable: wrapper, configuration: ["commit.gpgsign": "false"])
+    try harness.wrapGit(
+      in: """
+        case "$1" in
+          fetch) git "$@"; status=$?; /usr/bin/touch '\(fetched.path)'; \(harness.holdLine(until: gate)); exit $status ;;
+        esac
+        """
     )
     let fetch = Task { await harness.model.fetch(harness.project) }
     try await waitUntil { FileManager.default.fileExists(atPath: fetched.path) }

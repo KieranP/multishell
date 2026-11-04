@@ -83,7 +83,7 @@ struct CircleCIRunRecordTests {
     )
   }
 
-  @Test func outputThatIsNotJsonFailsTheRead() {
+  @Test func outputThatIsNotJSONFailsTheRead() {
     #expect(throws: ServiceReadFailure.self) {
       try CircleCIRunRecord.runs(from: Data("Error: not logged in".utf8))
     }
