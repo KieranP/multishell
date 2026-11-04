@@ -183,8 +183,8 @@ Raised by reviews and settled; a review need not raise these again.
 - **Places rebuilt and ranked on each render.** A few hundred rows, each title
   folded once, take well under a millisecond; only the file search, over up to
   200,000 paths, is kept between renders. The tab rows look groups and tabs up
-  once a build: a filter per worktree grew with the square of the worktrees,
-  1.7 ms at 300 and 10.7 ms at 1,000 in a release build.
+  once a build: a filter per worktree grew with the square of the worktrees, 1.7
+  ms at 300 and 10.7 ms at 1,000 in a release build.
 - **User themes written before `ui.quick_switcher`.** They fall back to the base
   theme's colours, as every new key does; the cost is above.
 - **Cmd+W and the other menu shortcuts acting on the pane behind the open
@@ -280,12 +280,12 @@ Raised by reviews and settled; a review need not raise these again.
   pane focused.
 - **The scope bar's pills drawn by hand rather than with `SegmentFace`**
   (2026-11-04 review). SegmentFace rounds at 4 with an 8 pt inset and an 18 pt
-  height; the pills round at 6 with 9 by 3. Taking it changes how they look,
-  the user's call.
+  height; the pills round at 6 with 9 by 3. Taking it changes how they look, the
+  user's call.
 - **The switcher's worktree order asking the sort cache with every worktree,
-  where the sidebar asks with the rows it shows.** Under a filter or with
-  hidden rows the two key lists differ, so each re-sorts the project when both
-  draw: 85 µs at 40 rows.
+  where the sidebar asks with the rows it shows.** Under a filter or with hidden
+  rows the two key lists differ, so each re-sorts the project when both draw: 85
+  µs at 40 rows.
 
 ## Checked by hand
 

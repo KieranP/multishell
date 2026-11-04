@@ -492,8 +492,14 @@ command line's requests on the same socket. Newest at the bottom.
   dot, was nowhere.
 - **A split's panes carry a split glyph and their position**, since a renamed
   tab names every pane alike and two plain shells both read as the shell.
-- **The worktree row drops its terminal count**, the rows under it being the
-  count.
+- **The worktree row keeps its terminal count while its panes are listed**,
+  though the rows under it say it again (REVERSAL, mockups 2026-11-05). Dropped,
+  the selected row's pull request and CI glyphs sat a capsule further right than
+  every other row's. The capsule is at least two digits wide for the same
+  reason. A row with no terminals keeps no room for it (user, 2026-11-05): the
+  empty slot left that row's other badges stranded off the edge. Cost: on such a
+  row the services glyphs sit a capsule further right than on rows with
+  terminals.
 - **The active tab's focused pane is bold, one per worktree**: with two groups
   two tabs are on screen, and two bold rows read as two selections.
 - **A click shows another and hands it the keyboard**, as a board card does.
@@ -1439,6 +1445,9 @@ command line's requests on the same socket. Newest at the bottom.
   Cost: the selected worktree's pane rows keep a ten-second clock of their own,
   board open or not; a row drawing no time sits each tick out, and a time under
   a minute lags by up to the tick, as a card's does.
+- **A pane row's title is caption-sized**, 11 pt at the default 13, where at
+  badge size it was the smallest text in the sidebar. The row keeps its height,
+  so nothing below moves (mockups, 2026-11-05).
 
 ## Reviewed and left as is
 

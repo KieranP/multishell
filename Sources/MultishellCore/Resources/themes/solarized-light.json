@@ -65,7 +65,7 @@
       "text_secondary": "#93a1a1",
       "text_tertiary": "#93a1a1",
       "border": "#ddd6c1",
-      "fill": "#dfca8844",
+      "fill": "#657b8317",
       "selection": "#b49471",
       "selection_background": "#dfca88"
     },
@@ -96,7 +96,7 @@
       "text_secondary": "#93a1a1",
       "text_tertiary": "#93a1a1",
       "border": "#ddd6c1",
-      "fill": "#dfca8844",
+      "fill": "#657b8317",
       "selection_background": "#dfca88",
       "accent": "#268bd2",
       "highlight": "#268bd2",
@@ -108,6 +108,7 @@
       "text_secondary": "#586e75",
       "text_tertiary": "#93a1a1",
       "border": "#ddd6c1",
+      "fill": "#586e751f",
       "selection": "#b49471"
     },
     "terminal_tab": {
@@ -133,7 +134,7 @@
       "text": "#657b83",
       "text_secondary": "#93a1a1",
       "border": "#ddd6c1",
-      "fill": "#dfca8844",
+      "fill": "#657b8317",
       "field_background": "#ddd6c1",
       "field_text": "#586e75",
       "field_text_secondary": "#586e75aa",
@@ -164,6 +165,7 @@
       "text": "#657b83",
       "text_secondary": "#93a1a1",
       "text_tertiary": "#93a1a1",
+      "border": "#ddd6c1",
       "block_background": "#fdf6e3"
     },
     "debug_info": {

@@ -18,6 +18,8 @@ struct DetailPlaceholder<Icon: View, Footer: View>: View {
       Text(title)
         .font(metrics.font(size: 18, weight: .semibold))
         .foregroundStyle(theme.detail.text)
+        // A worktree's name can wrap it, centred as the caption is.
+        .multilineTextAlignment(.center)
         .padding(.top, 20)
       Text(caption)
         .font(metrics.font(size: 13))

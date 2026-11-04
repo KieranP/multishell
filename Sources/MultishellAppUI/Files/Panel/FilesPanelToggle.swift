@@ -9,14 +9,17 @@ struct FilesPanelToggle: View {
   let theme: Theme
 
   var body: some View {
-    PlainGlyphButton(help: t("files-panel.toggle-help")) {
-      model.toggleFilesPanel()
-    } glyph: {
-      HeaderGlyph(symbol: "sidebar.right")
-    }
-    .foregroundStyle(
+    let resting =
       model.showsFilesPanel ? theme.color(.accent, in: .header) : theme.header.textSecondary
-    )
+    HeaderGlyphButton(
+      symbol: "sidebar.right",
+      help: t("files-panel.toggle-help"),
+      palette: theme.header,
+      resting: resting,
+      lit: GlyphButtonLight.turnsToTextWhenLit(isOn: model.showsFilesPanel) ? nil : resting,
+    ) {
+      model.toggleFilesPanel()
+    }
     .accessibilityLabel(t("files-panel.toggle"))
     .selectableButtonTraits(isSelected: model.showsFilesPanel)
   }

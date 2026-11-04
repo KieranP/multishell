@@ -14,6 +14,8 @@ struct FilesPanelModeTab<Glyph: View>: View {
   let theme: Theme
   @ViewBuilder let glyph: () -> Glyph
 
+  @State private var isHovered = false
+
   private var isSelected: Bool { model.shownFilesPanelMode == mode }
 
   var body: some View {
@@ -22,11 +24,16 @@ struct FilesPanelModeTab<Glyph: View>: View {
     } label: {
       glyph()
         .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
+        .glyphHover(
+          isHovered,
+          palette: theme.header,
+          resting: isSelected ? theme.header.text : theme.header.textTertiary,
+        )
         .contentShape(.rect)
     }
     .buttonStyle(.plain)
+    .tracksHover($isHovered)
     .accessibilityLabel(name)
-    .foregroundStyle(isSelected ? theme.header.text : theme.header.textTertiary)
     .frame(maxHeight: .infinity)
     .overlay(alignment: .bottom) {
       if isSelected {

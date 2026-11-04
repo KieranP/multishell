@@ -59,6 +59,10 @@ struct TabStrip: View {
       .frame(height: model.metrics.tabHeight)
     }
     .frame(height: model.metrics.tabHeight)
+    // Under the tabs, so the shown one's fill covers it and joins its content.
+    .background(alignment: .bottom) {
+      theme.tabBar.border.frame(height: UIMetrics.hairlineThickness)
+    }
     .background(theme.tabBar.background)
     .hairline(.top, theme.tabBar)
     .contentShape(.rect)

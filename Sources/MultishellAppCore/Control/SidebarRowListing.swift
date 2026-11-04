@@ -26,7 +26,7 @@ struct SidebarRowListing: Encodable, Equatable {
     let autoRenameFailure: String?
     let isInView: Bool
     let state: SessionState?
-    /// The count the row shows, none where its pane rows list them.
+    /// The count the row shows, its pane rows listed or not.
     let terminalCount: Int
     let panes: [PaneRow]
   }

@@ -288,12 +288,13 @@ command-line tool.
   draft, crossed when closed, the merge glyph once merged, and one corner dot,
   yellow for a conflict over blue for auto-merge, the conflict being what needs
   the user. Every services glyph, the Changes, PR and CI tabs and a conflict's
-  warning too, is the approved design's own strokes, not an SF Symbol; the Files
-  tab keeps the symbol it had. The running ring, the design's four arcs, turns
-  wherever it is drawn, the sidebar's rows included, by Core Animation in the
-  render server, so it costs the app no frame; a SwiftUI rotation redrew the
-  whole sidebar each frame, which kept it still there before. Reduce Motion
-  keeps it still.
+  warning too, is the approved design's own strokes, not an SF Symbol, and so is
+  the Files tab's file tree since 2026-11-05 (REVERSAL of keeping its symbol):
+  `doc.on.doc` is the system's Copy and the app's Copy button. The running ring,
+  the design's four arcs, turns wherever it is drawn, the sidebar's rows
+  included, by Core Animation in the render server, so it costs the app no
+  frame; a SwiftUI rotation redrew the whole sidebar each frame, which kept it
+  still there before. Reduce Motion keeps it still.
 - **The window's header shows no services.** The row and the panel's pages say
   them; the user cut a header pill that repeated them. A click on the row's pull
   request or run glyph opens the panel on its page, as the git badge opens

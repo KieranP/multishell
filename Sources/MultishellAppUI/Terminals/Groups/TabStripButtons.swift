@@ -22,20 +22,14 @@ struct TabStripButtons: View {
     }
   }
 
-  /// Splits the tab this group shows, whichever group the keyboard is in.
   private func splitButton(_ axis: SplitAxis, symbol: String) -> some View {
-    Button {
-      model.splitActivePane(axis, in: groupID)
-    } label: {
-      Image(systemName: symbol)
-        .font(model.metrics.font(size: model.metrics.glyph, weight: .medium))
-        .foregroundStyle(theme.tabBar.textSecondary)
-        .frame(width: model.metrics.splitButtonWidth, height: model.metrics.tabHeight)
-        .contentShape(.rect)
-    }
-    .buttonStyle(.plain)
-    .disabled(!model.canSplitShownTab(in: groupID))
-    .help(TabStripButtonText.splitHelp(axis, isFocusedGroup: isFocusedGroup))
-    .accessibilityLabel(TabStripButtonText.splitLabel(axis))
+    TabStripSplitButton(
+      model: model,
+      groupID: groupID,
+      axis: axis,
+      symbol: symbol,
+      isFocusedGroup: isFocusedGroup,
+      theme: theme,
+    )
   }
 }

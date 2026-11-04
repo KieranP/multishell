@@ -15,10 +15,12 @@ struct QuickSwitcherRow: View {
   let point: () -> Void
 
   private var palette: AreaPalette { theme.quickSwitcher }
+  /// The selected row's wash, which its glyph's badge ring takes too.
+  private var selectionWash: Color? { isSelected ? palette.color(.selectionBackground) : nil }
 
   var body: some View {
     HStack(spacing: 8) {
-      QuickSwitcherRowGlyph(item: item, theme: theme, metrics: metrics)
+      QuickSwitcherRowGlyph(item: item, ringWash: selectionWash, theme: theme, metrics: metrics)
       if let position = item.position {
         PanePositionBadge(number: position.number, metrics: metrics, palette: palette)
       }
@@ -38,7 +40,7 @@ struct QuickSwitcherRow: View {
     .padding(.horizontal, UIMetrics.quickSwitcherRowInset)
     .frame(height: metrics.rowHeight)
     .background(
-      isSelected ? palette.color(.selectionBackground) : .clear,
+      selectionWash ?? .clear,
       in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius),
     )
     .contentShape(.rect)

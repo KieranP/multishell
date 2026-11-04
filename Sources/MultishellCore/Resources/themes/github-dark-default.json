@@ -65,7 +65,7 @@
       "text_secondary": "#7d8590",
       "text_tertiary": "#6e7681",
       "border": "#30363d",
-      "fill": "#6e76811a",
+      "fill": "#6e768121",
       "selection": "#1f6feb",
       "selection_background": "#6e768166"
     },
@@ -108,6 +108,7 @@
       "text_secondary": "#7d8590",
       "text_tertiary": "#6e7681",
       "border": "#30363d",
+      "fill": "#e6edf329",
       "selection": "#1f6feb"
     },
     "terminal_tab": {
@@ -164,6 +165,7 @@
       "text": "#e6edf3",
       "text_secondary": "#7d8590",
       "text_tertiary": "#6e7681",
+      "border": "#30363d",
       "block_background": "#161b22"
     },
     "debug_info": {

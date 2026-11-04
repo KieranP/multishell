@@ -48,7 +48,7 @@ extension AppModel {
       autoRenameFailure: autoRenameFailure(of: worktree.id),
       isInView: isInView(worktree),
       state: state(ofWorktree: worktree.id, sessions: sessions),
-      terminalCount: row.shownTerminalCount(of: sessions[worktree.id].count),
+      terminalCount: sessions[worktree.id].count,
       panes: row.panes.map { pane in
         SidebarRowListing.PaneRow(
           id: pane.id,

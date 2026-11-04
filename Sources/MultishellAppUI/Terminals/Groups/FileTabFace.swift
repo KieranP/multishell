@@ -12,7 +12,10 @@ struct FileTabFace: View {
   let isFocusedGroup: Bool
   let theme: Theme
 
+  @State private var isHovered = false
+
   private var isShown: Bool { tab.id == group.shownTabID }
+  private var hoverWash: Color? { theme.hoverWash(onShownTab: isShown, isHovered: isHovered) }
   private var palette: AreaPalette { isShown ? theme.fileTab : theme.tabBar }
 
   var body: some View {
@@ -31,21 +34,29 @@ struct FileTabFace: View {
         .lineLimit(1)
         .truncationMode(.head)
       Spacer(minLength: 0)
-      if isActive { TabCloseButton(model: model, tabID: tab.id, palette: palette) }
+      TabCloseButton(
+        metrics: model.metrics,
+        palette: palette,
+        stripPalette: theme.tabBar,
+        isVisible: TabCloseButtonVisibility.isVisible(onShownTab: isShown, isHovered: isHovered),
+        close: { model.closeTab(tab.id) },
+      )
     }
     .tabFace(
       isShown: isShown,
+      wash: hoverWash,
       shownFill: theme.fileTab.background,
       theme: theme,
       activate: { model.activateTab(tab.id) },
       close: { model.closeTab(tab.id) },
     )
+    .tracksHover($isHovered)
     .help(tab.path)
     .accessibilityElement(children: .contain)
     .accessibilityLabel(AccessibilityText.fileTab(title: title, isShown: isShown, change: change))
     .selectableButtonTraits(isSelected: isShown)
     .contextMenu {
-      FileTabActions(model: model, tab: tab)
+      FileTabActions(model: model, tab: tab) { model.closeTab(tab.id) }
     }
   }
 
@@ -58,6 +69,7 @@ struct FileTabFace: View {
       .cornerBadge(
         onGlyphOf: size,
         ringFill: palette.background,
+        ringWash: hoverWash,
         change.map { change in
           Circle()
             .fill(theme.color(for: change))

@@ -5,6 +5,8 @@ import SwiftUI
 /// What a row is, drawn as the sidebar and the tab strip draw the same thing.
 struct QuickSwitcherRowGlyph: View {
   let item: QuickSwitcherItem
+  /// The row's selection wash, which the state badge's ring takes; `nil` for none.
+  let ringWash: Color?
   let theme: Theme
   let metrics: UIMetrics
 
@@ -50,6 +52,7 @@ struct QuickSwitcherRowGlyph: View {
       agentID: agentID,
       state: item.state,
       ringFill: palette.background,
+      ringWash: ringWash,
       plainTint: palette.textSecondary,
       theme: theme,
       palette: palette,

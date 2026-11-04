@@ -63,7 +63,7 @@
       "background": "#27272a",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
       "selection": "#5aa9f8",
@@ -73,7 +73,7 @@
       "background": "#27272a",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "selection_background": "#5aa9f833",
       "field_background": "#121215",
@@ -85,16 +85,16 @@
       "background": "#27272a",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
-      "selection_background": "#e4e4e70f"
+      "selection_background": "#5aa9f833"
     },
     "header": {
       "background": "#1d1d20",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
       "selection_background": "#e4e4e729",
@@ -106,15 +106,16 @@
       "background": "#1d1d20",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
+      "fill": "#e4e4e70f",
       "selection": "#5aa9f8"
     },
     "terminal_tab": {
       "background": "#121215",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "divider": "#1d1d20",
       "selection": "#5aa9f8"
@@ -123,7 +124,7 @@
       "background": "#121215",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
       "selection_background": "#e4e4e729"
@@ -141,20 +142,20 @@
     },
     "agents_panel": {
       "background": "#121215",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717"
     },
     "agents_column": {
       "background": "#19191c",
       "text": "#e4e4e7eb",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717"
     },
     "agents_card": {
       "background": "#232325",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
       "highlight": "#64d2ff"
@@ -163,14 +164,15 @@
       "background": "#121215",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
+      "border": "#e4e4e717",
       "block_background": "#1d1d20"
     },
     "debug_info": {
       "background": "#121215",
       "text": "#e4e4e7eb",
       "text_secondary": "#e4e4e799",
-      "text_tertiary": "#e4e4e761",
+      "text_tertiary": "#e4e4e766",
       "border": "#e4e4e717",
       "fill": "#e4e4e70f",
       "block_background": "#19191c",

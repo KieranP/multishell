@@ -2,6 +2,10 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
+  /// Whether a New Tab list offers more than a shell, which a worktree with no
+  /// tab says in its caption.
+  public var offersAgentTabs: Bool { !newTabAgentIDs.isEmpty }
+
   /// "New Claude Code Tab", and the typed command by its own name rather
   /// than as "New Custom command Tab".
   public func newAgentTabMenuLabel(_ id: String) -> String {

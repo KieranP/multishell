@@ -75,8 +75,10 @@ struct ThemeTests {
   }
 
   @Test func aKeyItsSectionDoesNotTakeIsNeverRead() throws {
-    let theme = try theme(##""ui": { "tab_bar": { "fill": "#a0f0c0", "selection": "#a0f0c0" } }"##)
-    #expect(theme.interfaceColors[.tabBar] == [.selection: "#a0f0c0"])
+    let theme = try theme(
+      ##""ui": { "agents_panel": { "fill": "#a0f0c0", "border": "#a0f0c0" } }"##
+    )
+    #expect(theme.interfaceColors[.agentsPanel] == [.border: "#a0f0c0"])
   }
 
   @Test func aSectionThatIsNotAnObjectSetsNothing() throws {

@@ -26,7 +26,7 @@ struct PaneRow: View, @MainActor Equatable {
         PanePositionBadge(number: position.number, metrics: metrics, palette: theme.projectsPanel)
       }
       Text(pane.title)
-        .font(metrics.font(size: metrics.badge, weight: pane.isFocused ? .semibold : .regular))
+        .font(metrics.font(size: metrics.caption, weight: pane.isFocused ? .semibold : .regular))
         .foregroundStyle(
           pane.isFocused ? theme.projectsPanel.text : theme.projectsPanel.textSecondary
         )

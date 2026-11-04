@@ -5,6 +5,8 @@ import SwiftUI
 struct CornerBadgeModifier<Badge: View>: ViewModifier {
   let glyphSize: Double
   let ringFill: Color
+  /// A wash laid over `ringFill` where the glyph's ground wears one too.
+  let ringWash: Color?
   /// `nil` draws nothing, the glyph keeping its whole shape.
   let badge: Badge?
 
@@ -13,6 +15,7 @@ struct CornerBadgeModifier<Badge: View>: ViewModifier {
       if let badge {
         badge
           .padding(1.2)
+          .background(ringWash ?? .clear, in: Circle())
           .background(ringFill, in: Circle())
           // Pushed out to the corner, so what it covers is the mark's edge
           // rather than the middle that carries the shape.

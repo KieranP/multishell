@@ -67,7 +67,9 @@ extension AccessibilityText {
     if standing.showsMergedBadge(with: status) { parts.append(standing.mergeState.summary) }
     if let status = WorktreeStatus.badged(status) { parts.append(status.summary) }
     if let spoken = standing.services.spokenSummary { parts.append(spoken) }
-    if terminalCount > 0 { parts.append(t("count.terminals", terminalCount)) }
+    if TerminalCountCapsule.showsCount(of: terminalCount) {
+      parts.append(t("count.terminals", terminalCount))
+    }
     return parts.joined(separator: ", ")
   }
 

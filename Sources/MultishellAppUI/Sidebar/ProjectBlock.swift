@@ -117,7 +117,7 @@ struct ProjectBlock: View {
       worktree: worktree,
       customName: row.customName,
       isRenaming: row.isRenaming,
-      terminalCount: row.shownTerminalCount(of: sessions[worktree.id].count),
+      terminalCount: sessions[worktree.id].count,
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
       autoRename: model.autoRenames[worktree.id],

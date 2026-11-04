@@ -84,9 +84,10 @@ left as is".
 - **A project's override stays in its settings**, the only place with room for
   the (i) text. Cost: the help saying the main and trunk rows hold the top is
   only there.
-- **The glyph is a mark rather than a control**, badge-sized and dimmer than the
-  caption. It uses the strip's plain menu style, since the borderless AppKit one
-  draws the image at its own size and tint whatever the label asks
+- **The glyph is badge-sized and dimmer than the caption**, lit as a button only
+  under the pointer (appearance.md; it was a mark that only brightened until
+  2026-11-05). It uses the strip's plain menu style, since the borderless AppKit
+  one draws the image at its own size and tint whatever the label asks
   (tabs-and-groups.md).
 - **A removed worktree goes to the Trash**, not `git worktree remove`, which
   refuses a dirty tree and whose force unlinks the files. The one time someone

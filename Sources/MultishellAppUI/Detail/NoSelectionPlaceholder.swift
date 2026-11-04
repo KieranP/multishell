@@ -15,17 +15,14 @@ struct NoSelectionPlaceholder: View {
       theme: theme,
       metrics: metrics,
     ) {
-      Image(systemName: "arrow.trianglehead.branch")
-        .font(.system(size: 40, weight: .light))
-        .foregroundStyle(theme.detail.textTertiary)
-        .accessibilityHidden(true)
+      PlaceholderSymbol(symbol: "arrow.trianglehead.branch", theme: theme)
     } footer: {
       if !hasProjects {
         Button(action: addProject) {
           Label(t("menu.add-project"), systemImage: "plus")
         }
         .buttonStyle(.borderedProminent)
-        .padding(.top, 22)
+        .padding(.top, UIMetrics.placeholderFooterGap)
       }
     }
   }

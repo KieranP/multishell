@@ -7,6 +7,8 @@ struct TabMoveAndCloseActions: View {
   let model: AppModel
   let tabID: WorkspaceTab.ID
   let groupID: TabGroup.ID
+  /// Closes the tab, as its X and middle click do.
+  let close: () -> Void
 
   var body: some View {
     // The keyboard-only way to the layout the edge bands offer a drag, and
@@ -16,8 +18,7 @@ struct TabMoveAndCloseActions: View {
     }
     .disabled(!model.canMoveTabToNewGroup(from: groupID))
     Divider()
-    // The one way to close an inactive tab without a mouse, the X being
-    // drawn on the active one alone. Not destructive-red.
-    Button(t("tab.close")) { model.closeTab(tabID) }
+    // The way to close a tab without aiming at its X. Not destructive-red.
+    Button(t("tab.close"), action: close)
   }
 }

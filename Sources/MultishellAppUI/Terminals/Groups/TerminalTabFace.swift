@@ -10,7 +10,10 @@ struct TerminalTabFace: View {
   let isFocusedGroup: Bool
   let theme: Theme
 
+  @State private var isHovered = false
+
   private var isShown: Bool { tab.id == group.shownTabID }
+  private var hoverWash: Color? { theme.hoverWash(onShownTab: isShown, isHovered: isHovered) }
   private var isRenaming: Bool { model.renamingTabID == tab.id }
   private var palette: AreaPalette { isShown ? theme.terminalTab : theme.tabBar }
 
@@ -37,15 +40,26 @@ struct TerminalTabFace: View {
 
       Spacer(minLength: 0)
 
-      if isActive, !isRenaming { TabCloseButton(model: model, tabID: tab.id, palette: palette) }
+      // A name field takes the button's room.
+      if !isRenaming {
+        TabCloseButton(
+          metrics: model.metrics,
+          palette: palette,
+          stripPalette: theme.tabBar,
+          isVisible: TabCloseButtonVisibility.isVisible(onShownTab: isShown, isHovered: isHovered),
+          close: closeUnlit,
+        )
+      }
     }
     .tabFace(
       isShown: isShown,
+      wash: hoverWash,
       shownFill: theme.terminalTab.background,
       theme: theme,
       activate: { model.activateTab(tab.id) },
-      close: { model.closeTab(tab.id) },
+      close: closeUnlit,
     )
+    .tracksHover($isHovered)
     // Simultaneous, not sequential: a plain double-tap makes SwiftUI hold
     // the single tap, and switching should not lag by that timeout.
     .simultaneousGesture(TapGesture(count: 2).onEnded { beginRenaming() })
@@ -64,7 +78,7 @@ struct TerminalTabFace: View {
     .selectableButtonTraits(isSelected: isShown)
     .accessibilityAction(named: t("action.rename-spoken")) { beginRenaming() }
     .contextMenu {
-      TerminalTabActions(model: model, tab: tab)
+      TerminalTabActions(model: model, tab: tab, close: closeUnlit)
     }
   }
 
@@ -81,6 +95,7 @@ struct TerminalTabFace: View {
       unmarkedSymbol: tab.isSplit ? PaneSymbol.split : PaneSymbol.terminal,
       state: state,
       ringFill: palette.background,
+      ringWash: hoverWash,
       plainTint: textColor,
       theme: theme,
       palette: palette,
@@ -117,5 +132,11 @@ struct TerminalTabFace: View {
 
   private func beginRenaming() {
     model.beginRenamingTab(tab.id)
+  }
+
+  /// Unlit first, as the close dialog a working agent raises hides the exit.
+  private func closeUnlit() {
+    isHovered = false
+    model.closeTab(tab.id)
   }
 }

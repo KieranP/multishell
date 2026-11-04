@@ -41,7 +41,7 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
       [.background] + text + [.border, .fill, .blockBackground]
         + [.seriesApp, .seriesTerminals, .seriesChildren, .hitch, .stall]
 
-    case .detail: [.background] + text + [.blockBackground]
+    case .detail: [.background] + text + [.border, .blockBackground]
 
     case .fileTab: [.background] + text + [.border, .fill, .selectionBackground]
 
@@ -66,7 +66,7 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
 
     case .states: [.working, .waiting, .done, .failed]
 
-    case .tabBar: [.background] + text + [.border, .selection]
+    case .tabBar: [.background] + text + [.border, .fill, .selection]
 
     case .terminalTab: [.background] + text + [.border, .divider, .selection]
     }

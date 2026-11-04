@@ -11,6 +11,8 @@ struct PaneGlyph: View {
   /// What the badge's ring is filled with, so it reads as a gap in the row
   /// rather than a second ring of colour.
   let ringFill: Color
+  /// A wash over `ringFill`, as on a hovered tab; `nil` for none.
+  var ringWash: Color?
   let plainTint: Color
   let theme: Theme
   let palette: AreaPalette
@@ -31,6 +33,7 @@ struct PaneGlyph: View {
     .cornerBadge(
       onGlyphOf: size,
       ringFill: ringFill,
+      ringWash: ringWash,
       state.map { StateDot(state: $0, theme: theme, palette: palette, diameter: dotSize) },
     )
   }

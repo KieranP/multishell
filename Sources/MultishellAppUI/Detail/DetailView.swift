@@ -34,7 +34,13 @@ struct DetailView: View {
         }
 
       case .noTabs(let worktree):
-        besideFilesPanel(of: worktree, theme: theme) { Spacer() }
+        besideFilesPanel(of: worktree, theme: theme) {
+          // Clipped to the room left, as the header is: its padding and symbol
+          // need more than the narrowest tab area, which would push the panel off.
+          NoTabsPlaceholder(model: model, worktree: worktree, theme: theme)
+            .frame(minWidth: 0, maxWidth: .infinity)
+            .clipped()
+        }
 
       case .noSelection(let hasProjects):
         // Clears the title-bar band, like the header does.

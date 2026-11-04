@@ -21,6 +21,7 @@ struct AppModelControlSidebarTests {
     )
     let inView = try #require(worktrees.first { $0["isInView"] as? Bool == true })
     #expect((inView["panes"] as? [[String: Any]])?.count == 1)
+    #expect(inView["terminalCount"] as? Int == 1)
   }
 
   @Test func aFilterNarrowsTheRowsAndACollapsedProjectListsNone() async throws {

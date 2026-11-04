@@ -88,7 +88,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
           .font(model.metrics.font(size: model.metrics.bodySize, weight: .semibold))
           .foregroundStyle(theme.tabBar.textSecondary)
           .frame(width: gutter, height: model.metrics.tabHeight)
-          .background(theme.tabBar.background)
+          .stripPaint(theme.tabBar.background)
           .contentShape(.rect)
       }
       .buttonStyle(.plain)

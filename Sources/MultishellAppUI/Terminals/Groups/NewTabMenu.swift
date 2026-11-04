@@ -10,6 +10,9 @@ struct NewTabMenu: View {
   let isFocusedGroup: Bool
   let theme: Theme
 
+  /// Held outside the menu, whose label is drawn inside it.
+  @State private var isHovered = false
+
   var body: some View {
     Menu {
       Button {
@@ -29,6 +32,7 @@ struct NewTabMenu: View {
     }
     .glyphMenuStyle()
     .frame(width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight)
+    .tracksHover($isHovered)
     .help(TabStripButtonText.newTabHelp(isFocusedGroup: isFocusedGroup))
     .accessibilityLabel(TabStripButtonText.newTabLabel)
   }
@@ -44,14 +48,19 @@ struct NewTabMenu: View {
         .font(model.metrics.font(size: model.metrics.menuChevronSize, weight: .bold))
         .accessibilityHidden(true)
     }
-    .foregroundStyle(theme.tabBar.textSecondary)
     .padding(.leading, model.metrics.stripGlyphInset)
     .frame(
       width: model.metrics.newTabMenuWidth,
       height: model.metrics.tabHeight,
       alignment: .leading,
     )
-    .background(theme.tabBar.background)
+    .glyphHover(
+      isHovered,
+      palette: theme.tabBar,
+      resting: theme.tabBar.textSecondary,
+      inset: model.metrics.stripButtonHoverInset,
+    )
+    .stripPaint(theme.tabBar.background)
     .contentShape(.rect)
   }
 

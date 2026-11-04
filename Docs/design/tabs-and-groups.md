@@ -212,9 +212,12 @@ bottom.
 - **The plus draws its own chevron**, small enough to read as a mark on it
   rather than a second glyph, which makes the button wider than the splits
   beside it.
-- **Its insets are deliberately unequal.** Equal ones looked unequal: a
-  chevron's ink is narrower than its box and a split symbol's is wider, so the
-  gap to the first split read as larger than the gap between the splits.
+- **Its insets are equal, as a split's are** (REVERSAL, 2026-11-05). They were
+  unequal, the chevron 4 pt nearer its edge, since a chevron's ink is narrower
+  than its box and a split symbol's wider, so equal gaps between bare glyphs
+  read as unequal. The lit square made the button's own edges visible, and the
+  chevron sat cramped against its right side. Cost: the gap to the first split
+  reads a little wider at rest.
 - **AppKit's own indicator is hidden**, sitting where this one's spacing cannot
   reach it, and the glyphs sit on a painted frame, a menu being hit-tested by
   what its label draws.
@@ -265,9 +268,70 @@ bottom.
   Cost: a `…/` title is read against the worktree's own last parts, so another
   folder sharing them, or one inside the worktree named as it is, is drawn from
   the wrong root. The title kept only its last parts; nothing says which.
+- **Every group's shown tab has its X, and any tab has one under the pointer**,
+  over the strip's `fill`. A background tab closed by middle click alone, and
+  another group's shown tab needed a click first. The X's room is kept while it
+  is not drawn, so a title never shifts; the floor already counted it. Picked
+  over the X on hover alone and over an X in the mark's place, which would have
+  taken the mark's clear-state click (mockups, 2026-11-05).
+  `TabCloseButtonVisibility` holds the rule.
+- **The shown tab has hairline sides and an open bottom**: the strip draws its
+  bottom hairline under the tabs, the shown tab's fill covering it, and the
+  separators between the other tabs went. Fill alone stood off the strip at
+  1.11:1 dark and 1.07:1 light, so with two groups which tab each showed was
+  hard to see. Picked over a 2 pt line on each shown tab and a strip stepped
+  further from the terminal. Cost: in Light the sides are as faint as the
+  separators were; the arrows and the plus paint short of the hairline.
+- **A worktree with no tab shows a placeholder**: its name, and a button for a
+  shell and one for each agent the New Tab menu lists, under the menu's own
+  labels. It was a blank area with no way to the plus, reached on every select
+  with Opens Terminal on Select off and after the last tab closes. Picked over
+  an empty strip with its plus, which would need a strip with no group behind
+  it. Cost: the buttons repeat the plus menu, and the area takes no dropped tab.
+  Each button is edged in `detail`'s new `border`, as the mockup drew it: its
+  block alone stood under 1.1:1 off the ground in six built-ins. The edge stands
+  1.1:1 off it in every one (PlaceholderButtonTests), Dracula's in its
+  current-line colour and Nord's in nord2, their header borders matching their
+  blocks. A button wider than the area truncates its label.
 
 ## Reviewed and left as is
 
+- **A tab that slides under or away from a still pointer keeps its hover until
+  the pointer moves** (round 1, 2026-11-05): `tracksHover`, on
+  `onContinuousHover`, hears only the pointer's own moves, so after a close or a
+  reorder the X and wash follow the next movement. Unproven on screen, and the
+  next move corrects it. A strip button or the sort menu, once chosen from, may
+  stay lit the same way (round 2), as may the header's actions menu once an item
+  opens a sheet (round 22).
+- **A click on the plus's bottom half point may miss its menu** (round 3,
+  unproven): the label paints short of the strip's hairline, and a menu is
+  hit-tested by what its label draws. Half a point, not checked on screen.
+- **A dragged shown tab shows the strip's bottom hairline through it** (round
+  2): the tab fades while it is dragged, its fill with it, which is the fade
+  saying it is in the air.
+- **A tab's hover is held by its face, whose body runs again on each enter and
+  exit** (round 2): a few lookups for one tab, and the badge's ring needs the
+  same wash the face draws.
+- **The shown tab's side beside a hovered neighbour reads only as the wash's
+  edge** in Nord and Multishell Light (round 6), about 1.2:1, the side's own
+  line matching the wash.
+- **The no-tabs caption's choice is read in the view from
+  `AppModel.offersAgentTabs`** (rounds 4 and 6, asked both ways): a type
+  wrapping the lookup is the second name translation.md rules out, and the
+  decision itself is the tested property.
+- **A shown first tab's leading side sits against whatever comes before the
+  strip** (round 8): the sidebar's edge or a group's divider. A debug build's
+  screenshot in both base themes showed it reading as one line (2026-11-05).
+- **Every strip part that paints calls `stripPaint`** (round 13) to stop short
+  of the bottom hairline, rather than the hairline lying over the parts with the
+  shown tab painting over it: the shown tab sits in a scroller under any overlay
+  the strip draws.
+- **A tab may keep its hover after it is dragged** (round 15, unproven): a drag
+  session holds the pointer, so the face hears no exit, and the next move over
+  it corrects it.
+- **The placeholder's buttons read the New Tab menu's keys** (round 4): they are
+  its items, the same act in the same words, which translation.md lets one key
+  carry.
 - **A tab's name field starts from its shown title** (round 1, 2026-11-04), and
   a field abandoned by a click elsewhere stores what it holds, as it stored the
   raw title before. The field starts from what the tab says.

@@ -108,6 +108,7 @@
       "text_secondary": "#6272a4",
       "text_tertiary": "#6272a4",
       "border": "#191a21",
+      "fill": "#f8f8f229",
       "selection": "#6272a4"
     },
     "terminal_tab": {
@@ -164,6 +165,7 @@
       "text": "#f8f8f2",
       "text_secondary": "#f8f8f2a6",
       "text_tertiary": "#6272a4",
+      "border": "#44475a",
       "block_background": "#191a21"
     },
     "debug_info": {

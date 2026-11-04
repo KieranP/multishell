@@ -7,6 +7,7 @@ import SwiftUI
 struct TerminalTabActions: View {
   let model: AppModel
   let tab: TerminalTab
+  let close: () -> Void
 
   var body: some View {
     Button(t("action.rename")) { model.beginRenamingTab(tab.id) }
@@ -18,6 +19,6 @@ struct TerminalTabActions: View {
       Button(t("action.clear-status")) { model.clearState(of: tab) }
     }
     Divider()
-    TabMoveAndCloseActions(model: model, tabID: tab.id, groupID: tab.groupID)
+    TabMoveAndCloseActions(model: model, tabID: tab.id, groupID: tab.groupID, close: close)
   }
 }

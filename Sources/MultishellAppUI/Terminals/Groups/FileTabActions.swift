@@ -7,10 +7,11 @@ import SwiftUI
 struct FileTabActions: View {
   let model: AppModel
   let tab: FileTab
+  let close: () -> Void
 
   var body: some View {
     FileActions(model: model, worktreeID: tab.worktreeID, path: tab.path)
     Divider()
-    TabMoveAndCloseActions(model: model, tabID: tab.id, groupID: tab.groupID)
+    TabMoveAndCloseActions(model: model, tabID: tab.id, groupID: tab.groupID, close: close)
   }
 }

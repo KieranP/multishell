@@ -23,6 +23,7 @@ struct ProjectRow: View, @MainActor Equatable {
   let requestNewWorktree: () -> Void
 
   @State private var isHovered = false
+  @State private var isNewWorktreeButtonHovered = false
 
   var body: some View {
     HStack(spacing: 6) {
@@ -34,7 +35,7 @@ struct ProjectRow: View, @MainActor Equatable {
     }
     .padding(.horizontal, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.rowHeight)
-    .onHover { isHovered = $0 }
+    .tracksHover($isHovered)
   }
 
   /// Only the chevron, icon and name toggle. A row-wide target made a
@@ -104,15 +105,28 @@ struct ProjectRow: View, @MainActor Equatable {
   }
 
   private var newWorktreeButton: some View {
-    PlainGlyphButton(help: t("sidebar.new-worktree"), action: requestNewWorktree) {
+    // Unlit by the click, the row with it, as the sheet it opens hides the exit.
+    PlainGlyphButton(help: t("sidebar.new-worktree")) {
+      isNewWorktreeButtonHovered = false
+      isHovered = false
+      requestNewWorktree()
+    } glyph: {
       Image(systemName: "plus")
         .font(metrics.font(size: metrics.glyph))
-        .foregroundStyle(
-          isHovered ? theme.projectsPanel.textSecondary : theme.projectsPanel.textTertiary
+        // No taller than the row, so its lit square stays off the rows beside it.
+        .frame(
+          width: UIMetrics.sidebarRowButtonWidth,
+          height: min(UIMetrics.sidebarRowButtonWidth, metrics.rowHeight),
         )
-        .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sidebarRowButtonWidth)
+        // Brighter while the row is pointed at, lit once the + itself is.
+        .glyphHover(
+          isNewWorktreeButtonHovered,
+          palette: theme.projectsPanel,
+          resting: isHovered ? theme.projectsPanel.textSecondary : theme.projectsPanel.textTertiary,
+        )
         .accessibilityHidden(true)
     }
+    .tracksHover($isNewWorktreeButtonHovered)
   }
 
   /// Everything but the closures, which capture only the project; see

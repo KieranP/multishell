@@ -23,7 +23,7 @@ extension UIMetrics {
   /// row so the worktree, pane and agents rows line up.
   var sidebarGlyphColumn: Double { paneGlyphSize }
 
-  /// A pane's row under the selected worktree: one line of badge-sized text,
+  /// A pane's row under the selected worktree: one line of caption-sized text,
   /// shorter than a worktree's so the panes read as its.
   var paneRowHeight: Double { (bodySize * 1.75).rounded() }
 

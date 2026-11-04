@@ -12,21 +12,22 @@ struct SidebarHeader: View {
   var body: some View {
     HStack(spacing: 2) {
       Spacer()
-      button("magnifyingglass", help: t("sidebar.filter-projects"), action: toggleFilter)
-        .foregroundStyle(
-          showsFilterField ? theme.projectsPanel.text : theme.projectsPanel.textSecondary
-        )
-      button("folder.badge.plus", help: t("sidebar.add-project"), action: addProject)
-        .foregroundStyle(theme.projectsPanel.textSecondary)
+      HeaderGlyphButton(
+        symbol: "magnifyingglass",
+        help: t("sidebar.filter-projects"),
+        palette: theme.projectsPanel,
+        resting: showsFilterField ? theme.projectsPanel.text : theme.projectsPanel.textSecondary,
+        action: toggleFilter,
+      )
+      HeaderGlyphButton(
+        symbol: "folder.badge.plus",
+        help: t("sidebar.add-project"),
+        palette: theme.projectsPanel,
+        resting: theme.projectsPanel.textSecondary,
+        opensAWindow: true,
+        action: addProject,
+      )
     }
     .windowHeader()
-  }
-
-  private func button(
-    _ symbol: String,
-    help: String,
-    action: @escaping () -> Void,
-  ) -> some View {
-    PlainGlyphButton(help: help, action: action) { HeaderGlyph(symbol: symbol) }
   }
 }

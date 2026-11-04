@@ -13,7 +13,7 @@ struct FilesPanelHeader: View {
     HStack(spacing: 0) {
       HStack(spacing: 2) {
         FilesPanelModeTab(model: model, mode: .files, name: t("files-panel.files"), theme: theme) {
-          HeaderGlyph(symbol: "doc.on.doc")
+          HeaderShapeGlyph(shape: FileTreeShape())
         }
         FilesPanelModeTab(
           model: model,

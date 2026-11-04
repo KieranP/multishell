@@ -29,7 +29,7 @@ struct UIMetricsTests {
   /// Written out rather than recomputed from `UIMetrics`: with the same
   /// expression on both sides the test cannot see the widths change.
   @Test func theSplitsShowAtTheThresholdAndNotAPointEarlier() {
-    for (size, threshold) in [(10.0, 202.0), (13.0, 252.0), (18.0, 351.0)] {
+    for (size, threshold) in [(10.0, 206.0), (13.0, 256.0), (18.0, 355.0)] {
       let metrics = UIMetrics(fontSize: size, fontFamily: nil)
       #expect(
         metrics.tabStripWidths.showsSplits(in: threshold),
@@ -45,11 +45,11 @@ struct UIMetricsTests {
   @Test func aStripsTabsHaveWhatItsButtonsLeave() {
     let metrics = UIMetrics(fontSize: 13, fontFamily: nil)
     #expect(
-      metrics.tabStripWidths.tabsAvailable(in: 252) == 145,
+      metrics.tabStripWidths.tabsAvailable(in: 256) == 145,
       "the menu and both splits come off",
     )
     #expect(
-      metrics.tabStripWidths.tabsAvailable(in: 251) == 212,
+      metrics.tabStripWidths.tabsAvailable(in: 255) == 212,
       "only the menu comes off below the threshold",
     )
   }

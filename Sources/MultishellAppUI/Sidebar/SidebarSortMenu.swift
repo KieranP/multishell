@@ -31,11 +31,12 @@ struct SidebarSortMenu: View {
     } label: {
       Image(systemName: "arrow.up.arrow.down")
         .font(metrics.font(size: metrics.badge))
-        .foregroundStyle(
-          isHovered
-            ? theme.projectsPanel.textSecondary : theme.projectsPanel.textTertiary.opacity(0.7)
-        )
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sectionHeaderHeight)
+        .glyphHover(
+          isHovered,
+          palette: theme.projectsPanel,
+          resting: theme.projectsPanel.textTertiary.opacity(0.7),
+        )
         // Painted: a menu is hit-tested by its label's ink, and the glyph
         // alone is a small target. As the strip's + does.
         .background(theme.projectsPanel.background)
@@ -44,7 +45,7 @@ struct SidebarSortMenu: View {
     }
     .glyphMenuStyle()
     .fixedSize()
-    .onHover { isHovered = $0 }
+    .tracksHover($isHovered)
     .help(t("sidebar.sort-worktrees"))
     .accessibilityLabel(t("sidebar.sort-worktrees"))
   }

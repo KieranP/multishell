@@ -11,7 +11,6 @@ struct WorktreeRowBadges: View {
   let isLocked: Bool
   let standing: BranchStanding
   let status: WorktreeStatus?
-  /// Already zero where the pane rows list them; see `SidebarWorktree`.
   let terminalCount: Int
   let theme: Theme
   let metrics: UIMetrics
@@ -19,6 +18,8 @@ struct WorktreeRowBadges: View {
   let clearAutoRenameFailure: () -> Void
   let showPullRequest: () -> Void
   let showCIRuns: () -> Void
+
+  private var showsCount: Bool { TerminalCountCapsule.showsCount(of: terminalCount) }
 
   var body: some View {
     if let operation {
@@ -79,16 +80,24 @@ struct WorktreeRowBadges: View {
         showCIRuns: showCIRuns,
       )
     }
-    if terminalCount > 0 {
+    // No room kept with no terminals: an empty slot left the row's other badges
+    // stranded off the edge.
+    if showsCount { countCapsule }
+  }
+
+  /// At least two digits wide, so 9 and 10 terminals leave the glyphs before it put.
+  private var countCapsule: some View {
+    ZStack {
+      Text(verbatim: "00").hidden()
       Text("\(terminalCount)")
-        .font(metrics.font(size: metrics.badge, weight: .semibold))
-        .monospacedDigit()
-        .foregroundStyle(theme.projectsPanel.textSecondary)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 1)
-        .background(theme.projectsPanel.fill, in: Capsule())
-        .help(t("count.terminals", terminalCount))
     }
+    .font(metrics.font(size: metrics.badge, weight: .semibold))
+    .monospacedDigit()
+    .foregroundStyle(theme.projectsPanel.textSecondary)
+    .padding(.horizontal, 6)
+    .padding(.vertical, 1)
+    .background(theme.projectsPanel.fill, in: Capsule())
+    .help(t("count.terminals", terminalCount))
   }
 
   /// One look for anything under way on the row, a stage or an Auto Rename.

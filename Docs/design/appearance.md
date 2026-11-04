@@ -221,6 +221,50 @@
   faintest the 18% light wash gives (View+RowSelectionTests). GitHub Light's
   source wash, 20%, gave 1.12:1 with no outline beside it, so it is 40% there,
   sidebar and switcher, departing from the published theme for that one key.
+- **A chrome glyph button lights under the pointer as the find bar's do**: the
+  area's full text over its `fill`, in a rounded square, on the sidebar header's
+  buttons and sort menu, a project's +, the header and file bar's actions menus,
+  the Files panel's pages and toggle, the strip's plus and splits, and a tab's
+  X, which takes the strip's `fill` for either kind of tab, a terminal tab's
+  section having none. Nothing but the find bar answered the pointer before, and
+  the sort glyph and the + only brightened. Rows stay still, a click answering
+  with the selection wash; the + still brightens while its row is pointed at.
+  Picked over a brightening alone and over the square with a wash on rows
+  (mockups, 2026-11-05). `tab_bar` gained a `fill` for it and for a hovered tab.
+  `GlyphButtonLight` holds when one lights, and that an open toggle, as the
+  Files panel's, keeps its accent lit; a placeholder button lights by it too. A
+  button whose click can raise a sheet, picker, alert or close dialog, a tab's X
+  and a terminal tab among them, unlights on its click, as what opens hides the
+  pointer's exit. Hover is tracked on every move (`tracksHover`), not only at
+  the edges, so a button unlit under a still pointer lights on the next move.
+- **The faint tier clears 3:1 on the sidebar**: the base themes' `text_tertiary`
+  went from 0x61 to 0x66 dark and 0x81 light, every `ui` area alike, from 2.97:1
+  and 2.23:1 to 3.13:1 and 3.09:1 on the sidebar. A selected row's wash takes it
+  to 2.68:1 and 2.89:1, and the file tab's line numbers and comments, `file`
+  keys, keep 0x61. It carries the idle ring, branch prefixes, unselected pages,
+  the header path and position badges. Cost: Light's secondary and faint tiers
+  sit closer, 0x99 against 0x81. Picked over raising the side panels alone, two
+  faint tiers in one window, and over a key of idle's own, which would reverse
+  idle's grey above.
+- **The Files panel's row for the file in front takes the sidebar's blue wash**,
+  20% dark and 18% light, where its 6% fill was the faintest selection in the
+  app. GitHub Light's takes its sidebar's 40%, every built-in's held to the
+  sidebar's floor (FilesPanelRowTests). Cost: two blue washes, which worktree
+  and which file, at either edge of the window. Picked over a stronger grey and
+  the old 12% blue.
+- **The editor themes' `tab_bar.fill` is their own text, translucent**, a key
+  their sources have no counterpart for: 8%, or 16% where the terminal is
+  lighter than the strip and 8% came out its colour, 12% in Solarized Light.
+  Their header fills, opaque in eight, hid a tab's lit X on its hover wash and,
+  where the fill matched the border, the shown tab's side. Every built-in's wash
+  stands 1.1:1 off its strip and its shown tab, and the X's square 1.1:1 off the
+  wash (Theme+TabStripColorsTests).
+- **Every area a glyph lights in holds its `fill` 1.1:1 off its ground**
+  (GlyphHoverModifierTests), departing from three sources: GitHub Dark's sidebar
+  fill at 13% where it was 10%, and GitHub Light's sidebar and find bar and
+  Solarized Light's sidebar, header and find bar in their own text, translucent,
+  their source fills being too near the ground at any alpha. The same key paints
+  the count capsule, the filter wells and the switches there.
 
 ## Reviewed and left as is
 
@@ -230,9 +274,27 @@
 - **A dragged collapsed project's preview may drop the turning arc** (round 3,
   2026-11-05). Unproven: SwiftUI's drag snapshot of an `NSViewRepresentable`
   could not be checked without driving the desktop.
+- **Each lit glyph button holds its own hover**, `glyphHover` taking it as a
+  value (round 4 of the design picks review): three are menus, heard from
+  outside the menu, and the X and the splits hear it outside `disabled`, so a
+  modifier holding it would be wrong for five of the nine.
+- **A corner badge's ring is painted in its ground's colour, passed down**
+  (round 14), `ringWash` now carrying a hovered tab's and a selected switcher
+  row's: a ring cut out of the glyph would change every badge in the app, the
+  sidebar's and the board's included, and could not be checked on screen.
+- **GlyphHoverModifierTests lists the five areas lit today** (round 14): a
+  caller in a new area adds it, as it adds the area's `fill` to its section.
+- **The theme-contrast suites are named for the view whose colours they hold**
+  (round 16): GlyphHoverModifierTests, PlaceholderButtonTests and
+  Theme+TabStripColorsTests, as View+RowSelectionTests is, the view being where
+  a reader looks for what its colours must clear.
 
 ### Asked both ways
 
+- **`CenteredFlowLayout` caching its subviews' sizes**: round 1 of the design
+  picks review asked for the cache, a layout pass measuring every button twice;
+  round 3 asked whether a size could go stale under it. Kept: SwiftUI calls
+  `updateCache` whenever the subviews change, a font change among them.
 - **`AnimatedGlyphView.motion` takes a new motion** (round 2 asked for it, round
   3 to drop it, as no caller changes one today). Kept: a representable that
   ignores a changed input is a trap for the next caller, at a few lines.

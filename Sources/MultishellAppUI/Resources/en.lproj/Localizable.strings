@@ -114,6 +114,9 @@
 "dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "dialog.decide-later" = "Decide Later";
 "dialog.remove-project" = "Remove Project";
+"empty.no-terminals" = "No terminals in %@";
+"empty.no-terminals-detail" = "Open a shell, or start an agent in this worktree.";
+"empty.no-terminals-shell-detail" = "Open a shell in this worktree.";
 "file.actions" = "File Actions";
 "file.layout" = "How changes are shown";
 "file.mode-changed" = "Mode changed";

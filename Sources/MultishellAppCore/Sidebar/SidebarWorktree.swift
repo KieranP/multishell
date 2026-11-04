@@ -10,9 +10,4 @@ public struct SidebarWorktree: Identifiable, Sendable {
 
   public var id: Worktree.ID { worktree.id }
   public var hasCustomName: Bool { customName != nil }
-
-  /// None where the pane rows list the terminals, which would say it twice.
-  public func shownTerminalCount(of total: Int) -> Int {
-    panes.isEmpty ? total : 0
-  }
 }
