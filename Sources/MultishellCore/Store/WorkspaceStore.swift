@@ -783,5 +783,9 @@ extension WorkspaceStore {
   public func setChangeScope(_ scope: ChangeScope) {
     workspace.changeScope = scope
   }
+
+  public func setShowsAllTerminals(_ shows: Bool) {
+    workspace.showsAllTerminals = shows
+  }
 }
 // swiftlint:enable no_grouping_extension

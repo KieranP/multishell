@@ -208,8 +208,10 @@ command line's requests on the same socket. Newest at the bottom.
 - **No duration floor, though the banner policy has one**: a banner interrupts,
   a card does not, and the sidebar dot already goes green for a trivial command.
 - **The filter lives on the model, not the view**, because the Dock badge counts
-  what the Waiting column shows and must read the same flag. Cost: off again
-  after a relaunch.
+  what the Waiting column shows and must read the same flag.
+- **The filter is saved in the workspace**, as the Files panel's page is, so
+  someone who watches their shells on the board no longer turns it on at every
+  launch. Cost: a toggle schedules a save.
 - **While the board is up, nothing acting on "the tab in front" acts**: closing
   would end a shell nobody can see, opening would make a tab that appears only
   once the board is left. One predicate answers for all of them.

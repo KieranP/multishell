@@ -2,6 +2,10 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
+  /// Whether the board shows every terminal or only agent panes. On the model
+  /// and not the view, the Dock badge reading the same filter.
+  public var showsAllTerminals: Bool { workspace.showsAllTerminals }
+
   /// Every live pane, flattened into a card.
   var agentBoardCards: [AgentBoardCard] {
     let projectNames = workspace.projects.keyedByID().mapValues(\.name)
@@ -89,9 +93,10 @@ extension AppModel {
     return .shell(shellPath(for: worktree).executableName)
   }
 
+  /// Kept for the next launch, as the Files panel's page is.
   public func setShowsAllTerminals(_ shows: Bool) {
     guard shows != showsAllTerminals else { return }
-    showsAllTerminals = shows
+    store.setShowsAllTerminals(shows)
     // The badge counts what the Waiting column shows, and the filter just
     // changed what that is.
     updateDockBadge()

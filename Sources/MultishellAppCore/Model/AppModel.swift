@@ -164,9 +164,6 @@ public final class AppModel<Surface> {
   /// What covers the selected worktree's terminals. Runtime state; set through
   /// the show methods and `uncoverDetail`, which do the seen-clearing.
   var detailCover: DetailCover?
-  /// Whether the board shows every terminal or only agent panes. Here and not
-  /// in the view, the Dock badge reading the same filter.
-  public internal(set) var showsAllTerminals = false
   /// What the badge was last set to, so it is written only when it changes.
   @ObservationIgnored var badgedWaitingCount = 0
   /// The board as last built; see `agentBoard`. Bumping the generation is

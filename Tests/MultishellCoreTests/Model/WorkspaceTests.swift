@@ -131,6 +131,11 @@ struct WorkspaceTests {
     )
   }
 
+  @Test func aWorkspaceSavedBeforeTheBoardsFilterWasKeptShowsOnlyAgents() throws {
+    #expect(try !decodeJSON(Workspace.self, #"{ "projects": [] }"#).showsAllTerminals)
+    #expect(try decodeJSON(Workspace.self, #"{ "showsAllTerminals": true }"#).showsAllTerminals)
+  }
+
   @Test func aWorkspaceWithoutAChangeScopeComparesWithHeadAndAnUnknownOneFallsBack() throws {
     #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).changeScope == .modified)
     #expect(try decodeJSON(Workspace.self, #"{ "changeScope": "branch" }"#).changeScope == .branch)

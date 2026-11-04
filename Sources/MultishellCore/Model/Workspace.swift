@@ -20,6 +20,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
     case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode, changeScope
+    case showsAllTerminals
     case portBlockStart, portBlockSize, portBlocks
   }
 
@@ -123,6 +124,8 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Modified or Branch, chosen in the panel or any file tab's bar, which
   /// both follow it.
   public internal(set) var changeScope = ChangeScope.default
+  /// The Agents board shows every terminal, not only agents' panes.
+  public internal(set) var showsAllTerminals = false
   /// The first port of the first block. Changing it or the size moves every
   /// block's ports; only a worktree left without a port changes block.
   public internal(set) var portBlockStart = PortBlock.defaultStart
@@ -262,6 +265,7 @@ public struct Workspace: Codable, Hashable, Sendable {
       or: .default,
     )
     changeScope = container.decodeTolerantly(ChangeScope.self, forKey: .changeScope, or: .default)
+    showsAllTerminals = try container.decode(Bool.self, forKey: .showsAllTerminals, or: false)
     // Tolerated, each block alone: one is given again on load, so a bad value costs itself.
     portBlockStart = container.decodeTolerantly(
       Int.self,

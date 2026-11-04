@@ -8,7 +8,7 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelPersistenceTests {
-  private func onDisk(_ file: URL) -> Workspace? {
+  func onDisk(_ file: URL) -> Workspace? {
     guard FileManager.default.fileExists(atPath: file.path) else { return nil }
     return try? StateFile(fileURL: file).load()
   }
