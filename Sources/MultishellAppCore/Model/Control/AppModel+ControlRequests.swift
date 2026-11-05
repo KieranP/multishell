@@ -70,6 +70,10 @@ extension AppModel {
 
     case .reportPaneState(let report): replyToReportPaneState(report)
     case .dismissPresentation: replyToDismissPresentation()
+
+    case .showSettingsPage(let page, let inProject, let project):
+      replyToShowSettingsPage(page, inProject: inProject, project: project)
+
     case .showView(let view, let project): replyToShowView(view, project: project)
     case .hideView(let view): replyToHideView(view)
     case .filterSidebar(let text): replyToFilterSidebar(text)
@@ -82,6 +86,7 @@ extension AppModel {
     case .markDebugSample(let name): replyToMarkDebugSample(name)
     case .debugGitRuns(let last): replyToDebugGitRuns(last: last)
     case .screenshot(let pane): replyToScreenshot(pane: pane)
+    case .settingsScreenshot: replyToSettingsScreenshot()
     case .openFileTab(let worktree, let path): await replyToOpenFileTab(path, in: worktree)
     case .stepToChange(let tab, let direction): await replyToStepToChange(direction, in: tab)
     case .findInFileTab(let id, let action): await replyToFindInFileTab(action, in: id)

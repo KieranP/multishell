@@ -1,6 +1,8 @@
+import MultishellCore
 import SwiftUI
 
-/// A path on one line, cut from the front so the end that tells it apart stays.
+/// A path on one line, home written `~`, cut from the front so the end that
+/// tells it apart stays.
 struct PathText: View {
   let path: String
 
@@ -13,6 +15,6 @@ struct PathText: View {
   }
 
   init(_ path: String) {
-    self.path = path
+    self.path = path.abbreviatingHomeDirectory()
   }
 }

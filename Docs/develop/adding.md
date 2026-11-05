@@ -354,12 +354,13 @@ What each addition needs beyond the code itself.
 - **A settings row.** Bind through the model's setting accessor, which re-reads
   the stored value; a field with its own binding goes stale against a change
   made elsewhere.
-- **An override is an override section**, naming the key path once, or the
-  `InheritableSettingKeys` where a repository may ship it. Help goes behind an
-  (i); a caption is only for a value computed live.
-- **A page that outgrows its window gets another part** in its segmented switch,
-  and each part a line in ViewSettingsWindowTests. Hooks' Create part has 7 pt
-  left under a repository file asking for trust.
+- **An override is an `OverrideRow` in its page's table**, naming the key path
+  once, or the `InheritableSettingKeys` where a repository may ship it. Help
+  goes behind an (i); a caption is only for a value computed live.
+- **A page that outgrows its window gets another part**, a `SettingsSection`
+  listed under its page in the sidebar, and each part a line in
+  ViewSettingsWindowTests. A row on any page also goes in the page's search
+  words, `SettingsPage+SearchTerms`.
 - **A user-visible string.** A line in the catalogue of the half that says it,
   in key order under its thing's prefix (design/translation.md), and the lookup
   where the words are wanted. A word both halves say is written in both, and app

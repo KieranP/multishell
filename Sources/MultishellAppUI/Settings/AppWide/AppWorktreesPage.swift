@@ -8,14 +8,11 @@ struct AppWorktreesPage: View {
   let model: AppModel
 
   var body: some View {
-    Form {
-      Section {
+    SettingsForm {
+      SettingsGroup(t("worktrees.section-creating")) {
         InfoLabeledContent(t("worktrees.path"), info: t("worktrees.path-info")) {
           TextField(t("worktrees.path"), text: model.worktreeDefaultBinding(\.worktreeDirectory))
         }
-      }
-
-      Section {
         InfoLabeledContent(t("worktrees.branch-prefix"), info: t("worktrees.branch-prefix-info")) {
           TextField(
             t("worktrees.branch-prefix"),
@@ -26,9 +23,6 @@ struct AppWorktreesPage: View {
         if let caption = model.workspace.worktreeDefaults.prefixExampleCaption {
           SettingsCaption(caption)
         }
-      }
-
-      Section {
         InfoLabeledContent(t("worktrees.hook-timeout"), info: t("worktrees.hook-timeout-info")) {
           SettingsNumberField(
             t("worktrees.hook-timeout"),
@@ -41,7 +35,7 @@ struct AppWorktreesPage: View {
         }
       }
 
-      Section {
+      SettingsGroup(t("worktrees.section-ports")) {
         InfoLabeledContent(
           t("worktrees.port-block-start"),
           info: t("worktrees.port-block-start-info"),
@@ -66,32 +60,32 @@ struct AppWorktreesPage: View {
         }
       }
 
-      Section {
+      SettingsGroup(t("worktrees.section-change-counts")) {
         InfoLabeledContent(t("worktrees.indicator"), info: t("worktrees.indicator-info")) {
-          Picker(
-            t("worktrees.indicator"),
+          SettingsPopUp(
+            label: t("worktrees.indicator"),
             selection: model.settingBinding(
               \.gitStatusIndicator,
               write: model.setGitStatusIndicator,
             ),
+            title: model.workspace.gitStatusIndicator.displayName,
           ) {
             ForEach(GitStatusIndicator.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
-          .fixedSize()
         }
         InfoLabeledContent(t("worktrees.diff-algorithm"), info: t("worktrees.diff-algorithm-info"))
         {
-          Picker(
-            t("worktrees.diff-algorithm"),
+          SettingsPopUp(
+            label: t("worktrees.diff-algorithm"),
             selection: model.settingBinding(\.diffAlgorithm, write: model.setDiffAlgorithm),
+            title: model.workspace.diffAlgorithm.displayName,
           ) {
             ForEach(DiffAlgorithm.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
-          .fixedSize()
         }
       }
 
-      Section {
+      SettingsGroup(t("worktrees.section-removing")) {
         InfoToggle(
           t("worktrees.confirm-removal"),
           info: t("worktrees.confirm-removal-info"),
@@ -118,6 +112,5 @@ struct AppWorktreesPage: View {
         )
       }
     }
-    .formStyle(.grouped)
   }
 }

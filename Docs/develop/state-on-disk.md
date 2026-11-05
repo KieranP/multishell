@@ -102,7 +102,7 @@ Under `~/Library/Application Support/Multishell`.
   check. What it said is never saved in the state file, where a restored copy
   would trust a file nobody looked at.
 - **A field it ships needs a line in the layering**, a decode that costs the key
-  and not the file, and an override section on the page (design/settings.md).
+  and not the file, and an override row on the page (design/settings.md).
 - **A field naming a path on the reader's disk needs more**: confinement, the
   trust text, the gate, and the export's carry-over, the last so export does not
   drop it while it is untrusted.

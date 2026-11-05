@@ -2,56 +2,37 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Four scripts and two file lists, one operation's group at a time; see
+/// Four scripts and two file lists, one sidebar part at a time; see
 /// Docs/design/settings.md. An inherited hook is grey, its trust above all.
 struct ProjectHooksPage: View {
-  enum Part: CaseIterable {
-    case create
-    case delete
-    case environment
-
-    var title: String {
-      switch self {
-      case .create: t("hooks.create")
-      case .delete: t("hooks.delete")
-      case .environment: t("hooks.environment")
-      }
-    }
-  }
-
   let model: AppModel
   let project: Project
-
-  @State private var part: Part
+  /// One of the Hooks page's parts.
+  let section: SettingsSection
 
   var body: some View {
     let shared = project.sharedSettingsSnapshot.confined
-    Form {
+    SettingsForm {
       if let shared, shared.asksForTrust {
         SharedSettingsTrustSection(model: model, project: project)
       } else if let problem = project.sharedSettingsSnapshot.problem {
-        Section { SettingsCaption(problem) }
+        SettingsGroup { SettingsCaption(problem) }
       }
 
-      SplitPagePicker(label: t("settings.hooks"), selection: $part, title: \.title)
+      switch section {
+      case .hooksCreate: createSection(shared)
+      case .hooksDelete: deleteSection(shared)
+      case .hooksEnvironment: HookEnvironmentSection(model: model)
 
-      switch part {
-      case .create: createSection(shared)
-      case .delete: deleteSection(shared)
-      case .environment: HookEnvironmentSection(model: model)
+      case .agentHooks, .agents, .agentSettings, .appearance, .general, .integrations,
+        .notifications, .terminal, .worktrees:
+        EmptyView()
       }
     }
-    .formStyle(.grouped)
-  }
-
-  init(model: AppModel, project: Project, part: Part = .create) {
-    self.model = model
-    self.project = project
-    _part = State(initialValue: part)
   }
 
   private func createSection(_ shared: SharedProjectSettings?) -> some View {
-    Section {
+    SettingsGroup {
       MonospacedEditor(
         label: t("hooks.pre-create"),
         info: t("hooks.pre-create-info"),
@@ -80,7 +61,7 @@ struct ProjectHooksPage: View {
   }
 
   private func deleteSection(_ shared: SharedProjectSettings?) -> some View {
-    Section {
+    SettingsGroup {
       MonospacedEditor(
         label: t("hooks.pre-delete"),
         info: t("hooks.pre-delete-info"),

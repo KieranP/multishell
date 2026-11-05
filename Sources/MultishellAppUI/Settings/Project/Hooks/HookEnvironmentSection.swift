@@ -7,7 +7,7 @@ struct HookEnvironmentSection: View {
   let model: AppModel
 
   var body: some View {
-    Section {
+    SettingsGroup {
       ForEach(HookVariable.allCases, id: \.self) { variable in
         LabeledContent {
           Text(variable.meaning).foregroundStyle(.secondary)

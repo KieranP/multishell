@@ -28,23 +28,11 @@ struct MultishellApp: App {
     .windowToolbarStyle(.unifiedCompact(showsTitle: false))
     .commands { MultishellCommands(model: model) }
 
+    // Every project's settings and each project's own, Project Settings…
+    // opening it on that project.
     Settings {
-      AppSettingsWindow(model: model, platform: platform)
+      SettingsWindow(model: model, platform: platform)
     }
-
-    // One settings window, retargeted from the sidebar. A `Window`, not a
-    // `WindowGroup`, whose own Cmd+W would win over Close Pane.
-    Window(t("window.project-settings"), id: ProjectSettingsWindow.windowID) {
-      if let projectID = model.settingsWindowProjectID {
-        ProjectSettingsWindow(model: model, platform: platform, projectID: projectID)
-      } else {
-        Text(t("window.project-settings-empty"))
-          .foregroundStyle(.secondary)
-          .frame(width: 400, height: 120)
-      }
-    }
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
   }
 
   init() {

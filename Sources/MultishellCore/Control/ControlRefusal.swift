@@ -45,9 +45,13 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case noMenuItem(path: String)
   case noPane(id: UUID)
   case noProject(id: String)
+  /// Project settings asked for with no project named, shown or selected.
+  case noProjectChosen
   /// The worktree's row draws no glyph for the page, having nothing on it.
   case noServicePage(ServicePage, id: String)
   case noSetting(key: String)
+  /// Not a page of the settings shown, whose own `pages` are named.
+  case noSettingsPage(ControlSettingsPage, pages: [ControlSettingsPage])
   /// The tab's pane tree has no split at that path.
   case noSplit(id: UUID, path: [Int])
   /// The quick switcher lists no row to choose.

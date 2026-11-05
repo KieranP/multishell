@@ -1,8 +1,8 @@
 import MultishellAppCore
 import SwiftUI
 
-/// The dropdown both settings windows use for an agent, shell, editor, font or a list
-/// the catalogue fixes. `options(selected:)` keeps a stale choice listed rather than blank.
+/// A settings row holding a `DetectionMenu`: an agent, shell, editor, font or a
+/// list the catalogue fixes.
 struct DetectionPicker: View {
   let label: String
   @Binding var selection: String
@@ -10,24 +10,13 @@ struct DetectionPicker: View {
   /// `nil` for a list the catalogue fixes, which no PATH scan changes.
   var refresh: (() -> Void)?
   let info: String
-  /// Greys the control while an override is off; the (i) stays readable.
+  /// Greys the control while it has nothing to choose; the (i) stays readable.
   var isEnabled = true
 
   var body: some View {
     InfoLabeledContent(label, info: info) {
-      Picker(label, selection: $selection) {
-        ForEach(options(selection)) { option in
-          if option.id == DetectionOption.dividerID {
-            Divider()
-          } else {
-            Text(option.label).tag(option.id)
-          }
-        }
-      }
-      .disabled(!isEnabled)
-      if let refresh {
-        SettingsSymbolButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
-      }
+      DetectionMenu(label: label, selection: $selection, options: options, refresh: refresh)
+        .disabled(!isEnabled)
     }
   }
 }
@@ -49,7 +38,7 @@ extension DetectionPicker {
       label: label,
       selection: selection,
       options: options,
-      refresh: { Task { await model.refreshLoginEnvironment() } },
+      refresh: DetectionMenu.refreshingLogin(of: model),
       info: info,
       isEnabled: isEnabled,
     )

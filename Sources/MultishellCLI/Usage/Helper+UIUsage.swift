@@ -1,9 +1,15 @@
 extension Helper {
   static let uiUsage = """
-    usage: multishell ui show board|all-terminals|settings
-    usage: multishell ui show project-settings [PROJECT_ID]
+    usage: multishell ui show board|all-terminals
+    usage: multishell ui show settings [--page PAGE]
+    usage: multishell ui show project-settings [PROJECT_ID] [--page PAGE]
         Open what the menu item or click opens: the Agents board, its Show
-        all terminals, the Settings window, or a project's settings.
+        all terminals, or the Settings window on All Projects or on a
+        project, turned to PAGE as its sidebar's row would. All Projects
+        has general, worktrees, terminal, agent-settings, agent-hooks,
+        notifications and appearance, and agents opens its first part. A
+        project has general, worktrees, hooks-create, hooks-delete,
+        hooks-environment, terminal, agents and integrations.
     usage: multishell ui show pull-request|ci [WORKTREE_ID]
         Open the Files panel on the worktree's pull request or CI page, the
         one in view's by default, as a click on its row's glyph does.

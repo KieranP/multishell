@@ -12,6 +12,8 @@ public struct BranchScan: Hashable, Sendable {
   /// `nil` for a repository with no branch to measure merges against; see
   /// `DefaultBranch.resolve`.
   public let mergeInputs: MergeInputs?
+  /// What detection alone finds, the override set aside.
+  public let detectedDefaultBranch: DefaultBranch?
   /// Where each local branch is published, by its worktree's name for it; `nil`
   /// where the retried read did not ask, so none is known gone.
   public let upstreams: [String: BranchUpstream]?
@@ -37,8 +39,10 @@ public struct BranchScan: Hashable, Sendable {
         guard Self.untrackedOwnName(of: ref, tips: tips) != nil else { return nil }
         return .some(Self.followedBranch(of: ref, tips: tips))
       }
-    mergeInputs = DefaultBranch.resolve(from: refs, override: override)
-      .map { MergeInputs(defaultBranch: $0, branches: branches) }
+    let inForce = DefaultBranch.resolve(from: refs, override: override)
+    detectedDefaultBranch =
+      override == nil ? inForce : DefaultBranch.resolve(from: refs, override: nil)
+    mergeInputs = inForce.map { MergeInputs(defaultBranch: $0, branches: branches) }
   }
 
   /// Where the branch's pull request and runs are filed: under its own name on

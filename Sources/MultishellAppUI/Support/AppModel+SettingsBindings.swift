@@ -15,6 +15,11 @@ extension AppModel {
     Binding(get: { self.globalShellID }, set: { self.setPreferredShell($0) })
   }
 
+  /// The theme chosen, by Settings > Appearance and the View menu alike.
+  var themeBinding: Binding<String> {
+    settingBinding(\.appearance.themeID, write: setTheme)
+  }
+
   var terminalFontBinding: Binding<String> {
     // A closure, not `setTerminalFontPickerID`: Swift 6.3's IRGen crashes on the
     // @isolated(any) thunk a method reference needs here.
@@ -114,8 +119,8 @@ extension AppModel {
     )
   }
 
-  /// The overridden value, reading as `fallback` while the override is off so
-  /// the disabled control shows what is in effect.
+  /// The overridden value, reading as `fallback` while the override is off,
+  /// which a control drawn only while it is on never reads.
   func overrideField<Value: Equatable & Sendable>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value?>,
     of project: Project,

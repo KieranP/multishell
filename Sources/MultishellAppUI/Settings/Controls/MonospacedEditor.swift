@@ -15,9 +15,9 @@ struct MonospacedEditor: View {
         text: $text,
         placeholder: placeholder,
         fontSize: UIMetrics.unscaledMonospacedSize,
-        fill: HierarchicalShapeStyle.quaternary.opacity(0.5),
-        border: nil,
-        minHeight: 48,
+        fill: SettingsColors.field,
+        border: SettingsColors.outline,
+        minHeight: 56,
         maxHeight: 96,
       )
     }

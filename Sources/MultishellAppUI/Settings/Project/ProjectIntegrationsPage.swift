@@ -10,9 +10,9 @@ struct ProjectIntegrationsPage: View {
   let project: Project
 
   var body: some View {
-    Form {
-      ForEach(ServiceIntegration.allCases, id: \.self) { integration in
-        Section {
+    SettingsForm {
+      ForEach(ServiceIntegration.settingsPageOrder, id: \.self) { integration in
+        SettingsGroup {
           InfoToggle(
             integration.settingsLabel,
             info: integration.settingsInfo,
@@ -30,7 +30,6 @@ struct ProjectIntegrationsPage: View {
         }
       }
     }
-    .formStyle(.grouped)
     .task { await model.refreshServiceToolStatuses() }
     .onDisappear { model.stopAskingToolStatuses() }
   }

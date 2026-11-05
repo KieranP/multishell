@@ -56,6 +56,13 @@ extension ControlRefusal {
 
     case .noProject(let id): "no project \(id); `multishell projects list` names them"
 
+    case .noSettingsPage(let page, let pages):
+      "no \(page.rawValue) page in the settings asked for, whose pages are "
+        + pages.map(\.rawValue).joined(separator: ", ")
+
+    case .noProjectChosen:
+      "no project is selected to show the settings of; name one with its PROJECT_ID"
+
     case .noSetting(let key):
       "no setting \(key); `multishell config global list` and "
         + "`multishell config project PROJECT_ID list` name the keys"

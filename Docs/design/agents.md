@@ -1023,9 +1023,16 @@ command line's requests on the same socket. Newest at the bottom.
 - **`worktrees show` reads git before it answers**, since status is read only
   while the app is frontmost, the Files panel's worktree aside (worktrees.md),
   and a scripted copy usually is not.
-- **The settings windows open through SwiftUI's own openers**, which only a view
-  can reach, so the root view hands them to the platform. AppKit cannot open a
+- **The settings window opens through SwiftUI's own opener**, which only a view
+  can reach, so the root view hands it to the platform. AppKit cannot open a
   SwiftUI scene, and closing one goes by the window's identifier.
+  `ui show settings` and `ui show project-settings` open that one window, on All
+  Projects and on a project; `ui hide project-settings` closes it only while it
+  shows a project. With no PROJECT_ID, no project shown and none selected,
+  `project-settings` is refused rather than opening on All Projects. `--page`
+  turns it as the sidebar's row would, `agents` on All Projects to its first
+  part, and a page the scope lacks is refused naming the scope's own. The page
+  and its scope go in one request, so a refusal moves nothing.
 - **`tabs open-file` opens a file by the Files panel click's rule**, so a file
   that would not open as text is refused where the click beeps. In a worktree
   out of view it opens without switching to it, as `tabs open` does.

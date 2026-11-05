@@ -6,14 +6,12 @@ import SwiftUI
 struct WindowOpenerRegistrationModifier: ViewModifier {
   let platform: MacPlatform
   @Environment(\.openSettings) private var openSettings
-  @Environment(\.openWindow) private var openWindow
 
   func body(content: Content) -> some View {
     content.onAppear {
-      platform.openAuxiliaryWindow = { [openSettings, openWindow] window in
+      platform.openAuxiliaryWindow = { [openSettings] window in
         switch window {
         case .settings: openSettings()
-        case .projectSettings: openWindow(id: ProjectSettingsWindow.windowID)
         }
       }
     }

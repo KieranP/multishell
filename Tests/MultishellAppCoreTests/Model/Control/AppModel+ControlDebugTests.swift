@@ -116,6 +116,15 @@ struct AppModelControlDebugTests {
     #expect(await harness.messageSource.ask(.screenshot(pane: nil)) == .refused(.screenshotFailed))
   }
 
+  @Test func theSettingsWindowIsScreenshotAsBase64AndAClosedOneIsRefused() async {
+    let harness = Harness()
+    #expect(await harness.messageSource.ask(.settingsScreenshot) == .refused(.screenshotFailed))
+
+    harness.platform.settingsWindowScreenshot = Data([1, 2, 3])
+
+    #expect(await harness.messageSource.ask(.settingsScreenshot) == .output("AQID"))
+  }
+
   @Test func aGitRunTheAppStartedIsAnsweredWithTheSampleItEndedIn() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

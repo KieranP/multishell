@@ -10,14 +10,13 @@ struct SharedSettingsTrustSection: View {
 
   var body: some View {
     let isTrusted = model.trustsSharedSettings(of: project)
-    Section {
+    SettingsGroup {
       HStack(spacing: 8) {
         Text(isTrusted ? t("hooks.shared-run") : t("hooks.shared-ignored"))
         Spacer()
         Button(isTrusted ? t("hooks.stop-trusting") : t("hooks.trust")) {
           model.setTrustsSharedSettings(!isTrusted, for: project)
         }
-        .controlSize(.small)
       }
     } header: {
       InfoLabel(

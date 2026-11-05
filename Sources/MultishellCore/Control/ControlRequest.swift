@@ -98,10 +98,15 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case setHiddenSectionExpanded(id: String, expanded: Bool)
   case setPanelWidth(ResizablePanel, width: Double)
   case setProjectExpanded(id: String, expanded: Bool)
+  /// The settings window as drawn, its title bar included, as a PNG screenshot.
+  case settingsScreenshot
   /// Hide Worktree or Show Worktree in its actions menu.
   case setWorktreeHidden(id: String, hidden: Bool)
   /// A row's pull request or CI glyph clicked; `nil` is the worktree in view's.
   case showServicePage(ServicePage, worktree: String?)
+  /// The settings window turned to a page of All Projects or, `inProject`, of
+  /// the project named, else the one shown, else the selection's.
+  case showSettingsPage(ControlSettingsPage, inProject: Bool, project: String?)
   /// `project` names the one project settings shows.
   case showView(ControlView, project: String?)
   case splitPane(axis: SplitAxis, tab: UUID?)

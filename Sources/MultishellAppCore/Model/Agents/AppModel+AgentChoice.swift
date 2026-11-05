@@ -32,14 +32,6 @@ extension AppModel {
     store.setAgentFlags(flags, for: id)
   }
 
-  /// The agent-flags override's footer while it is off: the global line in
-  /// force for this project, or that there is none.
-  public func globalAgentFlagsCaption(for project: Project) -> String {
-    let flags = workspace.globalAgentFlags(for: project)
-    return flags.isEmpty
-      ? t("project.using-global-flags-none") : t("project.using-global-flags", flags)
-  }
-
   public func setAutoStartsAgent(_ enabled: Bool) {
     store.setAutoStartsAgent(enabled)
   }

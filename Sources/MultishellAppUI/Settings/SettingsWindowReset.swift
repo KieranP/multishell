@@ -2,12 +2,12 @@ import SwiftUI
 
 struct SettingsWindowReset: NSViewRepresentable {
   let workspaceScreen: () -> NSScreen?
-  let showFirstPage: () -> Void
+  let onClose: () -> Void
 
   func makeNSView(context: Context) -> SettingsWindowResetView {
     let view = SettingsWindowResetView()
     view.workspaceScreen = workspaceScreen
-    view.showFirstPage = showFirstPage
+    view.onClose = onClose
     return view
   }
 
@@ -15,6 +15,6 @@ struct SettingsWindowReset: NSViewRepresentable {
   /// own state, and a captured copy may not be the live one.
   func updateNSView(_ view: SettingsWindowResetView, context: Context) {
     view.workspaceScreen = workspaceScreen
-    view.showFirstPage = showFirstPage
+    view.onClose = onClose
   }
 }

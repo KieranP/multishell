@@ -17,6 +17,10 @@ extension InheritableSettingKeys<String> {
   public static var branchPrefix: Self {
     Self(project: \.branchPrefix, shared: \.branchPrefix)
   }
+
+  static var defaultBranch: Self {
+    Self(project: \.defaultBranch, shared: \.defaultBranch)
+  }
 }
 
 extension InheritableSettingKeys<WorktreeSortOrder> {

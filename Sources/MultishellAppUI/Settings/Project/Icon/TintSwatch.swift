@@ -1,11 +1,12 @@
 import MultishellCore
 import SwiftUI
 
-/// One of the project tints: a disc in its colour, an x on the one for none,
-/// ringed where it is the project's.
+/// One of the project tints: a disc in its colour, checked for none, ringed in
+/// the accent where it is the project's.
 struct TintSwatch: View {
   let slot: Int?
-  let color: Color
+  /// The slot's colour, `nil` for no tint.
+  let color: Color?
   let isSelected: Bool
   let pick: () -> Void
 
@@ -13,21 +14,41 @@ struct TintSwatch: View {
 
   var body: some View {
     PlainGlyphButton(help: name, action: pick) {
-      ZStack {
+      disc
         // Outlined, or the theme's white vanishes on a light page and its
         // black on a dark one.
-        Circle().fill(color).strokeBorder(Color.primary.opacity(0.2), lineWidth: 0.5)
-          .frame(width: 14, height: 14)
-        if slot == nil {
-          Image(systemName: "xmark").font(.system(size: 7, weight: .bold)).foregroundStyle(.white)
-            .accessibilityHidden(true)
+        .overlay {
+          Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: UIMetrics.hairlineThickness)
         }
-      }
-      .overlay {
-        if isSelected { Circle().strokeBorder(Color.primary, lineWidth: 1.5).padding(-2.5) }
-      }
-      .frame(width: 18, height: 18)
+        .frame(width: UIMetrics.settingsSwatchSide, height: UIMetrics.settingsSwatchSide)
+        .overlay {
+          if isSelected { Circle().strokeBorder(Color.accentColor, lineWidth: 1.5).padding(-3.5) }
+        }
+        .frame(width: UIMetrics.settingsSwatchSide + 4, height: UIMetrics.settingsSwatchSide + 4)
     }
     .selectableButtonTraits(isSelected: isSelected)
+  }
+
+  /// A checkerboard for no tint, the mockup's mark for none.
+  @ViewBuilder private var disc: some View {
+    if let color {
+      Circle().fill(color)
+    } else {
+      Canvas { context, size in
+        let square = size.width / 4
+        for row in 0..<4 {
+          for column in 0..<4 where (row + column).isMultiple(of: 2) {
+            let cell = CGRect(
+              x: Double(column) * square,
+              y: Double(row) * square,
+              width: square,
+              height: square,
+            )
+            context.fill(Path(cell), with: .color(SettingsColors.faintText))
+          }
+        }
+      }
+      .clipShape(.circle)
+    }
   }
 }

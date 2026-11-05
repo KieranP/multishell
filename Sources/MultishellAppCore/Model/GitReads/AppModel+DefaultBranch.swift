@@ -22,9 +22,23 @@ extension AppModel {
   }
 
   /// What the default-branch override says under its field: the branch merges
-  /// are measured against, or that there is none and so no merged badge.
+  /// are measured against, or none, read as its row's Global column reads it.
   public func defaultBranchCaption(for project: Project) -> String {
-    defaultBranch(of: project).map { t("project.merges-measured", $0.shortName) }
-      ?? t("project.no-merge-base")
+    switch defaultBranchProgress(of: project) {
+    case .unscannable: t("project.no-merge-base")
+    case .awaitingScan: t("project.merge-base-finding")
+
+    case .scanned:
+      defaultBranch(of: project).map { t("project.merges-measured", $0.shortName) }
+        ?? t("project.no-merge-base")
+    }
+  }
+
+  /// Both scan dictionaries are written by one scan, so no entry is no scan
+  /// yet, and without git none will come.
+  func defaultBranchProgress(of project: Project) -> DefaultBranchProgress {
+    if missingProjects.contains(project.id) { return .unscannable }
+    if defaultBranchScans[project.id] != nil { return .scanned }
+    return coordinator == nil ? .unscannable : .awaitingScan
   }
 }

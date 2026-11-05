@@ -57,6 +57,14 @@ extension AppModel {
     } else {
       image = platform.screenshotWorkspaceWindow()
     }
+    return screenshotReply(image)
+  }
+
+  func replyToSettingsScreenshot() -> ControlReply {
+    screenshotReply(platform.screenshotSettingsWindow())
+  }
+
+  private func screenshotReply(_ image: Data?) -> ControlReply {
     guard let image else { return .refused(.screenshotFailed) }
     return .output(image.base64EncodedString())
   }

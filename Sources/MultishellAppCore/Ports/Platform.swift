@@ -107,6 +107,9 @@ public protocol Platform: AnyObject, Sendable {
   /// The main window as drawn, its panes included, as a PNG; `nil` where it
   /// is closed, minimized or has not drawn.
   func screenshotWorkspaceWindow() -> Data?
+  /// The settings window as drawn, its title bar and toolbar included; `nil`
+  /// where it is closed.
+  func screenshotSettingsWindow() -> Data?
   /// A named instant in the platform's trace, where a profiler lines it up.
   func signpost(_ name: String)
   /// The item at `path`, titles from the bar down, chosen as a click would.

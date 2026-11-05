@@ -8,7 +8,7 @@ struct ProjectActions: View {
   let model: AppModel
   let project: Project
 
-  @Environment(\.openWindow) private var openWindow
+  @Environment(\.openSettings) private var openSettings
 
   var body: some View {
     Button(t("action.new-worktree")) { model.requestNewWorktree(in: project) }
@@ -20,7 +20,7 @@ struct ProjectActions: View {
     Divider()
     Button(t("action.project-settings")) {
       model.requestSettings(for: project)
-      openWindow(id: ProjectSettingsWindow.windowID)
+      openSettings()
     }
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(project.path) }
     Divider()

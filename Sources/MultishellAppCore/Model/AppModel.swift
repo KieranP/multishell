@@ -65,9 +65,11 @@ public final class AppModel<Surface> {
   /// Worktrees by when they were last selected, newest first, for the
   /// switcher's Recent. Unobserved, as the selection writing it redraws anyway.
   @ObservationIgnored var recentWorktreeIDs: [Worktree.ID] = []
-  /// The project a menu asked the settings window for; `settingsWindowProjectID`
-  /// is the one it shows.
-  var requestedSettingsProjectID: Project.ID?
+  /// Whose settings the settings window shows, and which section. Runtime,
+  /// and back at All Projects each time the window closes.
+  public internal(set) var settingsLocation = SettingsLocation.start
+  /// What the settings sidebar's search holds, emptied as the window closes.
+  public internal(set) var settingsSearchText = ""
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
   var renamingWorktreeID: Worktree.ID?
@@ -293,6 +295,9 @@ public final class AppModel<Surface> {
   /// What each project's merges are measured against, `origin/main` and the
   /// like, once a scan answers.
   var defaultBranchScans: [Project.ID: DefaultBranchScan] = [:]
+  /// The branch each project's scan finds with no override or file to follow,
+  /// which a project's settings table offers beside its own.
+  var detectedDefaultBranchNames: [Project.ID: String] = [:]
   /// When each worktree's branch was last committed to. Runtime only: the
   /// workspace must not be rewritten because someone committed.
   var lastCommitDates: [Worktree.ID: Date] = [:]

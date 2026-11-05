@@ -43,7 +43,7 @@ extension AppModelWorktreeOrderTests {
       for: harness.project,
     )
     #expect(inherited == InheritedSetting(value: .createdOldestFirst, isFromRepository: true))
-    #expect(inherited.caption.contains(SharedProjectSettings.fileName))
+    #expect(inherited.globalValue.sourceNote?.contains(SharedProjectSettings.fileName) == true)
 
     var settings = harness.project.settings
     settings.worktreeSortOrder = .alphabetical

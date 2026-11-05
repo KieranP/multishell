@@ -10,23 +10,29 @@ struct AgentHooksSection: View {
   @State private var shownSnippetRowID: String?
 
   var body: some View {
-    Section(t("agents.hooks-section")) {
+    SettingsGroup(t("agents.hooks-section")) {
       ForEach(model.agentHooksRows) { row in
-        InfoLabeledContent(t("agents.row-label", row.name), info: row.info) {
-          Text(row.statusLabel)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .truncationMode(.head)
-          ForEach(row.actions, id: \.self) { action in
-            actionButton(action, for: row)
-          }
-          // A popover, not the page: shown inline it added 166 pt a row.
-          Button(t("agents.show", row.contentsLabel)) { shownSnippetRowID = row.id }
-            .popover(isPresented: snippetPresented(for: row), arrowEdge: .bottom) {
-              AgentHooksSnippetPopover(model: model, row: row)
+        // Not a labeled row, whose control side stops at a field's width: the
+        // path takes all the room its buttons leave.
+        HStack(spacing: UIMetrics.settingsRowSpacing) {
+          InfoLabel(t("agents.row-label", row.name), info: row.info)
+            .fixedSize()
+          HStack(spacing: UIMetrics.settingsControlSpacing) {
+            Text(row.statusLabel)
+              .foregroundStyle(.secondary)
+              .lineLimit(1)
+              .truncationMode(.head)
+              .frame(maxWidth: .infinity, alignment: .trailing)
+            ForEach(row.actions, id: \.self) { action in
+              actionButton(action, for: row)
             }
+            // A popover, not the page: shown inline it added 166 pt a row.
+            Button(t("agents.show", row.contentsLabel)) { shownSnippetRowID = row.id }
+              .popover(isPresented: snippetPresented(for: row), arrowEdge: .bottom) {
+                AgentHooksSnippetPopover(model: model, row: row)
+              }
+          }
         }
-        .controlSize(.small)
       }
     }
   }

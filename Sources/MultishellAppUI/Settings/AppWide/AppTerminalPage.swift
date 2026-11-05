@@ -8,8 +8,8 @@ struct AppTerminalPage: View {
   let model: AppModel
 
   var body: some View {
-    Form {
-      Section {
+    SettingsForm {
+      SettingsGroup(t("terminal.section-new-tabs")) {
         DetectionPicker(
           label: t("terminal.default-shell"),
           selection: model.preferredShellBinding,
@@ -28,6 +28,9 @@ struct AppTerminalPage: View {
             SettingsCaption(problem)
           }
         }
+      }
+
+      SettingsGroup(t("terminal.section-first-terminal")) {
         InfoToggle(
           t("terminal.open-on-select"),
           info: t("terminal.open-on-select-info"),
@@ -46,6 +49,5 @@ struct AppTerminalPage: View {
         )
       }
     }
-    .formStyle(.grouped)
   }
 }

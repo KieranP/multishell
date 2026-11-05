@@ -258,7 +258,9 @@
   that cannot click, and `multishell ui dismiss` cancels the topmost.
 - **Look with `multishell debug screenshot`**, which writes a new PNG under
   `/tmp` and prints `{"path": …}`, then read it. It is the app drawing itself,
-  terminals included, and needs no permission.
+  terminals included, and needs no permission. `--settings` takes the settings
+  window, which `ui show settings --page PAGE` turns to each page. Its sidebar's
+  material and selected row draw flat or black there; the window does not.
 - **Run it against a scratch home, never the account's.** A launch writes the
   state directory, re-points the helper links the installed app's hooks use, and
   its shells write history. `CFFIXED_USER_HOME` moves Foundation's home and

@@ -2,7 +2,7 @@ import AppKit
 
 final class SettingsWindowResetView: AccessibilityHiddenView {
   var workspaceScreen: (() -> NSScreen?)?
-  var showFirstPage: (() -> Void)?
+  var onClose: (() -> Void)?
 
   private var observers: [any NSObjectProtocol] = []
   /// Whether the window this view is in is one the user has already been
@@ -14,8 +14,7 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
     stopObserving()
     hasBeenShown = false
     guard let window else { return }
-    // Placing but not resetting the page, a write to the view's state here
-    // being a write during a SwiftUI update. The key pass does the page.
+    // Placing only; the key pass scrolls, a scroll here landing mid-update.
     center(window)
     let changes: [(NSNotification.Name, @MainActor @Sendable (SettingsWindowResetView) -> Void)] = [
       (NSWindow.didBecomeKeyNotification, { $0.windowDidBecomeKey() }),
@@ -34,11 +33,12 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
   private func windowWillClose() {
     guard let window else { return }
     hasBeenShown = false
+    onClose?()
     reset(window)
   }
 
-  /// The user cannot resize a settings window, so every resize is AppKit
-  /// settling: the page toolbar lands late and grows the frame.
+  /// The user cannot resize the settings window, so every resize is AppKit
+  /// settling its frame after the move, and it is centred again.
   private func windowDidResize() {
     guard let window else { return }
     center(window)
@@ -46,7 +46,6 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
 
   private func reset(_ window: NSWindow) {
     center(window)
-    showFirstPage?()
     window.contentView?.scrollDescendantsToTop()
   }
 

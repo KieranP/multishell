@@ -6,6 +6,7 @@ import MultishellCore
 extension AppModel {
   public func worktreeContainerCaption(for project: Project, isOverridden: Bool) -> String {
     let container = effectiveWorktreeSettings(for: project).worktreeContainer(for: project).path
+      .abbreviatingHomeDirectory()
     return inherited(
       .worktreeDirectory,
       global: workspace.worktreeDefaults.worktreeDirectory,
@@ -18,6 +19,7 @@ extension AppModel {
     let effective = effectiveWorktreeSettings(for: project)
     let branch = effective.exampleBranch
     let path = effective.worktreePath(forBranch: branch, in: project).path
+      .abbreviatingHomeDirectory()
     return inherited(.branchPrefix, global: workspace.worktreeDefaults.branchPrefix, for: project)
       .prefixExampleCaption(branch: branch, path: path, isOverridden: isOverridden)
   }

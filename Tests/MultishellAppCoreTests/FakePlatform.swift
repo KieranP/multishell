@@ -62,6 +62,7 @@ final class FakePlatform: Platform {
   var panelWidths: [ResizablePanel: Double] = [:]
   var workspaceWindowWidth: Double? { workspaceWindowSize?.width }
   var workspaceWindowScreenshot: Data?
+  var settingsWindowScreenshot: Data?
   var signposts: [String] = []
   var openedWebPages: [URL] = []
   var fontFamilies: Set<String> = ["Menlo", "SF Mono"]
@@ -126,6 +127,7 @@ final class FakePlatform: Platform {
     return true
   }
   func screenshotWorkspaceWindow() -> Data? { workspaceWindowScreenshot }
+  func screenshotSettingsWindow() -> Data? { settingsWindowScreenshot }
   func signpost(_ name: String) { signposts.append(name) }
   func hasFontFamily(_ family: String) -> Bool { fontFamilies.contains(family) }
   func performMenuItem(_ path: [String]) -> PlatformMenuOutcome {

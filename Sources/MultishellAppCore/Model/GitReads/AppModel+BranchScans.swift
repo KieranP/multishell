@@ -75,6 +75,10 @@ extension AppModel {
     // repository with no trunk still has branches to order.
     recordLastCommitDates(scan.lastCommitDates, of: project.id)
     recordDefaultBranch(scan.mergeInputs?.defaultBranch, of: project.id)
+    setIfChanged(
+      \.detectedDefaultBranchNames[project.id],
+      scan.detectedDefaultBranch?.nameWithoutRemote,
+    )
     recordScannedBranchTips(scan.branchTips, of: project.id)
     // No branch to measure against: drop the badges, before any wait, rather
     // than leave them about a base that no longer applies.

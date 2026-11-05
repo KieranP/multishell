@@ -6,8 +6,49 @@ import Testing
 
 @Suite @MainActor
 struct AppModelDefaultBranchTests {
+  @Test func theCaptionSaysTheBranchIsBeingFoundBeforeTheFirstScan() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+
+    harness.model.defaultBranchScans[harness.project.id] = nil
+
+    #expect(
+      harness.model.defaultBranchCaption(for: harness.project)
+        == "Finding the branch merges are measured against…"
+    )
+  }
+
+  @Test func theCaptionMeasuresAgainstNothingWithoutGitToScanWith() {
+    let harness = Harness()
+
+    #expect(
+      harness.model.defaultBranchCaption(for: harness.project)
+        == "No branch to measure merges against, so no worktree is badged as merged."
+    )
+  }
+
+  @Test func theCaptionOfAProjectWhoseFolderIsGoneMeasuresAgainstNothing() {
+    let harness = Harness()
+    harness.model.defaultBranchScans[harness.project.id] = .found(
+      DefaultBranch(
+        shortName: "main",
+        nameWithoutRemote: "main",
+        tip: "abc",
+        fullName: "refs/heads/main",
+      )
+    )
+
+    harness.model.missingProjects.insert(harness.project.id)
+
+    #expect(
+      harness.model.defaultBranchCaption(for: harness.project)
+        == "No branch to measure merges against, so no worktree is badged as merged."
+    )
+  }
+
   @Test func theCaptionNamesTheDetectedBranchAndSaysSoWhenThereIsNone() {
     let harness = Harness()
+    harness.model.defaultBranchScans[harness.project.id] = .absent
     #expect(
       harness.model.defaultBranchCaption(for: harness.project)
         == "No branch to measure merges against, so no worktree is badged as merged."

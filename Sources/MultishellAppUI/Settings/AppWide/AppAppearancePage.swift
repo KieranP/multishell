@@ -12,19 +12,26 @@ struct AppAppearancePage: View {
   @State private var fonts = InstalledFonts.detection
 
   var body: some View {
-    Form {
-      Section {
-        ThemePicker(title: t("appearance.theme"), model: model)
+    SettingsForm {
+      SettingsGroup(t("appearance.section-theme")) {
+        LabeledContent(t("appearance.theme")) {
+          SettingsPopUp(
+            label: t("appearance.theme"),
+            selection: model.themeBinding,
+            title: model.currentTheme.name,
+          ) {
+            ForEach(model.themes) { Text($0.name).tag($0.id) }
+          }
+        }
         InfoLabeledContent(t("appearance.theme-files"), info: t("appearance.theme-files-info")) {
           Button(t("appearance.open-folder")) { model.revealThemesFolder() }
           SettingsSymbolButton.refresh(help: t("appearance.reload-themes")) {
             Task { await model.reloadThemes() }
           }
         }
-        .controlSize(.small)
       }
 
-      Section {
+      SettingsGroup(t("appearance.section-terminal")) {
         DetectionPicker(
           label: t("appearance.terminal-font"),
           selection: model.terminalFontBinding,
@@ -43,7 +50,7 @@ struct AppAppearancePage: View {
         )
       }
 
-      Section {
+      SettingsGroup(t("appearance.section-file-tabs")) {
         DetectionPicker(
           label: t("appearance.file-font"),
           selection: model.fileFontBinding,
@@ -59,7 +66,7 @@ struct AppAppearancePage: View {
         )
       }
 
-      Section {
+      SettingsGroup(t("appearance.section-interface")) {
         DetectionPicker(
           label: t("appearance.ui-font"),
           selection: model.uiFontBinding,
@@ -75,7 +82,6 @@ struct AppAppearancePage: View {
         )
       }
     }
-    .formStyle(.grouped)
   }
 
   private func sizeRow(

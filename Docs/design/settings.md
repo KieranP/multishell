@@ -100,9 +100,114 @@
 - **A page taller than its window is split, not scrolled.** A grouped form's
   scroller is an overlay, so what is below the fold says nothing, and forcing
   the indicators changes nothing there. Project Hooks shows Create, Delete or
-  Environment, six editors being 973 pt of a 600 pt window; Agents shows the
-  preferred agent and Auto Rename or the hooks, the hooks growing with every
-  agent installed.
+  Environment, six editors being 973 pt; All Projects' Agents shows Agent
+  Settings or Agent hooks, the hooks growing with every agent installed. The
+  parts are sidebar rows under their page, not a segmented control in the form.
+- **One settings window, a sidebar of pages, for All Projects and each
+  project.** Chosen over two toolbar-tab windows (2026-11-05) from mockups of
+  four designs. The menu atop the sidebar picks whose settings; Project
+  Settings… opens the window on that project's General, and a close returns it
+  to All Projects, so Multishell > Settings never opens on a project. Cost: two
+  projects can no longer be open side by side, and the window is 860 by 640, the
+  mockup's size.
+- **The sidebar and page sit in a plain row, not a navigation split.** Inside
+  the Settings scene the split brought a sidebar button and a toolbar band of
+  empty space over the page, and its search field needs the split. So the search
+  is a plain field in a grey well, as the mockup drew it.
+- **The title bar is hidden from AppKit**, `NSWindow.hideTitleBar`: SwiftUI's
+  `hiddenTitleBar` style does nothing to a Settings scene. The sidebar runs up
+  under the traffic lights and the page draws its 50 pt header over the band, as
+  the workspace window does.
+- **Where the window is lives on the model**, `settingsLocation`, so the
+  sidebar, the command line and a Global cell's link all move it, and a scope
+  change keeps the page where the other scope has it (SettingsLocationTests).
+- **A project's page is a table: the setting, the Global column, the Override
+  column.** The global value is read beside the override rather than in a
+  caption under a greyed control, three rows becoming one. "Same" means the
+  project follows; it reads "Override" under the pointer and starts one seeded
+  with the value followed. The arrow hands it back.
+- **That button, not a blank field, starts an override**, so the four fields
+  where blank is "none" keep that meaning: an override cleared to blank is none,
+  and only the arrow returns to following.
+- **The Global column names its source** when it is not the global: "From
+  .multishell.json" or "Detected", and only a global value links to its page.
+  Default branch's "Detected" is what the scan finds with the override set
+  aside, else the column would echo the override back.
+- **Search matches every word typed against a page's title and row labels**,
+  listed beside the page (`SettingsPage+SearchTerms`). Cost: a row added to a
+  page and not to that list cannot be found.
+- **The pages are drawn to the mockup, not a grouped `Form`.** The Form gave a
+  white page under grey cards, 13 pt bold group titles and grey fields, the
+  mockup's inverse. `SettingsForm` and `SettingsGroup` lay out its metrics, kept
+  in `UIMetrics`, in `SettingsColors`' light and dark values; a row is a
+  `LabeledContent` or `Toggle` in its own style, and a `SettingsCaption` sits
+  under the row before it unruled. Menus are `SettingsPopUp`, buttons
+  `SettingsButtonStyle`. Cost: a native control the pages use must be given the
+  mockup's face by hand.
+- **The sidebar is drawn too**, its rows buttons and the arrow keys a model step
+  (`stepSettingsSection`), the page glyphs the mockup's own strokes. The sidebar
+  `List`'s material rendered its text in vibrancy and drew a rule under the
+  title bar in an inactive window.
+- **The window hides its title bar from AppKit and its toolbar's background**
+  (`toolbarBackgroundVisibility`): with the background, macOS faded the page
+  header's text under the band; hiding the whole toolbar took the traffic lights
+  with it.
+- **Reviewed and left as is**:
+  - Section and command-line page words convert by two switches, not raw values:
+    each is exhaustive, so a new case fails the build until both name it, where
+    a raw value would fail only at run time.
+  - The Global column builds the shell or agent menu's options to word the value
+    as the menu does: a catalogue's dozen entries, as the menu beside it builds
+    anyway.
+  - Unproven: whether Up and Down reach the sidebar while the search field has
+    the keyboard. The sidebar takes focus once tabbed to.
+  - Unproven: that moving from one project's Integrations to another's runs the
+    old page's stop after the new page's start, leaving tool status unasked
+    until the page reopens. It turns on SwiftUI's appear order.
+  - Unproven: that a switch row's hidden inner label, the visible label
+    repeated, adds a second (i) VoiceOver reads.
+  - The Window menu no longer lists Project Settings, the scene that put it
+    there being gone; the sidebar's menu and the scope menu reach a project.
+  - `ui show settings` turns an open window to All Projects while Cmd+, brings
+    it forward as it is: the command line's word names the scope.
+  - Search does not find an agent's name: its hook rows exist only for agents
+    installed, and the terms are fixed per page.
+  - The scope menu repeats `SettingsPopUp`'s Menu and Picker around its own card
+    face; a label parameter on the pop-up would serve this one caller.
+  - Hooks has no whole-page `--page` word, its three parts each having one.
+  - `SettingsColors` converts its hex constants itself: `RGB`'s initialiser is
+    Core's own, and widening it for six constants costs more than eight lines.
+  - The detected default branch is a dictionary beside `defaultBranchScans`, not
+    a field on it: that enum is built in tests across four suites.
+  - A raw socket request naming a project with `inProject` false opens All
+    Projects; the bundled command line never builds that shape.
+  - Unproven: that a ref read failing on every tick, while the worktree list
+    reads, leaves Default branch saying Detecting… for good.
+  - An unknown `--page` word is answered with every word: the helper does not
+    know which pages each scope has, and the app's refusal names them exactly.
+  - `SettingsForm` still sets the button style for its page: every plain button
+    on a page wants it, and the three that draw their own opt out.
+  - Unproven: that a page's column is 590 pt, the content running up under the
+    title band, rather than the 558 pt `settingsPageSize` holds pages to. The
+    tighter bound costs only an earlier split.
+  - The auto-start switches disable whole, (i) included, with no agent chosen,
+    as they did before the merge; only the Flags field is new.
+  - Unproven: that a double-click on the header minimises the Settings window,
+    which has no minimise button, when the system setting says Minimize.
+  - `ProjectHooksPage` takes a `SettingsSection` and draws nothing for one not
+    Hooks': `SettingsDetail` is its one caller, and a type of its own for the
+    three parts would be one more switch to keep.
+  - The Global column's own `globalValue(_:setIn:)` stays beside
+    `InheritedSetting`'s: building an `InheritedSetting` to word a menu label
+    reads as a value inherited, which it is not.
+  - The Flags row reads the global line twice, once for the column and once to
+    seed an override: two dictionary reads a render.
+  - `AuxiliaryWindow` keeps its one case, so the port names the window it opens.
+  - The search terms per scope are fixed lists in AppUI, where the words are.
+  - A branch scan with an override resolves the refs twice, once more for the
+    Detected cell: an in-memory pass over the refs already read.
+  - `PathText` writes home as `~` everywhere, the New Worktree sheet included,
+    whose planned location already did.
 - **A hook file opens in a popover**, which inline added 166 pt a row.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something

@@ -7,6 +7,7 @@ struct InfoToggle: View {
 
   var body: some View {
     Toggle(isOn: $isOn) { InfoLabel(label, info: info) }
+      .toggleStyle(SettingsToggleStyle())
   }
 
   init(_ label: String, info: String, isOn: Binding<Bool>) {

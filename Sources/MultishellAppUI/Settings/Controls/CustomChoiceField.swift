@@ -11,6 +11,7 @@ struct CustomChoiceField: View {
   var body: some View {
     InfoLabeledContent(label, info: info) {
       TextField(label, text: $text, prompt: Text(prompt))
+        .font(.system(size: UIMetrics.settingsMonospacedFieldSize, design: .monospaced))
     }
   }
 }

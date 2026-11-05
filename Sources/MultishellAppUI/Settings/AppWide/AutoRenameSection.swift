@@ -8,7 +8,7 @@ struct AutoRenameSection: View {
   let model: AppModel
 
   var body: some View {
-    Section(t("agents.auto-rename")) {
+    SettingsGroup(t("agents.auto-rename")) {
       DetectionPicker(
         label: t("agents.rename-agent"),
         selection: model.settingBinding(\.renameAgentID, or: AppModel.renameUnsetID) { id in

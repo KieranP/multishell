@@ -2,14 +2,16 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
+/// The project's repository, how the sidebar lists its worktrees, its icon,
+/// and sharing or removing it.
 struct ProjectGeneralPage: View {
   let model: AppModel
   let project: Project
 
   var body: some View {
     let worktrees = model.workspace.worktrees(of: project.id)
-    Form {
-      Section {
+    SettingsForm {
+      SettingsGroup {
         LabeledContent(t("project.repository")) {
           HStack {
             PathText(project.path.path)
@@ -28,34 +30,38 @@ struct ProjectGeneralPage: View {
         }
       }
 
-      OverrideSection(
-        model: model,
-        project: project,
-        setting: .worktreeSortOrder,
-        global: model.workspace.worktreeSortOrder,
-        label: t("project.sort-worktrees"),
-        info: t("project.sort-worktrees-info"),
-      ) { selection, isOverridden, _ in
-        Picker(t("worktrees.sort"), selection: selection) {
-          ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
+      OverrideTable {
+        OverrideRow(
+          model: model,
+          project: project,
+          setting: .worktreeSortOrder,
+          global: model.workspace.worktreeSortOrder,
+          label: t("project.sort-worktrees"),
+          info: t("project.sort-worktrees-info"),
+          column: \.globalValue,
+        ) { selection in
+          SettingsPopUp(
+            label: t("project.sort-worktrees"),
+            selection: selection,
+            title: selection.wrappedValue.displayName,
+          ) {
+            ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
+          }
         }
-        .disabled(!isOverridden)
-      } footer: { inherited in
-        SettingsCaption(inherited.caption)
+        OverrideRow(
+          model: model,
+          project: project,
+          setting: .showsActiveWorktreesFirst,
+          globalSetting: \.showsActiveWorktreesFirst,
+          label: t("project.active-first"),
+          info: t("project.active-first-info"),
+          globalSection: nil,
+        )
       }
-
-      OverrideSection(
-        model: model,
-        project: project,
-        setting: .showsActiveWorktreesFirst,
-        global: \.showsActiveWorktreesFirst,
-        label: t("project.active-first"),
-        info: t("project.active-first-info"),
-      )
 
       ProjectIconSection(model: model, project: project)
 
-      Section {
+      SettingsGroup {
         HStack(spacing: 8) {
           Button(t("action.export")) { Task { await model.exportSharedSettings(for: project) } }
           InfoButton(t("project.export-info", SharedProjectSettings.fileName))
@@ -67,6 +73,5 @@ struct ProjectGeneralPage: View {
         }
       }
     }
-    .formStyle(.grouped)
   }
 }

@@ -3,30 +3,35 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellCore
 
-/// What a settings form says about a flag the project leaves alone. The
-/// global stopped being the only answer when the file gained these keys.
+/// What a project's settings table shows for a setting the project leaves
+/// alone. The global stopped being the only answer when the file gained these keys.
 @Suite
 struct InheritedSettingTests {
-  @Test func aFlagTheRepositorySuppliesIsNamedAsItsOwn() {
+  @Test func aFlagTheRepositorySuppliesIsNamedAsItsOwnAndOpensNoPage() {
     let fromFile = InheritedSetting<Bool>(value: true, isFromRepository: true)
-    #expect(fromFile.caption == "Using the value in .multishell.json: on.")
+    #expect(fromFile.globalValue(setIn: .terminal).text == "On")
+    #expect(fromFile.globalValue(setIn: .terminal).sourceNote == "From .multishell.json")
+    #expect(fromFile.globalValue(setIn: .terminal).settingsSection == nil)
+
     let fromGlobal = InheritedSetting<Bool>(value: false, isFromRepository: false)
-    #expect(fromGlobal.caption == "Using the global value: off.")
+    #expect(fromGlobal.globalValue(setIn: .terminal).text == "Off")
+    #expect(fromGlobal.globalValue(setIn: .terminal).sourceNote == nil)
+    #expect(fromGlobal.globalValue(setIn: .terminal).settingsSection == .terminal)
   }
 
-  /// The order carries the same sentence as a flag, so a caption cannot say
-  /// "on" about a picker or word the file differently from row to row.
-  @Test func aSortOrderCaptionNamesItsLabelAndWhereItCameFrom() {
-    let fromFile = InheritedSetting(
-      value: WorktreeSortOrder.committedNewestFirst,
-      isFromRepository: true,
-    )
-    #expect(fromFile.caption == "Using the value in .multishell.json: Last commit, newest first.")
-
+  @Test func aSortOrderShowsItsPickerLabelAndOpensNoPageTheSidebarMenuSettingIt() {
     let fromGlobal = InheritedSetting(
-      value: WorktreeSortOrder.alphabetical,
+      value: WorktreeSortOrder.committedNewestFirst,
       isFromRepository: false,
     )
-    #expect(fromGlobal.caption == "Using the global value: Name.")
+    #expect(fromGlobal.globalValue.text == "Last commit, newest first")
+    #expect(fromGlobal.globalValue.settingsSection == nil)
+  }
+
+  @Test func aBlankPrefixReadsAsNoneAndABlankDirectoryAsTheDefault() {
+    let blank = InheritedSetting(value: "", isFromRepository: false)
+    #expect(blank.prefixGlobalValue.text == "none")
+    #expect(blank.directoryGlobalValue.text == "default")
+    #expect(blank.directoryGlobalValue.settingsSection == .worktrees)
   }
 }

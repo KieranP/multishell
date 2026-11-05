@@ -29,6 +29,29 @@ struct HelperDebugScreenshotTests {
     #expect(app.requests.received == [.screenshot(pane: pane)])
   }
 
+  @Test func theSettingsWindowIsAskedForByItsOwnFlagAndNotBesideAPane() async throws {
+    let app = try ControlListener(reply: .output("AQID"))
+    let file = Scratch.path("settings-snap").appendingPathExtension("png")
+    defer {
+      app.stop()
+      Scratch.remove(file)
+    }
+
+    let output = try await HelperBinary.run(
+      ["debug", "screenshot", file.path, "--settings"],
+      environment: app.environment,
+    )
+    let both = try await HelperBinary.run(
+      ["debug", "screenshot", "--settings", "--pane", UUID().uuidString],
+      environment: app.environment,
+    )
+
+    #expect(output.succeeded, "\(output.standardError)")
+    #expect(try Data(contentsOf: file) == Data([1, 2, 3]))
+    #expect(!both.succeeded)
+    #expect(app.requests.received == [.settingsScreenshot])
+  }
+
   @Test func aScreenshotWithNoFileIsANewOneUnderTmpWhosePathIsPrinted() async throws {
     let app = try ControlListener(reply: .output("AQID"))
     defer { app.stop() }

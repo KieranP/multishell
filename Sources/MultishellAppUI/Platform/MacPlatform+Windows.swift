@@ -87,11 +87,18 @@ extension MacPlatform {
     return ViewScreenshot.png(of: view)
   }
 
+  /// The frame view holding the content, so the title bar and toolbar draw too.
+  func screenshotSettingsWindow() -> Data? {
+    guard let window = NSApp.windows.first(where: { matches($0, .settings) }), window.isVisible,
+      let frame = window.contentView?.superview
+    else { return nil }
+    return ViewScreenshot.png(of: frame)
+  }
+
   private func matches(_ window: NSWindow, _ auxiliary: AuxiliaryWindow) -> Bool {
     let identifier = window.identifier?.rawValue ?? ""
     return switch auxiliary {
     case .settings: identifier == Self.settingsWindowIdentifier
-    case .projectSettings: identifier.hasPrefix(ProjectSettingsWindow.windowID)
     }
   }
 }

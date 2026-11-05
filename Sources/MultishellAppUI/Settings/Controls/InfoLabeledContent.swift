@@ -9,7 +9,7 @@ struct InfoLabeledContent<Content: View>: View {
 
   var body: some View {
     LabeledContent {
-      HStack(spacing: 8) { content().labelsHidden() }
+      HStack(spacing: UIMetrics.settingsControlSpacing) { content().labelsHidden() }
     } label: {
       InfoLabel(label, info: info)
     }

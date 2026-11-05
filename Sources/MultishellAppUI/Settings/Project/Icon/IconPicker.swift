@@ -23,20 +23,25 @@ struct IconPicker: View {
     }
   }
 
+  /// The glyph and a chevron, as the mockup drew it; its name is VoiceOver's value.
   private var field: some View {
     HStack(spacing: 6) {
-      Image(systemName: kind.symbolName).foregroundStyle(tint)
-        .accessibilityHidden(true)
-      switch kind {
-      case .folder: Text(t("icon-picker.folder"))
-      case .symbol(let name): Text(name).lineLimit(1).truncationMode(.middle)
-      }
-      Spacer(minLength: 4)
-      Image(systemName: "chevron.up.chevron.down")
-        .font(.system(size: 9, weight: .semibold))
-        .foregroundStyle(.secondary)
-        .accessibilityHidden(true)
+      Image(systemName: kind.symbolName)
+        .font(.system(size: 14))
+        .foregroundStyle(tint)
+      Image(systemName: "chevron.down")
+        .font(.system(size: 8, weight: .semibold))
+        .foregroundStyle(SettingsColors.secondaryText)
     }
-    .frame(width: 190)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(t("project.icon"))
+    .accessibilityValue(name)
+  }
+
+  private var name: String {
+    switch kind {
+    case .folder: t("icon-picker.folder")
+    case .symbol(let name): name
+    }
   }
 }

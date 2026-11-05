@@ -53,6 +53,7 @@ public final class NullPlatform: Platform {
   public func setWidth(of panel: ResizablePanel, to width: Double) -> Bool { false }
   public func setWorkspaceWindowFullScreen(_ isOn: Bool) -> Bool { false }
   public func screenshotWorkspaceWindow() -> Data? { nil }
+  public func screenshotSettingsWindow() -> Data? { nil }
   public func signpost(_ name: String) {}
   public func performMenuItem(_ path: [String]) -> PlatformMenuOutcome { .notFound }
   public func performMenuItemOnItsTurn(_ path: [String]) async -> PlatformMenuOutcome { .notFound }

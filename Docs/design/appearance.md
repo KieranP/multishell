@@ -18,10 +18,10 @@
   indicator in the wrong half.
 - **One workspace window, never a `WindowGroup`.** Each surface is one `NSView`,
   and a second window would steal it.
-- **Project settings is a `Window` too**, because a `WindowGroup` adds its own
-  Close and AppKit gives Cmd+W to the first matching item, so that Close beat
-  Close Pane and shut the app.
-- **A settings window opens centred on the workspace's screen**, first tab,
+- **Settings is SwiftUI's `Settings` scene, project settings included**
+  (settings.md). A `WindowGroup` would add its own Close, and AppKit gives Cmd+W
+  to the first matching item, so that Close beat Close Pane and shut the app.
+- **The settings window opens centred on the workspace's screen**, first page,
   scrolled to the top. SwiftUI reshows the same window, so the close places it
   while nothing is on screen to jump.
 - **The focus ring and the fade are theme keys.** A hairline in the selection
@@ -71,15 +71,14 @@
 - **The message block below stays one to three lines and optional**, so cards
   are not all one height. It is the occupant's words and the one thing on the
   card worth the room. Cost: a long command is cut off.
-- **Project settings hosts an AppKit tab controller** in the toolbar style
-  SwiftUI gives only to the settings scene, and asks about removing a project in
-  that window, or the dialog would be behind it.
+- **The settings window asks about removing a project itself**, or the dialog
+  would be behind it.
 - **The terminal font is picked, not typed**, some programming fonts not being
   marked fixed-pitch.
 - **The UI font's family is a setting of its own beside its size**, so the
   chrome can match the terminal or editor font someone reads all day. Code,
-  paths and commands keep the system monospace, and the settings windows and
-  dialogs keep the system font, their forms being AppKit's grouped style.
+  paths and commands keep the system monospace, and the settings window and
+  dialogs keep the system font.
 - **A project icon is tinted from a slot of the theme's `ui.project_icons`, not
   a hex**, so a theme change recolours it. The slots are named as the ANSI ones,
   being saved as their number, but no longer follow the terminal's.
@@ -152,7 +151,7 @@
   it; the focus ring, drawn by the app, keeps its own. `cursor_text` and
   `selection_foreground` left empty are not sent, leaving the user's own Ghostty
   config or libghostty's default, which keeps each cell's colour.
-- **The settings windows and dialogs stay out of the theme**, following the
+- **The settings window and dialogs stay out of the theme**, following the
   system appearance as their forms do. So do menus once open, tooltips and the
   spinners, which AppKit draws.
 - **Controls AppKit would draw in its own grey are drawn by the app** inside the

@@ -137,8 +137,8 @@ terminals, with the diff unified or side by side.
   page for it.
 - **Merge from the pull request page**, with GitHub's own commit message to edit
   first, or turn auto-merge on while required checks still run.
-- **Settings > Integrations** shows each tool's version and login, and turns
-  either off per project.
+- **Settings > (a project) > Integrations** shows each tool's version and login,
+  and turns either off per project.
 
 ### Terminals and files
 
@@ -172,7 +172,7 @@ terminals, with the diff unified or side by side.
 
 The `multishell` command drives the app: projects, worktrees, tabs, panes,
 settings and screenshots. Multishell's own terminals have it on their `PATH`,
-and Settings > Agents > Hooks > Install Command Line Tool links it into
+and Settings > Agents > Agent hooks > Install CLI links it into
 `/usr/local/bin`.
 
 ```sh
@@ -235,7 +235,7 @@ The full build notes are in [Docs/develop/build.md](Docs/develop/build.md).
 zsh, bash and fish report their state with no setup. Agents report through their
 own hooks, so their dots stay still until you add them:
 
-1. Open Settings > Agents > Hooks.
+1. Open Settings > Agents > Agent hooks.
 2. Click Add beside each agent. Multishell adds its entries to the agent's
    config, keeping a copy of the file the first time, or writes a file of its
    own. Remove takes out only what it added.

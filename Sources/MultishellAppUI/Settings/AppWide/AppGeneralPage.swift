@@ -8,8 +8,8 @@ struct AppGeneralPage: View {
   let model: AppModel
 
   var body: some View {
-    Form {
-      Section {
+    SettingsForm {
+      SettingsGroup(t("general.section-editor")) {
         DetectionPicker(
           label: t("general.editor"),
           selection: model.settingBinding(
@@ -31,7 +31,7 @@ struct AppGeneralPage: View {
         }
       }
 
-      Section {
+      SettingsGroup(t("general.section-storage")) {
         InfoLabeledContent(t("general.state-file"), info: t("general.state-file-info")) {
           PathText(Paths.stateFile.path)
           SettingsSymbolButton.reveal { model.revealInFileBrowser(Paths.stateFile) }
@@ -39,6 +39,5 @@ struct AppGeneralPage: View {
         }
       }
     }
-    .formStyle(.grouped)
   }
 }

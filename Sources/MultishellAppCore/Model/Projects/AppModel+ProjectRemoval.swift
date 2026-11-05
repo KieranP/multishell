@@ -28,6 +28,7 @@ extension AppModel {
 
   func removeProject(_ project: Project) {
     defaultBranchScans[project.id] = nil
+    detectedDefaultBranchNames[project.id] = nil
     forgetServices(ofProject: project.id)
     // Paths are ids, so the project re-added under the same filter text came back collapsed.
     setIfChanged(
@@ -42,9 +43,8 @@ extension AppModel {
     worktreeRecords[project.id] = nil
     worktreeSortCache.forget(project.id)
     dismissSharedSettingsTrust(for: project.id)
-    // Or the settings window's fallback to the current project never fires:
-    // a stale id wins over it, and the window opens only to dismiss itself.
-    if requestedSettingsProjectID == project.id { requestedSettingsProjectID = nil }
+    // Or the settings window would stay on a project it can no longer show.
+    if settingsLocation.scope == .project(project.id) { returnSettingsToAllProjects() }
     // The sheet this project's windows left standing, the settings window
     // being its own scene. A stale sheet's Create would add a real worktree.
     if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }

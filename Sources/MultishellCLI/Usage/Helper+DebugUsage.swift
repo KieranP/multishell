@@ -29,9 +29,10 @@ extension Helper {
     usage: multishell debug report PANE_ID STATE [--agent ID] [--message TEXT]
         Report STATE for the pane as an agent's hook would, and print the
         pane as it then is: the dot, banner and board follow.
-    usage: multishell debug screenshot [FILE] [--pane PANE_ID]
-        Write the main window, or one pane on screen, to FILE as a PNG, or
-        with no FILE to a new one under /tmp, and print its path.
+    usage: multishell debug screenshot [FILE] [--pane PANE_ID | --settings]
+        Write the main window, one pane on screen, or the settings window to
+        FILE as a PNG, or with no FILE to a new one under /tmp, and print its
+        path.
     usage: multishell debug log [--since SPAN] [--follow] [--plain]
         Print the running app's own log lines from the last SPAN, 5m by
         default, or follow them as they come: one JSON object a line, or

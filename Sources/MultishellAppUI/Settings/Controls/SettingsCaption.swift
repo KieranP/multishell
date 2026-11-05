@@ -7,9 +7,10 @@ struct SettingsCaption: View {
 
   var body: some View {
     Text(text)
-      .font(.system(size: 11))
-      .foregroundStyle(.tertiary)
+      .font(.system(size: UIMetrics.settingsSmallTextSize))
+      .foregroundStyle(SettingsColors.secondaryText)
       .fixedSize(horizontal: false, vertical: true)
+      .containerValue(\.isSettingsRowCaption, true)
   }
 
   init(_ text: String) { self.text = text }

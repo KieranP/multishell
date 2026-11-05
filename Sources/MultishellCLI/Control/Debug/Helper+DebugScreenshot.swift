@@ -15,10 +15,19 @@ extension Helper {
     guard words.count <= 1 else {
       throw UsageError("debug screenshot takes one FILE at most", topic: topic)
     }
-    let pane = try CommandOptions(optionWords, valued: ["pane"], topic: topic)["pane"].map { text in
-      try tabOrPaneID(text, topic: topic)
+    let options = try CommandOptions(
+      optionWords,
+      valued: ["pane"],
+      flags: ["settings"],
+      topic: topic,
+    )
+    let pane = try options["pane"].map { try tabOrPaneID($0, topic: topic) }
+    if options.has("settings"), pane != nil {
+      throw UsageError("debug screenshot takes --pane or --settings, not both", topic: topic)
     }
-    let encoded = try output(of: .screenshot(pane: pane), environment: environment) ?? ""
+    let request: ControlRequest =
+      options.has("settings") ? .settingsScreenshot : .screenshot(pane: pane)
+    let encoded = try output(of: request, environment: environment) ?? ""
     guard let image = Data(base64Encoded: encoded), !image.isEmpty else {
       throw ControlRefused(refusal: .screenshotFailed)
     }

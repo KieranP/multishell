@@ -60,18 +60,20 @@ rule holds is in `Docs/design/`.
   caught a zsh word subscript taking characters for a command run by its path,
   which a syntax check cannot see.
 - **A settings page outgrowing its fixed window**: ViewSettingsWindowTests lays
-  each page out in a window never ordered in and holds it to the window's
-  height, the content given the whole window with no tab band.
-- **The bound is absolute, not a margin**: Project General sits 18.5 pt under
-  it, so a macOS that grows a grouped form's rows fails this first, rightly.
-  Project Agents measured 541 here and 539 on the CI runner. Appearance stays
-  in: its font list is the machine's, but a picker is one row however long.
+  each page out in a window never ordered in and holds it to the page column:
+  the window less the sidebar's width, its height less the 50 pt header,
+  `UIMetrics.settingsPageSize`.
+- **The bound is absolute, not a margin**: Project Hooks' Create part under a
+  repository file asking for trust, the tallest, measured 539 of 558 on
+  2026-11-06, so a macOS that grows a grouped form's rows fails this first,
+  rightly. Appearance stays in: its font list is the machine's, but a picker is
+  one row however long.
 - **A page in parts is held part by part**: Project Hooks' three parts and
-  Agents' Agent part. Hooks' Create part under a repository file asking for
-  trust is its tallest, 593 pt of the 600.
-- **One part is exempt**: Agents' Hooks part reads the machine on appear, so its
-  height is the developer's. Width is not checkable at all, a minimum-size
-  measurement reporting where text wraps.
+  Agents' Agent settings. Hooks' Create part under a repository file asking for
+  trust measured 539.
+- **One part is exempt**: Agents' Agent hooks part reads the machine on appear,
+  so its height is the developer's. Width is not checkable at all, a
+  minimum-size measurement reporting where text wraps.
 - **A tab strip that stops answering the wheel**: SidewaysWheelViewTests sends a
   synthesized vertical scroll to the overlay over a real scroller, spinning the
   run loop by hand, since `run(until:)` returns at once while it has no source.
