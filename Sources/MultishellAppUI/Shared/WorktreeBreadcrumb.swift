@@ -8,6 +8,9 @@ struct WorktreeBreadcrumb: View {
   /// a card is smaller and cuts the worktree's name in the middle.
   enum Style { case header, card }
 
+  /// What the header's names take the room at, ahead of all else in it.
+  static let headerNamePriority: Double = 1
+
   let projectName: String
   let worktreeName: String
   let style: Style
@@ -55,5 +58,5 @@ struct WorktreeBreadcrumb: View {
     }
   }
 
-  private var namePriority: Double { style == .header ? 1 : 0 }
+  private var namePriority: Double { style == .header ? Self.headerNamePriority : 0 }
 }

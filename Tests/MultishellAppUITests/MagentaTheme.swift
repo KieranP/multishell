@@ -16,17 +16,35 @@ enum MagentaTheme {
     return try JSONDecoder().decode(Theme.self, from: Data(json.utf8))
   }
 
-  /// Pixels near magenta, anti-aliasing allowed for, right of `fromX`.
+  /// Near magenta, anti-aliasing allowed for.
+  private static func isMagenta(atX x: Int, y: Int, in bitmap: NSBitmapImageRep) -> Bool {
+    guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+    return pixel.redComponent > 0.7 && pixel.blueComponent > 0.7 && pixel.greenComponent < 0.35
+  }
+
+  /// Magenta pixels right of `fromX`.
   static func pixelCount(in bitmap: NSBitmapImageRep, fromX: Int = 0) -> Int {
-    var count = 0
-    for x in fromX..<bitmap.pixelsWide {
-      for y in 0..<bitmap.pixelsHigh {
-        guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
-        if pixel.redComponent > 0.7, pixel.blueComponent > 0.7, pixel.greenComponent < 0.35 {
-          count += 1
-        }
-      }
+    pixelCount(in: bitmap, columns: fromX..<bitmap.pixelsWide)
+  }
+
+  /// Magenta pixels in `columns`.
+  static func pixelCount(in bitmap: NSBitmapImageRep, columns: Range<Int>) -> Int {
+    columns.clamped(to: 0..<bitmap.pixelsWide).reduce(0) { count, x in
+      count + (0..<bitmap.pixelsHigh).count { isMagenta(atX: x, y: $0, in: bitmap) }
     }
-    return count
+  }
+
+  /// The columns holding any magenta, left to right.
+  static func inkedColumns(in bitmap: NSBitmapImageRep) -> [Int] {
+    (0..<bitmap.pixelsWide).filter { x in
+      (0..<bitmap.pixelsHigh).contains { isMagenta(atX: x, y: $0, in: bitmap) }
+    }
+  }
+
+  /// The rows holding any magenta.
+  static func inkedRowCount(in bitmap: NSBitmapImageRep) -> Int {
+    (0..<bitmap.pixelsHigh).count { y in
+      (0..<bitmap.pixelsWide).contains { isMagenta(atX: $0, y: y, in: bitmap) }
+    }
   }
 }

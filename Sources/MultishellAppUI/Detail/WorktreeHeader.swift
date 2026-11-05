@@ -5,6 +5,9 @@ import SwiftUI
 /// Project › name, a renamed one's branch, the path, the actions menu and, while
 /// the panel is shut, the Files toggle. The path gives way first; the names never do.
 struct WorktreeHeader: View {
+  /// A renamed worktree's branch gives way after the path and before the names.
+  private static let branchPriority = WorktreeBreadcrumb.headerNamePriority / 2
+
   let model: AppModel
   let worktree: Worktree
   let theme: Theme
@@ -36,13 +39,15 @@ struct WorktreeHeader: View {
           .foregroundStyle(theme.header.textTertiary)
           .lineLimit(1)
           .truncationMode(.middle)
+          .layoutPriority(Self.branchPriority)
       }
-      Text(worktree.path.path.abbreviatingHomeDirectory())
-        .font(.system(size: model.metrics.caption, design: .monospaced))
-        .foregroundStyle(theme.header.textTertiary)
-        .lineLimit(1)
-        .truncationMode(.head)
-        .padding(.leading, 6)
+      ReadableTail(
+        text: worktree.path.path.abbreviatingHomeDirectory(),
+        leastWidth: UIMetrics.readableTailWidth(atSize: model.metrics.caption),
+        insets: EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 0),
+      )
+      .font(.system(size: model.metrics.caption, design: .monospaced))
+      .foregroundStyle(theme.header.textTertiary)
       Spacer(minLength: 8)
       actionsMenu
       if model.worktreeHeaderShowsFilesPanelToggle {

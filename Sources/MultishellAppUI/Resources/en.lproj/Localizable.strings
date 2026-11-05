@@ -124,6 +124,7 @@
 "file.previous-change" = "Previous Change";
 "file.split" = "Split";
 "file.unified" = "Unified";
+"file.view-options" = "View Options";
 "files-panel.branch" = "Branch";
 "files-panel.change-scope" = "What changes are counted against";
 "files-panel.change-scope-help" = "Modified counts against the last commit; Branch, everything since the base branch, committed or not";

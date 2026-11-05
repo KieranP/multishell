@@ -90,6 +90,10 @@ struct UIMetrics: Equatable {
   /// state dot take over so nothing shifts.
   static func projectIconSlot(forGlyphOf size: Double) -> Double { size + 6 }
 
+  /// The least of a head-cut path worth drawing, about a dozen characters of
+  /// text at `size`: the header's path and a file tab's folder.
+  static func readableTailWidth(atSize size: Double) -> Double { size * 8 }
+
   /// The badge on a glyph's corner, a pane's state or a missing project's
   /// mark: 0.6 of the glyph in whole points, and never below a legible seven.
   static func cornerBadgeSize(onGlyphOf size: Double) -> Double {

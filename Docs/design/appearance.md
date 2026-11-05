@@ -224,19 +224,20 @@
 - **A chrome glyph button lights under the pointer as the find bar's do**: the
   area's full text over its `fill`, in a rounded square, on the sidebar header's
   buttons and sort menu, a project's +, the header and file bar's actions menus,
-  the Files panel's pages and toggle, the strip's plus and splits, and a tab's
-  X, which takes the strip's `fill` for either kind of tab, a terminal tab's
-  section having none. Nothing but the find bar answered the pointer before, and
-  the sort glyph and the + only brightened. Rows stay still, a click answering
-  with the selection wash; the + still brightens while its row is pointed at.
-  Picked over a brightening alone and over the square with a wash on rows
-  (mockups, 2026-11-05). `tab_bar` gained a `fill` for it and for a hovered tab.
-  `GlyphButtonLight` holds when one lights, and that an open toggle, as the
-  Files panel's, keeps its accent lit; a placeholder button lights by it too. A
-  button whose click can raise a sheet, picker, alert or close dialog, a tab's X
-  and a terminal tab among them, unlights on its click, as what opens hides the
-  pointer's exit. Hover is tracked on every move (`tracksHover`), not only at
-  the edges, so a button unlit under a still pointer lights on the next move.
+  the file bar's view menu, the Files panel's pages and toggle, the strip's plus
+  and splits, and a tab's X, which takes the strip's `fill` for either kind of
+  tab, a terminal tab's section having none. Nothing but the find bar answered
+  the pointer before, and the sort glyph and the + only brightened. Rows stay
+  still, a click answering with the selection wash; the + still brightens while
+  its row is pointed at. Picked over a brightening alone and over the square
+  with a wash on rows (mockups, 2026-11-05). `tab_bar` gained a `fill` for it
+  and for a hovered tab. `GlyphButtonLight` holds when one lights, and that an
+  open toggle, as the Files panel's, keeps its accent lit; a placeholder button
+  lights by it too. A button whose click can raise a sheet, picker, alert or
+  close dialog, a tab's X and a terminal tab among them, unlights on its click,
+  as what opens hides the pointer's exit. Hover is tracked on every move
+  (`tracksHover`), not only at the edges, so a button unlit under a still
+  pointer lights on the next move.
 - **The faint tier clears 3:1 on the sidebar**: the base themes' `text_tertiary`
   went from 0x61 to 0x66 dark and 0x81 light, every `ui` area alike, from 2.97:1
   and 2.23:1 to 3.13:1 and 3.09:1 on the sidebar. A selected row's wash takes it
@@ -265,9 +266,35 @@
   Solarized Light's sidebar, header and find bar in their own text, translucent,
   their source fills being too near the ground at any alpha. The same key paints
   the count capsule, the filter wells and the switches there.
+- **A head-cut path draws whole, a tail of about a dozen characters, or
+  nothing**, eight times its text size wide: the header's path and a file tab's
+  folder (`ReadableTail`). Squeezed further the header's drew one stray mark and
+  held room the project and branch names were cut short for, and the folder drew
+  a lone ellipsis (WorktreeHeaderTests, FileTabBarTests). A path shorter than
+  that least draws whole wherever it fits. Cost: in a narrow header the path is
+  only in the actions menu's Copy Path.
+- **A renamed worktree's branch in the header gives way after the path and
+  before the names**, at half their layout priority. At the spacer's it was cut
+  to a few points while the header had room, and at the names' a long branch cut
+  the project's name (WorktreeHeaderTests).
 
 ## Reviewed and left as is
 
+- **A file tab's bar cut at its group's edge may still take a click past it**
+  (round 1 of the narrow sizes review, 2026-11-05). Unproven: SwiftUI's hit
+  testing past a clip could not be checked without clicking the window.
+- **A hidden header path keeps one 6 pt stack gap** (same round): the empty view
+  is still a child of the header's stack. Taking it back means splitting the
+  stack, which moves the names' layout priorities for 6 pt. The file bar's
+  folder carries its gap itself, as a name moving 6 pt there showed between
+  tabs.
+- **Modified or Branch in the view menu shows no help** (round 2): `.help` on a
+  menu's section or picker could not be shown to reach a tooltip without opening
+  the menu on screen, so it was left off rather than claimed. The switch on the
+  bar keeps it.
+- **A path shorter than the least is tested at a width the header measures for
+  it** (round 2 asked whether the test reaches that case): with the "whole"
+  option removed from `ReadableTail` it fails.
 - **A state dot works out its own line widths** (round 2, 2026-11-05) rather
   than in `UIMetrics`: the dot is their only user, and the CI glyph's stroke is
   another design's, not a shared measurement.

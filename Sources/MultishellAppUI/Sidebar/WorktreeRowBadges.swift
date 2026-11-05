@@ -97,6 +97,8 @@ struct WorktreeRowBadges: View {
     .padding(.horizontal, 6)
     .padding(.vertical, 1)
     .background(theme.projectsPanel.fill, in: Capsule())
+    // Squeezed, the hidden "00" wrapped and stood the capsule the row's height.
+    .fixedSize()
     .help(t("count.terminals", terminalCount))
   }
 

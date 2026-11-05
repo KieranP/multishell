@@ -434,6 +434,20 @@ Newest at the bottom.
   change so the next step counts on from there, and keeps the column scrolled
   sideways to, as a restore does. A split steps from the side holding the
   keyboard, a step from the right having ignored a click on the left.
+- **A bar too narrow for its switches puts them in one menu**, Modified or
+  Branch and Unified or Split under a sliders glyph, each a section named as its
+  switch. The name, counts and arrows stay. The folder crumb is left out of the
+  fit, so a deep path never moves the switches into the menu, and it draws a
+  readable tail or nothing as the header's path does (appearance.md). It carries
+  its own gap to the name, so a folder that gives way leaves the name where a
+  root file's starts (FileTabBarTests). Picked over glyph-only switches, whose
+  Split drew as the strip's Split Right, and over a second row costing the file
+  30 pt (mockups, 2026-11-05).
+- **The bar is never wider than its group.** Its switches could not shrink, so
+  two groups in an 1100 pt window drew it 60 pt wider than its group and the
+  whole file view spilled left over the next group's terminal (FileTabBarTests).
+  A bar too narrow even with its switches in the menu is cut at its right edge,
+  the actions menu going first.
 - **Steps stop at either end and the arrow with nowhere to go greys out**, the
   user's choice over wrapping as find does. The view reports which ways are open
   as it scrolls and its selection moves, the bar not knowing either; the change

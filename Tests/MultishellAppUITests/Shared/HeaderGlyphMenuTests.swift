@@ -5,10 +5,12 @@ import Testing
 @testable import MultishellCore
 
 @Suite @MainActor
-struct HeaderActionsMenuTests {
+struct HeaderGlyphMenuTests {
   @Test func theButtonIsDrawnInItsAreasSecondaryText() throws {
     let theme = try MagentaTheme.with([.header: [.textSecondary]])
-    let menu = HeaderActionsMenu(help: "Actions", palette: theme.header) { Button("Item") {} }
+    let menu = HeaderGlyphMenu(symbol: "ellipsis.circle", help: "Actions", palette: theme.header) {
+      Button("Item") {}
+    }
 
     let bitmap = try #require(
       OffscreenWindow.pixels(ofHosted: menu.padding(4), size: CGSize(width: 40, height: 40))

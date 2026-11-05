@@ -6,6 +6,7 @@ import SwiftUI
 /// tab drew, and the same menu a Files panel row has.
 struct FileTabBar: View {
   private static let height: Double = 30
+  private static let spacing: Double = 6
 
   let model: AppModel
   let tab: FileTab
@@ -22,12 +23,37 @@ struct FileTabBar: View {
   }
 
   var body: some View {
-    HStack(spacing: 6) {
+    let offersChangeScope = model.offersChangeScopeSwitch(for: tab)
+    let offersLayout = model.offersLayoutSwitch(for: tab)
+    // The switches on the bar where they fit beside the name, else in one
+    // menu; whatever still overflows is cut, not drawn over the next group.
+    ViewThatFits(in: .horizontal) {
+      bar(switchesInMenu: false, offersChangeScope: offersChangeScope, offersLayout: offersLayout)
+      bar(switchesInMenu: true, offersChangeScope: offersChangeScope, offersLayout: offersLayout)
+    }
+    .font(model.metrics.font(size: model.metrics.secondary))
+    .padding(.leading, 12)
+    .padding(.trailing, 8)
+    .frame(height: Self.height)
+    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+    .clipped()
+    .background(theme.fileTab.background)
+    .hairline(.bottom, theme.fileTab)
+  }
+
+  /// The folder and the name as one, the folder carrying the gap to the name
+  /// so a folder that gives way leaves the name where a root file's starts.
+  private var location: some View {
+    HStack(spacing: 0) {
       if let folder = tab.folderCrumb {
-        Text(folder)
-          .foregroundStyle(theme.fileTab.textTertiary)
-          .lineLimit(1)
-          .truncationMode(.head)
+        ReadableTail(
+          text: folder,
+          leastWidth: UIMetrics.readableTailWidth(atSize: model.metrics.secondary),
+          insets: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: Self.spacing),
+        )
+        .foregroundStyle(theme.fileTab.textTertiary)
+        // Measured as nothing, so a long folder gives way rather than moving the switches.
+        .frame(idealWidth: 0, alignment: .leading)
       }
       Text(tab.fileName)
         .fontWeight(.semibold)
@@ -35,6 +61,23 @@ struct FileTabBar: View {
         .foregroundStyle(theme.fileTab.text)
         .lineLimit(1)
         .layoutPriority(1)
+    }
+    .layoutPriority(1)
+  }
+
+  private var actionsMenu: some View {
+    HeaderActionsMenu(help: t("file.actions"), palette: theme.fileTab) {
+      FileActions(model: model, worktreeID: tab.worktreeID, path: tab.path)
+    }
+  }
+
+  private func bar(
+    switchesInMenu: Bool,
+    offersChangeScope: Bool,
+    offersLayout: Bool,
+  ) -> some View {
+    HStack(spacing: Self.spacing) {
+      location
       if let changedLineCounts {
         FileLineCountsText(
           counts: changedLineCounts,
@@ -50,34 +93,21 @@ struct FileTabBar: View {
       if changedLineCounts != nil {
         ChangeStepButtons(model: model, tabID: tab.id, palette: theme.fileTab)
       }
-      if model.offersChangeScopeSwitch(for: tab) {
-        ChangeScopeSwitch(model: model, palette: theme.fileTab)
+      if switchesInMenu {
+        if offersChangeScope || offersLayout {
+          FileTabViewMenu(
+            model: model,
+            tab: tab,
+            offersChangeScope: offersChangeScope,
+            offersLayout: offersLayout,
+            palette: theme.fileTab,
+          )
+        }
+      } else {
+        if offersChangeScope { ChangeScopeSwitch(model: model, palette: theme.fileTab) }
+        if offersLayout { FileTabLayoutSwitch(model: model, tab: tab, palette: theme.fileTab) }
       }
-      if model.offersLayoutSwitch(for: tab) { layoutSwitch }
       actionsMenu
-    }
-    .font(model.metrics.font(size: model.metrics.secondary))
-    .padding(.leading, 12)
-    .padding(.trailing, 8)
-    .frame(height: Self.height)
-    .background(theme.fileTab.background)
-    .hairline(.bottom, theme.fileTab)
-  }
-
-  /// Unified, the changes inline; Split, the last commit beside the file.
-  private var layoutSwitch: some View {
-    SegmentedSwitch(
-      label: t("file.layout"),
-      options: [(t("file.unified"), .unified), (t("file.split"), .split)],
-      selection: Binding(get: { model.layout(of: tab) }, set: { model.setFileTabLayout($0) }),
-      palette: theme.fileTab,
-      metrics: model.metrics,
-    )
-  }
-
-  private var actionsMenu: some View {
-    HeaderActionsMenu(help: t("file.actions"), palette: theme.fileTab) {
-      FileActions(model: model, worktreeID: tab.worktreeID, path: tab.path)
     }
   }
 }
