@@ -14,6 +14,9 @@ struct WorktreeHeaderTests {
   /// The gaps, the spacer, the ⋯ menu, the Files toggle and the header's inset
   /// after the last text, about 102 pt, with a few to spare.
   private static let headerEndAfterTheText = 110.0
+  /// macOS 27.0 leaves 4 pt unlit inside a branch name; the header's parts sit
+  /// 16 pt apart.
+  private static let widestGapInsideAText = 8
 
   @Test func aMissingProjectsBadgeIsRingedInTheHeadersColourNotTheSidebars() throws {
     let harness = ModelHarness()
@@ -52,8 +55,8 @@ struct WorktreeHeaderTests {
     )
   }
 
-  /// Where the parts drawn in `key` sit, in points: glyphs closer than a
-  /// letter's gap make one run.
+  /// Where the parts drawn in `key` sit, in points: glyphs no further apart than
+  /// a gap inside one text make one run.
   private func inkRuns(
     inHeaderOfWidth width: Double,
     showing worktree: Worktree,
@@ -68,7 +71,7 @@ struct WorktreeHeaderTests {
       )
     )
     let pixelsPerPoint = bitmap.pixelsWide / Int(width)
-    let gapBetweenGlyphs = 3 * pixelsPerPoint
+    let gapBetweenGlyphs = Self.widestGapInsideAText * pixelsPerPoint
     let pixelRuns: [ClosedRange<Int>] = MagentaTheme.inkedColumns(in: bitmap)
       .reduce(into: []) { runs, x in
         if let last = runs.last, x - last.upperBound <= gapBetweenGlyphs {
