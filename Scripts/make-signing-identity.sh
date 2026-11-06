@@ -3,7 +3,11 @@
 # Why a certificate, and each step's quirk: Docs/design/signing.md.
 set -euo pipefail
 
-name="${1:-Multishell Dev}"
+name="${1:-${MULTISHELL_SIGN_IDENTITY:-Multishell Dev}}"
+if [ "$name" = "-" ]; then
+    echo "error: '-' means ad hoc signing; there is no certificate to make" >&2
+    exit 1
+fi
 # Asked for, since it is `login.keychain` on an account old enough. Printed
 # indented and quoted; only that is stripped, a home being free to hold spaces.
 keychain="$(security login-keychain | sed -e 's/^[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')"

@@ -46,7 +46,7 @@ extension WorktreeCoordinatorMergesTests {
       in: path,
     )
 
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     let merged = await worktreeGit.mergedBranches(into: "main", in: fixture.project)
     #expect(merged?.contains("release") == true, "got \(merged ?? [])")
 

@@ -56,9 +56,11 @@ extension ShellIntegrationScriptsTests {
     defer { files.tearDown() }
 
     func output(termProgram: String?) async throws -> String {
-      var environment = files.environment(termProgram: termProgram)
-      environment["ZDOTDIR"] = files.zshDirectory.path
-      return try await interactiveShellOutput(zsh, arguments: ["-i"], environment: environment)
+      try await interactiveShellOutput(
+        zsh,
+        arguments: ["-i"],
+        environment: files.zshEnvironment(termProgram: termProgram),
+      )
     }
 
     let marked = try await output(termProgram: "ghostty")
@@ -126,8 +128,7 @@ extension ShellIntegrationScriptsTests {
     let zsh = "/bin/zsh"
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
-    var environment = files.environment(termProgram: "ghostty")
-    environment["ZDOTDIR"] = files.zshDirectory.path
+    var environment = files.zshEnvironment(termProgram: "ghostty")
     environment["GHOSTTY_SHELL_FEATURES"] = "cursor:blink,title"
 
     let output = try await interactiveShellOutput(

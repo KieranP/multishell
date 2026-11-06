@@ -55,6 +55,7 @@ extension AppModelStatusReadsTests {
 
     let poll = Task { await model.refreshStatuses() }
     try await waitUntil { harness.statusRunCount() > 0 }
+    try #require(harness.statusRunCount() > 0)
     model.worktreeOperations.begin(.preDeleteHook, on: main.id)
     try Data().write(to: gate)
     await poll.value
@@ -123,6 +124,7 @@ extension AppModelStatusReadsTests {
     let add = Task { try await harness.addOutsideTheApp("outside", at: outside) }
     let lock = repository.appendingPathComponent(".git/worktrees/outside/locked")
     try await waitUntil { FileManager.default.fileExists(atPath: lock.path) }
+    try #require(FileManager.default.fileExists(atPath: lock.path))
 
     await harness.model.refreshWorktrees(of: harness.project)
     let row = try #require(harness.worktree(onBranch: "outside"))

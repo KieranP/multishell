@@ -77,6 +77,7 @@ struct AppModelQuickSwitcherTests {
 
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
     try await waitUntil { harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" } }
+    try #require(harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" })
     await harness.settled()
 
     #expect(harness.model.trackedFiles[harness.main.id] == nil)
@@ -93,6 +94,7 @@ struct AppModelQuickSwitcherTests {
 
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
     try await waitUntil { harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" } }
+    try #require(harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" })
 
     #expect(!harness.model.showsAgentBoard)
   }
@@ -108,6 +110,7 @@ struct AppModelQuickSwitcherTests {
 
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
     try await waitUntil { harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" } }
+    try #require(harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" })
 
     #expect(harness.model.workspace.tabs(in: harness.main.id).isEmpty)
   }
@@ -131,6 +134,7 @@ struct AppModelQuickSwitcherTests {
 
     harness.model.chooseQuickSwitcherRow(.file(path: "docs/guide.md", worktreeID: harness.main.id))
     try await waitUntil { !harness.model.workspace.fileTabs.isEmpty }
+    try #require(!harness.model.workspace.fileTabs.isEmpty)
     await harness.settled()
 
     #expect(!harness.model.showsAgentBoard)
@@ -146,6 +150,7 @@ struct AppModelQuickSwitcherTests {
     harness.model.chooseQuickSwitcherRow(.file(path: "notes.txt", worktreeID: harness.main.id))
     harness.model.showAgentBoard()
     try await waitUntil { harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" } }
+    try #require(harness.model.workspace.fileTabs.contains { $0.path == "notes.txt" })
     await harness.settled()
 
     #expect(harness.model.showsAgentBoard)
@@ -161,6 +166,7 @@ struct AppModelQuickSwitcherTests {
 
     harness.model.chooseQuickSwitcherRow(.file(path: "image.bin", worktreeID: harness.main.id))
     try await waitUntil { harness.platform.beeps == 1 }
+    try #require(harness.platform.beeps == 1)
     await harness.settled()
 
     #expect(harness.model.showsAgentBoard)
@@ -518,6 +524,7 @@ struct AppModelQuickSwitcherTests {
 
     harness.model.chooseQuickSwitcherRow(.file(path: "missing.md", worktreeID: harness.main.id))
     try await waitUntil { harness.platform.beeps == 1 }
+    try #require(harness.platform.beeps == 1)
 
     #expect(harness.model.workspace.project(harness.project.id)?.isExpanded == false)
   }

@@ -35,7 +35,7 @@ struct WorktreeGitInitializingTests {
       in: fixture.project.path,
     )
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
 
     #expect(listed.first { $0.branch == "making" }?.isInitializing == true)
     #expect(listed.first { $0.branch == "pinned" }?.isInitializing == false, "a user's lock")
@@ -58,7 +58,7 @@ struct WorktreeGitInitializingTests {
       !FileManager.default.fileExists(atPath: admin.appendingPathComponent("index").path)
     )
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
 
     #expect(listed.first { $0.branch == "unchecked" }?.isLocked == true)
     #expect(listed.first { $0.branch == "unchecked" }?.isInitializing == false)
@@ -75,7 +75,7 @@ struct WorktreeGitInitializingTests {
       in: fixture.project.path,
     )
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
 
     #expect(listed.first { $0.branch == "parked" }?.isLocked == true)
     #expect(listed.first { $0.branch == "parked" }?.isInitializing == false)
@@ -103,7 +103,7 @@ struct WorktreeGitInitializingTests {
       )
     }
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
 
     for branch in reasons.keys {
       #expect(listed.first { $0.branch == branch }?.isInitializing == false, "\(branch)")

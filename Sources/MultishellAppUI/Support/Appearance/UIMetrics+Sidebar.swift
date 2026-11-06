@@ -37,9 +37,8 @@ extension UIMetrics {
     hasCustomName || isRenaming ? customNameRowHeight : rowHeight
   }
 
-  /// How tall a project's block is, which the drop delegate halves: its row,
-  /// each worktree's, the pane rows under the one that shows them, and the
-  /// Hidden row where there is one.
+  /// How tall a project's block is, which the drop delegate halves: its row, the
+  /// Hidden row, and each worktree's with the pane rows of the one showing them.
   func projectBlockHeight(worktreeRows: [SidebarWorktree], showsHiddenSectionRow: Bool) -> Double {
     let top = showsHiddenSectionRow ? rowHeight * 2 + Self.sidebarRowSpacing : rowHeight
     return worktreeRows.reduce(top) { total, row in

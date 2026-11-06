@@ -30,7 +30,7 @@ struct WorktreeGitStatusTests {
     try fixture.write("changed\n", to: "README.md")
     let main = try await fixture.worktree(onBranch: "main")
 
-    let status = try await WorktreeGit(runner: fixture.runner).status(of: main)
+    let status = try await fixture.git.status(of: main)
 
     #expect(status.unstaged == 1, "the change was seen")
     #expect(try indexModified() == before, "the index was rewritten")
@@ -59,7 +59,7 @@ struct WorktreeGitStatusTests {
     let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
-      let status = try await WorktreeGit(runner: fixture.runner).status(
+      let status = try await fixture.git.status(
         of: main,
         counting: indicator,
       )
@@ -75,7 +75,7 @@ struct WorktreeGitStatusTests {
     try fixture.write("one\n", to: "a.txt")
     _ = try await fixture.runner.run(["add", "a.txt"], in: fixture.project.path)
     try fixture.write("one\ntwo\nthree\n", to: "a.txt")
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     #expect(try await git.status(of: main, counting: .stagedAndUnstaged).insertions == 3)
@@ -108,7 +108,7 @@ struct WorktreeGitStatusTests {
     try await fixture.commit("base", files: ["edited.txt": Self.editBefore])
     try fixture.write(Self.editAfter, to: "edited.txt")
     _ = try await fixture.runner.run(["add", "edited.txt"], in: path)
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
@@ -134,7 +134,7 @@ struct WorktreeGitStatusTests {
     try fixture.write(Self.editAfter, to: "edited.txt")
     _ = try await fixture.runner.run(["add", "edited.txt"], in: path)
     _ = try await fixture.runner.run(["mv", "moved.txt", "renamed.txt"], in: path)
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
     var plain: [GitStatusIndicator: WorktreeStatus] = [:]
     for indicator in GitStatusIndicator.allCases {
@@ -160,7 +160,7 @@ struct WorktreeGitStatusTests {
   @Test func aChangedFileAndANewOneAreCountedApartAndTheStatusNamesTheBranch() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     #expect(try await worktreeGit.status(of: main).isCleanAndInSync)
@@ -178,7 +178,7 @@ struct WorktreeGitStatusTests {
   @Test func statusCountsLinesAddedAndRemovedAgainstHeadAndInUntrackedFiles() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     try await fixture.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
     let main = try await fixture.worktree(onBranch: "main")
 
@@ -197,7 +197,7 @@ struct WorktreeGitStatusTests {
   @Test func aModeChangeAndANewBinaryFileCountAsFilesWithNoLines() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     let script = fixture.project.path.appendingPathComponent("run.sh")
     try await fixture.commit("seed", file: "run.sh", content: "echo hi\n")
     let main = try await fixture.worktree(onBranch: "main")
@@ -221,7 +221,7 @@ struct WorktreeGitStatusTests {
   @Test func eachFileInAnUntrackedDirectoryIsCountedWithItsLines() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     try await fixture.commit("seed", file: "counted.txt", content: "a\n")
     let main = try await fixture.worktree(onBranch: "main")
     try fixture.write("a\nb\n", to: "fresh/one.txt")
@@ -240,7 +240,7 @@ struct WorktreeGitStatusTests {
   @Test func aConflictedFileIsNotCountedAsAFileWithNoLines() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     try await fixture.commit("seed", file: "f.txt", content: "a\nb\n")
     try await fixture.commitOnBranch("other", file: "f.txt", content: "x\nb\n", message: "theirs")
     try await fixture.commit("mine", file: "f.txt", content: "y\nb\n")
@@ -256,7 +256,7 @@ struct WorktreeGitStatusTests {
   @Test func stagedOnlyCountsTheIndexAndNoUntrackedFile() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     try await fixture.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
     let main = try await fixture.worktree(onBranch: "main")
 

@@ -4,7 +4,6 @@ import SwiftUI
 /// A settings page's glyph as the approved mockup drew it: thin round strokes
 /// on a 16-unit grid, a dashed part where the page's mark has one.
 struct SettingsPageGlyph: View {
-  private static let grid: Double = 16
   private static let strokeWidth: Double = 1.3
   private static let quarter: Double = 0.5523
 
@@ -12,7 +11,7 @@ struct SettingsPageGlyph: View {
 
   var body: some View {
     Canvas { context, size in
-      let scale = min(size.width, size.height) / Self.grid
+      let scale = min(size.width, size.height) / GlyphGrid.side
       let transform = CGAffineTransform(scaleX: scale, y: scale)
       let style = StrokeStyle(
         lineWidth: Self.strokeWidth * scale,

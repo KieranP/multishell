@@ -140,6 +140,7 @@ struct AppModelPullRequestActionsTests {
 
     let create = Task { await model.createPullRequest(for: feat) }
     try await waitUntil { FileManager.default.fileExists(atPath: asked.path) }
+    try #require(FileManager.default.fileExists(atPath: asked.path))
     harness.store.replaceWorktrees(
       model.workspace.worktrees(of: harness.project.id).filter { $0.id != feat.id },
       forProject: harness.project.id,

@@ -67,7 +67,7 @@ struct WorktreeGitListingTests {
       settings: fixture.worktreeSettings,
     )
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(project)
+    let listed = try await fixture.git.list(project)
     let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
     let byBranch = Dictionary(uniqueKeysWithValues: zip(listed.map(\.name), dates))
 
@@ -88,7 +88,7 @@ struct WorktreeGitListingTests {
       using: fixture.runner,
     )
 
-    let worktrees = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let worktrees = try await fixture.git.list(fixture.project)
 
     #expect(worktrees.count == 2, "got \(worktrees.map(\.path.path))")
     let listed = worktrees.first { !$0.isPrimary }
@@ -108,7 +108,7 @@ struct WorktreeGitListingTests {
     try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
 
     func root(_ url: URL) async throws -> String {
-      try await fixture.coordinator.git.mainWorktreePath(containing: url).resolvingSymlinksInPath()
+      try await fixture.git.mainWorktreePath(containing: url).resolvingSymlinksInPath()
         .path
     }
     let main = fixture.project.path.resolvingSymlinksInPath().path
@@ -122,7 +122,7 @@ struct WorktreeGitListingTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     await #expect(throws: (any Error).self) {
-      try await fixture.coordinator.git.mainWorktreePath(containing: fixture.root)
+      try await fixture.git.mainWorktreePath(containing: fixture.root)
     }
   }
 
@@ -140,13 +140,13 @@ struct WorktreeGitListingTests {
       in: fixture.project,
       settings: fixture.worktreeSettings,
     )
-    var listed = try await fixture.coordinator.git.list(fixture.project)
+    var listed = try await fixture.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "a", "b"])
     #expect(listed[0].isPrimary && !listed[1].isPrimary)
     #expect(listed.allSatisfy { $0.projectID == fixture.project.id })
 
     try await fixture.coordinator.removeUnlinking(listed[1], in: fixture.project)
-    listed = try await fixture.coordinator.git.list(fixture.project)
+    listed = try await fixture.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "b"])
   }
 }

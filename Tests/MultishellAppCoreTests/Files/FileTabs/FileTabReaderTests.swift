@@ -294,12 +294,7 @@ struct FileTabReaderTests {
       atomically: true,
       encoding: .utf8,
     )
-    let base = DefaultBranch(
-      shortName: "main",
-      nameWithoutRemote: "main",
-      tip: "aaaa",
-      fullName: "refs/heads/main",
-    )
+    let base = DefaultBranch.sample("main", tip: "aaaa")
     let previous = FileTabReading(
       content: .text(
         FileTabRows(
@@ -361,12 +356,7 @@ struct FileTabReaderTests {
       """
     )
     defer { fake.tearDown() }
-    let base = DefaultBranch(
-      shortName: "main",
-      nameWithoutRemote: "main",
-      tip: "aaaa",
-      fullName: "refs/heads/main",
-    )
+    let base = DefaultBranch.sample("main", tip: "aaaa")
 
     let reading = await FileTabReader.read(
       path: "gone.txt",

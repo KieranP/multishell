@@ -28,7 +28,8 @@
   each service's own tool. `SCM/Core/` and `CI/Core/` hold each kind's protocol
   and the values it answers with, `SCM/GitHub/` and `CI/CircleCI/` the one
   service of each there is, through `gh` and `circleci`. What both kinds share
-  sits beside them: `Runner/` times every call into git's log, `Tools/` holds a
+  sits beside them: `Runner/` times every call into git's log, `StandIn/` the
+  JSON `debug services stand-in` answers both kinds from, `Tools/` holds a
   tool's status and read failures, `Remotes/` a remote's owner and name, and
   `Support/` what belongs to no concern.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited

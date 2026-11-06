@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// A setting a project does not override: the value in force and where it came
-/// from, for its settings table's Global column; see Docs/design/settings.md.
+/// A setting a project does not override: the value in force and its source,
+/// for the Global column and the captions under it; Docs/design/settings.md.
 public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable {
   public let value: Value
   /// The repository's file supplies it, rather than the user's global.

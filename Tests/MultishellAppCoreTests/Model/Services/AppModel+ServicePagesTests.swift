@@ -257,4 +257,14 @@ struct AppModelServicePagesTests {
     #expect(harness.model.pullRequestMenuItem(for: feat) == nil)
     #expect(harness.model.ciPage(of: feat) == .noRuns(branch: "feat"), "CI answered")
   }
+
+  @Test func aServicesPageWhoseToolIsGoneShowsFilesUntilOneConnects() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.store.setFilesPanelMode(.ciRuns)
+
+    #expect(harness.model.shownFilesPanelMode == .files)
+    harness.connectServices()
+    #expect(harness.model.shownFilesPanelMode == .ciRuns)
+  }
 }

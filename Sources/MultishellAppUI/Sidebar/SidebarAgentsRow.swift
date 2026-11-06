@@ -41,7 +41,7 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
     }
     .padding(.horizontal, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.rowHeight)
-    .rowSelection(theme, isSelected: isSelected)
+    .rowSelection(theme, in: .projectsPanel, isSelected: isSelected)
     .contentShape(.rect)
     .onTapGesture(perform: select)
     .accessibilityElement(children: .ignore)

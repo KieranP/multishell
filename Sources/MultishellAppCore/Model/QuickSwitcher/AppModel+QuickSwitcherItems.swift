@@ -26,13 +26,14 @@ extension AppModel {
 
   /// Those of `ids` still listed, in the order given.
   func quickSwitcherWorktrees(_ ids: [Worktree.ID]) -> [QuickSwitcherItem] {
-    let sessions = sessionIDsByWorktree
-    return ids.compactMap { id in
+    let workspace = workspace
+    let places: [SidebarPlace] = ids.compactMap { id in
       guard let worktree = workspace.worktree(id),
         let project = workspace.project(worktree.projectID)
       else { return nil }
-      return quickSwitcherWorktree(worktree, in: project, sessions: sessions)
+      return (project, worktree)
     }
+    return quickSwitcherWorktrees(in: places, sessionIDsByWorktree)
   }
 
   /// Every pane and file tab, the saved ones of worktrees not yet opened
@@ -87,27 +88,26 @@ extension AppModel {
     }
   }
 
-  private func quickSwitcherWorktree(
-    _ worktree: Worktree,
-    in project: Project,
-    sessions: SessionIDsByWorktree,
-  ) -> QuickSwitcherItem {
-    let branch = customName(of: worktree).map { "\(worktree.name) (\($0))" } ?? worktree.name
-    return QuickSwitcherItem(
-      target: .worktree(worktree.id),
-      kind: .worktree,
-      title: QuickSwitcherItem.path([project.name, branch]),
-      location: "",
-      state: state(ofWorktree: worktree.id, sessions: sessions),
-      status: statuses[worktree.id],
-    )
-  }
-
+  /// Reads the model once a list, as `orderedWorktrees` does, not once a row.
   private func quickSwitcherWorktrees(
     in order: [SidebarPlace],
     _ sessions: SessionIDsByWorktree,
   ) -> [QuickSwitcherItem] {
-    order.map { quickSwitcherWorktree($0.worktree, in: $0.project, sessions: sessions) }
+    let workspace = workspace
+    let states = sessionStates
+    let statuses = statuses
+    return order.map { project, worktree in
+      let branch =
+        workspace.customName(of: worktree.id).map { "\(worktree.name) (\($0))" } ?? worktree.name
+      return QuickSwitcherItem(
+        target: .worktree(worktree.id),
+        kind: .worktree,
+        title: QuickSwitcherItem.path([project.name, branch]),
+        location: "",
+        state: states.state(ofWorktree: worktree.id, sessions: sessions[worktree.id]),
+        status: statuses[worktree.id],
+      )
+    }
   }
 
   /// An agent's pane ends its path with the agent, so `claude` finds it, and
@@ -119,6 +119,7 @@ extension AppModel {
     of worktree: Worktree,
     at offset: Int,
     place: String,
+    states: SessionStates,
   ) -> QuickSwitcherItem {
     let paneTitle = shownTitle(ofPane: session, in: tab, of: worktree)
     return QuickSwitcherItem(
@@ -127,8 +128,8 @@ extension AppModel {
       title: QuickSwitcherItem.path([place, agentID.map(agentDisplayName) ?? paneTitle]),
       location: agentID == nil ? "" : paneTitle,
       position: .of(paneAt: offset, in: tab),
-      state: state(ofPane: session.id),
-      since: sessionStates.since(.session(session.id)),
+      state: states[.session(session.id)],
+      since: states.since(.session(session.id)),
     )
   }
 
@@ -145,6 +146,7 @@ extension AppModel {
   ) -> [QuickSwitcherItem] {
     let sessions = workspace.sessions.keyedByID()
     let tabsByWorktree = workspace.workspaceTabsByWorktree()
+    let states = sessionStates
     return order.flatMap { project, worktree in
       let place = quickSwitcherPlace(of: worktree, in: project)
       return (tabsByWorktree[worktree.id] ?? []).flatMap { tab -> [QuickSwitcherItem] in
@@ -161,6 +163,7 @@ extension AppModel {
               of: worktree,
               at: offset,
               place: place,
+              states: states,
             )
           }
 
@@ -181,11 +184,17 @@ extension AppModel {
   }
 
   /// Every worktree as the sidebar lists it, projects in order and each one's
-  /// worktrees by its sort.
+  /// worktrees by its sort, its hidden ones after the rest.
   private func quickSwitcherSidebarOrder(sessions: SessionIDsByWorktree) -> [SidebarPlace] {
     workspace.projects.flatMap { project in
-      orderedWorktrees(workspace.worktrees(of: project.id), in: project, sessions: sessions)
-        .map { (project, $0) }
+      let ordered = orderedWorktrees(
+        workspace.worktrees(of: project.id),
+        in: project,
+        sessions: sessions,
+      )
+      let shown = ordered.filter { !workspace.isHidden($0) }
+      let hidden = ordered.filter(workspace.isHidden)
+      return (shown + hidden).map { (project, $0) }
     }
   }
 }

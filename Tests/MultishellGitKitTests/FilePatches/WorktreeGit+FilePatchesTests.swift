@@ -15,7 +15,7 @@ struct WorktreeGitFilePatchesTests {
     try fixture.write("three\n", to: "a.txt")
 
     let patches = try #require(
-      await WorktreeGit(runner: fixture.runner).patches(
+      await fixture.git.patches(
         of: "a.txt",
         in: fixture.project.path,
         diffAlgorithm: .histogram,
@@ -39,7 +39,7 @@ struct WorktreeGitFilePatchesTests {
     try fixture.write("a\n\nB\n", to: "a.txt")
 
     let patches = try #require(
-      await WorktreeGit(runner: fixture.runner).patches(
+      await fixture.git.patches(
         of: "a.txt",
         in: fixture.project.path,
         diffAlgorithm: .histogram,
@@ -55,7 +55,7 @@ struct WorktreeGitFilePatchesTests {
     try await fixture.commit("seed", file: "a.txt", content: "one\n")
     let base = try #require(
       DefaultBranch.resolve(
-        from: await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project)?.refs ?? [],
+        from: await fixture.git.branchRefs(fixture.project)?.refs ?? [],
         override: nil,
       )
     )
@@ -64,7 +64,7 @@ struct WorktreeGitFilePatchesTests {
     try fixture.write("one\ntwo\nthree\n", to: "a.txt")
 
     let patches = try #require(
-      await WorktreeGit(runner: fixture.runner).patches(
+      await fixture.git.patches(
         of: "a.txt",
         in: fixture.project.path,
         diffAlgorithm: .histogram,

@@ -18,15 +18,11 @@ struct ChangeScopeSwitch: View {
     SegmentedSwitch(
       label: t("files-panel.change-scope"),
       options: Self.options,
-      selection: Self.selection(in: model),
+      selection: model.settingBinding(\.changeScope, write: model.setChangeScope),
       palette: palette,
       metrics: model.metrics,
       fillsWidth: fillsWidth,
     )
     .help(t("files-panel.change-scope-help"))
-  }
-
-  static func selection(in model: AppModel) -> Binding<ChangeScope> {
-    Binding(get: { model.workspace.changeScope }, set: { model.setChangeScope($0) })
   }
 }

@@ -64,6 +64,7 @@ struct AppModelBranchChangesTests {
     )
     harness.model.setChangeScope(.branch)
     try await waitUntil { !harness.model.fileTreeRows(of: feature.id).isEmpty }
+    try #require(!harness.model.fileTreeRows(of: feature.id).isEmpty)
 
     harness.model.setFilesPanelMode(.files)
     harness.model.readFilesPanel(of: feature.id)
@@ -129,14 +130,7 @@ struct AppModelBranchChangesTests {
     defer { harness.tearDown() }
     let feature = try await harness.featureInChangesList()
     await harness.model.refreshStatuses()
-    harness.model.defaultBranchScans[harness.project.id] = .found(
-      DefaultBranch(
-        shortName: "gone",
-        nameWithoutRemote: "gone",
-        tip: "abc",
-        fullName: "refs/heads/gone",
-      )
-    )
+    harness.model.defaultBranchScans[harness.project.id] = .found(.sample("gone"))
 
     harness.model.setChangeScope(.branch)
     let footer = { FilesPanelFooterText.changes(harness.model.filesPanelSummary(of: feature.id)) }
@@ -151,6 +145,7 @@ struct AppModelBranchChangesTests {
     let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
+    try #require(harness.model.branchChanges[feature.id] != nil)
     try await waitUntil { !harness.model.branchChangesReads.isRunning(feature.id) }
     harness.model.missingProjects.insert(harness.project.id)
 
@@ -165,6 +160,7 @@ struct AppModelBranchChangesTests {
     let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
+    try #require(harness.model.branchChanges[feature.id] != nil)
     harness.model.failedBranchReads[feature.id] = "old"
     harness.model.branchChanges[feature.id] = nil
 

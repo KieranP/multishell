@@ -21,8 +21,7 @@ extension ShellIntegrationScriptsTests {
     let files = try GeneratedIntegration(helper: helper)
     defer { files.tearDown() }
     if let usersRC { try files.writeHomeFile(".zshrc", usersRC) }
-    var environment = files.environment(termProgram: "ghostty")
-    environment["ZDOTDIR"] = files.zshDirectory.path
+    var environment = files.zshEnvironment(termProgram: "ghostty")
     environment["GHOSTTY_SHELL_FEATURES"] = features
     environment[SessionEnvironment.sessionVariable] = "zsh-output"
     environment[SessionEnvironment.worktreeVariable] = "/w"

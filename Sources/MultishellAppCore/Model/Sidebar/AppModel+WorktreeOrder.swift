@@ -11,11 +11,16 @@ extension AppModel {
     sessions: SessionIDsByWorktree,
   ) -> [Worktree] {
     let rule = worktreeSortRule(for: project)
+    // Read once, not per row: a generic model's observed read builds its key
+    // path each time, about 30 times a plain class's (quick-switcher.md).
+    let workspace = workspace
+    let states = sessionStates
+    let commitDates = lastCommitDates
     let keys = rule.keys(
       worktrees,
-      displayName: { self.workspace.displayName(of: $0) },
-      isActive: { self.isActiveWorktree($0.id, sessions: sessions) },
-      lastCommit: { self.lastCommitDates[$0.id] },
+      displayName: { workspace.displayName(of: $0) },
+      isActive: { states.isActive(worktree: $0.id, sessions: sessions[$0.id]) },
+      lastCommit: { commitDates[$0.id] },
     )
     return worktreeSortCache.rows(of: project.id, keys: keys, rule: rule)
   }
@@ -49,10 +54,8 @@ extension AppModel {
     )
   }
 
-  /// Whether anything is going on in a worktree: a terminal open in it, or
-  /// a state something reported for it.
   func isActiveWorktree(_ id: Worktree.ID, sessions: SessionIDsByWorktree) -> Bool {
-    !sessions[id].isEmpty || state(ofWorktree: id, sessions: sessions) != nil
+    sessionStates.isActive(worktree: id, sessions: sessions[id])
   }
 
   public func setWorktreeSortOrder(_ order: WorktreeSortOrder) {

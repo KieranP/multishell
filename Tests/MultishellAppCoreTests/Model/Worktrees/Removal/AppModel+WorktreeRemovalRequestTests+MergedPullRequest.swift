@@ -51,7 +51,7 @@ extension AppModelWorktreeRemovalRequestTests {
     let pending = try #require(harness.model.pendingWorktreeRemoval)
     #expect(pending.choices.first?.deletesBranch == true, "proof leads with deleting the branch")
     await harness.model.answerWorktreeRemoval(pending, choice: 0)?.value
-    await harness.awaitOperationEnd(on: feat.id)
+    try await harness.awaitOperationEnd(on: feat.id)
 
     #expect(harness.model.presentedError == nil)
     #expect(try await harness.branches() == ["main"])
@@ -66,7 +66,7 @@ extension AppModelWorktreeRemovalRequestTests {
 
     try await harness.commitFile("late.txt", in: feat)
     await harness.model.answerWorktreeRemoval(pending, choice: 0)?.value
-    await harness.awaitOperationEnd(on: feat.id)
+    try await harness.awaitOperationEnd(on: feat.id)
 
     #expect(try await harness.branches().contains("feat"))
   }
@@ -79,7 +79,7 @@ extension AppModelWorktreeRemovalRequestTests {
     harness.model.setDeletesBranchWithWorktree(true)
 
     await harness.model.requestWorktreeRemoval(of: feat)?.value
-    await harness.awaitOperationEnd(on: feat.id)
+    try await harness.awaitOperationEnd(on: feat.id)
 
     #expect(harness.model.presentedError == nil)
     #expect(try await harness.branches() == ["main"])

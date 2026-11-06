@@ -5,13 +5,13 @@ import SwiftUI
 /// Projects page that sets it, and its source where that is not the global.
 struct OverrideGlobalCell: View {
   let model: AppModel
-  let column: OverrideGlobalValue
+  let globalValue: OverrideGlobalValue
 
   @State private var isHovered = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 1) {
-      if let section = column.settingsSection {
+      if let section = globalValue.settingsSection {
         Button {
           model.showSettings(section, in: .allProjects)
         } label: {
@@ -25,7 +25,7 @@ struct OverrideGlobalCell: View {
       } else {
         valueText.foregroundStyle(.secondary)
       }
-      if let note = column.sourceNote {
+      if let note = globalValue.sourceNote {
         Text(note)
           .font(.system(size: 10))
           .foregroundStyle(.tertiary)
@@ -34,7 +34,7 @@ struct OverrideGlobalCell: View {
   }
 
   private var valueText: some View {
-    Text(column.text)
+    Text(globalValue.text)
       .font(.system(size: UIMetrics.settingsControlTextSize))
       .lineLimit(2)
       .truncationMode(.middle)

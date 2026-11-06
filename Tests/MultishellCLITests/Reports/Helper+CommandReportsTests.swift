@@ -58,6 +58,7 @@ struct HelperCommandReportsTests {
 
     #expect(try await HelperBinary.run(["state", "running"], environment: environment).succeeded)
     try await waitUntil { recorder.received.count == 5 }
+    try #require(recorder.received.count == 5)
     #expect(
       SessionStateReport.parse(recorder.received[4])?.isFromShellIntegration == nil,
       "and a script of the user's is not, whatever state it reports",

@@ -68,8 +68,8 @@
   in English.
 - **`make signing-identity` creates the self-signed certificate** that keeps
   permission grants across rebuilds; it is not for distribution
-  (design/signing.md). `MULTISHELL_SIGN_IDENTITY` picks another certificate, and
-  `-` forces ad hoc.
+  (design/signing.md). `MULTISHELL_SIGN_IDENTITY` picks another certificate, for
+  the build and for `make signing-identity` alike, and `-` forces ad hoc.
 - **Every target works the same from a git worktree**, and two can build at
   once: the scratch directories are per-worktree and the shared caches lock only
   briefly. Each worktree has its own clone of the submodule, so a new one's

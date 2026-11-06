@@ -66,7 +66,7 @@ struct AppModelControlViewsTests {
     _ = await harness.messageSource.ask(.hideView(.projectSettings))
     #expect(harness.platform.closedWindows.isEmpty, "All Projects is shown")
 
-    harness.model.requestSettings(for: harness.project)
+    harness.model.showSettings(of: harness.project)
     _ = await harness.messageSource.ask(.hideView(.projectSettings))
     _ = await harness.messageSource.ask(.hideView(.settings))
     #expect(harness.platform.closedWindows == [.settings, .settings])
@@ -146,6 +146,14 @@ struct AppModelControlViewsTests {
     )
     #expect(harness.model.settingsLocation == .start)
     #expect(harness.platform.shownWindows.isEmpty)
+  }
+
+  @Test func projectSettingsWithNoProjectNamedOrSelectedOpensTheOnlyProject() async {
+    let harness = Harness()
+
+    _ = await harness.messageSource.ask(.showView(.projectSettings, project: nil))
+
+    #expect(harness.model.settingsLocation.scope == .project(harness.project.id))
   }
 
   @Test func projectSettingsWithNoProjectNamedOrSelectedIsRefusedAndOpensNothing() async {

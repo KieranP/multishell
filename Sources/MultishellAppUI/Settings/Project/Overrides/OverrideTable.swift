@@ -16,7 +16,7 @@ struct OverrideTable<Rows: View>: View {
         Text(t("project.column-override"))
       }
       .font(.system(size: UIMetrics.settingsSmallTextSize, weight: .semibold))
-      .foregroundStyle(.secondary)
+      .foregroundStyle(SettingsColors.secondaryText)
       .accessibilityAddTraits(.isHeader)
       rows()
     }

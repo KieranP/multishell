@@ -20,7 +20,8 @@ struct SocketReplyTests {
   @Test func anAnswerSentAfterTheClientsEOFStillReachesIt() throws {
     let (server, path) = try server("rep") { line, channel in
       let reply = channel.open()
-      DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(200)) {
+      let delayed = DispatchQueue(label: "ms-test-delayed-reply")
+      delayed.asyncAfter(deadline: .now() + .milliseconds(200)) {
         reply?.send("answer to \(line)\n")
       }
     }

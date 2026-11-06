@@ -54,6 +54,7 @@ struct AppModelCIRunDetailReadsTests {
     let run = try #require(harness.model.services(of: feat).ciRun)
     let read = Task { await harness.model.readCIRunDetails(of: run, for: feat) }
     try await waitUntil { provider.calls.contains("workflows r1") }
+    try #require(provider.calls.contains("workflows r1"))
 
     harness.model.setIntegration(.circleCI, isEnabled: false, for: harness.project)
     provider.releaseHeldReads()
@@ -118,14 +119,17 @@ struct AppModelCIRunDetailReadsTests {
 
     let first = Task { await harness.model.readCIRunDetails(of: running, for: feat) }
     try await waitUntil { provider.calls.contains("workflows r1") }
+    try #require(provider.calls.contains("workflows r1"))
     let secondDone = Recorder<Bool>()
     let second = Task {
       await harness.model.readCIRunDetails(of: running, for: feat)
       secondDone.record(true)
     }
-    try await waitUntil {
+    let secondActed = {
       !secondDone.received.isEmpty || provider.calls.filter { $0 == "workflows r1" }.count > 1
     }
+    try await waitUntil(secondActed)
+    try #require(secondActed())
     provider.releaseHeldReads()
     await first.value
     await second.value
@@ -159,14 +163,17 @@ struct AppModelCIRunDetailReadsTests {
 
     let first = Task { await harness.model.readCIRunDetails(of: failed, for: feat) }
     try await waitUntil { provider.calls.contains("report r1") }
+    try #require(provider.calls.contains("report r1"))
     let secondDone = Recorder<Bool>()
     let second = Task {
       await harness.model.readCIRunDetails(of: failed, for: feat)
       secondDone.record(true)
     }
-    try await waitUntil {
+    let secondActed = {
       !secondDone.received.isEmpty || provider.calls.filter { $0 == "report r1" }.count > 1
     }
+    try await waitUntil(secondActed)
+    try #require(secondActed())
     provider.releaseHeldReads()
     await first.value
     await second.value

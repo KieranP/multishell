@@ -53,14 +53,12 @@ extension ShellIntegrationScriptsTests {
 
     if InstalledShells.isInstalled("/bin/zsh") {
       try files.writeHomeFile(".zshrc", "setopt nounset\n")
-      environment["ZDOTDIR"] = files.zshDirectory.path
       let output = try await interactiveShellOutput(
         "/bin/zsh",
         arguments: ["-i"],
-        environment: environment,
+        environment: files.zshEnvironment(termProgram: nil),
       )
       #expect(output.contains("parameter not set") == false, "no error at every startup")
-      environment["ZDOTDIR"] = nil
     }
 
     try files.writeHomeFile(".bashrc", "set -u\n")
@@ -87,12 +85,10 @@ extension ShellIntegrationScriptsTests {
     try files.writeHomeFile(".zprofile", "export ZDOTDIR=\"$HOME/.config/zsh\"\n")
     try files.writeHomeFile(".config/zsh/.zshrc", "export MULTISHELL_USER_RC_LOADED=relocated\n")
 
-    var environment = files.environment(termProgram: nil)
-    environment["ZDOTDIR"] = files.zshDirectory.path
     let output = try await Detached.output(
       of: "/bin/zsh",
       ["-l", "-i", "-c", "printf '%s|%s' \"$MULTISHELL_USER_RC_LOADED\" \"$ZDOTDIR\""],
-      environment: environment,
+      environment: files.zshEnvironment(termProgram: nil),
       in: files.home,
       standardError: .discarded,
     )

@@ -23,6 +23,8 @@ struct AppModelServiceReadsTests {
     await harness.model.refreshBranchScan(of: harness.project)
 
     try await waitUntil { host.askedBranches == ["feat"] && harness.servicesAreSettled() }
+    #expect(host.askedBranches == ["feat"])
+    #expect(harness.servicesAreSettled())
   }
 
   @Test func aWorktreeCheckedOutOntoAnotherBranchKeepsNoneOfTheOldOnesServices() async throws {
@@ -107,6 +109,7 @@ struct AppModelServiceReadsTests {
     host.releaseHeldReads()
     await read.value
     try await waitUntil { harness.servicesAreSettled() }
+    try #require(harness.servicesAreSettled())
 
     #expect(host.calls == ["list"])
     #expect(provider.calls.filter { $0 == "recent" }.count == 2)
@@ -121,6 +124,7 @@ struct AppModelServiceReadsTests {
     let id = harness.project.id
     let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
+    try #require(host.calls == ["list"])
 
     harness.model.remoteState.connections = .empty
     host.releaseHeldReads()
@@ -139,6 +143,7 @@ struct AppModelServiceReadsTests {
     let id = harness.project.id
     let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { provider.calls.contains("recent") }
+    try #require(provider.calls.contains("recent"))
 
     harness.model.remoteState.connections = .empty
     provider.releaseHeldReads()
@@ -182,6 +187,7 @@ struct AppModelServiceReadsTests {
     host.answer(.failure(.failed("offline")))
     let read = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls.count == 2 }
+    try #require(host.calls.count == 2)
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
     harness.model.setIntegration(.gitHub, isEnabled: true, for: harness.project)
@@ -227,12 +233,14 @@ struct AppModelServiceReadsTests {
     let id = harness.project.id
     let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { provider.calls.contains("recent") }
+    try #require(provider.calls.contains("recent"))
 
     harness.platform.isActive = false
     harness.model.setIntegration(.circleCI, isEnabled: false, for: harness.project)
     provider.releaseHeldReads()
     await read.value
     try await waitUntil { harness.servicesAreSettled() }
+    try #require(harness.servicesAreSettled())
 
     #expect(host.calls == ["list"], "nothing is asked in the background")
     #expect(harness.model.remoteState.readLog.isDue(id, at: .now))
@@ -271,6 +279,7 @@ struct AppModelServiceReadsTests {
 
     #expect(harness.model.remoteState.readLog.isDue(harness.project.id, at: .now))
     try await waitUntil { harness.servicesAreSettled() }
+    try #require(harness.servicesAreSettled())
     #expect(host.calls == ["list"])
   }
 

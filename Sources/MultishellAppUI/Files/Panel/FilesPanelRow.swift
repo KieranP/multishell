@@ -73,10 +73,7 @@ struct FilesPanelRow: View {
     .padding(.leading, 6 + Double(row.depth) * Self.levelIndent)
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.paneRowHeight)
-    .background(
-      isSelected ? theme.color(.selectionBackground, in: .filesPanel) : .clear,
-      in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius),
-    )
+    .rowSelection(theme, in: .filesPanel, isSelected: isSelected)
     .help(row.path)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(AccessibilityText.fileRow(row))

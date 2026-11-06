@@ -152,6 +152,7 @@ extension AppModelControlWorktreesTests {
       return reply
     }
     try await waitUntil({ FileManager.default.fileExists(atPath: started.path) }, seconds: 15)
+    try #require(FileManager.default.fileExists(atPath: started.path))
     create.cancel()
     try await waitUntil({ finished.raised }, seconds: 10)
 
@@ -187,8 +188,10 @@ extension AppModelControlWorktreesTests {
       )
     }
     try await waitUntil({ started() == 1 }, seconds: 15)
+    try #require(started() == 1)
     let request = Task { await harness.model.answer(.newWorktree(order("feat/cli", in: harness))) }
     try await waitUntil({ started() == 2 }, seconds: 15)
+    try #require(started() == 2)
     harness.model.cancelWorktreeCreation()
     FileManager.default.createFile(atPath: gate.path, contents: nil)
 

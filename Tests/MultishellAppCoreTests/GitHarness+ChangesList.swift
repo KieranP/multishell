@@ -17,10 +17,12 @@ extension GitHarness {
 
   /// Every status read asked for has landed, so none lands mid-test to start a read itself.
   func statusReadsSettle(_ worktree: Worktree) async throws {
-    try await waitUntil {
+    let settled = {
       model.statuses[worktree.id] != nil && model.pendingStatusRefreshes.isEmpty
         && !model.statusReadLog.isReading(worktree.id)
     }
+    try await waitUntil(settled)
+    try #require(settled())
   }
 
   /// The tab's last read's counts, `nil` before one holds rows.

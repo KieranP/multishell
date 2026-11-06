@@ -160,6 +160,11 @@ menu command. Newest at the bottom.
   typed hard before it acts first. Only the arrows, the text, the scope and the
   row moved to going scroll the list; an arrow at either end brings its row back
   into view, and a report re-ranking it leaves the scroll where the user put it.
+- **A row build reads the model's observed values once a list**, not once a row.
+  `AppModel` is generic over its surface, so each read of an observed property
+  builds its key path again: 900 reads took 1.66 ms against 0.055 ms on a plain
+  class. Reading per row cost the switcher 13 to 16 ms a keystroke at 900
+  worktrees and 300 tabs in release; the sort's key closures read the same way.
 
 ## Reviewed and left as is
 

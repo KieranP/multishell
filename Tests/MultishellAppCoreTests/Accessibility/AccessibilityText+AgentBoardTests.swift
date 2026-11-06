@@ -87,17 +87,7 @@ struct AccessibilityTextAgentBoardTests {
     #expect(AccessibilityText.workers(out) == "2 subagents, Explore, subagent")
     #expect(
       AccessibilityText.pane(
-        SidebarPane(
-          id: UUID(),
-          title: "claude",
-          position: nil,
-          isFocused: false,
-          state: .running,
-          since: nil,
-          workers: out,
-          agentID: nil,
-          agentName: "Claude Code",
-        ),
+        .sample(state: .running, workers: out, agentName: "Claude Code"),
         at: now,
       )
         == "claude, tab, Claude Code, agent, Working, 2 subagents"

@@ -31,6 +31,7 @@ struct AppModelDirectoryWatchTests {
 
     let older = Task { await harness.model.refreshWorktreesOnRequest(of: harness.project) }
     try await waitUntil { !volumeChecks.received.isEmpty }
+    try #require(!volumeChecks.received.isEmpty)
     let added = harness.root.appending(path: "added", directoryHint: .isDirectory)
     try await harness.addOutsideTheApp("added", at: added)
     await harness.model.noteFileChanges([common.appending(path: "worktrees")])
@@ -49,6 +50,7 @@ struct AppModelDirectoryWatchTests {
 
     let forced = Task { await harness.model.rearmWatcher(evenIfUnchanged: true) }
     try await waitUntil { !volumeChecks.received.isEmpty }
+    try #require(!volumeChecks.received.isEmpty)
     await harness.model.rearmWatcher()
     gate.signal()
     await forced.value
@@ -65,6 +67,7 @@ struct AppModelDirectoryWatchTests {
 
     let forced = Task { await harness.model.rearmWatcher(evenIfUnchanged: true) }
     try await waitUntil { !volumeChecks.received.isEmpty }
+    try #require(!volumeChecks.received.isEmpty)
     let callsBeforeRemoval = harness.watcher.calls.count
     harness.model.removeProject(harness.project)
     await harness.model.rearmWatcher()

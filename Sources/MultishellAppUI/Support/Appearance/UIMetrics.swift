@@ -40,10 +40,11 @@ struct UIMetrics: Equatable {
   /// Between the segments in a well, a switch's and the file bar's arrows alike.
   static let segmentSpacing: Double = 2
 
-  /// A state dot inside a line of text: the agents row's lanes, a worker's.
+  /// A state dot inside a line of text: the agents row's lanes, a pane row's
+  /// rail, a worker's.
   static let inlineStateDotDiameter: Double = 6
-  /// Commands, paths and logs where the text does not follow the UI font:
-  /// the settings windows and a worktree's operation pane.
+  /// Paths, hook scripts and logs that do not follow the UI font: the settings
+  /// window, the New Worktree sheet's path and a worktree's operation pane.
   static let unscaledMonospacedSize: Double = 11
   /// The square a settings row's small glyph button takes: copy, and (i).
   static let settingsGlyphButtonSide: Double = 20
@@ -52,14 +53,6 @@ struct UIMetrics: Equatable {
   /// makes the mockup's 640. ViewSettingsWindowTests holds the pages to it.
   static let settingsWindowSize = CGSize(width: 860, height: 608)
   static let settingsSidebarWidth: Double = 214
-  /// What a page has to fit: the window less the sidebar and its rule, and
-  /// less the page's header band.
-  static var settingsPageSize: CGSize {
-    CGSize(
-      width: settingsWindowSize.width - settingsSidebarWidth - 1,
-      height: settingsWindowSize.height - settingsHeaderHeight,
-    )
-  }
   /// A settings page's margins and its groups' cards, rows and titles, as
   /// the approved mockup measured them.
   static let settingsPageTopInset: Double = 18

@@ -19,7 +19,7 @@ struct WorktreeGitIgnoredPathsTests {
     }
     try fixture.write("x\n", to: "dist/forced.js")
     _ = try await fixture.runner.run(["add", "-f", "dist/forced.js"], in: path)
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
 
     let ignored = await git.ignoredPaths(
       ["node_modules", "node_modules/a", "packages", "packages/p/node_modules", "src", "dist"],

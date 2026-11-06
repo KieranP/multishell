@@ -17,7 +17,7 @@ struct FileTabViewMenu: View {
         section(
           t("files-panel.change-scope"),
           options: ChangeScopeSwitch.options,
-          selection: ChangeScopeSwitch.selection(in: model),
+          selection: model.settingBinding(\.changeScope, write: model.setChangeScope),
         )
       }
       if offersLayout {

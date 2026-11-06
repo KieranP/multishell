@@ -40,6 +40,12 @@ extension SessionStates {
     return SessionState.mostUrgent(candidates)
   }
 
+  /// Whether anything is going on in a worktree: a terminal open in it, or a
+  /// state something reported for it.
+  func isActive(worktree id: Worktree.ID, sessions: [TerminalSession.ID]) -> Bool {
+    !sessions.isEmpty || state(ofWorktree: id, sessions: sessions) != nil
+  }
+
   /// Whether an agent reported Working here. The shell's own Working is its
   /// command's, an agent's only where `commandIsAgent`: one typed with no hooks.
   func isAgentWorking(in id: TerminalSession.ID, commandIsAgent: Bool) -> Bool {

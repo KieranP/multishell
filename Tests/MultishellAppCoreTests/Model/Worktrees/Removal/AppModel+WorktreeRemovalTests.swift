@@ -207,7 +207,7 @@ struct AppModelWorktreeRemovalTests {
     try await waitUntil { harness.model.worktreeOperations[worktree.id]?.stage == .preDeleteHook }
     #expect(harness.model.worktreeOperations[worktree.id]?.stage == .preDeleteHook)
     harness.model.cancelStage(of: worktree)
-    await harness.awaitOperationEnd(on: worktree.id)
+    try await harness.awaitOperationEnd(on: worktree.id)
 
     #expect(harness.model.worktreeOperations[worktree.id] == nil)
     #expect(harness.model.presentedError == nil)

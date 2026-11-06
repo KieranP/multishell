@@ -58,6 +58,7 @@ struct AppModelFileFindTests {
     defer { harness.tearDown() }
     let (tab, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
     harness.model.showFind()
     harness.model.setFindText("h", of: tab.id)
 
@@ -150,6 +151,7 @@ struct AppModelFileFindTests {
     defer { harness.tearDown() }
     let (tab, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
     harness.model.showFind()
     harness.model.setFindText("h", of: tab.id)
     #expect(harness.model.fileFindResults[tab.id] != nil)
@@ -180,6 +182,7 @@ struct AppModelFileFindTests {
     defer { harness.tearDown() }
     let (tab, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
     harness.model.showFind()
     harness.model.setFindText("h", of: tab.id)
     harness.model.noteFileFindShown(FileFindShown(text: "h", selectionMoves: 1), of: tab.id)

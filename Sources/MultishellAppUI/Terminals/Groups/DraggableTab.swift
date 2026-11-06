@@ -89,11 +89,11 @@ struct DraggableTab: View, @MainActor Equatable {
     }
   }
 
-  /// Every field, the model by identity and the binding by its value; the
-  /// body's reads of the model are observed on their own.
+  /// Every field but the drag binding, the model by identity; the body's reads
+  /// of the model and the drag are observed on their own.
   static func == (a: Self, b: Self) -> Bool {
     a.model === b.model && a.group == b.group && a.tab == b.tab
       && a.isFocusedGroup == b.isFocusedGroup && a.isShuffling == b.isShuffling
-      && a.width == b.width && a.theme == b.theme && a.drag == b.drag
+      && a.width == b.width && a.theme == b.theme
   }
 }

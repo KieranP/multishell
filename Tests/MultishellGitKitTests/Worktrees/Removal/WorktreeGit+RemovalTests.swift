@@ -28,7 +28,7 @@ struct WorktreeGitRemovalTests {
 
     try await fixture.coordinator.removeUnlinking(gone, in: fixture.project)
 
-    let listed = try await fixture.coordinator.git.list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "away"], "the away worktree is still on record")
     try FileManager.default.moveItem(at: aside, to: away)
     #expect(
@@ -52,7 +52,7 @@ struct WorktreeGitRemovalTests {
 
     try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
 
-    let listed = try await fixture.coordinator.git.list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "away"])
     try FileManager.default.moveItem(at: aside, to: away)
     #expect(try await fixture.head(of: away) == fixture.head(of: fixture.project.path))
@@ -69,7 +69,7 @@ struct WorktreeGitRemovalTests {
     try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
 
     #expect(FileManager.default.fileExists(atPath: notes.path))
-    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   @Test func aLockedStaleRecordIsForgottenAndTheDirectoryAtItsPathKept() async throws {
@@ -83,7 +83,7 @@ struct WorktreeGitRemovalTests {
     try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
 
     #expect(FileManager.default.fileExists(atPath: notes.path))
-    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   /// Stands in for a `safe.directory` refusal or a timeout inside the checkout alone.
@@ -112,7 +112,7 @@ struct WorktreeGitRemovalTests {
 
     #expect(FileManager.default.fileExists(atPath: ran.path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
-    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
   }
 
   /// git before 2.31 echoes `--path-format=absolute` back as an unknown flag
@@ -152,7 +152,7 @@ struct WorktreeGitRemovalTests {
     )
     #expect(FileManager.default.fileExists(atPath: ran.path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
-    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
   }
 
   @Test func aCheckoutGitListsInAnotherCaseIsStillTheCheckout() async throws {
@@ -172,7 +172,7 @@ struct WorktreeGitRemovalTests {
     try await fixture.coordinator.removeUnlinking(cased, in: fixture.project)
 
     #expect(!FileManager.default.fileExists(atPath: container.appendingPathComponent("wt").path))
-    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   @Test func aCloneThatTookAStaleRecordsPathIsNotTrashed() async throws {
@@ -204,7 +204,7 @@ struct WorktreeGitRemovalTests {
 
     try await fixture.coordinator.removeUnlinking(locked, in: fixture.project)
 
-    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   @Test func removingAWorktreeWhoseDirectoryIsGoneForgetsItsRecord() async throws {

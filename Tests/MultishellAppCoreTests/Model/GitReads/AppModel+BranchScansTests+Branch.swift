@@ -14,8 +14,10 @@ extension AppModelBranchScansTests {
     let feature = try await harness.featureInChangesList()
     harness.model.setChangeScope(.branch)
     try await waitUntil { harness.model.branchChanges[feature.id] != nil }
+    try #require(harness.model.branchChanges[feature.id] != nil)
     try await harness.statusReadsSettle(feature)
     try await waitUntil { !harness.model.branchChangesReads.isRunning(feature.id) }
+    try #require(!harness.model.branchChangesReads.isRunning(feature.id))
     let git = try #require(harness.model.coordinator?.git)
     git.runLog.setRecording(true)
     defer { git.runLog.setRecording(false) }
@@ -24,6 +26,7 @@ extension AppModelBranchScansTests {
     await harness.model.refreshBranchScan(of: harness.project)
     harness.model.scheduleBranchChangesRead(of: feature.id)
     try await waitUntil { !harness.model.branchChangesReads.isRunning(feature.id) }
+    try #require(!harness.model.branchChangesReads.isRunning(feature.id))
 
     let mergeBases = git.runLog.drain().finishedRuns.filter { $0.command.hasPrefix("merge-base") }
     #expect(mergeBases.count == 1, "the read asked for here, and none from the scan")

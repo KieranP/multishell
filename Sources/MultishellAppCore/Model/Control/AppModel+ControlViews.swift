@@ -54,8 +54,8 @@ extension AppModel {
     return .done
   }
 
-  /// Whose settings a request asks for: a project named, else the one shown,
-  /// else the selection's, refused where none of those is to be had.
+  /// Whose settings a request asks for: a project named, else the one shown, else
+  /// the selection's or the only project, refused where none of those is to be had.
   private func settingsScopeAsked(
     inProject: Bool,
     project id: String?,
@@ -66,7 +66,9 @@ extension AppModel {
       return .success(.project(project.id))
     }
     if settingsLocation.scope != .allProjects { return .success(settingsLocation.scope) }
-    guard let project = settingsWindowFallbackProject else { return .failure(.noProjectChosen) }
+    guard let project = projectOrOnlyProject(of: workspace.selectedWorktree) else {
+      return .failure(.noProjectChosen)
+    }
     return .success(.project(project.id))
   }
 

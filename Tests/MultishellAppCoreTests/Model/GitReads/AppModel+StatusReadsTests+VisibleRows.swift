@@ -48,6 +48,7 @@ extension AppModelStatusReadsTests {
     harness.model.setExpanded(true, for: harness.project)
 
     try await waitUntil { harness.model.statuses[side.id] != nil }
+    try #require(harness.model.statuses[side.id] != nil)
     #expect(harness.model.statuses[otherMain.id] == unread)
   }
 

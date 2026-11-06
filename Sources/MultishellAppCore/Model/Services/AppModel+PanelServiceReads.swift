@@ -7,26 +7,6 @@ extension AppModel {
   /// How many of a branch's runs the CI page lists.
   private static var ciHistoryLength: Int { 10 }
 
-  /// The page the panel shows: a services' page whose tool is gone shows
-  /// Files, rather than a page nothing can fill.
-  public var shownFilesPanelMode: FilesPanelMode {
-    switch workspace.filesPanelMode {
-    case .ciRuns: showsCIPanelPage ? .ciRuns : .files
-    case .pullRequest: showsPullRequestPanelPage ? .pullRequest : .files
-    case .files, .changes: workspace.filesPanelMode
-    }
-  }
-
-  /// The pull request page's tab, wherever a host's tool is installed.
-  public var showsPullRequestPanelPage: Bool { !remoteState.connections.pullRequestHosts.isEmpty }
-
-  public var showsCIPanelPage: Bool { !readableCIProviders.isEmpty }
-
-  /// `nil` once a rerun has the run going again or passed.
-  public func failureReport(of run: CIRun) -> CIFailureReport? {
-    run.status == .failed ? remoteState.failureReports[run.id]?.value : nil
-  }
-
   /// A page whose host or provider is turned off or gone keeps nothing it read,
   /// so its return does not draw the old checks or runs as current.
   func forgetPanelReadsWithoutAService(ofProjects ids: [Project.ID]) {

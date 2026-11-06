@@ -70,7 +70,7 @@ struct WorktreeCoordinatorMergesTests {
     )
     #expect(states["rebased"] == .merged(.patchEquivalent, into: "main"))
     // Ancestry alone would have missed it.
-    let merged = await WorktreeGit(runner: fixture.runner).mergedBranches(
+    let merged = await fixture.git.mergedBranches(
       into: "main",
       in: fixture.project,
     )
@@ -149,7 +149,7 @@ struct WorktreeCoordinatorMergesTests {
     )
 
     let inputs = try await mergeInputs(fixture)
-    let cherry = await WorktreeGit(runner: fixture.runner).isPatchEquivalent(
+    let cherry = await fixture.git.isPatchEquivalent(
       "merged-in",
       against: "main",
       in: fixture.project,
@@ -214,7 +214,7 @@ struct WorktreeCoordinatorMergesTests {
 
     _ = try await fixture.addWorktree(onNewBranch: "old", from: cutFrom)
 
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
+    let worktreeGit = fixture.git
     #expect(
       await worktreeGit.hasWorkOfItsOwn("old", in: fixture.project) == false,
       "a bare repository logs no branch creation, so it has nothing to show for itself",
@@ -344,7 +344,7 @@ struct WorktreeCoordinatorMergesTests {
 
     let inputs = try await mergeInputs(fixture)
     // git itself calls it merged, which is the whole trap.
-    let merged = await WorktreeGit(runner: fixture.runner).mergedBranches(
+    let merged = await fixture.git.mergedBranches(
       into: inputs.defaultBranch.shortName,
       in: fixture.project,
     )

@@ -127,8 +127,7 @@ struct ShellIntegrationScriptsTests {
         encoding: .utf8,
       )
     }
-    var environment = integration.environment(termProgram: nil)
-    environment["ZDOTDIR"] = integration.zshDirectory.path
+    var environment = integration.zshEnvironment(termProgram: nil)
     environment["MULTISHELL_USER_ZDOTDIR"] = userZdotdir?.path
     let file = try await Detached.output(
       of: "/bin/zsh",

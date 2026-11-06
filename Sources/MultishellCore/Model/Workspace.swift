@@ -119,7 +119,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var diffAlgorithm = DiffAlgorithm.default
   /// Unified or Split, chosen in any file tab's bar and kept for the next.
   public internal(set) var fileTabLayout = FileTabLayout.default
-  /// Files or Git, chosen in any worktree's panel and kept for the next.
+  /// The Files panel's page, chosen in any worktree's panel and kept for the next.
   public internal(set) var filesPanelMode = FilesPanelMode.default
   /// Modified or Branch, chosen in the panel or any file tab's bar, which
   /// both follow it.

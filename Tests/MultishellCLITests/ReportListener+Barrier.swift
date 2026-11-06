@@ -14,10 +14,12 @@ extension ReportListener {
       environment: ["MULTISHELL_SOCKET": path.path],
     )
     #expect(barrier.succeeded, "\(barrier.standardError)")
-    try await waitUntil {
+    let barrierArrived = { [recorder] in
       let last = SessionStateReport.parse(recorder.received.last ?? "")
       return last?.state == .done && last?.agentID == "opencode"
     }
+    try await waitUntil(barrierArrived)
+    try #require(barrierArrived())
     return recorder.received
   }
 }

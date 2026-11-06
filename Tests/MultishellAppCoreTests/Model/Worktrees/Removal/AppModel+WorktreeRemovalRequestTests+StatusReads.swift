@@ -40,7 +40,7 @@ extension AppModelWorktreeRemovalRequestTests {
     harness.model.requestWorktreeRemoval(of: side)
 
     try await waitUntil { harness.worktree(onBranch: "side") == nil }
-    await harness.awaitOperationEnd(on: side.id)
+    try await harness.awaitOperationEnd(on: side.id)
     let runs = try String(contentsOf: log, encoding: .utf8)
     #expect(runs == "ran\n")
   }
@@ -124,6 +124,7 @@ extension AppModelWorktreeRemovalRequestTests {
     try await waitUntil { harness.statusRunCount() > 0 }
     try Data().write(to: gate)
     try await waitUntil { fake.pendingWorktreeRemoval != nil }
+    try #require(fake.pendingWorktreeRemoval != nil)
 
     #expect(harness.statusRunCount() == 1)
   }

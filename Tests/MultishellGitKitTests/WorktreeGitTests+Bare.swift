@@ -9,11 +9,11 @@ extension WorktreeGitTests {
     let (fixture, checkout) = try await RepositoryFixture.makeBare()
     defer { fixture.tearDown() }
 
-    #expect(await fixture.coordinator.git.isRepository(fixture.project.path))
-    #expect(await fixture.coordinator.git.isRepository(checkout))
-    #expect(await fixture.coordinator.git.isRepository(fixture.root) == false)
+    #expect(await fixture.git.isRepository(fixture.project.path))
+    #expect(await fixture.git.isRepository(checkout))
+    #expect(await fixture.git.isRepository(fixture.root) == false)
     #expect(
-      try await fixture.coordinator.git.mainWorktreePath(containing: checkout)
+      try await fixture.git.mainWorktreePath(containing: checkout)
         == fixture.project.path
     )
     #expect(fixture.project.name == "repo")
@@ -23,7 +23,7 @@ extension WorktreeGitTests {
     let (fixture, _) = try await RepositoryFixture.makeBare()
     defer { fixture.tearDown() }
 
-    let listed = try await fixture.coordinator.git.list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
     #expect(listed.map(\.isBare) == [true, false])
     #expect(listed[0].isPrimary && listed[0].name == "repo.git")
     #expect(listed[1].branch == "main")
@@ -35,8 +35,8 @@ extension WorktreeGitTests {
   @Test func worktreesAreCreatedAndRemovedFromTheBareRepository() async throws {
     let (fixture, _) = try await RepositoryFixture.makeBare()
     defer { fixture.tearDown() }
-    #expect(await fixture.coordinator.git.hasCommits(fixture.project))
-    #expect(try await fixture.coordinator.git.currentBranch(fixture.project) == "main")
+    #expect(await fixture.git.hasCommits(fixture.project))
+    #expect(try await fixture.git.currentBranch(fixture.project) == "main")
 
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "feat",
@@ -50,14 +50,14 @@ extension WorktreeGitTests {
       in: fixture.project,
       deletesBranch: true,
     )
-    #expect(try await fixture.coordinator.git.list(fixture.project).count == 2)
+    #expect(try await fixture.git.list(fixture.project).count == 2)
     #expect(try await fixture.branches() == ["main"])
   }
 
   @Test func theCommonDirectoryIsTheBareRepositoryItself() async throws {
     let (fixture, _) = try await RepositoryFixture.makeBare()
     defer { fixture.tearDown() }
-    let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
+    let common = try await fixture.git.commonGitDirectory(fixture.project)
     #expect(common.standardizedFileURL.path == fixture.project.path.path)
   }
 }

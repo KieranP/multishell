@@ -36,7 +36,7 @@ struct WorktreeCoordinatorBranchesTests {
       settings: fixture.worktreeSettings,
     )
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
     let worktree = try #require(
       listed.first { $0.path.standardizedFileURL == path.standardizedFileURL }
     )
@@ -60,7 +60,7 @@ struct WorktreeCoordinatorBranchesTests {
       in: fixture.project.path,
     )
 
-    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
     let detached = try #require(listed.first { $0.path.lastPathComponent == "detached" })
     let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)

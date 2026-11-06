@@ -11,7 +11,7 @@ struct OverrideRow<Value: Equatable & Sendable, Control: View>: View {
   let label: String
   let info: String
   /// The Global column's cell: what the project follows and where it is set.
-  let column: OverrideGlobalValue
+  let globalValue: OverrideGlobalValue
   /// What starting an override seeds it with: the value in force, which the
   /// repository's file may have decided.
   let fallback: Value
@@ -27,7 +27,7 @@ struct OverrideRow<Value: Equatable & Sendable, Control: View>: View {
         InfoLabel(label, info: info)
           .fontWeight(isOverridden.wrappedValue ? .semibold : .regular)
       } global: {
-        OverrideGlobalCell(model: model, column: column)
+        OverrideGlobalCell(model: model, globalValue: globalValue)
       } override: {
         if isOverridden.wrappedValue {
           control(model.overrideField(setting, of: project, fallback: fallback))

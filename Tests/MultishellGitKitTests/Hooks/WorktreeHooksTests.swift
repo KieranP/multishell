@@ -125,7 +125,7 @@ struct WorktreeHooksTests {
       #expect((failure.underlying as? ProcessFailure)?.message == "starting")
     }
     #expect(ContinuousClock.now - started < .seconds(10))
-    #expect(try await fixture.coordinator.git.list(project).count == 1, "nothing was created")
+    #expect(try await fixture.git.list(project).count == 1, "nothing was created")
   }
 
   @Test func theStopperEndsAPostCreateHookAndTheFailureSaysTheUserAsked() async throws {
@@ -151,7 +151,7 @@ struct WorktreeHooksTests {
     } catch let failure as HookFailure {
       #expect(failure.stage == .postCreate && failure.stopReason == .byUser)
     }
-    #expect(try await fixture.coordinator.git.list(project).count == 2, "the worktree exists")
+    #expect(try await fixture.git.list(project).count == 2, "the worktree exists")
   }
 
   @Test func aFailingPostCreateHookLeavesTheWorktreeInPlace() async throws {
@@ -187,7 +187,7 @@ struct WorktreeHooksTests {
       )
     }
 
-    #expect(try await fixture.coordinator.git.list(project).count == 1)
+    #expect(try await fixture.git.list(project).count == 1)
     #expect(try await fixture.branches() == ["main"], "git was never asked")
     #expect(
       !FileManager.default.fileExists(
@@ -242,7 +242,7 @@ struct WorktreeHooksTests {
     }
 
     #expect(FileManager.default.fileExists(atPath: path.path))
-    #expect(try await fixture.coordinator.git.list(project).count == 2)
+    #expect(try await fixture.git.list(project).count == 2)
   }
 
   @Test func aPreDeleteHookRunsInTheWorktreeBeforeItGoes() async throws {
@@ -283,7 +283,7 @@ struct WorktreeHooksTests {
       encoding: .utf8,
     )
     #expect(physicalPath(printed: ran) == Scratch.physicalPath(of: project.path))
-    #expect(try await fixture.coordinator.git.list(project).count == 1)
+    #expect(try await fixture.git.list(project).count == 1)
   }
 
   @Test func aMultiLineHookRunsItsLinesInOrderAndStopsAtAFailure() async throws {

@@ -13,7 +13,7 @@ extension WorktreeGitBranchesTests {
     let left = try await fixture.tip(of: "feat")
     _ = try await fixture.runner.run(["reset", "-q", "--hard", start], in: fixture.project.path)
 
-    let held = try await WorktreeGit(runner: fixture.runner)
+    let held = try await fixture.git
       .tipsHeld(byBranch: "feat", in: fixture.project)
 
     #expect(held == [start, left])
@@ -27,7 +27,7 @@ extension WorktreeGitBranchesTests {
       at: fixture.project.path.appendingPathComponent(".git/logs/refs/heads/feat")
     )
 
-    let held = try await WorktreeGit(runner: fixture.runner)
+    let held = try await fixture.git
       .tipsHeld(byBranch: "feat", in: fixture.project)
 
     #expect(held.isEmpty)
@@ -38,7 +38,7 @@ extension WorktreeGitBranchesTests {
     defer { fixture.tearDown() }
 
     await #expect(throws: (any Error).self) {
-      try await WorktreeGit(runner: fixture.runner)
+      try await fixture.git
         .tipsHeld(byBranch: "missing", in: fixture.project)
     }
   }

@@ -19,7 +19,7 @@ struct ProjectWorktreesPage: View {
           global: defaults.worktreeDirectory,
           label: t("project.worktree-path"),
           info: t("project.worktree-path-info"),
-          column: \.directoryGlobalValue,
+          globalValue: \.directoryGlobalValue,
           caption: { model.worktreeContainerCaption(for: project, isOverridden: $0) },
           control: { path in TextField(t("project.worktree-path"), text: path) },
         )
@@ -30,7 +30,7 @@ struct ProjectWorktreesPage: View {
           global: defaults.branchPrefix,
           label: t("project.branch-prefix"),
           info: t("project.branch-prefix-info"),
-          column: \.prefixGlobalValue,
+          globalValue: \.prefixGlobalValue,
           caption: { model.branchPrefixCaption(for: project, isOverridden: $0) },
           control: { prefix in
             TextField(
@@ -46,7 +46,7 @@ struct ProjectWorktreesPage: View {
           setting: \.defaultBranch,
           label: t("project.default-branch"),
           info: t("project.default-branch-info"),
-          column: model.defaultBranchGlobalValue(for: project),
+          globalValue: model.defaultBranchGlobalValue(for: project),
           fallback: model.defaultBranchName(of: project),
           caption: { _ in model.defaultBranchCaption(for: project) },
           control: { branch in

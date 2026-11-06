@@ -19,8 +19,6 @@ struct SettingsGroup<Content: View, Header: View, Footer: View>: View {
       card
       if Footer.self != EmptyView.self {
         footer()
-          .font(.system(size: UIMetrics.settingsSmallTextSize))
-          .foregroundStyle(SettingsColors.secondaryText)
           .padding(.horizontal, UIMetrics.settingsRowSideInset)
           .padding(.top, 6)
       }

@@ -16,6 +16,7 @@ struct AppModelFilesPanelWatchTests {
     harness.model.select(main)
     harness.model.setShowsFilesPanel(true)
     try await waitUntil { !harness.model.ignoredEntriesReads.isRunning(main.id) }
+    try #require(!harness.model.ignoredEntriesReads.isRunning(main.id))
     let gitDirectory = try #require(harness.model.commonGitDirectories[main.projectID])
     let targets = harness.model.fileChangeTargets([
       gitDirectory.appending(path: "index"), main.path.appending(path: "build"),

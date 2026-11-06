@@ -16,7 +16,7 @@ extension WorktreeGitStatusTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     for name in ["a", "b", "c"] { try fixture.write("x\n", to: "new/\(name)") }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
@@ -49,7 +49,7 @@ extension WorktreeGitStatusTests {
     try fixture.write("s\n", to: "staged.txt")
     _ = try await fixture.runner.run(["add", "staged.txt"], in: path)
     try fixture.write("1\n2\n", to: "with space/naïve\nname.txt")
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     let status = try await git.status(of: main)
@@ -94,7 +94,7 @@ extension WorktreeGitStatusTests {
     try fixture.write("a\nb\nc\n", to: "both.txt")
     try fixture.write("l\nm\n", to: "loose.txt")
     try fixture.write("new\n", to: "new.txt")
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     let staged = try await git.status(of: main, counting: .stagedOnly)
@@ -130,7 +130,7 @@ extension WorktreeGitStatusTests {
       ["rm", "-q", "--cached", "keep.txt"],
       in: fixture.project.path,
     )
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     let status = try await git.status(of: main)
@@ -150,7 +150,7 @@ extension WorktreeGitStatusTests {
     try await fixture.commitOnBranch("other", file: "f.txt", content: "x\nb\n", message: "theirs")
     try await fixture.commit("mine", file: "f.txt", content: "y\nb\n")
     _ = try? await fixture.runner.run(["merge", "other"], in: fixture.project.path)
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     for indicator in GitStatusIndicator.allCases {
@@ -170,7 +170,7 @@ extension WorktreeGitStatusTests {
     try fixture.write("one\n", to: "a.txt")
     _ = try await fixture.runner.run(["add", "a.txt"], in: fixture.project.path)
     try fixture.write("one\ntwo\n", to: "a.txt")
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     let status = try await git.status(of: main)
@@ -191,7 +191,7 @@ extension WorktreeGitStatusTests {
     defer { fixture.tearDown() }
     let total = UntrackedLineCounter.fileLimit + 5
     for index in 0..<total { try fixture.write("x\n", to: "many/\(index).txt") }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
 
     let status = try await git.status(of: main)
@@ -274,7 +274,7 @@ extension WorktreeGitStatusTests {
     let nested = path.appending(path: "nested", directoryHint: .isDirectory)
     try await TestRepository.initialise(at: nested, withFirstCommit: true, using: fixture.runner)
     try fixture.write("x\n", to: "nested/loose.txt")
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")
     let everyFile = try await fixture.runner.run(
       ["status", "--porcelain=v1", "-z", "--untracked-files=all"],

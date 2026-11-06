@@ -37,12 +37,14 @@ struct AppModelFetchTests {
     )
     let fetch = Task { await harness.model.fetch(harness.project) }
     try await waitUntil { FileManager.default.fileExists(atPath: fetched.path) }
+    try #require(FileManager.default.fileExists(atPath: fetched.path))
 
     await harness.model.refreshBranchScan(of: harness.project)
     try await waitUntil { host.calls.count == 2 }
     try Data().write(to: gate)
     await fetch.value
     try await waitUntil { harness.servicesAreSettled() }
+    try #require(harness.servicesAreSettled())
 
     #expect(host.calls == ["list", "list"])
   }
@@ -131,6 +133,7 @@ struct AppModelFetchTests {
 
     await harness.model.fetch(harness.project)
     try await waitUntil { harness.servicesAreSettled() }
+    try #require(harness.servicesAreSettled())
 
     #expect(host.calls == ["list", "list"])
   }

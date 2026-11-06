@@ -208,6 +208,16 @@
     Detected cell: an in-memory pass over the refs already read.
   - `PathText` writes home as `~` everywhere, the New Worktree sheet included,
     whose planned location already did.
+  - The window's button, switch and pop-up styles stay in `Settings/Layout/`
+    beside `SettingsToggleStyle`: splitting styles by which control wears them
+    would part four of five.
+  - (i) buttons and the Global cell keep the system's `.secondary`; titles,
+    headings and captions take `SettingsColors.secondaryText`, so the override
+    table's heading matches a group's title.
+  - `ThemePicker` stays in `Shared/` although only the Terminal menu draws it: a
+    folder follows what a file is, not how many places call it.
+  - `Theme.builtins` and `theme(from:)`'s default stay public: 24 AppUI test
+    files name them without `@testable` importing Core.
 - **A hook file opens in a popover**, which inline added 166 pt a row.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something

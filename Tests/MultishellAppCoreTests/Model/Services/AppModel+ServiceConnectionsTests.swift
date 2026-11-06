@@ -226,6 +226,7 @@ struct AppModelServiceConnectionsTests {
     provider.allowReads()
     await harness.model.checkToolsCanRead()
     try await waitUntil { provider.calls.contains("recent") }
+    try #require(provider.calls.contains("recent"))
     await harness.model.remoteState.servicePoll?.value
 
     #expect(host.calls == ["list"])

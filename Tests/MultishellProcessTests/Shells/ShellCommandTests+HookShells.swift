@@ -178,9 +178,8 @@ extension ShellCommandTests {
   }
 
   @Test(
-    arguments: InstalledShells.only(
-      ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"] + InstalledShells.fishCandidates
-    )
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"])
+      + InstalledShells.fishes
   )
   func aScriptStopsAtItsFirstFailingLineWhateverTheLoginShell(path: String) async throws {
     let shell = try ScratchShell(path)
@@ -216,7 +215,7 @@ extension ShellCommandTests {
   }
 
   @Test(
-    arguments: InstalledShells.only(["/bin/zsh", "/bin/tcsh"] + InstalledShells.fishCandidates)
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/tcsh"]) + InstalledShells.fishes
   )
   func aScriptIsReadAsShWhateverTheLoginShell(path: String) async throws {
     let shell = try ScratchShell(path)

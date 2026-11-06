@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -67,7 +68,7 @@ struct AppModelProjectRemovalTests {
     // The references a window and a row hold, which no refresh will come
     // back to clear once the project has left.
     harness.model.beginRenamingWorktree(worktrees[0])
-    harness.model.requestSettings(for: project)
+    harness.model.showSettings(of: project)
     // The dialogs a second scene can leave standing over a removal.
     harness.model.requestNewWorktree(in: project)
     await harness.model.requestWorktreeRemoval(of: worktrees[1])?.value
@@ -139,6 +140,20 @@ struct AppModelProjectRemovalTests {
 
     harness.model.removeProject(harness.project)
     #expect(harness.model.lastCommitDates.isEmpty)
+  }
+
+  @Test func removingTheProjectShownReturnsTheWindowToAllProjects() {
+    let harness = Harness()
+    let other = Scratch.path("settings-window")
+    defer { Scratch.remove(other) }
+    let second = harness.store.addProject(at: other)
+    harness.model.showSettings(of: second)
+
+    harness.model.removeProject(harness.project)
+    #expect(harness.model.settingsLocation.scope == .project(second.id), "another project's stays")
+
+    harness.model.removeProject(second)
+    #expect(harness.model.settingsLocation == .start)
   }
 
   @Test func removingTheProjectEndsAPostDeleteHookPastItsRecord() async throws {

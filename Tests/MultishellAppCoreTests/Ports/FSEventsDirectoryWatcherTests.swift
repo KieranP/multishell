@@ -137,6 +137,7 @@ struct FSEventsDirectoryWatcherTests {
 
     let supersededWatch = Task { await watcher.watch([superseded]) }
     try await waitUntil { !asked.received.isEmpty }
+    try #require(!asked.received.isEmpty)
     await watcher.watch([current])
     gate.signal()
     await supersededWatch.value

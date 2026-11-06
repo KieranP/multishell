@@ -13,6 +13,7 @@ struct AppModelFileTabReadsTests {
     defer { harness.tearDown() }
     let (tab, main) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
     #expect(harness.model.changeKind(of: tab) == nil, "unchanged since the commit")
 
     try "hello\nmore\n".write(
@@ -52,6 +53,7 @@ struct AppModelFileTabReadsTests {
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
     try await waitUntil { harness.model.isFileGone(of: tab.id) }
+    try #require(harness.model.isFileGone(of: tab.id))
 
     try text.write(to: readme, atomically: true, encoding: .utf8)
     harness.model.noteFileTabChanged(tab.id)
@@ -79,6 +81,7 @@ struct AppModelFileTabReadsTests {
     defer { harness.tearDown() }
     let (tab, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
 
     harness.model.noteFileTabSelection("hello", of: tab.id)
     harness.model.showFind()
@@ -115,6 +118,7 @@ struct AppModelFileTabReadsTests {
 
     harness.model.reconcileSessions(takingFocus: false)
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
 
     #expect(harness.model.pendingFileTabReads[tab.id] == nil)
   }
@@ -132,9 +136,11 @@ struct AppModelFileTabReadsTests {
     try text.write(to: readme, atomically: true, encoding: .utf8)
     harness.model.noteFileTabChanged(tab.id)
     try await waitUntil { !harness.model.isFileGone(of: tab.id) }
+    try #require(!harness.model.isFileGone(of: tab.id))
     try FileManager.default.removeItem(at: readme)
     harness.model.noteFileTabChanged(tab.id)
     try await waitUntil { harness.model.isFileGone(of: tab.id) }
+    try #require(harness.model.isFileGone(of: tab.id))
 
     harness.model.activateTab(tab.id)
 
@@ -148,7 +154,9 @@ struct AppModelFileTabReadsTests {
     defer { harness.tearDown() }
     let (tab, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
     try await waitUntil { harness.model.pendingFileTabReads[tab.id] == nil }
+    try #require(harness.model.pendingFileTabReads[tab.id] == nil)
     let log = { harness.model.fileTabReadLog }
     harness.model.noteFileTabChanged(tab.id)
     await harness.readBegins(in: tab.id)
@@ -161,6 +169,7 @@ struct AppModelFileTabReadsTests {
       !log().isReading(tab.id) && harness.model.pendingFileTabReads[tab.id] == nil
         && !log().owed.contains(tab.id)
     }
+    try #require(!log().isReading(tab.id) && harness.model.pendingFileTabReads[tab.id] == nil)
     #expect(!log().owed.contains(tab.id))
   }
 
@@ -220,6 +229,7 @@ struct AppModelFileTabReadsTests {
     let (tab, main) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
     try await waitUntil { harness.model.pendingFileTabReads[tab.id] == nil }
+    try #require(harness.model.pendingFileTabReads[tab.id] == nil)
     try "hello\nmore\n".write(
       to: main.path.appending(path: "README.md"),
       atomically: true,
@@ -298,7 +308,9 @@ struct AppModelFileTabReadsTests {
     let other = try await harness.createWorktree(onBranch: "other")
     let (tab, _) = try harness.openFileTab()
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
     try await waitUntil { harness.model.pendingFileTabReads[tab.id] == nil }
+    try #require(harness.model.pendingFileTabReads[tab.id] == nil)
     harness.model.toggleAgentBoard()
     harness.model.reconcileSessions(takingFocus: false)
 

@@ -8,7 +8,7 @@ import Testing
 @Suite
 struct WorktreeGitBranchChangesTests {
   private static func base(of fixture: RepositoryFixture) async throws -> DefaultBranch {
-    let refs = await WorktreeGit(runner: fixture.runner).branchRefs(fixture.project)?.refs ?? []
+    let refs = await fixture.git.branchRefs(fixture.project)?.refs ?? []
     return try #require(DefaultBranch.resolve(from: refs, override: nil))
   }
 
@@ -16,7 +16,7 @@ struct WorktreeGitBranchChangesTests {
     in fixture: RepositoryFixture,
     at tree: URL? = nil,
   ) async throws -> BranchChanges {
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let path = tree ?? fixture.project.path
     let status = try await git.status(
       inRepositoryAt: path,
@@ -105,7 +105,7 @@ struct WorktreeGitBranchChangesTests {
     try await fixture.commit("alone", file: "alone.txt", content: "alone\n")
 
     let changes = try await Self.branchChanges(in: fixture)
-    let mergeBase = try await WorktreeGit(runner: fixture.runner).mergeBase(
+    let mergeBase = try await fixture.git.mergeBase(
       with: base,
       inRepositoryAt: fixture.project.path,
     )
@@ -117,7 +117,7 @@ struct WorktreeGitBranchChangesTests {
   @Test func aNewFileCommittedSinceTheStatusReadIsCountedOnce() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let base = try await Self.base(of: fixture)
     _ = try await fixture.runner.run(["checkout", "-q", "-b", "work"], in: fixture.project.path)
     try fixture.write("a\nb\nc\n", to: "new.txt")
@@ -168,7 +168,7 @@ struct WorktreeGitBranchChangesTests {
       ],
       in: fixture.root,
     )
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let refs = await git.branchRefs(Project(path: clone))?.refs ?? []
     let base = try #require(DefaultBranch.resolve(from: refs, override: nil))
 
@@ -187,12 +187,7 @@ struct WorktreeGitBranchChangesTests {
       """
     )
     defer { fake.tearDown() }
-    let base = DefaultBranch(
-      shortName: "main",
-      nameWithoutRemote: "main",
-      tip: "abc",
-      fullName: "refs/heads/main",
-    )
+    let base = DefaultBranch.sample("main")
 
     let changes = await WorktreeGit(runner: fake.runner).branchChanges(
       inRepositoryAt: fake.directory,

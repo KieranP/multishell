@@ -6,7 +6,7 @@ extension AppModel {
   public var notificationSettingsCaption: String {
     NotificationSettingsText.caption(
       for: notificationAuthorization,
-      settingsLocation: platform.notificationSettingsLocation,
+      notificationSettingsLocation: platform.notificationSettingsLocation,
     )
   }
 

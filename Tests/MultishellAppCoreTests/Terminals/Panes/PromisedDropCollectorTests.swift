@@ -28,13 +28,6 @@ struct PromisedDropCollectorTests {
     }
   }
 
-  /// Twenty seconds before giving up, which is a two-core runner's headroom
-  /// over a handful of operations.
-  private func awaitDelivery(_ delivery: Recorder<[URL]>) async throws -> [URL] {
-    try await waitUntil({ !delivery.received.isEmpty }, seconds: 20)
-    return try #require(delivery.received.first, "the drop was never delivered")
-  }
-
   @Test func aFileReportedOffTheMainActorIsDelivered() async throws {
     let delivery = Recorder<[URL]>()
     let collector = PromisedDropCollector(expecting: [1]) { delivery.record($0) }
@@ -42,7 +35,7 @@ struct PromisedDropCollectorTests {
 
     report([(0, shot)], to: collector)
 
-    #expect(try await awaitDelivery(delivery) == [shot])
+    #expect(try #require(await delivery.firstArrival()) == [shot])
   }
 
   @Test func theFilesArriveInTheDragsOrderWhateverOrderTheyLandIn() async throws {
@@ -55,7 +48,7 @@ struct PromisedDropCollectorTests {
       to: collector,
     )
 
-    #expect(try await awaitDelivery(delivery) == files)
+    #expect(try #require(await delivery.firstArrival()) == files)
   }
 
   @Test func aFileTheSourceRefusesIsLeftOutAndTheRestArrive() async throws {
@@ -65,7 +58,7 @@ struct PromisedDropCollectorTests {
 
     report([(0, nil), (1, written)], to: collector)
 
-    #expect(try await awaitDelivery(delivery) == [written])
+    #expect(try #require(await delivery.firstArrival()) == [written])
   }
 
   /// Nothing arriving is still an answer: the caller pastes nothing for it,
@@ -76,7 +69,7 @@ struct PromisedDropCollectorTests {
 
     report([(0, nil), (1, nil)], to: collector)
 
-    #expect(try await awaitDelivery(delivery).isEmpty)
+    #expect(try #require(await delivery.firstArrival()).isEmpty)
   }
 
   /// A source reporting twice breaks its own promise, but the extra file is still kept.
@@ -92,7 +85,7 @@ struct PromisedDropCollectorTests {
     #expect(delivery.received.isEmpty, "the second source has not reported yet")
     collector.received(late, from: 1)
 
-    #expect(try await awaitDelivery(delivery) == [first, second, late])
+    #expect(try #require(await delivery.firstArrival()) == [first, second, late])
   }
 
   /// AppKit calls the reader once per promised name, so counting items delivered on the
@@ -109,7 +102,7 @@ struct PromisedDropCollectorTests {
     #expect(delivery.received.isEmpty, "the first item has another file coming")
     collector.received(second, from: 0)
 
-    #expect(try await awaitDelivery(delivery) == [first, second, other])
+    #expect(try #require(await delivery.firstArrival()) == [first, second, other])
   }
 
   /// A source is not obliged to answer, and one that never does would hold the drop, with

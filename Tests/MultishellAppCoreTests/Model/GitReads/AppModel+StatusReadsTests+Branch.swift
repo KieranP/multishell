@@ -24,6 +24,7 @@ extension AppModelStatusReadsTests {
     harness.model.setChangeScope(.branch)
     await harness.model.refreshStatuses()
     try await waitUntil { names() == ["README.md"] }
+    try #require(names() == ["README.md"])
     try await harness.statusReadsSettle(feature)
     try "hello\n".write(to: readme, atomically: true, encoding: .utf8)
 

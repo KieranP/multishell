@@ -10,7 +10,7 @@ struct WorktreeGitRemotesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
 
-    #expect(await fixture.coordinator.git.remotes(fixture.project) == [])
+    #expect(await fixture.git.remotes(fixture.project) == [])
   }
 
   @Test func publishingPushesTheBranchAndMakesItTrackTheRemoteOne() async throws {
@@ -19,14 +19,14 @@ struct WorktreeGitRemotesTests {
     try await fixture.addOrigin()
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
 
-    try await fixture.coordinator.git.publish(
+    try await fixture.git.publish(
       "feat",
       as: "feat",
       to: "origin",
       in: fixture.project.path,
     )
 
-    let remotes = try #require(await fixture.coordinator.git.remotes(fixture.project))
+    let remotes = try #require(await fixture.git.remotes(fixture.project))
     #expect(remotes.map(\.name) == ["origin"])
     let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
@@ -46,7 +46,7 @@ struct WorktreeGitRemotesTests {
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     try await follow("origin/main", from: "feat", in: fixture)
 
-    try await fixture.coordinator.git.publish(
+    try await fixture.git.publish(
       "feat",
       as: "feat",
       to: "origin",
@@ -63,7 +63,7 @@ struct WorktreeGitRemotesTests {
     try await fixture.addFork()
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     try await follow("origin/main", from: "feat", in: fixture)
-    let git = fixture.coordinator.git
+    let git = fixture.git
     let path = fixture.project.path
 
     #expect(await git.configuredPushRemote(ofBranch: "feat", in: path) == nil)
@@ -85,7 +85,7 @@ struct WorktreeGitRemotesTests {
       in: fixture.project.path,
     )
 
-    try await fixture.coordinator.git.publish(
+    try await fixture.git.publish(
       "feat",
       as: "feat",
       to: "fork",
@@ -109,7 +109,7 @@ struct WorktreeGitRemotesTests {
     try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     try await follow("origin/main", from: "feat", in: fixture)
 
-    try await fixture.coordinator.git.publish(
+    try await fixture.git.publish(
       "feat",
       as: "feat",
       to: "fork",

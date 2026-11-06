@@ -38,6 +38,7 @@ struct GhosttyLinkClicksTests {
     try await waitUntil { acted == [inEditor("fast")] }
     gate.signal()
     try await waitUntil { slowAnswered.withLock { $0 } }
+    try #require(slowAnswered.withLock { $0 })
     clicks.judge(click("after")) { acted.append($0) }
     try await waitUntil { acted.count == 2 }
 
@@ -88,6 +89,7 @@ struct GhosttyLinkClicksTests {
     clicks.judge(click("second")) { acted.append($0) }
     firstGate.signal()
     try await waitUntil { firstAnswered.withLock { $0 } }
+    try #require(firstAnswered.withLock { $0 })
     secondGate.signal()
     try await waitUntil { !acted.isEmpty }
 

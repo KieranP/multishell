@@ -60,6 +60,7 @@ struct AppModelServiceStandInTests {
     host.holdList()
     let toolRead = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls == ["list"] }
+    try #require(host.calls == ["list"])
 
     let standIn = try Self.standIn(numbered: 7, at: tip)
     let staging = Task { await harness.model.standInServices(standIn) }
@@ -110,10 +111,12 @@ struct AppModelServiceStandInTests {
     host.holdChecks()
     let toolRead = Task { await harness.model.pollPanelServices() }
     try await waitUntil { host.calls.contains("checks #7") }
+    try #require(host.calls.contains("checks #7"))
 
     let standIn = try Self.standIn(numbered: 7, at: tip, checkNamed: "lint")
     let standingIn = Task { await harness.model.standInServices(standIn) }
     try await waitUntil { harness.model.remoteState.standIn != nil }
+    try #require(harness.model.remoteState.standIn != nil)
     host.releaseHeldReads()
     await standingIn.value
     await toolRead.value
@@ -190,6 +193,7 @@ struct AppModelServiceStandInTests {
     host.holdList()
     let toolRead = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
     try await waitUntil { host.calls == ["list"] }
+    try #require(host.calls == ["list"])
     let standIn = try ServiceStandIn(json: "{}")
     let ended = AtomicFlag()
     let standingIn = Task {

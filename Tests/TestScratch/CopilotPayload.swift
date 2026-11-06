@@ -3,7 +3,7 @@
 public enum CopilotPayload {
   public static let parent = "17954dff-e162-4e7a-925e-a59ca530c5fb"
   public static let child = "37880ecf-c5f3-42ce-afe0-82b221d75839"
-  public static let transcript = "/Users/dev/.copilot/session-state/\(parent)/events.jsonl"
+  private static let transcript = "/Users/dev/.copilot/session-state/\(parent)/events.jsonl"
 
   public static let sessionStart =
     #"{"hook_event_name":"SessionStart","session_id":"\#(parent)","cwd":"/w","source":"new"}"#

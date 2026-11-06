@@ -45,6 +45,7 @@ struct AppModelStatusReadsTests {
 
     let poll = Task { await fake.refreshStatuses() }
     try await waitUntil { harness.statusRunCount() > 0 }
+    try #require(harness.statusRunCount() > 0)
     await fake.refreshStatuses(inProject: harness.project.id)
     try Data().write(to: gate)
     await poll.value
@@ -161,6 +162,7 @@ struct AppModelStatusReadsTests {
 
     let round = Task { await held.refreshStatuses() }
     try await waitUntil { harness.statusRunCount() > 0 }
+    try #require(harness.statusRunCount() > 0)
     harness.store.replaceWorktrees([main], forProject: harness.project.id)
     try Data().write(to: gate)
     await round.value

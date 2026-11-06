@@ -1,8 +1,7 @@
 import Foundation
 
-/// A `/bin/sh` blocked reading a line, standing in for a running program a
-/// test reports the pid of. `marker` is put on its command line, and
-/// `backgrounding` runs first as a job the shell kills once its read returns.
+/// A `/bin/sh` blocked on a read, standing in for a program whose pid a test reports. `marker`
+/// tags its command line; `backgrounding` runs first and is killed once the read returns.
 public final class WaitingShell {
   private let process = Process()
   private let input = Pipe()

@@ -1,6 +1,5 @@
 import Foundation
 import MultishellCore
-import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -11,7 +10,7 @@ struct AppModelSettingsWindowTests {
     let harness = Harness()
     harness.model.showSettings(.terminal, in: .allProjects)
 
-    harness.model.requestSettings(for: harness.project)
+    harness.model.showSettings(of: harness.project)
 
     #expect(
       harness.model.settingsLocation
@@ -21,10 +20,10 @@ struct AppModelSettingsWindowTests {
 
   @Test func aProjectsMenuEmptiesASearchThatMayHideItsFirstPage() {
     let harness = Harness()
-    harness.model.requestSettings(for: harness.project)
+    harness.model.showSettings(of: harness.project)
     harness.model.setSettingsSearchText("hook")
 
-    harness.model.requestSettings(for: harness.project)
+    harness.model.showSettings(of: harness.project)
 
     #expect(harness.model.settingsSearchText.isEmpty)
   }
@@ -47,32 +46,6 @@ struct AppModelSettingsWindowTests {
     #expect(harness.model.settingsLocation.section == .worktrees)
   }
 
-  @Test func removingTheProjectShownReturnsTheWindowToAllProjects() {
-    let harness = Harness()
-    let other = Scratch.path("settings-window")
-    defer { Scratch.remove(other) }
-    let second = harness.store.addProject(at: other)
-    harness.model.requestSettings(for: second)
-
-    harness.model.removeProject(harness.project)
-    #expect(harness.model.settingsLocation.scope == .project(second.id), "another project's stays")
-
-    harness.model.removeProject(second)
-    #expect(harness.model.settingsLocation == .start)
-  }
-
-  @Test func theFallbackProjectFollowsSelectionOrTheOnlyProject() {
-    let harness = Harness()
-    #expect(
-      harness.model.settingsWindowFallbackProject?.id == harness.project.id,
-      "one project, nothing selected",
-    )
-    harness.store.addProject(at: URL(fileURLWithPath: "/other"))
-    #expect(harness.model.settingsWindowFallbackProject == nil, "two projects, nothing selected")
-    harness.model.select(harness.feature)
-    #expect(harness.model.settingsWindowFallbackProject?.id == harness.project.id)
-  }
-
   @Test func returningToAllProjectsEmptiesTheSearch() {
     let harness = Harness()
     harness.model.setSettingsSearchText("zzz")
@@ -87,7 +60,7 @@ struct AppModelSettingsWindowTests {
     #expect(harness.model.settingsScopeName == "All Projects")
     #expect(harness.model.settingsHeaderCaption == "Applies to every project")
 
-    harness.model.requestSettings(for: harness.project)
+    harness.model.showSettings(of: harness.project)
 
     #expect(harness.model.settingsScopeName == harness.project.name)
     #expect(

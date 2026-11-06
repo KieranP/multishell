@@ -46,7 +46,7 @@ struct SettingsSidebarRow: View {
     }
     .buttonStyle(.plain)
     .tracksHover($isHovered)
-    .accessibilityAddTraits(isSelected ? .isSelected : [])
+    .selectableButtonTraits(isSelected: isSelected)
   }
 
   private var fill: Color {

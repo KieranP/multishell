@@ -52,7 +52,9 @@ struct AppModelPullRequestMergeTests {
     let lists = host.calls.filter { $0 == "list" }.count
     host.holdList()
     let poll = Task { _ = await harness.model.refreshServices(ofProject: harness.project.id) }
-    try await waitUntil { host.calls.filter { $0 == "list" }.count > lists }
+    let pollAsked = { host.calls.filter { $0 == "list" }.count > lists }
+    try await waitUntil(pollAsked)
+    try #require(pollAsked())
     return poll
   }
 
@@ -138,6 +140,7 @@ struct AppModelPullRequestMergeTests {
     await harness.model.beginMerge(of: feat)
     let first = Task { await harness.model.confirmMerge(of: feat) }
     try await waitUntil { harness.model.pendingMerge(of: feat)?.phase == .sending }
+    try #require(harness.model.pendingMerge(of: feat)?.phase == .sending)
 
     await harness.model.confirmMerge(of: feat)
     harness.model.dismissMergeForm(of: feat)
@@ -278,6 +281,7 @@ struct AppModelPullRequestMergeTests {
     host.holdMergeOptions()
     let first = Task { await harness.model.beginMerge(of: feat) }
     try await waitUntil { host.calls.contains("merge options #44") }
+    try #require(host.calls.contains("merge options #44"))
     harness.model.dismissMergeForm(of: feat)
     let later = PullRequestMergeOptions(
       methods: [.rebase],
@@ -410,6 +414,7 @@ struct AppModelPullRequestMergeTests {
     host.holdMerges()
     let cancel = Task { await harness.model.cancelAutoMerge(of: feat) }
     try await waitUntil { host.calls.contains("disable auto-merge #44") }
+    try #require(host.calls.contains("disable auto-merge #44"))
 
     host.answer(.success([.sample(number: 45)]))
     await harness.model.refreshServices(ofProject: harness.project.id)
@@ -451,6 +456,7 @@ struct AppModelPullRequestMergeTests {
     host.holdMerges()
     let cancel = Task { await harness.model.cancelAutoMerge(of: feat) }
     try await waitUntil { host.calls.contains("disable auto-merge #44") }
+    try #require(host.calls.contains("disable auto-merge #44"))
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
 
@@ -603,6 +609,7 @@ struct AppModelPullRequestMergeTests {
     await harness.model.beginMerge(of: feat)
     let merge = Task { await harness.model.confirmMerge(of: feat) }
     try await waitUntil { harness.model.pendingMerge(of: feat)?.isSending == true }
+    try #require(harness.model.pendingMerge(of: feat)?.isSending == true)
 
     try await harness.removeOutsideTheApp(feat.path)
     await harness.model.refreshWorktrees(of: harness.project)

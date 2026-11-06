@@ -13,7 +13,7 @@ struct WorktreeGitTrackedFilesTests {
     _ = try await fixture.runner.run(["sparse-checkout", "set", "kept"], in: fixture.project.path)
 
     let tracked = try #require(
-      await WorktreeGit(runner: fixture.runner).trackedFiles(in: fixture.project.path)
+      await fixture.git.trackedFiles(in: fixture.project.path)
     )
 
     #expect(tracked.paths.contains("kept/a.txt") && tracked.paths.contains("left/b.txt"))

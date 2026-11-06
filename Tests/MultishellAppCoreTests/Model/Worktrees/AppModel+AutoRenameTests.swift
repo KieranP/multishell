@@ -69,6 +69,7 @@ struct AppModelAutoRenameTests {
 
   private static func awaitEnd(of feature: Worktree, in harness: GitHarness) async throws {
     try await waitUntil { !harness.model.isAutoRenaming(feature.id) }
+    try #require(!harness.model.isAutoRenaming(feature.id))
   }
 
   @Test func theAgentsReplyNamesTheRowAndTheBranchKeepsItsName() async throws {
@@ -298,6 +299,7 @@ struct AppModelAutoRenameTests {
 
     harness.model.autoRename(feature)
     try await waitUntil { !requests.received.isEmpty }
+    try #require(!requests.received.isEmpty)
     harness.model.renameWorktree(feature.id, to: "Mine")
     FileManager.default.createFile(atPath: gate.path, contents: nil)
     try await Self.awaitEnd(of: feature, in: harness)
@@ -321,6 +323,7 @@ struct AppModelAutoRenameTests {
 
     harness.model.autoRename(feature)
     try await waitUntil { !requests.received.isEmpty }
+    try #require(!requests.received.isEmpty)
     harness.model.beginRenamingWorktree(feature)
     FileManager.default.createFile(atPath: gate.path, contents: nil)
     try await Self.awaitEnd(of: feature, in: harness)
@@ -344,6 +347,7 @@ struct AppModelAutoRenameTests {
 
     harness.model.autoRename(feature)
     try await waitUntil { !requests.received.isEmpty }
+    try #require(!requests.received.isEmpty)
     _ = try await harness.git.run(["checkout", "-q", "-b", "other"], in: feature.path)
     await harness.model.refreshWorktrees(of: harness.project)
     try #require(harness.model.workspace.worktree(feature.id)?.branch == "other")

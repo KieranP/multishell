@@ -352,6 +352,7 @@ struct AppModelPullRequestReadsTests {
     let id = harness.project.id
     let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
+    try #require(host.calls == ["list"])
 
     harness.model.removeProject(harness.project)
     host.releaseHeldReads()
@@ -369,6 +370,7 @@ struct AppModelPullRequestReadsTests {
     let id = harness.project.id
     let read = Task { _ = await harness.model.refreshServices(ofProject: id) }
     try await waitUntil { host.calls == ["list"] }
+    try #require(host.calls == ["list"])
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
     host.releaseHeldReads()

@@ -1,4 +1,5 @@
 import MultishellCore
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -29,14 +30,7 @@ struct AppModelDefaultBranchTests {
 
   @Test func theCaptionOfAProjectWhoseFolderIsGoneMeasuresAgainstNothing() {
     let harness = Harness()
-    harness.model.defaultBranchScans[harness.project.id] = .found(
-      DefaultBranch(
-        shortName: "main",
-        nameWithoutRemote: "main",
-        tip: "abc",
-        fullName: "refs/heads/main",
-      )
-    )
+    harness.model.defaultBranchScans[harness.project.id] = .found(.sample("main"))
 
     harness.model.missingProjects.insert(harness.project.id)
 
@@ -55,12 +49,7 @@ struct AppModelDefaultBranchTests {
     )
 
     harness.model.defaultBranchScans[harness.project.id] = .found(
-      DefaultBranch(
-        shortName: "origin/trunk",
-        nameWithoutRemote: "trunk",
-        tip: "abc",
-        fullName: "refs/remotes/origin/trunk",
-      )
+      .sample("trunk", remote: "origin")
     )
 
     #expect(
@@ -74,12 +63,7 @@ struct AppModelDefaultBranchTests {
     #expect(harness.model.defaultBranchName(of: harness.project) == "main", "nothing detected yet")
 
     harness.model.defaultBranchScans[harness.project.id] = .found(
-      DefaultBranch(
-        shortName: "origin/trunk",
-        nameWithoutRemote: "trunk",
-        tip: "abc",
-        fullName: "refs/remotes/origin/trunk",
-      )
+      .sample("trunk", remote: "origin")
     )
 
     #expect(harness.model.defaultBranchName(of: harness.project) == "trunk")

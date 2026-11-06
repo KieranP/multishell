@@ -44,6 +44,7 @@ struct WorktreeCoordinatorStoppedAddTests {
     }
     let record = project.path.appendingPathComponent(".git/worktrees/held")
     try await waitUntil { FileManager.default.fileExists(atPath: record.path) }
+    try #require(FileManager.default.fileExists(atPath: record.path))
 
     stopper.stop()
     await #expect(throws: ProcessFailure.self) { try await add.value }
@@ -94,12 +95,13 @@ struct WorktreeCoordinatorStoppedAddTests {
     }
     let added = fake.directory.appendingPathComponent("added")
     try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
+    try #require(FileManager.default.fileExists(atPath: added.path))
 
     stopper.stop()
     let failure = await #expect(throws: ProcessFailure.self) { try await add.value }
 
     #expect(failure?.stopReason == .byUser)
-    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
     #expect(try await fixture.branches() == ["main"])
   }
 
@@ -122,11 +124,12 @@ struct WorktreeCoordinatorStoppedAddTests {
     }
     let added = fake.directory.appendingPathComponent("added")
     try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
+    try #require(FileManager.default.fileExists(atPath: added.path))
 
     stopper.stop()
     await #expect(throws: ProcessFailure.self) { try await add.value }
 
-    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
     #expect(try await fixture.branches() == ["main"])
   }
 
@@ -153,11 +156,12 @@ struct WorktreeCoordinatorStoppedAddTests {
     }
     let added = fake.directory.appendingPathComponent("added")
     try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
+    try #require(FileManager.default.fileExists(atPath: added.path))
 
     stopper.stop()
     await #expect(throws: ProcessFailure.self) { try await add.value }
 
-    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
     #expect(try await fixture.branches() == ["main"])
   }
 
@@ -187,7 +191,7 @@ struct WorktreeCoordinatorStoppedAddTests {
       )
     }
 
-    let listed = try await fixture.coordinator.git.list(fixture.project)
+    let listed = try await fixture.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "renamed"])
   }
 

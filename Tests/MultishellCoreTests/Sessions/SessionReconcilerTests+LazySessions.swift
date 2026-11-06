@@ -4,7 +4,7 @@ import Testing
 @testable import MultishellCore
 
 extension SessionReconcilerTests {
-  @Test func onlyLiveWorktreesGetShellsAndTheCallbackFires() {
+  @Test func onlyLiveWorktreesGetShellsAndTheLiveSetIsReportedOnce() {
     let (store, warm, cold) = twoWorktreeStore()
     let warmTab = store.openTab(in: warm.id)!
     store.openTab(in: cold.id)

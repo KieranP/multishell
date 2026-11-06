@@ -25,12 +25,12 @@ public enum NotificationSettingsText {
   /// row's (i). A refusal replaces it; no desktop is named here.
   static func caption(
     for authorization: NotificationAuthorization,
-    settingsLocation: String?,
+    notificationSettingsLocation: String?,
   ) -> String {
     switch authorization {
     case .refused:
-      if let settingsLocation {
-        t("notifications.refused-at", settingsLocation)
+      if let notificationSettingsLocation {
+        t("notifications.refused-at", notificationSettingsLocation)
       } else {
         t("notifications.refused")
       }

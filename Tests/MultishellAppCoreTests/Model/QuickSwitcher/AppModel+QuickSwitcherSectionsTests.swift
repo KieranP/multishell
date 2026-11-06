@@ -125,6 +125,32 @@ struct AppModelQuickSwitcherSectionsTests {
     )
   }
 
+  @Test func hiddenWorktreesListAfterTheOthersAsTheSidebarsHiddenSectionDoes() {
+    let harness = Harness()
+    let project = harness.project.id
+    let zeta = Worktree(
+      path: harness.root.appendingPathComponent("zeta"),
+      projectID: project,
+      head: "c",
+      branch: "zeta",
+    )
+    let alpha = Worktree(
+      path: harness.root.appendingPathComponent("alpha"),
+      projectID: project,
+      head: "d",
+      branch: "alpha",
+    )
+    harness.store.replaceWorktrees([harness.main, zeta, alpha], forProject: project)
+    harness.model.setHidden(true, worktree: alpha)
+
+    harness.model.toggleQuickSwitcher(.worktrees)
+
+    #expect(
+      Self.targets(harness.model, in: .worktrees)
+        == [.worktree(harness.main.id), .worktree(zeta.id), .worktree(alpha.id)]
+    )
+  }
+
   @Test func tabsListInTheirStripsOrder() throws {
     let harness = Harness()
     let first = harness.openBackgroundTab()

@@ -9,7 +9,7 @@ struct WorktreeGitChangesPastHeadTests {
   @Test func aTipBehindItsHeadOrRebasedOntoAnotherBaseHasNoChangesPastIt() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let work = try await commit(file: "work.txt", content: "a\n", in: fixture)
     let later = try await commit(file: "later.txt", content: "b\n", in: fixture)
     _ = try await fixture.runner.run(
@@ -45,7 +45,7 @@ struct WorktreeGitChangesPastHeadTests {
   @Test func aTipWithACommitOrAnAmendTheHeadLacksHasChangesPastIt() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let work = try await commit(file: "work.txt", content: "a\n", in: fixture)
     let later = try await commit(file: "later.txt", content: "b\n", in: fixture)
     _ = try await fixture.runner.run(["reset", "-q", "--hard", work], in: fixture.project.path)
@@ -85,7 +85,7 @@ struct WorktreeGitChangesPastHeadTests {
   @Test func aTipThatMergedARemoteTrunkAfterItsSquashHasNoChangesOfItsOwn() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let path = fixture.project.path
     _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
     let mergedHead = try await commit(file: "work.txt", content: "a\n", in: fixture)
@@ -115,7 +115,7 @@ struct WorktreeGitChangesPastHeadTests {
   @Test func aCommitOnTheBranchsOwnRemoteBranchIsStillItsOwn() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let work = try await commit(file: "work.txt", content: "a\n", in: fixture)
     let later = try await commit(file: "later.txt", content: "b\n", in: fixture)
     let path = fixture.project.path
@@ -136,7 +136,7 @@ struct WorktreeGitChangesPastHeadTests {
   @Test func aCommitOnlyItsOwnLocalBranchHoldsIsItsOwnUntilAnotherBranchHoldsIt() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let work = try await commit(file: "work.txt", content: "a\n", in: fixture)
     let later = try await commit(file: "later.txt", content: "b\n", in: fixture)
     let project = fixture.project
@@ -167,7 +167,7 @@ struct WorktreeGitChangesPastHeadTests {
   @Test func aHeadTheRepositoryLacksGetsNoAnswer() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let tip = try await fixture.head(of: fixture.project.path)
     let unknown = String(repeating: "1", count: 40)
 

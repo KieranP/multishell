@@ -9,8 +9,8 @@ import Testing
 extension ShellIntegrationScriptsTests {
   private static let lead = "/lead/helper:/lead/app"
 
-  private func environment(_ files: GeneratedIntegration) -> [String: String] {
-    var environment = files.environment(termProgram: "ghostty")
+  private func withLeadingPath(_ base: [String: String]) -> [String: String] {
+    var environment = base
     environment["PATH"] = Self.lead + ":/usr/bin:/bin"
     environment[SessionEnvironment.leadingPathVariable] = Self.lead
     return environment
@@ -25,13 +25,11 @@ extension ShellIntegrationScriptsTests {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".zprofile", "export PATH=\"/opt/first:$PATH\"\n")
-    var environment = environment(files)
-    environment["ZDOTDIR"] = files.zshDirectory.path
 
     let output = try await Detached.output(
       of: Self.zshPath,
       ["-l", "-i", "-c", "print -r -- \"PATH=$PATH\""],
-      environment: environment,
+      environment: withLeadingPath(files.zshEnvironment(termProgram: "ghostty")),
       in: files.home,
       standardError: .discarded,
     )
@@ -50,7 +48,7 @@ extension ShellIntegrationScriptsTests {
     let output = try await interactiveShellOutput(
       bash,
       arguments: ["--init-file", files.bashInit.path, "-i"],
-      environment: environment(files),
+      environment: withLeadingPath(files.environment(termProgram: "ghostty")),
       input: "printf 'PATH=%s\\n' \"$PATH\"\nexit\n",
     )
 
@@ -73,7 +71,7 @@ extension ShellIntegrationScriptsTests {
     let output = try await interactiveShellOutput(
       fish,
       arguments: Array(launch.dropFirst()) + ["-i"],
-      environment: environment(files),
+      environment: withLeadingPath(files.environment(termProgram: "ghostty")),
       input: "echo PATH=(string join : $PATH)\nexit\n",
     )
 

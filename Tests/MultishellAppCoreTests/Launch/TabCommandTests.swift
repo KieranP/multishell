@@ -139,10 +139,8 @@ struct TabCommandTests {
 
   /// Each user's file stands in for the `path_helper` a login profile runs.
   @Test(
-    arguments: InstalledShells.only(
-      ["/bin/zsh", "/bin/sh", "/bin/ksh", "/bin/dash"] + InstalledBashes.all
-        + InstalledShells.fishCandidates
-    )
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/sh", "/bin/ksh", "/bin/dash"])
+      + InstalledBashes.all + InstalledShells.fishes
   )
   func theAgentFindsTheAppsEntriesAheadOfWhatTheLoginProfileAdded(shell: String) async throws {
     let home = try Scratch.directory("tab-command")

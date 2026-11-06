@@ -17,20 +17,7 @@ struct AccessibilityTextTests {
         == "1 subagent, 2 background shells, Explore, background shell, background shell"
     )
     #expect(
-      AccessibilityText.pane(
-        SidebarPane(
-          id: UUID(),
-          title: "claude",
-          position: nil,
-          isFocused: false,
-          state: .running,
-          since: nil,
-          workers: out,
-          agentID: nil,
-          agentName: nil,
-        ),
-        at: Date(),
-      )
+      AccessibilityText.pane(.sample(state: .running, workers: out), at: Date())
         == "claude, tab, Working, 1 subagent, 2 background shells"
     )
   }

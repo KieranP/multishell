@@ -40,4 +40,10 @@ struct GeneratedIntegration {
     environment["TERM_PROGRAM"] = termProgram
     return environment
   }
+
+  func zshEnvironment(termProgram: String?) -> [String: String] {
+    var environment = environment(termProgram: termProgram)
+    environment["ZDOTDIR"] = zshDirectory.path
+    return environment
+  }
 }

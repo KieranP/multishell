@@ -35,7 +35,6 @@ struct AppGeneralPage: View {
         InfoLabeledContent(t("general.state-file"), info: t("general.state-file-info")) {
           PathText(Paths.stateFile.path)
           SettingsSymbolButton.reveal { model.revealInFileBrowser(Paths.stateFile) }
-            .controlSize(.small)
         }
       }
     }

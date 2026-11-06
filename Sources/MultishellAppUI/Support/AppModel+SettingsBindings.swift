@@ -15,7 +15,7 @@ extension AppModel {
     Binding(get: { self.globalShellID }, set: { self.setPreferredShell($0) })
   }
 
-  /// The theme chosen, by Settings > Appearance and the View menu alike.
+  /// The theme chosen, by Settings > Appearance and the Terminal menu alike.
   var themeBinding: Binding<String> {
     settingBinding(\.appearance.themeID, write: setTheme)
   }

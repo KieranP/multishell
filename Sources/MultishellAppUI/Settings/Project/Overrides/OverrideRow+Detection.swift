@@ -12,7 +12,7 @@ extension OverrideRow where Value == String, Control == DetectionMenu {
     label: String,
     info: String,
     options: @escaping (String) -> [DetectionOption],
-    column: OverrideGlobalValue,
+    globalValue: OverrideGlobalValue,
     globalID: String,
   ) {
     self.init(
@@ -21,7 +21,7 @@ extension OverrideRow where Value == String, Control == DetectionMenu {
       setting: setting,
       label: label,
       info: info,
-      column: column,
+      globalValue: globalValue,
       fallback: globalID,
       caption: nil,
     ) { selection in

@@ -46,8 +46,8 @@ extension AppModel {
       ?? ShellChoice.loginShellPath()
   }
 
-  /// What the dropdown and captions call a stored shell.
-  public func shellDisplayName(_ id: String?) -> String {
+  /// What the Global column calls a stored shell.
+  func shellDisplayName(_ id: String?) -> String {
     ShellChoice.displayName(
       id,
       customPath: workspace.customShellPath,

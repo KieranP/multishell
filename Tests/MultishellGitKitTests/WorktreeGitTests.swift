@@ -13,8 +13,8 @@ struct WorktreeGitTests {
     let empty = try Scratch.directory("empty")
     defer { Scratch.remove(empty) }
 
-    #expect(await fixture.coordinator.git.isRepository(fixture.project.path))
-    #expect(await fixture.coordinator.git.isRepository(fixture.root) == false)
+    #expect(await fixture.git.isRepository(fixture.project.path))
+    #expect(await fixture.git.isRepository(fixture.root) == false)
     #expect(await WorktreeGit(runner: try GitRunner()).isRepository(empty) == false)
   }
 

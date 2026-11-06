@@ -62,6 +62,7 @@ struct AppModelFilesPanelReadsTests {
     harness.model.setShowsFilesPanel(true)
     harness.model.readFilesPanel(of: main.id)
     try await waitUntil { harness.model.trackedFiles[main.id] != nil }
+    try #require(harness.model.trackedFiles[main.id] != nil)
     _ = harness.model.fileTreeRows(of: main.id)
 
     harness.model.select(other)
@@ -70,6 +71,7 @@ struct AppModelFilesPanelReadsTests {
     #expect(harness.model.fileTreeCache[main.id] == nil)
 
     try await waitUntil { harness.model.trackedFiles[other.id] != nil }
+    try #require(harness.model.trackedFiles[other.id] != nil)
     harness.model.setShowsFilesPanel(false)
     #expect(harness.model.trackedFiles[other.id] == nil)
   }
@@ -117,6 +119,7 @@ struct AppModelFilesPanelReadsTests {
     for _ in 0..<5 { harness.model.scheduleSubmoduleRead("src", in: main.id) }
 
     try await waitUntil { harness.model.submoduleReadings[main.id]?["src"] != nil }
+    try #require(harness.model.submoduleReadings[main.id]?["src"] != nil)
     #expect(git.runLog.drain().startedCount == 1)
   }
 
@@ -140,6 +143,7 @@ struct AppModelFilesPanelReadsTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     _ = try await harness.openIgnoredFolder(in: main)
     try await waitUntil { !harness.model.ignoredEntriesReads.isRunning(main.id) }
+    try #require(!harness.model.ignoredEntriesReads.isRunning(main.id))
     let read = PanelFolderRead(kind: .ignoredFolder, path: "node_modules", worktreeID: main.id)
     harness.model.scheduleIgnoredFolderRead("node_modules", in: main.id)
     harness.model.scheduleIgnoredFolderRead("node_modules", in: main.id)
@@ -153,7 +157,9 @@ struct AppModelFilesPanelReadsTests {
     try await waitUntil {
       harness.model.ignoredEntries[main.id]?.contains("node_modules/") == false
     }
+    try #require(harness.model.ignoredEntries[main.id]?.contains("node_modules/") == false)
     try await waitUntil { !harness.model.panelFolderReads.isRunning(read) }
+    try #require(!harness.model.panelFolderReads.isRunning(read))
 
     #expect(harness.model.ignoredFolderEntries[main.id]?["node_modules"] == nil)
   }

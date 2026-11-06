@@ -196,7 +196,7 @@ struct WorktreeCoordinatorCreationTests {
       )
     }
     #expect(
-      try await fixture.coordinator.git.list(fixture.project).count == 1,
+      try await fixture.git.list(fixture.project).count == 1,
       "nothing was created",
     )
   }
@@ -246,7 +246,7 @@ struct WorktreeCoordinatorCreationTests {
       }
       #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
     }
-    #expect(try await fixture.coordinator.git.list(project).count == 1, "nothing was created")
+    #expect(try await fixture.git.list(project).count == 1, "nothing was created")
   }
 
   @Test func aBranchCheckedOutElsewhereCannotBeCheckedOutAgain() async throws {
@@ -346,7 +346,7 @@ struct WorktreeCoordinatorCreationTests {
     #expect(
       FileManager.default.fileExists(atPath: project.path.appendingPathComponent("pre.txt").path)
     )
-    #expect(try await fixture.coordinator.git.list(project).count == 2, "the worktree exists")
+    #expect(try await fixture.git.list(project).count == 2, "the worktree exists")
     #expect(!FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
 
     try await fixture.coordinator.runPostCreateHook(

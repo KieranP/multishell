@@ -13,6 +13,7 @@ struct RepositoryFixture {
   let project: Project
 
   var coordinator: WorktreeCoordinator { TestGit.coordinator(runner: runner) }
+  var git: WorktreeGit { coordinator.git }
   var worktreeSettings: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
 
   static func make(commit: Bool = true) async throws -> Self {
@@ -129,7 +130,7 @@ struct RepositoryFixture {
 
   func worktree(onBranch branch: String, in project: Project? = nil) async throws -> Worktree {
     try #require(
-      try await coordinator.git.list(project ?? self.project).first { $0.branch == branch }
+      try await git.list(project ?? self.project).first { $0.branch == branch }
     )
   }
 

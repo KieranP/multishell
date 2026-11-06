@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The theme choice the View menu offers; Settings > Appearance shares its
+/// The theme choice the Terminal menu offers; Settings > Appearance shares its
 /// binding in its own pop-up.
 struct ThemePicker: View {
   let title: String

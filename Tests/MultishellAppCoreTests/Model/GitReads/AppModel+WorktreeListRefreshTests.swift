@@ -56,7 +56,9 @@ struct AppModelWorktreeListRefreshTests {
     )
 
     let refresh = Task { await failing.refreshWorktrees(of: project) }
-    try await waitUntil { harness.gitCalls().contains { $0.hasPrefix("worktree list") } }
+    let listAsked = { harness.gitCalls().contains { $0.hasPrefix("worktree list") } }
+    try await waitUntil(listAsked)
+    try #require(listAsked())
     failing.removeProject(project)
     try "".write(to: gate, atomically: true, encoding: .utf8)
     await refresh.value

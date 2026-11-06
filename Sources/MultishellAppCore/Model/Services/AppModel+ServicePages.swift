@@ -3,6 +3,26 @@ import MultishellGitKit
 import MultishellServices
 
 extension AppModel {
+  /// The page the panel shows: a services' page whose tool is gone shows
+  /// Files, rather than a page nothing can fill.
+  public var shownFilesPanelMode: FilesPanelMode {
+    switch workspace.filesPanelMode {
+    case .ciRuns: showsCIPanelPage ? .ciRuns : .files
+    case .pullRequest: showsPullRequestPanelPage ? .pullRequest : .files
+    case .files, .changes: workspace.filesPanelMode
+    }
+  }
+
+  /// The pull request page's tab, wherever a host's tool is installed.
+  public var showsPullRequestPanelPage: Bool { !remoteState.connections.pullRequestHosts.isEmpty }
+
+  public var showsCIPanelPage: Bool { !readableCIProviders.isEmpty }
+
+  /// `nil` once a rerun has the run going again or passed.
+  public func failureReport(of run: CIRun) -> CIFailureReport? {
+    run.status == .failed ? remoteState.failureReports[run.id]?.value : nil
+  }
+
   public func pullRequestPage(of worktree: Worktree) -> PullRequestPage {
     guard let project = workspace.project(worktree.projectID), pullRequestHost(for: project) != nil
     else { return .turnedOff }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A one-symbol button for the settings windows, a word beside a dropdown
+/// A one-symbol button for the settings window, a word beside a dropdown
 /// pushing rows onto two lines. One symbol and help per meaning.
 struct SettingsSymbolButton: View {
   let symbol: String

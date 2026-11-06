@@ -9,7 +9,7 @@ public struct RGB: Hashable, Sendable {
   public let green: UInt8
   public let blue: UInt8
   /// 255 is opaque.
-  public let alpha: UInt8
+  let alpha: UInt8
 
   /// `#rrggbb` whatever the alpha: a Ghostty config refuses a fourth channel.
   public var opaqueHex: String {

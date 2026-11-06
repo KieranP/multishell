@@ -53,8 +53,9 @@ struct GitHarness {
 
   /// Waits for the removal that `requestWorktreeRemoval` or a dialog started, up to
   /// ten seconds, by watching the operation entry.
-  func awaitOperationEnd(on id: Worktree.ID) async {
-    try? await waitUntil({ model.worktreeOperations[id]?.isRunning != true }, seconds: 10)
+  func awaitOperationEnd(on id: Worktree.ID) async throws {
+    try await waitUntil({ model.worktreeOperations[id]?.isRunning != true }, seconds: 10)
+    try #require(model.worktreeOperations[id]?.isRunning != true)
   }
 
   /// `link/key` in the repository, where `link` leads out of it: a list that

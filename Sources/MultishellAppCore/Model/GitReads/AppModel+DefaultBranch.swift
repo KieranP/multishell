@@ -4,8 +4,8 @@ import MultishellGitKit
 extension AppModel {
   public static var usualDefaultBranchName: String { "main" }
 
-  /// The branch this project's merges are measured against, `nil` while
-  /// none has been resolved. What the settings panel shows as detected.
+  /// The branch this project's merges are measured against, override and file
+  /// applied; `nil` while none has been resolved.
   func defaultBranch(of project: Project) -> DefaultBranch? {
     defaultBranchScans[project.id]?.branch
   }

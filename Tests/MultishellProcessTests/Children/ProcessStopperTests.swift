@@ -262,9 +262,9 @@ struct ProcessStopperTests {
     defer { Scratch.remove(scratch) }
     let stopper = ProcessStopper()
     let run = startChildBlockingSIGHUP(stopper: stopper, in: scratch)
-    try await waitUntil {
-      FileManager.default.fileExists(atPath: scratch.appendingPathComponent("ready").path)
-    }
+    let ready = scratch.appendingPathComponent("ready").path
+    try await waitUntil { FileManager.default.fileExists(atPath: ready) }
+    try #require(FileManager.default.fileExists(atPath: ready))
     stopper.stop(.timedOut(after: .milliseconds(1)))
 
     stopper.stop()

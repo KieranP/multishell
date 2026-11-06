@@ -19,7 +19,7 @@ struct ProjectActions: View {
       .disabled(model.isFetching(project))
     Divider()
     Button(t("action.project-settings")) {
-      model.requestSettings(for: project)
+      model.showSettings(of: project)
       openSettings()
     }
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(project.path) }

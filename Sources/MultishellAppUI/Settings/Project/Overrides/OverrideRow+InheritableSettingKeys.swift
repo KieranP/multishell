@@ -4,7 +4,7 @@ import SwiftUI
 
 extension OverrideRow {
   /// A setting the repository's file may also set, named once for what the row
-  /// inherits and writes. `column` words the value in force, the file's or the global's.
+  /// inherits and writes. `globalValue` words the value in force, the file's or the global's.
   init(
     model: AppModel,
     project: Project,
@@ -12,7 +12,7 @@ extension OverrideRow {
     global: Value,
     label: String,
     info: String,
-    column: (InheritedSetting<Value>) -> OverrideGlobalValue,
+    globalValue: (InheritedSetting<Value>) -> OverrideGlobalValue,
     caption: ((Bool) -> String)? = nil,
     @ViewBuilder control: @escaping (Binding<Value>) -> Control,
   ) {
@@ -23,7 +23,7 @@ extension OverrideRow {
       setting: setting.project,
       label: label,
       info: info,
-      column: column(inherited),
+      globalValue: globalValue(inherited),
       fallback: inherited.value,
       caption: caption,
       control: control,
@@ -49,7 +49,7 @@ extension OverrideRow where Value == Bool, Control == SettingsSwitch {
       global: model.workspace[keyPath: globalSetting],
       label: label,
       info: info,
-      column: { $0.globalValue(setIn: globalSection) },
+      globalValue: { $0.globalValue(setIn: globalSection) },
       control: { SettingsSwitch(label: label, isOn: $0) },
     )
   }

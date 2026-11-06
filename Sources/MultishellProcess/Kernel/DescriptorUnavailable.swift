@@ -1,7 +1,7 @@
 import Foundation
 
-/// The process is out of file descriptors. Each watched worktree holds one
-/// and each live shell several; a Finder-launched app starts with 256.
+/// The process is out of file descriptors: each live shell and each child's
+/// pipes hold some, under the limit DescriptorLimit raises at launch.
 public struct DescriptorUnavailable: Error, CustomStringConvertible {
   public let code: Int32
 

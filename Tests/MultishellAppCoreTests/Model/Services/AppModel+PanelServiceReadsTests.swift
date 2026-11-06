@@ -114,6 +114,7 @@ struct AppModelPanelServiceReadsTests {
 
     harness.model.setFilesPanelMode(.ciRuns)
     try await waitUntil { harness.model.remoteState.ciHistories[feat.id] != nil }
+    try #require(harness.model.remoteState.ciHistories[feat.id] != nil)
 
     #expect(harness.model.ciPage(of: feat) == .noRuns(branch: "feat"))
   }
@@ -141,6 +142,7 @@ struct AppModelPanelServiceReadsTests {
     try await waitUntil {
       harness.model.ciPage(of: feat) == .run(.sample(id: "old", branch: "feat"))
     }
+    try #require(harness.model.ciPage(of: feat) == .run(.sample(id: "old", branch: "feat")))
 
     _ = try await harness.git.run(
       ["update-ref", "refs/remotes/origin/renamed", "HEAD"],
@@ -160,6 +162,7 @@ struct AppModelPanelServiceReadsTests {
     let (feat, host, _) = try await showingFeat(harness)
     harness.model.setFilesPanelMode(.pullRequest)
     try await waitUntil { harness.model.remoteState.checks[feat.id]?.checks != nil }
+    try #require(harness.model.remoteState.checks[feat.id]?.checks != nil)
 
     await harness.model.readPanelServicesIfDue(of: feat)
 
@@ -185,8 +188,10 @@ struct AppModelPanelServiceReadsTests {
     provider.answer(recent: [], history: [.sample(id: "h1", branch: "feat")])
     harness.model.setFilesPanelMode(.pullRequest)
     try await waitUntil { harness.model.remoteState.checks[feat.id] != nil }
+    try #require(harness.model.remoteState.checks[feat.id] != nil)
     harness.model.setFilesPanelMode(.ciRuns)
     try await waitUntil { harness.model.remoteState.ciHistories[feat.id] != nil }
+    try #require(harness.model.remoteState.ciHistories[feat.id] != nil)
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
     harness.model.setIntegration(.circleCI, isEnabled: false, for: harness.project)
@@ -223,11 +228,13 @@ struct AppModelPanelServiceReadsTests {
     host.holdChecks()
     harness.model.setFilesPanelMode(.pullRequest)
     try await waitUntil { host.calls.contains("checks #9") }
+    try #require(host.calls.contains("checks #9"))
 
     harness.model.setIntegration(.gitHub, isEnabled: false, for: harness.project)
     host.releaseHeldReads()
     let read = PanelRead(worktree: feat.id, page: .pullRequest)
     try await waitUntil { !harness.model.remoteState.panelReadLog.isAsking(read) }
+    try #require(!harness.model.remoteState.panelReadLog.isAsking(read))
 
     #expect(harness.model.remoteState.checks[feat.id] == nil)
   }
@@ -323,6 +330,7 @@ struct AppModelPanelServiceReadsTests {
     await harness.model.refreshServices(ofProject: harness.project.id)
     harness.model.setFilesPanelMode(.pullRequest)
     try await waitUntil { harness.model.remoteState.checks[feat.id]?.checks != nil }
+    try #require(harness.model.remoteState.checks[feat.id]?.checks != nil)
 
     harness.model.remoteState.panelReadLog.forget(PanelRead(worktree: feat.id, page: .pullRequest))
     await harness.model.readPanelServicesIfDue(of: feat)
@@ -338,7 +346,9 @@ struct AppModelPanelServiceReadsTests {
     provider.answer(recent: [], history: [.sample(id: "h1", branch: "feat"), earlier])
     harness.model.setFilesPanelMode(.ciRuns)
     try await waitUntil { harness.model.remoteState.ciHistories[feat.id] != nil }
+    try #require(harness.model.remoteState.ciHistories[feat.id] != nil)
     await harness.model.readCIRunDetails(of: earlier, for: feat)
+    try #require(harness.model.remoteState.ciWorkflows["h0"] != nil)
     let main = try #require(harness.worktree(onBranch: "main"))
 
     harness.model.select(main)
@@ -365,10 +375,12 @@ struct AppModelPanelServiceReadsTests {
     harness.model.select(main)
     harness.model.readFilesPanel(of: main.id)
     let mainRead = PanelRead(worktree: main.id, page: .pullRequest)
-    try await waitUntil {
+    let mainReadLanded = {
       let log = harness.model.remoteState.panelReadLog
       return log.hasAsked(mainRead) && !log.isAsking(mainRead)
     }
+    try await waitUntil(mainReadLanded)
+    try #require(mainReadLanded())
 
     #expect(!host.calls.contains("checks #9"), "feat was passed, not stopped on")
   }
@@ -425,10 +437,16 @@ struct AppModelPanelServiceReadsTests {
   @Test func aFailedHistoryReadWaitsItsIntervalRatherThanEveryTick() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (_, _, provider) = try await showingFeat(harness)
+    let (feat, _, provider) = try await showingFeat(harness)
     provider.failHistory()
     harness.model.setFilesPanelMode(.ciRuns)
-    try await waitUntil { provider.calls.contains("history feat") }
+    let read = PanelRead(worktree: feat.id, page: .ciRuns)
+    let failureLanded = {
+      let log = harness.model.remoteState.panelReadLog
+      return provider.calls.contains("history feat") && log.hasAsked(read) && !log.isAsking(read)
+    }
+    try await waitUntil(failureLanded)
+    try #require(failureLanded())
 
     await harness.model.pollPanelServices()
     await harness.model.pollPanelServices()
@@ -469,15 +487,5 @@ struct AppModelPanelServiceReadsTests {
 
     #expect(harness.model.filesPanelState(of: main.id).mode == .files)
     #expect(harness.model.filesPanelState(of: main.id).expandedFolders.contains("src"))
-  }
-
-  @Test func aServicesPageWhoseToolIsGoneShowsFilesUntilOneConnects() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    harness.store.setFilesPanelMode(.ciRuns)
-
-    #expect(harness.model.shownFilesPanelMode == .files)
-    harness.connectServices()
-    #expect(harness.model.shownFilesPanelMode == .ciRuns)
   }
 }

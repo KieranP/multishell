@@ -21,8 +21,10 @@ extension AppModelFilesPanelWatchTests {
     let names = { harness.model.fileTreeRows(of: feature.id).map(\.name) }
     harness.model.setChangeScope(.branch)
     try await waitUntil { names() == ["work.txt"] }
+    try #require(names() == ["work.txt"])
     try await harness.statusReadsSettle(feature)
     try await waitUntil { !harness.model.branchChangesReads.isRunning(feature.id) }
+    try #require(!harness.model.branchChangesReads.isRunning(feature.id))
     _ = try await harness.git.run(["reset", "-q", "--hard", "HEAD~1"], in: feature.path)
 
     await harness.model.noteFileChanges([harness.project.path.appending(path: ".git/refs/heads")])

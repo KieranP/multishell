@@ -7,13 +7,6 @@ import Testing
 /// A promise on this process's own pasteboard is never asked for.
 @Suite(.serialized) @MainActor
 struct PromisedDropTests {
-  /// Twenty seconds before giving up, which is a two-core runner's headroom
-  /// over a handful of operations.
-  private func awaitDelivery(_ delivery: Recorder<[URL]>) async throws -> [URL] {
-    try await waitUntil({ !delivery.received.isEmpty }, seconds: 20)
-    return try #require(delivery.received.first, "the drop was never delivered")
-  }
-
   @Test func anItemNamingTwoFilesOnceCalledInDeliversBoth() async throws {
     let delivery = Recorder<[URL]>()
     let directory = Scratch.path("promised")
@@ -21,7 +14,8 @@ struct PromisedDropTests {
 
     PromisedDrop.receive([TwoFilePromise()], into: directory) { delivery.record($0) }
 
-    #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
+    let delivered = try #require(await delivery.firstArrival())
+    #expect(delivered.map(\.lastPathComponent) == ["one.png", "two.png"])
   }
 
   @Test func anItemsFilesLandingOutOfOrderArePastedInTheOrderItNamesThem() async throws {
@@ -32,7 +26,8 @@ struct PromisedDropTests {
     let promise = TwoFilePromise(landing: ["two.png", "one.png"])
     PromisedDrop.receive([promise], into: directory) { delivery.record($0) }
 
-    #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
+    let delivered = try #require(await delivery.firstArrival())
+    #expect(delivered.map(\.lastPathComponent) == ["one.png", "two.png"])
   }
 
   @Test func aDragWithNoPromisesIsAnsweredAtOnce() {

@@ -39,7 +39,7 @@ struct AgentMarkShape: Shape {
   func path(in rect: CGRect) -> Path {
     guard let unit = Self.unitPath(of: mark) else { return Path() }
     let side = min(rect.width, rect.height)
-    let scale = side / 16
+    let scale = side / GlyphGrid.side
     let transform = CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2)
       .scaledBy(x: scale, y: scale)
     return unit.applying(transform)

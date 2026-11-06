@@ -13,7 +13,7 @@ extension WorktreeGitTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let project = fixture.project
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     try await fixture.commit("kept", file: "kept.txt", content: "kept\n")
     let side = try await fixture.addWorktree(onNewBranch: "side")
     try await fixture.commit("later", file: "later.txt", content: "later\n")
@@ -115,7 +115,7 @@ extension WorktreeGitTests {
   @Test func everyCountBeforeTheFirstCommitLeavesGitsDirectoryAsItWas() async throws {
     let fixture = try await RepositoryFixture.make(commit: false)
     defer { fixture.tearDown() }
-    let git = WorktreeGit(runner: fixture.runner)
+    let git = fixture.git
     let path = fixture.project.path
     try fixture.write("staged\n", to: "staged.txt")
     _ = try await fixture.runner.run(["add", "staged.txt"], in: path)

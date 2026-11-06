@@ -19,6 +19,7 @@ struct ServiceReadLog<Key: Hashable & Sendable>: Sendable {
     return now - last >= interval
   }
 
+  /// Whether a read of it is under way, for the tests.
   func isAsking(_ id: Key) -> Bool { asking.contains(id) }
 
   /// Whether it was asked since it last went due; a move of its upstreams

@@ -9,17 +9,7 @@ struct SidebarPaneRailTests {
   private let start = Date(timeIntervalSince1970: 1_000_000)
 
   private func pane(_ state: SessionState?) -> SidebarPane {
-    SidebarPane(
-      id: UUID(),
-      title: "claude",
-      position: nil,
-      isFocused: false,
-      state: state,
-      since: start,
-      workers: [],
-      agentID: "claude",
-      agentName: "Claude Code",
-    )
+    .sample(state: state, since: start, agentID: "claude", agentName: "Claude Code")
   }
 
   @Test func aWorkingPaneSaysHowLongItHasWorked() {

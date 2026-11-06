@@ -1,5 +1,5 @@
-/// A settings page or part `ui show settings --page` turns to, by the word the
-/// command line spells it with; the app holds it to the scope shown.
+/// A settings page or part `--page` turns to on `ui show settings` or
+/// `project-settings`, by its command-line word; held to the scope shown.
 public enum ControlSettingsPage: String, Codable, CaseIterable, Sendable {
   case agentHooks = "agent-hooks"
   /// A project's Agents page, and All Projects' first Agents part.

@@ -1,4 +1,4 @@
-import Dispatch
+import Foundation
 import MultishellAppCore
 import Synchronization
 import Testing
@@ -11,7 +11,7 @@ struct CompiledGrammarSlotTests {
     let compiles = Mutex(0)
     let result = Mutex<CompiledGrammar?>(nil)
     let waits = DispatchSemaphore(value: 0)
-    let finished = DispatchGroup()
+    let finished = DispatchSemaphore(value: 0)
   }
 
   private static func startSecondCallerAndAwaitItsWaitOrCompile(
@@ -19,15 +19,16 @@ struct CompiledGrammarSlotTests {
     second: SecondCaller,
     secondCompile: CompiledGrammar,
   ) {
-    DispatchQueue.global().async(group: second.finished) {
+    Thread {
       let compiled = slot.grammar {
         second.compiles.withLock { $0 += 1 }
         second.waits.signal()
         return secondCompile
       }
       second.result.withLock { $0 = compiled }
-    }
-    second.waits.wait()
+      second.finished.signal()
+    }.start()
+    #expect(second.waits.wait(timeout: .now() + 10) == .success)
   }
 
   @Test func aCallerArrivingMidCompileWaitsForItRatherThanCompilingAgain() throws {
@@ -43,7 +44,7 @@ struct CompiledGrammarSlotTests {
       )
       return grammar
     }
-    second.finished.wait()
+    #expect(second.finished.wait(timeout: .now() + 10) == .success)
 
     #expect(first != nil)
     #expect(second.result.withLock { $0 } != nil)
@@ -63,7 +64,7 @@ struct CompiledGrammarSlotTests {
       )
       return nil
     }
-    second.finished.wait()
+    #expect(second.finished.wait(timeout: .now() + 10) == .success)
 
     #expect(first == nil)
     #expect(second.result.withLock { $0 } != nil)

@@ -145,6 +145,7 @@ struct AppModelFilesPanelTests {
     await harness.model.openFileAsTab("node_modules/left-pad/index.js", in: main.id)
     let tab = try #require(harness.model.workspace.fileTabs.first)
     try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    try #require(harness.model.fileTabReadings[tab.id] != nil)
 
     #expect(harness.model.changeKind(of: tab) == nil, "shown as it is, not as every line added")
   }
@@ -356,6 +357,7 @@ struct AppModelFilesPanelTests {
     harness.model.statuses[main.id] = Self.modified(30_000)
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
     try await waitUntil { renderer.rows.count > 30_000 }
+    try #require(renderer.rows.count > 30_000)
 
     harness.model.statuses[main.id] = Self.modified(3)
     try await waitUntil { renderer.rows.count == 4 }
@@ -372,6 +374,7 @@ struct AppModelFilesPanelTests {
     harness.model.trackedFiles[main.id] = .sample(count: 30_000)
     let renderer = FilesPanelRenderer(harness.model, showing: main.id)
     try await waitUntil { !renderer.rows.isEmpty }
+    try #require(!renderer.rows.isEmpty)
 
     harness.model.trackedFiles[main.id] = .sample(count: 3)
     try await waitUntil { harness.model.fileTreeCache[main.id]?.tree.listing.filePaths.count == 3 }

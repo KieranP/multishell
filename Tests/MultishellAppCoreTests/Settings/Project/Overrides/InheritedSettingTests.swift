@@ -3,11 +3,9 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellCore
 
-/// What a project's settings table shows for a setting the project leaves
-/// alone. The global stopped being the only answer when the file gained these keys.
 @Suite
 struct InheritedSettingTests {
-  @Test func aFlagTheRepositorySuppliesIsNamedAsItsOwnAndOpensNoPage() {
+  @Test func aFlagSaysWhereItCameFromAndOnlyTheGlobalOneOpensItsPage() {
     let fromFile = InheritedSetting<Bool>(value: true, isFromRepository: true)
     #expect(fromFile.globalValue(setIn: .terminal).text == "On")
     #expect(fromFile.globalValue(setIn: .terminal).sourceNote == "From .multishell.json")

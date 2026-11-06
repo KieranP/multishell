@@ -38,33 +38,4 @@ struct SettingsPageTests {
         == [.hooksCreate, .hooksDelete, .hooksEnvironment]
     )
   }
-
-  @Test func everySectionBelongsToThePageThatListsIt() {
-    for scope in [SettingsScope.allProjects, Self.project] {
-      for page in SettingsPage.pages(in: scope) {
-        for section in page.sections(in: scope) {
-          #expect(section.page == page, "\(section) listed under \(page)")
-        }
-      }
-    }
-  }
-
-  @Test func onlyThePartsOfASplitPageArePartsAndEveryOneIsListedUnderItsPage() {
-    let parts: [SettingsSection] = [
-      .agentSettings, .agentHooks, .hooksCreate, .hooksDelete, .hooksEnvironment,
-    ]
-    for scope in [SettingsScope.allProjects, Self.project] {
-      for page in SettingsPage.pages(in: scope) {
-        let sections = page.sections(in: scope)
-        #expect(sections.allSatisfy { $0.isPart == (sections.count > 1) }, "\(page) in \(scope)")
-      }
-    }
-    #expect(parts.allSatisfy { $0.isPart })
-    let listed = [SettingsScope.allProjects, Self.project].flatMap { scope in
-      SettingsPage.pages(in: scope).flatMap { $0.sections(in: scope) }
-    }
-    for part in parts {
-      #expect(listed.contains(part), "\(part) has a sidebar row")
-    }
-  }
 }

@@ -88,6 +88,7 @@ struct HelperStateReportsTests {
     #expect(orphan.standardError.contains("--subagent-wakes"))
 
     try await waitUntil { recorder.received.count == 2 }
+    try #require(recorder.received.count == 2)
     let reports = recorder.received.map(SessionStateReport.parse)
     #expect(reports[0]?.resumesAfterWorkers == true)
     #expect(reports[1]?.worker == WorkerReport(id: "ses_1", phase: .ended, wakesAgent: false))
@@ -108,6 +109,7 @@ struct HelperStateReportsTests {
     }
 
     try await waitUntil { recorder.received.count == 2 }
+    try #require(recorder.received.count == 2)
     let reports = recorder.received.map(SessionStateReport.parse)
     #expect(reports[0]?.workersOut?.map(\.id) == ["ses_1", "ses_2"])
     #expect(reports[1]?.workersOut == [], "nothing out is said, not left unsaid")

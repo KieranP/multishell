@@ -18,7 +18,7 @@ struct ProjectTerminalPage: View {
           label: t("project.default-shell"),
           info: t("project.default-shell-info"),
           options: model.shellDetection.options(selected:),
-          column: model.globalShellValue,
+          globalValue: model.globalShellValue,
           globalID: model.globalShellID,
         )
         OverrideRow(

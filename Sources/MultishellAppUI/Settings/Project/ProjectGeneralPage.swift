@@ -16,7 +16,6 @@ struct ProjectGeneralPage: View {
           HStack {
             PathText(project.path.path)
             SettingsSymbolButton.reveal { model.revealInFileBrowser(project.path) }
-              .controlSize(.small)
           }
         }
         LabeledContent(t("project.worktrees-label")) {
@@ -25,7 +24,6 @@ struct ProjectGeneralPage: View {
             SettingsSymbolButton.refresh(help: t("project.refresh-from-git")) {
               Task { await model.refreshWorktreesOnRequest(of: project) }
             }
-            .controlSize(.small)
           }
         }
       }
@@ -38,7 +36,7 @@ struct ProjectGeneralPage: View {
           global: model.workspace.worktreeSortOrder,
           label: t("project.sort-worktrees"),
           info: t("project.sort-worktrees-info"),
-          column: \.globalValue,
+          globalValue: \.globalValue,
         ) { selection in
           SettingsPopUp(
             label: t("project.sort-worktrees"),

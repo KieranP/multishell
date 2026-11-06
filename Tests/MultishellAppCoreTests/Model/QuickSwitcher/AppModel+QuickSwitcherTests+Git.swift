@@ -56,6 +56,7 @@ extension AppModelQuickSwitcherTests {
 
     harness.model.scheduleTrackedFilesRead(of: main.id)
     try await waitUntil { harness.model.pendingTrackedFilesReads[main.id] == nil }
+    try #require(harness.model.pendingTrackedFilesReads[main.id] == nil)
 
     #expect(harness.model.fileTreeCache[main.id]?.quickSwitcherSearch != nil)
   }
@@ -92,5 +93,6 @@ extension AppModelQuickSwitcherTests {
     harness.model.chooseQuickSwitcherRow(.file(path: "README.md", worktreeID: main.id))
 
     try await waitUntil { harness.model.workspace.project(main.projectID)?.isExpanded == true }
+    #expect(harness.model.workspace.project(main.projectID)?.isExpanded == true)
   }
 }

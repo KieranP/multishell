@@ -52,7 +52,7 @@ struct WorktreeCoordinatorRemovalTests {
     #expect(
       FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/work.txt").path)
     )
-    #expect(try await fixture.coordinator.git.list(fixture.project).count == 1)
+    #expect(try await fixture.git.list(fixture.project).count == 1)
   }
 
   @Test func aTrashedWorktreeIsHandedOverThenForgottenAndTheHooksStillRun() async throws {
@@ -83,7 +83,7 @@ struct WorktreeCoordinatorRemovalTests {
     )
 
     #expect(steps.received == [.removingWorktree, .postDeleteHook])
-    #expect(try await fixture.coordinator.git.list(project).count == 1, "forgotten")
+    #expect(try await fixture.git.list(project).count == 1, "forgotten")
     #expect(
       FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/wip.txt").path),
       "the work is where the Trash put it",
@@ -116,7 +116,7 @@ struct WorktreeCoordinatorRemovalTests {
     }
     #expect(FileManager.default.fileExists(atPath: path.path))
     #expect(
-      try await fixture.coordinator.git.list(fixture.project).count == 2,
+      try await fixture.git.list(fixture.project).count == 2,
       "nothing was pruned",
     )
   }
@@ -196,7 +196,7 @@ struct WorktreeCoordinatorRemovalTests {
     }
 
     #expect(
-      try await fixture.coordinator.git.list(fixture.project).count == 1,
+      try await fixture.git.list(fixture.project).count == 1,
       "the worktree is gone",
     )
     #expect(try await fixture.branches() == ["main", "unmerged"], "the branch is kept")
@@ -218,7 +218,7 @@ struct WorktreeCoordinatorRemovalTests {
       in: fixture.project.path,
     )
     let worktree = try #require(
-      try await fixture.coordinator.git.list(fixture.project).first { worktree in
+      try await fixture.git.list(fixture.project).first { worktree in
         worktree.isDetached && !worktree.isPrimary
       }
     )
@@ -286,7 +286,7 @@ struct WorktreeCoordinatorRemovalTests {
     try await fixture.coordinator.removeUnlinking(stale, in: project, shellPath: "/bin/sh")
 
     #expect(try FileManager.default.contentsOfDirectory(atPath: path.path).isEmpty)
-    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
   }
 
   @Test func aLockedWorktreeWhoseTrashRefusesStaysLocked() async throws {
@@ -349,7 +349,7 @@ struct WorktreeCoordinatorRemovalTests {
     }
 
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("wip.txt").path))
-    #expect(try await fixture.coordinator.git.list(fixture.project).count == 2, "still on record")
+    #expect(try await fixture.git.list(fixture.project).count == 2, "still on record")
   }
 
   /// A trash standing in for the Finder's: the worktree moved into `bin` as

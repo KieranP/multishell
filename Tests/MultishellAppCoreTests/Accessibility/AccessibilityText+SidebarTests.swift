@@ -286,33 +286,17 @@ struct AccessibilityTextSidebarTests {
 
   /// A renamed tab names every pane alike, so the position tells them apart.
   @Test func aPaneInARenamedTabSaysItsPosition() {
-    let pane = SidebarPane(
-      id: UUID(),
+    let pane = SidebarPane.sample(
       title: "fix tests",
       position: PanePosition(number: 2, count: 2),
       isFocused: true,
-      state: nil,
-      since: nil,
-      workers: [],
-      agentID: nil,
-      agentName: nil,
     )
     #expect(AccessibilityText.pane(pane, at: Date()) == "fix tests, pane 2 of 2, selected")
   }
 
   @Test func aWorkingPaneSaysHowLongItHasWorkedAsItsCardDoes() {
     let start = Date(timeIntervalSince1970: 1_000_000)
-    let pane = SidebarPane(
-      id: UUID(),
-      title: "claude",
-      position: nil,
-      isFocused: false,
-      state: .running,
-      since: start,
-      workers: [],
-      agentID: nil,
-      agentName: nil,
-    )
+    let pane = SidebarPane.sample(state: .running, since: start)
     #expect(
       AccessibilityText.pane(pane, at: start.addingTimeInterval(720))
         == "claude, tab, Working, \(t("spoken.elapsed", "12m"))"

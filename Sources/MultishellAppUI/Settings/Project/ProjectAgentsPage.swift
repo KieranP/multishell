@@ -9,7 +9,6 @@ struct ProjectAgentsPage: View {
   let project: Project
 
   var body: some View {
-    let globalFlags = model.globalAgentFlagsValue(for: project)
     SettingsForm {
       OverrideTable {
         OverrideRow(
@@ -19,7 +18,7 @@ struct ProjectAgentsPage: View {
           label: t("project.preferred-agent"),
           info: t("project.preferred-agent-info"),
           options: model.agentDetection.options(selected:),
-          column: model.globalAgentValue,
+          globalValue: model.globalAgentValue,
           globalID: model.globalAgentID,
         )
         OverrideRow(
@@ -28,7 +27,7 @@ struct ProjectAgentsPage: View {
           setting: \.agentFlags,
           label: t("project.flags"),
           info: t("project.flags-info"),
-          column: globalFlags,
+          globalValue: model.globalAgentFlagsValue(for: project),
           fallback: model.workspace.globalAgentFlags(for: project),
           caption: nil,
         ) { flags in

@@ -36,7 +36,7 @@ struct SidebarQuickStats: View {
     }
     .padding(.horizontal, 6)
     .padding(.vertical, 5)
-    .rowSelection(theme, isSelected: model.showsDebugInfo)
+    .rowSelection(theme, in: .projectsPanel, isSelected: model.showsDebugInfo)
     .contentShape(.rect)
     .onTapGesture { model.showDebugInfo() }
     .padding(.horizontal, 6)

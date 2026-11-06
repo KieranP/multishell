@@ -1,9 +1,10 @@
+import MultishellCore
 import Testing
 
-@testable import MultishellCore
+@testable import MultishellAppUI
 
 @Suite
-struct ThemeSlotNamesTests {
+struct ThemeProjectIconSlotNamesTests {
   @Test func everyProjectIconSlotHasAName() {
     #expect(Theme.projectIconSlotNames.count == Theme.ansiSlotCount)
     #expect(Set(Theme.projectIconSlotNames).count == Theme.ansiSlotCount)

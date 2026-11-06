@@ -2,12 +2,6 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// What the project settings request opens with no project named: the
-  /// selected worktree's project, or the only project.
-  var settingsWindowFallbackProject: Project? {
-    projectOrOnlyProject(of: workspace.selectedWorktree)
-  }
-
   /// Whose settings the window shows, as its title names them.
   public var settingsScopeName: String {
     switch settingsLocation.scope {
@@ -42,7 +36,7 @@ extension AppModel {
 
   /// A project's own menu asking for its settings, which the window opened
   /// after this shows from its first page.
-  public func requestSettings(for project: Project) {
+  public func showSettings(of project: Project) {
     showSettingsUnfiltered(.general, in: .project(project.id))
   }
 

@@ -16,7 +16,7 @@ struct WorktreeRecordsTests {
       in: fixture.project,
       settings: fixture.worktreeSettings,
     )
-    let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
+    let common = try await fixture.git.commonGitDirectory(fixture.project)
     let before = WorktreeRecords.read(in: common)
     #expect(before.files.keys.contains("worktrees/work/HEAD"))
 
@@ -30,7 +30,7 @@ struct WorktreeRecordsTests {
   @Test func branchSwitchesLocksAndNewWorktreesChangeTheRecords() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
+    let common = try await fixture.git.commonGitDirectory(fixture.project)
     let empty = WorktreeRecords.read(in: common)
 
     let path = try await fixture.coordinator.createThenRunPostCreateHook(

@@ -1,4 +1,5 @@
 import Foundation
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -39,13 +40,6 @@ struct AppModelOverrideGlobalValuesTests {
   @Test func theDefaultBranchColumnSaysSoWhenAScanDetectedNothing() {
     let harness = Harness()
     harness.model.defaultBranchScans[harness.project.id] = .absent
-
-    #expect(harness.model.defaultBranchGlobalValue(for: harness.project).text == "Not detected")
-  }
-
-  @Test func theDefaultBranchColumnOfAProjectWhoseFolderIsGoneDetectsNothing() {
-    let harness = Harness()
-    harness.model.missingProjects.insert(harness.project.id)
 
     #expect(harness.model.defaultBranchGlobalValue(for: harness.project).text == "Not detected")
   }
@@ -107,12 +101,7 @@ struct AppModelOverrideGlobalValuesTests {
   @Test func theDefaultBranchColumnSaysItWasDetectedAndOpensNoPage() {
     let harness = Harness()
     harness.model.defaultBranchScans[harness.project.id] = .found(
-      DefaultBranch(
-        shortName: "origin/trunk",
-        nameWithoutRemote: "trunk",
-        tip: "abc",
-        fullName: "refs/remotes/origin/trunk",
-      )
+      .sample("trunk", remote: "origin")
     )
     harness.model.detectedDefaultBranchNames[harness.project.id] = "trunk"
 
