@@ -21,7 +21,7 @@ extension WorktreeGit {
         message: "git listed no worktrees for \(project.path.path)",
       )
     }
-    // Stats, each of which a dead mount holds; see worktrees.md.
+    // Stats, each of which a dead mount holds; see worktrees/line-count-badge.md.
     return await runOnDispatch { worktrees.map(Self.datedByDirectory).map(Self.judgedInitializing) }
   }
 
@@ -50,7 +50,7 @@ extension WorktreeGit {
   }
 
   /// An answer that proves nothing, unreadable or empty, counts as listed:
-  /// the caller deletes the branch next. See Docs/design/worktrees.md.
+  /// the caller deletes the branch next. See Docs/design/worktrees/creating-and-removing.md.
   func isListed(_ path: URL, in project: Project) async -> Bool {
     guard let listed = try? await parsedList(in: project.path, projectID: project.id),
       !listed.isEmpty

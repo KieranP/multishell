@@ -8,7 +8,7 @@ extension AppModel {
   }
 
   /// A checkout, a file list or a hook of a create or a removal is writing
-  /// there, so git reads a half-made tree; see worktrees.md.
+  /// there, so git reads a half-made tree; see worktrees/creating-and-removing.md.
   func isBeingWritten(_ id: Worktree.ID) -> Bool {
     hasStageWriting(id) || workspace.worktree(id)?.isInitializing == true
   }

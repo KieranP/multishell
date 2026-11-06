@@ -15,7 +15,7 @@ struct BranchRunLookup: Equatable {
   let tipAskedSince: Date
 
   /// Asked again once the branch is pushed to, until its run ends, on hold
-  /// included, and until the tip's own run appears; see services.md.
+  /// included, and until the tip's own run appears; see services/reads.md.
   func stillAnswers(upstreamTip tip: String?, now: Date) -> Bool {
     guard tip == upstreamTip, run?.isFinished != false, run?.status != .unknown else {
       return false

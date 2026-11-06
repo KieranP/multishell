@@ -181,7 +181,7 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(nil) == .attention, "a Claude from before the field keeps its banner")
     #expect(
       state("plan_approval_prompt") == .attention,
-      "a type this build has not heard of is taken to ask; see Docs/design/agents.md",
+      "a type this build has not heard of is taken to ask; Docs/design/agents/reports-and-hooks.md",
     )
     #expect(
       claude.event(for: AgentHookPayload(eventName: "Stop", notificationType: "idle_prompt"))?

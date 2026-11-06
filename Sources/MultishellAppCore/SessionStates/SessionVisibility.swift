@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// `isSeen` is the focused pane and clears a Done; `isOnScreen` is any pane
-/// in view and holds the banner. See Docs/design/terminals.md.
+/// in view and holds the banner. See Docs/design/terminals/sessions.md.
 struct SessionVisibility {
   let worktreeID: Worktree.ID
   let isSeen: Bool

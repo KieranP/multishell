@@ -26,9 +26,9 @@
   there, offscreen.
 - **Clearing the pending value takes the sheet down with it.** A worktree
   removed outside the app clears `pendingWorktreeRemoval`, and a sheet left
-  standing would confirm a removal on a path git no longer knows (worktrees.md).
-  The `destructiveAlert` modifier drops the answer then, rather than reading it
-  as a Cancel.
+  standing would confirm a removal on a path git no longer knows
+  (worktrees/creating-and-removing.md). The `destructiveAlert` modifier drops
+  the answer then, rather than reading it as a Cancel.
 - **The shared-settings question stays a SwiftUI dialog.** Nothing it offers is
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a

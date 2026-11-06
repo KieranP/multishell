@@ -12,7 +12,7 @@ enum PanePasteboard {
     [.fileURL, .string] + PastedImageFile.pasteboardTypes
 
   /// Only the user's own paste saves an image or takes the session's wording;
-  /// a program's read gets quoted paths. terminals.md says why.
+  /// a program's read gets quoted paths. terminals/paste-and-drop.md says why.
   @MainActor
   static func pasteText(
     on pasteboard: NSPasteboard,

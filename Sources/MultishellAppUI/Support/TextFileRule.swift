@@ -3,7 +3,7 @@ import MultishellAppCore
 import UniformTypeIdentifiers
 
 /// Which files open as text: in the editor from a clicked link, and in a file
-/// tab from the Files panel, by one rule; see Docs/design/files.md.
+/// tab from the Files panel, by one rule; see Docs/design/files/file-tabs.md.
 enum TextFileRule {
   /// A regular file typed as text, or reading as text: macOS has no text type
   /// for a `.rs` or a `Dockerfile`, and calls a `.ts` a video.

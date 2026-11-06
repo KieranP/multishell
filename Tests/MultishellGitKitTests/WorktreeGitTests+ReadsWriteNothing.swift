@@ -7,7 +7,7 @@ import Testing
 @testable import MultishellGitKit
 
 /// The app watches `.git`, so a read that writes there raises the change
-/// that schedules it again; see Docs/design/worktrees.md.
+/// that schedules it again; see Docs/design/worktrees/watching-and-status-reads.md.
 extension WorktreeGitTests {
   @Test func everyReadTheAppRunsByItselfLeavesGitsDirectoryAsItWas() async throws {
     let fixture = try await RepositoryFixture.make()

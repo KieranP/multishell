@@ -4,7 +4,7 @@ import MultishellCore
 import SwiftUI
 
 /// One of the selected worktree's panes: mark, split position, title, chip, and
-/// its state and time on the right. Bold is the focused pane; see agents.md.
+/// its state and time on the right. Bold is the focused pane; see agents/board-and-pane-rows.md.
 struct PaneRow: View, @MainActor Equatable {
   let pane: SidebarPane
   /// The sidebar's clock, held by `SelectedWorktreePanes` as the board holds its own.

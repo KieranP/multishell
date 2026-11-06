@@ -4,7 +4,7 @@ import MultishellServices
 import SwiftUI
 
 /// The pull request in a card, whether it can merge and the checks that decide
-/// it, or the merge form in their place; see Docs/design/services.md.
+/// it, or the merge form in their place; see Docs/design/services/.
 struct PullRequestPanelPage: View {
   let model: AppModel
   let worktree: Worktree

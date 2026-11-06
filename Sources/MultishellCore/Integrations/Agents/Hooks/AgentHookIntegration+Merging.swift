@@ -1,7 +1,7 @@
 import Foundation
 
 /// Adding an agent's hooks to a settings object and taking them out again,
-/// without touching the disk; see Docs/design/agents.md.
+/// without touching the disk; see Docs/design/agents/reports-and-hooks.md.
 extension AgentHookIntegration {
   /// What a bare hook of ours carries; a matcher is the group's and stays.
   private static let bareHookKeys = ["type", "command", "timeout", "timeoutSec"]
@@ -112,7 +112,7 @@ extension AgentHookIntegration {
   }
 
   /// Ours out of one group, `nil` where nothing of the user's is left; a mixed
-  /// group, ours never, keeps theirs. See Docs/design/agents.md.
+  /// group, ours never, keeps theirs. See Docs/design/agents/reports-and-hooks.md.
   private func withoutOurHooks(_ group: [String: Any]) -> [String: Any]? {
     var trimmed = group
     if let command = group["command"] as? String, AgentHookCatalogue.isOurHook(command) {

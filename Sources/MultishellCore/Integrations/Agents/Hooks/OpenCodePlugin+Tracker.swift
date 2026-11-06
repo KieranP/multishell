@@ -102,7 +102,7 @@ extension OpenCodePlugin {
         ended.add(id)
       }
       // A parent's prompt starts a turn, OpenCode sending none over a child's end,
-      // and one naming no session starts none; a child's is its work (agents.md).
+      // and one naming no session starts none; a child's is its work (agents/background-work.md).
       const onPrompt = (id) => reportFor(id, "running", undefined, !!id)
       // No prompt hook stands for the turn a child's end wakes, so its start
       // says Working where the prompt has not.

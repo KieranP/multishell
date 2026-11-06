@@ -45,7 +45,7 @@ struct ProcessRunnerTests {
   }
 
   /// Starved, the cooperative pool holds at most a thread per core inside a run, so each child
-  /// counts the runs beside it instead of timing the batch; see Docs/develop/tests.md.
+  /// counts runs beside it, not timing the batch: Docs/develop/tests/state-git-and-worktrees.md.
   @Test func manyConcurrentProcessesDoNotStarveEachOther() async throws {
     let running = try Scratch.directory("overlap")
     defer { Scratch.remove(running) }

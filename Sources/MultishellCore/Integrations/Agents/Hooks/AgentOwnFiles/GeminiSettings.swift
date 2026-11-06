@@ -1,7 +1,7 @@
 import Foundation
 
 /// Whether Gemini starts a turn of its own when a background shell ends,
-/// which only two settings together make it do; see Docs/design/agents.md.
+/// which only two settings together make it do; see Docs/design/agents/background-work.md.
 enum GeminiSettings {
   /// The ones Gemini reads that name a turn a shell's end starts.
   private static let wakingCompletionBehaviors: Set<String> = ["inject", "notify"]

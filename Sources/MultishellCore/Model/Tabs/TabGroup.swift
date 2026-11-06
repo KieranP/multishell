@@ -1,7 +1,7 @@
 import Foundation
 
 /// One group of tabs in a worktree's terminal area, left to right in
-/// `Workspace.tabGroups`; see Docs/design/tabs-and-groups.md.
+/// `Workspace.tabGroups`; see Docs/design/tabs-and-groups/groups-and-dragging.md.
 public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   /// `shownTabID` keeps the key it was saved under; see state-and-store.md.
   enum CodingKeys: String, CodingKey {

@@ -5,8 +5,8 @@ import Testing
 @testable import MultishellAppUI
 @testable import MultishellCore
 
-/// Agents' Agent Hooks part is left out because its height is the developer's agent count; the
-/// exemptions and what this cannot see are in Docs/develop/tests.md and build.md.
+/// Agent Hooks is left out, its height being the developer's agent count. Why, and what this
+/// misses: Docs/develop/tests/interface-and-terminal.md, Docs/develop/build/verifying-a-change.md.
 @Suite @MainActor
 struct ViewSettingsWindowTests {
   private struct Page {

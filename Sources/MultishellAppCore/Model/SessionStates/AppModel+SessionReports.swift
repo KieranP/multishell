@@ -3,7 +3,7 @@ import MultishellCore
 
 extension AppModel {
   /// What the shell says it started, while it runs. An agent naming itself
-  /// is left alone; see Docs/design/agents.md.
+  /// is left alone; see Docs/design/agents/board-and-pane-rows.md.
   private func noteCommandAgent(_ report: SessionStateReport, of id: TerminalSession.ID) {
     guard report.isFromShellIntegration == true, report.agentID == nil else { return }
     setIfChanged(
@@ -17,10 +17,10 @@ extension AppModel {
   func receive(_ report: SessionStateReport) {
     if areDebugToolsEnabled { debugSampler.stateReportCount += 1 }
     // An older helper's walk from a prompt ends at this process, whose pid
-    // never goes while it is looking; see Docs/design/agents.md.
+    // never goes while it is looking; see Docs/design/agents/reports-and-hooks.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
     // A shell's exit can wake the agent before the poll sees it go, where no
-    // list of what is out says so; see Docs/design/agents.md.
+    // list of what is out says so; see Docs/design/agents/background-work.md.
     if report.state == .done, report.resumesAfterWorkers == true, report.workersOut == nil {
       sweepGonePIDs()
     }

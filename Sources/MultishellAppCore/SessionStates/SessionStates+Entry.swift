@@ -103,7 +103,7 @@ extension SessionStates {
     }
 
     /// One prompt answered, `true` when no other is asking. A shared place
-    /// answers nothing, being any of them; see Docs/design/agents.md.
+    /// answers nothing, being any of them; see Docs/design/agents/subagents.md.
     mutating func answer(_ raiser: PromptRaiser, sharedPlace: Bool = false) -> Bool {
       guard !sharedPlace else { return false }
       promptRaisers.remove(raiser)

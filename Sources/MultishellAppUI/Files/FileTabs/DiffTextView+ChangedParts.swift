@@ -2,7 +2,7 @@ import AppKit
 import MultishellAppCore
 
 /// The words a changed line differs in, painted darker over its line's tint;
-/// see Docs/design/files.md.
+/// see Docs/design/files/file-tabs.md.
 extension DiffTextView {
   func drawChangedParts(in rect: NSRect) {
     guard let layoutManager = textLayoutManager

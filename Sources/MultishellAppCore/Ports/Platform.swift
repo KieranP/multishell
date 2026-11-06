@@ -14,7 +14,7 @@ public protocol Platform: AnyObject, Sendable {
   /// window Cmd+W closes that window, not a pane nobody can see.
   var isWorkspaceWindowKey: Bool { get }
   /// Whether any of the workspace window is on screen, frontmost or not: file
-  /// tabs and the Files panel stay current while it is; see files.md.
+  /// tabs and the Files panel stay current while it is; see files/panel.md.
   var isWorkspaceWindowVisible: Bool { get }
   /// In the Dock, which `isWorkspaceWindowVisible` alone cannot tell from covered.
   var isWorkspaceWindowMinimized: Bool { get }
@@ -52,7 +52,7 @@ public protocol Platform: AnyObject, Sendable {
   func beep()
 
   /// Whether a file opens as text, by a clicked link's rule; blocking, so run
-  /// through `runOnDispatch`. See Docs/design/files.md.
+  /// through `runOnDispatch`. See Docs/design/files/file-tabs.md.
   nonisolated func opensAsText(_ file: URL) -> Bool
   /// The same rule for a copy git holds, by its name's type or its first bytes.
   nonisolated func opensAsText(named name: String, startingWith bytes: Data) -> Bool

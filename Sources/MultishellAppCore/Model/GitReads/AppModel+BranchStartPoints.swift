@@ -4,7 +4,7 @@ import MultishellGitKit
 
 extension AppModel {
   /// A worktree's branch following the remote one it was made from, under
-  /// another name, follows someone else's; see Docs/design/services.md.
+  /// another name, follows someone else's; see Docs/design/services/branch-matching.md.
   func upstreamsOfTheirOwn(
     _ upstreams: [String: BranchUpstream],
     of project: Project,

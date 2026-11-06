@@ -1,5 +1,5 @@
 /// A service read through its own command-line tool. The raw value is saved,
-/// so add cases but never rename one; see Docs/design/services.md.
+/// so add cases but never rename one; see Docs/design/services/reads.md.
 public enum ServiceIntegration: String, Codable, Hashable, Sendable, CaseIterable {
   case circleCI = "circleci"
   case gitHub = "github"

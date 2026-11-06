@@ -2,7 +2,7 @@ import MultishellAppCore
 import SwiftUI
 
 /// A worktree's name that gives up its prefix before its leaf: whole, then
-/// `…/leaf`, then the leaf cut in its middle. See Docs/design/worktrees.md.
+/// `…/leaf`, then the leaf cut in its middle. See Docs/design/worktrees/sidebar.md.
 struct BranchNameText: View {
   let name: String
   let font: Font

@@ -1,5 +1,5 @@
 /// Marks the changes on disk the index holds too, matched across the two diffs
-/// against `HEAD`; see Docs/design/files.md for why one algorithm diffs both.
+/// against `HEAD`; see Docs/design/files/file-tabs.md for why one algorithm diffs both.
 enum StagedChangeMarker {
   /// Where an addition sits: the `HEAD` line it comes before, and its text.
   private struct Addition: Hashable {

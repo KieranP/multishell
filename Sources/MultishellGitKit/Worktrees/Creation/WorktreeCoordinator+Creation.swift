@@ -94,7 +94,7 @@ extension WorktreeCoordinator {
         stopper: stopper,
       )
       await git.settleIndex(of: path, stopper: stopper)
-      // A Cancel during that wait comes after git finished; see worktrees.md.
+      // A Cancel during that wait comes after git finished; see worktrees/creating-and-removing.md.
       if stopper?.isStopRequested == true {
         throw ProcessFailure.unreportedByGit(
           ["worktree", "add"],

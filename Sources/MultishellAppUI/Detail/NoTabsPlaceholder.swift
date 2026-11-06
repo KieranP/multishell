@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// A worktree with no tab: a button for a shell and one for each agent the
-/// strip's New Tab menu offers. See Docs/design/tabs-and-groups.md.
+/// strip's New Tab menu offers. See Docs/design/tabs-and-groups/tab-strip.md.
 struct NoTabsPlaceholder: View {
   /// About three buttons a line, a little wider than the caption above.
   private static var buttonsMaxWidth: Double { 520 }

@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// One worker an agent has out, as the app knows it from the reports about
-/// it. Runtime only, kept by `SessionStates`; see Docs/design/agents.md.
+/// it. Runtime only, kept by `SessionStates`; see Docs/design/agents/subagents.md.
 public struct Worker: Identifiable, Equatable, Sendable {
   static let shellPrefix = "shell:"
 
@@ -21,12 +21,12 @@ public struct Worker: Identifiable, Equatable, Sendable {
   /// What it was launched to do, as the agent shows it.
   public internal(set) var description: String?
   /// The worker that launched it, `nil` for the agent's own or where no
-  /// report has said yet; see Docs/design/agents.md.
+  /// report has said yet; see Docs/design/agents/background-work.md.
   var parentID: String?
   /// When it started. Handed in by `stampChanges`, never read from a clock.
   var startedAt: Date?
   /// How many workers share this roster place. Above one only where an agent
-  /// names a worker without an id; see Docs/design/agents.md.
+  /// names a worker without an id; see Docs/design/agents/subagents.md.
   var occurrences = 1
   /// Set on a shell the agent backgrounded, whose exit is its end.
   var pid: Int32?
@@ -43,9 +43,9 @@ public struct Worker: Identifiable, Equatable, Sendable {
   /// not vouch for it: its end may have been lost.
   var wasHeardSinceStop = true
   /// Ended, and kept while a worker it launched is out, drawn as out as
-  /// Claude draws it; see Docs/design/agents.md.
+  /// Claude draws it; see Docs/design/agents/background-work.md.
   var hasEnded = false
-  /// Killed or failed, and drawn so until swept; see Docs/design/agents.md.
+  /// Killed or failed, and drawn so until swept; see Docs/design/agents/background-work.md.
   var hasFailed = false
   /// When it failed. Handed in by `stampChanges`, never read from a clock.
   var failedAt: Date?
@@ -56,10 +56,10 @@ public struct Worker: Identifiable, Equatable, Sendable {
   /// result named it; only Claude's hooks report one.
   var isBackgroundAgent = false
   /// Whether its last report was its own stop; a launched worker leaving the
-  /// list without one was killed. See Docs/design/agents.md.
+  /// list without one was killed. See Docs/design/agents/background-work.md.
   var lastReportWasItsStop = false
   /// Paused, and the last of its own work has just ended, which wakes it, so
-  /// it is kept until the next list; see Docs/design/agents.md.
+  /// it is kept until the next list; see Docs/design/agents/background-work.md.
   var awaitsResume = false
 
   var isBackgroundShell: Bool { pid != nil || isListedShell }

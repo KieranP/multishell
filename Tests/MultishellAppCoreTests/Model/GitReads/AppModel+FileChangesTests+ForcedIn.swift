@@ -9,7 +9,7 @@ import Testing
 
 extension AppModelFileChangesTests {
   /// `check-ignore` is asked about the folder, and a folder holding a tracked
-  /// file must not read as ignored; worktrees.md records the rule.
+  /// file must not read as ignored; worktrees/watching-and-status-reads.md records the rule.
   @Test func anEditToAFileForcedInUnderAnIgnoredFolderIsRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

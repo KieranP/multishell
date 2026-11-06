@@ -4,7 +4,7 @@ import MultishellCore
 /// a split side's padding belongs to the change across from it.
 extension DiffDisplayText {
   /// The first row of the change a step lands on, `nil` past the last or before
-  /// the first; what it counts from is in Docs/design/files.md.
+  /// the first; what it counts from is in Docs/design/files/file-tabs.md.
   public func startOfChange(
     _ direction: CycleDirection,
     stepOriginRow: Int?,

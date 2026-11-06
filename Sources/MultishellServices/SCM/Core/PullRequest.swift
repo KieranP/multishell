@@ -1,7 +1,7 @@
 import Foundation
 
 /// One pull request as its host lists it. Runtime only, never saved: it is
-/// read again from the host; see Docs/design/services.md.
+/// read again from the host; see Docs/develop/state-on-disk.md.
 public struct PullRequest: Hashable, Sendable {
   public let number: Int
   public let title: String

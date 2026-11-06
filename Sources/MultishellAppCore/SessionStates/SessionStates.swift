@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// What each live terminal is doing, and who clears what. Runtime only; see
-/// Docs/design/agents.md.
+/// Docs/design/terminals/sessions.md.
 public struct SessionStates: Equatable, Sendable {
   public enum Key: Hashable, Sendable {
     case session(TerminalSession.ID)

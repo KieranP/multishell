@@ -1,7 +1,7 @@
 import AppKit
 
 /// The standard panel with the commit beside the build number, so a bug
-/// report says which tree was installed; see Docs/develop/build.md.
+/// report says which tree was installed; see Docs/develop/build/building-locally.md.
 enum AboutPanel {
   static let commitKey = "MultishellCommit"
 

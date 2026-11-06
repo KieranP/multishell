@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// When and at what cost each worktree's `git status` was last read, the pace
-/// those readings are judged by, and which reads are in flight; see worktrees.md.
+/// When and at what cost each worktree's `git status` was last read, the pace those readings
+/// are judged by, and which reads are in flight; see worktrees/watching-and-status-reads.md.
 struct StatusReadLog: Sendable {
   struct Ticket: Sendable {
     fileprivate let generation: Int

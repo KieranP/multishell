@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The global order and the active-first toggle; a project's override stays
-/// in its settings. See Docs/design/worktrees.md.
+/// in its settings. See Docs/design/worktrees/sidebar.md.
 struct SidebarSortMenu: View {
   let model: AppModel
   let theme: Theme

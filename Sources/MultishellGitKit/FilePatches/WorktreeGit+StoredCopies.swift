@@ -2,7 +2,7 @@ import Foundation
 import MultishellProcess
 
 /// What git holds of one file, read by size before by content, for a file tab
-/// and the Files panel's open rule; see Docs/design/files.md.
+/// and the Files panel's open rule; see Docs/design/files/file-tabs.md.
 extension WorktreeGit {
   /// `:0:`, as `:1:notes.txt` alone names stage one of `notes.txt`.
   private static func storedObjectNames(of path: String) -> [String] {

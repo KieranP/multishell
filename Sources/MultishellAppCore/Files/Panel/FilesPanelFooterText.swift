@@ -2,7 +2,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// The Files panel footer's words: what changed, which the counts follow, then
-/// what the panel left out, after them; see Docs/design/files.md.
+/// what the panel left out, after them; see Docs/design/files/panel.md.
 public enum FilesPanelFooterText {
   public static func changes(_ summary: FilesPanelSummary) -> String {
     switch summary.comparison {

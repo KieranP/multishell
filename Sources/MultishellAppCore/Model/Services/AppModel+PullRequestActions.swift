@@ -48,7 +48,7 @@ extension AppModel {
   }
 
   /// The host's new pull request page against the trunk. A branch the remote
-  /// lacks, or commits it lacks, is asked about first; see services.md.
+  /// lacks, or commits it lacks, is asked about first; see services/create-and-merge.md.
   public func createPullRequest(for worktree: Worktree) async {
     guard let project = workspace.project(worktree.projectID), let coordinator,
       let branch = worktree.branch, pullRequestHost(for: project) != nil,

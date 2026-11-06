@@ -16,7 +16,7 @@ struct WorktreeGitStatusTests {
     "c\nc\na\nc\n\nx\nc\nc\na\na\nc\ny\n}\na\n{\n}\n{\n}\nb\nx\n{\ny\nc\nx\ny\n"
 
   /// A stale index makes a plain `git status` rewrite it under `index.lock`, which trips a
-  /// commit typed at that moment; see Docs/design/worktrees.md.
+  /// commit typed at that moment; see Docs/design/worktrees/watching-and-status-reads.md.
   @Test func aStatusPollNeverWritesTheIndex() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
@@ -217,7 +217,7 @@ struct WorktreeGitStatusTests {
   }
 
   /// `git status` collapses an untracked directory to one entry while
-  /// `ls-files --others` lists every file in it; see Docs/design/worktrees.md.
+  /// `ls-files --others` lists every file in it; see Docs/design/worktrees/line-count-badge.md.
   @Test func eachFileInAnUntrackedDirectoryIsCountedWithItsLines() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

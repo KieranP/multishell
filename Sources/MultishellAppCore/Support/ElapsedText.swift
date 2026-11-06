@@ -7,7 +7,7 @@ enum ElapsedText {
   private static let minute = 60.0
   private static let hour = 3600.0
   /// `Int(_: Double)` traps above this, and the board renders whatever
-  /// duration a report carried; see Docs/design/agents.md.
+  /// duration a report carried; see Docs/design/agents/reports-and-hooks.md.
   private static let renderable = Double(Int.max)
 
   /// A glance: `41s`, `12m`, `1h 05m`. A negative interval reads as nothing

@@ -3,8 +3,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The quick switcher over the whole window, drawn as the find bar is, a
-/// panel lifted under a hairline with the field in a well. See quick-switcher.md.
+/// The quick switcher over the whole window, drawn as the find bar is, a panel lifted under a
+/// hairline with the field in a well. See quick-switcher/field-keys-and-look.md.
 struct QuickSwitcherOverlay: View {
   let model: AppModel
   let state: QuickSwitcherState

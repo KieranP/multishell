@@ -3,8 +3,30 @@ import MultishellCore
 extension AppModel {
   /// Each tab with a live shell, from what its panes were last seen running
   /// and what their terminals held.
-  public var debugMemoryTable: DebugMemoryTable {
-    let snapshot = shownDebugSnapshot
+  public var debugMemoryTable: DebugMemoryTable { debugMemoryTable(of: shownDebugSnapshot) }
+
+  /// The command line's table, read on while the panel is paused.
+  var liveDebugMemoryTable: DebugMemoryTable { debugMemoryTable(of: liveDebugSnapshot) }
+
+  /// UTF-16 kept for each line, twice over for the rows' joined text, and an
+  /// image's bytes: the model's copy, not the layout or picture a shown tab adds.
+  private var debugFileTabMemory: DebugFileTabMemory {
+    let bytes = fileTabReadings.values.reduce(UInt64(0)) { total, reading in
+      switch reading.content {
+      case .image(let image):
+        return total + UInt64(image.shownCopies.reduce(0) { $0 + $1.image.data.count })
+
+      case .text(let rows):
+        return total + UInt64(rows.displayText.string.utf16.count) * 4
+
+      case .binary, .missing, .released, .releasedFollowingStatus, .tooLarge, .unreadable:
+        return total
+      }
+    }
+    return DebugFileTabMemory(tabCount: workspace.fileTabs.count, contentMemory: bytes)
+  }
+
+  private func debugMemoryTable(of snapshot: DebugSnapshot) -> DebugMemoryTable {
     let processesBySession = snapshot.attribution.processesBySession
     let terminalMemoryBySession = snapshot.terminalMemoryBySession
     let worktreesByID = workspace.worktrees.keyedByID()
@@ -28,23 +50,5 @@ extension AppModel {
       unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst(),
       fileTabs: debugFileTabMemory,
     )
-  }
-
-  /// UTF-16 kept for each line, twice over for the rows' joined text, and an
-  /// image's bytes: the model's copy, not the layout or picture a shown tab adds.
-  private var debugFileTabMemory: DebugFileTabMemory {
-    let bytes = fileTabReadings.values.reduce(UInt64(0)) { total, reading in
-      switch reading.content {
-      case .image(let image):
-        return total + UInt64(image.shownCopies.reduce(0) { $0 + $1.image.data.count })
-
-      case .text(let rows):
-        return total + UInt64(rows.displayText.string.utf16.count) * 4
-
-      case .binary, .missing, .released, .releasedFollowingStatus, .tooLarge, .unreadable:
-        return total
-      }
-    }
-    return DebugFileTabMemory(tabCount: workspace.fileTabs.count, contentMemory: bytes)
   }
 }

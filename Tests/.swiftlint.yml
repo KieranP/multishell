@@ -1,5 +1,5 @@
-# What a test may do that Sources may not: stop on a broken fixture, compare to
-# a literal so a failure prints the value, run long; Docs/develop/build.md.
+# What a test may do that Sources may not: stop on a broken fixture, compare to a literal
+# so a failure prints the value, run long; Docs/develop/build/compiler-and-lint-strictness.md.
 disabled_rules:
   - cyclomatic_complexity
   - empty_collection_literal

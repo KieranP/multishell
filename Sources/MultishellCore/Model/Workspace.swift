@@ -37,7 +37,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var sessions: [TerminalSession] = []
   public internal(set) var tabs: [TerminalTab] = []
   /// Saved under a key an older build ignores, so it drops them and keeps the
-  /// rest; see Docs/design/files.md.
+  /// rest; see Docs/design/files/file-tabs.md.
   public internal(set) var fileTabs: [FileTab] = []
   /// The groups of tabs each worktree is divided into, in display order
   /// left to right; see `TabGroup`. A worktree with tabs has at least one.
@@ -54,7 +54,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// the reason `customWorktreeNames` is.
   var hiddenWorktreeIDs: Set<Worktree.ID> = []
   /// Each worktree's port block, by index from `portBlockStart`. Here for the
-  /// reason `customWorktreeNames` is; see Docs/design/worktrees.md.
+  /// reason `customWorktreeNames` is; see Docs/design/worktrees/ports.md.
   var portBlocks: [Worktree.ID: Int] = [:]
 
   public internal(set) var appearance = Appearance()
@@ -66,7 +66,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// What `AgentCatalogue.customID` runs, as the user typed it.
   public internal(set) var customAgentCommand = ""
   /// Extra arguments each agent is started with, by catalogue id, as typed.
-  /// Per agent, not one line; see Docs/design/agents.md.
+  /// Per agent, not one line; see Docs/design/agents/launch-arguments.md.
   public internal(set) var agentFlags: [String: String] = [:]
   /// The catalogue agent Auto Rename runs, or `nil` for the project's agent.
   public internal(set) var renameAgentID: String?

@@ -12,7 +12,7 @@ extension AppModel {
   ) -> [Worktree] {
     let rule = worktreeSortRule(for: project)
     // Read once, not per row: a generic model's observed read builds its key
-    // path each time, about 30 times a plain class's (quick-switcher.md).
+    // path each time, about 30 times a plain class's (quick-switcher/lists-and-matching.md).
     let workspace = workspace
     let states = sessionStates
     let commitDates = lastCommitDates

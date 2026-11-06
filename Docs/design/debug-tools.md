@@ -2,9 +2,7 @@
 
 What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 
-- **For finding where sluggishness comes from**, in every build. The sidebar's
-  quick stats show FPS, CPU and memory; a click opens Debug Info over the panes,
-  as the Agents board does.
+- **For finding where sluggishness comes from**, in every build.
 - **The toggle is runtime state, not a preference.** Sampling costs a process
   table read a second, and the display link wakes the main thread every refresh,
   120 times a second on ProMotion, panel closed or not, since the sidebar shows
@@ -94,11 +92,11 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   size, an estimate, so the terminals can read more than the footprint holds.
   The Total row stays the footprint and children as measured.
 - **File tabs share one row, estimated from the text and image bytes the model
-  keeps**, and taken out of the app's row as a terminal is (files.md). The
-  layout a shown tab adds, up to 186 MB at the 1 MiB cap, and a shown image's
-  decoded picture, up to 36 MB a copy, stay in the app's row, and the estimate
-  is a second reason that row stops at zero. `debug memory` prints it as
-  `contentMemory`, `textMemory` before images counted.
+  keeps**, and taken out of the app's row as a terminal is (files/file-tabs.md).
+  The layout a shown tab adds, up to 186 MB at the 1 MiB cap, and a shown
+  image's decoded picture, up to 36 MB a copy, stay in the app's row, and the
+  estimate is a second reason that row stops at zero. `debug memory` prints it
+  as `contentMemory`, `textMemory` before images counted.
 - **Freed memory stays in the footprint until macOS wants it**, so closing a tab
   leaves its terminal's pages counted until the next tab reuses them. Not a leak
   (develop/memory.md).

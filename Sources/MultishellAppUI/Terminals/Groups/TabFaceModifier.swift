@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// What every tab in a strip shares around its content: fills, the shown tab's
-/// sides, a click and a middle click. See Docs/design/tabs-and-groups.md.
+/// sides, a click and a middle click. See Docs/design/tabs-and-groups/tab-strip.md.
 struct TabFaceModifier: ViewModifier {
   let isShown: Bool
   /// A tab behind the shown one under the pointer; `nil` for none.

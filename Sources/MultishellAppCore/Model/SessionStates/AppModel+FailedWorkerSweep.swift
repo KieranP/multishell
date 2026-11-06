@@ -2,7 +2,7 @@ import Foundation
 
 extension AppModel {
   /// One task, set for the next failed worker due to go and moved when that
-  /// changes; see Docs/design/agents.md.
+  /// changes; see Docs/design/agents/background-work.md.
   func scheduleFailedWorkerSweep() {
     let due = sessionStates.nextFailedWorkerSweep(lingering: failedWorkerLingering)
     guard due != failedWorkerSweepDue else { return }

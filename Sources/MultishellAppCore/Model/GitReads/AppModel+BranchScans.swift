@@ -7,7 +7,7 @@ extension AppModel {
   private static var concurrentBranchScans: Int { 4 }
 
   /// What the sidebar draws for one worktree. git's own proof stands; a merged
-  /// pull request headed by the branch's tip is proof beside it; see services.md.
+  /// pull request headed by the branch's tip is proof beside it; see services/branch-matching.md.
   public func mergeState(of worktree: Worktree) -> WorktreeMergeState {
     let gitVerdict = mergeStates[worktree.id] ?? .unknown
     if gitVerdict.isCertain { return gitVerdict }
@@ -114,7 +114,7 @@ extension AppModel {
     var plan = MergeReadPlan()
     for worktree in workspace.worktrees(of: id) {
       // A stage keeps what it earned and is asked nothing; a claimed path
-      // forgets, the last checkout there being gone. See worktrees.md.
+      // forgets, the last checkout there being gone. See worktrees/creating-and-removing.md.
       if worktreeOperations.isRunning(worktree.id) { continue }
       guard !pathClaims.isClaimed(worktree.id), !worktree.isInitializing,
         WorktreeMergeState.applies(

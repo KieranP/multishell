@@ -42,8 +42,8 @@
   separates the three. All three badge; only the two that are proof get a
   removal dialog led by the button that deletes the branch.
 - **A merged pull request headed by the branch's tip is a fourth sign**, and
-  proof, taken ahead of git's; its glyph is drawn instead of the badge
-  (services.md).
+  proof, taken ahead of git's inference but not its proof; its glyph is drawn
+  instead of the badge (services/branch-matching.md).
 - **The badge hides while the worktree holds uncommitted or unpushed work.**
   Unpushed means ahead of an upstream: a branch with none counts ahead of the
   base, and those are the commits a patch-id or content verdict found landed.
@@ -60,9 +60,9 @@
   can hang. So a badge is only as fresh as the last fetch, and Fetch is a menu
   item with a timeout and a spinner.
 - **The check runs when a ref, the index, `HEAD`, the config or another entry
-  worktrees.md counts changes in the project's `.git`**, and on the backstop
-  poll. Four projects are scanned at once there, one after another having been
-  the tick's longest wait at ten projects.
+  worktrees/watching-and-status-reads.md counts changes in the project's
+  `.git`**, and on the backstop poll. Four projects are scanned at once there,
+  one after another having been the tick's longest wait at ten projects.
 - **Each verdict is memoised on base, base tip, branch, branch tip and whether
   the upstream was gone.** The branch because two may sit on one commit with
   only one gone upstream; the upstream because a first push puts one back
@@ -91,8 +91,6 @@
   every poll.
 - **Verdicts are runtime state, never saved**: recomputed from git, no badge
   comes off disk describing a branch that has moved since.
-- **Never badged**: main worktree, bare repo, detached HEAD, the trunk's own
-  checkout.
 - **The user's git config cannot change what a read means.** Every runner turns
   signature printing off and untracked files on, through the environment rather
   than `-c`, which a failure would report in its arguments.

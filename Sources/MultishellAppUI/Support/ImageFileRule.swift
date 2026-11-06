@@ -4,7 +4,7 @@ import MultishellAppCore
 import UniformTypeIdentifiers
 
 /// Which files a file tab draws as an image, and their size; see
-/// Docs/design/files.md.
+/// Docs/design/files/image-tabs.md.
 enum ImageFileRule {
   /// What ImageIO decodes on this Mac, asked once.
   private static let decodedTypes = Set(CGImageSourceCopyTypeIdentifiers() as? [String] ?? [])

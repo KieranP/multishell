@@ -1,5 +1,5 @@
 # What init.fish adds in a Ghostty pane to the marks fish writes itself: the
-# cursor's shape. Why: Docs/design/terminals.md.
+# cursor's shape. Why: Docs/design/terminals/shell-integration.md.
 
 # A bar to type in, the configured shape back for a program. fish's own vi-mode
 # handler draws every shape itself, so ours stands back.

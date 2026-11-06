@@ -1,7 +1,7 @@
 import Foundation
 
 /// A number in a settings file, kept as the user spelled it: a string
-/// carrying the literal behind a marker across the parse; see agents.md.
+/// carrying the literal behind a marker across the parse; see agents/reports-and-hooks.md.
 enum NumberLiteral {
   // U+0001 and a token this process alone knows, so a string of the user's
   // cannot be taken for a marked number on the way back out.

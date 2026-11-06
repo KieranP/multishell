@@ -37,7 +37,7 @@ extension NewWorktreeDraft {
   }
 
   /// What the branch field hands in, pasted or typed. A run of characters
-  /// unusual in a branch name becomes one `-`; see worktrees.md.
+  /// unusual in a branch name becomes one `-`; see worktrees/creating-and-removing.md.
   public mutating func typeBranch(_ text: String) {
     branch = Self.dashingUnusualCharacters(in: text)
   }

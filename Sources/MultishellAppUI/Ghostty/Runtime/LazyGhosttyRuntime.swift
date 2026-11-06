@@ -2,7 +2,7 @@ import AppKit
 import MultishellCore
 
 /// The runtime every surface shares, built on first use with the user's
-/// config under the app's layer; see Docs/design/terminals.md.
+/// config under the app's layer; see Docs/design/terminals/engine-and-config.md.
 @MainActor
 final class LazyGhosttyRuntime {
   private let readBase: @MainActor () -> String

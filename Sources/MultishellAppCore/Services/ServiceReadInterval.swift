@@ -1,6 +1,6 @@
 import Foundation
 
-/// How often the services are asked; see Docs/design/services.md.
+/// How often the services are asked; see Docs/design/services/reads.md.
 enum ServiceReadInterval {
   /// What anything happening on the host waits at most to be seen: a review,
   /// a teammate's push, a run starting.

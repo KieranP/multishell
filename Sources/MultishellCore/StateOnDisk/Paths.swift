@@ -42,7 +42,7 @@ public enum Paths {
   }
 
   /// Where a drag's promised files and pasted images are copied, somewhere the
-  /// pane's own shell can read; see terminals.md.
+  /// pane's own shell can read; see terminals/paste-and-drop.md.
   public static var dropsDirectory: URL {
     stateDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
   }

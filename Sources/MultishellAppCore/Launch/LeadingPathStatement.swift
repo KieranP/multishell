@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellProcess
 
 /// The statement a tab's line opens with, in the login shell's own syntax: its
-/// profile's `path_helper` moved the app's entries back. See terminals.md.
+/// profile's `path_helper` moved the app's entries back. See terminals/sessions.md.
 enum LeadingPathStatement {
   /// Empty where no profile ran: csh reads `.login` only as a login shell,
   /// which `-i -c` is not, and `/bin/sh -c` reads nothing.

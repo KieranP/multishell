@@ -1,7 +1,7 @@
 import Foundation
 
 /// One spelling sh, zsh, bash, dash, tcsh and fish read alike, typed at a
-/// prompt or run as a script; see Docs/design/terminals.md.
+/// prompt or run as a script; see Docs/design/terminals/paste-and-drop.md.
 public enum AnyShellQuoting {
   /// Characters no shell above reads specially anywhere in a word.
   private static let bare = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_./"))

@@ -1,5 +1,5 @@
 /// What a worktree holds since its branch left the project's base branch,
-/// committed or not, new files included; see Docs/design/files.md.
+/// committed or not, new files included; see Docs/design/files/modified-and-branch.md.
 public struct BranchChanges: Hashable, Sendable {
   /// The base as git prints it short, `origin/main`.
   public let baseName: String

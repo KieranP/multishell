@@ -23,8 +23,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-dark.png">
-    <img src="Docs/screenshot-light.png" width="900" alt="Multishell with projects and worktrees in the sidebar, Claude Code split above a shell on the left, a second Claude Code on the right, pull request and CI marks on the worktree rows, and the Git panel listing the branch's changes">
+    <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-dark.png">
+    <img src="Screenshots/screenshot-light.png" width="900" alt="Multishell with projects and worktrees in the sidebar, Claude Code split above a shell on the left, a second Claude Code on the right, pull request and CI marks on the worktree rows, and the Git panel listing the branch's changes">
   </picture>
 </p>
 
@@ -64,8 +64,8 @@ changed, the branch's pull request and its latest CI run.
 </td>
 <td width="55%" align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-sidebar-dark.png">
-  <img src="Docs/screenshot-sidebar-light.png" width="320" alt="The sidebar: three projects, their worktrees with state dots, line counts, pull request and CI marks, and the agent tabs of the selected worktree">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-sidebar-dark.png">
+  <img src="Screenshots/screenshot-sidebar-light.png" width="320" alt="The sidebar: three projects, their worktrees with state dots, line counts, pull request and CI marks, and the agent tabs of the selected worktree">
 </picture>
 </td>
 </tr>
@@ -78,8 +78,8 @@ another worktree moves without restarting.
 </td>
 <td width="55%">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-panes-dark.png">
-  <img src="Docs/screenshot-panes-light.png" width="100%" alt="A tab group with Claude Code split above a shell">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-panes-dark.png">
+  <img src="Screenshots/screenshot-panes-light.png" width="100%" alt="A tab group with Claude Code split above a shell">
 </picture>
 </td>
 </tr>
@@ -92,8 +92,8 @@ gained and lost.
 </td>
 <td width="55%" align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-git-dark.png">
-  <img src="Docs/screenshot-git-light.png" width="300" alt="The Git panel under Branch, listing changed files with their line counts">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-git-dark.png">
+  <img src="Screenshots/screenshot-git-light.png" width="300" alt="The Git panel under Branch, listing changed files with their line counts">
 </picture>
 </td>
 </tr>
@@ -106,8 +106,8 @@ committed copy beside the new one.
 </td>
 <td width="55%">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-diff-dark.png">
-  <img src="Docs/screenshot-diff-light.png" width="100%" alt="A file tab showing rate-limit.js side by side, the committed lines on the left and the new ones on the right, highlighted as JavaScript">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-diff-dark.png">
+  <img src="Screenshots/screenshot-diff-light.png" width="100%" alt="A file tab showing rate-limit.js side by side, the committed lines on the left and the new ones on the right, highlighted as JavaScript">
 </picture>
 </td>
 </tr>
@@ -120,12 +120,12 @@ message, or turn on auto-merge while required checks still run.
 </td>
 <td width="55%" align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-pr-dark.png">
-  <img src="Docs/screenshot-pr-light.png" width="48%" alt="A pull request page reading Ready to merge, with a Merge button and five passing checks">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-pr-dark.png">
+  <img src="Screenshots/screenshot-pr-light.png" width="48%" alt="A pull request page reading Ready to merge, with a Merge button and five passing checks">
 </picture>
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-ci-dark.png">
-  <img src="Docs/screenshot-ci-light.png" width="48%" alt="A CircleCI page for a failed run, with the failing test job's log excerpt">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-ci-dark.png">
+  <img src="Screenshots/screenshot-ci-light.png" width="48%" alt="A CircleCI page for a failed run, with the failing test job's log excerpt">
 </picture>
 </td>
 </tr>
@@ -138,8 +138,8 @@ still working. Type to reach any worktree, tab or file, or start with
 </td>
 <td width="55%" align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-switcher-dark.png">
-  <img src="Docs/screenshot-switcher-light.png" width="100%" alt="The quick switcher on its Agents scope: two agents waiting for input, two working, four done">
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-switcher-dark.png">
+  <img src="Screenshots/screenshot-switcher-light.png" width="100%" alt="The quick switcher on its Agents scope: two agents waiting for input, two working, four done">
 </picture>
 </td>
 </tr>
@@ -147,8 +147,8 @@ still working. Type to reach any worktree, tab or file, or start with
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-board-dark.png">
-    <img src="Docs/screenshot-board-light.png" width="900" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
+    <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-board-dark.png">
+    <img src="Screenshots/screenshot-board-light.png" width="900" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
   </picture>
 </p>
 
@@ -279,7 +279,8 @@ folder button at the top of the sidebar, or ⌘O.
 - If it stops because the submodule is past its pin, run
   `git submodule update ThirdParty/ghostty`.
 
-The full build notes are in [Docs/develop/build.md](Docs/develop/build.md).
+The full build notes are in
+[Docs/develop/build/building-locally.md](Docs/develop/build/building-locally.md).
 
 </details>
 

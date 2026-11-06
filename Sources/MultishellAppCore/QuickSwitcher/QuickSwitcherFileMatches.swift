@@ -1,5 +1,5 @@
 /// The selected worktree's files holding every word of a query, best first, by
-/// the byte search the Files panel's filter uses. See quick-switcher.md.
+/// the byte search the Files panel's filter uses. See quick-switcher/lists-and-matching.md.
 enum QuickSwitcherFileMatches {
   private static let inName = 100
   private static let startingName = 50

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Whether an installed file holds what this build writes. Nothing rewrites
-/// one unasked, the row offering Update instead; see Docs/design/agents.md.
+/// one unasked, the row offering Update instead; see Docs/design/agents/reports-and-hooks.md.
 extension AgentHookIntegration {
   public enum InstallState: Sendable, Equatable {
     case absent, stale, current

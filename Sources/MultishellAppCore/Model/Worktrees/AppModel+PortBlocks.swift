@@ -20,7 +20,7 @@ extension AppModel {
   }
 
   /// A worktree just created with no block. Never over another alert, the
-  /// caption keeping the record; see Docs/design/worktrees.md.
+  /// caption keeping the record; see Docs/design/worktrees/ports.md.
   func alertNoPortBlock(for worktree: Worktree) {
     guard presentedError == nil else { return }
     // Owned by no request, so a command line create that caused it still succeeds.

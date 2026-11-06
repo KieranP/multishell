@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The window's right-hand panel: the worktree's files, what git says changed,
-/// its pull request or its CI runs; see Docs/design/files.md and services.md.
+/// its pull request or its CI runs; see Docs/design/files/panel.md and services/marks-and-pages.md.
 struct FilesPanel: View {
   let model: AppModel
   let worktree: Worktree

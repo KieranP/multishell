@@ -26,7 +26,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public internal(set) var untrackedPaths: [String] = []
 
   /// Lines added and removed against HEAD, with an untracked file's whole
-  /// contents counted as added; see Docs/design/worktrees.md.
+  /// contents counted as added; see Docs/design/worktrees/line-count-badge.md.
   public internal(set) var insertions = 0
   public internal(set) var deletions = 0
   /// Files that changed with no line to show for it: a binary file, a mode
@@ -67,7 +67,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public func kind(of path: String) -> StatusChange.Kind? { kinds[path] }
 
   /// Whether `ahead` is counted past `base`, git having no upstream; never for a
-  /// checkout of a local base or of a branch with no commit yet. See worktrees.md.
+  /// checkout of a local base or of a branch with no commit yet. See worktrees/line-count-badge.md.
   public func countsAhead(past base: DefaultBranch) -> Bool {
     upstream == nil && !isUnborn && branch != nil && branch != base.shortName
   }

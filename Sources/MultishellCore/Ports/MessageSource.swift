@@ -1,5 +1,5 @@
 /// What arrives from outside the engine: reports about a session, which only
-/// the program in it can make, and the command line's requests; agents.md.
+/// the program in it can make, and the command line's requests; agents/command-line.md.
 @MainActor
 public protocol MessageSource: AnyObject {
   var onReport: (@MainActor (SessionStateReport) -> Void)? { get set }

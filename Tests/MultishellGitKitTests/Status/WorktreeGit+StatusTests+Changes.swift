@@ -6,7 +6,7 @@ import Testing
 
 @testable import MultishellGitKit
 
-/// The per-file list every count is summed from; see Docs/design/files.md.
+/// The per-file list every count is summed from; see Docs/design/files/panel.md.
 extension WorktreeGitStatusTests {
   private static func change(_ path: String, in status: WorktreeStatus) -> StatusChange? {
     status.changes.first { $0.path == path }

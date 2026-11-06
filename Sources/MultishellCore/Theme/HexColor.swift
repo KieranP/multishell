@@ -8,7 +8,7 @@ enum HexColor {
   private static let hash = UInt8(ascii: "#")
 
   /// `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa`, the `#` optional. Read on every
-  /// render, so it scans the bytes in place; see appearance.md.
+  /// render, so it scans the bytes in place; see appearance/themes.md.
   static func parse(_ text: String) -> RGB? {
     var utf8 = Substring(text).utf8[...]
     // Hand-edited theme files pick up stray spaces; the base theme's colour

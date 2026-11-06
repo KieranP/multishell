@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// Every chrome colour is the theme's, so the window follows it rather than
-/// the system appearance; see Docs/design/appearance.md.
+/// the system appearance; see Docs/design/appearance/themes.md.
 extension Theme {
   /// How far a sidebar row's name is held back until the row is selected.
   private static let unselectedRowNameOpacity = 0.85

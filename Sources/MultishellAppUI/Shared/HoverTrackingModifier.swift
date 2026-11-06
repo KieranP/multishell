@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Keeps `isHovered` with the pointer on every move inside, not only at the edges,
-/// so a button unlit by a click lights on the next move. See appearance.md.
+/// so a button unlit by a click lights on the next move. See appearance/window-chrome.md.
 struct HoverTrackingModifier: ViewModifier {
   @Binding var isHovered: Bool
 

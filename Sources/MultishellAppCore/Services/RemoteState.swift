@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellServices
 import Observation
 
-/// Fetches, pushes, pull requests and CI runs, runtime only; see services.md.
+/// Fetches, pushes, pull requests and CI runs, runtime only; see services/.
 /// Its own observable, so each property is tracked alone.
 @Observable
 @MainActor

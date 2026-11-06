@@ -18,7 +18,7 @@ public enum ShellCommand {
   static let stderrStartMarker = "--multishell-hook-output--"
 
   /// Runs a command line to its end with no pipes and no timeout, throwing on
-  /// a failure: an editor shim may hold this open; see terminals.md.
+  /// a failure: an editor shim may hold this open; see terminals/sessions.md.
   public static func runUncaptured(
     _ commandLine: String,
     in directory: URL,

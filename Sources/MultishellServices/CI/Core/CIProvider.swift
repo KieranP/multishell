@@ -1,7 +1,7 @@
 import Foundation
 
 /// What runs a repository's CI, read through the provider's own tool.
-/// CircleCI's is the one there is; see Docs/design/services.md.
+/// CircleCI's is the one there is; see Docs/design/services/reads.md.
 public protocol CIProvider: Sendable {
   /// The file, relative to a checkout, that says a repository runs on this
   /// provider; a repository without it is never asked about.

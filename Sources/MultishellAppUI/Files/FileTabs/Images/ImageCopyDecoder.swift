@@ -3,10 +3,10 @@ import Foundation
 import ImageIO
 
 /// Decodes a file tab's image no larger than a screen needs, turned as its
-/// orientation says; see Docs/design/files.md.
+/// orientation says; see Docs/design/files/image-tabs.md.
 enum ImageCopyDecoder {
   /// Past this ImageIO's peak while scaling jumps, 130 MB to 430 for a 48-megapixel
-  /// photo (files.md); decoded at 8 bits a channel it holds 36 MB.
+  /// photo (files/image-tabs.md); decoded at 8 bits a channel it holds 36 MB.
   private static let longestSide = 3072
   private static let bitsPerPixel = 32
 

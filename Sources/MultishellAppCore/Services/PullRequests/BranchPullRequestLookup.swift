@@ -7,7 +7,7 @@ struct BranchPullRequestLookup: Equatable {
   let pullRequests: [PullRequest]
 
   /// Asked again once the branch is pushed to, or while one is open: its
-  /// review, checks and merge move with no push. See services.md.
+  /// review, checks and merge move with no push. See services/reads.md.
   func stillAnswers(upstreamTip tip: String?) -> Bool {
     tip == upstreamTip && !pullRequests.contains { !$0.state.isSettled }
   }

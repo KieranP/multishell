@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// What a batch of file events re-reads of the Files panel's worktree, ahead
-/// of the frontmost guard; see Docs/design/files.md.
+/// of the frontmost guard; see Docs/design/files/panel.md.
 extension AppModel {
   /// The panel's worktree is read on its own events, frontmost or not, and its
   /// tracked files when its project's git moved.

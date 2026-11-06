@@ -19,7 +19,7 @@ extension AppModel {
     await refreshProjectsIfChanged(withGitDirectoryChanges: targets.projectsWithGitDirectoryChanges)
     guard platform.isActive else { return }
     // Again only where the awaits changed what a change is matched against;
-    // see worktrees.md for its cost.
+    // see worktrees/watching-and-status-reads.md for its cost.
     if workspace.projects != projects || workspace.worktrees != worktrees
       || commonGitDirectories != gitDirectories
     {

@@ -1,7 +1,7 @@
 import Foundation
 
 /// The agents whose hooks Multishell knows how to write, and the one line they
-/// all run. See Docs/design/agents.md for why each event was chosen.
+/// all run. See Docs/design/agents/reports-and-hooks.md for why each event was chosen.
 public enum AgentHookCatalogue {
   public static let subcommand = "agent-hook"
   /// What the first builds wrote. The helper exits 0 on it and reports nothing,
@@ -26,7 +26,7 @@ public enum AgentHookCatalogue {
   ]
 
   /// The notification types of Claude's that announce rather than ask, out of
-  /// fifteen in its list and two sent outside it. A deny list; see agents.md.
+  /// fifteen in its list and two sent outside it. A deny list; see agents/reports-and-hooks.md.
   private static let claudeAnnouncements: Set<String> = [
     "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
     "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
@@ -69,7 +69,7 @@ public enum AgentHookCatalogue {
   )
 
   /// Claude's own labels for work whose end is announced to the model, read
-  /// from its binary; the rest never end or end unannounced. See agents.md.
+  /// from its binary; the rest never end or end unannounced. See agents/background-work.md.
   private static let claudeWakingTaskTypes: Set<String> = [
     "subagent", "shell", "workflow", "MCP task", "cloud session",
   ]
@@ -121,7 +121,7 @@ public enum AgentHookCatalogue {
   )
 
   /// In the wrapper every shell-tool command runs in and nothing else does, so
-  /// no MCP server matches. Not a documented contract; see agents.md.
+  /// no MCP server matches. Not a documented contract; see agents/background-work.md.
   private static let geminiShellMarker = "/gemini-shell-"
 
   /// Antigravity CLI reads `~/.gemini/config/hooks.json`, sets of hooks by name.
@@ -149,8 +149,8 @@ public enum AgentHookCatalogue {
     payloadSpelling: .antigravity,
   )
 
-  /// Copilot CLI reads every JSON file in `~/.copilot/hooks`. Ours uses its VS Code spelling, where
-  /// no SubagentStart names an id, so a worker goes on at its own first event; see agents.md.
+  /// Copilot CLI reads every JSON file in `~/.copilot/hooks`. Ours uses its VS Code spelling, whose
+  /// SubagentStart names no id, so a worker goes on at its first event; see agents/subagents.md.
   static let copilot = AgentHookIntegration(
     id: AgentCatalogue.copilotID,
     file: underHome(".copilot/hooks/multishell.json"),

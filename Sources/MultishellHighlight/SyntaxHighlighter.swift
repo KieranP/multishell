@@ -3,8 +3,8 @@ import MultishellAppCore
 import SwiftTreeSitter
 import Synchronization
 
-/// A whole text's highlighted ranges from one parse and one query, and one of each
-/// per injection; blocking, so callers run it off the main thread. See Docs/design/files.md.
+/// A whole text's highlighted ranges from one parse and one query, and one of each per injection;
+/// blocking, so callers run it off the main thread. See Docs/design/files/syntax-highlighting.md.
 final class SyntaxHighlighter: Sendable {
   static let shared = SyntaxHighlighter()
 

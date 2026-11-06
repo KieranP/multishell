@@ -8,7 +8,7 @@ import Testing
 @Suite(.serialized)
 struct WorktreeGitRemovalTests {
   /// A repository-wide prune after the trash would also forget a worktree
-  /// whose drive is unmounted at that moment; see Docs/design/worktrees.md.
+  /// whose drive is unmounted at that moment; see Docs/design/worktrees/creating-and-removing.md.
   @Test func removingOneWorktreeKeepsAnotherWhoseDirectoryIsAway() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

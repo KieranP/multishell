@@ -1,7 +1,7 @@
 import AppKit
 
 /// A command or control key AppKit offers as a menu equivalent before
-/// `keyDown`. terminals.md says why it is typed only on its second offer.
+/// `keyDown`. terminals/engine-and-config.md says why it is typed only on its second offer.
 struct GhosttyKeyEquivalent {
   /// When the key now on offer was first passed up, so its second offer, the
   /// same event again, is known; `doCommand` matches on it too.

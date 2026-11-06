@@ -106,7 +106,7 @@ struct TerminalTabFace: View {
         model.clearState(of: tab)
       } label: {
         // The target the dot had before the mark took the slot, without the
-        // width: `tabMinWidth` has none to give. See Docs/design/agents.md.
+        // width: `tabMinWidth` has none to give. See Docs/design/agents/board-and-pane-rows.md.
         glyph.padding(2).contentShape(.rect).padding(-2)
       }
       .buttonStyle(.plain)

@@ -58,7 +58,7 @@ extension AppModel {
   }
 
   /// Waits on the scheduled read; rows not in hand are refused for the helper to ask
-  /// again, and a notice or image has none (agents.md, a file tab's arrows and find).
+  /// again, and a notice or image has none (agents/command-line.md, a file tab's arrows and find).
   private func refusalToActOnRowsOnceRead(
     of id: FileTab.ID,
     _ refusalNow: () -> ControlRefusal?,

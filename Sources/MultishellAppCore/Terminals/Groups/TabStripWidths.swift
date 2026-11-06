@@ -1,5 +1,5 @@
 /// The widths a tab strip is laid out from, and what they decide: whether the
-/// splits show and how much room the tabs and arrows get. See tabs-and-groups.md.
+/// splits show and how much room the tabs and arrows get. See tabs-and-groups/tab-strip.md.
 public struct TabStripWidths: Equatable, Sendable {
   /// The New Tab menu and the two splits.
   let buttons: Double

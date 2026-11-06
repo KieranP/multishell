@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// The order a project's worktree rows are drawn in. The main worktree and
-/// the trunk keep the top whatever the sort says; see worktrees.md.
+/// the trunk keep the top whatever the sort says; see worktrees/sidebar.md.
 struct WorktreeSortRule: Equatable, Sendable {
   /// Which tier a worktree is listed in, before the sort orders each tier.
   fileprivate enum Tier: Int {

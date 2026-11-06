@@ -1,7 +1,7 @@
 import Foundation
 
 /// What the command line names a project or worktree by: short, the same
-/// every run, and no path, though the model keys both by theirs; agents.md.
+/// every run, and no path, though the model keys both by theirs; agents/command-line.md.
 public enum ControlID {
   public static func project(_ id: Project.ID) -> String { "p-" + digits(of: id) }
   public static func worktree(_ id: Worktree.ID) -> String { "w-" + digits(of: id) }

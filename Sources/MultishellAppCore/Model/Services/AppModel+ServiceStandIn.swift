@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellServices
 
 /// `debug services stand-in`: answers in place of `gh` and `circleci`, through
-/// every read the tools' answers go through; see Docs/design/services.md.
+/// every read the tools' answers go through; see Docs/design/services/debug-stand-in.md.
 extension AppModel {
   /// A stand-in, or the tools back with `nil`; returns once the rows in view
   /// and an open services page are read through it, the rest left due.

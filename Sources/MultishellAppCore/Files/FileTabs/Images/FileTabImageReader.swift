@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-/// An image tab's two copies, for `FileTabReader`; see Docs/design/files.md.
+/// An image tab's two copies, for `FileTabReader`; see Docs/design/files/image-tabs.md.
 enum FileTabImageReader {
   /// A camera's photo or a 5K screenshot fits; decoded, a picture costs its
   /// pixels, not its file, which the view caps when it draws one.

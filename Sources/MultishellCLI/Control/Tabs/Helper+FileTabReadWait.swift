@@ -7,7 +7,7 @@ extension Helper {
   private static let fileTabReadPollInterval: Duration = .milliseconds(100)
 
   /// Asked again while the tab's rows are read, each ask given the usual timeout, as
-  /// one cut short may still act in the app (agents.md, a file tab's arrows and find).
+  /// one cut short may still act in the app (agents/command-line.md, a file tab's arrows and find).
   static func askOnceRead(
     _ request: ControlRequest,
     of id: UUID,

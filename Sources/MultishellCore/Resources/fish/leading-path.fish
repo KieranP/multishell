@@ -1,5 +1,5 @@
-# fish's own path_helper read put /etc/paths ahead of the helper's directory,
-# so `multishell` reached another build's; ours go back in front. terminals.md.
+# fish's own path_helper read put /etc/paths ahead of the helper's directory, so
+# `multishell` reached another build's; ours go first. terminals/sessions.md.
 if test -n "$MULTISHELL_LEADING_PATH"
     set -l _multishell_lead (string split : -- $MULTISHELL_LEADING_PATH)
     set -l _multishell_rest

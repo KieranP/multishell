@@ -1,6 +1,6 @@
 (version 1)
 ; Writes only to the build tree and the temporary directories, so a test
-; reaching the account's own files fails; see Docs/develop/tests.md.
+; reaching the account's own files fails; see Docs/develop/tests/conventions.md.
 (allow default)
 (deny file-write*)
 (allow file-write*

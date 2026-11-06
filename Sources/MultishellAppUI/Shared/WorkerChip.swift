@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The count of workers an agent has out in the Working colour, or of failed
-/// ones once none is. Hovering it lists them; see Docs/design/agents.md.
+/// ones once none is. Hovering it lists them; see Docs/design/agents/subagents.md.
 struct WorkerChip: View {
   /// Long enough to cross from the chip onto the list without it closing,
   /// short enough that it goes with the pointer.

@@ -44,10 +44,11 @@ extension Helper {
         input's, in place of gh and circleci, until `debug services clear` or
         the app quits, and return once the projects in view are read through
         it. The JSON holds "pullRequests" and "ciRuns", keyed as `worktrees
-        show` prints them; Docs/design/services.md gives the whole shape. A
-        worktree matches as with the tools: its branch pushed to a remote
-        whose URL names the pull request's headRepository. A request holds
-        \(UnixSocketServer.maximumLineLength / 1024) KB, the JSON's quotes and newlines escaped.
+        show` prints them; Docs/design/services/debug-stand-in.md gives the
+        whole shape. A worktree matches as with the tools: its branch pushed
+        to a remote whose URL names the pull request's headRepository.
+        A request holds \(UnixSocketServer.maximumLineLength / 1024) KB, the JSON's quotes and
+        newlines escaped.
     usage: multishell debug services clear
         Hand back to gh and circleci, and read the projects in view again.
 

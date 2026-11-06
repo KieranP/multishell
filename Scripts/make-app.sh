@@ -1,13 +1,13 @@
 #!/bin/bash
 # Wraps the SPM executable into Multishell.app, the bundle macOS needs and
-# SwiftPM cannot emit; build.md.
+# SwiftPM cannot emit; build/building-locally.md.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$root/Scripts/build-lib.sh"
 
 # Builds of one tree share build/, and one emptied the bundle another was
-# about to sign and install; build.md.
+# about to sign and install; build/building-locally.md.
 rerun_holding_lock "$root/build/.make-app.lock" MULTISHELL_MAKE_APP_LOCKED "$root/Scripts/make-app.sh" "$@"
 
 config="${1:-debug}"

@@ -2,7 +2,7 @@ import AppKit
 import MultishellAppCore
 
 /// The find bar's matches painted under the text with the line tints; see
-/// files.md for why not as TextKit 2 rendering attributes.
+/// files/file-tabs.md for why not as TextKit 2 rendering attributes.
 extension DiffTextView {
   /// Matches in UTF-16 units; the selected one is scrolled to where `find` moved
   /// it since `previous`, else selected alone on a first paint outside a box.

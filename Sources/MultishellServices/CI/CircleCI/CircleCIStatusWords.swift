@@ -1,5 +1,5 @@
 /// A CircleCI phase and outcome as one status: its API's words exactly, others
-/// loosely, and a word neither knows is no status; see services.md.
+/// loosely, and a word neither knows is no status; see services/reads.md.
 enum CircleCIStatusWords {
   private static let exactWords: [String: CIRunStatus] = [
     "success": .passed, "succeeded": .passed, "passed": .passed,

@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The panel's Files and Changes pages: the switch, the filter, the list and its
-/// footer; see Docs/design/files.md.
+/// footer; see Docs/design/files/panel.md.
 struct FileListPage: View {
   let model: AppModel
   let worktree: Worktree
@@ -32,7 +32,7 @@ struct FileListPage: View {
       metrics: model.metrics,
     ) {
       // Both sides, zeroes too, as the badge draws them: a footer changing
-      // shape as the index fills would read as broken; see worktrees.md.
+      // shape as the index fills would read as broken; see worktrees/line-count-badge.md.
       if summary.changedFiles > 0 {
         FileLineCountsText(
           counts: FileLineCounts(insertions: summary.insertions, deletions: summary.deletions),

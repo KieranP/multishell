@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// `+N −M` in the badge's colours, a zero side left out but in a footer,
-/// which keeps both as the badge does; see worktrees.md.
+/// which keeps both as the badge does; see files/panel.md.
 struct FileLineCountsText: View {
   let counts: FileLineCounts
   let theme: Theme

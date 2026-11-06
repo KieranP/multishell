@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The keyboard and a file tab. Only a surface reports its own focus to the
-/// store, so a file tab's view reports its own here; see tabs-and-groups.md.
+/// store, so a file tab's view reports its own here; see tabs-and-groups/tab-strip.md.
 extension AppModel {
   /// The reconcile's hand-off: a file tab in front takes the keyboard, as the
   /// focused pane of a terminal tab does.

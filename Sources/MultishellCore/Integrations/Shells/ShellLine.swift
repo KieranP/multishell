@@ -1,7 +1,7 @@
 import Foundation
 
 /// A line the user wrote for their shell, with each value it names handed
-/// over in the environment rather than written into it; see agents.md.
+/// over in the environment rather than written into it; see agents/launch-arguments.md.
 public struct ShellLine: Hashable, Sendable {
   /// Trimmed, so an empty line is one with nothing to run.
   public let text: String

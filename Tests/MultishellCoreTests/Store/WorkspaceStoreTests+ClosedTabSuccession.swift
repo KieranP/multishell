@@ -3,7 +3,7 @@ import Testing
 @testable import MultishellCore
 
 /// Which tab a group shows once the one it was showing leaves. A strip hands
-/// the place to whatever slid into it; see Docs/design/tabs-and-groups.md.
+/// the place to whatever slid into it; see Docs/design/tabs-and-groups/groups-and-dragging.md.
 extension WorkspaceStoreTests {
   private func group(of worktree: Worktree.ID, in store: WorkspaceStore) -> TabGroup {
     store.workspace.groups(in: worktree)[0]

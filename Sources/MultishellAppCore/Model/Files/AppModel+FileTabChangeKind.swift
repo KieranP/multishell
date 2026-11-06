@@ -46,7 +46,7 @@ extension AppModel {
   }
 
   /// Under Branch the panel's current read, counting from the merge base as the
-  /// tab does, or none where it holds none (files.md); else the status's.
+  /// tab does, or none where it holds none (files/modified-and-branch.md); else the status's.
   private func worktreeChangeKind(of tab: FileTab) -> StatusChange.Kind? {
     if case .branch(let changes) = changeComparison(of: tab.worktreeID) {
       // No shared history leaves the tab counting from `HEAD`, as the status does.

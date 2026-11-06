@@ -1,6 +1,6 @@
 import Foundation
 
-/// Antigravity's camelCase payload, read on 1.4.8; see Docs/design/agents.md.
+/// Antigravity's camelCase payload, read on 1.4.8; see Docs/design/agents/reports-and-hooks.md.
 extension AgentHookPayload {
   static let antigravityStop = "Stop"
   /// The events a cancelled and a failed Stop are reported as.

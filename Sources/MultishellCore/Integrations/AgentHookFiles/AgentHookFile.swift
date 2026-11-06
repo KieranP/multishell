@@ -1,13 +1,13 @@
 import Foundation
 
 /// A file an agent reads its hooks from: the user's settings JSON, refused unless
-/// plain JSON, or a file of ours written whole. See agents.md.
+/// plain JSON, or a file of ours written whole. See agents/reports-and-hooks.md.
 enum AgentHookFile {
   /// The kernel's MAXSYMLINKS: a longer chain is a loop.
   private static let maximumLinkHops = 32
 
-  /// An empty object for a missing or blank file; anything else it cannot read
-  /// back is an error. Numbers come back as `NumberLiteral` strings; see agents.md.
+  /// An empty object for a missing or blank file; anything else it cannot read back is an error.
+  /// Numbers come back as `NumberLiteral` strings; see agents/reports-and-hooks.md.
   static func read(_ file: URL) throws -> [String: Any] {
     guard FileManager.default.fileExists(atPath: file.path) else { return [:] }
     let data = try Data(contentsOf: file)
@@ -30,7 +30,7 @@ enum AgentHookFile {
   }
 
   /// Where a write lands. A link at the end of the path is written through,
-  /// not over, so a dotfiles repo keeps seeing the file; see agents.md.
+  /// not over, so a dotfiles repo keeps seeing the file; see agents/reports-and-hooks.md.
   private static func destination(of file: URL) -> URL {
     var current = file
     // Followed link by link: `resolvingSymlinksInPath` hands back a link whose

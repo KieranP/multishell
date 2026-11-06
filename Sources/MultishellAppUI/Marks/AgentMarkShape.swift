@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// One agent's mark, read from its `.svg` in `Resources/Marks` and scaled
-/// from its 16-point square; see Docs/design/agents.md.
+/// from its 16-point square; see Docs/design/agents/board-and-pane-rows.md.
 struct AgentMarkShape: Shape {
   /// Parsed once, on the first mark drawn: every row reads a path each render, and a `let`
   /// needs no lock. A bad or missing file draws nothing; `AgentMarkShapeTests` catches it.

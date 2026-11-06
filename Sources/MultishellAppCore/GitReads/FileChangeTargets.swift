@@ -5,7 +5,7 @@ import MultishellCore
 /// move any of its rows, and one in a worktree's files moves that row alone.
 struct FileChangeTargets {
   /// What under `.git` can move a row; the rest, and any `.lock`, is a command's
-  /// scratch. See Docs/design/worktrees.md.
+  /// scratch. See Docs/design/worktrees/watching-and-status-reads.md.
   private static let gitEntriesThatMoveRows: Set<String> = [
     "HEAD", "config", "config.worktree", "index", "info", "modules", "packed-refs", "reftable",
     "refs", "worktrees",

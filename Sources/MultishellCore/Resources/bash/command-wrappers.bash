@@ -23,7 +23,7 @@ if _multishell_has_feature sudo && [ -n "${TERMINFO-}" ] && ! declare -F sudo >/
 fi
 
 # A host without xterm-ghostty gets a TERM it knows. ssh-terminfo would install
-# the entry, through a Ghostty CLI this bundle lacks; terminals.md.
+# the entry via a Ghostty CLI this bundle lacks; terminals/shell-integration.md.
 if { _multishell_has_feature ssh-env || _multishell_has_feature ssh-terminfo; } \
   && ! declare -F ssh >/dev/null; then
   function ssh {

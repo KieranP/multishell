@@ -3,7 +3,7 @@ import MultishellCore
 // Declared order is the order allCases gives the UI.
 // swiftlint:disable sorted_enum_cases
 /// A column of the board, most urgent first. Failed goes with Waiting; see
-/// Docs/design/agents.md.
+/// Docs/design/agents/board-and-pane-rows.md.
 public enum AgentBoardLane: String, CaseIterable, Sendable {
   case waiting
   case working

@@ -6,7 +6,7 @@ import Testing
 @testable import MultishellAppUI
 
 /// The forced row geometry on the macOS running the suite, through a getter
-/// Apple does not document as an override point; see files.md.
+/// Apple does not document as an override point; see files/file-tabs.md.
 @Suite @MainActor
 struct DiffDocumentViewTests {
   private static let rowCount = 10_750

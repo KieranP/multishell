@@ -3,7 +3,8 @@
 
 # include leading-path.fish
 
-# fish 4 writes its own prompt marks, directory and title; terminals.md.
+# fish 4 writes its own prompt marks, directory and title;
+# terminals/shell-integration.md.
 if status is-interactive; and test "$TERM_PROGRAM" = ghostty
     # Ghostty exports the user's shell-integration-features, `cursor:blink` and all.
     function _multishell_has_feature

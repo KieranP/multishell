@@ -1,5 +1,5 @@
 /// What Copy puts on the pasteboard: from a unified file tab, a selection
-/// touching a change as `git diff` prints it; see Docs/design/files.md.
+/// touching a change as `git diff` prints it; see Docs/design/files/file-tabs.md.
 extension DiffDisplayText {
   /// `selections` are UTF-16 ranges into `string`, as the view holds it.
   public func diffCopy(selections: [Range<Int>]) -> String {

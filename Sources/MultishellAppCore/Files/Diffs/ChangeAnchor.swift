@@ -1,5 +1,5 @@
 /// The boxed change by its text and place, not its row, and the committed side by digest to
-/// tell a commit from an edit; why is in Docs/design/files.md.
+/// tell a commit from an edit; why is in Docs/design/files/file-tabs.md.
 public struct ChangeAnchor: Equatable, Sendable {
   let committedDigest: Int
   let committedLineAbove: Int

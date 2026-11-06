@@ -28,7 +28,7 @@ extension UIMetrics {
   /// mark on the plus rather than a second glyph.
   var menuChevronSize: Double { (glyph * 0.6).rounded() }
   /// A split's width plus the gap and the chevron, so the plus and chevron sit
-  /// as far from the lit square's sides as a split's glyph. See tabs-and-groups.md.
+  /// as far from the lit square's sides as a split's glyph. See tabs-and-groups/tab-strip.md.
   var newTabMenuWidth: Double { splitButtonWidth + Self.menuChevronGap + menuChevronSize }
   /// A split glyph's inset, which the menu's plus shares.
   var stripGlyphInset: Double { (splitButtonWidth - glyph) / 2 }

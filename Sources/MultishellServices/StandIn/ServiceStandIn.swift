@@ -1,7 +1,7 @@
 import Foundation
 
 /// Pull requests and CI runs `multishell debug services stand-in` hands the app,
-/// answered in place of `gh` and `circleci`; see Docs/design/services.md.
+/// answered in place of `gh` and `circleci`; see Docs/design/services/debug-stand-in.md.
 public struct ServiceStandIn: Sendable {
   /// What the Integrations page names as either tool's version.
   static let toolVersion = "stand-in"

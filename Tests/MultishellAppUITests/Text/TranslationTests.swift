@@ -6,7 +6,7 @@ import Testing
 @testable import MultishellAppUI
 
 /// Pairs with the TranslationTests in `Tests/MultishellCoreTests`: a check added to one goes in
-/// the other; see Docs/develop/tests.md.
+/// the other; see Docs/develop/tests/interface-and-terminal.md.
 @Suite
 struct TranslationTests {
   private static let countedForms: Set<String> = {

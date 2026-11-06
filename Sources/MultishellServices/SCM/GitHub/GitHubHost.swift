@@ -7,7 +7,7 @@ import MultishellProcess
 /// knows an Enterprise host from the repository's remotes.
 public struct GitHubHost: PullRequestHost {
   /// The newest pull requests, open or not; a branch whose own are older is
-  /// asked alone. Why in Docs/design/services.md.
+  /// asked alone. Why in Docs/design/services/reads.md.
   static let listLimit = 100
   /// Every pull request one branch has headed, reopened as new ones included.
   static let branchListLimit = 10

@@ -20,13 +20,13 @@ extension AppModel {
   }
 
   /// The trunk only, as git would: another branch's upstream would hand the
-  /// new one its pull request and push into it; see services.md.
+  /// new one its pull request and push into it; see services/branch-matching.md.
   private func tracksAsUpstream(_ startPoint: String?, in project: Project) -> Bool {
     startPoint == nil || startPoint == defaultBranch(of: project)?.shortName
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
-  /// add takes back the branch and directories it made; see worktrees.md.
+  /// add takes back the branch and directories it made; see worktrees/creating-and-removing.md.
   public func cancelWorktreeCreation() {
     stageHandles.stopCreation()
   }
@@ -62,7 +62,7 @@ extension AppModel {
     let planned = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
     if await refuseIfStillBeingRemoved(planned) { return nil }
     // The row can arrive mid-checkout: git writes its record before the
-    // first file, and that directory is watched. See worktrees.md.
+    // first file, and that directory is watched. See worktrees/creating-and-removing.md.
     let claimed = planned.flatMap(claimPath(_:))
     let stopper = ProcessStopper()
     // A create from the command line leaves the sheet's Cancel and progress to one it shows.

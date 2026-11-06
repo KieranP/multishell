@@ -46,7 +46,7 @@ public struct BranchScan: Hashable, Sendable {
   }
 
   /// Where the branch's pull request and runs are filed: under its own name on
-  /// the remote its pushes go to, else what it follows; see services.md.
+  /// the remote its pushes go to, else what it follows; see services/branch-matching.md.
   private static func publishedBranch(
     of ref: BranchRef,
     tips: [String: String],

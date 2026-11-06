@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellServices
 
 /// What a project's CI provider last answered: the newest run of each branch,
-/// by its name on the remote. Runtime only; see Docs/design/services.md.
+/// by its name on the remote. Runtime only; see Docs/design/services/branch-matching.md.
 struct ProjectCIRuns: Equatable {
   let integration: ServiceIntegration
   /// Whether a checkout holds the provider's configuration file; without it

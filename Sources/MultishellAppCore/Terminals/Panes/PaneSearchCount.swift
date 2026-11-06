@@ -8,7 +8,7 @@ struct PaneSearchCount: Equatable, Sendable {
   /// the next a turn later, or its count blinks on every Return.
   private var selectedBeforeStep: Int?
   /// Searches replaced but not yet ended by the engine's 0, or its no total as an
-  /// emptied find text stops it, before which every count is theirs; terminals.md.
+  /// emptied find text stops it, before which every count is theirs; terminals/find.md.
   private var replacedSearchEndsAwaited: Int
 
   var matchCount: FindMatchCount? {

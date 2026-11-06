@@ -58,7 +58,7 @@ struct DetailView: View {
   }
 
   /// The worktree's header over its tab area, the Files panel full height at
-  /// their right while open, resized from its left edge; see files.md.
+  /// their right while open, resized from its left edge; see files/panel.md.
   private func besideFilesPanel(
     of worktree: Worktree,
     theme: Theme,

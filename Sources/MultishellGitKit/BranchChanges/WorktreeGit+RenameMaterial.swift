@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellProcess
 
 /// Auto Rename's read of a branch: commits and the index against the merge
-/// base, so unstaged and untracked work is left out. See Docs/design/agents.md.
+/// base, so unstaged and untracked work is left out. See Docs/design/agents/auto-rename.md.
 extension WorktreeGit {
   private static let renameSubjectLimit = 50
   /// About 5,000 tokens of diff, a small fraction of any listed model's window.

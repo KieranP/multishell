@@ -2,7 +2,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// The Files panel's Branch list: what its worktree changed since the branch
-/// left its project's base branch; see Docs/design/files.md.
+/// left its project's base branch; see Docs/design/files/modified-and-branch.md.
 extension AppModel {
   private var listsBranchChanges: Bool {
     workspace.filesPanelMode == .changes && workspace.changeScope == .branch

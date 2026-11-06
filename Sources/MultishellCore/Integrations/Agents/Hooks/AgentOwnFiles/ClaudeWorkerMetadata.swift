@@ -1,7 +1,7 @@
 import Foundation
 
 /// The file Claude keeps beside its transcript for each worker: which worker
-/// launched it and what Claude calls it. No hook says either; see agents.md.
+/// launched it and what Claude calls it. No hook says either; see agents/background-work.md.
 struct ClaudeWorkerMetadata: Equatable {
   /// Far more than the few hundred bytes Claude writes there.
   private static let maximumBytes = 64 << 10

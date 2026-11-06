@@ -1,7 +1,7 @@
 import Foundation
 
 /// What an agent's flags or custom command may stand in for, written
-/// `{{branch}}`; see Docs/design/agents.md. An editor line has only `{path}`.
+/// `{{branch}}`; see Docs/design/agents/launch-arguments.md. An editor line has only `{path}`.
 public enum WorktreePlaceholder: String, CaseIterable, Sendable {
   /// The branch, or the short SHA when detached.
   case branch

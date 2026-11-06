@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// The workers one agent still has out, in the order they started; see
-/// Docs/design/agents.md.
+/// Docs/design/agents/subagents.md.
 struct WorkerRoster: Equatable, Sendable {
   /// A roster place a report touched, and whether more than one worker was
   /// under it: a start repeated under one id makes which reported unknowable.

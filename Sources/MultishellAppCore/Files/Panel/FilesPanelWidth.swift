@@ -9,7 +9,7 @@ public enum FilesPanelWidth {
   public static let initial = 280.0
 
   /// Half the detail area at most, so a narrower window never leaves the tabs
-  /// less; one too narrow keeps the panel's minimum. See files.md.
+  /// less; one too narrow keeps the panel's minimum. See files/panel.md.
   public static func range(inDetailOfWidth width: Double) -> ClosedRange<Double> {
     minimum...max(minimum, width / 2)
   }

@@ -181,7 +181,7 @@ let package = Package(
       dependencies: ["MultishellCLI", "MultishellCore", "MultishellProcess", "TestScratch"],
     ),
     // The app's own values, its AppKit pieces, and views laid out in a window
-    // never shown; see Docs/develop/tests.md.
+    // never shown; see Docs/develop/tests/conventions.md.
     .testTarget(name: "MultishellAppUITests", dependencies: ["MultishellAppUI", "TestScratch"]),
     .testTarget(
       name: "MultishellHighlightTests",
@@ -193,8 +193,8 @@ let package = Package(
   ],
 )
 
-// Stricter than Swift 6's defaults; Docs/develop/build.md says what each catches
-// and why StrictMemorySafety is not among them.
+// Stricter than Swift 6's defaults; Docs/develop/build/compiler-and-lint-strictness.md says
+// what each catches and why StrictMemorySafety is not among them.
 for target in package.targets where target.type != .binary {
   target.swiftSettings =
     (target.swiftSettings ?? []) + [

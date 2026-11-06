@@ -83,7 +83,8 @@ find_zig() {
         zig="$keg/bin/zig"
     else
         die "error: Ghostty needs Zig $required, and none was found." \
-            "       brew install zig@$wanted, or set ZIG to one. See Docs/develop/build.md."
+            "       brew install zig@$wanted, or set ZIG to one." \
+            "       See Docs/develop/build/building-locally.md."
     fi
 }
 

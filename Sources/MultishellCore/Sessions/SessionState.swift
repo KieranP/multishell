@@ -52,7 +52,7 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
   }
 
   /// Whether looking is enough to clear it: Done alone. See
-  /// Docs/design/agents.md for how Failed and Waiting part on a dead process.
+  /// Docs/design/agents/board-and-pane-rows.md for how Failed and Waiting part on a dead process.
   public var clearsWhenSeen: Bool { self == .done }
 
   /// What a foreground command's exit code says. A code above 128 is a

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Writes the shell-integration files, rewritten each launch so a moved
-/// bundle's helper path stays current; see Docs/design/terminals.md.
+/// bundle's helper path stays current; see Docs/design/terminals/shell-integration.md.
 public enum ShellIntegration {
   public static func refresh(
     zshDirectory: URL = Paths.zshIntegrationDirectory,

@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The quick switcher's keys and clicks; what it lists is in
-/// `AppModel+QuickSwitcherSections`. See Docs/design/quick-switcher.md.
+/// `AppModel+QuickSwitcherSections`. See Docs/design/quick-switcher/field-keys-and-look.md.
 extension AppModel {
   /// Two items of the same titles, "…" or not, are one path, which only ever
   /// chooses the first, so a later one is never listed, nor the first if greyed out.
@@ -104,7 +104,7 @@ extension AppModel {
   }
 
   /// Return, on the row selected as the key lands, so keys typed in a burst act
-  /// in order; see quick-switcher.md.
+  /// in order; see quick-switcher/field-keys-and-look.md.
   public func chooseSelectedQuickSwitcherRow() {
     guard let target = quickSwitcherResults.selection else { return }
     chooseQuickSwitcherRow(target)

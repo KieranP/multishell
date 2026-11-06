@@ -60,7 +60,7 @@ extension AppModel {
       with: coordinator,
     )
     // After the await: a removed row keeps no badge, and one a stage began on
-    // meanwhile keeps its old one and takes no new one; see worktrees.md.
+    // meanwhile keeps its old one and takes no new one; see worktrees/creating-and-removing.md.
     let known = Set(workspace.worktrees.map(\.id).filter { !pathClaims.isClaimed($0) })
     let current = workspace.worktrees.keyedByID()
     let kept = readings.filter { current[$0.key].map(mayReadStatus) == true }
@@ -80,7 +80,7 @@ extension AppModel {
   }
 
   /// Only rows on screen are polled, bar the main one, the selected one and any
-  /// on the board; see Docs/design/worktrees.md.
+  /// on the board; see Docs/design/worktrees/watching-and-status-reads.md.
   func isStatusWanted(_ worktree: Worktree, onSidebar: Set<Worktree.ID>) -> Bool {
     worktree.isPrimary || worktree.id == workspace.selectedWorktreeID
       || onSidebar.contains(worktree.id)

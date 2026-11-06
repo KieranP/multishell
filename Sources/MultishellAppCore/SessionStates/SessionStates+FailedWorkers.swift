@@ -1,7 +1,7 @@
 import Foundation
 
 /// A killed or failed worker drawn as failed for a while, as Claude Code
-/// draws it; see Docs/design/agents.md.
+/// draws it; see Docs/design/agents/background-work.md.
 extension SessionStates {
   /// How long a failed worker stays listed: Claude Code 2.1.292's own `pP`.
   static let failedWorkerLingering: TimeInterval = 30

@@ -4,8 +4,8 @@ import MultishellCore
 /// Parses `git worktree list --porcelain -z`, free of any process or
 /// filesystem access so the format is testable against fixture text alone.
 enum WorktreeListParser {
-  /// Records of `worktree <path>`, `HEAD <sha>` and `branch <ref>` or `detached`,
-  /// split on NUL for `-z` or a newline for an older git's form; see worktrees.md.
+  /// Records of `worktree <path>`, `HEAD <sha>` and `branch <ref>` or `detached`, split on NUL for
+  /// `-z` or a newline for an older git's form; see worktrees/watching-and-status-reads.md.
   static func parse(
     _ porcelain: String,
     projectID: Project.ID,

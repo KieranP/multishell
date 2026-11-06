@@ -26,8 +26,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// Agent override by catalogue id. `nil` follows the global;
   /// `AgentCatalogue.noneID` opts this project out of it.
   public var preferredAgentID: String?
-  /// Extra arguments the agent is started with here. `""` is the override to
-  /// no flags at all; see Docs/design/agents.md for why a repo file cannot say this.
+  /// Extra arguments the agent is started with here. `""` is the override to no flags at all; see
+  /// Docs/design/agents/launch-arguments.md for why a repo file cannot say this.
   public var agentFlags: String?
   /// Whether new tabs here start the agent. `nil` follows the global.
   public var autoStartsAgent: Bool?

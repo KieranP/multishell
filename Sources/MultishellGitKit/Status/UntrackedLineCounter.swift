@@ -1,7 +1,7 @@
 import Foundation
 
 /// Lines in the files git lists as untracked, which have no diff until they
-/// are added; see Docs/design/worktrees.md.
+/// are added; see Docs/design/worktrees/line-count-badge.md.
 enum UntrackedLineCounter {
   /// A poll's share of the disk: how many files it opens, how big one may be,
   /// and how much it reads in all before it stops counting.

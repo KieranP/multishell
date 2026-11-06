@@ -90,7 +90,8 @@
 - **`MULTISHELL_PORT` is unset after the rc files where the worktree has no
   block**, in the script's prologue, so neither the app's environment nor an rc
   file gives a port it has not. A set port is not pinned the same way: the
-  prologue would carry it as shell text, which no value ever is (agents.md).
+  prologue would carry it as shell text, which no value ever is
+  (agents/launch-arguments.md).
 - **A copied directory is one APFS clone** (`clonefile`), the walk only its
   fallback: another volume, a disk not APFS, or something unreadable, where the
   walk names the failure. A 60,304-entry `node_modules` took 12.9s walked and

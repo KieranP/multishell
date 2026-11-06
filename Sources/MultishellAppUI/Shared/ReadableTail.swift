@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Text cut at its head that draws whole, or a tail at least `leastWidth`
-/// wide, or nothing; see Docs/design/appearance.md. Font and colour are the caller's.
+/// wide, or nothing; see Docs/design/appearance/window-chrome.md. Font and colour are the caller's.
 struct ReadableTail: View {
   let text: String
   let leastWidth: Double

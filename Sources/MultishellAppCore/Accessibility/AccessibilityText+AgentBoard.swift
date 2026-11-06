@@ -6,7 +6,7 @@ import MultishellGitKit
 /// like the sidebar rows beside it.
 extension AccessibilityText {
   /// In the order the card draws them, with the occupant after the title,
-  /// which the card itself no longer shows; see Docs/design/appearance.md.
+  /// which the card itself no longer shows; see Docs/design/appearance/window-chrome.md.
   public static func card(_ card: AgentBoardCard, at now: Date) -> String {
     var parts = [card.state.shownState.displayName]
     parts.append(t("spoken.named", card.projectName, card.worktreeName))

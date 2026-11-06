@@ -1,7 +1,7 @@
 import Foundation
 
-/// Whether git would take a name as a branch: `git-check-ref-format(1)`'s
-/// rules in Swift, less the full-refname ones about slashes; see worktrees.md.
+/// Whether git would take a name as a branch: `git-check-ref-format(1)`'s rules in Swift, less the
+/// full-refname ones about slashes; see worktrees/creating-and-removing.md.
 public enum GitBranchName {
   private static let forbidden: Set<Character> = [
     " ", "~", "^", ":", "?", "*", "[", "\\",

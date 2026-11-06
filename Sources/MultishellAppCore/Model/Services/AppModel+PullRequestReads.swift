@@ -7,7 +7,7 @@ extension AppModel {
   private static var concurrentBranchPullRequestLookups: Int { 4 }
 
   /// One list call for the whole project, and alone each pushed branch it left
-  /// out. A failure keeps the list before it; see Docs/design/services.md.
+  /// out. A failure keeps the list before it; see Docs/design/services/reads.md.
   func readPullRequests(
     of project: Project,
     remotes: [GitRemote]?,

@@ -27,7 +27,7 @@ extension AppModel {
   }
 
   /// Every project with a row in view whose services are due: the poll's, at
-  /// `interval`, and sooner where a shown run is under way; see services.md.
+  /// `interval`, and sooner where a shown run is under way; see services/reads.md.
   func pollServices(interval: Duration = ServiceReadInterval.poll) async {
     let now = ContinuousClock.now
     let due = projectsWithRowsInView().filter { id in

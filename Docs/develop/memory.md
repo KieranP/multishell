@@ -32,10 +32,10 @@ decisions that came out of it are in design/debug-tools.md.
   loop inside a test never drains the main queue, so a test of what a deferred
   free releases awaits instead (`GhosttyTerminalHostTests`
   `closedSessionsLetTheirSurfaceViewsGo`).
-- **Drive the app with the debug build's helper** (build.md): `tabs open`,
-  `debug tools on`, `debug info show`, then `debug samples` and `debug memory`
-  for the readings, and `info` for the pid to hand `footprint`. `debug mark`
-  before a step prints the sample it lands in.
+- **Drive the app with the debug build's helper** (build/verifying-a-change.md):
+  `tabs open`, `debug tools on`, `debug info show`, then `debug samples` and
+  `debug memory` for the readings, and `info` for the pid to hand `footprint`.
+  `debug mark` before a step prints the sample it lands in.
 
 ## Where it goes
 
@@ -62,9 +62,10 @@ One shell tab, idle, debug tools off: 193 MB.
   added 31 MB of live heap.
 - **Opening a tab briefly charges about 217 MB of GPU memory** before it settles
   near 117 MB; four 32 MB surfaces were made, not three.
-- **A file tab's row counts its text, not its layout.** A shown tab's TextKit 2
-  layout, up to 186 MB at the 1 MiB cap (design/files.md), stays in the app's
-  row.
+- **A file tab's row counts its text and image bytes, not its layout or
+  picture.** A shown tab's TextKit 2 layout, up to 186 MB at the 1 MiB cap, and
+  a shown image's decoded picture, up to 36 MB a copy
+  (design/files/image-tabs.md), stay in the app's row.
 - **Debug Info added 105 to 117 MB while open**, from its `Canvas` strips, now
   shapes (design/debug-tools.md).
 

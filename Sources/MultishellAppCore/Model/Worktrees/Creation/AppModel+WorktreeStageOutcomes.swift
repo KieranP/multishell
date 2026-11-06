@@ -68,7 +68,7 @@ extension AppModel {
   }
 
   /// The first tab held back while the setup ran opens now, as the sheet answered
-  /// or else the create settings say, and starts even out of view; terminals.md.
+  /// or else the create settings say, and starts even out of view; terminals/sessions.md.
   func openHeldBackTab(of worktree: Worktree) {
     defer { newWorktreeFirstTabs[worktree.id] = nil }
     guard let current = workspace.worktree(worktree.id),

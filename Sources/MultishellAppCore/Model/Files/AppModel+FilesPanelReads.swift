@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// The git and disk reads behind the Files panel, each one at a time per
-/// worktree or folder; see Docs/design/files.md.
+/// worktree or folder; see Docs/design/files/panel.md.
 extension AppModel {
   /// What a shown panel needs of its worktree: its tracked files, each folder open
   /// in it that git does not list, a status read and, under Branch, a branch read.

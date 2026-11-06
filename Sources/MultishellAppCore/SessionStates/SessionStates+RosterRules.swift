@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// What a report means once the roster of workers is kept, and the Done a
-/// Stop owes while workers are out; see Docs/design/agents.md.
+/// Stop owes while workers are out; see Docs/design/agents/subagents.md.
 extension SessionStates {
   /// `nil` for a report that moves nothing.
   mutating func applyRoster(

@@ -2,7 +2,7 @@ import Foundation
 import MultishellProcess
 
 /// How to launch a login shell so the command-status hooks reach that session
-/// only. zsh rides `ZDOTDIR`, bash `--init-file`, fish `-C`; see terminals.md.
+/// only. zsh rides `ZDOTDIR`, bash `--init-file`, fish `-C`; see terminals/shell-integration.md.
 public enum ShellLaunch {
   /// The shell taking over when an agent tab's agent quits: `exec` plus the
   /// integration a fresh tab gets, as words for the caller to quote.
@@ -44,7 +44,7 @@ public enum ShellLaunch {
   }
 
   /// Points a zsh session's `ZDOTDIR` at the generated directory, and says
-  /// where the user's was so ours can chain to it; see terminals.md.
+  /// where the user's was so ours can chain to it; see terminals/shell-integration.md.
   static func zshEnvironment(
     forShell shellPath: String,
     environment: [String: String] = ProcessInfo.processInfo.environment,

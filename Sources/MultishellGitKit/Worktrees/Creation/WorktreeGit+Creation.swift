@@ -3,8 +3,8 @@ import MultishellCore
 import MultishellProcess
 
 extension WorktreeGit {
-  /// `git worktree add [-b <branch>] <path> <start point>`; `createsBranch: false`
-  /// checks out an existing branch. No timeout, only `stopper`; see worktrees.md.
+  /// `git worktree add [-b <branch>] <path> <start point>`; `createsBranch: false` checks out an
+  /// existing branch. No timeout, only `stopper`; see worktrees/creating-and-removing.md.
   func add(
     branch: String,
     at path: URL,
@@ -28,7 +28,7 @@ extension WorktreeGit {
   }
 
   /// One worker per core, where git's default is one in all, unless the user
-  /// chose a count. See Docs/design/worktrees.md.
+  /// chose a count. See Docs/design/worktrees/creating-and-removing.md.
   private func checkoutWorkers(in project: Project) async -> [String: String] {
     let isUserSet = await runner.succeeds(
       ["config", "--get", "checkout.workers"],
@@ -38,7 +38,7 @@ extension WorktreeGit {
   }
 
   /// Written once, a second after the checkout: git trusts no stat data from the
-  /// second an index was written in; see Docs/design/worktrees.md.
+  /// second an index was written in; see Docs/design/worktrees/creating-and-removing.md.
   func settleIndex(of path: URL, stopper: ProcessStopper?) async {
     guard settlesNewIndex else { return }
     let now = Date().timeIntervalSince1970

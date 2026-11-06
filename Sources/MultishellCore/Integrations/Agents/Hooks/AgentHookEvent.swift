@@ -11,10 +11,10 @@ struct AgentHookEvent: Hashable, Sendable {
   /// them and only some of them mean what we are after.
   let matcher: String?
   /// Whether the event means waiting only in a mode that stops for the user;
-  /// see Docs/design/agents.md.
+  /// see Docs/design/agents/reports-and-hooks.md.
   let meansWaitingOnlyWhenPrompting: Bool
   /// Which notification types this event does not stand for, where all arrive
-  /// on one. A deny list; see Docs/design/agents.md.
+  /// on one. A deny list; see Docs/design/agents/reports-and-hooks.md.
   let ignoredNotificationTypes: Set<String>
   /// Whether the event moves the dot and says nothing else, for the second
   /// of two events standing for one thing.

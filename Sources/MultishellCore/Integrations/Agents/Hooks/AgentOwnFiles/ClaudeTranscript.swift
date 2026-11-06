@@ -1,6 +1,6 @@
 import Foundation
 
-/// What Claude's transcript tells a hook; see Docs/design/agents.md.
+/// What Claude's transcript tells a hook; see Docs/design/agents/.
 enum ClaudeTranscript {
   /// Far more than a turn writes, and a read of a few milliseconds where a
   /// whole transcript runs to 23 MB.

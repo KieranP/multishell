@@ -8,7 +8,7 @@
   key there is an opinion, not a typo.
 - **A repo's `.multishell.json` fills only gaps the user left.** A team default
   must never override a made choice. Of those four, agent flags are the one it
-  cannot carry (agents.md).
+  cannot carry (agents/launch-arguments.md).
 - **What it names on disk needs trust; what it draws does not.** "Runs nothing,
   so needs no trust" was wrong: `worktreeDirectory`, `linkedPaths` and
   `copiedPaths` are paths on the reader's machine. A repo could commit
@@ -91,7 +91,7 @@
   can read it changes it.
 - **Integrations is per project with no global and no repository file**: it
   turns display-only reads off, and a repository without the service already
-  shows nothing (services.md).
+  shows nothing (services/reads.md).
 - **Help goes behind an (i).** Captions doubled every form's height and were
   read once. A caption is left only for a value computed live.
 - **An (i) holds at most 200 characters once filled in**, leaving what another
@@ -138,20 +138,13 @@
   page and not to that list cannot be found.
 - **The pages are drawn to the mockup, not a grouped `Form`.** The Form gave a
   white page under grey cards, 13 pt bold group titles and grey fields, the
-  mockup's inverse. `SettingsForm` and `SettingsGroup` lay out its metrics, kept
-  in `UIMetrics`, in `SettingsColors`' light and dark values; a row is a
-  `LabeledContent` or `Toggle` in its own style, and a `SettingsCaption` sits
-  under the row before it unruled. Menus are `SettingsPopUp`, buttons
-  `SettingsButtonStyle`. Cost: a native control the pages use must be given the
+  mockup's inverse. Cost: a native control the pages use must be given the
   mockup's face by hand.
-- **The sidebar is drawn too**, its rows buttons and the arrow keys a model step
-  (`stepSettingsSection`), the page glyphs the mockup's own strokes. The sidebar
-  `List`'s material rendered its text in vibrancy and drew a rule under the
-  title bar in an inactive window.
-- **The window hides its title bar from AppKit and its toolbar's background**
-  (`toolbarBackgroundVisibility`): with the background, macOS faded the page
-  header's text under the band; hiding the whole toolbar took the traffic lights
-  with it.
+- **The sidebar is drawn too.** The sidebar `List`'s material rendered its text
+  in vibrancy and drew a rule under the title bar in an inactive window.
+- **The window hides its toolbar's background** (`toolbarBackgroundVisibility`):
+  with the background, macOS faded the page header's text under the band; hiding
+  the whole toolbar took the traffic lights with it.
 - **Reviewed and left as is**:
   - Section and command-line page words convert by two switches, not raw values:
     each is exhaustive, so a new case fails the build until both name it, where
@@ -180,7 +173,7 @@
     ring view: offscreen there is no accessibility tree, and no public seam.
   - Hooks has no whole-page `--page` word, its three parts each having one.
   - `SettingsColors` converts its hex constants itself: `RGB`'s initialiser is
-    Core's own, and widening it for six constants costs more than eight lines.
+    Core's own, and widening it for eight constants costs more than eight lines.
   - The detected default branch is a dictionary beside `defaultBranchScans`, not
     a field on it: that enum is built in tests across four suites.
   - A raw socket request naming a project with `inProject` false opens All
@@ -222,7 +215,6 @@
     folder follows what a file is, not how many places call it.
   - `Theme.builtins` and `theme(from:)`'s default stay public: 24 AppUI test
     files name them without `@testable` importing Core.
-- **A hook file opens in a popover**, which inline added 166 pt a row.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something
   failed", which is all some people want.
@@ -249,4 +241,5 @@
   and refuses a value the decoder would drop or change: a blank agent id, a tint
   off the palette, `null` on a hook, which has no global to follow. Saved as
   given, it would read as unset on the next load. The trust answers are not
-  settable there at all (agents.md; AppModelControlProjectSettingsTests).
+  settable there at all (agents/command-line.md;
+  AppModelControlProjectSettingsTests).

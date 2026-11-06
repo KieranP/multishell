@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// Reads one file tab's file and its changes against `HEAD`, or where its
-/// branch left `base`; see Docs/design/files.md.
+/// branch left `base`; see Docs/design/files/modified-and-branch.md.
 enum FileTabReader {
   /// The spikes: git diffs 1 MiB in under 40 ms, but the forced TextKit 2
   /// view takes up to 186 MB laid out at that size.

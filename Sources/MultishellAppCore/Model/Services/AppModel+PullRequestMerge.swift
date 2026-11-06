@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellServices
 
-/// Merging from the pull request page; see Docs/design/services.md.
+/// Merging from the pull request page; see Docs/design/services/create-and-merge.md.
 extension AppModel {
   /// The form the page shows in its place, kept current by `reconcileMerges`.
   public func pendingMerge(of worktree: Worktree) -> PendingMerge? {
@@ -87,7 +87,7 @@ extension AppModel {
   }
 
   /// The app's second write to a remote, after the push. The form is the
-  /// question asked every time; see services.md for what it is held to.
+  /// question asked every time; see services/create-and-merge.md for what it is held to.
   public func confirmMerge(of worktree: Worktree) async {
     guard let project = workspace.project(worktree.projectID),
       let (_, host) = pullRequestHost(for: project),

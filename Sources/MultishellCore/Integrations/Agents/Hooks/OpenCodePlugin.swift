@@ -1,5 +1,5 @@
 /// The plugin OpenCode is given, since it runs no hook command. Here and not
-/// in `Resources`, which the helper cannot reach; see Docs/design/agents.md.
+/// in `Resources`, which the helper cannot reach; see Docs/design/agents/reports-and-hooks.md.
 enum OpenCodePlugin {
   /// OpenCode 2 loads a plugin only from a default export with an id and a
   /// `setup`, and runs no plugin written for 1.x.

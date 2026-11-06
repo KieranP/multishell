@@ -3,7 +3,7 @@ import MultishellCore
 
 extension AppModel {
   /// A request from the command line, done as the menu item or click it
-  /// stands for would do it; see Docs/design/agents.md.
+  /// stands for would do it; see Docs/design/agents/command-line.md.
   func answer(_ request: ControlRequest) async -> ControlReply {
     let requestID = UUID()
     requestsBeingAnswered.insert(requestID)

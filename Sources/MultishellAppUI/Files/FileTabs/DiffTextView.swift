@@ -3,7 +3,7 @@ import MultishellAppCore
 import MultishellCore
 
 /// A file tab's text: read-only, never wrapped, every row's geometry forced
-/// so it sits where `DiffRowGeometry` says; see Docs/design/files.md.
+/// so it sits where `DiffRowGeometry` says; see Docs/design/files/file-tabs.md.
 @MainActor
 final class DiffTextView: NSTextView {
   /// Room after the widest line, so its last glyph is not against the edge.

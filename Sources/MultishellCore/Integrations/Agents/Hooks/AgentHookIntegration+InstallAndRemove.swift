@@ -1,7 +1,7 @@
 import Foundation
 
 /// Putting an agent's hooks into its file on disk and taking them out again;
-/// the merging itself is in `+Merging`. See Docs/design/agents.md.
+/// the merging itself is in `+Merging`. See Docs/design/agents/reports-and-hooks.md.
 extension AgentHookIntegration {
   public func install(
     into file: URL? = nil,

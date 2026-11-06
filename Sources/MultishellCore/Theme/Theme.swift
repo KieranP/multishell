@@ -1,5 +1,5 @@
 /// A colour scheme as a theme file writes it, every colour optional; one left
-/// out is its base theme's, see `Theme+Colors` and Docs/design/appearance.md.
+/// out is its base theme's, see `Theme+Colors` and Docs/design/appearance/themes.md.
 public struct Theme: Identifiable, Decodable, Hashable, Sendable {
   private enum CodingKeys: String, CodingKey {
     case fileColors = "file"

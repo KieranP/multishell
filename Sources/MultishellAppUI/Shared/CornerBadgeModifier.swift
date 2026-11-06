@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A badge on a glyph's lower right corner, ringed in what it sits on so it
-/// reads as a gap rather than a second ring of colour. See agents.md.
+/// reads as a gap rather than a second ring of colour. See agents/board-and-pane-rows.md.
 struct CornerBadgeModifier<Badge: View>: ViewModifier {
   let glyphSize: Double
   let ringFill: Color

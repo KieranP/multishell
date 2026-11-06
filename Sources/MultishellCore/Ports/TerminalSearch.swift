@@ -1,5 +1,5 @@
 /// One step of a search in a session's scrollback, the engine keeping the
-/// matches and which is selected; see Docs/design/terminals.md.
+/// matches and which is selected; see Docs/design/terminals/find.md.
 public enum TerminalSearch: Equatable, Sendable {
   /// The bar has closed: the search is over and its highlights come down.
   case end

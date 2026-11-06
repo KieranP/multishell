@@ -1,5 +1,5 @@
 /// What a shell's tools, or a Multishell pane, keep about its session, inherited from
-/// the terminal that started the app; handed on, mise rebuilt PATH. terminals.md.
+/// the terminal that started the app; handed on, mise rebuilt PATH. terminals/sessions.md.
 public enum InheritedShellState {
   private static let misePrefix = "__MISE_"
   /// What direnv loaded, not its settings such as its log format.

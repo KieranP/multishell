@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// Modified or Branch and Unified or Split as one menu, where a group is too
-/// narrow for the bar's switches; see Docs/design/files.md.
+/// narrow for the bar's switches; see Docs/design/files/file-tabs.md.
 struct FileTabViewMenu: View {
   let model: AppModel
   let tab: FileTab

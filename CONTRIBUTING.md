@@ -33,14 +33,15 @@ make build    # bundle it, which CI does not do for you
 make release  # the optimised bundle make install ships, which neither builds
 ```
 
-All five have to pass. [Docs/develop/build.md](Docs/develop/build.md) covers
-driving a debug build from the `multishell` command line, which reads panes and
-takes screenshots without Apple events, and what that still leaves unverified.
-Say what you checked rather than that it works.
+All five have to pass.
+[Docs/develop/build/verifying-a-change.md](Docs/develop/build/verifying-a-change.md)
+covers driving a debug build from the `multishell` command line, which reads
+panes and takes screenshots without Apple events, and what that still leaves
+unverified. Say what you checked rather than that it works.
 
 Fixing a bug starts with a test that fails on the bug and passes on the fix.
-[Docs/develop/tests.md](Docs/develop/tests.md) has the conventions a new one
-follows, and [Docs/develop/adding.md](Docs/develop/adding.md) lists what an
-addition needs beyond its code, per kind of addition. User-visible strings go
-through the catalogues, never into a view; see
+[Docs/develop/tests/conventions.md](Docs/develop/tests/conventions.md) has the
+conventions a new one follows, and [Docs/develop/adding/](Docs/develop/adding/)
+lists what an addition needs beyond its code, per kind of addition. User-visible
+strings go through the catalogues, never into a view; see
 [Docs/design/translation.md](Docs/design/translation.md).

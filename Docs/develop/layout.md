@@ -50,10 +50,9 @@
   the app's executable hands the helper when started with a command.
 - **Everything about a program someone else wrote is in Core's
   `Integrations/`**, one folder per kind: agents, editors, shells, and
-  `AgentHookFiles/` for the files hooks are written into. A new agent touches
-  the agents folder and each built-in theme's `ui.agent_marks`, until someone
-  draws its mark. Its hooks sit under `Agents/Hooks/`, and what reads or writes
-  one agent's own files under `Agents/Hooks/AgentOwnFiles/`.
+  `AgentHookFiles/` for the files hooks are written into. An agent's hooks sit
+  under `Agents/Hooks/`, and what reads or writes one agent's own files under
+  `Agents/Hooks/AgentOwnFiles/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed as
   `multishell`, since it and the app would share one products path on a
   case-insensitive disk. Commands that drive the app sit under `Control/`, a
@@ -119,10 +118,10 @@
 ## Style
 
 - **`swift-format` from the toolchain and SwiftLint, each with its root
-  config**; build.md says which rules are off and why.
+  config**; build/compiler-and-lint-strictness.md says which rules are off and
+  why.
 - **CLAUDE.md's file per type covers an error type, a null object and a test's
-  helper too**, a test's helper at the suite's root. A dialog is a `View`
-  extension in `View+<Dialog>.swift`, attached by the scene that asked.
+  helper too**.
 - **A call or declaration that wraps puts each argument on its own line, with a
   trailing comma**, so adding or removing one changes one line. Chained calls
   are not split one to a line: that moved `.flatMap {` off its receiver.

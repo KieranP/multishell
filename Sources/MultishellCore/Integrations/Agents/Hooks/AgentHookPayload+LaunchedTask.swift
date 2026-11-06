@@ -1,5 +1,5 @@
 /// A worker or shell a tool call started in the background, read from the
-/// result Claude Code 2.1.292 hands its PostToolUse; see Docs/design/agents.md.
+/// result Claude Code 2.1.292 hands its PostToolUse; see Docs/design/agents/background-work.md.
 extension AgentHookPayload {
   struct LaunchedTask: Hashable, Sendable {
     var id: String

@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellProcess
 
 /// The menus' Auto Rename: a catalogue agent names the row from what its
-/// branch changed. The git branch keeps its name; see Docs/design/agents.md.
+/// branch changed. The git branch keeps its name; see Docs/design/agents/auto-rename.md.
 extension AppModel {
   func isAutoRenaming(_ id: Worktree.ID) -> Bool {
     autoRenames[id] == .running

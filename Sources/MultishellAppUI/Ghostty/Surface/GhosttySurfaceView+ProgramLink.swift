@@ -2,7 +2,7 @@ import AppKit
 import GhosttyKit
 
 /// libghostty looks for no link while a program holds the mouse, so Cmd's hand
-/// and Cmd+click are given here to what reads as one; see terminals.md.
+/// and Cmd+click are given here to what reads as one; see terminals/links.md.
 extension GhosttySurfaceView {
   /// Over libghostty's arrow only: any other shape is the program's own choice.
   var shownPointer: NSCursor {

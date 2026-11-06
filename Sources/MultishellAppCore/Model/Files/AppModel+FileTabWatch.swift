@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// Which file tabs a watcher batch moved, heard ahead of the frontmost and
-/// ignored-folder guards; see Docs/design/files.md.
+/// ignored-folder guards; see Docs/design/files/file-tabs.md.
 extension AppModel {
   /// A change in a tab's folder re-reads it where its `lstat` moved, and one in
   /// its project's git always, the diff's other side having moved.

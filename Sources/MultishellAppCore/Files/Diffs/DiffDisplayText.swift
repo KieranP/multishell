@@ -19,8 +19,8 @@ public struct DiffDisplayText: Equatable, Sendable {
   /// The sides every line of which these rows hold: a split side holds one, and
   /// a parse of the other's partial text would colour it wrong.
   let wholeSides: [DiffSide]
-  /// Every committed line's text hashed, the merge base's under Branch (files.md), which a
-  /// commit, checkout or new scope changes; a split's right side takes its left's.
+  /// Every committed line's text hashed, the merge base's under Branch, which a commit, checkout or
+  /// new scope changes (files/modified-and-branch.md); a split's right side takes its left's.
   let committedDigest: Int
   /// Whether a changed line says staged or unstaged: not against an older
   /// commit than `HEAD`, whose changes the index holds too.

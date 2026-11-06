@@ -1,6 +1,6 @@
 #!/bin/bash
-# Dates each tracked file by the last commit that touched it, deepening a shallow
-# clone first, so a .build CI restores recompiles only what changed since; build.md.
+# Dates each tracked file by its last commit, deepening a shallow clone first, so a
+# .build CI restores recompiles only what changed since; build/continuous-integration.md.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

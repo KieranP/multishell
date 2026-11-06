@@ -3,7 +3,7 @@ import MultishellProcess
 
 extension AppModel {
   /// The pids worth a poll: those a state is about always, and those an
-  /// agent reported under only while the board is up; see agents.md.
+  /// agent reported under only while the board is up; see agents/board-and-pane-rows.md.
   var watchedPIDs: Set<Int32> {
     guard showsAgentBoard else { return sessionStates.trackedPIDs }
     return sessionStates.trackedPIDs.union(reportedAgents.values.compactMap(\.pid))

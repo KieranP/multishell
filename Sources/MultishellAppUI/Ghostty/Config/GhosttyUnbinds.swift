@@ -12,7 +12,7 @@ enum GhosttyUnbinds {
   ]
 
   /// Ghostty bindings on plain keys, released so the key reaches the program:
-  /// its performable `esc=end_search` ate Escape under our bar; terminals.md.
+  /// its performable `esc=end_search` ate Escape under our bar; terminals/find.md.
   static let surfaceReleases = ["escape"]
 
   static let all: [String] =

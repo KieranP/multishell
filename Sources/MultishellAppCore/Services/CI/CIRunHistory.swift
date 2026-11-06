@@ -1,7 +1,7 @@
 import MultishellServices
 
 /// A branch's newest runs, newest first, read while the panel shows them.
-/// Runtime only; see Docs/design/services.md.
+/// Runtime only; see Docs/design/services/marks-and-pages.md.
 struct CIRunHistory: Equatable, Sendable {
   /// The branch's name on the remote.
   let branch: String

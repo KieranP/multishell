@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// A title a pane's program reported, as the strip, the sidebar, the board and
-/// the switcher draw it. The command line keeps the raw one. See tabs-and-groups.md.
+/// the switcher draw it. The command line keeps the raw one. See tabs-and-groups/tab-strip.md.
 enum ShownPaneTitle {
   /// Read once, every shown title being measured against it.
   static let accountHome = FileManager.default.homeDirectoryForCurrentUser.path

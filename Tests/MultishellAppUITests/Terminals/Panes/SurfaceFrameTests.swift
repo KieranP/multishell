@@ -8,7 +8,7 @@ import Testing
 @Suite @MainActor
 struct SurfaceFrameTests {
   /// A window never ordered in, focus being refused to a view that is in
-  /// none; see Docs/develop/build.md.
+  /// none; see Docs/develop/build/verifying-a-change.md.
   private func framed() -> (window: NSWindow, frame: SurfaceFrame) {
     let container = NSView(frame: NSRect(x: 0, y: 0, width: 200, height: 200))
     let window = OffscreenWindow.holding(container, deferred: false)

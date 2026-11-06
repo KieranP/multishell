@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellServices
 
 /// What a project's pull request host last answered, with the remotes the
-/// rows are matched against. Runtime only; see Docs/design/services.md.
+/// rows are matched against. Runtime only; see Docs/design/services/branch-matching.md.
 struct ProjectPullRequests: Equatable {
   let integration: ServiceIntegration
   /// The last list the host gave, then each lookup's, kept through a failed

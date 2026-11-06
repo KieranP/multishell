@@ -58,7 +58,7 @@ extension AppModel {
   }
 
   /// The pane's or file tab's selection the first time a Cmd+F finds it there,
-  /// outliving the find text typed over it; never from the field. terminals.md.
+  /// outliving the find text typed over it; never from the field. terminals/find.md.
   private func takeSelection(in id: FindTargetID) -> String? {
     guard findFieldTargetID != id else { return nil }
     let selection =
@@ -185,7 +185,7 @@ extension AppModel {
   }
 
   /// The first step after a new find text lands nearest the prompt whichever arrow
-  /// asked: the engine selected nothing on the find text. See terminals.md.
+  /// asked: the engine selected nothing on the find text. See terminals/find.md.
   private func step(_ direction: CycleDirection, in id: FindTargetID) {
     guard findBarTargetIDs.contains(id), !findText(of: id).isEmpty else { return }
     if workspace.fileTab(id) != nil {
@@ -193,7 +193,7 @@ extension AppModel {
       return
     }
     // The engine says the match it lands on a turn later, and nothing for a
-    // step back onto the only match, which stays selected; terminals.md.
+    // step back onto the only match, which stays selected; terminals/find.md.
     if let count = searchCounts[id], count.total != 1 {
       updateSearchCount(of: id) { $0.noteStep() }
     }

@@ -30,7 +30,7 @@ extension AppModel {
 
   func replyToDebugMemory() -> ControlReply {
     guard areDebugToolsEnabled else { return .refused(.debugToolsOff) }
-    return .json(DebugMemoryRecord(debugMemoryTable))
+    return .json(DebugMemoryRecord(liveDebugMemoryTable))
   }
 
   /// Into the next sample, so `samples` lines it up with the frame rate and

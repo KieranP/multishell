@@ -1,5 +1,5 @@
 /// Why a read through a service's tool gave no answer. Never a verdict: the
-/// row keeps what it last showed; see Docs/design/services.md.
+/// row keeps what it last showed; see Docs/design/services/reads.md.
 public enum ServiceReadFailure: Error, Hashable, Sendable {
   /// The tool ran and failed, with what it said.
   case failed(String)

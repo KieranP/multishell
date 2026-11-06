@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Both settings words open the one window, `settings` on All Projects and `project-settings`
-  /// on the project named, else the one shown, else the selection's; see Docs/design/agents.md.
+  /// `settings` opens the settings window on All Projects and `project-settings` on the project
+  /// named, else the one shown, else the selection's; see Docs/design/agents/command-line.md.
   func replyToShowView(_ view: ControlView, project id: String?) -> ControlReply {
     switch view {
     case .agentBoard: showAgentBoard()

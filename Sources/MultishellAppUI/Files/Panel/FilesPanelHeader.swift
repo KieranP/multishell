@@ -4,7 +4,7 @@ import MultishellServices
 import SwiftUI
 
 /// The panel's Files, Changes, PR and CI, and the glyph that shuts it, in the
-/// title bar's band; see Docs/design/files.md.
+/// title bar's band; see Docs/design/files/panel.md.
 struct FilesPanelHeader: View {
   let model: AppModel
   let theme: Theme

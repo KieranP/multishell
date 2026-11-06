@@ -1,7 +1,7 @@
 import Foundation
 
 /// The JSON an agent writes to a hook command's stdin, reduced to the fields
-/// this reads; see Docs/design/agents.md.
+/// this reads; see Docs/design/agents/reports-and-hooks.md.
 public struct AgentHookPayload: Hashable, Sendable {
   struct BackgroundTask: Hashable, Sendable {
     var id: String
@@ -28,17 +28,17 @@ public struct AgentHookPayload: Hashable, Sendable {
   var conversationID: String?
   var transcriptPath: String?
   /// What Claude's Stop says is still in flight, `nil` from an agent or a
-  /// version that does not say; see Docs/design/agents.md.
+  /// version that does not say; see Docs/design/agents/background-work.md.
   var backgroundTasks: [BackgroundTask]?
   /// What a tool call's result says it started in the background, where the
-  /// result is Claude's; see Docs/design/agents.md.
+  /// result is Claude's; see Docs/design/agents/background-work.md.
   var launchedTask: LaunchedTask?
   /// The task a TaskStop result says it stopped, which Claude ends with all
-  /// it launched; see Docs/design/agents.md.
+  /// it launched; see Docs/design/agents/background-work.md.
   var killedTaskID: String?
 
   /// Whether the transcript is another conversation's: Copilot files a
-  /// subagent's under its parent's id; see Docs/design/agents.md.
+  /// subagent's under its parent's id; see Docs/design/agents/subagents.md.
   var isFiledUnderAnotherConversation: Bool {
     guard let conversationID, !conversationID.isEmpty, let transcriptPath else { return false }
     return !transcriptPath.contains(conversationID)

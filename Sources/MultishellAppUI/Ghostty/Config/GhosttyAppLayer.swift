@@ -28,8 +28,8 @@ enum GhosttyAppLayer {
         config.set("font-family", name)
       }
       config.set("font-size", appearance.terminalFontSize)
-      // Our hooks write the marks, zsh's the title and cursor, and fish 4 writes
-      // both itself, so the engine injects nothing into a shell; see terminals.md.
+      // Our hooks write the marks, zsh's the title and cursor, and fish 4 writes both itself, so
+      // the engine injects nothing into a shell; see terminals/shell-integration.md.
       config.set("shell-integration", "none")
 
       // Ghostty's defaults bind our shortcuts to actions this embedding

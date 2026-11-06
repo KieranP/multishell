@@ -4,8 +4,8 @@ autoload -Uz add-zsh-hook 2>/dev/null
 
 # include leading-path.zsh
 
-# What a zsh pane tells Ghostty, whose own integration is off: prompt marks,
-# a command's end, title, cursor and directory. Why each: terminals.md.
+# What a zsh pane tells Ghostty, whose own integration is off: prompt marks, a
+# command's end, title, cursor and directory; terminals/shell-integration.md.
 if [ "${TERM_PROGRAM-}" = ghostty ]; then
   # `cl=line` is one arrow per cell.
   typeset -g _multishell_prompt_mark=$'%{\e]133;A;cl=line\a%}'
@@ -42,8 +42,8 @@ if [ "${TERM_PROGRAM-}" = ghostty ]; then
   }
 fi
 
-# What the app is told of a session: a command running, which agent it is,
-# its end with a status and a time, and idle on the way out. agents.md.
+# What the app is told of a session: a command running, which agent it is, its
+# end with a status and a time, and idle on exit. agents/reports-and-hooks.md.
 if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
   typeset -g _multishell_bin="__MULTISHELL_HELPER__"
   typeset -g _multishell_agents="__MULTISHELL_AGENTS__"

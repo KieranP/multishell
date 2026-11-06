@@ -91,7 +91,7 @@ final class GhosttySurfaceView: NSView {
   }
 
   /// libghostty reads the clipboard for a paste before the key, click or menu
-  /// action returns, and for a program's read later; terminals.md has more.
+  /// action returns, and for a program's read later; terminals/paste-and-drop.md has more.
   @discardableResult
   static func forwardingUserInput<Result>(_ body: () -> Result) -> Result {
     guard !isActingForTheCommandLine else { return body() }

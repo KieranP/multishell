@@ -1,7 +1,7 @@
 import Foundation
 
 /// One CI run of a branch, its newest as the service lists them. Runtime
-/// only; see Docs/design/services.md.
+/// only; see Docs/develop/state-on-disk.md.
 public struct CIRun: Hashable, Sendable, Identifiable {
   /// git's own shortest abbreviation; anything shorter names too many commits.
   private static let shortestCommitPrefix = 7

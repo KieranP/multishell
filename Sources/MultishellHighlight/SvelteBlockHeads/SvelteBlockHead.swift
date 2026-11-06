@@ -17,8 +17,8 @@ enum SvelteBlockHead {
     return (0..<open, open..<end + 1)
   }
 
-  /// `load() then value`: the promise, its `then` or `catch`, and the pattern after it.
-  /// `then` is a legal name too; Docs/design/files.md says where it is the keyword.
+  /// `load() then value`: the promise, its `then` or `catch`, and the pattern after it. `then` is a
+  /// legal name too; Docs/design/files/syntax-highlighting.md says where it is the keyword.
   static func awaitHead(
     _ head: String
   ) -> (promise: Range<Int>, keyword: Range<Int>?, pattern: Range<Int>?) {

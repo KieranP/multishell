@@ -3,7 +3,7 @@ import MultishellAppCore
 import MultishellCore
 
 /// The committed side on the left, the file on disk on the right, locked by scroll offset,
-/// the same row on both sides under forced geometry; see files.md.
+/// the same row on both sides under forced geometry; see files/file-tabs.md.
 @MainActor
 final class SplitDiffDocumentView: NSView {
   let committed: DiffDocumentView

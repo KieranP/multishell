@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// The user's Ghostty files and the files they include, in Ghostty's order,
-/// followed here since libghostty is handed one file; see terminals.md.
+/// followed here since libghostty is handed one file; see terminals/engine-and-config.md.
 enum GhosttyConfigIncludes {
   /// Each file's text, an include after the whole file that names it and a
   /// file already read skipped, which is what ends a cycle.

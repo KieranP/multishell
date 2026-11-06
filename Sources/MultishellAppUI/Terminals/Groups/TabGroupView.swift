@@ -35,7 +35,7 @@ struct TabGroupView: View {
       case .terminal(let tab): withDropBands(panes(of: tab))
 
       // A hidden file tab's view goes, its layout with it; the model lets go of
-      // its rows, see files.md.
+      // its rows, see files/file-tabs.md.
       case .file(let tab):
         withDropBands(FileTabView(model: model, tab: tab, theme: theme).id(tab.id))
 

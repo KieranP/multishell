@@ -42,7 +42,7 @@ extension AppModel {
   }
 
   /// Held until anything the build read changes, the build being tracked so
-  /// no input can be missed; see Docs/design/agents.md.
+  /// no input can be missed; see Docs/design/agents/board-and-pane-rows.md.
   public var agentBoard: AgentBoard {
     // What a view holding the cached board is told through.
     _ = agentBoardGeneration

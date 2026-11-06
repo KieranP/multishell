@@ -4,11 +4,11 @@ extension OpenCodePlugin {
 
   /// Which sessions belong to the directory the plugin was loaded for.
   static let directorySessions = """
-    // Hooks fire only for this directory's sessions, but the service's bus
-    // carries every directory's and each loads the plugin; see agents.md.
+    // Hooks fire only for this directory's sessions, but the service's bus carries every
+    // directory's and each loads the plugin; see agents/opencode-session-placement.md.
     const directorySessions = ({ directory, get, track }) => {
-      // How far each source's word on a session's place goes: a hook or a move is
-      // this moment's, the newer winning; an envelope is the least. See agents.md.
+      // How far each source's word on a session's place goes: a hook or a move is this moment's,
+      // the newer winning; an envelope is the least. See agents/opencode-session-placement.md.
       const rank = { envelope: 0, creation: 1, answer: 1, hook: 2, move: 2 }
       // Each session's place, the source that set it and when, its parent and agent,
       // bounded per place so other directories' sessions never push out this one's.

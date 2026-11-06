@@ -2,7 +2,7 @@ import MultishellAppCore
 import SwiftUI
 
 /// A chrome glyph lit under the pointer as the find bar's are: full text over
-/// the area's fill, so it reads as a button. See Docs/design/appearance.md.
+/// the area's fill, so it reads as a button. See Docs/design/appearance/window-chrome.md.
 struct GlyphHoverModifier: ViewModifier {
   let isHovered: Bool
   let palette: AreaPalette

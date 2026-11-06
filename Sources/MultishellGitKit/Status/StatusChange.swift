@@ -1,5 +1,5 @@
 /// One path's change as a status read counted it. Every count a worktree shows
-/// is a sum over these; see Docs/design/files.md.
+/// is a sum over these; see Docs/design/files/panel.md.
 public struct StatusChange: Hashable, Sendable {
   /// What the change does to the path, which colours its dot.
   public enum Kind: Hashable, Sendable {

@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-/// One pane's card, read in the sidebar's order; see Docs/design/appearance.md.
+/// One pane's card, read in the sidebar's order; see Docs/design/appearance/window-chrome.md.
 /// No output on it: a pane's text is read under the engine's renderer lock.
 struct AgentBoardCardView: View {
   let model: AppModel

@@ -4,7 +4,7 @@ import MultishellServices
 import SwiftUI
 
 /// The panel's CI page: the branch's newest run in a card, its workflows and
-/// jobs under Latest Run, and its earlier runs; see Docs/design/services.md.
+/// jobs under Latest Run, and its earlier runs; see Docs/design/services/marks-and-pages.md.
 struct CIPanelPage: View {
   /// Often enough that a run's "Started 4 minutes ago" is never a minute out.
   private static let ageTickInterval: Duration = .seconds(30)

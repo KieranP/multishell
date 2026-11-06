@@ -35,8 +35,8 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   # include terminal-reports.bash
   # include session-reports.bash
 
-  # One resident relay rather than the helper launched per report, which
-  # cost 9.4 ms a command under bash 3.2; see Docs/design/terminals.md.
+  # One resident relay rather than the helper launched per report, which cost
+  # 9.4 ms a command under bash 3.2; Docs/design/terminals/shell-integration.md.
   _multishell_relay=0
   # Started in the background of the substitution, which then exits: bash 4.4+
   # sets $! to it, and a bare `wait` would wait on a relay that never ends.

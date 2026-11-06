@@ -9,7 +9,7 @@ extension AgentHookCatalogue {
   }
 
   /// Runs the helper rather than `exec`ing it, and exits 0 whatever became of
-  /// it; parses in fish as well as sh. See Docs/design/agents.md.
+  /// it; parses in fish as well as sh. See Docs/design/agents/reports-and-hooks.md.
   static func command(agent id: String, helper: String, event: String? = nil) -> String {
     let naming = event.map { " --event \($0)" } ?? ""
     return "[ -x \"\(helper)\" ] && \"\(helper)\" \(subcommand) --agent \(id)\(naming); exit 0"

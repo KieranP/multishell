@@ -4,7 +4,7 @@ extension AgentCatalogue {
   static let taskVariable = "MULTISHELL_TASK"
 
   /// The custom agent command, which runs as written: each placeholder reads
-  /// a variable, so no value is ever shell text. See Docs/design/agents.md.
+  /// a variable, so no value is ever shell text. See Docs/design/agents/launch-arguments.md.
   public static func customCommandLine(
     _ line: String,
     values: [WorktreePlaceholder: String],

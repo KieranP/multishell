@@ -35,7 +35,7 @@ struct ScannedBlockHead {
   }
 
   /// Past the regex's closing `/`, not one escaped or in a `[…]` class, and its flags;
-  /// `nil` where the line ends first. `unclosed`: see Docs/design/files.md.
+  /// `nil` where the line ends first. `unclosed`: see Docs/design/files/syntax-highlighting.md.
   private static func regexEnd(
     in text: [UInt16],
     at start: Int,

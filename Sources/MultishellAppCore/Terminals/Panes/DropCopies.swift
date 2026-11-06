@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// The copies a pane is handed a path to: files a drag promised rather than
-/// handed over, and images pasted from the clipboard; see terminals.md.
+/// handed over, and images pasted from the clipboard; see terminals/paste-and-drop.md.
 public enum DropCopies {
   /// How long a copy is kept: long enough that a prompt written today still
   /// resolves next week.

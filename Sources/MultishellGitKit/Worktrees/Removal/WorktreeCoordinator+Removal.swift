@@ -26,7 +26,7 @@ extension WorktreeCoordinator {
     let path = worktree.path
     let directoryExists = await runOnDispatch { FileManager.default.fileExists(atPath: path.path) }
     // Whatever took a stale record's path since is not ours: not trashed,
-    // and no hook runs, each being handed that path; see worktrees.md.
+    // and no hook runs, each being handed that path; see worktrees/creating-and-removing.md.
     if directoryExists, try await !git.isCheckout(of: worktree, in: project) {
       onStep?(.removingWorktree)
       try await git.removeStaleRecord(worktree, in: project)

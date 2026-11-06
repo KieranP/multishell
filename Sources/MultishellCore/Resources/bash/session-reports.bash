@@ -1,5 +1,5 @@
 # The functions init.bash installs in a session: what the app is told of each
-# command through the helper. Docs/design/agents.md.
+# command through the helper. Docs/design/agents/reports-and-hooks.md.
 
 # A line the relay would carry, `kind first second`, as the helper's own argv.
 _multishell_run_helper() {
@@ -9,8 +9,8 @@ _multishell_run_helper() {
   esac
 }
 
-# A relay that fails, an older helper or a crash, leaves its lines in the
-# pipe, so they go a helper each from here; see Docs/design/terminals.md.
+# A relay that fails, an older helper or a crash, leaves lines in the pipe, so
+# they go a helper each from here; Docs/design/terminals/shell-integration.md.
 _multishell_relay_or_inline() {
   "$_multishell_bin" relay --pid $$ && return
   trap '' HUP TSTP TTIN TTOU
@@ -56,7 +56,7 @@ _multishell_command_started() {
   _multishell_output_mark
 
   # The program being started, sent only where it is an agent: the words
-  # of the line, past any prefix. Docs/design/agents.md.
+  # of the line, past any prefix. Docs/design/agents/board-and-pane-rows.md.
   local line="$1" command_word=""
   while [ -n "$line" ]; do
     command_word="${line%% *}"

@@ -1,5 +1,5 @@
 /// Each agent's one-shot run, read from its own `--help` and model list on
-/// 2026-10-24; see Docs/design/agents.md for each choice.
+/// 2026-10-24; see Docs/design/agents/auto-rename.md for each choice.
 extension AgentCatalogue {
   private static let claudeEfforts = ["low", "medium", "high", "xhigh", "max"]
   private static let copilotEfforts = ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
@@ -8,7 +8,7 @@ extension AgentCatalogue {
   private static let antigravityClaudeEfforts = ["low", "medium", "high", "max"]
 
   // Aliases follow each release. No MCP server, and user settings only: `-p`
-  // skips the trust prompt a repository's hooks wait behind. See agents.md.
+  // skips the trust prompt a repository's hooks wait behind. See agents/auto-rename.md.
   static let claudeOneShot = AgentOneShot(
     leadingArguments: [
       "-p", "--no-session-persistence", "--strict-mcp-config", "--setting-sources", "user",
@@ -82,7 +82,7 @@ extension AgentCatalogue {
   )
 
   // `--standalone`, or the background service runs it without this environment;
-  // a repository's own config and plugins are not loaded. See agents.md.
+  // a repository's own config and plugins are not loaded. See agents/auto-rename.md.
   static let openCodeOneShot = AgentOneShot(
     leadingArguments: ["run", "--standalone"],
     promptArgument: .operand,

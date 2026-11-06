@@ -33,7 +33,7 @@ Under `~/Library/Application Support/Multishell`.
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.
 - **A file written before file tabs gives no group an order**, so the repair
-  takes each group's from the order of its tabs (design/files.md).
+  takes each group's from the order of its tabs (design/files/file-tabs.md).
 - **An agent id the catalogue retired is forgotten on load**
   (design/state-and-store.md).
 - **A broken state file is moved aside with a timestamp**
@@ -45,7 +45,7 @@ Under `~/Library/Application Support/Multishell`.
   place, so it is never briefly world-readable: the mode comes from the umask at
   bind, and umask is process-wide. The command line's requests come in on it
   too, so that mode is all that stops another account running a command in a
-  pane (design/agents.md).
+  pane (design/agents/command-line.md).
 - **So the longest path that binds is two bytes shorter than `sun_path`
   allows**, the `.b` of the staging name, and the refusal names the socket
   rather than the staging file, which is no concern of the user's.
@@ -73,7 +73,8 @@ Under `~/Library/Application Support/Multishell`.
 - **The drops directory holds files a drag promised rather than handed over and
   images pasted from the clipboard**, swept at launch once a week old.
 - **The merged Ghostty config passes through the temporary directory**, a file
-  per load, gone once libghostty has read it (design/terminals.md).
+  per load, gone once libghostty has read it
+  (design/terminals/engine-and-config.md).
 - **`multishell debug screenshot` writes its PNG from the helper**, to the file
   named or a new one under `/tmp`, so the app writes to no path a request names.
 - **libghostty is built without its crash reporter**, so it keeps no crash
@@ -81,15 +82,15 @@ Under `~/Library/Application Support/Multishell`.
   and never writes.
 - **Agent hooks are written only when asked**, each in that agent's own config
   directory; launch leaves alone even one an older build wrote
-  (design/agents.md). Three of them keep a copy of the file as it was the first
-  time, beside it; the other two are files of ours alone and are deleted to
-  remove.
+  (design/agents/reports-and-hooks.md). Four of them keep a copy of the file as
+  it was the first time, beside it; the other two are files of ours alone and
+  are deleted to remove.
 - **Those directories are under `$HOME`**, as the agents read it, and under the
   account's home only where `HOME` is unset or empty: the account's home alone
   sent a test's helper into the developer's own files.
-- **Gemini's own settings are read where Gemini reads them** (design/agents.md);
-  the hook file does not follow them to the temporary directory under an empty
-  `HOME`.
+- **Gemini's own settings are read where Gemini reads them**
+  (design/agents/background-work.md); the hook file does not follow them to the
+  temporary directory under an empty `HOME`.
 - **The sidebar's and the Files panel's widths live in user defaults**: a
   release's in the `io.multishell.app` domain, a debug build's in one named for
   its variant, so `window sidebar-width` on a scratch run never moves the
@@ -101,11 +102,6 @@ Under `~/Library/Application Support/Multishell`.
   which an event on the file or the project's `.git` and each minute's round
   check. What it said is never saved in the state file, where a restored copy
   would trust a file nobody looked at.
-- **A field it ships needs a line in the layering**, a decode that costs the key
-  and not the file, and an override row on the page (design/settings.md).
-- **A field naming a path on the reader's disk needs more**: confinement, the
-  trust text, the gate, and the export's carry-over, the last so export does not
-  drop it while it is untrusted.
 - **Decide what a blank one means.** Coerce to "none" where that and "no
   opinion" agree, and leave it alone where blank is how "none" is spelled. Left
   uncoerced, a blank hook counts as a hook, and the trust question asks about an

@@ -1,7 +1,7 @@
 import Foundation
 
 /// How one agent is asked to say what it is doing, and where that is
-/// written; see Docs/design/agents.md.
+/// written; see Docs/design/agents/reports-and-hooks.md.
 public struct AgentHookIntegration: Identifiable, Sendable {
   /// How a file spells the hooks, and whether it is the user's or ours.
   enum Format: Sendable {
@@ -62,28 +62,28 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// asks anything at all. Codex trusts a hook only once told to.
   public let trustNote: String?
   /// What the command line of a shell the agent runs a tool in holds, so its
-  /// Stop can name those still running; see Docs/design/agents.md.
+  /// Stop can name those still running; see Docs/design/agents/background-work.md.
   let backgroundShellMarker: String?
   /// Whether the agent takes another turn when the work it left out at its
-  /// Stop ends, which then pays the Done; see Docs/design/agents.md.
+  /// Stop ends, which then pays the Done; see Docs/design/agents/background-work.md.
   let resumption: Resumption
   /// Whether a subagent is a conversation of its own, firing its own prompt
-  /// and Stop, which only its conversation id tells apart; see agents.md.
+  /// and Stop, which only its conversation id tells apart; see agents/subagents.md.
   let subagentsAreConversations: Bool
   /// The kinds of listed work whose end reaches the model and wakes it. One
-  /// counted that never wakes it holds the pane Working for good; see agents.md.
+  /// counted that never wakes it holds the pane Working for good; see agents/background-work.md.
   let wakingTaskTypes: Set<String>
   /// Whether the agent's transcript shows a finished task's notice still
-  /// queued at a Stop, which starts a turn straight after; see agents.md.
+  /// queued at a Stop, which starts a turn straight after; see agents/background-work.md.
   let transcriptQueuesNotices: Bool
   /// Whether the agent's questions reach a hook as permission prompts, which
-  /// only its transcript tells apart; see agents.md.
+  /// only its transcript tells apart; see agents/reports-and-hooks.md.
   let transcriptShowsPendingQuestion: Bool
   /// Whether the agent keeps a file per worker beside its transcript naming
-  /// the worker's parent; see agents.md.
+  /// the worker's parent; see agents/background-work.md.
   let keepsWorkerMetadataBesideTranscript: Bool
   /// Whether a tool call's result names the background task it launched or
-  /// stopped; see agents.md.
+  /// stopped; see agents/background-work.md.
   let toolResultsNameBackgroundTasks: Bool
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }

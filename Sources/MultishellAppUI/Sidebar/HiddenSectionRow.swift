@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The row under a project's worktrees that holds the ones the user hid,
-/// collapsed until its chevron is clicked. See Docs/design/worktrees.md.
+/// collapsed until its chevron is clicked. See Docs/design/worktrees/sidebar.md.
 struct HiddenSectionRow: View, @MainActor Equatable {
   let isExpanded: Bool
   let worktreeCount: Int

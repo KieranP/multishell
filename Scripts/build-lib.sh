@@ -12,8 +12,8 @@ die() {
     exit 1
 }
 
-# Runs `script` again under `lockf -k lock`, once: `marker` names the variable
-# the re-run sees set. Without lockf the caller goes on unguarded; build.md.
+# Runs `script` again under `lockf -k lock`, once: `marker` names the variable the re-run
+# sees set. Without lockf the caller goes on unguarded; build/building-locally.md.
 rerun_holding_lock() {
     local lock="$1" marker="$2" script="$3"
     shift 3
@@ -58,8 +58,8 @@ bundle_build_number() {
     git -C "$1" rev-list --count HEAD 2>/dev/null || echo 0
 }
 
-# The worktree a debug bundle was built from, so two can `make run` over their
-# own state. Spelled down because the name reaches the Info.plist; build.md.
+# The worktree a debug bundle was built from, so two can `make run` over their own state.
+# Spelled down because the name reaches the Info.plist; build/building-locally.md.
 bundle_variant() {
     local root="$1" config="$2"
     [ "$config" != "release" ] || return 0
@@ -75,8 +75,8 @@ bundle_copyright() {
         "$COPYRIGHT_YEARS" "$COPYRIGHT_HOLDER"
 }
 
-# xcodebuild rather than swift build, logged rather than -quiet, coverage and
-# its own signing off: build.md, "Why the app is built through xcodebuild".
+# xcodebuild rather than swift build, logged rather than -quiet, coverage and its own
+# signing off: build/building-locally.md, "Why the app is built through xcodebuild".
 xcode_build() {
     local package="$1" scheme="$2" derived="$3" configuration="$4"
     local log="$derived/xcodebuild-$configuration.log"
@@ -92,13 +92,13 @@ xcode_build() {
 }
 
 # The three ways an xcodebuild product has come out wrong here, and why each
-# check pipes into `grep -c` rather than `grep -q`: build.md.
+# check pipes into `grep -c` rather than `grep -q`: build/building-locally.md.
 verify_binary() {
     local binary="$1"
     if strings "$binary" | grep -c '\.build/.*\.bundle$' >/dev/null; then
         die "error: $binary looks for its resource bundles under a .build directory," \
             "       so the installed app would stop working at the next build there." \
-            "       See Docs/develop/build.md."
+            "       See Docs/develop/build/building-locally.md."
     fi
     if otool -l "$binary" | grep -c __llvm_prf >/dev/null; then
         die "error: $binary is instrumented for code coverage, which slows it and" \
@@ -107,7 +107,7 @@ verify_binary() {
     # The destination also matches Mac Catalyst, and xcodebuild takes the first.
     if ! otool -l "$binary" | grep -A2 LC_BUILD_VERSION | grep -c 'platform 1$' >/dev/null; then
         die "error: $binary was not built for macOS itself; xcodebuild took another" \
-            "       variant of the destination. See Docs/develop/build.md."
+            "       variant of the destination. See Docs/develop/build/building-locally.md."
     fi
 }
 
@@ -127,14 +127,14 @@ copy_resource_bundles() {
 }
 
 # libghostty finds its terminfo by this path inside the bundle, and every
-# child misbehaves without it: a TERM with no entry; build.md.
+# child misbehaves without it: a TERM with no entry; build/building-locally.md.
 copy_engine_resources() {
     local ghostty_share="$1" bundling="$2" destination="$3"
     [ -f "$ghostty_share/terminfo/78/xterm-ghostty" ] \
         || die "error: no terminfo in $ghostty_share. Run Scripts/build-ghostty.sh first."
     cp -R "$ghostty_share/terminfo" "$destination/terminfo"
-    # Ghostty exports its resources folder to every shell, and its manual
-    # integration lines source from it; ours are stand-ins, terminals.md.
+    # Ghostty exports its resources folder to every shell, and its manual integration lines
+    # source from it; ours are stand-ins, terminals/shell-integration.md.
     cp -R "$bundling/ghostty" "$destination/ghostty"
 }
 
@@ -149,8 +149,8 @@ copy_info_plist_strings() {
     done
 }
 
-# Prints the template with each remaining argument pair replaced, placeholder
-# then value. Bash's own replacement, so no value needs escaping; build.md.
+# Prints the template with each remaining argument pair replaced, placeholder then value.
+# Bash's own replacement, so no value needs escaping; build/building-locally.md.
 render_template() {
     local template="$1" text
     shift
@@ -171,7 +171,7 @@ render_template() {
 }
 
 # The languages the app has, as CFBundleLocalizations rows, from the app
-# half's folders alone; build.md.
+# half's folders alone; build/building-locally.md.
 bundle_localizations() {
     local resources="$1" lproj
     for lproj in "$resources"/*.lproj; do
@@ -208,8 +208,8 @@ bundle_entitlements() {
     printf %s "$file"
 }
 
-# codesign seals a bundle with no executable and `--verify` passes it, but
-# Finder calls it damaged, which a racing build once installed; build.md.
+# codesign seals a bundle with no executable and `--verify` passes it, but Finder
+# calls it damaged, which a racing build once installed; build/building-locally.md.
 require_bundle_executable() {
     local bundle="$1" executable
     executable="$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" \

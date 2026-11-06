@@ -83,7 +83,7 @@ public final class AppModel<Surface> {
   /// the last search there; read through `findText(of:)`.
   var findTexts: [FindTargetID: String] = [:]
   /// Targets whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
-  /// a bar a worktree switch brings back has none. See terminals.md.
+  /// a bar a worktree switch brings back has none. See terminals/find.md.
   public internal(set) var findFieldRequests: Set<FindTargetID> = []
   /// Targets whose search has a selected match: a step has gone since the find
   /// text was set. See `step(_:in:)`.

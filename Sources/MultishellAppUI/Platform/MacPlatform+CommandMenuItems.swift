@@ -2,7 +2,7 @@ import AppKit
 import MultishellAppCore
 
 /// The app's own commands that can act now, for the quick switcher; what is
-/// left out and why is in Docs/design/quick-switcher.md.
+/// left out and why is in Docs/design/quick-switcher/lists-and-matching.md.
 extension MacPlatform {
   /// Hide and Show All, Dictation, Emoji & Symbols, Enter Full Screen and the
   /// window tabbing items.

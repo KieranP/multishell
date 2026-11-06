@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// The Files panel: what it lists, the switch, the filter and its folders;
-/// see Docs/design/files.md.
+/// see Docs/design/files/panel.md.
 extension AppModel {
   /// A listing or a change set is built in the render below this many paths, where
   /// a background build would only flash an empty panel; 200,000 took 1.2 s.

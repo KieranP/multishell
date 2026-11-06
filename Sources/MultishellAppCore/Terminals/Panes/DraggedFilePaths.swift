@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// Which paths in a file drag are the user's own and which are copies macOS
-/// made for the drop, asked for again through its promise; see terminals.md.
+/// made for the drop, asked for again through its promise; see terminals/paste-and-drop.md.
 public enum DraggedFilePaths {
   /// Whether a dragged path is a copy macOS made for this drop, read off the
   /// `TemporaryItems` and `NSIRD_` marks it carries.

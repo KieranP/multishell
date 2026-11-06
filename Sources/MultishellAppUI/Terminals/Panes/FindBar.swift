@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The find bar over one pane or file tab, in Ghostty's shape: a well for the
-/// text and three glyphs. Its text is the model's, per target; see terminals.md.
+/// text and three glyphs. Its text is the model's, per target; see terminals/find.md.
 struct FindBar: View {
   /// What the bar takes when the pane has it; a narrower pane shrinks the
   /// well rather than drawing the bar over its neighbour.
@@ -28,7 +28,7 @@ struct FindBar: View {
     .floatingPanel(theme.findBar.background, border: theme.findBar.border)
     .padding(12)
     // A turn later, and only against a Cmd+F: a bar a worktree switch brings
-    // back must not take the keyboard from the pane. See terminals.md.
+    // back must not take the keyboard from the pane. See terminals/find.md.
     .task { claimField() }
     .onChange(of: model.findFieldRequests.contains(targetID)) { claimField() }
     .onDisappear { model.noteFindField(focused: false, of: targetID) }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// The extra arguments an agent is started with, as typed. Split into words
-/// here rather than handed to a shell; see Docs/design/agents.md.
+/// here rather than handed to a shell; see Docs/design/agents/launch-arguments.md.
 public enum AgentFlags {
   /// The line as an argument list, placeholders resolved. An unknown one is
   /// left as typed, so the mistake shows in the tab.
@@ -13,7 +13,7 @@ public enum AgentFlags {
   }
 
   /// One pass over what was typed. A token appearing in a value is text the
-  /// user named something, not a placeholder; see Docs/design/agents.md.
+  /// user named something, not a placeholder; see Docs/design/agents/launch-arguments.md.
   private static func expanded(_ text: String, values: [WorktreePlaceholder: String]) -> String {
     var result = ""
     var rest = Substring(text)

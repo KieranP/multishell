@@ -3,14 +3,14 @@ import MultishellCore
 import MultishellGitKit
 
 /// A file tab opened from the Files panel or the quick switcher, by the
-/// clicked-link rule; see Docs/design/files.md.
+/// clicked-link rule; see Docs/design/files/file-tabs.md.
 extension AppModel {
   /// A click on a file's row: its tab, else a beep.
   public func openFileAsTab(_ clicked: String, in id: Worktree.ID) async {
     _ = await openFileAsTab(clicked, in: id, as: .click)
   }
 
-  /// The tab where the file opens as text or an image (files.md), else `nil`; a
+  /// The tab where the file opens as text or an image (files/image-tabs.md), else `nil`; a
   /// gone file is judged on git's copy. The caller drops the listing it built.
   func openFileAsTab(
     _ clicked: String,

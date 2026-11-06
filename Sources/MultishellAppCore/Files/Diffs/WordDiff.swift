@@ -1,5 +1,5 @@
 /// The words changed text differs from the text it replaced in, which the
-/// view marks darker; see Docs/design/files.md.
+/// view marks darker; see Docs/design/files/file-tabs.md.
 enum WordDiff {
   enum Outcome: Equatable {
     /// In UTF-16 units of each text.

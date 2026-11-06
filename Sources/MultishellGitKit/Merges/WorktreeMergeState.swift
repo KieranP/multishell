@@ -20,7 +20,7 @@ public enum WorktreeMergeState: Hashable, Sendable {
     /// how a rebase-merge or a run of cherry-picks lands.
     case patchEquivalent
     /// The host merged a pull request whose head is the branch's tip, so
-    /// nothing on the branch is left out of it; see Docs/design/services.md.
+    /// nothing on the branch is left out of it; see Docs/design/services/branch-matching.md.
     case pullRequest(number: Int)
     /// Upstream gone and the base moved on: what a squash merge leaves.
     /// Not proof; see Docs/design/merged-branch.md for what else is asked.

@@ -16,7 +16,7 @@ extension DiffDisplayText: ChangeAnchoring {
   }
 
   /// By committed lines while that side is as it was, else by text, as after a
-  /// commit; see Docs/design/files.md.
+  /// commit; see Docs/design/files/file-tabs.md.
   public func change(at anchor: ChangeAnchor) -> Range<Int>? {
     hasCommittedSideMoved(since: anchor)
       ? nearestChange(holding: anchor)?.rows

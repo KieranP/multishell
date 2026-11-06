@@ -2,7 +2,7 @@ import AppKit
 import MultishellAppCore
 
 /// A row placed where its number says, not where TextKit 2 estimates; an
-/// undocumented override point the drift tests guard. See files.md.
+/// undocumented override point the drift tests guard. See files/file-tabs.md.
 final class FixedRowLayoutFragment: NSTextLayoutFragment {
   /// Asked each time the frame is, not kept: replacing only a file's changed
   /// rows keeps the fragments below them, whose row numbers it moved.

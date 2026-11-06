@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellServices
 
 /// What the services say about one worktree's branch, as its row and the
-/// panel's pages draw it. Runtime only; see Docs/design/services.md.
+/// panel's pages draw it. Runtime only; see Docs/design/services/marks-and-pages.md.
 public struct WorktreeServices: Equatable, Sendable {
   static let empty = Self()
 

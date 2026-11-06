@@ -20,7 +20,7 @@ extension AppModel {
   }
 
   /// What stood when the request's first alert went up, or a newer one no request
-  /// being answered owns that a later one of its alerts covered; see agents.md.
+  /// being answered owns that a later one of its alerts covered; see agents/command-line.md.
   func noteAlertRaised(over covered: PresentedError?) {
     guard let alert = presentedError, let id = alert.raisingRequestID,
       id == ControlRequestScope.id, requestsBeingAnswered.contains(id)

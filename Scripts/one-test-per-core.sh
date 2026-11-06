@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs the command with swift-testing held to one test per core, failing where it
-# cannot cap itself rather than freezing CI. Why: Docs/develop/tests.md.
+# cannot cap itself rather than freezing CI. Why: Docs/develop/tests/conventions.md.
 set -euo pipefail
 
 testing="$(xcode-select -p)/Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework/Testing"

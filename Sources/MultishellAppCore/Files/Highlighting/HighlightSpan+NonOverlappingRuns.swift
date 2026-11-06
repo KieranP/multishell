@@ -1,6 +1,6 @@
 extension HighlightSpan {
-  /// Runs in text order that do not overlap, a later span winning as applied in turn,
-  /// and a plain span clearing but leaving no run. Why each: Docs/design/files.md.
+  /// Runs in text order that do not overlap, a later span winning as applied in turn, and a plain
+  /// span clearing but leaving no run. Why each: Docs/design/files/syntax-highlighting.md.
   public static func nonOverlappingRuns(_ spans: [Self], length: Int) -> [Self] {
     var roles = [HighlightRole?](repeating: nil, count: length)
     for span in spans {

@@ -4,7 +4,7 @@ import MultishellGitKit
 import MultishellProcess
 
 /// One Auto Rename off the main actor: read the branch, ask the agent, take
-/// the name out of its reply. See Docs/design/agents.md.
+/// the name out of its reply. See Docs/design/agents/auto-rename.md.
 struct AutoRenameRun: Sendable {
   /// A model on a slow day takes tens of seconds for a long diff; past this
   /// the user has stopped waiting for the row.

@@ -1,5 +1,5 @@
 /// The glyph drawn where an agent is at a prompt: a case per project the app
-/// has art for, letters for the rest. See Docs/design/agents.md.
+/// has art for, letters for the rest. See Docs/design/agents/board-and-pane-rows.md.
 public enum AgentMark: Equatable, Hashable, Sendable {
   case claude
   case codex

@@ -272,7 +272,7 @@ extension WorkspaceStore {
   }
 
   /// Moves a tab of either kind beside `anchor`, possibly in another group of
-  /// the same worktree; see Docs/design/tabs-and-groups.md.
+  /// the same worktree; see Docs/design/tabs-and-groups/groups-and-dragging.md.
   @discardableResult
   public func moveTab(
     _ id: WorkspaceTab.ID,
@@ -310,7 +310,7 @@ extension WorkspaceStore {
   }
 
   /// Moves a terminal tab, panes and all, to another worktree, refusing a file
-  /// tab; see Docs/design/tabs-and-groups.md.
+  /// tab; see Docs/design/tabs-and-groups/groups-and-dragging.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard
@@ -505,8 +505,8 @@ extension WorkspaceStore {
     return workspace.group(tab.groupID)?.tabOrder.firstIndex(of: id)
   }
 
-  /// A group after a tab left it: another showing, or the group gone, with
-  /// `vacating` the place it held, read first. See Docs/design/tabs-and-groups.md.
+  /// A group after a tab left it: another showing, or the group gone, with `vacating` the place it
+  /// held, read first. See Docs/design/tabs-and-groups/groups-and-dragging.md.
   private func settle(group groupID: TabGroup.ID, vacating slot: Int?) {
     guard let index = workspace.groupIndex(groupID) else { return }
     let remaining = workspace.workspaceTabs(inGroup: groupID).map(\.id)

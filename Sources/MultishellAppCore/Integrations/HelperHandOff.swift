@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// What the app's own executable passes to the helper: a shell that rebuilds
-/// PATH can still find the app as `multishell` in `Contents/MacOS`; terminals.md.
+/// PATH can still find the app as `multishell` in `Contents/MacOS`; terminals/sessions.md.
 public enum HelperHandOff {
   /// `nil` starts the app: no arguments, or AppKit's own, which are a single
   /// dash and a name, as `-psn_` and `-AppleLanguages` are.

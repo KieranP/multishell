@@ -3,7 +3,7 @@ import MultishellCore
 /// The paths a create is checking out into, before git lists them. Asked by
 /// every read that must leave a half-made tree alone.
 struct WorktreePathClaims: Sendable {
-  /// Counted, not a set: two creates can name one path; see worktrees.md.
+  /// Counted, not a set: two creates can name one path; see worktrees/creating-and-removing.md.
   private var claims: [Worktree.ID: Int] = [:]
 
   /// A path is being checked out into. The caller has already found no

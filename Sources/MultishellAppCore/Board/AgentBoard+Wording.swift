@@ -4,7 +4,7 @@ import MultishellCore
 /// is tested rather than read off a screenshot.
 extension AgentBoard {
   /// Said under the columns whenever there is nothing on them, and not gated
-  /// on hooks being installed; see Docs/design/agents.md.
+  /// on hooks being installed; see Docs/design/agents/board-and-pane-rows.md.
   public static var emptyHint: String { t("board.empty-hint") }
 
   /// Beside the title: how many terminals are on the board, and how many of

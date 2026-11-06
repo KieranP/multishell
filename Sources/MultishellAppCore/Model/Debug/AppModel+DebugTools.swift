@@ -8,7 +8,7 @@ extension AppModel {
 
   var shownDebugSnapshot: DebugSnapshot { pausedDebugSnapshot ?? liveDebugSnapshot }
 
-  private var liveDebugSnapshot: DebugSnapshot {
+  var liveDebugSnapshot: DebugSnapshot {
     DebugSnapshot(
       history: debugHistory,
       attribution: debugProcessAttribution,

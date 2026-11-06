@@ -1,5 +1,5 @@
 /// Every open pane, in the column its state puts it in. A roster, not a
-/// queue; see Docs/design/agents.md.
+/// queue; see Docs/design/agents/board-and-pane-rows.md.
 public struct AgentBoard: Equatable, Sendable {
   public let columns: [AgentBoardColumn]
 

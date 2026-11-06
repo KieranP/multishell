@@ -1,7 +1,7 @@
 import Foundation
 
 /// Where a repository's pull requests live, read through the host's own
-/// tool. GitHub's is the one there is; see Docs/design/services.md.
+/// tool. GitHub's is the one there is; see Docs/design/services/reads.md.
 public protocol PullRequestHost: Sendable {
   /// Pull requests of the repository at `directory`, open or not, newest
   /// first, as many as one call returns. Throws `ServiceReadFailure`.

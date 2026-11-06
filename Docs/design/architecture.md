@@ -11,8 +11,8 @@
 - **One `reconcileSessions(takingFocus:)`, and only a user's action passes
   focus.** A refresh runs from the watcher, so focusing there would take the
   keyboard off whatever is being typed. The exceptions are a held-back first tab
-  opening in view (terminals.md) and a command-line request on the worktree in
-  view, done as the click it stands for (agents.md).
+  opening in view (terminals/sessions.md) and a command-line request on the
+  worktree in view, done as the click it stands for (agents/command-line.md).
 - **A refresh still reconciles.** Without it a worktree removed outside the app
   keeps its surfaces and its shells run on unreachable.
 - **Identity is the path.** A minted id would change under persisted selection.
@@ -39,9 +39,10 @@
 - **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
   thread per core until GCD ran out and the suite hung. Blocking file work goes
   through `runOnDispatch`, the git library's stats, reads and line counts
-  included; worktrees.md has the cost.
+  included; worktrees/line-count-badge.md has the cost.
 - **The directory check before a shell starts is the one wait**, a second at
-  most on the main thread and never on a pool thread; worktrees.md has why.
+  most on the main thread and never on a pool thread; worktrees/sidebar.md has
+  why.
 - **Both pipes drain at once**, or the second fills its buffer and blocks the
   child. EOF counts as arrived a second after the exit, a backgrounded server
   holding them open.

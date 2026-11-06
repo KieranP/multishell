@@ -42,7 +42,7 @@ extension AppModel {
     )
   }
 
-  /// A link clicked in a pane named a text file; terminals.md says where it goes.
+  /// A link clicked in a pane named a text file; terminals/links.md says where it goes.
   func openInEditor(file: URL, clickedIn sessionID: TerminalSession.ID) {
     guard
       let tab = workspace.tab(owning: sessionID),

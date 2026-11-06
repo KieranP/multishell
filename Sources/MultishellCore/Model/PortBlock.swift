@@ -1,5 +1,5 @@
 /// The run of ports each worktree's servers take, numbered from the starting
-/// port; see Docs/design/worktrees.md.
+/// port; see Docs/design/worktrees/ports.md.
 public enum PortBlock {
   public static let highestPort = 65_535
   /// Below it are the well-known ports, which system services claim.

@@ -1,5 +1,5 @@
 /// One worker's change, riding on a report. The app keeps the roster, a
-/// hook being a fresh process with nothing to remember; see Docs/design/agents.md.
+/// hook being a fresh process with nothing to remember; see Docs/design/agents/subagents.md.
 public struct WorkerReport: Codable, Hashable, Sendable {
   public enum Phase: String, Codable, Hashable, Sendable, CaseIterable {
     case started
@@ -32,12 +32,12 @@ public struct WorkerReport: Codable, Hashable, Sendable {
   public internal(set) var type: String?
   public internal(set) var phase: Phase
   /// `false` on an end the agent takes no turn over, a cancelled worker's,
-  /// so the last one out pays the Done; see Docs/design/agents.md.
+  /// so the last one out pays the Done; see Docs/design/agents/background-work.md.
   public internal(set) var wakesAgent: Bool?
   /// Set on a shell a Stop lists by the agent's own id for it, not a pid.
   public internal(set) var isBackgroundShell: Bool?
   /// The worker that launched this one, absent for the agent's own; see
-  /// Docs/design/agents.md. Set only through the inits, which bound it.
+  /// Docs/design/agents/background-work.md. Set only through the inits, which bound it.
   public private(set) var parentID: String?
   /// The name the agent shows for this worker, where it gave one. Set only
   /// through the inits, which cut it, as they cut the description.
@@ -45,10 +45,10 @@ public struct WorkerReport: Codable, Hashable, Sendable {
   /// What the worker was launched to do, as the agent shows it.
   public private(set) var description: String?
   /// Set on an end that was a kill or a failure, which the list draws as
-  /// failed for a while; see Docs/design/agents.md.
+  /// failed for a while; see Docs/design/agents/background-work.md.
   public internal(set) var hasFailed: Bool?
   /// Set on the worker's own stop while it is still listed, which a finished
-  /// worker sends before it leaves and a killed one never; see agents.md.
+  /// worker sends before it leaves and a killed one never; see agents/background-work.md.
   public internal(set) var isPaused: Bool?
 
   /// Bounds every string both ways, since any process may write a line. An id

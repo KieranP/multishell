@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellProcess
 
 /// What a worktree changed since its branch left the project's base branch,
-/// for the Files panel's Branch list and a file tab; see Docs/design/files.md.
+/// for the Files panel's Branch list and a file tab; see Docs/design/files/modified-and-branch.md.
 extension WorktreeGit {
   /// Where `HEAD` and the base last shared a commit: `nil` where they share
   /// none, a branch with no commits included, and a throw where git cannot say.

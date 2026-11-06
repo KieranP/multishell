@@ -5,7 +5,7 @@ import Testing
 @testable import MultishellAppCore
 
 /// Claude Code's `Stop` ends its main loop while background subagents still work; their
-/// own end is a separate event. See Docs/design/agents.md.
+/// own end is a separate event. See Docs/design/agents/background-work.md.
 extension SessionStatesTests {
   @Test func doneWaitsForTheLastWorkerOutRatherThanTheMainLoopStopping() {
     var states = SessionStates()

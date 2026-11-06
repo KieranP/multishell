@@ -1,7 +1,7 @@
 /// The settings a user's Ghostty file may carry into a pane.
 enum GhosttyConfigAllowList {
   /// What a user's file may set; everything else is dropped. An allow list,
-  /// a deny list having to grow with Ghostty; see terminals.md.
+  /// a deny list having to grow with Ghostty; see terminals/engine-and-config.md.
   private static let prefixes = [
     "adjust-", "background", "bell-", "clipboard-", "cursor-", "font-", "link",
     "mouse-", "palette", "resize-overlay", "scrollback-", "search-", "selection-",

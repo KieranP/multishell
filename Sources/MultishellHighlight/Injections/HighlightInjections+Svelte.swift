@@ -3,8 +3,8 @@ import MultishellAppCore
 import SwiftTreeSitter
 
 extension HighlightInjections {
-  /// Svelte's compiler's `regex_lang_attribute`, its `(["'])?…\1` as three cases, since ICU
-  /// fails a back reference to a group that took no part; see Docs/design/files.md for `(?>`.
+  /// Svelte's compiler's `regex_lang_attribute`, its `(["'])?…\1` as three cases, since ICU fails a
+  /// back reference to an unmatched group; Docs/design/files/syntax-highlighting.md has `(?>`.
   private static let langAttribute = try? NSRegularExpression(
     pattern: #"<!--[\s\S]*?-->|<script\s+"#
       + #"(?:[^>]*|(?>[^=>'"/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)\s+)*)"#

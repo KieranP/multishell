@@ -12,7 +12,7 @@ enum FileOnDisk: Sendable {
   }
 
   /// Blocking: callers run it through `runOnDispatch`. Unmapped, as a mapped
-  /// file truncated under the read faults; see worktrees.md.
+  /// file truncated under the read faults; see worktrees/line-count-badge.md.
   static func read(_ url: URL, sizeLimit: Int) -> Self {
     guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
       values.isRegularFile == true

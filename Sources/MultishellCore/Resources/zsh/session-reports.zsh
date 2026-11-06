@@ -1,5 +1,5 @@
 # The functions init.zsh installs where the app gave the session a socket:
-# what it is told of each command. Docs/design/agents.md.
+# what it is told of each command. Docs/design/agents/reports-and-hooks.md.
 
 # $1 is the JSON line; the rest is the helper's argv for the fallback.
 _multishell_send() {
@@ -15,8 +15,8 @@ _multishell_send() {
   fi
 }
 
-# A state and the JSON fields after it, then the helper's argv. `shell`
-# marks these as the integration's own; see Docs/design/agents.md.
+# A state and the JSON fields after it, then the helper's argv. `shell` marks
+# these as the integration's own; see Docs/design/agents/board-and-pane-rows.md.
 _multishell_report_state() {
   local state=$1 fields=$2
   shift 2
@@ -31,8 +31,8 @@ _multishell_preexec() {
   _multishell_ran=1
   _multishell_started_at=${EPOCHREALTIME:-$SECONDS}
 
-  # The program being started, sent only where it is an agent: the
-  # expanded line, its words, past any prefix. Docs/design/agents.md.
+  # The program being started, sent only where it is an agent: the expanded
+  # line, its words, past any prefix. Docs/design/agents/board-and-pane-rows.md.
   local -a parts=(${(z)${2:-$1}})
   local -i i=1
   while (( i <= $#parts )) && [[ ${parts[i]} == (*=*|command|env|exec) ]]; do
@@ -56,8 +56,8 @@ _multishell_precmd() {
   (( _multishell_ran )) || return 0
   _multishell_ran=0
 
-  # Integer milliseconds, the point written by hand: `%f` takes the locale's
-  # separator. Clamped, or a clock stepped back writes `0.-234`; terminals.md.
+  # Integer ms, the point written by hand: `%f` takes the locale's separator.
+  # Clamped, or a clock set back gives `0.-234`; terminals/shell-integration.md.
   local -i ms=$(( (${EPOCHREALTIME:-$SECONDS} - _multishell_started_at) * 1000 ))
   (( ms < 0 )) && ms=0
   local duration state=error

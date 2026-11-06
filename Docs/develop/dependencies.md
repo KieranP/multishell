@@ -19,8 +19,8 @@
 - **`Lakr233/libghostty-spm` was dropped for it.** Its libghostty came prebuilt
   by a third party with GNU libintl, LGPL, inside, which left open how a user
   would relink it; its Swift wrapper also dropped the search counts and kept the
-  selection to itself (design/terminals.md). `Lakr233/DisplayLink`, which only
-  it depended on, went with it, and so did the bash-preexec it shipped.
+  selection to itself (design/terminals/find.md). `Lakr233/DisplayLink`, which
+  only it depended on, went with it, and so did the bash-preexec it shipped.
 - **The patches in `ThirdParty/ghostty-patches/` came from libghostty-spm**,
   MIT, cut as plain diffs against the pin, each with its reasons in its own
   header: scroll remainder, synchronized output kept across a resize, and the
@@ -66,7 +66,8 @@
 - **One build at a time per worktree**, under `lockf`: two at once reverted the
   patches under each other and deleted each other's output.
 - **Ghostty's bash and zsh integration scripts are GPLv3 and are not shipped**;
-  its integration is off and ours does that work (design/terminals.md).
+  its integration is off and ours does that work
+  (design/terminals/shell-integration.md).
 - **Moving the pin changes which config keys a user's Ghostty file may use**,
   and can change which file names it reads, so `GhosttyConfigAllowList` and
   `GhosttyUserConfig` want a look then. The key list came from Ghostty's own
@@ -113,7 +114,7 @@
   never shipped: without one its integration shows nothing, and the Integrations
   page says how to install it. `circleci` 1.0 is the floor, the first with the
   run commands. Their output is read as JSON, any field optional, so a release
-  that drops one costs that record (design/services.md).
+  that drops one costs that record (design/services/reads.md).
 - **prettier formats the Markdown** for `make format` and the Claude Code hook.
   From Homebrew rather than a `package.json`: there is no Node toolchain here,
   and a `node_modules` for one formatter is more than the docs are worth.

@@ -7,10 +7,10 @@ public enum SessionEnvironment {
   public static let worktreeVariable = "MULTISHELL_WORKTREE"
   public static let socketVariable = "MULTISHELL_SOCKET"
   /// The app's own pid, where the helper's walk up from a prompt stops; see
-  /// Docs/design/agents.md.
+  /// Docs/design/agents/reports-and-hooks.md.
   public static let appPIDVariable = "MULTISHELL_APP_PID"
   /// Ours, for a shell's integration to put back in front once a login
-  /// profile's `path_helper` has moved `/etc/paths` ahead; terminals.md.
+  /// profile's `path_helper` has moved `/etc/paths` ahead; terminals/sessions.md.
   static let leadingPathVariable = "MULTISHELL_LEADING_PATH"
 
   /// `bundle` names the helper's and the app's directories, where PATH is

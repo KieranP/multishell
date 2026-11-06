@@ -1,14 +1,14 @@
 import SwiftUI
 
 /// Reads the one path out of a mark's `.svg`: absolute `M`, `L`, `C`, `Q` and
-/// `Z` alone, anything else refused. See Docs/design/agents.md.
+/// `Z` alone, anything else refused. See Docs/design/agents/board-and-pane-rows.md.
 enum SVGPathParser {
   static func path(fromSVG text: String) -> Path? {
     guard let pathData = attribute("d", in: text) else { return nil }
     return path(fromData: pathData)
   }
 
-  // One pass over the path data, kept whole by choice; Docs/develop/build.md.
+  // One pass, kept whole by choice; Docs/develop/build/compiler-and-lint-strictness.md.
   // swiftlint:disable:next function_body_length
   static func path(fromData pathData: String) -> Path? {
     var path = Path()

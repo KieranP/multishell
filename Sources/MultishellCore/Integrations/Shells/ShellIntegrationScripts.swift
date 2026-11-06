@@ -1,11 +1,11 @@
 import Foundation
 
 /// The integration scripts a shell sources, and the generated startup files
-/// carrying them into this app's terminals; see Docs/design/terminals.md.
+/// carrying them into this app's terminals; see Docs/design/terminals/shell-integration.md.
 public enum ShellIntegrationScripts {
   private static let helperPlaceholder = "__MULTISHELL_HELPER__"
   /// The agents a shell may report starting, filled in when the file is
-  /// generated; see Docs/design/agents.md.
+  /// generated; see Docs/design/agents/board-and-pane-rows.md.
   private static let agentsPlaceholder = "__MULTISHELL_AGENTS__"
   private static let includeDirective = "# include "
 
@@ -18,7 +18,7 @@ public enum ShellIntegrationScripts {
     """
 
   /// macOS's `/etc/zshrc` names the history file after ZDOTDIR while it is
-  /// still ours, so a tab's history left the user's file; see terminals.md.
+  /// still ours, so a tab's history left the user's file; see terminals/shell-integration.md.
   private static let historyFromUsersDirectory = """
     case "${HISTFILE-}" in
       "$_multishell_self_zdotdir"/*) HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history" ;;

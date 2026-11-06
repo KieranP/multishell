@@ -1,7 +1,7 @@
 import Foundation
 
 /// One message over the inbound channel, JSON one object per line. Fields
-/// are only ever added; see Docs/design/agents.md.
+/// are only ever added; see Docs/design/agents/reports-and-hooks.md.
 public struct SessionStateReport: Codable, Hashable, Sendable {
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -49,46 +49,46 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// prompt, which the tab's own `agentID` cannot say; see `ReportedAgent`.
   public internal(set) var agentID: String?
   /// The foreground command a shell just started, its first word only; see
-  /// Docs/design/agents.md.
+  /// Docs/design/agents/board-and-pane-rows.md.
   public internal(set) var command: String?
   /// Set on the reports the injected shell integration sends, which are the
-  /// only ones that take an agent's mark back; see Docs/design/agents.md.
+  /// only ones that take an agent's mark back; see Docs/design/agents/board-and-pane-rows.md.
   public internal(set) var isFromShellIntegration: Bool?
   /// Set where the report moves a dot and another about the same thing will
   /// raise the banner. Absent keeps an older helper's banners.
   public internal(set) var isSilent: Bool?
   /// The count a helper from before workers had names wrote: `1` started, `-1`
-  /// ended. Read as an unnamed worker; see Docs/design/agents.md.
+  /// ended. Read as an unnamed worker; see Docs/design/agents/subagents.md.
   var legacyWorkerCount: Int?
   /// A worker starting, calling a tool or ending. The app keeps the
-  /// roster; see Docs/design/agents.md.
+  /// roster; see Docs/design/agents/subagents.md.
   var worker: WorkerReport?
   /// A worker or shell this report's worker, or the agent, launched in the
   /// background, so it is listed under its launcher from the start.
   public internal(set) var launched: WorkerReport?
   /// A task the agent killed, which the list draws as failed with all it
-  /// held; see Docs/design/agents.md.
+  /// held; see Docs/design/agents/background-work.md.
   public internal(set) var killedTaskID: String?
   /// Set on the prompt that starts a turn, which keeps only the workers a held
-  /// Stop saw out; see Docs/design/agents.md.
+  /// Stop saw out; see Docs/design/agents/subagents.md.
   public internal(set) var startsTurn: Bool?
   /// Set on an agent's session start, which one agent sends after its first
-  /// prompt; see Docs/design/agents.md.
+  /// prompt; see Docs/design/agents/subagents.md.
   public internal(set) var startsSession: Bool?
   /// The shells the agent left running at its Stop, by pid; their exit is
-  /// the only end they report. See Docs/design/agents.md.
+  /// the only end they report. See Docs/design/agents/background-work.md.
   public internal(set) var backgroundShells: [Int32]?
   /// Set on a Stop from an agent that takes another turn when the work it
-  /// left out ends, so that turn pays the Done; see Docs/design/agents.md.
+  /// left out ends, so that turn pays the Done; see Docs/design/agents/background-work.md.
   public internal(set) var resumesAfterWorkers: Bool?
   /// The agent's own id for the conversation, from an agent that runs a
-  /// subagent as a conversation of its own; see Docs/design/agents.md.
+  /// subagent as a conversation of its own; see Docs/design/agents/subagents.md.
   public internal(set) var conversationID: String?
   /// Everything a Stop says is still out, shells aside, which outranks what
-  /// the hooks said; see Docs/design/agents.md.
+  /// the hooks said; see Docs/design/agents/background-work.md.
   public internal(set) var workersOut: [WorkerReport]?
   /// Set on a Stop the agent takes another turn straight after, a finished
-  /// task's notice still being queued; see Docs/design/agents.md.
+  /// task's notice still being queued; see Docs/design/agents/background-work.md.
   public internal(set) var turnFollows: Bool?
   /// Set where the agent waits on its own question though its message says
   /// permission; the app words it, the helper having no catalogue.

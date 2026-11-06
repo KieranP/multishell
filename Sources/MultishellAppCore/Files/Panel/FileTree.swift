@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// Every file of a worktree as a tree: its listing, kept while only counts
-/// move, and the changes marked on it; flattened per panel state. See files.md.
+/// move, and the changes marked on it; flattened per panel state. See files/panel.md.
 struct FileTree: Sendable {
   struct Node: Sendable {
     let name: String
@@ -24,7 +24,7 @@ struct FileTree: Sendable {
   let changedFileCount: Int
 
   /// An opened submodule's files count in no Changes list of the worktree's, and
-  /// what git ignores lists greyed, in Files alone; see Docs/design/files.md.
+  /// what git ignores lists greyed, in Files alone; see Docs/design/files/panel.md.
   init(
     _ sources: FileTreeSources,
     listing: FileTreeListing,

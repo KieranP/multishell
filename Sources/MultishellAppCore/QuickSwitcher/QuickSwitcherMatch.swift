@@ -1,5 +1,5 @@
 /// How well a query names a row, each word found in order through the title
-/// or starting a word of its location. See Docs/design/quick-switcher.md.
+/// or starting a word of its location. See Docs/design/quick-switcher/lists-and-matching.md.
 struct QuickSwitcherMatch: Equatable, Sendable {
   private static let perCharacter = 10
   private static let atStart = 60
@@ -71,7 +71,7 @@ struct QuickSwitcherMatch: Equatable, Sendable {
   }
 
   /// The best of the greedy matches from each place the first letter is, as a
-  /// path names its project first. Runs score as fzf's do; quick-switcher.md.
+  /// path names its project first. Runs score as fzf's do; quick-switcher/lists-and-matching.md.
   private static func subsequence(
     _ word: [String],
     in title: [String],

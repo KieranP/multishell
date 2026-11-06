@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// Under the chip: each worker's name and description under its parent, and
-/// its time out. Not its tool, which flashed; see Docs/design/agents.md.
+/// its time out. Not its tool, which flashed; see Docs/design/agents/subagents.md.
 struct WorkerList: View {
   private static let rowSpacing: CGFloat = 7
   /// A description runs to 200 characters, which is cut short of this.

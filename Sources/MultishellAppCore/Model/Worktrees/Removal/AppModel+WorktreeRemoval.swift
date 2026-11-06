@@ -108,7 +108,7 @@ extension AppModel {
   }
 
   /// The Trash where it takes the directory, deletion where it will not: the
-  /// removal was confirmed either way; see Docs/design/worktrees.md.
+  /// removal was confirmed either way; see Docs/design/worktrees/creating-and-removing.md.
   private func trashOrDelete(_ url: URL) async throws {
     let platform = self.platform
     let trashed = await runOnDispatch { Result { try platform.moveToTrash(url) } }

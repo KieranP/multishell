@@ -81,7 +81,7 @@ extension AgentHookIntegration {
   }
 
   /// Claude stops a worker at every turn end, pauses included, and lists it
-  /// until its run returns, so one its stop leaves out failed; see agents.md.
+  /// until its run returns, so one its stop leaves out failed; see agents/background-work.md.
   private func pausedOrFailedAtItsOwnStop(
     _ worker: WorkerReport,
     at payload: AgentHookPayload,

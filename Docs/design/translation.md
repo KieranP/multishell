@@ -15,7 +15,8 @@ Newest at the bottom.
   keys cost the English twice, as a case name and as a value, to buy a compile
   error on a typo.
 - **TranslationTests buys that instead**, one per catalogue, failing a missing
-  key, an unused entry and a wrong argument count (develop/tests.md).
+  key, an unused entry and a wrong argument count
+  (develop/tests/interface-and-terminal.md).
 - **Cost: a mistyped key is a test failure, not a compile error**, and the scan
   only sees a key written as a literal. Nothing builds one at runtime, and
   nothing should.
@@ -116,10 +117,10 @@ Newest at the bottom.
   bare string reaches the screen in English and no test sees it; the trust
   question named its fields that way.
 - **Memory and file sizes do follow the region.** `ByteCountFormatter` takes no
-  locale, so in a region that writes a comma Debug Info's sizes and a file tab's
-  binary or too-large notice use one, and the rates and durations beside them do
-  not. The clock time under the timeline's pointer follows the region too, being
-  `Date.formatted`.
+  locale, so in a region that writes a comma Debug Info's sizes, a file tab's
+  binary or too-large notice and an image's caption use one, and the rates and
+  durations beside them do not. The clock time under the timeline's pointer
+  follows the region too, being `Date.formatted`.
 - **The app answers the command line in data and the helper words it.** A
   refusal crosses the socket as a case and its fields, so neither catalogue
   holds the helper's sentences (`ControlRefusal+Wording`).

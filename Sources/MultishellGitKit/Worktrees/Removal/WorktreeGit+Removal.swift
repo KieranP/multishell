@@ -15,14 +15,14 @@ extension WorktreeGit {
         in: project.path,
       )
     } catch let refusal {
-      // A record git cannot match to the path; see Docs/design/worktrees.md.
+      // A record git cannot match to the path; see Docs/design/worktrees/creating-and-removing.md.
       do {
         _ = try await runner.run(["worktree", "prune"], in: project.path)
       } catch {
         throw WorktreeRecordRemovalFailure(path: worktree.path, underlying: error)
       }
       // prune exits 0 whether or not this record was one it took, and the
-      // caller deletes the branch on a success; see Docs/design/worktrees.md.
+      // caller deletes the branch on a success; see Docs/design/worktrees/creating-and-removing.md.
       guard await !isListed(worktree.path, in: project) else {
         throw WorktreeRecordRemovalFailure(path: worktree.path, underlying: refusal)
       }
@@ -61,7 +61,7 @@ extension WorktreeGit {
   }
 
   /// A record whose path is now someone else's directory. That record alone
-  /// goes, not every one prune would take; see worktrees.md.
+  /// goes, not every one prune would take; see worktrees/creating-and-removing.md.
   func removeStaleRecord(_ worktree: Worktree, in project: Project) async throws {
     // A `.git` there is another repository's, which prune would keep too.
     let taken = await runOnDispatch {

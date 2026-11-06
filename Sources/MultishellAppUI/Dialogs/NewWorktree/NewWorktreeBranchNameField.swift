@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The new-branch name field. SwiftUI's `TextField` never shows a binding changed
-/// while it is edited, and the draft fixes the name as it arrives; see worktrees.md.
+/// The new-branch name field. SwiftUI's `TextField` never shows a binding changed while it is
+/// edited, and the draft fixes the name as it arrives; see worktrees/creating-and-removing.md.
 struct NewWorktreeBranchNameField: NSViewRepresentable {
   @Binding var text: String
   let prompt: String

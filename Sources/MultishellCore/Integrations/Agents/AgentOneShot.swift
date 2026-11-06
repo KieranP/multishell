@@ -1,5 +1,5 @@
 /// How an agent answers one prompt and exits, no tool of its own able to
-/// touch the worktree. Auto Rename's run; see Docs/design/agents.md.
+/// touch the worktree. Auto Rename's run; see Docs/design/agents/auto-rename.md.
 public struct AgentOneShot: Hashable, Sendable {
   /// The subcommand, the print mode and the tools taken away, in that order.
   private let leadingArguments: [String]
@@ -9,7 +9,7 @@ public struct AgentOneShot: Hashable, Sendable {
   private let effortFlag: AgentOption?
   /// Laid over the login shell's, for what an agent takes no flag for.
   public let environment: [String: String]
-  /// What Rename model offers; Docs/design/agents.md says why they are a list.
+  /// What Rename model offers; Docs/design/agents/auto-rename.md says why they are a list.
   public let models: [AgentModel]
 
   public var takesEffort: Bool { effortFlag != nil }

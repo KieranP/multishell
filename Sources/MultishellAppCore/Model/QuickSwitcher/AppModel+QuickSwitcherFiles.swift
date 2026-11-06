@@ -20,7 +20,7 @@ extension AppModel {
     }
   }
 
-  /// Once the Files scope or text in All lists them; see quick-switcher.md.
+  /// Once the Files scope or text in All lists them; see quick-switcher/lists-and-matching.md.
   func readQuickSwitcherFilesOnceListed() {
     guard let state = quickSwitcher, state.listsFiles,
       let id = workspace.selectedWorktreeID, trackedFiles[id] == nil, state.filesAskedFor != id

@@ -3,11 +3,11 @@ import MultishellCore
 
 extension WorktreeGit {
   /// A lock older than this is an add that died mid-checkout, git's own
-  /// cleanup running only on a signal it can catch; see worktrees.md.
+  /// cleanup running only on a signal it can catch; see worktrees/creating-and-removing.md.
   private static let abandonedAddAge: TimeInterval = 10 * 60
 
   /// git's `initializing` is in the user's language, so a lock from before
-  /// `gitdir` over files with no index yet counts too; see worktrees.md.
+  /// `gitdir` over files with no index yet counts too; see worktrees/creating-and-removing.md.
   static func judgedInitializing(_ worktree: Worktree) -> Worktree {
     guard worktree.isLocked else { return worktree }
     let record = Self.recordDirectoryFromGitFile(in: worktree.path)

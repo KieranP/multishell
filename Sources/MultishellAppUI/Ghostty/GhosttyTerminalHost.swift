@@ -3,7 +3,7 @@ import MultishellAppCore
 import MultishellCore
 
 /// A `TerminalHost` backed by libghostty, which owns the pty, renderer and
-/// config. Three config layers; see Docs/design/terminals.md.
+/// config. Three config layers; see Docs/design/terminals/engine-and-config.md.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
   private static let bundleDirectories =

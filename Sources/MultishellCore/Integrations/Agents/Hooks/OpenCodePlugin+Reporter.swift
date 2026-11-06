@@ -8,7 +8,7 @@ extension OpenCodePlugin {
 
   /// The helper calls the reports make.
   static let reporter = """
-    // The background service runs every tab's sessions; see Docs/design/agents.md.
+    // The background service runs every tab's sessions; see Docs/design/agents/opencode-plugin.md.
     const runsUnderTheService = process.argv.includes("--service")
 
     // Under the service the helper finds the app's socket itself and marks the
@@ -21,7 +21,7 @@ extension OpenCodePlugin {
     }
 
     // One helper at a time, each once the last has exited: started together
-    // they land in either order; see Docs/design/agents.md.
+    // they land in either order; see Docs/design/agents/background-work.md.
     const reporter = () => {
       const env = helperEnvironment()
       const pending = []

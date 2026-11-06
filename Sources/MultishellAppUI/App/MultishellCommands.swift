@@ -128,7 +128,7 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(AppShortcutCatalogue.quickSwitcher)
       Button(t("menu.quick-switcher-commands")) { model.toggleQuickSwitcher(.commands) }
         .keyboardShortcut(AppShortcutCatalogue.quickSwitcherCommands)
-      // No key yet; one is an `AppShortcut` in the catalogue (adding.md).
+      // No key yet; one is an `AppShortcut` in the catalogue (adding/interface.md).
       Toggle(t("menu.files-panel"), isOn: model.showsFilesPanelBinding)
       Divider()
       Toggle(t("menu.enable-debug-tools"), isOn: model.debugToolsEnabledBinding)

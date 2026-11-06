@@ -1,5 +1,5 @@
-# Every rule runs but those disabled below, each with its reason. Limits sit
-# just above the largest that exists; Docs/develop/build.md says more.
+# Every rule runs but those disabled below, each with its reason. Limits sit just above
+# the largest that exists; Docs/develop/build/compiler-and-lint-strictness.md says more.
 cyclomatic_complexity: 15
 disabled_rules:
   # Incompatible with swift-format
@@ -54,14 +54,14 @@ disabled_rules:
   - required_deinit  # an empty deinit says nothing
   - switch_case_on_newline  # 375, the code's one-line cases
   # Other
-  - capture_variable  # analyzer rule, not run; Docs/develop/build.md
-  - explicit_self  # analyzer rule, not run; Docs/develop/build.md
+  - capture_variable  # analyzer rule, not run; Docs/develop/build/compiler-and-lint-strictness.md
+  - explicit_self  # analyzer rule, not run; Docs/develop/build/compiler-and-lint-strictness.md
   - incompatible_concurrency_annotation  # only for Swift 5 clients
   - number_separator  # swift-format's GroupNumericLiterals groups long ones
   - raw_value_for_camel_cased_codable_enum  # contradicts redundant_string_enum_value
-  - typesafe_array_init  # analyzer rule, not run; Docs/develop/build.md
-  - unused_declaration  # analyzer rule, not run; Docs/develop/build.md
-  - unused_import  # analyzer rule, not run; Docs/develop/build.md
+  - typesafe_array_init  # analyzer rule, not run; Docs/develop/build/compiler-and-lint-strictness.md
+  - unused_declaration  # analyzer rule, not run; Docs/develop/build/compiler-and-lint-strictness.md
+  - unused_import  # analyzer rule, not run; Docs/develop/build/compiler-and-lint-strictness.md
 function_body_length: 60
 function_parameter_count: 9
 identifier_name:
@@ -84,7 +84,8 @@ nesting:
 opt_in_rules:
   - all
 strict: true
-# Every new rule would run on upgrade, so a bump is a choice; build.md.
+# Every new rule would run on upgrade, so a bump is a choice;
+# build/compiler-and-lint-strictness.md.
 swiftlint_version: 0.65.1
 trailing_closure:
   only_single_muted_parameter: true

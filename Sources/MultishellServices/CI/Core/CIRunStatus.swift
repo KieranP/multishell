@@ -12,7 +12,7 @@ public enum CIRunStatus: String, Decodable, Hashable, Sendable {
   /// Queued or under way.
   case running
   /// Said in words this build does not know, drawn as a question mark rather
-  /// than guessed; see services.md.
+  /// than guessed; see services/reads.md.
   case unknown
 
   /// Whether a check or job with this status may still change by itself,

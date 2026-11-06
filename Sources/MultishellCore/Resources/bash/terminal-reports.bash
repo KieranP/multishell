@@ -1,5 +1,5 @@
-# The marks init.bash writes in a Ghostty pane, which writes none for bash,
-# so all three come from here and ride with the session's hooks. terminals.md.
+# Ghostty writes no marks for bash, so in a Ghostty pane init.bash writes all
+# three from here, riding the session's hooks. terminals/shell-integration.md.
 
 # The terminal itself, as the DEBUG trap runs inside a redirected block's
 # redirect; stdout where there is none. A failed `exec` ends a script's shell.
@@ -45,7 +45,7 @@ _multishell_directory_title() {
 }
 
 # Prompt start printed, input start on the end of PS1, which is why this
-# runs last of all; see Docs/design/terminals.md.
+# runs last of all; see Docs/design/terminals/shell-integration.md.
 _multishell_prompt_marks() {
   [ "$_multishell_marks" = 1 ] || return 0
   _multishell_report_directory

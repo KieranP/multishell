@@ -7,7 +7,7 @@ struct GhosttyPasteConfirmation: Sendable {
   let text: String
 
   /// `nil` for anything but a paste with text: a program's read or write is
-  /// refused unasked; see Docs/design/terminals.md.
+  /// refused unasked; see Docs/design/terminals/paste-and-drop.md.
   init?(
     _ request: GhosttyClipboardRequest,
     kind: ghostty_clipboard_request_e,

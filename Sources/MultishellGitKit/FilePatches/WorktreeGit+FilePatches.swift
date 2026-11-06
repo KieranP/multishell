@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellProcess
 
 /// One file's changes against `HEAD` or the Branch list's merge base, for its
-/// tab; see Docs/design/files.md.
+/// tab; see Docs/design/files/file-tabs.md.
 extension WorktreeGit {
   /// Every line in context: large enough for any file under the size cap. git
   /// takes larger values, but 4294967296 wraps to no context at all.
@@ -20,8 +20,8 @@ extension WorktreeGit {
     ]
   }
 
-  /// `diff-index` writes nothing to the index; against `commit` where given, else
-  /// `HEAD`, else the empty tree before the first commit; see worktrees.md.
+  /// `diff-index` writes nothing to the index; against `commit` where given, else `HEAD`, else the
+  /// empty tree before the first commit; see worktrees/watching-and-status-reads.md.
   public func patches(
     of path: String,
     in directory: URL,

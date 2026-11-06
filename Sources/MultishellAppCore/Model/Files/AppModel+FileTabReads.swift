@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// Keeping each file tab's rows current with its file and its git; see
-/// Docs/design/files.md.
+/// Docs/design/files/file-tabs.md.
 extension AppModel {
   /// A burst of saves becomes one read: 0.15 s of FSEvents latency, then this.
   private static var fileTabSettleDelay: Duration { .milliseconds(75) }
@@ -83,7 +83,7 @@ extension AppModel {
   }
 
   /// A hidden tab keeps its dot and strike, and a gone file's rows, the last
-  /// it showed; see files.md. Its waiting read is owed instead.
+  /// it showed; see files/file-tabs.md. Its waiting read is owed instead.
   func releaseHiddenFileTabs() {
     for tab in workspace.fileTabs where !isFileTabShown(tab.id) {
       // Its view goes with it, and the next one says afresh where its arrows lead;

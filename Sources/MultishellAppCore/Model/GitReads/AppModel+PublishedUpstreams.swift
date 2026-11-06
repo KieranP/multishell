@@ -4,7 +4,7 @@ import MultishellGitKit
 
 extension AppModel {
   /// A branch published under its own name where git tracks another counts
-  /// only once it held that tip, else what it follows; see services.md.
+  /// only once it held that tip, else what it follows; see services/branch-matching.md.
   func upstreamsPublishedByTheirBranches(
     _ upstreams: [String: BranchUpstream],
     fallbacks: [String: BranchUpstream?],

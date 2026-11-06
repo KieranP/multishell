@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The sidebar's and the Files panel's widths as drawn, each at most half the
-/// room the other leaves, solved together; see files.md.
+/// room the other leaves, solved together; see files/panel.md.
 public struct SideColumnWidths: Equatable, Sendable {
   public let sidebar: Double
   /// Zero while the panel is shut.

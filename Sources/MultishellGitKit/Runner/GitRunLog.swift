@@ -3,7 +3,7 @@ import MultishellProcess
 import Synchronization
 
 /// Every git run timed while debug tools are on, and `gh`'s and `circleci`'s
-/// beside them; see services.md. Off, it keeps nothing, so nothing grows.
+/// beside them; see services/reads.md. Off, it keeps nothing, so nothing grows.
 public final class GitRunLog: Sendable {
   private struct State {
     var isRecording = false

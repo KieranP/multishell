@@ -10,7 +10,7 @@ import Testing
 
 extension AppModelStatusReadsTests {
   /// A worktree still being set up is a building site: the file lists and
-  /// the post-create hook are writing into it. See worktrees.md.
+  /// the post-create hook are writing into it. See worktrees/creating-and-removing.md.
   @Test func aWorktreeWithAStageRunningIsNotBadged() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

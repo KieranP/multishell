@@ -6,7 +6,7 @@ import MultishellProcess
 /// Files panel; one list of changes, every count a sum over it.
 extension WorktreeGit {
   /// How many paths a read keeps for the Files panel, of new files and of
-  /// ignored entries alike. Every new file is still counted; see files.md.
+  /// ignored entries alike. Every new file is still counted; see files/panel.md.
   static let listedPathLimit = 50_000
 
   /// `--diff-filter=u` drops unmerged paths, which print `0 0`. Renames and the
@@ -74,8 +74,8 @@ extension WorktreeGit {
     return status
   }
 
-  /// A branch never pushed has no upstream for git to count against, so its
-  /// unpushed commits are those past the base that no remote holds; see worktrees.md.
+  /// A branch never pushed has no upstream for git to count against, so its unpushed commits are
+  /// those past the base that no remote holds; see worktrees/line-count-badge.md.
   private func unpushedCommitCount(past base: DefaultBranch, in path: URL) async throws -> Int {
     let arguments = ["rev-list", "--count", "HEAD", "--not", base.fullName, "--remotes", "--"]
     let output = try await runner.run(arguments, in: path)
@@ -86,7 +86,7 @@ extension WorktreeGit {
   }
 
   /// Joined to status by path. `--cached` under Staged Only, and the fallback
-  /// where the count since the last commit fails; see worktrees.md.
+  /// where the count since the last commit fails; see worktrees/line-count-badge.md.
   private func trackedChanges(
     _ entries: [StatusEntry],
     in path: URL,
@@ -113,8 +113,8 @@ extension WorktreeGit {
     }
   }
 
-  /// `diff-index`, as `diff HEAD` writes a new index the watcher reads as a
-  /// change. Before the first commit, from the empty tree; see worktrees.md.
+  /// `diff-index`, as `diff HEAD` writes a new index the watcher reads as a change. Before the
+  /// first commit, from the empty tree; see worktrees/watching-and-status-reads.md.
   private func numstatSinceLastCommit(in path: URL, options: [String]) async -> String? {
     let diffIndex = ["--no-optional-locks", "diff-index"] + options
     if let output = await runner.output(diffIndex + ["HEAD"], in: path) { return output }
@@ -142,7 +142,7 @@ extension WorktreeGit {
   }
 
   /// The reads block, on a dead mount until it times out, so they run on
-  /// Dispatch and not on a cooperative pool thread; see worktrees.md.
+  /// Dispatch and not on a cooperative pool thread; see worktrees/line-count-badge.md.
   func untrackedChanges(_ paths: [String], in path: URL) async -> [StatusChange] {
     guard !paths.isEmpty else { return [] }
     let memo = readState.untrackedMemo

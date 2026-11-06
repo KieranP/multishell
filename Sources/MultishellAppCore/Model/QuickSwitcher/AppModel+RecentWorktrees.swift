@@ -6,7 +6,7 @@ extension AppModel {
   private static var recentWorktreesKept: Int { 50 }
 
   /// Called from `select` alone, enough as launch selects nothing; see
-  /// quick-switcher.md's settled list.
+  /// quick-switcher/lists-and-matching.md's settled list.
   func noteRecentWorktree(_ id: Worktree.ID) {
     recentWorktreeIDs.removeAll { $0 == id }
     recentWorktreeIDs.insert(id, at: 0)

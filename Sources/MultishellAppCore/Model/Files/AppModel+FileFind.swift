@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The find bar over a file tab, searched in its rows rather than by the
-/// engine; see Docs/design/files.md. `AppModel+Find` routes a file tab here.
+/// engine; see Docs/design/files/file-tabs.md. `AppModel+Find` routes a file tab here.
 extension AppModel {
   /// While its bar is up; the view highlights each.
   public func fileFindMatches(of id: FileTab.ID) -> [Range<Int>] {

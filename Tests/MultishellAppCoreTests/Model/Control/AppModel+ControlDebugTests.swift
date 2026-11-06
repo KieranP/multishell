@@ -62,6 +62,19 @@ struct AppModelControlDebugTests {
     #expect(tabs.first?["terminalMemory"] as? Int == 50)
   }
 
+  @Test func theMemoryAnswerReadsTheLiveSampleWhileThePanelIsPaused() async throws {
+    let harness = Harness()
+    harness.model.enableDebugTools(scan: .sample(appMemory: 400, trees: []))
+    await harness.model.takeDebugSample()
+    harness.model.setDebugPaused(true)
+    harness.model.debugSampler.scanProcesses = { _, _ in .sample(appMemory: 900, trees: []) }
+    await harness.model.takeDebugSample()
+
+    let reply = try #require(await harness.messageSource.ask(.debugMemory))
+
+    #expect(reply.outputFields["appMemory"] as? Int == 900)
+  }
+
   @Test func aMarkLandsInTheNextSampleAloneAndInTheTrace() async throws {
     let harness = Harness()
     harness.model.enableDebugTools()

@@ -1,5 +1,5 @@
 /// A file tab's image: the file on disk and the committed copy, one buffer
-/// where their bytes match; see Docs/design/files.md.
+/// where their bytes match; see Docs/design/files/image-tabs.md.
 public struct FileTabImage: Equatable, Sendable {
   /// `nil` where the file is gone, its committed copy shown alone.
   let onDisk: ImageFileBytes?

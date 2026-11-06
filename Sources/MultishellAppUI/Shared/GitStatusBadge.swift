@@ -4,7 +4,7 @@ import MultishellGitKit
 import SwiftUI
 
 /// The worktree's git badge: lines added, lines removed, files with no line
-/// to show, then the unpushed arrows; see Docs/design/worktrees.md.
+/// to show, then the unpushed arrows; see Docs/design/worktrees/line-count-badge.md.
 struct GitStatusBadge: View {
   let status: WorktreeStatus
   let theme: Theme

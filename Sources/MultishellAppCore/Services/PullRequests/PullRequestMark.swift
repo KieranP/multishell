@@ -1,7 +1,7 @@
 import MultishellServices
 
 /// How a pull request's glyph is drawn: its shape, the colour it takes, and
-/// the dot on its corner; see Docs/design/services.md.
+/// the dot on its corner; see Docs/design/services/marks-and-pages.md.
 public struct PullRequestMark: Equatable, Sendable {
   public enum Shape: Equatable, Sendable {
     case closed

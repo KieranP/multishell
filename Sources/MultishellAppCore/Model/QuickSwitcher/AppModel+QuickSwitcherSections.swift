@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellGitKit
 
 /// What the quick switcher lists for its scope and text; see
-/// Docs/design/quick-switcher.md.
+/// Docs/design/quick-switcher/lists-and-matching.md.
 extension AppModel {
   private static var placesInAll: Int { 8 }
   private static var filesInAll: Int { 5 }

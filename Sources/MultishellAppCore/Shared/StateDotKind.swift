@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The shape a state's dot takes, so no state is told apart by colour alone:
-/// waiting's blue is the selection's too. See Docs/design/appearance.md.
+/// waiting's blue is the selection's too. See Docs/design/appearance/window-chrome.md.
 public enum StateDotKind: Hashable, Sendable {
   case filled
   case hollowRing

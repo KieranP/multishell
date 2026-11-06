@@ -2,8 +2,8 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// `forced` is a read someone asked for, past the pace; see worktrees.md.
-  /// `true` where a status landed.
+  /// `forced` is a read someone asked for, past the pace; see
+  /// worktrees/watching-and-status-reads.md. `true` where a status landed.
   @discardableResult
   func refreshStatus(of worktreeID: Worktree.ID, forced: Bool = false) async -> Bool {
     guard let coordinator, let worktree = workspace.worktree(worktreeID),

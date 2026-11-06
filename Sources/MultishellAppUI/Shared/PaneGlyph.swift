@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// What a pane is running, with its state badged on the mark's corner; drawn
-/// by the strip, a card and a switcher row. See Docs/design/agents.md.
+/// by the strip, a card and a switcher row. See Docs/design/agents/board-and-pane-rows.md.
 struct PaneGlyph: View {
   let agentID: String?
   var unmarkedSymbol = PaneSymbol.terminal
@@ -19,7 +19,7 @@ struct PaneGlyph: View {
   let size: Double
 
   /// The state dot on the mark's corner; what it covers is the trade, see
-  /// Docs/design/agents.md.
+  /// Docs/design/agents/board-and-pane-rows.md.
   private var dotSize: Double { UIMetrics.cornerBadgeSize(onGlyphOf: size) }
 
   var body: some View {

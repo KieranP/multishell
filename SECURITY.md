@@ -29,7 +29,8 @@ me:
   first; see `Docs/design/settings.md`.
 - Anything another user can do through the socket, a request that answers the
   trust prompt or drives another build's app, or a report that reaches somewhere
-  it should not. See `Docs/design/agents.md`.
+  it should not. See `Docs/design/agents/command-line.md` and
+  `Docs/design/agents/reports-and-hooks.md`.
 - Reading or writing outside the worktree from a branch name, a path or a theme
   file.
 - A privilege escalation out of the one script that asks for administrator

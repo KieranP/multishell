@@ -3,7 +3,7 @@
 An index. Pull in the file you need; do not read them all. Rules live with their
 reasons, so a file under `Docs/design/` is binding and not background.
 
-Five rules live here, then the code design rules. The rest are in the files
+Six rules live here, then the code design rules. The rest are in the files
 below.
 
 - Before changing code in an area, read the `Docs/design/` file that covers it;
@@ -11,6 +11,8 @@ below.
 - Commit only when the user explicitly asks.
 - No code comment exceeds two lines. Where more is needed, add it to a file
   under `Docs/design/` or `Docs/develop/` and refer to it from the comment.
+- No file under `Docs/` exceeds 300 lines. One that would becomes a folder of
+  files named for their concerns, each listed in the index table.
 - When fixing a bug, write a failing test first where practical, then fix it.
 - New functions and properties start `private`. Widen one only when a caller
   needs it: internal for another file or a test, `public` only where another

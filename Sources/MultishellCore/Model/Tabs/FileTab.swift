@@ -1,7 +1,7 @@
 import Foundation
 
 /// A read-only tab showing one file of its worktree. It holds no process, so a
-/// relaunch reopens it from its path; see Docs/design/files.md.
+/// relaunch reopens it from its path; see Docs/design/files/file-tabs.md.
 public struct FileTab: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
   public let worktreeID: Worktree.ID

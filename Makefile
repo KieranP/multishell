@@ -6,15 +6,15 @@ APP     = build/Multishell.app
 INSTALL_DIR ?= /Applications
 
 # Queues a second worktree's suites behind the first, whose wall-clock bounds
-# it would break. Why, and why -k: Docs/develop/build.md.
+# it would break. Why, and why -k: Docs/develop/build/building-locally.md.
 TEST_LOCK_FILE ?= $(HOME)/Library/Caches/multishell-test.lock
 LOCKF := $(shell command -v lockf 2>/dev/null)
 ifneq ($(LOCKF),)
 LOCK = $(LOCKF) -k "$(TEST_LOCK_FILE)"
 endif
 
-# Tests may write only the build tree and the temporary directories. Why
-# --disable-sandbox, and where it runs unconfined: Docs/develop/build.md.
+# Tests may write only the build tree and the temporary directories. Why --disable-sandbox,
+# and where it runs unconfined: Docs/develop/build/building-locally.md.
 SANDBOX_EXEC := $(shell command -v sandbox-exec 2>/dev/null)
 ifneq ($(SANDBOX_EXEC),)
 SWIFT_TEST = $(SANDBOX_EXEC) -D REPO="$(CURDIR)" -D HOME="$(HOME)" -f Scripts/test-sandbox.sb swift test --skip-build --disable-sandbox
@@ -45,7 +45,7 @@ release: libghostty grammars
 	Scripts/make-app.sh release
 
 ## Test everything. Built before the lock and run under it; why in
-## Docs/develop/build.md.
+## Docs/develop/build/building-locally.md.
 test: libghostty grammars
 	swift build --build-tests
 	$(LOCK) Scripts/one-test-per-core.sh $(SWIFT_TEST)

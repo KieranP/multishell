@@ -1,5 +1,5 @@
 # The functions init.zsh installs in a Ghostty pane, whose own integration is
-# off. Why each is as it is: Docs/design/terminals.md.
+# off. Why each is as it is: Docs/design/terminals/shell-integration.md.
 
 # Zero where the user turned titles off, as a hook's status is err_exit's.
 _multishell_title() {
