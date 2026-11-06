@@ -65,7 +65,7 @@ changed, the branch's pull request and its latest CI run.
 <td width="55%" align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-sidebar-dark.png">
-  <img src="Docs/screenshot-sidebar-light.png" width="250" alt="The sidebar: three projects, their worktrees with state dots, line counts, pull request and CI marks, and the agent tabs of the selected worktree">
+  <img src="Docs/screenshot-sidebar-light.png" width="320" alt="The sidebar: three projects, their worktrees with state dots, line counts, pull request and CI marks, and the agent tabs of the selected worktree">
 </picture>
 </td>
 </tr>
@@ -87,8 +87,8 @@ another worktree moves without restarting.
 <td width="45%" valign="middle">
 <h3>See what the branch changed</h3>
 Modified counts from <code>HEAD</code>. Branch counts from where the branch left
-its base, so an agent's commits stay listed. Files open read-only beside the
-terminals, with the diff unified or side by side.
+its base, so an agent's commits stay listed. Every file shows the lines it
+gained and lost.
 </td>
 <td width="55%" align="center">
 <picture>
@@ -97,7 +97,60 @@ terminals, with the diff unified or side by side.
 </picture>
 </td>
 </tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Review the diff beside the agents</h3>
+A changed file opens as a tab beside the terminals, highlighted, unified or side
+by side. Arrows step from one change to the next. An image opens too, its
+committed copy beside the new one.
+</td>
+<td width="55%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-diff-dark.png">
+  <img src="Docs/screenshot-diff-light.png" width="100%" alt="A file tab showing rate-limit.js side by side, the committed lines on the left and the new ones on the right, highlighted as JavaScript">
+</picture>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Merge once the checks pass</h3>
+A row's pull request or CI mark opens its page in the side panel: the review,
+each check, and the failing job's log. Merge from there with GitHub's own commit
+message, or turn on auto-merge while required checks still run.
+</td>
+<td width="55%" align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-pr-dark.png">
+  <img src="Docs/screenshot-pr-light.png" width="48%" alt="A pull request page reading Ready to merge, with a Merge button and five passing checks">
+</picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-ci-dark.png">
+  <img src="Docs/screenshot-ci-light.png" width="48%" alt="A CircleCI page for a failed run, with the failing test job's log excerpt">
+</picture>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Jump to whoever is waiting</h3>
+⌘P lists the agents waiting on you first, longest wait at the top, then those
+still working. Type to reach any worktree, tab or file, or start with
+<code>&gt;</code> to run a menu command.
+</td>
+<td width="55%" align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-switcher-dark.png">
+  <img src="Docs/screenshot-switcher-light.png" width="100%" alt="The quick switcher on its Agents scope: two agents waiting for input, two working, four done">
+</picture>
+</td>
+</tr>
 </table>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Docs/screenshot-board-dark.png">
+    <img src="Docs/screenshot-board-light.png" width="900" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
+  </picture>
+</p>
 
 ### Agents
 
