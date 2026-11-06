@@ -15,6 +15,7 @@ struct FileTabNotice: View {
       Text(FileTabNoticeText.message(for: content) ?? "")
         .foregroundStyle(theme.fileTab.textTertiary)
         .fixedSize(horizontal: false, vertical: true)
+        .allowsHitTesting(false)
       if FileTabNoticeText.offersEditor(for: content) {
         Button(t("action.open-in-editor")) {
           model.openInEditor(path: tab.path, in: tab.worktreeID)

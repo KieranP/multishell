@@ -95,6 +95,18 @@ final class MacPlatform: Platform {
     TextFileRule.opensAsText(named: name, startingWith: bytes)
   }
 
+  nonisolated func opensAsImage(_ file: URL) -> Bool {
+    ImageFileRule.opensAsImage(file)
+  }
+
+  nonisolated func opensAsImage(named name: String) -> Bool {
+    ImageFileRule.opensAsImage(named: name)
+  }
+
+  nonisolated func imagePixelSize(of data: Data) -> ImagePixelSize? {
+    ImageFileRule.pixelSize(of: data)
+  }
+
   func chooseDirectory(prompt: String) async -> URL? {
     let panel = NSOpenPanel()
     panel.canChooseDirectories = true

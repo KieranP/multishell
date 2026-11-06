@@ -82,6 +82,15 @@ final class FakePlatform: Platform {
   nonisolated func opensAsText(named name: String, startingWith bytes: Data) -> Bool {
     !bytes.contains(0)
   }
+  /// A stand-in for the type check: a `.png` name, a regular file's.
+  nonisolated func opensAsImage(_ file: URL) -> Bool {
+    let isFile = (try? file.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
+    return isFile && opensAsImage(named: file.lastPathComponent)
+  }
+  nonisolated func opensAsImage(named name: String) -> Bool { name.hasSuffix(".png") }
+  nonisolated func imagePixelSize(of data: Data) -> ImagePixelSize? {
+    FakeImage.pixelSize(of: data)
+  }
   nonisolated func moveToTrash(_ url: URL) throws {
     fakeTrash.onMainThread.append(Thread.isMainThread)
     guard let trash = fakeTrash.destination else { throw TrashRefused() }

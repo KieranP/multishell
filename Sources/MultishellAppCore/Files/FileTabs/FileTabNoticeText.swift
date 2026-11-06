@@ -9,7 +9,7 @@ public enum FileTabNoticeText {
     switch content {
     case .binary(let bytes): t("file.binary-notice", size(bytes))
     case .missing: t("file.missing-notice")
-    case .released, .releasedFollowingStatus, .text: nil
+    case .image, .released, .releasedFollowingStatus, .text: nil
     case .tooLarge(let bytes): t("file.too-large-notice", size(bytes))
     case .unreadable: t("file.unreadable-notice")
     }

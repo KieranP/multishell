@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A file tab's content: its bar over the file's rows, or a notice where
-/// there are none to show.
+/// A file tab's content: its bar over the file's rows or image, or a notice
+/// where there are none to show.
 struct FileTabView: View {
   let model: AppModel
   let tab: FileTab
@@ -23,14 +23,25 @@ struct FileTabView: View {
             }
           }
 
-      case .some(let content) where content.isNotice:
-        FileTabNotice(model: model, tab: tab, content: content, theme: theme)
+      // One focus target for both, so a read turning one into the other keeps it.
+      case .some(let content) where content.drawsNoRows:
+        noRowsView(of: content)
+          .background(FileTabFocusTarget(model: model, tabID: tab.id))
 
       case .some, nil:
         theme.fileTab.background
       }
     }
     .background(theme.fileTab.background)
+  }
+
+  @ViewBuilder
+  private func noRowsView(of content: FileTabContent) -> some View {
+    if case .image(let image) = content {
+      FileTabImageView(model: model, image: image, theme: theme)
+    } else {
+      FileTabNotice(model: model, tab: tab, content: content, theme: theme)
+    }
   }
 
   @ViewBuilder

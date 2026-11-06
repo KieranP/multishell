@@ -8,6 +8,14 @@ extension AppModel {
   /// A burst of saves becomes one read: 0.15 s of FSEvents latency, then this.
   private static var fileTabSettleDelay: Duration { .milliseconds(75) }
 
+  private var imageRule: ImageRule {
+    let platform = self.platform
+    return ImageRule(
+      opensAsImage: { platform.opensAsImage(named: $0) },
+      pixelSize: { platform.imagePixelSize(of: $0) },
+    )
+  }
+
   /// In front of its group, in the worktree in view.
   func isFileTabShown(_ id: FileTab.ID) -> Bool {
     guard let tab = workspace.fileTab(id), tab.worktreeID == worktreeIDInView else { return false }
@@ -66,8 +74,12 @@ extension AppModel {
     fileTabReadings[id].map { !$0.content.isReleased } ?? false
   }
 
-  func holdsNotice(_ id: FileTab.ID) -> Bool {
-    fileTabReadings[id]?.content.isNotice ?? false
+  func holdsImage(_ id: FileTab.ID) -> Bool {
+    fileTabReadings[id]?.image != nil
+  }
+
+  func holdsNoRows(_ id: FileTab.ID) -> Bool {
+    fileTabReadings[id]?.content.drawsNoRows ?? false
   }
 
   /// A hidden tab keeps its dot and strike, and a gone file's rows, the last
@@ -82,11 +94,11 @@ extension AppModel {
         task.cancel()
         fileTabReadLog.owe(tab.id)
       }
-      guard let reading = fileTabReadings[tab.id], case .text = reading.content,
-        !reading.isFileGone, !fileTabReadLog.isReading(tab.id)
+      guard let reading = fileTabReadings[tab.id], reading.isLetGoWhenHidden,
+        !fileTabReadLog.isReading(tab.id)
       else { continue }
       let released = FileTabContent.released(changeKind: changeKind(of: tab))
-      fileTabReadings[tab.id] = FileTabReading(content: released, isFileGone: false)
+      fileTabReadings[tab.id] = FileTabReading(content: released, isFileGone: reading.isFileGone)
     }
   }
 
@@ -122,10 +134,18 @@ extension AppModel {
       diffAlgorithm: workspace.diffAlgorithm,
       since: fileTabBase(in: tab.worktreeID),
       previous: fileTabReadings[id],
+      imageRule: imageRule,
     )
     let readsAgain = fileTabReadLog.finish(id, cost: started.duration(to: .now))
     guard workspace.fileTab(id) != nil else { return }
     setIfChanged(\.fileTabReadings[id], reading)
+    // A find opened before an image read has no bar to draw, nor any lines; a
+    // field that had the keyboard hands it back, as closing the bar does.
+    let fieldHadKeyboard = findFieldTargetID == id
+    if reading.image != nil, endFind(in: id) {
+      if findFieldRequests.contains(id) { findFieldRequests.remove(id) }
+      if fieldHadKeyboard { fileTabFocusRequest = id }
+    }
     // Hidden while it ran, its rows would wait for the next reconcile.
     releaseHiddenFileTabs()
     rerunFileFind(in: id)
@@ -149,14 +169,14 @@ extension AppModel {
       guard isGone != (current?.isFileGone ?? false) else { return }
       let content: FileTabContent =
         switch current?.content {
-        case .text(let rows) where isGone && rows.holdsTextOnDisk: .text(rows.lastTextOnDisk())
+        case let content? where isGone: content.lastOnDisk() ?? content
         case let content?: content
         case nil: .missing
         }
-      // A file back on a hidden tab lets go of the rows kept from before, its
-      // dot following the status: those rows are no diff of what came back.
-      let isBackWhileHidden = !isGone && !isFileTabShown(id)
-      let kept = isBackWhileHidden ? FileTabContent.releasedFollowingStatus : content
+      // A file back on a hidden or released tab lets go of what was kept, its dot
+      // following the status: that is no diff of what came back.
+      let isBackUnread = !isGone && (!isFileTabShown(id) || content.isReleased)
+      let kept = isBackUnread ? FileTabContent.releasedFollowingStatus : content
       setIfChanged(\.fileTabReadings[id], FileTabReading(content: kept, isFileGone: isGone))
       rerunFileFind(in: id)
     }

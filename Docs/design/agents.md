@@ -1063,10 +1063,11 @@ command line's requests on the same socket. Newest at the bottom.
   covered or minimized window, which reads no file tab or panel list (files.md),
   though `tabs find --close` shuts a bar anyway; `window size` and `full-screen`
   refuse a minimized one. A tab drawn as a notice, its file too large, binary,
-  missing or unreadable, takes no step or find, having no arrows or bar, and is
-  refused as not read while a read of it runs, which may bring rows. A file with
-  no changes draws no arrows either. A request's own words are checked before
-  the window, so a bad one is named.
+  missing or unreadable, or as an image, takes no step or find, having no arrows
+  or bar, and is refused as not read while a read of it runs, which may bring
+  rows; an image's refusal says image rather than notice. A file with no changes
+  draws no arrows either. A request's own words are checked before the window,
+  so a bad one is named.
 - **`worktrees hide` refuses the project's own checkout, and
   `projects expand-hidden` a project hiding none**: the menu has no Hide item
   for the one, and the sidebar no Hidden row for the other.
@@ -1079,8 +1080,8 @@ command line's requests on the same socket. Newest at the bottom.
 - **A panel's width is written where the views read it**, a debug build's own
   user defaults (develop/state-on-disk.md), so a scratch run never moves the
   installed app's edges. A width past what a drag reaches is refused: each
-  side's reach is half the room the other side leaves, as its drag's is, so
-  with no window open there is nothing to measure and it is refused.
+  side's reach is half the room the other side leaves, as its drag's is, so with
+  no window open there is nothing to measure and it is refused.
 - **Fetch and Refresh answer once done; Auto Rename once started.** A script
   waits on the first two's reads; a rename runs an agent for seconds, and
   `sidebar list` says while it runs and how it ended.

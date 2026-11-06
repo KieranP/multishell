@@ -58,15 +58,15 @@ extension AppModel {
   }
 
   /// Waits on the scheduled read; rows not in hand are refused for the helper to ask
-  /// again, and a notice has none to act on (agents.md, a file tab's arrows and find).
+  /// again, and a notice or image has none (agents.md, a file tab's arrows and find).
   private func refusalToActOnRowsOnceRead(
     of id: FileTab.ID,
     _ refusalNow: () -> ControlRefusal?,
   ) async -> ControlRefusal? {
     if let refusal = refusalNow() { return refusal }
     let isRowless = !holdsContent(id)
-    // A notice may yet turn to rows, so its scheduled read is waited on too.
-    let awaitsRead = isRowless || (holdsNotice(id) && pendingFileTabReads[id] != nil)
+    // A notice or an image may yet turn to rows, so its scheduled read is waited on too.
+    let awaitsRead = isRowless || (holdsNoRows(id) && pendingFileTabReads[id] != nil)
     if awaitsRead, !fileTabReadLog.isReading(id) {
       if isRowless, coordinator == nil { return .gitNotFound }
       if let scheduled = pendingFileTabReads[id] {
@@ -78,8 +78,9 @@ extension AppModel {
       if let refusal = refusalNow() { return refusal }
     }
     guard holdsContent(id) else { return .fileTabNotRead(id: id) }
-    guard holdsNotice(id) else { return nil }
-    return fileTabReadLog.isReading(id) ? .fileTabNotRead(id: id) : .fileTabShowsNotice(id: id)
+    guard holdsNoRows(id) else { return nil }
+    if fileTabReadLog.isReading(id) { return .fileTabNotRead(id: id) }
+    return holdsImage(id) ? .fileTabShowsImage(id: id) : .fileTabShowsNotice(id: id)
   }
 
   /// A hidden tab lets its rows go, and the arrows and find read the view's,

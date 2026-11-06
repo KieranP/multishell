@@ -124,7 +124,7 @@ struct DebugMemoryTableTests {
       appMemory: 400,
       tabs: [],
       unattributedProcesses: [],
-      fileTabs: DebugFileTabMemory(tabCount: 2, textMemory: 150),
+      fileTabs: DebugFileTabMemory(tabCount: 2, contentMemory: 150),
     )
 
     #expect(table.rows.map(\.source) == [.app, .fileTabs, .total])
@@ -164,7 +164,7 @@ struct DebugMemoryTableTests {
       appMemory: 100,
       tabs: [],
       unattributedProcesses: [],
-      fileTabs: DebugFileTabMemory(tabCount: 1, textMemory: 80),
+      fileTabs: DebugFileTabMemory(tabCount: 1, contentMemory: 80),
     )
 
     let row = try #require(table.rows.first { $0.source == .fileTabs })

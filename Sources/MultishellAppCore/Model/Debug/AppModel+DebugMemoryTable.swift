@@ -30,13 +30,21 @@ extension AppModel {
     )
   }
 
-  /// UTF-16 kept for each line, twice over for the rows' joined text: the
-  /// model's copy, not the layout a shown tab adds on top.
+  /// UTF-16 kept for each line, twice over for the rows' joined text, and an
+  /// image's bytes: the model's copy, not the layout or picture a shown tab adds.
   private var debugFileTabMemory: DebugFileTabMemory {
     let bytes = fileTabReadings.values.reduce(UInt64(0)) { total, reading in
-      guard case .text(let rows) = reading.content else { return total }
-      return total + UInt64(rows.displayText.string.utf16.count) * 4
+      switch reading.content {
+      case .image(let image):
+        return total + UInt64(image.shownCopies.reduce(0) { $0 + $1.image.data.count })
+
+      case .text(let rows):
+        return total + UInt64(rows.displayText.string.utf16.count) * 4
+
+      case .binary, .missing, .released, .releasedFollowingStatus, .tooLarge, .unreadable:
+        return total
+      }
     }
-    return DebugFileTabMemory(tabCount: workspace.fileTabs.count, textMemory: bytes)
+    return DebugFileTabMemory(tabCount: workspace.fileTabs.count, contentMemory: bytes)
   }
 }

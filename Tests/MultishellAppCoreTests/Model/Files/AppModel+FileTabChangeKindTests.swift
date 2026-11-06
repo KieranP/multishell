@@ -17,6 +17,47 @@ struct AppModelFileTabChangeKindTests {
     return status
   }
 
+  @Test func anImageTabsDotIsItsOwnReadsWhereItHoldsACommittedCopy() {
+    let harness = Harness()
+    let tab = harness.openFileTab("logo.png")
+    let size = ImagePixelSize(width: 1, height: 1)
+    let before = ImageFileBytes(data: Data([1]), pixelSize: size)
+    let after = ImageFileBytes(data: Data([2]), pixelSize: size)
+    let reading = { (image: FileTabImage?) in
+      FileTabReading(content: .image(try #require(image)), isFileGone: false)
+    }
+
+    harness.model.fileTabReadings[tab.id] = try? reading(
+      .sharingBuffers(onDisk: after, committed: before, committedObjectID: "a", keptFrom: nil)
+    )
+    let changed = harness.model.changeKind(of: tab)
+    harness.model.fileTabReadings[tab.id] = try? reading(
+      .sharingBuffers(onDisk: before, committed: before, committedObjectID: "a", keptFrom: nil)
+    )
+    let unchanged = harness.model.changeKind(of: tab)
+
+    #expect(changed == .modified)
+    #expect(unchanged == nil)
+  }
+
+  @Test func anImageWhoseModeAloneChangedTakesTheStatusDot() {
+    let harness = Harness()
+    let tab = harness.openFileTab("logo.png")
+    let logo = ImageFileBytes(data: Data([1]), pixelSize: ImagePixelSize(width: 1, height: 1))
+    let image = FileTabImage.sharingBuffers(
+      onDisk: logo,
+      committed: logo,
+      committedObjectID: "a",
+      keptFrom: nil,
+    )
+    harness.model.fileTabReadings[tab.id] = image.map { shown in
+      FileTabReading(content: .image(shown), isFileGone: false)
+    }
+    harness.model.statuses[harness.main.id] = Self.status("logo.png", .modified)
+
+    #expect(harness.model.changeKind(of: tab) == .modified)
+  }
+
   @Test func anEmptyNewFilesTabIsAdded() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

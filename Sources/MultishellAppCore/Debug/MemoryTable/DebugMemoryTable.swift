@@ -18,7 +18,7 @@ public struct DebugMemoryTable: Sendable, Equatable {
   /// hold, which their rows show. Never below zero: both are estimates.
   var appMemoryOutsideTabs: UInt64 {
     appMemory.subtractingFlooredAtZero(
-      tabs.reduce(fileTabs.textMemory) { $0 + ($1.terminalMemory ?? 0) }
+      tabs.reduce(fileTabs.contentMemory) { $0 + ($1.terminalMemory ?? 0) }
     )
   }
 
@@ -30,7 +30,7 @@ public struct DebugMemoryTable: Sendable, Equatable {
       max(
         appRowMemory,
         unattributed.totalMemory,
-        fileTabs.textMemory,
+        fileTabs.contentMemory,
         tabs.compactMap(\.totalMemory).max() ?? 0,
         1,
       )
@@ -71,9 +71,9 @@ public struct DebugMemoryTable: Sendable, Equatable {
           title: t("debug.file-tabs-row"),
           subtitle: t("debug.file-tabs-row-subtitle", fileTabs.tabCount),
           processCount: nil,
-          selfMemory: fileTabs.textMemory,
-          totalMemory: fileTabs.textMemory,
-          barFraction: fraction(fileTabs.textMemory),
+          selfMemory: fileTabs.contentMemory,
+          totalMemory: fileTabs.contentMemory,
+          barFraction: fraction(fileTabs.contentMemory),
           terminalRow: nil,
           processRows: [],
         )

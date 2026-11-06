@@ -43,9 +43,10 @@ extension AppModel {
     }
   }
 
-  /// A notice draws no bar, though the find stays for rows read again.
+  /// A notice draws no bar, though the find stays for rows read again; an image
+  /// ends any find when read.
   private func fileFindBar(of id: FileTab.ID) -> FindBarDescription? {
-    guard findBarTargetIDs.contains(id), !holdsNotice(id) else { return nil }
+    guard findBarTargetIDs.contains(id), !holdsNoRows(id) else { return nil }
     let count = holdsContent(id) ? findMatchCount(of: id) : nil
     return FindBarDescription(
       text: findText(of: id),

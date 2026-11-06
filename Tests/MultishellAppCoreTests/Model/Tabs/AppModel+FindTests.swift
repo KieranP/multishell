@@ -1,5 +1,7 @@
+import Foundation
 import MultishellCore
 import Observation
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -716,6 +718,52 @@ struct AppModelFindTests {
     engineReports(.total(3), in: pane, harness)
 
     #expect(harness.model.findMatchCount(of: pane) == FindMatchCount(position: nil, total: 3))
+  }
+
+  @Test func anImageTabTakesNoFindBarHavingNoLines() {
+    let harness = Harness()
+    let tab = harness.openFileTab("logo.png")
+    harness.model.fileTabReadings[tab.id] = FileTabReading(
+      content: .image(.onDiskOnly()),
+      isFileGone: false,
+    )
+
+    harness.model.showFind()
+
+    #expect(harness.model.findBarTargetIDs.isEmpty)
+    #expect(!harness.model.findIsAvailable)
+  }
+
+  @Test func aFindOpenedBeforeAnImageIsReadEndsWhenItArrives() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    try FakeImage.bytes(width: 2, height: 2).write(to: main.path.appending(path: "logo.png"))
+    let (tab, _) = try harness.openFileTab("logo.png")
+    harness.model.showFind()
+    try #require(harness.model.findBarTargetIDs.contains(tab.id))
+
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+
+    #expect(!harness.model.findBarTargetIDs.contains(tab.id))
+    #expect(!harness.model.findFieldRequests.contains(tab.id))
+  }
+
+  @Test func aFindFieldAnImageReadEndsHandsTheKeyboardBackToTheTab() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    try FakeImage.bytes(width: 2, height: 2).write(to: main.path.appending(path: "logo.png"))
+    let (tab, _) = try harness.openFileTab("logo.png")
+    _ = harness.model.takeFileTabFocusRequest(tab.id)
+    harness.model.showFind()
+    harness.model.noteFindField(focused: true, of: tab.id)
+
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+
+    #expect(harness.model.fileTabFocusRequest == tab.id)
   }
 
   @Test func aClosedBarCountsNothing() {

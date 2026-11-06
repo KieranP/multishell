@@ -9,58 +9,12 @@ import Testing
 
 @Suite(.serialized)
 struct FileTabReaderTests {
-  private struct Repository {
-    let root: URL
-    let path: URL
-    let runner: GitRunner
-    var git: WorktreeGit { WorktreeGit(runner: runner) }
-
-    static func make(commit: Bool = true) async throws -> Self {
-      let runner = try TestGit.runner()
-      let root = Scratch.path("filetab")
-      let path = root.appending(path: "demo", directoryHint: .isDirectory)
-      try await TestRepository.initialise(at: path, withFirstCommit: commit, using: runner)
-      return Self(root: root, path: path, runner: runner)
-    }
-
-    func write(_ text: String, to file: String) throws {
-      try text.write(to: path.appending(path: file), atomically: true, encoding: .utf8)
-    }
-
-    func read(
-      _ file: String,
-      since base: DefaultBranch? = nil,
-      previous: FileTabReading? = nil,
-    ) async -> FileTabReading {
-      await FileTabReader.read(
-        path: file,
-        in: path,
-        git: git,
-        diffAlgorithm: .histogram,
-        since: base,
-        previous: previous,
-      )
-    }
-
-    /// `main`, as a project with no remote resolves it.
-    func base() async throws -> DefaultBranch {
-      try #require(
-        DefaultBranch.resolve(
-          from: await git.branchRefs(Project(path: path))?.refs ?? [],
-          override: nil,
-        )
-      )
-    }
-
-    func tearDown() { Scratch.remove(root) }
-  }
-
   private static func text(_ reading: FileTabReading) -> FileTabRows? {
     if case .text(let text) = reading.content { text } else { nil }
   }
 
   @Test func aModifiedFileShowsEveryLineWithItsChangesAndStagedOnesMarked() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try await TestRepository.commit(
       "seed",
@@ -81,7 +35,7 @@ struct FileTabReaderTests {
   }
 
   @Test func sinceTheBaseAFileShowsWhatItsBranchCommittedWithNoStagingMarked() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try await TestRepository.commit(
       "seed",
@@ -111,7 +65,7 @@ struct FileTabReaderTests {
   }
 
   @Test func sinceTheBaseAFileTheBranchAddedThenDeletedShowsHeadsTextRemoved() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -130,7 +84,7 @@ struct FileTabReaderTests {
   }
 
   @Test func sinceTheBaseAFileGitNeverHadThatIsGoneIsMissingNotUnreadable() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -150,7 +104,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aTabWhoseMergeBaseGitCannotReadKeepsWhatItLastShowed() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -170,7 +124,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aTabOnABranchSharingNoHistoryWithTheBaseCountsFromHeadAndKeepsUp() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(
@@ -192,7 +146,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aMergeBaseGitCannotReadShowsNoRowsRatherThanAGuessWhereNoneAreKept() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -207,7 +161,7 @@ struct FileTabReaderTests {
   }
 
   @Test func onTheBaseItselfABranchTabStillMarksWhatIsStaged() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -222,7 +176,7 @@ struct FileTabReaderTests {
   }
 
   @Test func sinceTheBaseAFileTheBranchDeletedThenWroteAgainShowsItsTextOnDisk() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -237,7 +191,7 @@ struct FileTabReaderTests {
   }
 
   @Test func anIgnoredFileTakenOutOfTheIndexShowsItsLinesRemovedAsTheListDoes() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try repository.write("README.md\n", to: ".gitignore")
     _ = try await repository.runner.run(
@@ -251,7 +205,7 @@ struct FileTabReaderTests {
   }
 
   @Test func sinceTheBaseAFileTheBranchAddedThenDeletedMarksNoStaging() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -269,7 +223,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aDeletionStagedWithGitRmMarksItsRemovedLinesStaged() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     _ = try await repository.runner.run(["rm", "-q", "README.md"], in: repository.path)
 
@@ -312,6 +266,7 @@ struct FileTabReaderTests {
       diffAlgorithm: .histogram,
       since: base,
       previous: previous,
+      imageRule: .fake,
     )
 
     #expect(reading == previous, "not read as a file new since the base")
@@ -339,6 +294,7 @@ struct FileTabReaderTests {
       diffAlgorithm: .histogram,
       since: nil,
       previous: nil,
+      imageRule: .fake,
     )
 
     #expect(reading.content == .unreadable, "said so, not every line added")
@@ -365,13 +321,14 @@ struct FileTabReaderTests {
       diffAlgorithm: .histogram,
       since: base,
       previous: nil,
+      imageRule: .fake,
     )
 
     #expect(reading.content == .unreadable)
   }
 
   @Test func sinceTheBaseANewFileIsEveryLineAddedWithNoStagingMarked() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
@@ -390,7 +347,7 @@ struct FileTabReaderTests {
   }
 
   @Test func anUntrackedFileIsEveryLineAddedAndAnUnchangedOneIsPlain() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try repository.write("x\r\ny\n", to: "new.txt")
 
@@ -404,7 +361,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aFileDeletedBeforeTheTabOpenedShowsItsCommittedTextRemoved() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try FileManager.default.removeItem(at: repository.path.appending(path: "README.md"))
 
@@ -415,7 +372,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aDeletedLatin1FilesCommittedTextIsDecodedAsATextEditorWould() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let file = repository.path.appending(path: "menu.txt")
     try Data([0x63, 0x61, 0x66, 0xE9, 0x0A]).write(to: file)
@@ -429,7 +386,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aDeletedBinaryFileSaysItsCommittedSize() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let file = repository.path.appending(path: "icon.png")
     try Data([0x89, 0x50, 0x00, 0x01]).write(to: file)
@@ -444,7 +401,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aFileDeletedUnderAnOpenTabKeepsItsLastTextUnmarked() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try repository.write("hello\nmore\n", to: "README.md")
     let before = await repository.read("README.md")
@@ -459,7 +416,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aBinaryFileAModeChangeAndAFileTooLargeEachSaySo() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try Data([0x89, 0x50, 0x00]).write(to: repository.path.appending(path: "icon.png"))
     try FileManager.default.setAttributes(
@@ -480,7 +437,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aSmallFileWhoseLastCommitIsTooLargeIsNeverDiffed() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let huge = String(repeating: "y\n", count: FileTabReader.sizeLimit)
     try await TestRepository.commit(
@@ -495,7 +452,7 @@ struct FileTabReaderTests {
   }
 
   @Test func beforeTheFirstCommitAStagedFileIsEveryLineAdded() async throws {
-    let repository = try await Repository.make(commit: false)
+    let repository = try await FileTabRepository.make(commit: false)
     defer { repository.tearDown() }
     try repository.write("a\nb\n", to: "first.txt")
     _ = try await repository.runner.run(["add", "first.txt"], in: repository.path)
@@ -507,7 +464,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aNameThatLooksLikeAPatternIsReadLiterally() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try await TestRepository.commit(
       "odd",
@@ -521,7 +478,7 @@ struct FileTabReaderTests {
   }
 
   @Test func aDeletedFilesTabReadAgainKeepsItsRemovedLines() async throws {
-    let repository = try await Repository.make()
+    let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     try FileManager.default.removeItem(at: repository.path.appending(path: "README.md"))
     let first = await repository.read("README.md")

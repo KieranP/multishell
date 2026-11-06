@@ -9,12 +9,12 @@ struct DebugMemoryRecordTests {
       appMemory: 400,
       tabs: [],
       unattributedProcesses: [],
-      fileTabs: DebugFileTabMemory(tabCount: 2, textMemory: 150),
+      fileTabs: DebugFileTabMemory(tabCount: 2, contentMemory: 150),
     )
 
     let record = DebugMemoryRecord(table)
 
     #expect(record.appMemoryOutsideTabs == 250)
-    #expect(record.fileTabs == DebugMemoryRecord.FileTabsRecord(count: 2, textMemory: 150))
+    #expect(record.fileTabs == DebugMemoryRecord.FileTabsRecord(count: 2, contentMemory: 150))
   }
 }

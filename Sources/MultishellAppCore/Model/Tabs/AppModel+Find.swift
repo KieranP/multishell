@@ -3,7 +3,7 @@ import MultishellCore
 extension AppModel {
   /// Whether there is a pane or a file to find in: the menu's Find… is enabled on it.
   public var findIsAvailable: Bool {
-    workspaceTabInView != nil
+    menuFindTarget != nil
   }
 
   /// Whether the menu's target has a bar up, enabling Find Next, Previous and Close
@@ -17,7 +17,8 @@ extension AppModel {
   /// field has the keyboard, if the tab in front's, else its focused pane.
   private var menuFindTarget: FindTargetID? {
     switch workspaceTabInView {
-    case .file(let tab): return tab.id
+    // An image has no lines to find in, and none come back as a notice's may.
+    case .file(let tab): return holdsImage(tab.id) ? nil : tab.id
 
     case .terminal(let tab):
       if let field = findFieldTargetID, findBarTargetIDs.contains(field),

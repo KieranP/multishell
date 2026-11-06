@@ -9,8 +9,8 @@ enum FileTabReader {
   /// view takes up to 186 MB laid out at that size.
   static let sizeLimit = 1 << 20
 
-  /// `previous` is the tab's last read, which a file deleted under an open
-  /// tab keeps showing, unmarked.
+  /// `previous` is the last read, which a file deleted under an open tab keeps
+  /// showing; `imageRule` says whether the name is an image's.
   static func read(
     path pathInWorktree: String,
     in worktree: URL,
@@ -18,16 +18,22 @@ enum FileTabReader {
     diffAlgorithm: DiffAlgorithm,
     since base: DefaultBranch?,
     previous: FileTabReading?,
+    imageRule: ImageRule,
   ) async -> FileTabReading {
     let url = worktree.appending(path: pathInWorktree)
-    let (onDisk, repository) = await runOnDispatch {
-      (
-        FileOnDisk.read(url, sizeLimit: sizeLimit),
+    let (onDisk, repository, isImage, image) = await runOnDispatch {
+      let isImage = imageRule.opensAsImage(pathInWorktree)
+      let onDisk = FileOnDisk.read(
+        url,
+        sizeLimit: isImage ? FileTabImageReader.sizeLimit : sizeLimit,
+      )
+      return (
+        onDisk,
         RepositoryLocation.innermost(holding: pathInWorktree, in: worktree),
+        isImage,
+        isImage ? onDisk.bytes.flatMap { FileTabImageReader.bytes($0, imageRule) } : nil,
       )
     }
-    // A file in a submodule is diffed against the submodule's own `HEAD`.
-    let path = repository.path
     // A file too large on disk is said so before git is asked anything.
     let data: Data?
     switch onDisk {
@@ -39,6 +45,11 @@ enum FileTabReader {
     }
     let isGone = data == nil
     if isGone, let kept = keptReading(ofGoneFile: previous) { return kept }
+    // An image's name past the text cap with bytes no decoder reads is text's to judge.
+    if let data, image == nil, data.count > sizeLimit {
+      return FileTabReading(content: .tooLarge(bytes: data.count), isFileGone: false)
+    }
+    let readsAsImage = isImage && (image != nil || isGone)
     let resolved = await committedSide(
       of: repository,
       in: worktree,
@@ -46,13 +57,39 @@ enum FileTabReader {
       isGone: isGone,
       git: git,
     )
+    if readsAsImage,
+      let content = await FileTabImageReader.content(
+        onDisk: image,
+        of: repository,
+        against: resolved,
+        git: git,
+        previous: previous.flatMap(\.image),
+        imageRule,
+      )
+    {
+      return FileTabReading(content: content, isFileGone: isGone)
+    }
     guard let side = resolved else {
-      // What it counts from is unknown: the last rows, else none rather than a guess.
-      if let previous, case .text = previous.content, previous.isFileGone == isGone {
+      // What it counts from is unknown: the last rows or image, else none rather than a guess.
+      if let previous, previous.content.showsTheFile, previous.isFileGone == isGone {
         return previous
       }
       return FileTabReading(content: .unreadable, isFileGone: isGone)
     }
+    return await textReading(of: data, in: repository, against: side, git: git, diffAlgorithm)
+  }
+
+  /// Text, or a notice where it is none or too large, against a side resolved.
+  private static func textReading(
+    of data: Data?,
+    in repository: RepositoryLocation,
+    against side: CommittedSide,
+    git: WorktreeGit,
+    _ diffAlgorithm: DiffAlgorithm,
+  ) async -> FileTabReading {
+    // A file in a submodule is diffed against the submodule's own `HEAD`.
+    let path = repository.path
+    let isGone = data == nil
     let committedSize = side.size
     if isGone, let notice = noticeOfGoneFile(committedSize: committedSize) { return notice }
     if let committedSize, committedSize > sizeLimit {
@@ -82,19 +119,11 @@ enum FileTabReader {
   /// What a tab whose file is gone keeps showing without asking git, `nil` where
   /// its committed copy is read.
   private static func keptReading(ofGoneFile previous: FileTabReading?) -> FileTabReading? {
-    // A tab that showed the file keeps its last text; one showing the committed
-    // side's removed lines reads it again, a commit being able to move it.
-    if case .text(let rows) = previous?.content, previous?.isFileGone == false,
-      rows.holdsTextOnDisk
-    {
-      return FileTabReading(content: .text(rows.lastTextOnDisk()), isFileGone: true)
-    }
-    if let previous, previous.isFileGone, case .text(let rows) = previous.content,
-      !rows.lines.contains(where: { $0.kind == .removed })
-    {
-      return previous
-    }
-    return nil
+    // A tab that showed the file keeps its last text or copy; one showing the
+    // committed side reads it again, a commit being able to move it.
+    guard let previous else { return nil }
+    if previous.isFileGone { return previous.content.isLastOnDisk ? previous : nil }
+    return previous.content.lastOnDisk().map { FileTabReading(content: $0, isFileGone: true) }
   }
 
   /// A gone file with no committed copy to show removed, or one too large.
@@ -235,7 +264,10 @@ enum FileTabReader {
       let isWhollyRemoved = !data.isEmpty && lines.allSatisfy { $0.kind == .removed }
       if isWhollyRemoved, await git.ignoredPaths([path], in: repository)?.contains(path) == false {
         return .text(
-          FileTabRows(lines: plainLines(text, kind: .added), marksStaging: marksStaging)
+          FileTabRows(
+            lines: PlainDiffLines.of(text, kind: .added),
+            marksStaging: marksStaging,
+          )
         )
       }
       return .text(
@@ -245,7 +277,7 @@ enum FileTabReader {
     case .modeOnly:
       return .text(
         FileTabRows(
-          lines: plainLines(text, kind: .context),
+          lines: PlainDiffLines.of(text, kind: .context),
           marksStaging: marksStaging,
           hasModeChange: true,
         )
@@ -257,26 +289,9 @@ enum FileTabReader {
       if isNew { isNew = await git.ignoredPaths([path], in: repository)?.contains(path) == false }
       return .text(
         FileTabRows(
-          lines: plainLines(text, kind: isNew ? .added : .context),
+          lines: PlainDiffLines.of(text, kind: isNew ? .added : .context),
           marksStaging: marksStaging,
         )
-      )
-    }
-  }
-
-  /// One row per line, a final newline closing the last rather than opening
-  /// another.
-  private static func plainLines(_ text: String, kind: DiffLine.Kind) -> [DiffLine] {
-    var parts = text.lines()
-    if parts.last?.isEmpty == true { parts.removeLast() }
-    return parts.enumerated().map { index, part in
-      let line = String(part)
-      let number = index + 1
-      return DiffLine(
-        kind: kind,
-        oldNumber: kind == .context ? number : nil,
-        newNumber: number,
-        text: line,
       )
     }
   }

@@ -11,12 +11,14 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   /// Auto Rename is greyed out for the worktree.
   case autoRenameUnavailable(id: String)
   case debugToolsOff
-  /// Not a file the worktree holds that opens as text, which a click beeps at.
+  /// Not a file the worktree holds that opens as text or an image, which a click beeps at.
   case fileNotOpenable(path: String)
   /// Shut, or showing a pull request's or CI's page, which lists no files.
   case filesPanelListsNoFiles
   /// A file tab's rows are still being read, so a step or find has nothing to act on.
   case fileTabNotRead(id: UUID)
+  /// Drawn as an image, which has no lines for arrows or a find bar.
+  case fileTabShowsImage(id: UUID)
   /// Drawn as a notice, too large, binary, missing or unreadable, with no arrows or find bar.
   case fileTabShowsNotice(id: UUID)
   /// No git on the login shell's PATH, which every git read needs.

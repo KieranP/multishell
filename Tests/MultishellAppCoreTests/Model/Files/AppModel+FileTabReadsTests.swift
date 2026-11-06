@@ -1,10 +1,10 @@
 import Foundation
 import MultishellCore
-import MultishellGitKit
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 
 @Suite(.serialized) @MainActor
 struct AppModelFileTabReadsTests {
@@ -207,6 +207,94 @@ struct AppModelFileTabReadsTests {
 
     #expect(harness.model.fileTabReadings[tab.id]?.content == .released(changeKind: .modified))
     #expect(harness.model.changeKind(of: tab) == .modified)
+  }
+
+  @Test func aHiddenImageTabLetsGoOfItsBytesAndReadsThemAgainWhenShown() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try FakeImage.bytes(width: 2, height: 2).write(to: main.path.appending(path: "logo.png"))
+    let (tab, _) = try harness.openFileTab("logo.png")
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+
+    harness.model.newShellTab()
+    let hidden = harness.model.fileTabReadings[tab.id]?.content
+    harness.model.activateTab(tab.id)
+
+    #expect(hidden?.isReleased == true)
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+    #expect(harness.model.holdsImage(tab.id))
+  }
+
+  @Test func aHiddenTabOfADeletedImageLetsGoOfTheCommittedCopyAndStaysStruck() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let logo = main.path.appending(path: "logo.png")
+    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
+    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
+    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    try FileManager.default.removeItem(at: logo)
+    let (tab, _) = try harness.openFileTab("logo.png")
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+
+    harness.model.newShellTab()
+    let hidden = harness.model.fileTabReadings[tab.id]
+    harness.model.activateTab(tab.id)
+
+    #expect(hidden?.content.isReleased == true)
+    #expect(hidden?.isFileGone == true)
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+    #expect(harness.model.isFileGone(of: tab.id))
+  }
+
+  @Test func aDeletedImageBackOverItsReleasedCopyFollowsTheStatusNotTheDeletedDot() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let logo = main.path.appending(path: "logo.png")
+    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
+    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
+    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    try FileManager.default.removeItem(at: logo)
+    let (tab, _) = try harness.openFileTab("logo.png")
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+    harness.model.newShellTab()
+    try #require(harness.model.fileTabReadings[tab.id]?.content.isReleased == true)
+    harness.platform.isWorkspaceWindowVisible = false
+    harness.model.activateTab(tab.id)
+
+    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
+    harness.model.noteFileTabChanged(tab.id)
+    try await waitUntil { !harness.model.isFileGone(of: tab.id) }
+
+    #expect(harness.model.fileTabReadings[tab.id]?.content == .releasedFollowingStatus)
+    #expect(harness.model.changeKind(of: tab) != .deleted)
+  }
+
+  @Test func anImageDeletedWithTheWindowOutOfViewKeepsOnlyTheCopyOnDisk() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let logo = main.path.appending(path: "logo.png")
+    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
+    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
+    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    let edited = FakeImage.bytes(width: 3, height: 3)
+    try edited.write(to: logo)
+    let (tab, _) = try harness.openFileTab("logo.png")
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+    harness.platform.isWorkspaceWindowVisible = false
+
+    try FileManager.default.removeItem(at: logo)
+    harness.model.noteFileTabChanged(tab.id)
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
+
+    guard case .image(let image) = harness.model.fileTabReadings[tab.id]?.content else {
+      Issue.record("no image kept")
+      return
+    }
+    #expect(image.shownCopies.map(\.image.data) == [edited])
   }
 
   @Test func aTabShownAgainIsReadAtOnceWhateverItsPace() async throws {

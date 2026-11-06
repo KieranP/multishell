@@ -10,8 +10,8 @@ extension AppModel {
     _ = await openFileAsTab(clicked, in: id, as: .click)
   }
 
-  /// The tab where a clicked link would open the file as text, else `nil`; a file
-  /// gone from disk is judged on git's copy. The caller drops the listing it built.
+  /// The tab where the file opens as text or an image (files.md), else `nil`; a
+  /// gone file is judged on git's copy. The caller drops the listing it built.
   func openFileAsTab(
     _ clicked: String,
     in id: Worktree.ID,
@@ -26,16 +26,12 @@ extension AppModel {
     }
     let url = worktree.path.appending(path: path)
     let platform = self.platform
-    var opens = await runOnDispatch { platform.opensAsText(url) }
+    // The image rule first, as it reads only the name where the text rule reads the start.
+    var opens = await runOnDispatch { platform.opensAsImage(url) || platform.opensAsText(url) }
     if !opens, await !runOnDispatch({ FileManager.default.fileExists(atPath: url.path) }),
-      let start = await coordinator?.git.storedCopyStart(
-        of: path,
-        in: worktree.path,
-        byteCount: TextFileStart.byteCount,
-        sizeLimit: FileTabReader.sizeLimit,
-      )
+      let git = coordinator?.git
     {
-      opens = platform.opensAsText(named: url.lastPathComponent, startingWith: start)
+      opens = await opensGoneFile(path, in: worktree.path, git: git)
     }
     guard opens, workspace.worktree(id) != nil else {
       if asker == .click { platform.beep() }
@@ -44,5 +40,28 @@ extension AppModel {
     let tab = store.openFileTab(path: path, in: id)
     reconcileSessions(takingFocus: asker == .click || worktreeIDInView == id)
     return tab
+  }
+
+  /// By git's copy, a submodule's own for a file inside one: an image's name needs
+  /// only that there is a copy, text its start.
+  private func opensGoneFile(_ path: String, in worktree: URL, git: WorktreeGit) async -> Bool {
+    let name = (path as NSString).lastPathComponent
+    let platform = self.platform
+    let (repository, isImage) = await runOnDispatch {
+      (
+        RepositoryLocation.innermost(holding: path, in: worktree),
+        platform.opensAsImage(named: name),
+      )
+    }
+    if isImage { return await git.hasStoredCopy(of: repository.path, in: repository.directory) }
+    guard
+      let start = await git.storedCopyStart(
+        of: repository.path,
+        in: repository.directory,
+        byteCount: TextFileStart.byteCount,
+        sizeLimit: FileTabReader.sizeLimit,
+      )
+    else { return false }
+    return platform.opensAsText(named: name, startingWith: start)
   }
 }

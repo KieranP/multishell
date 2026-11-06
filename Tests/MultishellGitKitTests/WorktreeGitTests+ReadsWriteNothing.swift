@@ -107,6 +107,12 @@ extension WorktreeGitTests {
           sizeLimit: 1 << 20,
         ) != nil
       )
+      #expect(await git.hasStoredCopy(of: "README.md", in: worktree.path))
+      let objectID = try #require(
+        try await git.committedObjectID(of: "README.md", in: worktree.path, at: base.tip)
+      )
+      #expect(try await git.objectSize(objectID, in: worktree.path) != nil)
+      #expect(await git.objectBytes(objectID, in: worktree.path) != nil)
     }
 
     #expect(try DirectorySnapshot(of: common) == before)

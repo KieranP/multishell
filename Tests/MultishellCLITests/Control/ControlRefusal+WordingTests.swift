@@ -71,6 +71,14 @@ struct ControlRefusalWordingTests {
     )
   }
 
+  @Test func anImageTabSaysItHasNoLines() {
+    let id = UUID()
+    #expect(
+      ControlRefusal.fileTabShowsImage(id: id).wording
+        == "tab \(id) shows an image, which has no lines to step or find"
+    )
+  }
+
   @Test func aWidthOutOfRangeSaysTheRange() {
     #expect(
       ControlRefusal.widthOutOfRange(minimum: 200, maximum: 560).wording

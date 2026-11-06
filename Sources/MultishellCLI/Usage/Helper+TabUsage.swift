@@ -44,7 +44,8 @@ extension Helper {
         Move a file tab's view to the next or previous change, as the arrows
         on its bar do. The tab must be on screen, its main window neither
         covered nor minimized; refused where its arrow is greyed out, or the
-        tab shows a notice in place of the file, which has no arrows.
+        tab shows an image or a notice in place of the file's lines, which
+        has no arrows.
     usage: multishell tabs find TAB_ID TEXT
     usage: multishell tabs find TAB_ID --next | --previous | --close
         As `panes find`, over a file tab on screen, and print the tab as `tabs

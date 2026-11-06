@@ -182,6 +182,9 @@
 "error.worktree-unanswered-message" = "%@ did not answer within a second. Its volume may be disconnected or still waking; try again once it is back.";
 "error.worktree-unanswered-title" = "Worktree directory is not answering";
 "file.binary-notice" = "Binary file, %@. Open in Editor to view it.";
+"file.image-after" = "After: %@";
+"file.image-before" = "Before: %@";
+"file.image-size" = "%1$@ × %2$@ pixels, %3$@";
 "file.missing-notice" = "This file is neither on disk nor in the last commit.";
 "file.too-large-notice" = "This file is %@, too large to show here.";
 "file.unreadable-notice" = "git could not say what this file is compared with. It is read again on its next change.";

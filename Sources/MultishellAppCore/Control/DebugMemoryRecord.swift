@@ -16,8 +16,8 @@ struct DebugMemoryRecord: Encodable, Equatable {
 
   struct FileTabsRecord: Encodable, Equatable {
     let count: Int
-    /// Estimated from the text the app keeps, as the row is.
-    let textMemory: UInt64
+    /// Estimated from the text and images the app keeps, as the row is.
+    let contentMemory: UInt64
   }
 
   struct ProcessRecord: Encodable, Equatable {
@@ -46,7 +46,7 @@ struct DebugMemoryRecord: Encodable, Equatable {
     appMemoryOutsideTabs = table.appMemoryOutsideTabs
     fileTabs = FileTabsRecord(
       count: table.fileTabs.tabCount,
-      textMemory: table.fileTabs.textMemory,
+      contentMemory: table.fileTabs.contentMemory,
     )
     totalMemory = table.totalMemory
     tabs = table.tabs.map { tab in

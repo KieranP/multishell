@@ -147,6 +147,21 @@ struct AppModelStatusReadsTests {
     #expect(!harness.model.statusReadLog.hasNoReadings, "and the read it asked for has landed")
   }
 
+  @Test func changingTheDiffAlgorithmReadsNoImageTabAgain() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    try FakeImage.bytes(width: 2, height: 2).write(to: main.path.appending(path: "logo.png"))
+    let (tab, _) = try harness.openFileTab("logo.png")
+    try await waitUntil { harness.model.holdsImage(tab.id) }
+    try await waitUntil { harness.model.pendingFileTabReads[tab.id] == nil }
+
+    harness.model.setDiffAlgorithm(.myers)
+
+    #expect(harness.model.pendingFileTabReads[tab.id] == nil)
+  }
+
   /// The reads run while the app carries on, so a worktree can be removed
   /// between asking git and hearing back.
   @Test func aWorktreeRemovedWhileGitRanGetsNoBadgeFromThatRound() async throws {

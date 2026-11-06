@@ -56,6 +56,13 @@ public protocol Platform: AnyObject, Sendable {
   nonisolated func opensAsText(_ file: URL) -> Bool
   /// The same rule for a copy git holds, by its name's type or its first bytes.
   nonisolated func opensAsText(named name: String, startingWith bytes: Data) -> Bool
+  /// Whether a regular file's name types it as an image the platform decodes and
+  /// not as text, which wins, so an SVG opens as text; blocking, as above.
+  nonisolated func opensAsImage(_ file: URL) -> Bool
+  /// The same rule for a name alone: a gone file's, or a tab's on each read.
+  nonisolated func opensAsImage(named name: String) -> Bool
+  /// An image's size from its header, `nil` for bytes no decoder reads.
+  nonisolated func imagePixelSize(of data: Data) -> ImagePixelSize?
 
   /// Moves a removed worktree's directory to the Trash, throwing where it
   /// will not take it. Off the main actor: a large tree is walked here.

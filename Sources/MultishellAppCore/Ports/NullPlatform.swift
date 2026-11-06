@@ -30,6 +30,9 @@ public final class NullPlatform: Platform {
   nonisolated public func opensAsText(named name: String, startingWith bytes: Data) -> Bool {
     false
   }
+  nonisolated public func opensAsImage(_ file: URL) -> Bool { false }
+  nonisolated public func opensAsImage(named name: String) -> Bool { false }
+  nonisolated public func imagePixelSize(of data: Data) -> ImagePixelSize? { nil }
   /// No Trash here, so the directory is deleted.
   nonisolated public func moveToTrash(_ url: URL) throws {
     try FileManager.default.removeItem(at: url)

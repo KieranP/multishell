@@ -9,6 +9,11 @@ extension AppModel {
     if reading.isFileGone { return .deleted }
     if case .released(let kind) = reading.content { return kind }
     let statusKind = statusChangeKind(of: tab)
+    // Its own read says the bytes moved, as rows do; matching bytes leave a mode
+    // change, which only the status knows.
+    if let image = reading.image, image.committed != nil {
+      return image.isChanged ? .modified : statusKind
+    }
     if case .releasedFollowingStatus = reading.content { return statusKind }
     // An empty file has no rows to tell; every row added may be a file
     // committed empty, which only its status calls modified.

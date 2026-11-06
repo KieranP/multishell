@@ -10,8 +10,13 @@ extension ControlRefusal {
     case .alert(let title, let message): "\(title) \(message)"
     case .autoRenameUnavailable(let id): "Auto Rename is greyed out for worktree \(id)"
     case .debugToolsOff: "debug tools are off; `multishell debug tools on` turns them on"
-    case .fileNotOpenable(let path): "\(path) is not a file of the worktree that opens as text"
+
+    case .fileNotOpenable(let path):
+      "\(path) is not a file of the worktree that opens as text or an image"
+
     case .fileTabNotRead(let id): "tab \(id) is still being read; ask again once it is"
+
+    case .fileTabShowsImage(let id): "tab \(id) shows an image, which has no lines to step or find"
 
     case .fileTabShowsNotice(let id):
       "tab \(id) shows a notice, its file too large, binary, missing or unreadable"

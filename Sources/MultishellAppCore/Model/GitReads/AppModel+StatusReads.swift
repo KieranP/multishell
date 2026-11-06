@@ -36,7 +36,8 @@ extension AppModel {
   public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
     store.setDiffAlgorithm(algorithm)
     statusReadLog.invalidate()
-    noteFileTabsChanged(releasingDots: false) { _ in true }
+    // An image has no diff for the algorithm to change.
+    noteFileTabsChanged(releasingDots: false) { !holdsImage($0.id) }
     Task { await refreshStatuses() }
   }
 

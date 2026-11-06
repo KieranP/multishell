@@ -277,6 +277,23 @@ struct AppModelControlFileTabsTests {
     #expect(!harness.model.findBarTargetIDs.contains(tab.id))
   }
 
+  @Test func aStepOrFindOnATabShowingAnImageIsRefused() async {
+    let harness = Harness()
+    let tab = harness.openFileTab()
+    harness.model.fileTabReadings[tab.id] = FileTabReading(
+      content: .image(.onDiskOnly()),
+      isFileGone: false,
+    )
+
+    let step = await harness.messageSource.ask(.stepToChange(tab: tab.id, direction: .next))
+    let find = await harness.messageSource.ask(.findInFileTab(id: tab.id, action: .open("x")))
+
+    #expect(step == .refused(.fileTabShowsImage(id: tab.id)))
+    #expect(find == .refused(.fileTabShowsImage(id: tab.id)))
+    #expect(harness.model.takeChangeStepRequests(tab.id).isEmpty)
+    #expect(!harness.model.findBarTargetIDs.contains(tab.id))
+  }
+
   @Test func aStepOnATabWithNoGitToReadItIsRefusedAsGitNotFound() async {
     let harness = Harness()
     let tab = harness.openFileTab()

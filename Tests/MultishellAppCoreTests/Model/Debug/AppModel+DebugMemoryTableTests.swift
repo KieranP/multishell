@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 import MultishellProcess
 import Testing
@@ -126,5 +127,23 @@ struct AppModelDebugMemoryTableTests {
     harness.model.setDebugToolsEnabled(false)
 
     #expect(harness.model.debugTerminalMemoryBySession.isEmpty)
+  }
+
+  @Test func anImageTabCountsTheBytesOfEachCopyItDraws() {
+    let harness = Harness()
+    let tab = harness.openFileTab("logo.png")
+    let size = ImagePixelSize(width: 1, height: 1)
+    let image = FileTabImage(
+      onDisk: ImageFileBytes(data: Data(count: 300), pixelSize: size),
+      committed: ImageFileBytes(data: Data(count: 200), pixelSize: size),
+      committedObjectID: nil,
+      isChanged: true,
+    )
+    harness.model.fileTabReadings[tab.id] = FileTabReading(
+      content: .image(image),
+      isFileGone: false,
+    )
+
+    #expect(harness.model.debugMemoryTable.fileTabs.contentMemory == 500)
   }
 }

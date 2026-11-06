@@ -7,6 +7,10 @@ enum FileOnDisk: Sendable {
   case gone
   case tooLarge(bytes: Int)
 
+  var bytes: Data? {
+    if case .bytes(let data) = self { data } else { nil }
+  }
+
   /// Blocking: callers run it through `runOnDispatch`. Unmapped, as a mapped
   /// file truncated under the read faults; see worktrees.md.
   static func read(_ url: URL, sizeLimit: Int) -> Self {
