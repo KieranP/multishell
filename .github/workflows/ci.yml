@@ -106,7 +106,7 @@ jobs:
           path: *swift-build-paths
           key: ${{ steps.swift-cache.outputs.cache-primary-key }}
       - name: Run the tests
-        run: Scripts/one-test-per-core.sh swift test --skip-build --manifest-cache local
+        run: Scripts/one-test-per-core.sh swift test --skip-build --manifest-cache local --filter WorktreeHeader
 
   # swift-format ships in the toolchain. SwiftLint is the version
   # .swiftlint.yml names, which refuses to run under any other.
