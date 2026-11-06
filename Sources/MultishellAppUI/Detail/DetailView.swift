@@ -79,7 +79,7 @@ struct DetailView: View {
           ResizeHandle(
             width: $filesPanelWidth,
             range: range,
-            initial: FilesPanelWidth.initial,
+            idealWidth: { idealFilesPanelWidth(of: worktree) },
             dragged: FilesPanelWidth.dragged,
             palette: theme.filesPanel,
           )
@@ -88,5 +88,10 @@ struct DetailView: View {
         }
       }
     }
+  }
+
+  private func idealFilesPanelWidth(of worktree: Worktree) -> Double {
+    guard model.filesPanelFitsToRows else { return FilesPanelWidth.initial }
+    return FileListRows.idealWidth(of: worktree.id, in: model)
   }
 }

@@ -10,13 +10,15 @@ import Testing
 /// so this reads the pixels either side of the pane.
 @Suite @MainActor
 struct DetailViewTests {
-  @Test func theHeaderDrawsNothingOutsideTheNarrowestDetail() throws {
-    try expectNothingDrawnOutside(width: TabAreaWidth.minimum, showsFilesPanel: false)
+  private static let narrowTabArea = 50.0
+
+  @Test func theHeaderDrawsNothingOutsideANarrowDetail() throws {
+    try expectNothingDrawnOutside(width: Self.narrowTabArea, showsFilesPanel: false)
   }
 
-  @Test func theHeaderBesideAnOpenPanelDrawsNothingOutsideTheNarrowestDetail() throws {
+  @Test func theHeaderBesideAnOpenPanelDrawsNothingOutsideANarrowDetail() throws {
     try expectNothingDrawnOutside(
-      width: TabAreaWidth.minimum + FilesPanelWidth.initial,
+      width: Self.narrowTabArea + FilesPanelWidth.initial,
       showsFilesPanel: true,
     )
   }

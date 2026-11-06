@@ -784,6 +784,10 @@ extension WorkspaceStore {
     workspace.changeScope = scope
   }
 
+  public func setShowsFilesPanel(_ shows: Bool) {
+    workspace.showsFilesPanel = shows
+  }
+
   public func setShowsAllTerminals(_ shows: Bool) {
     workspace.showsAllTerminals = shows
   }

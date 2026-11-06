@@ -18,11 +18,17 @@ extension AppModel {
     }
   }
 
+  public var showsFilesPanel: Bool { workspace.showsFilesPanel }
+
   /// Open, and with a worktree to list: what both edges' widths allow for.
   public var isFilesPanelOnScreen: Bool { showsFilesPanel && filesPanelWorktree != nil }
 
   /// Files or Changes shows: a services' page lists no files, so reads none.
   var isFileListOnScreen: Bool { isFilesPanelOnScreen && shownFilesPanelMode.listsFiles }
+
+  /// A services' page wraps its text rather than cut it, so a double-click on
+  /// the edge puts it back to its first width.
+  public var filesPanelFitsToRows: Bool { shownFilesPanelMode.listsFiles }
 
   /// Modified or Branch, drawn over the Changes list alone, Files counting from `HEAD`.
   public var filesPanelShowsChangeScopeSwitch: Bool { shownFilesPanelMode == .changes }
@@ -32,10 +38,10 @@ extension AppModel {
     !showsFilesPanel && filesPanelWorktree != nil
   }
 
-  /// The header glyph's and the View menu's; shut at each launch.
+  /// The header glyph's and the View menu's, kept for the next launch.
   public func setShowsFilesPanel(_ shows: Bool) {
     guard showsFilesPanel != shows else { return }
-    showsFilesPanel = shows
+    store.setShowsFilesPanel(shows)
     if shows, let worktree = filesPanelWorktree {
       readFilesPanel(of: worktree.id)
     } else if !shows {

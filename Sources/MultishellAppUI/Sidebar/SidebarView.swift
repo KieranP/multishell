@@ -40,36 +40,14 @@ struct SidebarView: View {
       }
       ScrollView {
         LazyVStack(spacing: UIMetrics.sidebarRowSpacing) {
-          SidebarAgentsRow(
-            counts: model.sidebarLaneCounts,
-            isSelected: model.showsAgentBoard,
-            theme: theme,
-            metrics: metrics,
-            select: { model.showAgentBoard() },
+          SidebarRows(
+            model: model,
+            entries: entries,
+            sessions: sessions,
+            projectInsertion: $projectInsertion,
+            tabDropTarget: $tabDropTarget,
+            endProjectDrag: endProjectDrag,
           )
-          .equatable()
-          .padding(.bottom, 4)
-
-          ProjectsSectionHeader(model: model, theme: theme, metrics: metrics)
-
-          ForEach(entries, id: \.project.id) { entry in
-            let ordered = model.orderedWorktrees(of: entry, sessions: sessions)
-            ProjectBlock(
-              model: model,
-              project: entry.project,
-              worktrees: ordered.worktrees,
-              hiddenWorktrees: ordered.hiddenWorktrees,
-              isExpanded: entry.isExpanded,
-              isHiddenSectionExpanded: entry.isHiddenSectionExpanded,
-              showsHiddenSectionRow: entry.showsHiddenSectionRow,
-              showsHiddenWorktrees: entry.showsHiddenWorktrees,
-              sessions: sessions,
-              theme: theme,
-              projectInsertion: $projectInsertion,
-              tabDropTarget: $tabDropTarget,
-              endProjectDrag: endProjectDrag,
-            )
-          }
         }
         .padding(.horizontal, UIMetrics.sidebarListSideInset)
         .padding(.top, Self.listGap)

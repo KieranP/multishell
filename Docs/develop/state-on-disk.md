@@ -20,15 +20,15 @@ Under `~/Library/Application Support/Multishell`.
 - **`state.json`**: sidebar, terminal tabs and file tabs by path with their
   scroll, the groups they sit in with their widths, order and shown tab, pane
   trees, worktree names, which worktrees are hidden, creation dates and port
-  blocks, the Agents board's Show all terminals, every setting.
+  blocks, the Agents board's Show all terminals, whether the Files panel is
+  open, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
-  which Hidden sections are expanded, a file tab's text, whether the Files panel
-  is open, its filter and the folders opened in it, the pull requests and CI
-  runs last read, the quick switcher's recent worktrees, whether the Agents
-  board is up, or anything about the debug tools. Those are runtime state, so
-  the Files panel starts shut, and the debug tools start off at every launch and
-  write nothing to disk or defaults.
+  which Hidden sections are expanded, a file tab's text, the Files panel's
+  filter and the folders opened in it, the pull requests and CI runs last read,
+  the quick switcher's recent worktrees, whether the Agents board is up, or
+  anything about the debug tools. Those are runtime state, so the debug tools
+  start off at every launch and write nothing to disk or defaults.
 - **A file written before groups existed names no group**, and carries a key for
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.

@@ -58,7 +58,7 @@ struct AppModelControlResizingTests {
 
     #expect(sidebar == .done)
     #expect(harness.platform.panelWidths == [.sidebar: 320])
-    #expect(narrow == .refused(.widthOutOfRange(minimum: 200, maximum: 560)))
+    #expect(narrow == .refused(.widthOutOfRange(minimum: 200, maximum: 440)))
   }
 
   @Test func aShareThatLeavesAPaneNarrowerThanADragWouldIsRefused() async throws {
@@ -128,13 +128,22 @@ struct AppModelControlResizingTests {
     #expect(layout["shares"] as? [Double] == [0.5, 0.5])
   }
 
-  @Test func aFilesPanelWidthNoDragReachesIsNamedWithTheWindowShut() async {
+  @Test func aFilesPanelWidthWithTheWindowShutIsRefused() async {
     let harness = Harness()
     harness.platform.workspaceWindowSize = nil
 
-    let reply = await harness.messageSource.ask(.setPanelWidth(.filesPanel, width: 50))
+    let reply = await harness.messageSource.ask(.setPanelWidth(.filesPanel, width: 300))
 
-    #expect(reply == .refused(.widthOutOfRange(minimum: 200, maximum: 560)))
+    #expect(reply == .refused(.noWindow))
+  }
+
+  @Test func aFilesPanelIsHeldToTheRoomTheSidebarLeaves() async {
+    let harness = Harness()
+    harness.platform.panelWidths[.sidebar] = 400
+
+    let reply = await harness.messageSource.ask(.setPanelWidth(.filesPanel, width: 100_000))
+
+    #expect(reply == .refused(.widthOutOfRange(minimum: 200, maximum: 400)))
   }
 
   @Test func aSidebarWiderThanTheWindowIsRefused() async {
@@ -142,7 +151,7 @@ struct AppModelControlResizingTests {
 
     let reply = await harness.messageSource.ask(.setPanelWidth(.sidebar, width: 100_000))
 
-    #expect(reply == .refused(.widthOutOfRange(minimum: 180, maximum: 1_150)))
+    #expect(reply == .refused(.widthOutOfRange(minimum: 180, maximum: 600)))
   }
 
   @Test func aSidebarIsHeldToTheRoomAnOpenFilesPanelLeaves() async {
@@ -153,7 +162,19 @@ struct AppModelControlResizingTests {
 
     let reply = await harness.messageSource.ask(.setPanelWidth(.sidebar, width: 1_000))
 
-    #expect(reply == .refused(.widthOutOfRange(minimum: 180, maximum: 850)))
+    #expect(reply == .refused(.widthOutOfRange(minimum: 180, maximum: 450)))
+  }
+
+  @Test func aKeptSidebarPastItsHalfHoldsThePanelToTheSidebarAsDrawn() async {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setShowsFilesPanel(true)
+    harness.platform.panelWidths[.sidebar] = 700
+    harness.platform.panelWidths[.filesPanel] = 500
+
+    let reply = await harness.messageSource.ask(.setPanelWidth(.filesPanel, width: 1_000))
+
+    #expect(reply == .refused(.widthOutOfRange(minimum: 200, maximum: 400)))
   }
 
   @Test func aWorktreeWithNoTabsHasNoGroupsToSize() async {

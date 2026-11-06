@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellServices
 import TestScratch
 import TestSupport
 import Testing
@@ -38,6 +39,21 @@ struct AppModelFilesPanelTests {
     #expect(harness.model.filesPanelState(of: main.id).mode == .changes)
     #expect(harness.model.workspace.changeScope == .modified, "what the badge counts")
     #expect(harness.model.filesPanelState(of: main.id).filterText == "")
+  }
+
+  @Test func onlyAListOfFilesFitsThePanelToItsRows() throws {
+    let harness = Harness()
+    harness.model.remoteState.connections = ServiceConnections(
+      standIn: try ServiceStandIn(json: "{}")
+    )
+
+    harness.model.setFilesPanelMode(.changes)
+    let fitsChanges = harness.model.filesPanelFitsToRows
+    harness.model.setFilesPanelMode(.pullRequest)
+    let fitsPullRequest = harness.model.filesPanelFitsToRows
+
+    #expect(fitsChanges)
+    #expect(!fitsPullRequest)
   }
 
   @Test func aClickOnTheRowsPullRequestGlyphOpensThePanelOnThePullRequestPage() async throws {

@@ -109,6 +109,8 @@ struct UIMetrics: Equatable {
   static let settingsScopeCardInset: Double = 8
   /// The search field's and part rows' text, a step under the page rows'.
   static let settingsSidebarControlFontSize: Double = 12.5
+  /// The search field's magnifying glass, as far under its text as the Files panel's is.
+  static var settingsSearchGlyphSize: Double { settingsSidebarControlFontSize - 3 }
   /// A project's settings table: the Global column, then the Override column,
   /// wide enough for a path field and its button.
   static let settingsGlobalColumnWidth: Double = 140

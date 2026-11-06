@@ -10,10 +10,10 @@ extension Helper {
     usage: multishell window sidebar-width WIDTH
     usage: multishell window panel-width WIDTH
         Set the sidebar's or the Files panel's width in points, as dragging
-        its edge does. Refused past what the drag reaches, which for the
-        sidebar is the window less an open Files panel and the tabs' least;
-        a window too narrow for the panel draws it narrower. A debug build
-        keeps these apart from the installed app's.
+        its edge does. Refused past what the drag reaches, half the room the
+        other side leaves, the sidebar's other side an open Files panel, and
+        refused with no window open. A debug build keeps these apart from the
+        installed app's.
 
     """
 }

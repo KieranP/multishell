@@ -77,6 +77,37 @@ struct GhosttyPaneEventMonitorTests {
     #expect(!isTaken)
   }
 
+  @Test func aModifierChangeOverAPaneWithoutTheKeyboardGoesToThatPane() {
+    let content = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
+    let window = OffscreenWindow.holding(content)
+    let focused = GhosttySurfaceView(runtime: GhosttyRuntime(), launch: .sleeping)
+    let hovered = GhosttySurfaceView(runtime: GhosttyRuntime(), launch: .sleeping)
+    defer {
+      focused.freeSurface()
+      hovered.freeSurface()
+    }
+    focused.frame = NSRect(x: 0, y: 0, width: 200, height: 400)
+    hovered.frame = NSRect(x: 200, y: 0, width: 200, height: 400)
+    content.addSubview(focused)
+    content.addSubview(hovered)
+    window.makeFirstResponder(focused)
+    let overHovered = content.convert(NSPoint(x: 300, y: 200), to: nil)
+    let overFocused = content.convert(NSPoint(x: 100, y: 200), to: nil)
+
+    withExtendedLifetime(window) {
+      let toHovered = GhosttyPaneEventMonitor.paneMissingModifierChanges(
+        at: overHovered,
+        in: window,
+      )
+      let toFocused = GhosttyPaneEventMonitor.paneMissingModifierChanges(
+        at: overFocused,
+        in: window,
+      )
+      #expect(toHovered === hovered)
+      #expect(toFocused == nil, "the pane with the keyboard has its own flagsChanged")
+    }
+  }
+
   private func paneWithTheKeyboard() -> (GhosttySurfaceView, NSWindow) {
     let pane = GhosttySurfaceView(runtime: GhosttyRuntime(), launch: .sleeping)
     let window = KeyWindow(

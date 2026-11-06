@@ -540,6 +540,29 @@ at the bottom.
   click past every pane's hit test.
 - **The pointer is what libghostty asks for**, an I-beam over text and a hand
   over a link, hidden while typing where the user's config says so.
+- **Cmd shows the hand and Cmd+click opens a link a program holding the mouse
+  printed**, as libghostty does in a plain shell; without Cmd, no hand.
+  libghostty looks for no link while a program such as Claude Code holds the
+  mouse, and a mouse report carries no Cmd, so the app reads the word under the
+  pointer and its row each time the pointer reaches another cell with Cmd
+  held. Where that reads as a web address, a path, or a file name the
+  highlighter or macOS knows, an app's excepted, libghostty's arrow turns into
+  the hand, never a shape the program asked for, and a Cmd+click opens it by
+  the clicked-link rule without reaching the program, unless a drag or Cmd let
+  go left it first. A bare name drops its `:12`, which the rule would read as a
+  URL's scheme. Cost: the pattern is the app's guess, `and/or` reading as a
+  path and `console.log` as a file, and text redrawn under a still pointer is
+  judged at the next move. An OSC 8 link's target is not readable here, so its
+  text is opened.
+- **A pane without the keyboard is handed Cmd's changes** by the app's event
+  monitor, flagsChanged reaching only the first responder, so the hand comes
+  and goes there too. A pointer dragged past the pane's edge is over no link,
+  libghostty reading the edge cell's word there.
+- **Reviewed and left as is, for that hand**: a Cmd press under a pointer that
+  has not moved since the pane appeared judges libghostty's last position;
+  sending it the pointer first would report a motion to the program on every
+  Cmd. No test reaches the word and row reads, a test pane's command never
+  running, so a pane holding the mouse is checked by hand.
 - **A program asking whether the terminal is light or dark is told the theme's
   answer**, the view's appearance following the app's theme, not the system's.
 - **Secure keyboard entry is on while a pane at a password prompt has the

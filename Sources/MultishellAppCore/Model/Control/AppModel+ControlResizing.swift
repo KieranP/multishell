@@ -63,20 +63,22 @@ extension AppModel {
     return .done
   }
 
-  /// Held to what a drag could reach: the sidebar to the window less an open Files
-  /// panel and the tab area's least; the panel narrowed by a small window as after a drag.
+  /// Held to what a drag could reach: half the room the other side leaves, the
+  /// sidebar's other side an open Files panel as drawn.
   func replyToSetPanelWidth(_ panel: ResizablePanel, to width: Double) -> ControlReply {
-    let range: ClosedRange<Double>
-    switch panel {
-    case .filesPanel: range = FilesPanelWidth.minimum...FilesPanelWidth.maximum
+    guard let windowWidth = platform.workspaceWindowWidth else { return .refused(.noWindow) }
+    let widths = SideColumnWidths(
+      windowWidth: windowWidth,
+      storedSidebar: platform.width(of: .sidebar),
+      storedFilesPanel: isFilesPanelOnScreen ? platform.width(of: .filesPanel) : nil,
+    )
+    let range =
+      switch panel {
+      case .filesPanel: FilesPanelWidth.range(inDetailOfWidth: windowWidth - widths.sidebar)
 
-    case .sidebar:
-      guard let windowWidth = platform.workspaceWindowWidth else { return .refused(.noWindow) }
-      range = SidebarWidth.range(
-        inWindowOfWidth: windowWidth,
-        besidePanelOf: isFilesPanelOnScreen ? platform.width(of: .filesPanel) : 0,
-      )
-    }
+      case .sidebar:
+        SidebarWidth.range(inWindowOfWidth: windowWidth, besidePanelOf: widths.filesPanel)
+      }
     guard range.contains(width) else {
       return .refused(.widthOutOfRange(minimum: range.lowerBound, maximum: range.upperBound))
     }

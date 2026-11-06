@@ -1,8 +1,7 @@
 import Foundation
 import MultishellCore
 
-/// Where the sidebar's and the Files panel's per-machine widths are kept;
-/// whether the panel is open is not kept (files.md).
+/// Where the sidebar's and the Files panel's per-machine widths are kept.
 @MainActor
 enum PanelWidthStorage {
   static let sidebarKey = "sidebarWidth"

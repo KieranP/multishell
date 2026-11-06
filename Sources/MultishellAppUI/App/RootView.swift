@@ -17,9 +17,14 @@ struct RootView: View {
   var body: some View {
     let theme = model.currentTheme
     GeometryReader { window in
+      let widths = SideColumnWidths(
+        windowWidth: window.size.width,
+        storedSidebar: sidebarWidth,
+        storedFilesPanel: model.isFilesPanelOnScreen ? filesPanelWidth : nil,
+      )
       let range = SidebarWidth.range(
         inWindowOfWidth: window.size.width,
-        besidePanelOf: model.isFilesPanelOnScreen ? filesPanelWidth : 0,
+        besidePanelOf: widths.filesPanel,
       )
       HStack(spacing: 0) {
         SidebarView(model: model)
@@ -27,7 +32,7 @@ struct RootView: View {
         ResizeHandle(
           width: $sidebarWidth,
           range: range,
-          initial: SidebarWidth.initial,
+          idealWidth: { SidebarRows.idealWidth(of: model) },
           dragged: SidebarWidth.dragged,
           palette: theme.projectsPanel,
         )

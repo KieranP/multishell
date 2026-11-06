@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Bindings for what the model holds this run and never saves: the board's
-/// filter, the Files panel, the debug toggles, a find bar's text.
+/// Bindings over the model's own setters, for toggles and fields the menus and
+/// views flip: the board's filter, the Files panel, the debug toggles, find text.
 extension AppModel {
   var showsAllTerminalsBinding: Binding<Bool> {
     Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })

@@ -121,7 +121,7 @@ struct MonochromeThemeTests {
         ResizeHandle(
           width: .constant(260),
           range: 200...400,
-          initial: 260,
+          idealWidth: { 260 },
           dragged: SidebarWidth.dragged,
           palette: harness.model.currentTheme.projectsPanel,
         )

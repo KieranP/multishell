@@ -44,6 +44,13 @@ final class GhosttySurfaceView: NSView {
   var pendingPaste: (paste: GhosttyPasteConfirmation, alert: NSAlert)?
   /// What a program or libghostty last asked the pointer to be over the pane.
   var pointer = NSCursor.iBeam
+  /// The link under the pointer that a program holding the mouse printed,
+  /// looked for only while Cmd is held.
+  var programLinkUnderPointer: String?
+  /// That link, Cmd+pressed, to open on the release.
+  var pressedProgramLink: String?
+  /// The cell the pointer was last judged in, so a move inside it reads nothing.
+  var judgedPointerCell: GhosttyPointerCell?
   /// Held so libghostty's app outlives every surface made in it.
   let runtime: GhosttyRuntime
   /// libghostty saw this pane's program turn echo off, as at a password
@@ -144,7 +151,7 @@ final class GhosttySurfaceView: NSView {
   }
 
   override func resetCursorRects() {
-    addCursorRect(bounds, cursor: pointer)
+    addCursorRect(bounds, cursor: shownPointer)
   }
 
   override func viewDidChangeEffectiveAppearance() {

@@ -103,9 +103,6 @@ public final class AppModel<Surface> {
   @ObservationIgnored var fileTabScrolls: [FileTab.ID: FileTabScroll] = [:]
   @ObservationIgnored var fileFindsShown: [FileTab.ID: FileFindShown] = [:]
 
-  /// Whether the Files panel is open: one switch for the window, which the
-  /// view keeps per machine as it keeps the sidebar's width.
-  public internal(set) var showsFilesPanel = false
   /// What the panel shows of each worktree. Runtime state.
   var filesPanelStates: [Worktree.ID: FilesPanelState] = [:]
   /// What each worktree's index tracks, read while its panel is shown.

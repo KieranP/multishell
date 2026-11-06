@@ -74,6 +74,7 @@ extension GhosttySurfaceView {
       GhosttyModifiers.mods(flags).rawValue & mod.rawValue != 0
       && GhosttyModifiers.isOwnSideDown(keyCode: event.keyCode, in: flags)
     sendUserInput(GhosttyKeyInput(event, isDown ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE))
+    judgeProgramLink(afterModifiersOf: event)
   }
 
   func send(_ input: GhosttyKeyInput) {

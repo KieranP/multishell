@@ -4,14 +4,14 @@ import MultishellCore
 /// from its left edge.
 public enum FilesPanelWidth {
   static let minimum = 200.0
-  static let maximum = 560.0
   /// Where a machine that has never moved the edge starts, and where a
-  /// double-click on it puts it back.
+  /// double-click on a services' page puts it back.
   public static let initial = 280.0
 
-  /// A detail area too narrow keeps the panel's minimum.
+  /// Half the detail area at most, so a narrower window never leaves the tabs
+  /// less; one too narrow keeps the panel's minimum. See files.md.
   public static func range(inDetailOfWidth width: Double) -> ClosedRange<Double> {
-    minimum...max(minimum, min(maximum, width - TabAreaWidth.minimum))
+    minimum...max(minimum, width / 2)
   }
 
   /// Dragged by its left edge, so a drag to the left widens it.

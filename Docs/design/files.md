@@ -52,13 +52,24 @@ Newest at the bottom.
 - **The filter folds as the sidebar's does**, over the whole path, matched as
   UTF-8 over paths folded and composed once: `contains` took 181 to 263 ms over
   200,000 paths, a byte search 7 to 11.
-- **The panel is one switch for the window, shut at each launch, and its width
-  is per machine**, kept as the sidebar's is. A switch kept across launches
-  opened the panel with the first worktree, which read as a bug. The model holds
-  the switch, so a click on a row's badge can open it. Double-clicking either
-  edge resets its width. No keyboard shortcut yet; a View menu item.
-- **Both clamps leave the tabs one minimum**, so a wide sidebar beside a wide
-  panel cannot squeeze the tabs to nothing.
+- **The panel is one switch for the window, kept across launches, and its width
+  is per machine**, kept as the sidebar's is. It was once shut at each launch,
+  then opening with the first worktree having read as a bug; a launch now
+  selects nothing, so the panel shows with the worktree picked, and a panel
+  closed at every launch read as forgotten. The model holds the switch, so a
+  click on a row's badge can open it. No keyboard shortcut yet; a View menu
+  item.
+- **Double-clicking either edge fits its column to its rows**, laid out off
+  screen at their ideal widths, since a lazy list holds only those on screen:
+  every sidebar row, and the panel's 64 longest by characters, every row of a
+  10,000-row list having taken 3 s; 15,000 rows fit in 50 ms. A services' page
+  wraps rather than truncates, so there it goes back to the first width.
+- **Each side takes at most half the room it shares with the tabs**, by drag,
+  fit or a narrower window, and never less than its minimum. A fixed 560 pt cap
+  cut a deep path's fit; with none, a fit to a 1000 pt path and then a narrower
+  window left the tabs 50 pt. Both drawn widths are solved together from the
+  kept ones, so the layout and `multishell window` agree: where both are past
+  half their room the window splits in thirds.
 - **A click on a row's git badge opens the panel on Changes under Modified**,
   what the badge counts, with a named accessibility action on the row, whose
   children VoiceOver cannot reach.
