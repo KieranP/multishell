@@ -8,6 +8,21 @@ extension AppModel {
     await refreshStatuses { id == nil || $0.projectID == id }
   }
 
+  /// A branch with no upstream counts ↑ past the base, which the first scan
+  /// resolves after launch's reads. A row not yet read may have a read under way without it.
+  func scheduleStatusRefreshesCountingAhead(past bases: [DefaultBranch], inProject id: Project.ID) {
+    let candidates = workspace.worktrees(of: id).filter { worktree in
+      statuses[worktree.id].map { status in bases.contains(where: status.countsAhead(past:)) }
+        ?? true
+    }
+    guard !candidates.isEmpty else { return }
+    let onSidebar = sidebarRowIDs()
+    for worktree in candidates
+    where mayReadStatus(of: worktree) && isStatusWanted(worktree, onSidebar: onSidebar) {
+      scheduleStatusRefresh(of: worktree.id)
+    }
+  }
+
   /// Every badge is re-read at once rather than at the next poll, which a
   /// slow checkout paces minutes out: the setting was changed to be seen.
   public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
@@ -81,6 +96,7 @@ extension AppModel {
       of: worktrees,
       counting: workspace.gitStatusIndicator,
       diffAlgorithm: workspace.diffAlgorithm,
+      bases: defaultBranchScans.compactMapValues(\.branch),
     )
     let stillCounts = statusReadLog.finish(ticket)
     let again = statusReadLog.takeAskedAgain(of: ticket)

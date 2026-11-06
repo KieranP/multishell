@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 /// What a worktree holds against its branch, for the sidebar's badges and the
 /// Files panel; one list of changes, every count a sum over it.
@@ -21,6 +22,7 @@ extension WorktreeGit {
     of worktree: Worktree,
     counting indicator: GitStatusIndicator = .default,
     diffAlgorithm: DiffAlgorithm = .default,
+    against base: DefaultBranch? = nil,
   )
     async throws -> WorktreeStatus
   {
@@ -28,6 +30,7 @@ extension WorktreeGit {
       inRepositoryAt: worktree.path,
       counting: indicator,
       diffAlgorithm: diffAlgorithm,
+      against: base,
     )
   }
 
@@ -37,6 +40,7 @@ extension WorktreeGit {
     inRepositoryAt path: URL,
     counting indicator: GitStatusIndicator,
     diffAlgorithm: DiffAlgorithm,
+    against base: DefaultBranch? = nil,
   )
     async throws -> WorktreeStatus
   {
@@ -45,6 +49,9 @@ extension WorktreeGit {
       in: path,
     )
     var (status, entries) = WorktreeStatusParser.parse(output)
+    if let base, status.countsAhead(past: base) {
+      status.ahead = try await unpushedCommitCount(past: base, in: path)
+    }
     guard status.isDirty else { return status }
     let tracked = entries.filter { !$0.isUntracked }
     var changes = await trackedChanges(
@@ -65,6 +72,17 @@ extension WorktreeGit {
     }
     status.setChanges(changes)
     return status
+  }
+
+  /// A branch never pushed has no upstream for git to count against, so its
+  /// unpushed commits are those past the base that no remote holds; see worktrees.md.
+  private func unpushedCommitCount(past base: DefaultBranch, in path: URL) async throws -> Int {
+    let arguments = ["rev-list", "--count", "HEAD", "--not", base.fullName, "--remotes", "--"]
+    let output = try await runner.run(arguments, in: path)
+    guard let count = RevListCountParser.parse(output) else {
+      throw ProcessFailure.unreportedByGit(arguments, message: output)
+    }
+    return count
   }
 
   /// Joined to status by path. `--cached` under Staged Only, and the fallback

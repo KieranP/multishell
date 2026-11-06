@@ -9,11 +9,11 @@ extension WorktreeMergeState {
     return isCertain ? t("merged.safe-to-remove", summary) : summary
   }
 
-  /// Whether the row draws the badge, given `git status`. Uncommitted work
-  /// hides it; see Docs/design/merged-branch.md.
+  /// Whether the row draws the badge, given `git status`. Uncommitted work, or
+  /// commits its upstream lacks, hide it; see Docs/design/merged-branch.md.
   func showsBadge(with status: WorktreeStatus?) -> Bool {
     guard case .merged = self else { return false }
     guard let status else { return true }
-    return !status.isDirty && status.ahead == 0
+    return !status.isDirty && (status.upstream == nil || status.ahead == 0)
   }
 }

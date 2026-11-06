@@ -34,9 +34,10 @@
   so a reused name inherits an upstream that was never on the remote, spelled
   the same way.
 - **The branch's own changes reading the same on the base**, which status cannot
-  see here, a branch with no upstream being ahead of nothing. Two diffs: what
-  the branch changed since it forked against where the two differ now, nothing
-  in both. A path the base changed counts as differing, erring towards no badge.
+  see here, a `[gone]` upstream leaving git nothing to count against. Two diffs:
+  what the branch changed since it forked against where the two differ now,
+  nothing in both. A path the base changed counts as differing, erring towards
+  no badge.
 - **Sign 3 is inference**, a PR closed unmerged leaving it too, so `isCertain`
   separates the three. All three badge; only the two that are proof get a
   removal dialog led by the button that deletes the branch.
@@ -44,6 +45,8 @@
   proof, taken ahead of git's; its glyph is drawn instead of the badge
   (services.md).
 - **The badge hides while the worktree holds uncommitted or unpushed work.**
+  Unpushed means ahead of an upstream: a branch with none counts ahead of the
+  base, and those are the commits a patch-id or content verdict found landed.
 - **A failed read is not a verdict.** Nil rather than an empty set from the
   merged list, nil rather than false from the patch, behind and content reads,
   nil from the ref read, which otherwise says a project has no branches and

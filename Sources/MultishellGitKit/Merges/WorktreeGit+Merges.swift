@@ -54,9 +54,7 @@ extension WorktreeGit {
       ["rev-list", "--count", "-n", "1", "\(RefName.local(branch))..\(baseRef)", "--"],
       in: project.path,
     )
-    guard let text = output?.trimmingCharacters(in: .whitespacesAndNewlines), let count = Int(text)
-    else { return nil }
-    return count > 0
+    return output.flatMap(RevListCountParser.parse).map { $0 > 0 }
   }
 
   /// Whether the base reads the same as `branch` wherever it changed

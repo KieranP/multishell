@@ -326,6 +326,20 @@ left as is".
 - **A badge out of room drops its file count, then its arrows**, the tooltip
   naming both. The name truncates first: `+12345 −6789 ~12 ↑3 ↓2` needed 229.5
   pt of a 164 pt row at the narrowest sidebar and overflowed it.
+- **A branch with no upstream counts ↑ against the project's default branch.**
+  git counts only against an upstream, so a branch never pushed showed no arrow
+  however many commits it held. A commit any remote-tracking ref holds is left
+  out, or a branch pushed without `-u` showed every pushed commit as unpushed.
+  Cost: one `rev-list` a read for such a branch, before the diffs, and none for
+  a checkout of a local base or a branch with no commit yet. A local `main` with
+  no upstream beside `origin/main` is counted: its commits are unpushed.
+- **A failed count fails the read**, which keeps the last badge, rather than
+  reading as nothing ahead.
+- **Those branches are read again when the default branch resolves or changes
+  name.** Launch reads statuses before the first branch scan, so waiting for the
+  next poll left the arrow missing. A row not yet read is read too, as a read
+  under way began without the base. Only rows a poll reads are read, each when
+  its pace allows. A tip moving needs nothing: the ref write reads the rows.
 - **Staged and unstaged come from one diff**, with the cached-only form as the
   fallback wherever that call fails. Before the first commit it counts from the
   empty tree, whose id `hash-object` gives without writing it: the cached form
@@ -710,6 +724,36 @@ Raised by reviews and settled; a review need not raise these again.
 - **A renamed row's branch tooltip sits inside its name's** (round 2,
   2026-11-05): the outer one covers the custom name, the inner one the branch
   line, so neither repeats the other's area.
+- **A `[gone]` upstream counts no ↑ past the base** (2026-11-06). After a squash
+  merge every commit on the branch is past the base and on no remote, so each
+  landed branch would wear ↑N for work that was pushed and merged.
+- **A branch tracking a local branch counts ↑ against it, as git does**
+  (2026-11-06). `git status` names a local upstream as it names a remote one;
+  telling them apart costs a config read on every status read.
+- **A repository with no remote shows ↑ past its local trunk** (2026-11-06). The
+  user's rule is commits beyond the base that were never pushed, and with no
+  remote none were.
+- **A merged badge on a branch with no upstream stays up through a new commit
+  until the verdict is asked again** (2026-11-06). It was so before ↑ counted
+  for such a branch; the commit moves a ref, whose scan re-asks on its own
+  budget.
+- **A branch pushed without `-u` whose remote branch was deleted after a squash
+  merge shows ↑N** (2026-11-06). With no upstream and no remote ref left, git
+  holds nothing that tells it from a branch never pushed.
+- **The control reply's `ahead` carries the badge's count, with no upstream
+  field** (2026-11-06). The record is what the row's badge and tooltip read.
+- **The launch-order test waits on `pendingBranchScans`, which clears before the
+  scan ends** (2026-11-06). It failed without the re-read and passes with it; a
+  stray scan landing late would fail its first check rather than pass.
+- **The unpushed count on every status read, not cached on the refs**
+  (2026-11-06). `rev-list --count HEAD --not <base> --remotes` took 10 ms with
+  5,100 packed remote refs, beside a read that already runs `status` and a diff.
+- **The count in the status read rather than the branch scan** (2026-11-06).
+  `ahead` stays one field that the badge, tooltip, merged badge and control
+  reply all read; counting in the scan would split it across two reads.
+- **Launch reads a never-pushed row twice**, before and after its base resolves
+  (2026-11-06). Scanning branches before the first status reads would hold every
+  badge back behind a `for-each-ref` per project.
 
 - **`select` taking a `turning` closure rather than a typed pane or tab.** A
   menu's New Shell Tab and New Agent Tab open a tab there, which is neither. The
@@ -755,3 +799,7 @@ one kept; a review that would argue the other side need not raise it.
   their own refusal handling, as above.
 - **The folder-gone tests passing on the code before the fix.** They guard the
   order `select` runs the closure in, not a bug that was there; they stay.
+- **The unpushed count beside the diffs, or before them.** Round 1 of the ↑
+  review (2026-11-06) asked to run it beside them, round 2 to keep each read to
+  one git at a time under `maximumConcurrentReads`. It runs before them: the
+  width bounds processes, and the count takes about 10 ms.

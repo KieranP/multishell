@@ -63,6 +63,7 @@ enum WorktreeStatusParser {
       }
       if let prefix = unbornPrefixes.first(where: name.hasPrefix) {
         name = String(name.dropFirst(prefix.count))
+        status.isUnborn = true
       }
       status.branch = name.isEmpty ? nil : name
     }

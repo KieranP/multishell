@@ -34,7 +34,7 @@ extension WorktreeGit {
       ["rev-list", "--count", "\(tip)..\(RefName.local(branch))", "--"],
       in: directory,
     )
-    .flatMap { Int($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+    .flatMap(RevListCountParser.parse)
   }
 
   /// `git push` to `remoteBranch`, the upstream's own name where there is

@@ -37,6 +37,7 @@ struct WorktreeMergeStateBadgeTests {
     #expect(!merged.showsBadge(with: untracked))
 
     var ahead = WorktreeStatus()
+    ahead.upstream = "origin/feature"
     ahead.ahead = 1
     #expect(!merged.showsBadge(with: ahead), "commits the remote has not got")
 
@@ -46,5 +47,14 @@ struct WorktreeMergeStateBadgeTests {
 
     #expect(!WorktreeMergeState.unmerged.showsBadge(with: WorktreeStatus()))
     #expect(!WorktreeMergeState.unknown.showsBadge(with: nil), "nothing asked yet")
+  }
+
+  @Test func commitsPastTheBaseOnABranchNeverPushedKeepTheBadge() {
+    var neverPushed = WorktreeStatus()
+    neverPushed.ahead = 2
+
+    #expect(
+      WorktreeMergeState.merged(.patchEquivalent, into: "origin/main").showsBadge(with: neverPushed)
+    )
   }
 }

@@ -172,6 +172,12 @@ extension AppModel {
     // From no answer to no base, the tabs count from `HEAD` before and after.
     guard previous?.branch != scan.branch else { return }
     noteDefaultBranchMoved(from: previous?.branch, to: scan.branch, ofProject: id)
+    // A tip moving is a ref write, which already reads the rows it may change.
+    guard previous?.branch?.shortName != scan.branch?.shortName else { return }
+    scheduleStatusRefreshesCountingAhead(
+      past: [previous?.branch, scan.branch].compactMap(\.self),
+      inProject: id,
+    )
   }
 
   /// A scan's upstreams, unless a newer scan began while its reflog reads ran.

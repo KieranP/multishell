@@ -3,12 +3,13 @@ import MultishellCore
 
 /// Many worktrees' statuses read side by side, and what those reads remember.
 extension WorktreeCoordinator {
-  /// Statuses for many worktrees at once, each with how long git took, one
-  /// that could not be read simply absent. At most `maximumConcurrentReads` run together.
+  /// Statuses for many worktrees at once, each with how long git took, one unread absent; at
+  /// most `maximumConcurrentReads` together. A branch never pushed counts ahead of `bases`.
   public func readStatuses(
     of worktrees: [Worktree],
     counting indicator: GitStatusIndicator = .default,
     diffAlgorithm: DiffAlgorithm = .default,
+    bases: [Project.ID: DefaultBranch] = [:],
   ) async -> [Worktree.ID: StatusReading] {
     let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
       width: SharedReadState.maximumConcurrentReads
@@ -18,6 +19,7 @@ extension WorktreeCoordinator {
         of: worktree,
         counting: indicator,
         diffAlgorithm: diffAlgorithm,
+        against: bases[worktree.projectID],
       )
       return (
         worktree.id,

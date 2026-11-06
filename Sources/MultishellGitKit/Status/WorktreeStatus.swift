@@ -10,6 +10,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public internal(set) var ahead = 0
   public internal(set) var behind = 0
   /// What `ahead` and `behind` count against, `origin/main` and the like.
+  /// Where nil, `ahead` may count past the default branch; see `countsAhead(past:)`.
   public internal(set) var upstream: String?
 
   /// Files with any change, every new file in a new folder among them,
@@ -35,6 +36,8 @@ public struct WorktreeStatus: Hashable, Sendable {
   /// The branch git reports, or nil when detached. Compared against the
   /// sidebar, which catches a checkout no file event reports.
   public internal(set) var branch: String?
+  /// The branch has no commit yet, so `HEAD` names nothing to count from.
+  var isUnborn = false
 
   /// New files counted but not listed by path.
   public var unlistedUntrackedFiles: Int { max(0, untracked - untrackedPaths.count) }
@@ -62,6 +65,12 @@ public struct WorktreeStatus: Hashable, Sendable {
 
   /// One path's kind, looked up per file tab render.
   public func kind(of path: String) -> StatusChange.Kind? { kinds[path] }
+
+  /// Whether `ahead` is counted past `base`, git having no upstream; never for a
+  /// checkout of a local base or of a branch with no commit yet. See worktrees.md.
+  public func countsAhead(past base: DefaultBranch) -> Bool {
+    upstream == nil && !isUnborn && branch != nil && branch != base.shortName
+  }
 
   mutating func setChanges(_ changes: [StatusChange]) {
     self.changes = changes
