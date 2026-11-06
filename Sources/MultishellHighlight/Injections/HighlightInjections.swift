@@ -7,7 +7,7 @@ import SwiftTreeSitter
 enum HighlightInjections {
   private static let htmlQuery = "(script_element) @script (style_element) @style"
 
-  private static let markdownQuery = "(fenced_code_block) @code_block"
+  private static let markdownQuery = "(fenced_code_block) @code_block (html_block) @html_block"
 
   /// Each node a `{…}` expression sits in whole. An each's parameter and an
   /// await's head are cut apart, and a shorthand attribute keeps its colour.
@@ -40,23 +40,18 @@ enum HighlightInjections {
     return try Query(language: language, data: Data(source.utf8))
   }
 
-  /// Where `keptRanges` are given, only the injections that may reach one, though a
-  /// Svelte expression's language is still read from the whole file.
+  /// Where `keptRanges` are given, only the injections that may reach one, though Svelte's
+  /// expression language and Markdown's HTML blocks are read from the whole file.
   static func find(
     in tree: MutableTree,
     text: NSString,
     using injectionQuery: InjectionQuery,
     within keptRanges: [Range<Int>]?,
   ) -> HostInjections {
-    let captures = injectionQuery.query.captures(
-      in: tree,
-      within: keptRanges,
-      matching: Predicate.Context(string: text as String),
-    )
     switch injectionQuery.host {
     case .markup(let host):
       return markupInjections(
-        from: captures,
+        from: captures(of: injectionQuery, in: tree, text: text, within: keptRanges),
         in: tree,
         text: text,
         host: host,
@@ -64,9 +59,49 @@ enum HighlightInjections {
       )
 
     case .markdown:
-      let blocks = captures.compactMap { FencedCodeBlock.injection(of: $0.node, in: text) }
-      return HostInjections(injections: blocks)
+      guard let root = tree.rootNode else { return HostInjections() }
+      return markdownInjections(
+        from: captures(of: injectionQuery, in: tree, text: text, within: nil),
+        under: root,
+        text: text,
+        within: keptRanges,
+      )
     }
+  }
+
+  private static func captures(
+    of injectionQuery: InjectionQuery,
+    in tree: MutableTree,
+    text: NSString,
+    within keptRanges: [Range<Int>]?,
+  ) -> some Sequence<QueryCapture> {
+    injectionQuery.query.captures(
+      in: tree,
+      within: keptRanges,
+      matching: Predicate.Context(string: text as String),
+    )
+  }
+
+  private static func markdownInjections(
+    from captures: some Sequence<QueryCapture>,
+    under root: Node,
+    text: NSString,
+    within keptRanges: [Range<Int>]?,
+  ) -> HostInjections {
+    var found = HostInjections()
+    var htmlBlocks: [Node] = []
+    for capture in captures {
+      switch capture.name {
+      case "code_block" where keptRanges?.hasRange(meeting: capture.range.integerRange) ?? true:
+        found.add(FencedCodeBlock.injection(of: capture.node, in: text))
+
+      case "html_block": htmlBlocks.append(capture.node)
+      default: break
+      }
+    }
+    let html = HTMLBlocks.injection(of: htmlBlocks, under: root, in: text)
+    if let html, keptRanges.map(html.reaches(any:)) ?? true { found.add(html) }
+    return found
   }
 
   private static func markupInjections(

@@ -15,6 +15,9 @@ enum ASCIIUnits {
   static let dot = UInt16(UInt8(ascii: "."))
   static let greaterThan = UInt16(UInt8(ascii: ">"))
   static let hash = UInt16(UInt8(ascii: "#"))
+  /// What CommonMark counts as a block's indent.
+  static let indent = Set(" \t".utf16)
+  static let lineBreaks = Set("\n\r".utf16)
   /// Set in an ASCII letter's unit, it gives the lowercase letter.
   static let lowercaseBit: UInt16 = 0x20
   static let lowercaseX = UInt16(UInt8(ascii: "x"))

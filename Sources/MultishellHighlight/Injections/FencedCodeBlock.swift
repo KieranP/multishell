@@ -4,8 +4,6 @@ import SwiftTreeSitter
 
 /// A Markdown fenced code block's body, read in the language its info string names.
 enum FencedCodeBlock {
-  private static let lineMarkerType = "block_continuation"
-
   /// None where the info string names no grammar here, the body keeping Markdown's colour.
   static func injection(of block: Node, in text: NSString) -> Injection? {
     let children = Array(block.children)
@@ -21,8 +19,7 @@ enum FencedCodeBlock {
     let body = bodyNode.range.integerRange.clamped(to: 0..<text.length)
     guard !body.isEmpty else { return nil }
     let firstLineMarker = firstLineMarker(of: body, after: children[..<bodyIndex].last)
-    let laterLineMarkers = bodyNode.children.filter { $0.nodeType == lineMarkerType }
-      .map(\.range.integerRange).filter { !$0.isEmpty }
+    let laterLineMarkers = bodyNode.lineMarkerRanges
     return Injection(
       range: (firstLineMarker?.lowerBound ?? body.lowerBound)..<body.upperBound,
       language: language,
@@ -34,7 +31,7 @@ enum FencedCodeBlock {
   /// The body's first line's quote marker or list indent, taken in so that every line
   /// is blanked alike and none reads as nested under the first.
   private static func firstLineMarker(of body: Range<Int>, after node: Node?) -> Range<Int>? {
-    guard let node, node.nodeType == lineMarkerType else { return nil }
+    guard let node, node.isLineMarker else { return nil }
     let range = node.range.integerRange
     return range.upperBound == body.lowerBound && !range.isEmpty ? range : nil
   }

@@ -486,7 +486,11 @@ rule holds is in `Docs/design/`.
   SvelteBlockHeadTests. **A `>` or bare `&` in Svelte text leaving the rest of
   the file uncoloured**: SvelteGrammarInputTests and SyntaxHighlighterTests.
 - **A Markdown fence left plain or coloured in a language it does not name, and
-  nested fences overflowing the stack**: FencedCodeBlockTests.
+  nested fences overflowing the stack**: FencedCodeBlockTests. **A Markdown HTML
+  block left plain, or a closing tag in a later block uncoloured**:
+  HTMLBlocksTests. **An `<h1>` line the grammar folds into a paragraph left
+  plain**: HeadingTagBlocksTests. **HTML parsed for removed rows holding only
+  the Markdown between blocks**: SyntaxHighlighterTests.
 - **A drag nothing takes or a drop refuses goes back between the neighbours it
   left, and one a drop took stays**: AppModelTabDragTests.
 - **A segmented picker drawn only as wide as its labels**:

@@ -1,8 +1,8 @@
 import Foundation
 import MultishellAppCore
 
-/// Part of a file in another language than its own, in UTF-16 offsets from the file's
-/// start, parsed inside an uncoloured prefix and suffix that make it read as what it is.
+/// Part of a file in another language, in UTF-16 offsets, parsed inside an uncoloured prefix
+/// and suffix; its ascending `hostRanges` are blanked for the parse and keep the file's colours.
 struct Injection {
   let range: Range<Int>
   let language: HighlightLanguage
@@ -10,6 +10,10 @@ struct Injection {
   let suffix: String
   let decodesCharacterReferences: Bool
   let blankedRanges: [Range<Int>]
+  let hostRanges: [Range<Int>]
+
+  /// Where its colours land: `range` less `hostRanges`.
+  var injectedRanges: [Range<Int>] { range.subtracting(hostRanges) }
 
   init(
     range: Range<Int>,
@@ -18,6 +22,7 @@ struct Injection {
     suffix: String = "",
     decodesCharacterReferences: Bool = false,
     blankedRanges: [Range<Int>] = [],
+    hostRanges: [Range<Int>] = [],
   ) {
     self.range = range
     self.language = language
@@ -25,14 +30,21 @@ struct Injection {
     self.suffix = suffix
     self.decodesCharacterReferences = decodesCharacterReferences
     self.blankedRanges = blankedRanges
+    self.hostRanges = hostRanges
   }
 
-  /// Its text with `blankedRanges`, a fence's quote markers and list indent, as spaces,
-  /// so offsets line up.
+  /// Whether any of `injectedRanges` meets one of `keptRanges`, ascending.
+  func reaches(any keptRanges: [Range<Int>]) -> Bool {
+    injectedRanges.contains { keptRanges.hasRange(meeting: $0) }
+  }
+
+  /// Its text with `blankedRanges`, a quote's markers and list indent, and `hostRanges`
+  /// as spaces, so offsets line up.
   func source(in text: NSString) -> String {
-    guard !blankedRanges.isEmpty else { return text.substring(with: NSRange(range)) }
+    let blanks = blankedRanges + hostRanges
+    guard !blanks.isEmpty else { return text.substring(with: NSRange(range)) }
     let source = NSMutableString(string: text.substring(with: NSRange(range)))
-    for blanked in blankedRanges {
+    for blanked in blanks {
       let inSource = NSRange(blanked.shifted(by: -range.lowerBound))
       let spaces = String(repeating: " ", count: inSource.length)
       source.replaceCharacters(in: inSource, with: spaces)

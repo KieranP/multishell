@@ -29,6 +29,17 @@ final class SyntaxHighlighter: Sendable {
     }
   }
 
+  /// A comment or string can run across a host range, which keeps the host's colour.
+  private static func clipped(
+    _ spans: [HighlightSpan],
+    outside hostRanges: [Range<Int>],
+  ) -> [HighlightSpan] {
+    guard !hostRanges.isEmpty else { return spans }
+    return spans.flatMap { span in
+      span.range.subtracting(hostRanges).map { HighlightSpan(range: $0, role: span.role) }
+    }
+  }
+
   /// In pattern order so a later pattern wins, then each injection's, all from matches reaching
   /// `keptRanges`, sorted and apart; UTF-16. One highlight's texts share `cache`.
   func spans(
@@ -86,11 +97,11 @@ final class SyntaxHighlighter: Sendable {
     let keywords = found.keywords.map { HighlightSpan(range: $0, role: .keyword) }
     var injected: [HighlightSpan] = []
     var blanked: Set<Range<Int>> = []
-    for injection in found.injections where keptRanges?.hasRange(meeting: injection.range) ?? true {
+    for injection in found.injections where keptRanges.map(injection.reaches(any:)) ?? true {
       injected += injectedSpans(of: injection, in: string, cache: &cache)
       blanked.formUnion(injection.blankedRanges)
     }
-    // A quote's `>` inside a fence keeps the quote's colour over the injection's plain span.
+    // A quote's or list's markers inside an injection keep their colour over its plain span.
     let blankedHostSpans =
       blanked.isEmpty ? [] : inPatternOrder.filter { blanked.contains($0.range) }
     return inPatternOrder + injected + keywords + blankedHostSpans
@@ -129,7 +140,8 @@ final class SyntaxHighlighter: Sendable {
         role: span.role,
       )
     }
-    return [HighlightSpan(range: injection.range, role: .plain)] + inFile
+    let plain = injection.injectedRanges.map { HighlightSpan(range: $0, role: .plain) }
+    return plain + Self.clipped(inFile, outside: injection.hostRanges)
   }
 
   private func parser(

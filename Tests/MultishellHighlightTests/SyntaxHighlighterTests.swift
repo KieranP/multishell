@@ -94,6 +94,21 @@ struct SyntaxHighlighterTests {
     #expect(HighlightProbe.role(of: "go", in: text, spans: spans) == .string)
   }
 
+  @Test func aKeptRangeOnlyInTheMarkdownBetweenHTMLBlocksParsesNoHTML() {
+    let attempts = CompileAttempts()
+    let highlighter = SyntaxHighlighter { language in
+      attempts.byLanguage.withLock { $0[language, default: 0] += 1 }
+      return try HighlightGrammars.compile(language)
+    }
+    let text = "<p>\n</p>\n\nProse row\n\n<div>\n</div>\n"
+    let prose = (text as NSString).range(of: "Prose row").integerRange
+    var cache = HighlightPassCache()
+
+    _ = highlighter.spans(in: text, language: .markdown, cache: &cache, within: [prose])
+
+    #expect(attempts.byLanguage.withLock { $0[.html] } == nil)
+  }
+
   @Test func anInjectionReachingNoRangeAskedForIsNotParsed() {
     let text = "<script>var a</script>\n<script>let b</script>"
     let reached = (text as NSString).range(of: "b<").integerRange

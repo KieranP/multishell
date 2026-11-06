@@ -5,8 +5,13 @@ import Testing
 @testable import MultishellHighlight
 
 enum HighlightProbe {
-  static func role(of word: String, in text: String, spans: [HighlightSpan]) -> HighlightRole? {
-    let found = (text as NSString).range(of: word)
+  static func role(
+    of word: String,
+    in text: String,
+    spans: [HighlightSpan],
+    searching options: NSString.CompareOptions = [],
+  ) -> HighlightRole? {
+    let found = (text as NSString).range(of: word, options: options)
     guard found.location != NSNotFound else {
       Issue.record("\(word) is not in the text")
       return nil

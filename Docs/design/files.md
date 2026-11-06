@@ -415,8 +415,45 @@ Newest at the bottom.
   past the first as nested; the markers keep the quote's colour. Python then
   reads its first line as indented and recovers, `def` and `return` still
   coloured. The grammar closes no fence on a last line with no newline after it,
-  so Markdown is parsed with one added. An HTML block and inline code stay
-  Markdown's.
+  so Markdown is parsed with one added.
+- **A Markdown file's HTML blocks are parsed together as one HTML document**,
+  the Markdown between them blanked, and their scripts, styles and handlers
+  injected in turn. `<details>`, a blank line, Markdown and `</details>` make
+  two blocks, and the second alone is an error to HTML's grammar, its tag name
+  uncoloured; together they read as the rendered page does. The Markdown between
+  keeps its own colours: the HTML's plain span skips it, and a string or comment
+  left open across it is cut around it. Every block is read when a diff colours
+  only removed rows, so a closing tag there meets its opener above, but none is
+  parsed where those rows hold only the Markdown between blocks. Blanking the
+  6,167 stretches between blocks of a 1 MiB file took 8 ms of a debug highlight
+  whose run to run spread was over a second. CommonMark starts a block at a line
+  opening with a block tag such as `<div>` or a comment, or holding any other
+  tag alone. The grammar reads a block tag's name as letters alone, upstream as
+  at our pin, so `<h1 align="center">Multishell</h1>` is a paragraph to it, and
+  runs into the paragraph above when no blank line comes between. A paragraph
+  line opening with `<h1>` to `<h6>` followed by a space, tab, `>`, `/>` or the
+  line's end, indented at most three columns past its container's content
+  column, where the paragraph's first line starts, and not past its marker's
+  end, which a tab can carry beyond it, a tab running to the next stop of four,
+  is read as HTML from that line to the paragraph's end, the quote marker of the
+  line after it blanked. The tags are found by searching the text for `<` and
+  looking up the paragraph around each hit: capturing every paragraph instead
+  cost 7% of finding a 1 MiB file's injections, and the search costs nothing
+  measurable. Each paragraph and its markers are read once: read again for each
+  mention, a quoted paragraph naming `<h1>` on each of 10,000 lines ran past
+  four minutes in a debug build, and takes a second now. A mention walks back
+  over its indent and its line's marker alone, not to the line's start: one line
+  of 64,000 mentions ran past a minute walking back, and takes a second and a
+  half now. A mention in a fence or HTML block skips that block whole: looked up
+  one by one, a fence of 30,000 `<h1>` lines took 0.43 s. Its processing
+  instruction and CDATA blocks, `<?…?>` and `<![CDATA[…]]>`, stay Markdown's,
+  HTML's grammar reading them as tags. Only the block grammar is parsed, so HTML
+  within a paragraph, `Run <kbd>make</kbd>`, and inline code stay Markdown's. A
+  quote's or list's markers on later lines are blanked and keep their colour;
+  the first line's sit outside the block, and the indent left is nothing to
+  HTML. A block in a quote or list item that a blank line and more of that quote
+  or item follow is an error to Markdown's grammar, not an HTML block, and stays
+  uncoloured.
 - **A language is picked by extension, then by name where the extension says
   nothing, then by shebang.** `Rakefile` and `Gemfile` are Ruby by name, and
   `Cargo.lock` TOML, `Package.resolved`, `.prettierrc` and `.swift-format` JSON.
@@ -607,6 +644,19 @@ Raised by reviews and settled; a review need not raise these again.
 - **`lineFeed` kept in `SyntaxHighlighter` rather than `ASCIIUnits`.**
   `ASCIIUnits` holds the units more than one scanner compares; this has one
   reader.
+- **Fences filtered by kept ranges in `HighlightInjections.find` as well as in
+  `SyntaxHighlighter`.** `find` returns only the injections that may reach a
+  kept range, which FencedCodeBlockTests holds it to; the highlighter's filter
+  covers every injection, the combined HTML one included.
+- **A heading-tag block ending where the grammar ends its paragraph.**
+  CommonMark runs `<h1 a>T</h1>` on to the next blank line, so a `# Next` or
+  `---` straight under it is HTML; here it keeps Markdown's colour. Matching it
+  means changing `iswalpha` to accept digits in the name loop of the Markdown
+  scanner's HTML block start, which our pin and upstream main share: one line,
+  but a patch to carry on every grammar bump, so it was not made.
+- **A quoted or listed HTML block followed by a blank line and more of the quote
+  or item left plain.** Markdown's grammar parses it as an error, not an
+  `html_block`; reading it would mean patching the grammar.
 - **`"makefile"` in both `byCodeFenceName` and `byFileName`.** `byFileName`
   matches a file's name in its own case; a fence's name is folded, so reading it
   there would take `.bashrc` or `brewfile` as fence names by accident.
@@ -615,3 +665,11 @@ Raised by reviews and settled; a review need not raise these again.
   value throughout (`setFilesPanelMode`, `showFilesPanel(_ mode:of:)`,
   `lastReadFilesPanelMode`); renaming the type would touch the persisted
   `filesPanelMode` key, the command line's setting name and about 140 sites.
+
+### Asked both ways
+
+- **One tuple type for a paragraph's range and markers and an HTML block's**:
+  round 7 of the Markdown HTML review asked for `HTMLBlocks.Block` in place of a
+  same-shaped `ParagraphLines`; round 9 asked for them apart again. Kept as one,
+  since both are a range and the markers blanked in it, and named the function
+  that builds the paragraph's `rangeAndMarkers(of:)`.

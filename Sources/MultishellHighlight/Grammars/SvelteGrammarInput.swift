@@ -7,7 +7,6 @@ enum SvelteGrammarInput {
   private static let dollar = UInt16(UInt8(ascii: "$"))
   private static let backtick = UInt16(UInt8(ascii: "`"))
   private static let quotes = Set("\"'".utf16)
-  private static let lineBreaks = Set("\n\r".utf16)
   private static let commentOpening = Array("<!--".utf16)
   private static let commentClosing = Array("-->".utf16)
   private static let rawTextTags = [Array("script".utf16), Array("style".utf16)]
@@ -131,7 +130,8 @@ enum SvelteGrammarInput {
         index = units.index(past: ASCIIUnits.blockCommentClosing, from: index + 2)
 
       case ASCIIUnits.slash where index + 1 < units.count && units[index + 1] == ASCIIUnits.slash:
-        index = (units[index...].firstIndex { lineBreaks.contains($0) } ?? units.count) + 1
+        index =
+          (units[index...].firstIndex { ASCIIUnits.lineBreaks.contains($0) } ?? units.count) + 1
 
       default:
         index = quotes.contains(unit) ? stringEnd(from: index, in: units) : index + 1
