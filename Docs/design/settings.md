@@ -174,6 +174,10 @@
     installed, and the terms are fixed per page.
   - The scope menu repeats `SettingsPopUp`'s Menu and Picker around its own card
     face; a label parameter on the pop-up would serve this one caller.
+  - A press on the scope card dims all of it, tile included, as `SettingsPopUp`
+    dims its face.
+  - SettingsScopePickerTests reads the Menu's frame from SwiftUI's private focus
+    ring view: offscreen there is no accessibility tree, and no public seam.
   - Hooks has no whole-page `--page` word, its three parts each having one.
   - `SettingsColors` converts its hex constants itself: `RGB`'s initialiser is
     Core's own, and widening it for six constants costs more than eight lines.

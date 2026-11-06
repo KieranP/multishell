@@ -3,12 +3,7 @@ import MultishellCore
 
 extension AppModel {
   /// Whose settings the window shows, as its title names them.
-  public var settingsScopeName: String {
-    switch settingsLocation.scope {
-    case .allProjects: t("settings.all-projects")
-    case .project(let id): workspace.project(id)?.name ?? ""
-    }
-  }
+  public var settingsScopeName: String { settingsScopeName(of: settingsLocation.scope) }
 
   /// The header's right end: that these apply to every project, or which
   /// project's folder they belong to.
@@ -16,6 +11,14 @@ extension AppModel {
     switch settingsLocation.scope {
     case .allProjects: t("settings.applies-to-all")
     case .project(let id): workspace.project(id)?.path.path.abbreviatingHomeDirectory() ?? ""
+    }
+  }
+
+  /// Whose settings a scope holds, as the window's title names them.
+  public func settingsScopeName(of scope: SettingsScope) -> String {
+    switch scope {
+    case .allProjects: t("settings.all-projects")
+    case .project(let id): workspace.project(id)?.name ?? ""
     }
   }
 

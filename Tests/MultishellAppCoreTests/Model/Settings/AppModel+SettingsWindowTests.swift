@@ -68,6 +68,17 @@ struct AppModelSettingsWindowTests {
     )
   }
 
+  @Test func aScopeIsNamedForItselfWhicheverScopeTheWindowShows() {
+    let harness = Harness()
+
+    let projectScope = SettingsScope.project(harness.project.id)
+    #expect(harness.model.settingsScopeName(of: projectScope) == harness.project.name)
+
+    harness.model.showSettings(of: harness.project)
+
+    #expect(harness.model.settingsScopeName(of: .allProjects) == "All Projects")
+  }
+
   @Test func theScopeMenuEmptiesTheSearchButAPageOfTheSameScopeKeepsIt() {
     let harness = Harness()
     harness.model.setSettingsSearchText("port")

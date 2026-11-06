@@ -9,42 +9,42 @@ struct SettingsScopePicker: View {
   let scope: SettingsScope
 
   var body: some View {
-    HStack(spacing: 8) {
-      tile
-      Menu {
-        Picker(
-          t("settings.scope"),
-          selection: Binding(get: { scope }, set: { model.setSettingsScope($0) }),
-        ) {
-          Text(t("settings.all-projects")).tag(SettingsScope.allProjects)
-          Divider()
-          ForEach(model.workspace.projects) { project in
-            Text(project.name).tag(SettingsScope.project(project.id))
-          }
+    Menu {
+      Picker(
+        t("settings.scope"),
+        selection: Binding(get: { scope }, set: { model.setSettingsScope($0) }),
+      ) {
+        Text(t("settings.all-projects")).tag(SettingsScope.allProjects)
+        Divider()
+        ForEach(model.workspace.projects) { project in
+          Text(project.name).tag(SettingsScope.project(project.id))
         }
-        .pickerStyle(.inline)
-        .labelsHidden()
-      } label: {
+      }
+      .pickerStyle(.inline)
+      .labelsHidden()
+    } label: {
+      HStack(spacing: 8) {
+        tile
         HStack(spacing: 4) {
-          Text(model.settingsScopeName)
+          Text(scopeName)
             .fontWeight(.semibold)
             .foregroundStyle(.primary)
             .lineLimit(1)
           Spacer(minLength: 0)
           Image(systemName: "chevron.up.chevron.down")
+            .accessibilityHidden(true)
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(SettingsColors.secondaryText)
         }
-        .contentShape(.rect)
       }
-      .menuStyle(.button)
-      .buttonStyle(.plain)
-      .menuIndicator(.hidden)
-      .accessibilityLabel(t("settings.scope"))
-      .accessibilityValue(model.settingsScopeName)
+      .padding(UIMetrics.settingsScopeCardInset)
+      .settingsCardFace(radius: UIMetrics.settingsScopeCardRadius)
     }
-    .padding(UIMetrics.settingsScopeCardInset)
-    .settingsCardFace(radius: UIMetrics.settingsScopeCardRadius)
+    .menuStyle(.button)
+    .buttonStyle(.plain)
+    .menuIndicator(.hidden)
+    .accessibilityLabel(t("settings.scope"))
+    .accessibilityValue(scopeName)
   }
 
   /// A gear for All Projects, else the project's glyph on its tint.
@@ -72,6 +72,8 @@ struct SettingsScopePicker: View {
       }
     }
   }
+
+  private var scopeName: String { model.settingsScopeName(of: scope) }
 
   private var scopeProject: Project? {
     guard case .project(let id) = scope else { return nil }
