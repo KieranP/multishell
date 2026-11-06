@@ -32,19 +32,7 @@ struct GhosttyPaneEventMonitorTests {
     defer { pane.freeSurface() }
     pane.frame = NSRect(x: 0, y: 0, width: 400, height: 400)
     let window = OffscreenWindow.holding(pane, deferred: false)
-    let click = try #require(
-      NSEvent.mouseEvent(
-        with: .leftMouseDown,
-        location: NSPoint(x: 200, y: 200),
-        modifierFlags: [],
-        timestamp: 1,
-        windowNumber: window.windowNumber,
-        context: nil,
-        eventNumber: 0,
-        clickCount: 1,
-        pressure: 1,
-      )
-    )
+    let click = try mouseEvent(.leftMouseDown, at: NSPoint(x: 200, y: 200), in: window)
 
     let isTaken = withExtendedLifetime(window) { GhosttyPaneEventMonitor.deliver(click) }
 

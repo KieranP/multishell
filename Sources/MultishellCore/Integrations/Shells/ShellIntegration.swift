@@ -3,7 +3,7 @@ import Foundation
 /// Writes the shell-integration files, rewritten each launch so a moved
 /// bundle's helper path stays current; see Docs/design/terminals/shell-integration.md.
 public enum ShellIntegration {
-  public static func refresh(
+  public static func write(
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     bashInit: URL = Paths.bashInitFile,
     fishInit: URL = Paths.fishInitFile,

@@ -137,8 +137,8 @@ public final class AppModel<Surface> {
   var failedBranchReads: [Worktree.ID: String] = [:]
   @ObservationIgnored var branchChangesReads = CoalescedReads<Worktree.ID>()
 
-  /// Each file tab's last read. Runtime only: contents never reach the file,
-  /// so after a relaunch a deleted file's tab shows its committed text removed.
+  /// Each file tab's last read, never saved: after a relaunch a deleted file's
+  /// tab shows its committed text removed, or its committed image alone.
   public internal(set) var fileTabReadings: [FileTab.ID: FileTabReading] = [:]
   /// The file tab a reconcile handed the keyboard to, taken by its view
   /// through `takeFileTabFocusRequest`, as a find field takes its request.
@@ -249,8 +249,8 @@ public final class AppModel<Surface> {
     await LoginShellEnvironment.capture(shellPath: ShellChoice.loginShellPath())
   }
   /// A harness stands in for both, the real ones writing the account's own files.
-  @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) throws -> Void =
-    { try AppLaunchFiles.refresh(helper: $0) }
+  @ObservationIgnored var writeAppLaunchFiles: @Sendable (_ helper: URL?) throws -> Void =
+    { try AppLaunchFiles.write(helper: $0) }
   @ObservationIgnored var sweepDropCopies: @Sendable () -> Void = {
     DropCopies.sweep()
   }

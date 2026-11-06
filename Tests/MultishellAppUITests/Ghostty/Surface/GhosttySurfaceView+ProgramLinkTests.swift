@@ -15,19 +15,7 @@ struct GhosttySurfaceViewProgramLinkTests {
   }
 
   private func click(_ type: NSEvent.EventType, _ flags: NSEvent.ModifierFlags) throws -> NSEvent {
-    try #require(
-      NSEvent.mouseEvent(
-        with: type,
-        location: NSPoint(x: 10, y: 10),
-        modifierFlags: flags,
-        timestamp: 1,
-        windowNumber: 0,
-        context: nil,
-        eventNumber: 0,
-        clickCount: 1,
-        pressure: 1,
-      )
-    )
+    try mouseEvent(type, at: NSPoint(x: 10, y: 10), flags: flags)
   }
 
   private func commandKey(_ flags: NSEvent.ModifierFlags) throws -> NSEvent {

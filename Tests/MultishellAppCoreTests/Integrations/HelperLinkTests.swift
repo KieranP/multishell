@@ -6,22 +6,22 @@ import Testing
 
 @Suite
 struct HelperLinkTests {
-  @Test func refreshPointsTheLinkAtTheHelperAndReplacesAStaleOne() throws {
+  @Test func pointsTheLinkAtTheHelperAndReplacesAStaleOne() throws {
     let root = Scratch.path("helperlink")
     defer { Scratch.remove(root) }
     let link = root.appendingPathComponent("bin/multishell")
     let old = root.appendingPathComponent("old/multishell")
     let new = root.appendingPathComponent("new/multishell")
 
-    try HelperLink.refresh(to: old, link: link)
+    try HelperLink.point(link, at: old)
     #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == old.path)
-    try HelperLink.refresh(to: new, link: link)
+    try HelperLink.point(link, at: new)
     #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == new.path)
-    try HelperLink.refresh(to: new, link: link)
+    try HelperLink.point(link, at: new)
     #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == new.path)
 
     let untouched = root.appendingPathComponent("none/multishell")
-    try HelperLink.refresh(to: nil, link: untouched)
+    try HelperLink.point(untouched, at: nil)
     #expect(!FileManager.default.fileExists(atPath: untouched.path), "no helper, no link")
   }
 
@@ -37,8 +37,8 @@ struct HelperLinkTests {
       try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
     try Data().write(to: helper)
-    try HelperLink.refresh(to: helper, link: shared)
-    try HelperLink.refresh(to: helper, link: otherBuilds)
+    try HelperLink.point(shared, at: helper)
+    try HelperLink.point(otherBuilds, at: helper)
     let installed = { HelperLink.isCommandLineToolInstalled(link: tool, sharedLink: shared) }
 
     #expect(!installed(), "nothing there")

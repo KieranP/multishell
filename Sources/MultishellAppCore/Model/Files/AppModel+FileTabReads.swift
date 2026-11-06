@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-/// Keeping each file tab's rows current with its file and its git; see
+/// Keeping each file tab's rows or image current with its file and its git; see
 /// Docs/design/files/file-tabs.md.
 extension AppModel {
   /// A burst of saves becomes one read: 0.15 s of FSEvents latency, then this.
@@ -69,7 +69,7 @@ extension AppModel {
     }
   }
 
-  /// Its rows in hand: read, and not let go since it was hidden.
+  /// Its reading in hand, rows, image or notice: read, and not let go since it was hidden.
   func holdsContent(_ id: FileTab.ID) -> Bool {
     fileTabReadings[id].map { !$0.content.isReleased } ?? false
   }
@@ -78,12 +78,12 @@ extension AppModel {
     fileTabReadings[id]?.image != nil
   }
 
-  func holdsNoRows(_ id: FileTab.ID) -> Bool {
+  func drawsNoRows(_ id: FileTab.ID) -> Bool {
     fileTabReadings[id]?.content.drawsNoRows ?? false
   }
 
-  /// A hidden tab keeps its dot and strike, and a gone file's rows, the last
-  /// it showed; see files/file-tabs.md. Its waiting read is owed instead.
+  /// A hidden tab keeps its dot and strike, and a gone file's rows or copy on
+  /// disk, the last it showed; see files/file-tabs.md. Its waiting read is owed instead.
   func releaseHiddenFileTabs() {
     for tab in workspace.fileTabs where !isFileTabShown(tab.id) {
       // Its view goes with it, and the next one says afresh where its arrows lead;
@@ -146,7 +146,7 @@ extension AppModel {
       if findFieldRequests.contains(id) { findFieldRequests.remove(id) }
       if fieldHadKeyboard { fileTabFocusRequest = id }
     }
-    // Hidden while it ran, its rows would wait for the next reconcile.
+    // Hidden while it ran, its rows or image would wait for the next reconcile.
     releaseHiddenFileTabs()
     rerunFileFind(in: id)
     if readsAgain {
@@ -187,8 +187,8 @@ extension AppModel {
     fileTabReadLog.noteHighlightCost(cost, of: id)
   }
 
-  /// A closed tab's rows, reads, selection, scroll and requests go with it. Run
-  /// from the reconcile.
+  /// A closed tab's rows or image, reads, selection, scroll and requests go
+  /// with it. Run from the reconcile.
   func pruneFileTabs() {
     let open = Set(workspace.fileTabs.map(\.id))
     setIfChanged(\.fileTabReadings, fileTabReadings.filter { open.contains($0.key) })

@@ -2,7 +2,7 @@
 /// row the keyboard is on.
 public struct QuickSwitcherResults: Equatable, Sendable {
   /// What the rows were listed for.
-  public struct Basis: Equatable, Sendable {
+  struct Basis: Equatable, Sendable {
     let scope: QuickSwitcherScope
     let text: String
   }

@@ -1,6 +1,7 @@
 import Foundation
 
-/// A task's notice still queued at its Stop, which starts a turn.
+/// A task's notice still queued at its Stop, which starts a turn; see
+/// agents/background-work.md.
 extension ClaudeTranscript {
   private static let noticeOpening = "<task-notification>"
   private static let markers = [noticeOpening, "stop_hook_summary"].map { Data($0.utf8) }

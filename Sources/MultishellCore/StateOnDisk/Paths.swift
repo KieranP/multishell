@@ -51,7 +51,7 @@ public enum Paths {
   /// from a hook of the user's own.
   static let helperName = "multishell"
 
-  /// A stable path to the helper binary, refreshed at every launch: a hook
+  /// A stable path to the helper binary, pointed at the launching build's at launch: a hook
   /// holding the bundle's own path breaks when the app moves.
   public static var helperLink: URL {
     stateDirectory.appendingPathComponent("bin", isDirectory: true)

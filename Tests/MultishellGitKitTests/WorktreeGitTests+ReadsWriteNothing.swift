@@ -69,9 +69,7 @@ extension WorktreeGitTests {
       ) != nil
     )
     #expect(await git.ignoredPaths(["new.txt", "README.md"], in: project.path) == [])
-    let base = try #require(
-      DefaultBranch.resolve(from: await git.branchRefs(project)?.refs ?? [], override: nil)
-    )
+    let base = try await fixture.defaultBranch()
     for worktree in worktrees {
       #expect(
         await git.branchChanges(

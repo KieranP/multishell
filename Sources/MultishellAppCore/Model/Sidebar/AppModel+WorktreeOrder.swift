@@ -54,10 +54,6 @@ extension AppModel {
     )
   }
 
-  func isActiveWorktree(_ id: Worktree.ID, sessions: SessionIDsByWorktree) -> Bool {
-    sessionStates.isActive(worktree: id, sessions: sessions[id])
-  }
-
   public func setWorktreeSortOrder(_ order: WorktreeSortOrder) {
     store.setWorktreeSortOrder(order)
   }

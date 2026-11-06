@@ -1,7 +1,7 @@
 import Foundation
 
-/// Whether Claude is asking the user its own question. Its permission
-/// notification says "permission" for that too and names no tool.
+/// Whether Claude asks the user its own question, its notification saying
+/// "permission" and naming no tool; see agents/reports-and-hooks.md.
 extension ClaudeTranscript {
   private static let questionToolName = "AskUserQuestion"
 

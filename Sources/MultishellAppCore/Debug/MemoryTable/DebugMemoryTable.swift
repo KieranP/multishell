@@ -2,7 +2,7 @@ import MultishellCore
 import MultishellProcess
 
 /// The Memory by tab table: the app itself, each tab with a live shell, the
-/// file tabs' text, and what the app started that no tab runs.
+/// file tabs' text and images, and what the app started that no tab runs.
 public struct DebugMemoryTable: Sendable, Equatable {
   /// The app's whole footprint, its tabs' terminals included.
   let appMemory: UInt64
@@ -15,7 +15,7 @@ public struct DebugMemoryTable: Sendable, Equatable {
   let totalMemory: UInt64
 
   /// The footprint less what the tabs' terminals and the file tabs' text
-  /// hold, which their rows show. Never below zero: both are estimates.
+  /// and images hold, which their rows show. Never below zero: both are estimates.
   var appMemoryOutsideTabs: UInt64 {
     appMemory.subtractingFlooredAtZero(
       tabs.reduce(fileTabs.contentMemory) { $0 + ($1.terminalMemory ?? 0) }

@@ -6,11 +6,11 @@ import Foundation
 
 extension GitHarness {
   func commitFile(_ file: String, in worktree: Worktree) async throws {
-    try "\(file)\n".write(
-      to: worktree.path.appendingPathComponent(file),
-      atomically: true,
-      encoding: .utf8,
-    )
+    try await commitFile(file, holding: Data("\(file)\n".utf8), in: worktree)
+  }
+
+  func commitFile(_ file: String, holding data: Data, in worktree: Worktree) async throws {
+    try data.write(to: worktree.path.appendingPathComponent(file))
     _ = try await git.run(["add", file], in: worktree.path)
     _ = try await git.run(["commit", "-q", "-m", file], in: worktree.path)
   }

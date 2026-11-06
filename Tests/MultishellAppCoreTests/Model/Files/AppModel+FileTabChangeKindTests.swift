@@ -165,9 +165,7 @@ struct AppModelFileTabChangeKindTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let feature = try await harness.featureInChangesList()
-    try Data([0, 1, 2, 0]).write(to: feature.path.appending(path: "blob.bin"))
-    _ = try await harness.git.run(["add", "blob.bin"], in: feature.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", "blob"], in: feature.path)
+    try await harness.commitFile("blob.bin", holding: Data([0, 1, 2, 0]), in: feature)
     await harness.model.refreshStatuses()
     harness.model.setChangeScope(.branch)
     let tab = try #require(harness.model.openFileTab("blob.bin", in: feature))

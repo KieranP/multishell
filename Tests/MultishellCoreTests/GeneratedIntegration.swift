@@ -19,7 +19,7 @@ struct GeneratedIntegration {
     bashInit = root.appendingPathComponent("bash/init.bash")
     fishInit = root.appendingPathComponent("fish/init.fish")
     try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    try ShellIntegration.refresh(
+    try ShellIntegration.write(
       zshDirectory: zshDirectory,
       bashInit: bashInit,
       fishInit: fishInit,

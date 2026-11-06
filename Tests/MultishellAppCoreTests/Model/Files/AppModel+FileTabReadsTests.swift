@@ -231,9 +231,11 @@ struct AppModelFileTabReadsTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     let logo = main.path.appending(path: "logo.png")
-    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
-    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    try await harness.commitFile(
+      "logo.png",
+      holding: FakeImage.bytes(width: 2, height: 2),
+      in: main,
+    )
     try FileManager.default.removeItem(at: logo)
     let (tab, _) = try harness.openFileTab("logo.png")
     try await waitUntil { harness.model.holdsImage(tab.id) }
@@ -253,9 +255,11 @@ struct AppModelFileTabReadsTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     let logo = main.path.appending(path: "logo.png")
-    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
-    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    try await harness.commitFile(
+      "logo.png",
+      holding: FakeImage.bytes(width: 2, height: 2),
+      in: main,
+    )
     try FileManager.default.removeItem(at: logo)
     let (tab, _) = try harness.openFileTab("logo.png")
     try await waitUntil { harness.model.holdsImage(tab.id) }
@@ -277,9 +281,11 @@ struct AppModelFileTabReadsTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     let logo = main.path.appending(path: "logo.png")
-    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
-    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    try await harness.commitFile(
+      "logo.png",
+      holding: FakeImage.bytes(width: 2, height: 2),
+      in: main,
+    )
     let edited = FakeImage.bytes(width: 3, height: 3)
     try edited.write(to: logo)
     let (tab, _) = try harness.openFileTab("logo.png")

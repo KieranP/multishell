@@ -6,9 +6,10 @@ extension OpenCodePlugin {
     SessionEnvironment.socketVariable, SessionEnvironment.appPIDVariable,
   ].map { "\"\($0)\"" }.joined(separator: ", ")
 
-  /// The helper calls the reports make.
+  /// The helper calls the reports make; see agents/opencode-plugin.md for the
+  /// service and agents/background-work.md for the order.
   static let reporter = """
-    // The background service runs every tab's sessions; see Docs/design/agents/opencode-plugin.md.
+    // The background service runs every tab's sessions.
     const runsUnderTheService = process.argv.includes("--service")
 
     // Under the service the helper finds the app's socket itself and marks the
@@ -21,7 +22,7 @@ extension OpenCodePlugin {
     }
 
     // One helper at a time, each once the last has exited: started together
-    // they land in either order; see Docs/design/agents/background-work.md.
+    // they land in either order.
     const reporter = () => {
       const env = helperEnvironment()
       const pending = []

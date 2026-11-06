@@ -4,7 +4,8 @@ extension OpenCodePlugin {
   private static let reportedSessionLimit = 512
   static let endedChildLimit = 64
 
-  /// What a session is doing, as the plugin's hooks and events tell it.
+  /// What a session is doing, as the plugin's hooks and events tell it; see
+  /// agents/background-work.md.
   static let tracker = """
     // What this directory's sessions are doing, from plain calls the hooks and
     // events make, sent through `send`.
@@ -13,18 +14,18 @@ extension OpenCodePlugin {
       // What each runs as is kept from its creation.
       const workers = new Map()
       // `session` is the session a Done is its own for, which lists its own out.
-      const report = (state, message, worker, newTurn, session) => {
+      const report = (state, message, entry, newTurn, session) => {
         const args = ["state", state, "--agent", "\(AgentCatalogue.openCodeID)"]
         if (cwd) args.push("--cwd", cwd)
         if (message) args.push("--message", message)
         if (newTurn) args.push("--new-turn", "true")
         // A child ending wakes the parent for a turn, so its Done says what is
         // still out; a report can overtake another, and the list outranks them.
-        if (!worker && state === "done") args.push("--resumes", "true", "--out", out(session).join(","))
-        if (worker) {
-          args.push("--subagent", worker.id, "--subagent-phase", worker.phase)
-          if (worker.type) args.push("--subagent-type", worker.type)
-          if (worker.parent) args.push("--subagent-parent", worker.parent)
+        if (!entry && state === "done") args.push("--resumes", "true", "--out", out(session).join(","))
+        if (entry) {
+          args.push("--subagent", entry.id, "--subagent-phase", entry.phase)
+          if (entry.type) args.push("--subagent-type", entry.type)
+          if (entry.parent) args.push("--subagent-parent", entry.parent)
         }
         send(args)
       }
@@ -84,8 +85,8 @@ extension OpenCodePlugin {
       // The session's own report, or a live child's; an ended child's says nothing.
       const reportFor = (id, state, message, newTurn) => {
         if (!workers.has(id)) return reportOwn(id, state, message, newTurn)
-        const child = worker(id, "working")
-        if (child) report(state, message, child)
+        const entry = worker(id, "working")
+        if (entry) report(state, message, entry)
       }
       // A child's end, as many ways as OpenCode spells one. It wakes the parent,
       // whom OpenCode tells, a cancelled one too, so no end says it wakes nobody.
@@ -93,16 +94,16 @@ extension OpenCodePlugin {
         if (reportEnd(id)) markEnded(id)
       }
       const reportEnd = (id) => {
-        const child = worker(id, "ended")
-        if (child) report("running", undefined, child)
-        return !!child
+        const entry = worker(id, "ended")
+        if (entry) report("running", undefined, entry)
+        return !!entry
       }
       const markEnded = (id) => {
         workers.get(id).hasEnded = true
         ended.add(id)
       }
       // A parent's prompt starts a turn, OpenCode sending none over a child's end,
-      // and one naming no session starts none; a child's is its work (agents/background-work.md).
+      // and one naming no session starts none; a child's is its work.
       const onPrompt = (id) => reportFor(id, "running", undefined, !!id)
       // No prompt hook stands for the turn a child's end wakes, so its start
       // says Working where the prompt has not.

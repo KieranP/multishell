@@ -4,7 +4,7 @@ import MultishellCore
 /// What a file tab says in place of rows, and whether its editor is offered:
 /// a file that is nowhere has nothing to open.
 public enum FileTabNoticeText {
-  /// `nil` for text, which shows rows instead.
+  /// `nil` for text or an image, which draw the file instead.
   public static func message(for content: FileTabContent) -> String? {
     switch content {
     case .binary(let bytes): t("file.binary-notice", size(bytes))

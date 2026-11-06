@@ -58,7 +58,7 @@ Under `~/Library/Application Support/Multishell`.
   until it execs, and this process spawns freely.
 - **A connect alone cannot tell**: a listener whose accept backlog is full
   refuses one exactly as a dead socket does.
-- **Symlinks to the helper in the current bundle are refreshed at launch**: the
+- **Symlinks to the helper are pointed at the launching build's at launch**: the
   shared one in `bin/`, which hook lines reference through the home directory,
   and the build's own in `cli/`.
 - **`/usr/local/bin/multishell` is a link to the build's own link**, `cli/`

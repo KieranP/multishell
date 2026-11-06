@@ -76,7 +76,7 @@ struct WorktreeRow: View, @MainActor Equatable {
     .padding(.leading, metrics.worktreeRowIndent)
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
     .frame(height: height)
-    .rowSelection(theme, in: .projectsPanel, isSelected: isSelected, isDropTarget: isDropTarget)
+    .rowSelection(theme.projectsPanel, isSelected: isSelected, isDropTarget: isDropTarget)
     .contentShape(.rect)
     // `.contain` while renaming, or the field the Rename action opened would
     // sit inside an ignored subtree where VoiceOver cannot reach it.

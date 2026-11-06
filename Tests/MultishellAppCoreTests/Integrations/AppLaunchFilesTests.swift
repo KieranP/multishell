@@ -21,7 +21,7 @@ struct AppLaunchFilesTests {
     var wroteIntegration = false
 
     #expect(throws: (any Error).self) {
-      try AppLaunchFiles.refresh(
+      try AppLaunchFiles.write(
         helper: helper,
         links: [blocked.appendingPathComponent("multishell"), shared],
         writeShellIntegration: { wroteIntegration = true },

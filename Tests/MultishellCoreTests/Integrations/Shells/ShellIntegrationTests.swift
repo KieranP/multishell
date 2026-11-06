@@ -8,7 +8,7 @@ import Testing
 /// `--init-file` and fish's `-C` point.
 @Suite
 struct ShellIntegrationTests {
-  @Test func refreshWritesEveryFileAndRewritesAStaleOne() throws {
+  @Test func writesEveryFileAndRewritesAStaleOne() throws {
     let root = try Scratch.directory("integration")
     defer { Scratch.remove(root) }
     let zsh = root.appendingPathComponent("zsh", isDirectory: true)
@@ -16,7 +16,7 @@ struct ShellIntegrationTests {
     let fishInit = root.appendingPathComponent("fish/init.fish")
 
     for helper in ["/old/multishell", "/new/multishell"] {
-      try ShellIntegration.refresh(
+      try ShellIntegration.write(
         zshDirectory: zsh,
         bashInit: bashInit,
         fishInit: fishInit,

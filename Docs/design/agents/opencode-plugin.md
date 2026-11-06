@@ -34,6 +34,10 @@ and how the plugin subscribes. Newest at the bottom.
 - **Each session's last Working is its own**: two sessions in one directory
   shared one, and one's Done swallowed the other's (`eachSessionsDoneIsItsOwn`).
   A run's end arrives once in 2, so no second Done is dropped.
+- **The plugin's own comments name no doc path**: an installed plugin is stale
+  when its text differs at all, so moving the docs (bf9d3d92) asked every
+  install to Update. A part with a design doc names it in the Swift doc comment
+  above its text instead.
 
 ## Reviewed and left as is
 
@@ -58,11 +62,6 @@ and how the plugin subscribes. Newest at the bottom.
 - **"child" and "worker" in the plugin** (round 12): a child is OpenCode's
   session relation, by `parentID`; a worker is the roster's entry the app
   counts. `isWorker(parentID)` asks whether the parent is on the roster.
-- **The tracker's `report(…, worker, …)` parameter shadowing
-  `worker(id, phase)`, and its `child` locals for a roster entry** (2026-11-04
-  review). Renaming them changes the plugin text, so every installed plugin
-  reads stale and offers Update; they go with the next plugin change that is
-  needed anyway.
 
 ### Asked both ways
 

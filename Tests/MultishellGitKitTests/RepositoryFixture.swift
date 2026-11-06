@@ -118,6 +118,11 @@ struct RepositoryFixture {
     return (record, path)
   }
 
+  func defaultBranch() async throws -> DefaultBranch {
+    let refs = await git.branchRefs(project)?.refs ?? []
+    return try #require(DefaultBranch.resolve(from: refs, override: nil))
+  }
+
   func head(of directory: URL) async throws -> String {
     try await runner.run(["rev-parse", "HEAD"], in: directory).trimmingCharacters(
       in: .whitespacesAndNewlines

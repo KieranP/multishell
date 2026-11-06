@@ -46,14 +46,18 @@ struct AppModelFilesPanelTests {
     harness.model.remoteState.connections = ServiceConnections(
       standIn: try ServiceStandIn(json: "{}")
     )
+    var measuredPages: [FilesPanelMode] = []
+    func widthOnDoubleClick(on mode: FilesPanelMode) -> Double {
+      harness.model.setFilesPanelMode(mode)
+      return harness.model.filesPanelWidthOnDoubleClick {
+        measuredPages.append(mode)
+        return 512
+      }
+    }
 
-    harness.model.setFilesPanelMode(.changes)
-    let fitsChanges = harness.model.filesPanelFitsToRows
-    harness.model.setFilesPanelMode(.pullRequest)
-    let fitsPullRequest = harness.model.filesPanelFitsToRows
-
-    #expect(fitsChanges)
-    #expect(!fitsPullRequest)
+    #expect(widthOnDoubleClick(on: .changes) == 512)
+    #expect(widthOnDoubleClick(on: .pullRequest) == FilesPanelWidth.initial)
+    #expect(measuredPages == [.changes], "a services' page lays out no rows")
   }
 
   @Test func aClickOnTheRowsPullRequestGlyphOpensThePanelOnThePullRequestPage() async throws {

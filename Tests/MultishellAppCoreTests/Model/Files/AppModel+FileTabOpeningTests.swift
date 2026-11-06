@@ -31,9 +31,11 @@ struct AppModelFileTabOpeningTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
     let logo = main.path.appending(path: "logo.png")
-    try FakeImage.bytes(width: 2, height: 2).write(to: logo)
-    _ = try await harness.git.run(["add", "logo.png"], in: main.path)
-    _ = try await harness.git.run(["commit", "-q", "-m", "logo"], in: main.path)
+    try await harness.commitFile(
+      "logo.png",
+      holding: FakeImage.bytes(width: 2, height: 2),
+      in: main,
+    )
     try FakeImage.bytes(width: 3, height: 3).write(to: main.path.appending(path: "new.png"))
     try FileManager.default.removeItem(at: logo)
     _ = await harness.model.refreshStatus(of: main.id)

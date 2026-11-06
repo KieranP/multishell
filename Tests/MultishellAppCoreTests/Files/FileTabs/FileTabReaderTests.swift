@@ -374,11 +374,8 @@ struct FileTabReaderTests {
   @Test func aDeletedLatin1FilesCommittedTextIsDecodedAsATextEditorWould() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    let file = repository.path.appending(path: "menu.txt")
-    try Data([0x63, 0x61, 0x66, 0xE9, 0x0A]).write(to: file)
-    _ = try await repository.runner.run(["add", "menu.txt"], in: repository.path)
-    _ = try await repository.runner.run(["commit", "-q", "-m", "menu"], in: repository.path)
-    try FileManager.default.removeItem(at: file)
+    try await repository.commit(Data([0x63, 0x61, 0x66, 0xE9, 0x0A]), as: "menu.txt")
+    try FileManager.default.removeItem(at: repository.path.appending(path: "menu.txt"))
 
     let reading = await repository.read("menu.txt")
 
@@ -388,11 +385,8 @@ struct FileTabReaderTests {
   @Test func aDeletedBinaryFileSaysItsCommittedSize() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    let file = repository.path.appending(path: "icon.png")
-    try Data([0x89, 0x50, 0x00, 0x01]).write(to: file)
-    _ = try await repository.runner.run(["add", "icon.png"], in: repository.path)
-    _ = try await repository.runner.run(["commit", "-q", "-m", "icon"], in: repository.path)
-    try FileManager.default.removeItem(at: file)
+    try await repository.commit(Data([0x89, 0x50, 0x00, 0x01]), as: "icon.png")
+    try FileManager.default.removeItem(at: repository.path.appending(path: "icon.png"))
 
     let reading = await repository.read("icon.png")
 

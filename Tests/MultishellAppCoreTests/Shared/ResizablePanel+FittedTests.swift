@@ -6,14 +6,14 @@ import Testing
 @Suite
 struct ResizablePanelFittedTests {
   @Test func aFittedColumnRoundsItsRowsUpSoNoFractionTruncatesOne() {
-    #expect(ResizablePanel.fitted(toRowsOf: 312.2, in: 200...900) == 313)
+    #expect(ResizablePanel.fitted(312.2, in: 200...900) == 313)
   }
 
   @Test func aFittedColumnIsNeverNarrowerThanADragAllows() {
-    #expect(ResizablePanel.fitted(toRowsOf: 90, in: 200...900) == 200)
+    #expect(ResizablePanel.fitted(90, in: 200...900) == 200)
   }
 
   @Test func aFittedColumnIsNeverWiderThanADragAllows() {
-    #expect(ResizablePanel.fitted(toRowsOf: 1400, in: 200...900) == 900)
+    #expect(ResizablePanel.fitted(1400, in: 200...900) == 900)
   }
 }

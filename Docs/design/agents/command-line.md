@@ -242,9 +242,10 @@ The command line's requests on the reports' socket. Newest at the bottom.
   ask again**, not waited on in the app: the read log holds no waiter, and one
   would need resuming on a close as well as a finish. Cost: up to fifty asks in
   the five seconds, and a read landing later is reported as still reading.
-- **`FileTabContent.isNotice` and `FileTabNoticeText.message` each switch over
-  the content**, asked for both ways: one shared test built a localized string
-  per request, and a separate notice type is more than two short switches need.
+- **`FileTabContent.drawsNoRows` and `FileTabNoticeText.message` each switch
+  over the content**, asked for both ways: one shared test built a localized
+  string per request, and a separate notice type is more than two short switches
+  need.
 - **`tabs find --close` ends a find kept over a tab drawn as a notice**, though
   `tabs show` lists no bar there: the find would come back with the rows, and a
   refusal would leave no way to drop it.

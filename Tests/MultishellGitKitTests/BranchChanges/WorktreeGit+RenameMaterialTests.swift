@@ -12,11 +12,9 @@ struct WorktreeGitRenameMaterialTests {
     diffByteLimit: Int = WorktreeGit.renameDiffByteLimit,
   ) async throws -> RenameMaterial? {
     let git = fixture.git
-    let refs = await git.branchRefs(fixture.project)?.refs ?? []
-    let base = try #require(DefaultBranch.resolve(from: refs, override: nil))
     return try await git.renameMaterial(
       inRepositoryAt: fixture.project.path,
-      since: base,
+      since: try await fixture.defaultBranch(),
       diffByteLimit: diffByteLimit,
     )
   }

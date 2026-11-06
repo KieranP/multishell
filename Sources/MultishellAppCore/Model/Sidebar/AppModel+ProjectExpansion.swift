@@ -43,7 +43,7 @@ extension AppModel {
   }
 
   /// Its rows went unread while collapsed, so they are read now.
-  func expandWhileFiltering(_ projectID: Project.ID) {
+  private func expandWhileFiltering(_ projectID: Project.ID) {
     guard projectsCollapsedWhileFiltering.remove(projectID) != nil else { return }
     Task { await refreshStatuses(inProject: projectID) }
   }

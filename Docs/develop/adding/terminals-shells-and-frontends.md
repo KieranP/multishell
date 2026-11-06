@@ -33,7 +33,7 @@ beyond the code itself.
   copied whole in the manifest, whose init file carries the helper's and the
   agents' placeholders and joins the rest through `# include` lines, a
   `leading-path` file of its own among them. Then a path in `Paths`, a generator
-  in the integration scripts, a write in the integration refresh, and a case in
+  in the integration scripts, a write in `ShellIntegration.write`, and a case in
   `ShellLaunch.initFileArguments`, the one way in for both a fresh tab and the
   shell taking over when an agent quits. Add its generated file to
   `everyGeneratedFileParsesInItsShell` and
@@ -50,10 +50,10 @@ beyond the code itself.
   and directory. Without them its panes go without click-to-move, a clicked
   relative path resolves from where the pane started, and the shape and the
   wrappers are gone.
-- **The refresh's new parameter takes a default**, so the test callers that pass
-  it every path, `GeneratedIntegration`, `ShellTab` and ShellIntegrationTests,
-  still compile without the new one and write that shell's file into the debug
-  build's own integration folder.
+- **`ShellIntegration.write`'s new parameter takes a default**, so the test
+  callers that pass it every path, `GeneratedIntegration`, `ShellTab` and
+  ShellIntegrationTests, still compile without the new one and write that
+  shell's file into the debug build's own integration folder.
 - **As a login shell it runs agents' lines only if it is in
   `ShellInvocation.interactiveLoginShells`**; left out, they run through
   `/bin/sh` and miss its PATH. One whose syntax is not sh's also needs a branch

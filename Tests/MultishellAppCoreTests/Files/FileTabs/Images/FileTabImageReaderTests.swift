@@ -1,6 +1,4 @@
 import Foundation
-import TestScratch
-import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -12,24 +10,12 @@ struct FileTabImageReaderTests {
     try #require(copy).data.withUnsafeBytes { $0.baseAddress }
   }
 
-  private static func commit(
-    _ data: Data,
-    as file: String,
-    in repository: FileTabRepository,
-  )
-    async throws
-  {
-    try data.write(to: repository.path.appending(path: file))
-    _ = try await repository.runner.run(["add", file], in: repository.path)
-    _ = try await repository.runner.run(["commit", "-q", "-m", file], in: repository.path)
-  }
-
   @Test func aChangedImageShowsItsCommittedCopyBeforeTheFileOnDisk() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let before = FakeImage.bytes(width: 4, height: 3)
     let after = FakeImage.bytes(width: 8, height: 6)
-    try await Self.commit(before, as: "logo.png", in: repository)
+    try await repository.commit(before, as: "logo.png")
     try after.write(to: repository.path.appending(path: "logo.png"))
 
     let reading = await repository.read("logo.png")
@@ -45,7 +31,7 @@ struct FileTabImageReaderTests {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let logo = FakeImage.bytes(width: 4, height: 3)
-    try await Self.commit(logo, as: "logo.png", in: repository)
+    try await repository.commit(logo, as: "logo.png")
     try FakeImage.bytes(width: 2, height: 2).write(to: repository.path.appending(path: "new.png"))
 
     let unchanged = try #require((await repository.read("logo.png")).image)
@@ -58,10 +44,9 @@ struct FileTabImageReaderTests {
   @Test func aReadOfUnchangedCopiesKeepsTheBuffersTheLastReadHeld() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    try await Self.commit(
+    try await repository.commit(
       FakeImage.bytes(width: 4, height: 3, padding: 64),
       as: "logo.png",
-      in: repository,
     )
     try FakeImage.bytes(width: 8, height: 6, padding: 64).write(
       to: repository.path.appending(path: "logo.png")
@@ -86,20 +71,11 @@ struct FileTabImageReaderTests {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let committed = FakeImage.bytes(width: 1, height: 1)
-    try await Self.commit(committed, as: "logo.png", in: repository)
+    try await repository.commit(committed, as: "logo.png")
     let file = repository.path.appending(path: "logo.png")
     try FakeImage.bytes(width: 2, height: 2).write(to: file)
     let first = await repository.read("logo.png")
-    let failing = FileTabRepository(
-      root: repository.root,
-      path: repository.path,
-      runner: try TestGit.runner(
-        executable: try Scratch.script(
-          failure + "\nexec git \"$@\"",
-          at: repository.root.appending(path: "fake-git"),
-        )
-      ),
-    )
+    let failing = try repository.wrappingGit(in: failure)
     let edited = FakeImage.bytes(width: 3, height: 3)
     try edited.write(to: file)
 
@@ -111,19 +87,12 @@ struct FileTabImageReaderTests {
   @Test func bytesThatNoLongerDecodeWhereGitCannotSayKeepTheLastReading() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    try await Self.commit(FakeImage.bytes(width: 1, height: 1), as: "logo.png", in: repository)
+    try await repository.commit(FakeImage.bytes(width: 1, height: 1), as: "logo.png")
     let file = repository.path.appending(path: "logo.png")
     try FakeImage.bytes(width: 2, height: 2).write(to: file)
     let first = await repository.read("logo.png")
-    let failing = FileTabRepository(
-      root: repository.root,
-      path: repository.path,
-      runner: try TestGit.runner(
-        executable: try Scratch.script(
-          "case \"$*\" in *\"cat-file -s\"*) exit 2;; esac\nexec git \"$@\"",
-          at: repository.root.appending(path: "fake-git"),
-        )
-      ),
+    let failing = try repository.wrappingGit(
+      in: "case \"$*\" in *\"cat-file -s\"*) exit 2;; esac"
     )
     try Data([0x00, 0x01]).write(to: file)
 
@@ -135,10 +104,9 @@ struct FileTabImageReaderTests {
   @Test func aCommitOfTheFileAsShownKeepsTheBufferTheTabHolds() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    try await Self.commit(
+    try await repository.commit(
       FakeImage.bytes(width: 1, height: 1, padding: 64),
       as: "logo.png",
-      in: repository,
     )
     try FakeImage.bytes(width: 2, height: 2, padding: 64).write(
       to: repository.path.appending(path: "logo.png")
@@ -155,18 +123,11 @@ struct FileTabImageReaderTests {
   @Test func aCommittedObjectGitNamesButCannotSizeIsNoCopyToKeepUnderItsID() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    try await Self.commit(FakeImage.bytes(width: 1, height: 1), as: "logo.png", in: repository)
+    try await repository.commit(FakeImage.bytes(width: 1, height: 1), as: "logo.png")
     try FakeImage.bytes(width: 2, height: 2).write(to: repository.path.appending(path: "logo.png"))
     let objectID = String(repeating: "?", count: 40)
-    let failing = FileTabRepository(
-      root: repository.root,
-      path: repository.path,
-      runner: try TestGit.runner(
-        executable: try Scratch.script(
-          "case \"$*\" in *\"cat-file -s \"\(objectID)) exit 128;; esac\nexec git \"$@\"",
-          at: repository.root.appending(path: "fake-git"),
-        )
-      ),
+    let failing = try repository.wrappingGit(
+      in: "case \"$*\" in *\"cat-file -s \"\(objectID)) exit 128;; esac"
     )
 
     let reading = await failing.read("logo.png")
@@ -178,7 +139,7 @@ struct FileTabImageReaderTests {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let logo = FakeImage.bytes(width: 4, height: 3)
-    try await Self.commit(logo, as: "logo.png", in: repository)
+    try await repository.commit(logo, as: "logo.png")
     try FileManager.default.removeItem(at: repository.path.appending(path: "logo.png"))
 
     let reading = await repository.read("logo.png")
@@ -190,7 +151,7 @@ struct FileTabImageReaderTests {
   @Test func anImageDeletedUnderAnOpenTabKeepsTheCopyItLastShowed() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
-    try await Self.commit(FakeImage.bytes(width: 4, height: 3), as: "logo.png", in: repository)
+    try await repository.commit(FakeImage.bytes(width: 4, height: 3), as: "logo.png")
     let edited = FakeImage.bytes(width: 9, height: 9)
     let file = repository.path.appending(path: "logo.png")
     try edited.write(to: file)
@@ -207,11 +168,11 @@ struct FileTabImageReaderTests {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }
     let original = FakeImage.bytes(width: 1, height: 1)
-    try await Self.commit(original, as: "logo.png", in: repository)
+    try await repository.commit(original, as: "logo.png")
     let base = try await repository.base()
     _ = try await repository.runner.run(["checkout", "-q", "-b", "work"], in: repository.path)
     let committed = FakeImage.bytes(width: 2, height: 2)
-    try await Self.commit(committed, as: "logo.png", in: repository)
+    try await repository.commit(committed, as: "logo.png")
 
     let sinceHead = try #require((await repository.read("logo.png")).image)
     let sinceBase = try #require((await repository.read("logo.png", since: base)).image)

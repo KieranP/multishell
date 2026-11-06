@@ -7,11 +7,6 @@ import Testing
 
 @Suite
 struct WorktreeGitBranchChangesTests {
-  private static func base(of fixture: RepositoryFixture) async throws -> DefaultBranch {
-    let refs = await fixture.git.branchRefs(fixture.project)?.refs ?? []
-    return try #require(DefaultBranch.resolve(from: refs, override: nil))
-  }
-
   private static func branchChanges(
     in fixture: RepositoryFixture,
     at tree: URL? = nil,
@@ -26,7 +21,7 @@ struct WorktreeGitBranchChangesTests {
     return try #require(
       await git.branchChanges(
         inRepositoryAt: path,
-        since: try await base(of: fixture),
+        since: try await fixture.defaultBranch(),
         status: status,
         diffAlgorithm: .histogram,
       )
@@ -37,7 +32,7 @@ struct WorktreeGitBranchChangesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.commit("seed", file: "a.txt", content: "one\n")
-    let base = try await Self.base(of: fixture)
+    let base = try await fixture.defaultBranch()
     _ = try await fixture.runner.run(["checkout", "-q", "-b", "work"], in: fixture.project.path)
     try await fixture.commit("work", file: "b.txt", content: "b\nb\n")
     try fixture.write("one\ntwo\n", to: "a.txt")
@@ -97,7 +92,7 @@ struct WorktreeGitBranchChangesTests {
   @Test func aBranchSharingNoHistoryWithTheBaseHasNoMergeBaseAndNoChanges() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let base = try await Self.base(of: fixture)
+    let base = try await fixture.defaultBranch()
     _ = try await fixture.runner.run(
       ["checkout", "-q", "--orphan", "alone"],
       in: fixture.project.path,
@@ -118,7 +113,7 @@ struct WorktreeGitBranchChangesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let git = fixture.git
-    let base = try await Self.base(of: fixture)
+    let base = try await fixture.defaultBranch()
     _ = try await fixture.runner.run(["checkout", "-q", "-b", "work"], in: fixture.project.path)
     try fixture.write("a\nb\nc\n", to: "new.txt")
     let staleStatus = try await git.status(
@@ -144,7 +139,7 @@ struct WorktreeGitBranchChangesTests {
   @Test func aBranchWithNoCommitsYetSharesNoHistoryWithTheBase() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    _ = try await Self.base(of: fixture)
+    _ = try await fixture.defaultBranch()
     _ = try await fixture.runner.run(
       ["checkout", "-q", "--orphan", "unborn"],
       in: fixture.project.path,

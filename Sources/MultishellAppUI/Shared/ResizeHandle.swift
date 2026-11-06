@@ -3,13 +3,14 @@ import MultishellCore
 import SwiftUI
 
 /// A hairline with a wider grab area, the sidebar's edge and the Files panel's:
-/// a drag resizes the column, a double-click fits it to its rows.
+/// a drag resizes the column, a double-click sets its ideal width.
 struct ResizeHandle: View {
   private static let grabWidth: Double = 8
 
   @Binding var width: Double
   let range: ClosedRange<Double>
-  /// The width that truncates none of the column's rows, measured on asking.
+  /// Measured on asking: the width that truncates none of a list's rows, or a
+  /// services' page's first width.
   let idealWidth: () -> Double
   /// Where a drag that began at a width leaves it, for this edge's direction.
   let dragged: (_ start: Double, _ translation: Double, _ range: ClosedRange<Double>) -> Double
@@ -36,11 +37,11 @@ struct ResizeHandle: View {
                 width = dragged(dragStartWidth ?? width, value.translation.width, range)
               }
           )
-          .simultaneousGesture(TapGesture(count: 2).onEnded { fitToRows() })
+          .simultaneousGesture(TapGesture(count: 2).onEnded { takeIdealWidth() })
       }
   }
 
-  private func fitToRows() {
-    width = ResizablePanel.fitted(toRowsOf: idealWidth(), in: range)
+  private func takeIdealWidth() {
+    width = ResizablePanel.fitted(idealWidth(), in: range)
   }
 }

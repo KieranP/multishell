@@ -26,10 +26,6 @@ extension AppModel {
   /// Files or Changes shows: a services' page lists no files, so reads none.
   var isFileListOnScreen: Bool { isFilesPanelOnScreen && shownFilesPanelMode.listsFiles }
 
-  /// A services' page wraps its text rather than cut it, so a double-click on
-  /// the edge puts it back to its first width.
-  public var filesPanelFitsToRows: Bool { shownFilesPanelMode.listsFiles }
-
   /// Modified or Branch, drawn over the Changes list alone, Files counting from `HEAD`.
   public var filesPanelShowsChangeScopeSwitch: Bool { shownFilesPanelMode == .changes }
 
@@ -51,6 +47,12 @@ extension AppModel {
 
   public func toggleFilesPanel() {
     setShowsFilesPanel(!showsFilesPanel)
+  }
+
+  /// The rows' fit, measured only where asked: a services' page wraps its text
+  /// rather than cut it, so a double-click on the edge puts it back to its first width.
+  public func filesPanelWidthOnDoubleClick(fittingRows rowsWidth: () -> Double) -> Double {
+    shownFilesPanelMode.listsFiles ? rowsWidth() : FilesPanelWidth.initial
   }
 
   /// A click on a worktree row's git badge: that worktree, the panel open on

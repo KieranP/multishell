@@ -24,7 +24,7 @@ extension AppModel {
   public func start() async {
     guard startMessageSource() else { return }
     // On the main actor, before `start` first yields, so no tab can open ahead.
-    presentingFailure { try refreshAppLaunchFiles(platform.bundledHelper) }
+    presentingFailure { try writeAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.
     let sweep = sweepDropCopies
     Task { await runOnDispatch(sweep) }

@@ -56,7 +56,7 @@ final class Harness {
       notifier: notifier,
     )
     model.statusReadLog.pace = .unpaced
-    model.refreshAppLaunchFiles = { _ in }
+    model.writeAppLaunchFiles = { _ in }
     model.sweepDropCopies = {}
     let path = root.appendingPathComponent("bin").path
     model.captureLoginEnvironment = { [root] in

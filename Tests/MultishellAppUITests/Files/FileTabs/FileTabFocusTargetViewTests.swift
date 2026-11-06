@@ -10,19 +10,7 @@ struct FileTabFocusTargetViewTests {
     var focusCount = 0
     view.onFocus = { focusCount += 1 }
     let window = OffscreenWindow.holding(view)
-    let click = try #require(
-      NSEvent.mouseEvent(
-        with: .leftMouseDown,
-        location: NSPoint(x: 50, y: 50),
-        modifierFlags: [],
-        timestamp: 0,
-        windowNumber: window.windowNumber,
-        context: nil,
-        eventNumber: 0,
-        clickCount: 1,
-        pressure: 1,
-      )
-    )
+    let click = try mouseEvent(.leftMouseDown, at: NSPoint(x: 50, y: 50), in: window)
 
     view.mouseDown(with: click)
 

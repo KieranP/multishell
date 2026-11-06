@@ -1,8 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// Keeps the helper reachable from outside the bundle: hook lines name a
-/// stable path, refreshed at launch. The PATH link is the platform's.
+/// Keeps the helper reachable from outside the bundle: hook lines name a stable
+/// path, pointed at the launching build's helper. The PATH link is the platform's.
 public enum HelperLink {
   public static let commandLineToolLink = URL(fileURLWithPath: "/usr/local/bin/multishell")
 
@@ -21,7 +21,7 @@ public enum HelperLink {
 
   /// Points `link` at `helper`, replacing whatever was there. Nothing to do
   /// when there is no bundled helper.
-  static func refresh(to helper: URL?, link: URL) throws {
+  static func point(_ link: URL, at helper: URL?) throws {
     guard let helper else { return }
     let manager = FileManager.default
     try manager.createDirectory(

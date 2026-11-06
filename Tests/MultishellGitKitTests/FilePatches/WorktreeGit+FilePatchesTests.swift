@@ -53,12 +53,7 @@ struct WorktreeGitFilePatchesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.commit("seed", file: "a.txt", content: "one\n")
-    let base = try #require(
-      DefaultBranch.resolve(
-        from: await fixture.git.branchRefs(fixture.project)?.refs ?? [],
-        override: nil,
-      )
-    )
+    let base = try await fixture.defaultBranch()
     _ = try await fixture.runner.run(["checkout", "-q", "-b", "work"], in: fixture.project.path)
     try await fixture.commit("work", file: "a.txt", content: "one\ntwo\n")
     try fixture.write("one\ntwo\nthree\n", to: "a.txt")

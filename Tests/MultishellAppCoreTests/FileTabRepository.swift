@@ -7,7 +7,6 @@ import Testing
 @testable import MultishellCore
 @testable import MultishellGitKit
 
-/// A scratch repository a file tab reads from.
 struct FileTabRepository {
   let root: URL
   let path: URL
@@ -24,6 +23,20 @@ struct FileTabRepository {
 
   func write(_ text: String, to file: String) throws {
     try text.write(to: path.appending(path: file), atomically: true, encoding: .utf8)
+  }
+
+  func commit(_ data: Data, as file: String) async throws {
+    try data.write(to: path.appending(path: file))
+    _ = try await runner.run(["add", file], in: path)
+    _ = try await runner.run(["commit", "-q", "-m", file], in: path)
+  }
+
+  func wrappingGit(in prelude: String) throws -> Self {
+    let script = try Scratch.script(
+      prelude + "\nexec git \"$@\"",
+      at: root.appending(path: "fake-git"),
+    )
+    return Self(root: root, path: path, runner: try TestGit.runner(executable: script))
   }
 
   func read(

@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
@@ -82,11 +83,16 @@ struct WorktreeGitStoredCopiesTests {
     try await fixture.commit("seed", file: "logo.png", content: "one\n")
     try fixture.write("staged\n", to: "staged.png")
     _ = try await fixture.runner.run(["add", "staged.png"], in: fixture.project.path)
-    let git = fixture.git
+    let fake = try FakeGit.make("exec git \"$@\"", loggingCalls: true)
+    defer { fake.tearDown() }
+    let git = WorktreeGit(runner: fake.runner)
 
     #expect(await git.hasStoredCopy(of: "logo.png", in: fixture.project.path))
     #expect(await git.hasStoredCopy(of: "staged.png", in: fixture.project.path))
     #expect(!(await git.hasStoredCopy(of: "new.png", in: fixture.project.path)))
+    let calls = FakeGit.calls(in: fake.directory)
+    #expect(!calls.isEmpty)
+    #expect(!calls.contains { $0.contains("cat-file blob") || $0.contains("cat-file -p") })
   }
 
   @Test func aCommittedCopysObjectIDMovesOnlyWithItsBytes() async throws {

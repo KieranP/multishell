@@ -60,11 +60,11 @@ struct AppModelLifecycleTests {
     #expect(harness.engine.focused.isEmpty)
   }
 
-  @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
+  @Test func launchWritesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
     let harness = Harness()
     let calls = Recorder<String>()
-    harness.model.refreshAppLaunchFiles = { _ in
-      calls.record("refresh")
+    harness.model.writeAppLaunchFiles = { _ in
+      calls.record("write")
       throw CocoaError(.fileWriteNoPermission)
     }
     harness.model.sweepDropCopies = { calls.record("sweep") }
@@ -72,7 +72,7 @@ struct AppModelLifecycleTests {
     await harness.model.start()
 
     try await waitUntil { calls.received.count == 2 }
-    #expect(calls.received == ["refresh", "sweep"])
+    #expect(calls.received == ["write", "sweep"])
     #expect(
       harness.model.presentedError?.message
         == PresentedError(CocoaError(.fileWriteNoPermission)).message

@@ -23,7 +23,7 @@ enum ShellTab {
 
   static func zshIntegrationDirectory(in root: URL) throws -> URL {
     let directory = root.appendingPathComponent("integration", isDirectory: true)
-    try ShellIntegration.refresh(
+    try ShellIntegration.write(
       zshDirectory: directory,
       bashInit: root.appendingPathComponent("bash/init.bash"),
       fishInit: root.appendingPathComponent("fish/init.fish"),

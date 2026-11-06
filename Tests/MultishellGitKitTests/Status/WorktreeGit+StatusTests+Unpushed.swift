@@ -6,11 +6,6 @@ import Testing
 @testable import MultishellGitKit
 
 extension WorktreeGitStatusTests {
-  private static func base(of fixture: RepositoryFixture) async throws -> DefaultBranch {
-    let refs = await fixture.git.branchRefs(fixture.project)?.refs ?? []
-    return try #require(DefaultBranch.resolve(from: refs, override: nil))
-  }
-
   private static func commitWork(in path: URL, of fixture: RepositoryFixture) async throws {
     try await TestRepository.commit(
       "work \(UUID().uuidString)",
@@ -27,7 +22,7 @@ extension WorktreeGitStatusTests {
     let path = try await fixture.addWorktree(onNewBranch: "feature")
     try await Self.commitWork(in: path, of: fixture)
     let feature = try await fixture.worktree(onBranch: "feature")
-    let base = try await Self.base(of: fixture)
+    let base = try await fixture.defaultBranch()
 
     let status = try await fixture.git.status(of: feature, against: base)
 
@@ -52,7 +47,7 @@ extension WorktreeGitStatusTests {
 
     let status = try await fixture.git.status(
       of: feature,
-      against: try await Self.base(of: fixture),
+      against: try await fixture.defaultBranch(),
     )
 
     #expect(status.isDirty)
@@ -67,7 +62,7 @@ extension WorktreeGitStatusTests {
     try await Self.commitWork(in: path, of: fixture)
     _ = try await fixture.runner.run(["push", "-q", "origin", "feature"], in: path)
     let feature = try await fixture.worktree(onBranch: "feature")
-    let base = try await Self.base(of: fixture)
+    let base = try await fixture.defaultBranch()
 
     let pushed = try await fixture.git.status(of: feature, against: base)
     try await Self.commitWork(in: path, of: fixture)
@@ -126,7 +121,7 @@ extension WorktreeGitStatusTests {
     let path = try await fixture.addWorktree(onNewBranch: "feature")
     try await Self.commitWork(in: path, of: fixture)
     let feature = try await fixture.worktree(onBranch: "feature")
-    let base = try await Self.base(of: fixture)
+    let base = try await fixture.defaultBranch()
 
     let status = try await fixture.git.status(of: feature, against: base)
 
@@ -146,7 +141,7 @@ extension WorktreeGitStatusTests {
 
     let status = try await fixture.git.status(
       of: feature,
-      against: try await Self.base(of: fixture),
+      against: try await fixture.defaultBranch(),
     )
 
     #expect(status.upstream == "origin/feature")

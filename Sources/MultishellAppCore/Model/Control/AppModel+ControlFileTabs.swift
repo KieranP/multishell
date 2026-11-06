@@ -64,11 +64,11 @@ extension AppModel {
     _ refusalNow: () -> ControlRefusal?,
   ) async -> ControlRefusal? {
     if let refusal = refusalNow() { return refusal }
-    let isRowless = !holdsContent(id)
+    let holdsNothing = !holdsContent(id)
     // A notice or an image may yet turn to rows, so its scheduled read is waited on too.
-    let awaitsRead = isRowless || (holdsNoRows(id) && pendingFileTabReads[id] != nil)
+    let awaitsRead = holdsNothing || (drawsNoRows(id) && pendingFileTabReads[id] != nil)
     if awaitsRead, !fileTabReadLog.isReading(id) {
-      if isRowless, coordinator == nil { return .gitNotFound }
+      if holdsNothing, coordinator == nil { return .gitNotFound }
       if let scheduled = pendingFileTabReads[id] {
         await scheduled.value
       } else {
@@ -78,7 +78,7 @@ extension AppModel {
       if let refusal = refusalNow() { return refusal }
     }
     guard holdsContent(id) else { return .fileTabNotRead(id: id) }
-    guard holdsNoRows(id) else { return nil }
+    guard drawsNoRows(id) else { return nil }
     if fileTabReadLog.isReading(id) { return .fileTabNotRead(id: id) }
     return holdsImage(id) ? .fileTabShowsImage(id: id) : .fileTabShowsNotice(id: id)
   }

@@ -87,9 +87,9 @@ final class FakePlatform: Platform {
     let isFile = (try? file.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
     return isFile && opensAsImage(named: file.lastPathComponent)
   }
-  nonisolated func opensAsImage(named name: String) -> Bool { name.hasSuffix(".png") }
+  nonisolated func opensAsImage(named name: String) -> Bool { ImageRule.fake.opensAsImage(name) }
   nonisolated func imagePixelSize(of data: Data) -> ImagePixelSize? {
-    FakeImage.pixelSize(of: data)
+    ImageRule.fake.pixelSize(data)
   }
   nonisolated func moveToTrash(_ url: URL) throws {
     fakeTrash.onMainThread.append(Thread.isMainThread)

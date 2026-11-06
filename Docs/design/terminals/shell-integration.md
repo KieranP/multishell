@@ -6,10 +6,10 @@ Newest at the bottom.
 - **Shell integration is injected, never written to a user's file.** It is
   written at launch into the app's own directory, and every session pointed at
   it.
-- **The helper sits behind a symlink refreshed at the same time**, so a moved
-  bundle breaks no hook line. An agent's hooks are the one exception, written
-  only on the user's click: merged into a settings file of theirs with a copy
-  kept, or a file of ours written whole (agents/reports-and-hooks.md).
+- **The helper sits behind a symlink each launch points at its own build's**, so
+  a moved bundle breaks no hook line. An agent's hooks are the one exception,
+  written only on the user's click: merged into a settings file of theirs with a
+  copy kept, or a file of ours written whole (agents/reports-and-hooks.md).
 - **The engine's own shell integration is off** (`shell-integration = none`), so
   ours is the only one in a pane; two integrations printing marks from their own
   hooks fought over the prompt. develop/dependencies.md has its scripts'
