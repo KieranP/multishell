@@ -7,6 +7,17 @@ extension AppModel {
     remoteState.ciWorkflows[run.id]?.value
   }
 
+  /// Why the run's workflows or report could not be read, `nil` once a read answers.
+  public func ciRunDetailProblem(ofRun run: CIRun, for worktree: Worktree) -> String? {
+    let failure =
+      remoteState.workflowReadFailures[run.id]
+      ?? (run.status == .failed ? remoteState.reportReadFailures[run.id] : nil)
+    guard let failure, let project = workspace.project(worktree.projectID),
+      let (integration, _) = ciProvider(for: project)
+    else { return nil }
+    return failure.reason(integration: integration)
+  }
+
   /// A run of the panel's history, read as its row opens.
   public func readCIRunDetails(of run: CIRun, for worktree: Worktree) async {
     guard let project = workspace.project(worktree.projectID) else { return }
@@ -49,9 +60,17 @@ extension AppModel {
     else { return }
     defer { remoteState.reportReads.remove(run.id) }
     let changesBefore = remoteState.integrationChanges[project.id]
-    guard let report = try? await provider.failureReport(of: run, in: project.path),
-      stillReads(integration, for: project, changedSince: changesBefore)
-    else { return }
+    let report: CIFailureReport?
+    var failure: ServiceReadFailure?
+    do {
+      report = try await provider.failureReport(of: run, in: project.path)
+    } catch {
+      report = nil
+      failure = ServiceReadFailure(error)
+    }
+    guard stillReads(integration, for: project, changedSince: changesBefore) else { return }
+    setIfChanged(\.remoteState.reportReadFailures[run.id], failure)
+    guard let report else { return }
     remoteState.reportsReadAt[run.id] = .now
     setIfChanged(
       \.remoteState.failureReports[run.id],
@@ -69,9 +88,17 @@ extension AppModel {
     else { return }
     defer { remoteState.workflowReads.remove(run.id) }
     let changesBefore = remoteState.integrationChanges[project.id]
-    guard let workflows = try? await provider.workflows(of: run, in: project.path),
-      stillReads(integration, for: project, changedSince: changesBefore)
-    else { return }
+    let workflows: [CIWorkflow]?
+    var failure: ServiceReadFailure?
+    do {
+      workflows = try await provider.workflows(of: run, in: project.path)
+    } catch {
+      workflows = nil
+      failure = ServiceReadFailure(error)
+    }
+    guard stillReads(integration, for: project, changedSince: changesBefore) else { return }
+    setIfChanged(\.remoteState.workflowReadFailures[run.id], failure)
+    guard let workflows else { return }
     remoteState.workflowsReadAt[run.id] = .now
     setIfChanged(
       \.remoteState.ciWorkflows[run.id],

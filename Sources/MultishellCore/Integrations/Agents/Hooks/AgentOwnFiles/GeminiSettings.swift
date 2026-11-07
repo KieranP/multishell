@@ -28,11 +28,11 @@ enum GeminiSettings {
   ) -> [[String: Any]] {
     let geminiDirectory = geminiDirectory(environment)
     let systemFile = URL(
-      fileURLWithPath: environment["GEMINI_CLI_SYSTEM_SETTINGS_PATH"]
+      fileURLWithPath: environment["GEMINI_CLI_SYSTEM_SETTINGS_PATH"]?.nonEmpty
         ?? "/Library/Application Support/GeminiCli/settings.json"
     )
     let defaults = read(
-      environment["GEMINI_CLI_SYSTEM_DEFAULTS_PATH"].map(URL.init(fileURLWithPath:))
+      environment["GEMINI_CLI_SYSTEM_DEFAULTS_PATH"]?.nonEmpty.map(URL.init(fileURLWithPath:))
         ?? systemFile.deletingLastPathComponent().appendingPathComponent("system-defaults.json")
     )
     let user = read(geminiDirectory.appendingPathComponent("settings.json"))
@@ -66,33 +66,32 @@ enum GeminiSettings {
       ? String(directory.dropLast()) : directory
   }
 
-  /// Gemini's own rule: the longest rule path naming the folder decides, a
-  /// parent rule standing for the folder above it, and no rule is no trust.
+  /// Gemini's own rule: a refusal in the environment, then the folder rules.
   private static func isTrusted(
     _ directory: String,
     environment: [String: String],
     settings: [[String: Any]],
   ) -> Bool {
+    // Checked first, as Gemini 0.66's checkPathTrust does: a refusal outranks every rule.
+    if environment["GEMINI_RESTRICTED_MODE"] == "true"
+      || environment["GEMINI_CLI_TRUST_WORKSPACE"] == "false"
+    {
+      return false
+    }
     if environment["GEMINI_CLI_TRUST_WORKSPACE"] == "true" { return true }
     let enabled = settings.reduce(true) { enabled, file in
       let trust = (file["security"] as? [String: Any])?["folderTrust"] as? [String: Any]
       return trust?["enabled"] as? Bool ?? enabled
     }
     guard enabled else { return true }
+    // Gemini tests each path variable for truth, so an empty one is unset.
     let rulesFile =
-      environment["GEMINI_CLI_TRUSTED_FOLDERS_PATH"].map(URL.init(fileURLWithPath:))
+      environment["GEMINI_CLI_TRUSTED_FOLDERS_PATH"]?.nonEmpty.map(URL.init(fileURLWithPath:))
       ?? geminiDirectory(environment).appendingPathComponent("trustedFolders.json")
-    guard let rules = read(rulesFile) as? [String: String] else { return false }
-    let folder = URL(fileURLWithPath: resolved(directory))
-    let decisive = rules.filter { path, level in
-      let covered = level == "TRUST_PARENT" ? (path as NSString).deletingLastPathComponent : path
-      return folder.pathComponents(under: URL(fileURLWithPath: resolved(covered))) != nil
-    }.max { $0.key.count < $1.key.count }
-    return decisive.map { $0.value == "TRUST_FOLDER" || $0.value == "TRUST_PARENT" } ?? false
-  }
-
-  private static func resolved(_ path: String) -> String {
-    URL(fileURLWithPath: path).comparablePath
+    guard let text = try? String(contentsOf: rulesFile, encoding: .utf8),
+      let rules = GeminiTrustedFolders(text: text)
+    else { return false }
+    return rules.trusts(directory)
   }
 
   /// Gemini reads its settings with comments allowed.

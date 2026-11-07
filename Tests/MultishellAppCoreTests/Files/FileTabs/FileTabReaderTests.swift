@@ -300,6 +300,136 @@ struct FileTabReaderTests {
     #expect(reading.content == .unreadable, "said so, not every line added")
   }
 
+  @Test func aTrackedFileWhoseDiffGitCannotReadIsNeverDrawnUnchanged() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *diff-index*) exit 2 ;;
+        *cat-file*) echo 5 ;;
+        *rev-parse*) echo bbbb ;;
+      esac
+      """
+    )
+    defer { fake.tearDown() }
+    try "edit\n".write(
+      to: fake.directory.appending(path: "a.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+
+    let reading = await FileTabReader.read(
+      path: "a.txt",
+      in: fake.directory,
+      git: WorktreeGit(runner: fake.runner),
+      diffAlgorithm: .histogram,
+      since: nil,
+      previous: nil,
+      imageRule: .fake,
+    )
+
+    #expect(reading.content == .unreadable)
+  }
+
+  @Test func aTrackedFileWhoseDiffGitCannotReadKeepsWhatTheTabLastShowed() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *diff-index*) exit 2 ;;
+        *cat-file*) echo 5 ;;
+        *rev-parse*) echo bbbb ;;
+      esac
+      """
+    )
+    defer { fake.tearDown() }
+    try "edit\n".write(
+      to: fake.directory.appending(path: "a.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    let previous = FileTabReading(
+      content: .text(
+        FileTabRows(
+          lines: [DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "edit")],
+          marksStaging: true,
+        )
+      ),
+      isFileGone: false,
+    )
+
+    let reading = await FileTabReader.read(
+      path: "a.txt",
+      in: fake.directory,
+      git: WorktreeGit(runner: fake.runner),
+      diffAlgorithm: .histogram,
+      since: nil,
+      previous: previous,
+      imageRule: .fake,
+    )
+
+    #expect(reading == previous)
+  }
+
+  @Test(arguments: [
+    #"*diff-index*) exit 0 ;; *cat-file*) exit 128 ;;"#,
+    #"*--cached*) exit 0 ;; *diff-index*) printf 'diff --git a/a.txt b/a.txt\ndeleted file mode 100644\nindex 1111111..0000000\n--- a/a.txt\n+++ /dev/null\n@@ -1,2 +0,0 @@\n-new\n-file\n' ;; *cat-file*) echo 9 ;;"#,
+  ])
+  func aFileWhoseIgnoreCheckGitCannotRunIsUnreadableNotUnchangedOrRemoved(
+    diffAndSize: String
+  ) async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *check-ignore*) exit 128 ;;
+        \(diffAndSize)
+        *rev-parse*) echo bbbb ;;
+      esac
+      """
+    )
+    defer { fake.tearDown() }
+    try "new\nfile\n".write(
+      to: fake.directory.appending(path: "a.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+
+    let reading = await FileTabReader.read(
+      path: "a.txt",
+      in: fake.directory,
+      git: WorktreeGit(runner: fake.runner),
+      diffAlgorithm: .histogram,
+      since: nil,
+      previous: nil,
+      imageRule: .fake,
+    )
+
+    #expect(reading.content == .unreadable)
+  }
+
+  @Test func aGoneFileWhoseDiffGitCannotReadIsUnreadableNotMissing() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *diff-index*) exit 2 ;;
+        *cat-file*) echo 5 ;;
+        *rev-parse*) echo bbbb ;;
+      esac
+      """
+    )
+    defer { fake.tearDown() }
+
+    let reading = await FileTabReader.read(
+      path: "a.txt",
+      in: fake.directory,
+      git: WorktreeGit(runner: fake.runner),
+      diffAlgorithm: .histogram,
+      since: nil,
+      previous: nil,
+      imageRule: .fake,
+    )
+
+    #expect(reading == FileTabReading(content: .unreadable, isFileGone: true))
+  }
+
   @Test func aGoneFilesCopyInHeadGitCannotSizeIsNoAnswerNotAMissingFile() async throws {
     let fake = try FakeGit.make(
       """

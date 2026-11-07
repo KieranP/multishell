@@ -107,6 +107,25 @@ struct AppModelFilesPanelReadsTests {
     #expect(!harness.listsLeftPad(in: main))
   }
 
+  @Test func aSubmoduleStatusGitCannotReadKeepsTheLastReading() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let sub = main.path.appending(path: "sub")
+    try await TestRepository.initialise(at: sub, withFirstCommit: true, using: harness.git)
+    try "x\n".write(to: sub.appending(path: "new.txt"), atomically: true, encoding: .utf8)
+    harness.model.scheduleSubmoduleRead("sub", in: main.id)
+    try await waitUntil { harness.model.submoduleReadings[main.id]?["sub"]?.status != nil }
+    let first = try #require(harness.model.submoduleReadings[main.id]?["sub"])
+    try #require(first.status?.untrackedPaths.isEmpty == false)
+    try harness.wrapGit(in: #"case "$*" in *status*) exit 128 ;; esac"#)
+
+    harness.model.scheduleSubmoduleRead("sub", in: main.id)
+    try await waitUntil { !harness.model.panelFolderReads.isRunning { _ in true } }
+
+    #expect(harness.model.submoduleReadings[main.id]?["sub"] == first)
+  }
+
   @Test func submoduleReadsAskedForWhileOneRunsWaitForIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

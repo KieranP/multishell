@@ -36,7 +36,7 @@ public struct WorktreeGit: Sendable {
   public func isRepositoryTop(_ directory: URL) async -> Bool {
     guard
       let top = await runner.output(["rev-parse", "--show-toplevel"], in: directory)?
-        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .gitLines.first
     else { return false }
     return await runOnDispatch { Self.sameComparablePath(URL(fileURLWithPath: top), directory) }
   }

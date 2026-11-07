@@ -153,6 +153,53 @@ struct FileTreeTests {
     #expect(rows.first?.parentFolder == "Sources/App")
   }
 
+  @Test func aFilterListsASubmoduleOrNestedRepositoryAsARepositoryByName() {
+    let submoduleMoved = StatusChange(
+      path: "vendor",
+      kind: .modified,
+      lines: .counted(insertions: 0, deletions: 0),
+    )
+    let nestedAdded = StatusChange(path: "nested/", kind: .added, lines: .notCounted)
+    let tree = FileTree(
+      FileTreeSources(
+        tracked: Self.tracked,
+        status: Self.status([submoduleMoved, nestedAdded], untracked: ["nested/"]),
+      )
+    )
+    var files = FilesPanelState()
+    files.filterText = "e"
+    var changes = files
+    changes.mode = .changes
+
+    let repositories = [files, changes].map { state in
+      tree.rows(state: state).filter(\.isRepository).map { [$0.path, $0.name, "\($0.isFolder)"] }
+    }
+
+    #expect(repositories[0] == [["nested", "nested", "true"], ["vendor", "vendor", "true"]])
+    #expect(repositories[1] == repositories[0])
+    #expect(tree.rows(state: changes).allSatisfy { $0.isRepository })
+  }
+
+  @Test func aNestedRepositoryGitListsWithItsSlashKeepsItsChangeKind() {
+    let nestedAdded = StatusChange(path: "nested/", kind: .added, lines: .notCounted)
+    let tree = FileTree(
+      FileTreeSources(
+        tracked: .empty,
+        status: Self.status([nestedAdded], untracked: ["nested/"]),
+      )
+    )
+    var changes = FilesPanelState()
+    changes.mode = .changes
+    var filtered = changes
+    filtered.filterText = "nest"
+
+    let kinds = [changes, filtered].map { state in
+      tree.rows(state: state).first { $0.path == "nested" }?.changeKind
+    }
+
+    #expect(kinds == [.added, .added])
+  }
+
   @Test func aDeletedFileTheIndexNoLongerHasIsStillListed() {
     let gone = StatusChange(
       path: "old.txt",

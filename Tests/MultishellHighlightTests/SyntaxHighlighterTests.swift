@@ -257,4 +257,60 @@ struct SyntaxHighlighterTests {
       "\(language) left \(word) plain",
     )
   }
+
+  @Test func aZigNameInLowerCaseIsNoConstant() {
+    let text = "const value = compute(other);\nconst MAX_SIZE = 1;"
+    let spans = HighlightProbe.spans(in: text, language: .zig)
+
+    #expect(HighlightProbe.role(of: "other", in: text, spans: spans) != .number)
+    #expect(HighlightProbe.role(of: "MAX_SIZE", in: text, spans: spans) == .number)
+  }
+
+  @Test func aRubyLocalVariableIsNoFunction() {
+    let text = "def go\n  total = 1\n  puts total\nend\n"
+    let spans = HighlightProbe.spans(in: text, language: .ruby)
+
+    #expect(HighlightProbe.role(of: "total", in: text, spans: spans) != .function)
+  }
+
+  @Test func aBareRubyNameNoAssignmentDeclaresIsAMethodCall() {
+    let text = "def go\n  helper\nend\n"
+    let spans = HighlightProbe.spans(in: text, language: .ruby)
+
+    #expect(HighlightProbe.role(of: "helper", in: text, spans: spans) == .function)
+  }
+
+  @Test func aJavaScriptLocalNamedForABuiltInIsNoBuiltIn() {
+    let declared = "const console = make();\nconsole.log(1);\n"
+    let global = "console.log(1);\n"
+
+    #expect(
+      HighlightProbe.role(
+        of: "console",
+        in: declared,
+        spans: HighlightProbe.spans(in: declared, language: .javaScript),
+        searching: .backwards,
+      ) != .keyword
+    )
+    #expect(HighlightProbe.role(of: "console", in: global, language: .javaScript) == .keyword)
+  }
+
+  @Test func codeInsideAStringInterpolationKeepsItsColours() {
+    let script = "let s = `a ${f(1)} b`;"
+    let python = "s = f\"{len(x) + 1}\""
+    let scriptSpans = HighlightProbe.spans(in: script, language: .javaScript)
+    let pythonSpans = HighlightProbe.spans(in: python, language: .python)
+
+    #expect(HighlightProbe.role(of: "f", in: script, spans: scriptSpans) == .function)
+    #expect(HighlightProbe.role(of: "1", in: script, spans: scriptSpans) == .number)
+    #expect(HighlightProbe.role(of: "len", in: python, spans: pythonSpans) == .function)
+  }
+
+  @Test func aKotlinCallKeepsItsColourWhereTheQueryMarksItForAPredicateOnly() {
+    let text = "val r = Regex(\"a\")\nval l = \"a\".toRegex()\n"
+    let spans = HighlightProbe.spans(in: text, language: .kotlin)
+
+    #expect(HighlightProbe.role(of: "Regex", in: text, spans: spans) == .function)
+    #expect(HighlightProbe.role(of: "toRegex", in: text, spans: spans) == .function)
+  }
 }

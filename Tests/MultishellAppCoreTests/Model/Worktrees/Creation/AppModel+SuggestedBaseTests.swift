@@ -37,6 +37,17 @@ struct AppModelSuggestedBaseTests {
     #expect(try await suggestedStartPoint(in: harness) == "main")
   }
 
+  @Test func aBranchListGitCannotReadStillStartsOnTheDefaultBranch() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    try await run(["checkout", "-q", "-b", "upgrade-deps"], in: harness)
+    await harness.model.refreshBranchScan(of: harness.project)
+    try harness.wrapGit(in: #"case "$*" in *for-each-ref*) exit 128 ;; esac"#)
+
+    #expect(await harness.model.suggestedBase(of: harness.project) == "main")
+    #expect(try await suggestedStartPoint(in: harness) == "main")
+  }
+
   @Test func withNoDefaultBranchTheBaseStartsOnTheCheckoutsBranch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

@@ -46,14 +46,21 @@ enum HighlightGrammars {
     }
   }
 
-  /// A language's grammar, loaded when first compiled, and its query files.
+  /// A language's grammar, loaded when first compiled, its query files, and the
+  /// locals files whose definitions answer its highlights' `#is-not? local`.
   private struct GrammarSource: Sendable {
     let load: @Sendable () -> OpaquePointer
     let queries: [QueryFile]
+    let locals: [QueryFile]
 
-    init(_ load: @escaping @Sendable () -> OpaquePointer, _ queries: [QueryFile]) {
+    init(
+      _ load: @escaping @Sendable () -> OpaquePointer,
+      _ queries: [QueryFile],
+      locals: [QueryFile] = [],
+    ) {
       self.load = load
       self.queries = queries
+      self.locals = locals
     }
   }
 
@@ -67,6 +74,10 @@ enum HighlightGrammars {
     in: "TreeSitterJavaScript",
     name: "highlights-jsx.scm",
   )
+  private static let javaScriptLocals = QueryFile.highlights(
+    in: "TreeSitterJavaScript",
+    name: "locals.scm",
+  )
 
   /// A table rather than a switch, 26 cases being past the lint's complexity;
   /// `everyGrammarCompilesWithItsQuery` checks every language has an entry.
@@ -79,14 +90,22 @@ enum HighlightGrammars {
     .golang: GrammarSource({ tree_sitter_go() }, [.highlights(in: "TreeSitterGo")]),
     .html: GrammarSource({ tree_sitter_html() }, [html]),
     .java: GrammarSource({ tree_sitter_java() }, [.highlights(in: "TreeSitterJava")]),
-    .javaScript: GrammarSource({ tree_sitter_javascript() }, [javaScript, jsx]),
+    .javaScript: GrammarSource(
+      { tree_sitter_javascript() },
+      [javaScript, jsx],
+      locals: [javaScriptLocals],
+    ),
     .json: GrammarSource({ tree_sitter_json() }, [.highlights(in: "TreeSitterJSON")]),
     .kotlin: GrammarSource({ tree_sitter_kotlin() }, [.highlights(in: "TreeSitterKotlin")]),
     .makefile: GrammarSource({ tree_sitter_make() }, [.highlights(in: "TreeSitterMake")]),
     .markdown: GrammarSource({ tree_sitter_markdown() }, [.highlights(in: "TreeSitterMarkdown")]),
     .php: GrammarSource({ tree_sitter_php() }, [.highlights(in: "TreeSitterPHP")]),
     .python: GrammarSource({ tree_sitter_python() }, [.highlights(in: "TreeSitterPython")]),
-    .ruby: GrammarSource({ tree_sitter_ruby() }, [.highlights(in: "TreeSitterRuby")]),
+    .ruby: GrammarSource(
+      { tree_sitter_ruby() },
+      [.highlights(in: "TreeSitterRuby")],
+      locals: [.highlights(in: "TreeSitterRuby", name: "locals.scm")],
+    ),
     .rust: GrammarSource({ tree_sitter_rust() }, [.highlights(in: "TreeSitterRust")]),
     .scss: GrammarSource({ tree_sitter_scss() }, [css, .highlights(in: "TreeSitterSCSS")]),
     .sql: GrammarSource({ tree_sitter_sql() }, [.highlights(in: "TreeSitterSql")]),
@@ -96,10 +115,12 @@ enum HighlightGrammars {
     .tsx: GrammarSource(
       { tree_sitter_tsx() },
       [javaScript, jsx, .highlights(in: "TreeSitterTypeScript", target: "TreeSitterTSX")],
+      locals: [javaScriptLocals],
     ),
     .typeScript: GrammarSource(
       { tree_sitter_typescript() },
       [javaScript, .highlights(in: "TreeSitterTypeScript")],
+      locals: [javaScriptLocals],
     ),
     .yaml: GrammarSource({ tree_sitter_yaml() }, [.highlights(in: "TreeSitterYAML")]),
     .zig: GrammarSource({ tree_sitter_zig() }, [.highlights(in: "TreeSitterZig")]),
@@ -108,20 +129,26 @@ enum HighlightGrammars {
   static func compile(_ language: HighlightLanguage) throws -> CompiledGrammar {
     guard let grammar = sources[language] else { throw MissingGrammar(language: language) }
     let shipped = try grammar.queries.map { file in
-      guard let text = GrammarQueries.query(file.name, inBundle: file.bundle) else {
-        throw MissingGrammarQuery(bundle: file.bundle, file: file.name)
-      }
-      return text
+      ShippedQueryRewrites.rewritten(try text(of: file))
     }
     let corrections = HighlightQueryCorrections.query(for: language).map { [$0] } ?? []
     let source = (shipped + corrections).joined(separator: "\n")
     let compiled = Language(language: grammar.load())
+    let locals = try grammar.locals.map(text(of:)).joined(separator: "\n")
     return CompiledGrammar(
       language: compiled,
       query: try Query(language: compiled, data: Data(source.utf8)),
       injectionQuery: injectionQuery(for: language, in: compiled),
       rolesFor: language,
+      localNames: locals.isEmpty ? nil : try LocalNamesQuery(source: locals, language: compiled),
     )
+  }
+
+  private static func text(of file: QueryFile) throws -> String {
+    guard let text = GrammarQueries.query(file.name, inBundle: file.bundle) else {
+      throw MissingGrammarQuery(bundle: file.bundle, file: file.name)
+    }
+    return text
   }
 
   /// A broken injection query costs only the injections, not the file's colour, so

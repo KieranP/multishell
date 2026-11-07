@@ -5,6 +5,7 @@ import MultishellServices
 
 extension AppModel {
   private static var concurrentBranchPullRequestLookups: Int { 4 }
+  private static var concurrentRepositoryAsks: Int { 4 }
 
   /// One list call for the whole project, and alone each pushed branch it left
   /// out. A failure keeps the list before it; see Docs/design/services/reads.md.
@@ -30,10 +31,11 @@ extension AppModel {
     reading.remotes = remotes
     do {
       let listed = try await host.pullRequests(in: project.path)
+      await resolveCurrentRepositories(in: &reading, with: host, in: project.path)
       let lookups = try await lookUpBranches(
         leftOutBy: listed,
         of: project,
-        remotes: remotes,
+        reading: reading,
         with: host,
         reusing: reading.lookups,
       )
@@ -60,12 +62,48 @@ extension AppModel {
     return reading
   }
 
+  /// What each remote's push URL names today, asked once a URL while its remote
+  /// stays; one that failed waits out `ServiceReadInterval`'s recheck.
+  private func resolveCurrentRepositories(
+    in reading: inout ProjectPullRequests,
+    with host: any PullRequestHost,
+    in directory: URL,
+  ) async {
+    let remotes = reading.remotes
+    let urls = Set(
+      remotes.compactMap { remote in
+        RemoteRepository(pushedTo: remote.name, among: remotes).map { _ in
+          remote.pushURL ?? remote.url
+        }
+      }
+    )
+    reading.currentRepositories = reading.currentRepositories.filter { urls.contains($0.key) }
+    reading.remoteURLAskFailures = reading.remoteURLAskFailures.filter { urls.contains($0.key) }
+    let failures = reading.remoteURLAskFailures
+    let asking = urls.subtracting(reading.currentRepositories.keys).filter { url in
+      !ServiceReadInterval.unresolvedRemoteStands(since: failures[url])
+    }
+    let answers = await asking.sorted().mapConcurrentlyUnordered(
+      width: Self.concurrentRepositoryAsks
+    ) { url -> (String, RemoteRepository?) in
+      (url, try? await host.repository(namedBy: url, in: directory))
+    }
+    for (url, answer) in answers {
+      if let answer {
+        reading.currentRepositories[url] = answer
+        reading.remoteURLAskFailures[url] = nil
+      } else {
+        reading.remoteURLAskFailures[url] = .now
+      }
+    }
+  }
+
   /// Each worktree's branch on the remote that no listed pull request heads in
   /// its repository, gone or not. Not the trunk: forks open pull requests from theirs.
   private func branchesLeftOut(
     by listed: [PullRequest],
     of project: Project,
-    remotes: [GitRemote],
+    reading: ProjectPullRequests,
   ) -> [String: String?] {
     let trunk = defaultBranchName(of: project)
     var branches: [String: String?] = [:]
@@ -73,10 +111,16 @@ extension AppModel {
       guard let upstream = remoteState.upstreams[worktree.id], upstream.branch != trunk else {
         continue
       }
-      let repository = RemoteRepository(pushedTo: upstream.remote, among: remotes)
+      let repositories = PushedRepositories.of(
+        remote: upstream.remote,
+        among: reading.remotes,
+        currentRepositories: reading.currentRepositories,
+      )
+      // A remote whose URL names no repository takes any pull request its branch heads.
       let isListed = listed.contains { pullRequest in
         pullRequest.headBranch == upstream.branch
-          && repository.map(pullRequest.headRepository.isSame(as:)) != false
+          && (repositories.isEmpty
+            || repositories.contains(where: pullRequest.headRepository.isSame(as:)))
       }
       if !isListed { branches[upstream.branch] = upstream.tip }
     }
@@ -87,13 +131,13 @@ extension AppModel {
   private func lookUpBranches(
     leftOutBy listed: [PullRequest],
     of project: Project,
-    remotes: [GitRemote],
+    reading: ProjectPullRequests,
     with host: any PullRequestHost,
     reusing previous: [String: BranchPullRequestLookup],
   ) async throws -> [String: BranchPullRequestLookup] {
     var lookups: [String: BranchPullRequestLookup] = [:]
     var asking: [(branch: String, tip: String?)] = []
-    for (branch, tip) in branchesLeftOut(by: listed, of: project, remotes: remotes) {
+    for (branch, tip) in branchesLeftOut(by: listed, of: project, reading: reading) {
       if let kept = previous[branch], kept.stillAnswers(upstreamTip: tip) {
         lookups[branch] = kept
       } else {

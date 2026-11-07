@@ -66,4 +66,10 @@ struct BranchRefParserTests {
     // The \r a Windows-configured checkout appends is not part of the tip.
     #expect(refs[0].tip == "ab1")
   }
+
+  @Test func aBranchNameHoldingALineSeparatorIsOneRef() {
+    let refs = BranchRefParser.parse("refs/heads/a\u{2028}b\tab1\t\t\nrefs/heads/main\tcd2\t\t\n")
+
+    #expect(refs.map(\.fullName) == ["refs/heads/a\u{2028}b", "refs/heads/main"])
+  }
 }

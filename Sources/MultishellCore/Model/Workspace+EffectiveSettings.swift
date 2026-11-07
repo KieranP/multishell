@@ -18,10 +18,11 @@ extension Workspace {
     )
   }
 
-  /// The project's flag line where it overrides, else the global one for
-  /// that agent. Blank is the override to none; see settings.md.
+  /// The project's flags where they override and `id` is its agent, else the
+  /// global line for `id`. Blank is the override to none; see settings.md.
   public func effectiveAgentFlags(for project: Project, agent id: String) -> String {
-    project.settings.agentFlags ?? agentFlags[id] ?? ""
+    let override = effectiveAgentID(for: project) == id ? project.settings.agentFlags : nil
+    return override ?? agentFlags[id] ?? ""
   }
 
   /// The global flag line of the agent this project runs, which its own

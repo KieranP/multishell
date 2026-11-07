@@ -21,6 +21,9 @@ final class FakePullRequestHost: PullRequestHost {
     var holdsMerges = false
     var holdsMergeOptions = false
     var heldOptionsReads: [AsyncStream<Void>.Continuation] = []
+    var renamedRepositories: [String: RemoteRepository] = [:]
+    var askedRemoteURLs: [String] = []
+    var repositoryFailures: [ServiceReadFailure] = []
   }
 
   private let state = Mutex(State())
@@ -28,6 +31,8 @@ final class FakePullRequestHost: PullRequestHost {
   private let heldWrites = AsyncStream<Void>.makeStream()
 
   var calls: [String] { state.withLock { $0.calls } }
+  /// Each remote URL asked which repository it names, apart from `calls`.
+  var askedRemoteURLs: [String] { state.withLock { $0.askedRemoteURLs } }
   /// Each branch asked alone, apart from `calls`, which count the list reads.
   var askedBranches: [String] { state.withLock { $0.askedBranches } }
 
@@ -46,6 +51,28 @@ final class FakePullRequestHost: PullRequestHost {
 
   func releaseHeldReads() {
     heldReads.continuation.finish()
+  }
+
+  /// The host answers `repository` for `remoteURL`, as GitHub does after a rename.
+  func rename(_ remoteURL: String, to repository: RemoteRepository) {
+    state.withLock { $0.renamedRepositories[remoteURL] = repository }
+  }
+
+  /// The next asks fail in turn, as a timed-out or logged-out `gh` would.
+  func failRepositoryAsks(_ failures: [ServiceReadFailure]) {
+    state.withLock { $0.repositoryFailures = failures }
+  }
+
+  func repository(namedBy remoteURL: String, in directory: URL) async throws -> RemoteRepository {
+    try state.withLock { state in
+      state.askedRemoteURLs.append(remoteURL)
+      if !state.repositoryFailures.isEmpty { throw state.repositoryFailures.removeFirst() }
+      if let renamed = state.renamedRepositories[remoteURL] { return renamed }
+      guard let named = RemoteRepository(remoteURL: remoteURL) else {
+        throw ServiceReadFailure.notHosted
+      }
+      return named
+    }
   }
 
   /// A branch with no answer set heads none.

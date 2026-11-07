@@ -95,6 +95,19 @@ struct WorkspaceEffectiveSettingsTests {
     #expect(workspace.effectiveAgentFlags(for: own, agent: "claude") == "--model haiku")
   }
 
+  @Test func aProjectsFlagsOverrideNeverReachesAnAgentTheProjectDoesNotRun() {
+    var workspace = Workspace()
+    workspace.preferredAgentID = AgentCatalogue.claudeID
+    workspace.agentFlags = ["claude": "--model opus"]
+    let project = Project(
+      path: URL(fileURLWithPath: "/repos/a"),
+      settings: ProjectSettings(preferredAgentID: "codex", agentFlags: "--full-auto"),
+    )
+
+    #expect(workspace.effectiveAgentFlags(for: project, agent: "codex") == "--full-auto")
+    #expect(workspace.effectiveAgentFlags(for: project, agent: "claude") == "--model opus")
+  }
+
   @Test func aWorkspaceResolvesAProjectsAgent() {
     var workspace = Workspace()
     workspace.preferredAgentID = "claude"

@@ -28,8 +28,9 @@ VoiceOver. Newest at the bottom, above "Reviewed and left as is".
   composing**, the model's text being empty until the composition is confirmed.
   AppKit's own placeholder would hide itself, but setting it as the scope
   changes ends the field's editing, which closes the switcher.
-- **Taking the keyboard selects the field's text, in the system's colour**, so
-  the caret is put at the end: MonochromeThemeTests found the selection.
+- **Taking the keyboard selects the field's text**, so the caret is put at the
+  end: MonochromeThemeTests found the selection, drawn in the system's colour
+  before the field took `quick_switcher.selection_background`.
 - **It wears the find bar's look**, a panel lifted under a hairline with the
   field in a well, under a `ui.quick_switcher` section of its own. The built-in
   themes take its colours from their find bar, and its fainter text and

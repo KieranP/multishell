@@ -7,6 +7,7 @@ struct QuickSwitcherTextField: NSViewRepresentable {
   let text: String
   let font: NSFont
   let color: NSColor
+  let selection: NSColor
   let handlers: QuickSwitcherFieldHandlers
 
   func makeNSView(context: Context) -> QuickSwitcherNSTextField {
@@ -31,8 +32,12 @@ struct QuickSwitcherTextField: NSViewRepresentable {
     // Unchanged on most redraws, a composition's each key among them.
     if field.font != font { field.font = font }
     if field.textColor != color { field.textColor = color }
+    field.selection = selection
     let editor = field.currentEditor() as? NSTextView
     if let editor, editor.insertionPointColor != color { editor.insertionPointColor = color }
+    if let editor, editor.selectedTextAttributes[.backgroundColor] as? NSColor != selection {
+      editor.selectedTextAttributes = [.backgroundColor: selection]
+    }
     if !(editor?.hasMarkedText() ?? false), field.stringValue != text { field.stringValue = text }
   }
 

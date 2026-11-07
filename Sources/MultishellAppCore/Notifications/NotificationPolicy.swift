@@ -23,7 +23,7 @@ enum NotificationPolicy {
     return !isOnScreen
   }
 
-  /// The tab's title, or the worktree's name for a worktree-level report,
+  /// The reporting pane's title, or the worktree's name for a worktree-level report,
   /// then where it is.
   static func title(subject: String, project: String, worktree: String) -> String {
     t("notification.title", subject, project, worktree)

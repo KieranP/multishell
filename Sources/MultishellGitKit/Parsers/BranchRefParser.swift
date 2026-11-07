@@ -4,11 +4,10 @@ import Foundation
 /// anything else. A row missing its first two fields is dropped.
 enum BranchRefParser {
   static func parse(_ output: String) -> [BranchRef] {
-    output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline)
-      .compactMap { ref(from: $0) }
+    output.gitLines.compactMap { ref(from: $0) }
   }
 
-  private static func ref(from line: Substring) -> BranchRef? {
+  private static func ref(from line: String) -> BranchRef? {
     // Trailing \r where git ran with a Windows-configured core.autocrlf.
     let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
       .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\r")) }

@@ -240,6 +240,18 @@ bottom.
   nothing, then by shebang.** The shebang is the file on disk's, which a unified
   diff lists after `HEAD`'s first line.
 
+- **An interpolation's `@embedded` or `@none` is a hole, not a span.** In
+  pattern order its plain span erased the code's own colours inside a template
+  literal, an f-string or `"$(date)"`; it is cut out of the spans around it.
+- **Zig's `#lua-match?` is rewritten as `#match?`**, its patterns using no `%`:
+  SwiftTreeSitter passes every match of a predicate it does not know. A `@_`
+  capture feeds a predicate and colours nothing.
+- **`#is-not? local` is answered from the names the grammar's locals query
+  declares**, file-wide rather than per scope: answered no, every bare Ruby name
+  read as a call and a JS local named `console` as the built-in. Only the
+  definitions are queried, the reference pattern matching every name; a 1 MiB JS
+  file took 4.60 s against 4.12 s in a debug build.
+
 ## Reviewed and left as is
 
 Raised by reviews and settled; a review need not raise these again.

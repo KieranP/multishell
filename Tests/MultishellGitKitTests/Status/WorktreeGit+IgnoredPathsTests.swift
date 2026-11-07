@@ -29,4 +29,18 @@ struct WorktreeGitIgnoredPathsTests {
     #expect(ignored == ["node_modules", "node_modules/a", "packages/p/node_modules"])
     #expect(await git.ignoredPaths(["src"], in: path) == [], "none ignored is an answer")
   }
+
+  @Test func aNameHoldingALineSeparatorIsOneNameNotTwo() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    let separated = "build\u{2028}x"
+    try fixture.write("\(separated)\n", to: ".gitignore")
+    try fixture.write("x\n", to: separated)
+    try fixture.write("x\n", to: "build")
+
+    let ignored = await fixture.git.ignoredPaths(["build", separated], in: path)
+
+    #expect(ignored == [separated])
+  }
 }

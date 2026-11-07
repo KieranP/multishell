@@ -172,6 +172,14 @@ extension AppModel {
       \.remoteState.failureReports,
       remoteState.failureReports.filter { shownRuns.contains($0.key) },
     )
+    setIfChanged(
+      \.remoteState.workflowReadFailures,
+      remoteState.workflowReadFailures.filter { shownRuns.contains($0.key) },
+    )
+    setIfChanged(
+      \.remoteState.reportReadFailures,
+      remoteState.reportReadFailures.filter { shownRuns.contains($0.key) },
+    )
     remoteState.workflowsReadAt = remoteState.workflowsReadAt.filter { shownRuns.contains($0.key) }
     remoteState.reportsReadAt = remoteState.reportsReadAt.filter { shownRuns.contains($0.key) }
   }

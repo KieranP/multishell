@@ -75,6 +75,34 @@ struct ReflogWorkParserTests {
     #expect(!ReflogWorkParser.parse("\(firstSHA) clone: from /tmp/origin.git\n"))
   }
 
+  @Test func aRenamedOrCopiedBranchWithNoCommitsOfItsOwnHasNoWork() {
+    #expect(
+      !ReflogWorkParser.parse(
+        """
+        \(firstSHA) Branch: renamed refs/heads/feat-a to refs/heads/feat-b
+        \(firstSHA) branch: Created from main
+        """
+      )
+    )
+    #expect(
+      !ReflogWorkParser.parse(
+        """
+        \(firstSHA) Branch: copied refs/heads/feat-a to refs/heads/feat-b
+        \(firstSHA) branch: Created from main
+        """
+      )
+    )
+    #expect(
+      ReflogWorkParser.parse(
+        """
+        \(secondSHA) Branch: renamed refs/heads/feat-a to refs/heads/feat-b
+        \(secondSHA) commit: own
+        \(firstSHA) branch: Created from main
+        """
+      )
+    )
+  }
+
   /// A rebase that replayed nothing writes the same `(finish)` as one that
   /// did; where the branch came to rest, on the target or past it, tells them apart.
   @Test func aRebaseThatReplayedNothingIsAnArrival() {

@@ -145,6 +145,94 @@ struct GeminiSettingsTests {
     #expect(files.wakes)
   }
 
+  @Test(arguments: [
+    ["GEMINI_RESTRICTED_MODE": "true"],
+    ["GEMINI_CLI_TRUST_WORKSPACE": "false"],
+    ["GEMINI_RESTRICTED_MODE": "true", "GEMINI_CLI_TRUST_WORKSPACE": "true"],
+  ])
+  func anEnvironmentRefusingTrustOutranksEveryRule(refusal: [String: String]) throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.user(steering)
+    try files.project(injecting)
+    try files.trust([files.workspace.path: "TRUST_FOLDER"])
+
+    let wakes = GeminiSettings.wakesForBackgroundShells(
+      environment: files.environment.merging(refusal) { _, refused in refused },
+      directory: files.workspace.path,
+    )
+
+    #expect(!wakes)
+  }
+
+  @Test func theLongestRuleIsCountedInUTF16UnitsAsGeminiCountsIt() throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.user(steering)
+    try files.project(injecting)
+    let wide = files.root.appendingPathComponent("😀😀😀😀").path
+    try files.trust([wide: "TRUST_PARENT", files.workspace.path: "DO_NOT_TRUST"])
+
+    #expect(files.wakes, "four emoji are eight units, longer than repo's four")
+  }
+
+  @Test func ofTwoRulesTheSameLengthTheFirstInTheFileDecides() throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.user(steering)
+    try files.project(injecting)
+    let sibling = files.root.appendingPathComponent("abcd").path
+    let rules = #"{"\#(sibling)": "TRUST_PARENT", "\#(files.workspace.path)": "DO_NOT_TRUST"}"#
+    try files.write(rules, to: files.home.appendingPathComponent(".gemini/trustedFolders.json"))
+
+    #expect(files.wakes)
+  }
+
+  @Test func twoSpellingsOfOneFolderAreOneRuleTheLaterValueWinning() throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.user(steering)
+    try files.project(injecting)
+    let folder = files.workspace.path
+    let rules = #"{"\#(folder)/": "DO_NOT_TRUST", "\#(folder)": "TRUST_FOLDER"}"#
+    try files.write(rules, to: files.home.appendingPathComponent(".gemini/trustedFolders.json"))
+
+    #expect(files.wakes)
+  }
+
+  @Test func anEmptyTrustedFoldersPathFallsBackToTheDefaultAsGeminiDoes() throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.user(steering)
+    try files.project(injecting)
+    try files.trust([files.workspace.path: "TRUST_FOLDER"])
+    var environment = files.environment
+    environment["GEMINI_CLI_TRUSTED_FOLDERS_PATH"] = ""
+
+    let wakes = GeminiSettings.wakesForBackgroundShells(
+      environment: environment,
+      directory: files.workspace.path,
+    )
+
+    #expect(wakes)
+  }
+
+  @Test func anEmptySystemDefaultsPathFallsBackToTheDefaultAsGeminiDoes() throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.write(steering, to: files.defaults)
+    try files.user(injecting)
+    var environment = files.environment
+    environment["GEMINI_CLI_SYSTEM_DEFAULTS_PATH"] = ""
+
+    let wakes = GeminiSettings.wakesForBackgroundShells(
+      environment: environment,
+      directory: files.workspace.path,
+    )
+
+    #expect(wakes)
+  }
+
   @Test func theSystemDefaultsBesideTheSystemFileAreTheFirstLayer() throws {
     let files = Files()
     defer { Scratch.remove(files.root) }

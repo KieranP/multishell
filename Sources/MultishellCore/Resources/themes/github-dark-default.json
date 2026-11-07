@@ -109,7 +109,8 @@
       "text_tertiary": "#6e7681",
       "border": "#30363d",
       "fill": "#e6edf329",
-      "selection": "#1f6feb"
+      "selection": "#1f6feb",
+      "selection_background": "#6e768166"
     },
     "terminal_tab": {
       "background": "#0d1117",
@@ -118,7 +119,8 @@
       "text_tertiary": "#6e7681",
       "border": "#30363d",
       "divider": "#010409",
-      "selection": "#1f6feb"
+      "selection": "#1f6feb",
+      "selection_background": "#6e768166"
     },
     "file_tab": {
       "background": "#0d1117",
@@ -135,6 +137,7 @@
       "text_secondary": "#7d8590",
       "border": "#30363d",
       "fill": "#6e76811a",
+      "selection_background": "#6e768166",
       "field_background": "#0d1117",
       "field_text": "#e6edf3",
       "field_text_secondary": "#7d8590",

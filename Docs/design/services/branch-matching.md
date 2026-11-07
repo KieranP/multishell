@@ -9,6 +9,17 @@ upstream, and a merged pull request as proof the branch landed.
   matched the same way, by the `repository_url` CircleCI gives it, so a fork
   shows none of the project's runs on its same-named branch; where either side
   names no repository, the branch name alone decides.
+- **A remote's push URL is asked once which repository it names today**,
+  `gh repo view <url>`, and a pull request headed there matches too: GitHub
+  lists a renamed or moved repository's under its new name while the URL keeps
+  the old, which it redirects (`zeit/next.js` heads `vercel/next.js`, checked
+  2026-11-07). A fork resolves to itself, so its parent's same-named branch
+  stays someone else's; trusting any pull request from no fork with one remote
+  was tried and dropped for taking those. A URL `gh` cannot resolve, a GitLab
+  mirror, an ssh host alias or a timeout, waits ten minutes before it is asked
+  again, as each read waits on the asks. A run matches the new name only while
+  the pull request integration has asked, as CircleCI's read asks nothing of
+  GitHub.
 - **The branch's upstream here is where it is published**: its own name on the
   remote its pushes go to, `pushRemote` or `remote.pushDefault` resolved by
   git's `%(push:remotename)`, where that remote has it; else the branch it

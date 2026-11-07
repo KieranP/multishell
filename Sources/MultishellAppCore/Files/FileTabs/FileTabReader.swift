@@ -50,7 +50,7 @@ enum FileTabReader {
       return FileTabReading(content: .tooLarge(bytes: data.count), isFileGone: false)
     }
     let readsAsImage = isImage && (image != nil || isGone)
-    let resolved = await committedSide(
+    let resolved = await CommittedSide.resolved(
       of: repository,
       in: worktree,
       since: base,
@@ -69,24 +69,39 @@ enum FileTabReader {
     {
       return FileTabReading(content: content, isFileGone: isGone)
     }
-    guard let side = resolved else {
-      // What it counts from is unknown: the last rows or image, else none rather than a guess.
-      if let previous, previous.content.showsTheFile, previous.isFileGone == isGone {
-        return previous
-      }
-      return FileTabReading(content: .unreadable, isFileGone: isGone)
-    }
-    return await textReading(of: data, in: repository, against: side, git: git, diffAlgorithm)
+    guard let side = resolved,
+      let reading = await textReading(
+        of: data,
+        in: repository,
+        against: side,
+        git: git,
+        diffAlgorithm,
+      )
+    else { return lastReadingOrUnreadable(previous, isFileGone: isGone) }
+    return reading
   }
 
-  /// Text, or a notice where it is none or too large, against a side resolved.
+  /// Where git cannot say what the file counts from or how it changed: the
+  /// last rows or image, else none rather than a guess.
+  private static func lastReadingOrUnreadable(
+    _ previous: FileTabReading?,
+    isFileGone: Bool,
+  ) -> FileTabReading {
+    if let previous, previous.content.showsTheFile, previous.isFileGone == isFileGone {
+      return previous
+    }
+    return FileTabReading(content: .unreadable, isFileGone: isFileGone)
+  }
+
+  /// Text, or a notice where it is none or too large, against a side resolved;
+  /// `nil` where git cannot diff the file.
   private static func textReading(
     of data: Data?,
     in repository: RepositoryLocation,
     against side: CommittedSide,
     git: WorktreeGit,
     _ diffAlgorithm: DiffAlgorithm,
-  ) async -> FileTabReading {
+  ) async -> FileTabReading? {
     // A file in a submodule is diffed against the submodule's own `HEAD`.
     let path = repository.path
     let isGone = data == nil
@@ -96,23 +111,27 @@ enum FileTabReader {
       return FileTabReading(content: .tooLarge(bytes: committedSize), isFileGone: false)
     }
     guard let data else {
-      let content = await deletedContent(
+      guard
+        let content = await deletedContent(
+          path: path,
+          in: repository.directory,
+          against: side,
+          git: git,
+          diffAlgorithm,
+        )
+      else { return nil }
+      return FileTabReading(content: content, isFileGone: true)
+    }
+    guard
+      let content = await content(
+        of: data,
         path: path,
         in: repository.directory,
         against: side,
         git: git,
         diffAlgorithm,
       )
-      return FileTabReading(content: content, isFileGone: true)
-    }
-    let content = await content(
-      of: data,
-      path: path,
-      in: repository.directory,
-      against: side,
-      git: git,
-      diffAlgorithm,
-    )
+    else { return nil }
     return FileTabReading(content: content, isFileGone: false)
   }
 
@@ -135,49 +154,6 @@ enum FileTabReader {
     return nil
   }
 
-  /// The merge base with `base` for the worktree's own file, else `HEAD`; `nil`
-  /// where git cannot say which.
-  private static func committedSide(
-    of repository: RepositoryLocation,
-    in worktree: URL,
-    since base: DefaultBranch?,
-    isGone: Bool,
-    git: WorktreeGit,
-  ) async -> CommittedSide? {
-    var commit: String?
-    if let base, repository.directory == worktree {
-      async let mergeBase = git.mergeBase(with: base, inRepositoryAt: worktree)
-      async let head = git.headCommit(in: worktree)
-      // No shared history is an answer, `HEAD`; only a throw leaves git unable to say.
-      do {
-        commit = try await mergeBase
-      } catch {
-        return nil
-      }
-      // On the base itself the index holds nothing past `HEAD`, so its marks stay exact.
-      if let found = commit, found == (await head) { commit = nil }
-    }
-    // A size git could not read is no answer, not a file the merge base lacks.
-    let size: Int?
-    do {
-      size = try await git.committedSize(of: repository.path, in: repository.directory, at: commit)
-    } catch {
-      return nil
-    }
-    guard commit != nil, size == nil, isGone else {
-      return CommittedSide(commit: commit, size: size, marksStaging: commit == nil)
-    }
-    // Added by the branch and deleted, `HEAD`'s copy is shown removed, staging unmarked;
-    // none there either is the missing notice, and only a throw leaves git unable to say.
-    let headSize: Int?
-    do {
-      headSize = try await git.committedSize(of: repository.path, in: repository.directory)
-    } catch {
-      return nil
-    }
-    return CommittedSide(commit: nil, size: headSize, marksStaging: false)
-  }
-
   /// The rows, those the index holds marked staged where the side marks staging.
   private static func rows(
     of lines: [DiffLine],
@@ -194,14 +170,14 @@ enum FileTabReader {
     )
   }
 
-  /// The committed text, every line removed.
+  /// The committed text, every line removed; `nil` where git cannot diff it.
   private static func deletedContent(
     path: String,
     in repository: URL,
     against side: CommittedSide,
     git: WorktreeGit,
     _ diffAlgorithm: DiffAlgorithm,
-  ) async -> FileTabContent {
+  ) async -> FileTabContent? {
     // Naming `HEAD` skips the staged diff, which rows marking no staging never read.
     let commit = side.marksStaging ? nil : side.commit ?? "HEAD"
     guard
@@ -211,7 +187,7 @@ enum FileTabReader {
         diffAlgorithm: diffAlgorithm,
         since: commit,
       )
-    else { return .missing }
+    else { return nil }
     // The patch holds the committed bytes, so it is guessed as the file would be.
     let encoding = TextDecoding.decode(patches.onDisk)?.encoding ?? .utf8
     switch UnifiedPatchParser.parse(patches.onDisk, encoding: encoding) {
@@ -234,7 +210,7 @@ enum FileTabReader {
   }
 
   /// A file with no committed side and nothing staged is untracked: every
-  /// line added, no git needed beyond what said so.
+  /// line added, no git needed beyond what said so. `nil` where git cannot diff it.
   private static func content(
     of data: Data,
     path: String,
@@ -242,19 +218,20 @@ enum FileTabReader {
     against side: CommittedSide,
     git: WorktreeGit,
     _ diffAlgorithm: DiffAlgorithm,
-  ) async -> FileTabContent {
+  ) async -> FileTabContent? {
     guard let (text, encoding) = TextDecoding.decode(data) else {
       return .binary(bytes: data.count)
     }
     let marksStaging = side.marksStaging
-    let patches = await git.patches(
-      of: path,
-      in: repository,
-      diffAlgorithm: diffAlgorithm,
-      since: side.commit,
-    )
-    let onDiskPatch = patches.map { UnifiedPatchParser.parse($0.onDisk, encoding: encoding) }
-    switch onDiskPatch ?? .unchanged {
+    guard
+      let patches = await git.patches(
+        of: path,
+        in: repository,
+        diffAlgorithm: diffAlgorithm,
+        since: side.commit,
+      )
+    else { return nil }
+    switch UnifiedPatchParser.parse(patches.onDisk, encoding: encoding) {
     case .binary:
       return .binary(bytes: data.count)
 
@@ -262,16 +239,20 @@ enum FileTabReader {
       // Out of the index but on disk, git prints it deleted; it is the new file it is,
       // unless git ignores it, which the list shows deleted too.
       let isWhollyRemoved = !data.isEmpty && lines.allSatisfy { $0.kind == .removed }
-      if isWhollyRemoved, await git.ignoredPaths([path], in: repository)?.contains(path) == false {
-        return .text(
-          FileTabRows(
-            lines: PlainDiffLines.of(text, kind: .added),
-            marksStaging: marksStaging,
+      if isWhollyRemoved {
+        // A failed check is no answer, not a file git ignores.
+        guard let ignored = await git.ignoredPaths([path], in: repository) else { return nil }
+        guard ignored.contains(path) else {
+          return .text(
+            FileTabRows(
+              lines: PlainDiffLines.of(text, kind: .added),
+              marksStaging: marksStaging,
+            )
           )
-        )
+        }
       }
       return .text(
-        rows(of: lines, staged: patches?.staged, encoding: encoding, marksStaging: marksStaging)
+        rows(of: lines, staged: patches.staged, encoding: encoding, marksStaging: marksStaging)
       )
 
     case .modeOnly:
@@ -286,7 +267,10 @@ enum FileTabReader {
     case .unchanged:
       // A new file is every line added; one git ignores is shown as it is.
       var isNew = side.size == nil
-      if isNew { isNew = await git.ignoredPaths([path], in: repository)?.contains(path) == false }
+      if isNew {
+        guard let ignored = await git.ignoredPaths([path], in: repository) else { return nil }
+        isNew = !ignored.contains(path)
+      }
       return .text(
         FileTabRows(
           lines: PlainDiffLines.of(text, kind: isNew ? .added : .context),

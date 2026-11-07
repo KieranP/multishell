@@ -56,6 +56,9 @@ final class RemoteState {
   var checks: [Worktree.ID: PullRequestChecks] = [:]
   var ciHistories: [Worktree.ID: CIRunHistory] = [:]
   var failureReports: [CIRun.ID: CIRunDetail<CIFailureReport>] = [:]
+  /// Why each run's last workflows or report read failed, until one answers.
+  var workflowReadFailures: [CIRun.ID: ServiceReadFailure] = [:]
+  var reportReadFailures: [CIRun.ID: ServiceReadFailure] = [:]
   /// When each project's list and runs last answered, kept apart so an answer
   /// that changed nothing redraws nothing; a failed read's tooltip reads them.
   @ObservationIgnored var pullRequestsAnsweredAt: [Project.ID: Date] = [:]

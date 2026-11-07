@@ -70,22 +70,32 @@ final class SyntaxHighlighter: Sendable {
     within keptRanges: [Range<Int>]? = nil,
   ) -> [HighlightSpan] {
     var captured: [(pattern: Int, span: HighlightSpan)] = []
+    var holes: [EmbeddedCodeHoles.Hole] = []
+    let context = grammar.localNames.map { locals in
+      LocalNamesQuery.context(for: text, declaring: locals.names(in: tree, text: text))
+    }
     let captures = grammar.query.captures(
       in: tree,
       within: keptRanges,
-      matching: Predicate.Context(string: text),
+      matching: context ?? Predicate.Context(string: text),
     )
-    for capture in captures {
-      guard capture.range.length > 0, let role = grammar.captureRoles[capture.index] else {
-        continue
+    for capture in captures where capture.range.length > 0 {
+      let range = capture.range.integerRange
+      if grammar.embeddedCodeCaptures.contains(capture.index) {
+        holes.append(EmbeddedCodeHoles.Hole(pattern: capture.patternIndex, range: range))
+      } else if let role = grammar.captureRoles[capture.index] {
+        captured.append((capture.patternIndex, HighlightSpan(range: range, role: role)))
       }
-      let span = HighlightSpan(range: capture.range.integerRange, role: role)
-      captured.append((capture.patternIndex, span))
     }
-    let inPatternOrder = captured.enumerated().sorted { first, second in
+    let sorted = captured.enumerated().sorted { first, second in
       first.element.pattern == second.element.pattern
         ? first.offset < second.offset : first.element.pattern < second.element.pattern
-    }.map(\.element.span)
+    }.map(\.element)
+    let embeddedCode = EmbeddedCodeHoles(holes)
+    let inPatternOrder =
+      holes.isEmpty
+      ? sorted.map(\.span)
+      : sorted.flatMap { embeddedCode.pieces(of: $0.span, fromPattern: $0.pattern) }
     guard let injectionQuery = grammar.injectionQuery else { return inPatternOrder }
     let string = text as NSString
     let found = HighlightInjections.find(

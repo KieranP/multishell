@@ -26,8 +26,11 @@ extension AppModel {
     // app off screen, and the sidebar they picture says that.
     let worktreeName = workspace.displayName(of: worktree)
     let subject: String
-    if case .session(let id) = key, let tab = workspace.tab(owning: id) {
-      subject = shownTitle(of: tab)
+    if case .session(let id) = key,
+      let tab = workspace.tab(owning: id),
+      let session = workspace.session(id)
+    {
+      subject = shownTitle(ofPane: session, in: tab, of: worktree)
     } else {
       subject = worktreeName
     }

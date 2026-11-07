@@ -10,13 +10,23 @@ enum ServiceReadInterval {
   /// A return to the front asks again only past this, so switching apps
   /// back and forth asks nothing.
   static let activation: Duration = .seconds(30)
-  /// How long "not ours" stands with the remotes unchanged: an Enterprise
+  /// How long a refusal stands with the remotes unchanged: an Enterprise
   /// host is not ours until `gh auth login` names it.
-  private static let notHostedRecheck: TimeInterval = 600
+  private static let refusalRecheck: TimeInterval = 600
 
   /// Whether a "not ours" first given at `since`, and given again each time
   /// since, still answers without asking.
   static func notHostedStands(since: Date?) -> Bool {
-    since.map { Date.now.timeIntervalSince($0) < notHostedRecheck } ?? false
+    refusalStands(since: since)
+  }
+
+  /// Whether a remote URL `gh` could not resolve at `since` waits before it is
+  /// asked again: a GitLab mirror or an ssh host alias never resolves.
+  static func unresolvedRemoteStands(since: Date?) -> Bool {
+    refusalStands(since: since)
+  }
+
+  private static func refusalStands(since: Date?) -> Bool {
+    since.map { Date.now.timeIntervalSince($0) < refusalRecheck } ?? false
   }
 }

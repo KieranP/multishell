@@ -13,6 +13,14 @@ struct StandInPullRequestHost: PullRequestHost {
     standIn.pullRequests.filter { $0.headBranch == branch }
   }
 
+  /// A stand-in has no host to follow a rename on, so the URL's own.
+  func repository(namedBy remoteURL: String, in directory: URL) async throws -> RemoteRepository {
+    guard let repository = RemoteRepository(remoteURL: remoteURL) else {
+      throw ServiceReadFailure.notHosted
+    }
+    return repository
+  }
+
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck] {
     standIn.checks[ServiceStandIn.key(of: pullRequest)] ?? []
   }

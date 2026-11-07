@@ -190,6 +190,24 @@ struct AppModelSessionReportsTests {
     #expect(harness.notifier.posted.first?.title.contains("feature") == false, "not the branch")
   }
 
+  @Test func aBannerFromAnUnfocusedSplitPaneIsTitledByThatPane() throws {
+    let harness = Harness()
+    harness.model.setNotificationPreference(.everyState)
+    harness.model.select(harness.main)
+    harness.model.splitActivePane(.horizontal)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let reporter = try #require(tab.sessionIDs.first { $0 != tab.focusedSessionID })
+    harness.model.noteTitle("vim", of: tab.focusedSessionID)
+    harness.model.noteTitle("make release", of: reporter)
+    harness.model.select(harness.feature)
+
+    harness.messageSource.send(SessionStateReport(state: .attention, sessionID: reporter))
+
+    let title = try #require(harness.notifier.posted.first?.title)
+    #expect(title.contains("make release"))
+    #expect(!title.contains("vim"))
+  }
+
   /// The banner already up is the prompt's, and posting again under the same key would
   /// replace it with a body that says less.
   @Test func aWorkerTickRaisesNoSecondBannerForAPromptAlreadyUp() {

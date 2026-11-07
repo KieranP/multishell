@@ -32,13 +32,21 @@ public enum HighlightCaptureRoles {
     "storageclass": .keyword, "string": .string, "tag": .keyword, "type": .type,
   ]
 
+  /// Code inside a string's interpolation: a hole in the string's colour, not a colour.
+  public static func marksEmbeddedCode(_ name: String) -> Bool {
+    name == "embedded" || name == "none"
+  }
+
   /// `.plain` for `variable`, `operator`, `label` and the like, which still
   /// override an earlier pattern; `nil` for a mark that is no highlight.
   public static func role(
     forCapture name: String,
     in language: HighlightLanguage,
   ) -> HighlightRole? {
-    guard !notHighlights.contains(name) else { return nil }
+    // A name starting `_` only feeds a predicate, tree-sitter's convention.
+    guard !notHighlights.contains(name), !name.hasPrefix("_"), !marksEmbeddedCode(name) else {
+      return nil
+    }
     if let exception = exceptionsByLanguage[language]?[name] ?? exceptions[name] {
       return exception
     }

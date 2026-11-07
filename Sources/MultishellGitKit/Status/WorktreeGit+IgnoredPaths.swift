@@ -14,7 +14,7 @@ extension WorktreeGit {
     guard let outcome = await runner.capture(arguments, in: directory),
       outcome.status == 0 || outcome.status == 1
     else { return nil }
-    return Set(outcome.standardOutput.split(whereSeparator: \.isNewline).map(String.init))
+    return Set(outcome.standardOutput.gitLines)
   }
 
   /// What git ignores, a wholly ignored folder one entry ending in `/`, so its

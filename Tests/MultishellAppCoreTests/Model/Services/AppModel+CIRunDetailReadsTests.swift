@@ -38,6 +38,31 @@ struct AppModelCIRunDetailReadsTests {
     #expect(harness.model.remoteState.ciWorkflows["r1"] == nil)
   }
 
+  @Test func aRunWhoseDetailsCouldNotBeReadSaysWhyUntilAReadAnswers() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    provider.answer(recent: [.sample(id: "r1", branch: "feat", status: .failed)], workflows: [])
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let run = try #require(harness.model.services(of: feat).ciRun)
+    provider.failRunDetails(.failed("offline"))
+
+    await harness.model.readCIRunDetails(of: run, for: feat)
+
+    #expect(harness.model.ciRunDetailProblem(ofRun: run, for: feat) == "offline")
+
+    provider.failRunDetails(nil)
+    await harness.model.readCIRunDetails(of: run, for: feat)
+
+    #expect(harness.model.ciRunDetailProblem(ofRun: run, for: feat) == nil)
+    #expect(harness.model.ciWorkflows(ofRun: run) == [])
+  }
+
   @Test func workflowsLandingAfterTheProviderWasTurnedOffAreNotKept() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -186,8 +211,16 @@ struct AppModelCIRunDetailReadsTests {
     defer { harness.tearDown() }
     let (_, provider) = harness.connectServices()
     try harness.writeCIConfiguration()
+    try await harness.addOrigin()
     let feat = try await harness.createWorktree(onBranch: "feat")
-    let running = CIRun.sample(id: "r1", branch: "feat", status: .running)
+    try await harness.pushToGitHubOrigin(feat)
+    provider.answer(
+      recent: [.sample(id: "r1", branch: "feat", status: .running)],
+      workflows: [],
+    )
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    let running = try #require(harness.model.services(of: feat).ciRun)
     await harness.model.readCIRunDetails(of: running, for: feat)
     harness.model.remoteState.workflowsReadAt["r1"] = .distantPast
     let changed = AtomicFlag()

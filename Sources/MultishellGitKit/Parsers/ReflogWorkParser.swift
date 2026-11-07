@@ -20,7 +20,10 @@ enum ReflogWorkParser {
     let parts = message.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
     let action = String(parts[0])
     let detail = parts.count > 1 ? parts[1].trimmingCharacters(in: .whitespaces) : ""
-    if action == "branch" || action == "reset" || action == "clone" { return true }
+    // git writes a rename or copy as `Branch: renamed …`, capitalised, moving no commit.
+    if action == "branch" || action == "Branch" || action == "reset" || action == "clone" {
+      return true
+    }
     if action.hasPrefix("fetch") { return true }
     if action.hasSuffix("(finish)") || action.hasSuffix(" finished"),
       rebaseReplayedNothing(detail, restingAt: tipSHA)

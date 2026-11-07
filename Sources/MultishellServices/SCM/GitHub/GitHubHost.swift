@@ -52,6 +52,19 @@ public struct GitHubHost: PullRequestHost {
     try await list(["--limit", String(Self.listLimit)], in: directory)
   }
 
+  /// `gh` follows GitHub's redirect from a renamed or moved repository's old URL.
+  public func repository(
+    namedBy remoteURL: String,
+    in directory: URL,
+  ) async throws -> RemoteRepository {
+    let json = try await runner.read(
+      ["repo", "view", remoteURL, "--json", GitHubRepositoryRecord.fields],
+      in: directory,
+      failure: GitHubErrorText.failure(from:),
+    )
+    return try GitHubRepositoryRecord.repository(from: json)
+  }
+
   /// `--head` matches the branch's name in any repository, a fork's too.
   public func pullRequests(
     headedBy branch: String,

@@ -142,19 +142,20 @@ extension AppModel {
       PanelFolderRead(kind: .submodule, path: path, worktreeID: id),
       in: id,
       on: \.panelFolderReads,
-      reading: {
-        guard await git.isRepositoryTop(directory),
-          let tracked = await git.trackedFiles(in: directory)
-        else { return SubmoduleReading.uninitialised }
-        let status = try? await git.status(
-          inRepositoryAt: directory,
-          counting: indicator,
-          diffAlgorithm: algorithm,
-        )
+      reading: { () -> SubmoduleReading? in
+        guard await git.isRepositoryTop(directory) else { return SubmoduleReading.uninitialised }
+        // A list or status git could not read is no answer, and keeps the last reading.
+        guard let tracked = await git.trackedFiles(in: directory),
+          let status = try? await git.status(
+            inRepositoryAt: directory,
+            counting: indicator,
+            diffAlgorithm: algorithm,
+          )
+        else { return nil }
         return SubmoduleReading(tracked: tracked, status: status)
       },
       landing: { model, reading in
-        guard model.submoduleReadings[id]?[path] != reading else { return }
+        guard let reading, model.submoduleReadings[id]?[path] != reading else { return }
         model.submoduleReadings[id, default: [:]][path] = reading
       },
       rerun: { $0.scheduleSubmoduleRead(path, in: id) },

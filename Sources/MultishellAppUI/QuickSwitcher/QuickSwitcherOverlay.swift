@@ -56,6 +56,7 @@ struct QuickSwitcherOverlay: View {
         text: state.text,
         font: metrics.appKitFont(size: metrics.quickSwitcherFieldFontSize),
         color: NSColor(palette.color(.fieldText)),
+        selection: NSColor(palette.color(.selectionBackground)),
         handlers: QuickSwitcherFieldHandlers(
           setText: { text in
             model.setQuickSwitcherText(text)

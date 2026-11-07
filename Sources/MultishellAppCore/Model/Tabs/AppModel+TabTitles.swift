@@ -19,7 +19,7 @@ extension AppModel {
     tab.customTitle ?? sessionTitles[session.id] ?? session.displayTitle
   }
 
-  /// `title(of:)` as the strip, a banner and Debug Info draw it.
+  /// `title(of:)` as the strip and Debug Info draw it.
   public func shownTitle(of tab: TerminalTab) -> String {
     guard tab.customTitle == nil, let reported = sessionTitles[tab.focusedSessionID] else {
       return title(of: tab)
@@ -27,8 +27,8 @@ extension AppModel {
     return shown(reported, worktreePath: workspace.worktree(tab.worktreeID)?.path.path)
   }
 
-  /// `title(ofPane:in:)` as the sidebar, the board and the switcher draw it,
-  /// each already holding the tab's worktree.
+  /// `title(ofPane:in:)` as the sidebar, the board, the switcher and a banner
+  /// draw it, each already holding the tab's worktree.
   func shownTitle(
     ofPane session: TerminalSession,
     in tab: TerminalTab,

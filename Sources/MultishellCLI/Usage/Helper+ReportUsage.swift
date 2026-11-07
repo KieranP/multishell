@@ -18,7 +18,7 @@ extension Helper {
         \(SessionEnvironment.sessionVariable), \(SessionEnvironment.worktreeVariable),
         \(SessionEnvironment.socketVariable), \(SessionEnvironment.appPIDVariable). The pid defaults to the
         nearest ancestor that is not a shell: the program that ran this, or
-        the shell itself when the next ancestor is the app. --agent names
+        the shell or its login when the next ancestor is the app. --agent names
         the agent at the prompt, by catalogue id, so the app can tell an
         agent's pane from a plain shell; the agents' own hooks set it.
         --subagent names a worker the agent has out, so the app can list

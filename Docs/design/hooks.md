@@ -108,3 +108,7 @@
 - **A clone drops a nested file's ACL**, with or without `CLONE_ACL`, where the
   walk's `copyItem` kept it. Checking for one would cost the walk's time, and
   the walk already dropped a folder's.
+- **A hook, a file list and a merge message are typed into a plain `NSTextView`,
+  not SwiftUI's `TextEditor`**: that one turned `"` and `--` into curly quotes
+  and a dash as they were typed, which broke the script, and has no switch for
+  it; the app's Edit menu drops the Substitutions menu that would.

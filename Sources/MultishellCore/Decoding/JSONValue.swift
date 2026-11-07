@@ -4,6 +4,8 @@ public enum JSONValue: Codable, Hashable, Sendable {
   case array([Self])
   case bool(Bool)
   case integer(Int)
+  /// Past `Int`'s range, which a `Double` would round.
+  case largeInteger(UInt64)
   case null
   case number(Double)
   case object([String: Self])
@@ -17,6 +19,8 @@ public enum JSONValue: Codable, Hashable, Sendable {
       self = .bool(value)
     } else if let value = try? single.decode(Int.self) {
       self = .integer(value)
+    } else if let value = try? single.decode(UInt64.self) {
+      self = .largeInteger(value)
     } else if let value = try? single.decode(Double.self) {
       self = .number(value)
     } else if let value = try? single.decode(String.self) {
@@ -34,6 +38,7 @@ public enum JSONValue: Codable, Hashable, Sendable {
     case .null: try single.encodeNil()
     case .bool(let value): try single.encode(value)
     case .integer(let value): try single.encode(value)
+    case .largeInteger(let value): try single.encode(value)
     case .number(let value): try single.encode(value)
     case .string(let value): try single.encode(value)
     case .array(let value): try single.encode(value)

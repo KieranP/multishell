@@ -17,7 +17,8 @@ extension String {
           inString = false
         }
       } else if character == "/", pending == "/" {
-        while let skipped = pending, skipped != "\n" { pending = characters.next() }
+        // Not `!= "\n"`: a CRLF file's `\r\n` is one Character, never equal to it.
+        while let skipped = pending, !skipped.isNewline { pending = characters.next() }
       } else if character == "/", pending == "*" {
         pending = characters.next()
         var previous: Character?

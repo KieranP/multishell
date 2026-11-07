@@ -46,6 +46,17 @@ struct AppearanceTests {
     #expect((written as? [String: Any])?["fileFontName"] as? String == "Menlo")
   }
 
+  @Test func fontSizesOutsideTheirRangeAreBroughtIntoItOnLoad() throws {
+    let saved = try decodeJSON(
+      Appearance.self,
+      #"{ "fontSize": 200, "uiFontSize": 0, "fileFontSize": -4 }"#,
+    )
+
+    #expect(saved.terminalFontSize == Appearance.terminalFontSizes.upperBound)
+    #expect(saved.uiFontSize == Appearance.uiFontSizes.lowerBound)
+    #expect(saved.fileFontSize == Appearance.fileFontSizes.lowerBound)
+  }
+
   @Test func theUIFontFamilyIsKeptAndAnOlderFileHasNone() throws {
     #expect(try decodeJSON(Appearance.self, #"{ "uiFontSize": 16 }"#).uiFontName == nil)
 

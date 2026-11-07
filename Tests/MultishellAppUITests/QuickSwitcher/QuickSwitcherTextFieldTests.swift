@@ -1,5 +1,6 @@
 import AppKit
 import MultishellCore
+import SwiftUI
 import Testing
 
 @testable import MultishellAppCore
@@ -21,6 +22,15 @@ struct QuickSwitcherTextFieldTests {
     let field = try harness.field()
 
     #expect(try harness.editor().insertionPointColor == field.textColor)
+  }
+
+  @Test func itsTextIsSelectedInTheSwitchersSelection() throws {
+    let harness = QuickSwitcherFieldHarness()
+    let expected = NSColor(harness.model.currentTheme.quickSwitcher.color(.selectionBackground))
+
+    let selection = try harness.editor().selectedTextAttributes[.backgroundColor] as? NSColor
+
+    #expect(FocusedFieldEditor.isSame(selection, as: expected))
   }
 
   @Test func whatIsTypedReachesTheModel() throws {

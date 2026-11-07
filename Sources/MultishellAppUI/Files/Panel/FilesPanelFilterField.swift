@@ -8,6 +8,8 @@ struct FilesPanelFilterField: View {
   let worktreeID: Worktree.ID
   let theme: Theme
 
+  @FocusState private var isFocused: Bool
+
   var body: some View {
     let metrics = model.metrics
     let text = Binding(
@@ -28,6 +30,12 @@ struct FilesPanelFilterField: View {
         )
         .font(metrics.font(size: metrics.secondary))
         .foregroundStyle(theme.filesPanel.text)
+        .focused($isFocused)
+        .fieldEditorColors(
+          selection: theme.filesPanel.color(.selectionBackground),
+          caret: theme.filesPanel.text,
+          isFocused: isFocused,
+        )
         .onExitCommand { text.wrappedValue = "" }
       if !text.wrappedValue.isEmpty {
         ClearFilterButton(

@@ -48,7 +48,7 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
     case .filesPanel: [.background] + text + [.border, .fill, .selectionBackground]
 
     case .findBar:
-      [.background, .text, .textSecondary, .border, .fill]
+      [.background, .text, .textSecondary, .border, .fill, .selectionBackground]
         + [.fieldBackground, .fieldText, .fieldTextSecondary, .fieldBorder]
 
     case .git: [.added, .removed, .changed, .merged]
@@ -66,9 +66,9 @@ public enum InterfaceSection: String, CaseIterable, Sendable {
 
     case .states: [.working, .waiting, .done, .failed]
 
-    case .tabBar: [.background] + text + [.border, .fill, .selection]
+    case .tabBar: [.background] + text + [.border, .fill, .selection, .selectionBackground]
 
-    case .terminalTab: [.background] + text + [.border, .divider, .selection]
+    case .terminalTab: [.background] + text + [.border, .divider, .selection, .selectionBackground]
     }
   }
 }

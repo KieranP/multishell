@@ -7,7 +7,7 @@ extension WorktreeGit {
   /// The flag came in git 2.31. An older git echoes it back as a flag it does
   /// not know and answers relative to where it ran, so that is resolved here.
   static func absolutePaths(in output: String, from directory: URL) -> [URL] {
-    var lines = output.split(whereSeparator: \.isNewline).map(String.init)
+    var lines = output.gitLines
     if lines.first == absolutePathsFlag { lines.removeFirst() }
     return lines.map { directoryURL($0, relativeTo: directory) }
   }

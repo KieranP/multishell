@@ -69,6 +69,83 @@ struct AppModelPullRequestReadsTests {
     #expect(host.askedBranches.isEmpty)
   }
 
+  @Test func aRepositoryRenamedSinceItsRemoteWasSetStillFindsItsPullRequest() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.rename(GitHarness.gitHubOrigin, to: RemoteRepository(owner: "new-owner", name: "demo"))
+    host.answer(.success([.sample(number: 9, headBranch: "feat", owner: "new-owner")]))
+
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.services(of: feat).pullRequest?.number == 9)
+    #expect(host.askedBranches.isEmpty)
+  }
+
+  @Test func aRemoteURLIsAskedWhichRepositoryItNamesOnceNotEachRead() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(host.calls.filter { $0 == "list" }.count == 2)
+    #expect(host.askedRemoteURLs == [GitHarness.gitHubOrigin])
+  }
+
+  @Test func aRemoteURLWhoseAskFailedWaitsOutTheRecheckBeforeItIsAskedAgain() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.rename(GitHarness.gitHubOrigin, to: RemoteRepository(owner: "new-owner", name: "demo"))
+    host.failRepositoryAsks([.failed("timed out")])
+    host.answer(.success([.sample(number: 9, headBranch: "feat", owner: "new-owner")]))
+    await harness.model.refreshBranchScan(of: harness.project)
+    let id = harness.project.id
+
+    await harness.model.refreshServices(ofProject: id)
+    await harness.model.refreshServices(ofProject: id)
+    let askedWithinTheRecheck = host.askedRemoteURLs
+    harness.model.remoteState.pullRequests[id]?.remoteURLAskFailures[GitHarness.gitHubOrigin] =
+      .distantPast
+    await harness.model.refreshServices(ofProject: id)
+
+    #expect(askedWithinTheRecheck == [GitHarness.gitHubOrigin])
+    #expect(host.askedRemoteURLs == [GitHarness.gitHubOrigin, GitHarness.gitHubOrigin])
+    #expect(harness.model.services(of: feat).pullRequest?.number == 9)
+  }
+
+  @Test func onlyTheURLARemotePushesToIsAskedWhichRepositoryItNames() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    let pushURL = "git@github.com:me/demo-fork.git"
+    _ = try await harness.git.run(
+      ["remote", "set-url", "--push", "origin", pushURL],
+      in: harness.project.path,
+    )
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(host.askedRemoteURLs == [pushURL])
+  }
+
   @Test func aForksSameNamedPullRequestInTheListDoesNotStopTheBranchBeingAskedAlone()
     async throws
   {

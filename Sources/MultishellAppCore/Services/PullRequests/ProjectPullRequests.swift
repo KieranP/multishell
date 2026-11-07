@@ -13,6 +13,11 @@ struct ProjectPullRequests: Equatable {
   /// The branches the list left out, by their name on the remote.
   var lookups: [String: BranchPullRequestLookup] = [:]
   var remotes: [GitRemote]
+  /// What each remote URL names today, asked once a URL: a renamed repository's
+  /// pull requests come under its new name.
+  var currentRepositories: [String: RemoteRepository] = [:]
+  /// When each URL's ask last failed, which `ServiceReadInterval` waits out.
+  var remoteURLAskFailures: [String: Date] = [:]
   /// Whether any read has answered; when is `RemoteState`'s, unobserved.
   var hasAnswered = false
   /// Why the latest read gave no answer, `nil` where it gave one.

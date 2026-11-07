@@ -48,6 +48,11 @@ struct FindBar: View {
         .font(metrics.font(size: metrics.bodySize))
         .foregroundStyle(theme.color(.fieldText, in: .findBar))
         .focused($isFieldFocused)
+        .fieldEditorColors(
+          selection: theme.findBar.color(.selectionBackground),
+          caret: theme.color(.fieldText, in: .findBar),
+          isFocused: isFieldFocused,
+        )
         .onChange(of: isFieldFocused) { model.noteFindField(focused: $1, of: targetID) }
         .onSubmit(submit)
         .onExitCommand { model.closeFind(in: targetID) }

@@ -51,14 +51,14 @@ extension AppModel {
   public func newWorktreeBranches(of project: Project) async -> NewWorktreeBranches? {
     let hasCommits = await hasCommits(project)
     guard !Task.isCancelled else { return nil }
-    let (local, remote) = await branches(of: project)
+    let branches = await branches(of: project)
     guard !Task.isCancelled else { return nil }
-    let base = await suggestedBase(of: project, local: local, remote: remote)
+    let base = await suggestedBase(of: project, among: branches)
     guard !Task.isCancelled else { return nil }
     return NewWorktreeBranches(
       hasCommits: hasCommits,
-      localBranches: local,
-      remoteBranches: remote,
+      localBranches: branches?.local ?? [],
+      remoteBranches: branches?.remote ?? [],
       suggestedBase: base,
     )
   }

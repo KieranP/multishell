@@ -5,7 +5,7 @@ import SwiftUI
 struct MonospacedTextEditor<Fill: ShapeStyle>: View {
   private static var inset: Double { 4 }
   private static var cornerRadius: Double { 5 }
-  /// The text view's own line padding, which a placeholder has to match.
+  /// The text container's own line padding, which a placeholder has to match.
   private static var linePadding: Double { 5 }
 
   @Binding var text: String
@@ -19,9 +19,7 @@ struct MonospacedTextEditor<Fill: ShapeStyle>: View {
   let maxHeight: Double
 
   var body: some View {
-    TextEditor(text: $text)
-      .font(.system(size: fontSize, design: .monospaced))
-      .scrollContentBackground(.hidden)
+    PlainTextView(text: $text, fontSize: fontSize)
       .frame(minHeight: minHeight, maxHeight: maxHeight)
       .padding(Self.inset)
       .overlay(alignment: .topLeading) {

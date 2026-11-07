@@ -35,10 +35,12 @@ struct FileTree: Sendable {
     var kinds: [String: StatusChange.Kind] = [:]
     var counts: [String: FileLineCounts] = [:]
     func add(_ change: StatusChange) {
-      kinds[change.path] = kinds[change.path]?.combined(with: change.kind) ?? change.kind
+      // A nested repository's path ends in `/` as git lists it; its row's does not.
+      let path = change.path.hasSuffix("/") ? String(change.path.dropLast()) : change.path
+      kinds[path] = kinds[path]?.combined(with: change.kind) ?? change.kind
       guard let changeCounts = FileLineCounts(change.lines) else { return }
-      let total = counts[change.path]
-      counts[change.path] = FileLineCounts(
+      let total = counts[path]
+      counts[path] = FileLineCounts(
         insertions: (total?.insertions ?? 0) + changeCounts.insertions,
         deletions: (total?.deletions ?? 0) + changeCounts.deletions,
       )
@@ -87,12 +89,19 @@ struct FileTree: Sendable {
         foldedPath.prefoldedContains(filter) && !shut.contains(where: path.hasPrefix)
       }
       // A split and join per row took 200 ms of a 200,000-match filter.
-      return matches.map { path, _ in
+      return matches.map { listedPath, _ in
+        // Changes lists a nested repository with its slash, as git's status does.
+        let path = listedPath.hasSuffix("/") ? String(listedPath.dropLast()) : listedPath
         let slash = path.utf8.lastIndex(of: UInt8(ascii: "/"))
+        let name = slash.map { String(path[path.index(after: $0)...]) } ?? path
+        let parentFolder = slash.map { String(path[..<$0]) }
+        guard !listing.repositories.contains(path) else {
+          return repositoryRow(path: path, name: name, parentFolder: parentFolder, state: state)
+        }
         return row(
           path: path,
-          name: slash.map { String(path[path.index(after: $0)...]) } ?? path,
-          parentFolder: slash.map { String(path[..<$0]) },
+          name: name,
+          parentFolder: parentFolder,
           depth: 0,
           isIgnored: listing.ignoredFiles.contains(path),
         )
@@ -154,6 +163,30 @@ struct FileTree: Sendable {
       )
       if isExpanded { flatten(shown.children, depth: depth + 1, state: state, into: &rows) }
     }
+  }
+
+  /// A submodule or nested repository a filter matched, opening as it does in the tree.
+  private func repositoryRow(
+    path: String,
+    name: String,
+    parentFolder: String?,
+    state: FilesPanelState,
+  ) -> FileTreeRow {
+    FileTreeRow(
+      path: path,
+      name: name,
+      parentFolder: parentFolder,
+      depth: 0,
+      isFolder: true,
+      isExpanded: state.mode == .changes
+        ? !state.collapsedChangesFolders.contains(path) : state.expandedFolders.contains(path),
+      holdsChange: changes.foldersHoldingChanges.contains(path),
+      changeKind: changeKinds[path],
+      lineCounts: lineCounts[path],
+      isRepository: true,
+      isIgnored: false,
+      isOpenable: true,
+    )
   }
 
   private func row(

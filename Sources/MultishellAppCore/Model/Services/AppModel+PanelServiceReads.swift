@@ -160,7 +160,14 @@ extension AppModel {
         limit: Self.ciHistoryLength,
         in: project.path,
       )
-      .filter { WorktreeServices.ran($0, inRepositoryOf: upstream, remotes: remotes) }
+      .filter { run in
+        WorktreeServices.ran(
+          run,
+          inRepositoryOf: upstream,
+          remotes: remotes,
+          currentRepositories: remoteState.pullRequests[project.id]?.currentRepositories ?? [:],
+        )
+      }
       forgetDetailsOfRerunRuns(history.runs)
       history.failure = nil
     } catch {

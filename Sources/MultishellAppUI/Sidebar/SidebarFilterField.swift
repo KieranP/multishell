@@ -24,6 +24,11 @@ struct SidebarFilterField: View {
         .font(metrics.font(size: metrics.secondary))
         .foregroundStyle(theme.projectsPanel.text)
         .focused($isFocused)
+        .fieldEditorColors(
+          selection: theme.projectsPanel.color(.selectionBackground),
+          caret: theme.projectsPanel.text,
+          isFocused: isFocused,
+        )
         // A turn later: focus does not take on a field the hierarchy has not
         // installed yet.
         .task { isFocused = true }

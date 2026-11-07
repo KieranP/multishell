@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Testing
 
@@ -17,5 +18,17 @@ struct FilesPanelFilterFieldTests {
     )
 
     #expect(MagentaTheme.pixelCount(in: bitmap, fromX: bitmap.pixelsWide / 4) > 10)
+  }
+
+  @Test func itsTextIsSelectedInThePanelsSelectionWithACaretInItsText() throws {
+    let harness = ModelHarness()
+    let worktree = harness.addPrimaryWorktree()
+    let theme = try FocusedFieldEditor.theme(.filesPanel, caretKey: .text)
+    let field = FilesPanelFilterField(model: harness.model, worktreeID: worktree.id, theme: theme)
+
+    let (editor, window) = try FocusedFieldEditor.editor(of: field)
+    defer { withExtendedLifetime(window) {} }
+
+    FocusedFieldEditor.expectThemeColours(in: editor)
   }
 }

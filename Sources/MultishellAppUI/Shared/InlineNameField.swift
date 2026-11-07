@@ -1,3 +1,4 @@
+import MultishellCore
 import SwiftUI
 
 /// A name typed in place, on a tab or a worktree's row: Return and blur
@@ -22,6 +23,11 @@ struct InlineNameField: View {
       .font(font)
       .foregroundStyle(palette.text)
       .focused($isFocused)
+      .fieldEditorColors(
+        selection: palette.color(.selectionBackground),
+        caret: palette.text,
+        isFocused: isFocused,
+      )
       .onSubmit { commit(draft) }
       .onExitCommand(perform: cancel)
       .onAppear {

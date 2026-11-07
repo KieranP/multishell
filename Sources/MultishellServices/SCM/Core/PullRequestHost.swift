@@ -11,6 +11,10 @@ public protocol PullRequestHost: Sendable {
   /// Throws `ServiceReadFailure`.
   func pullRequests(headedBy branch: String, in directory: URL) async throws -> [PullRequest]
 
+  /// The repository `remoteURL` names today, a rename on the host followed.
+  /// Throws `ServiceReadFailure`.
+  func repository(namedBy remoteURL: String, in directory: URL) async throws -> RemoteRepository
+
   /// The checks on the pull request's head, each once, and which are required.
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck]
 

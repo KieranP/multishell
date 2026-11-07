@@ -61,6 +61,22 @@ struct GitHubHostTests {
     )
   }
 
+  @Test func aRemoteURLIsAskedWhichRepositoryItNamesToday() async throws {
+    let tool = try FakeTool(named: "gh", #"echo '{"nameWithOwner":"vercel/next.js"}'"#)
+    defer { tool.tearDown() }
+
+    let repository = try await host(for: tool).repository(
+      namedBy: "git@github.com:zeit/next.js.git",
+      in: tool.directory,
+    )
+
+    #expect(repository == RemoteRepository(owner: "vercel", name: "next.js"))
+    #expect(
+      tool.calls.first?.arguments
+        == "repo view git@github.com:zeit/next.js.git --json nameWithOwner"
+    )
+  }
+
   @Test func aBranchAskedAloneListsEveryPullRequestItHeadsOpenOrNot() async throws {
     let merged = GitHubFixtures.record(number: 7, state: "MERGED", headRefName: "old")
     let tool = try FakeTool(named: "gh", "echo '[\(merged)]'")

@@ -5,9 +5,9 @@
 - **Ancestry alone cannot tell "landed" from "never began"**, a branch being cut
   at its start commit, nor from "was carried up", a pull in a worktree cut
   before the trunk moved fast-forwarding it.
-- **Sign 1 is the branch's reflog**, read as a deny list. Creation, reset,
-  clone, fetch, a fast-forward and a rebase that replayed nothing are arrivals;
-  everything else is work of its own.
+- **Sign 1 is the branch's reflog**, read as a deny list. Creation, a rename or
+  copy, reset, clone, fetch, a fast-forward and a rebase that replayed nothing
+  are arrivals; everything else is work of its own.
 - **A deny list because the arrivals are the closed set.** A message a later git
   invents reads as work, which is what counting entries assumed of every entry
   anyway.

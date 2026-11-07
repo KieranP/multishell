@@ -48,6 +48,9 @@ struct CIWorkflowList: View {
         excerpt in
         CIFailureExcerptView(text: excerpt, theme: theme, metrics: metrics)
       }
+      if let problem = model.ciRunDetailProblem(ofRun: run, for: worktree) {
+        ServicePageNote(text: problem, theme: theme, metrics: metrics)
+      }
     }
     .task(id: run.id) { await model.readCIRunDetails(of: run, for: worktree) }
   }

@@ -17,6 +17,7 @@ final class FakeCIProvider: CIProvider {
     var holdsRecent = false
     var holdsWorkflows = false
     var holdsReports = false
+    var runDetailsFailure: ServiceReadFailure?
     var calls: [String] = []
   }
 
@@ -85,6 +86,10 @@ final class FakeCIProvider: CIProvider {
     }
   }
 
+  func failRunDetails(_ failure: ServiceReadFailure?) {
+    state.withLock { $0.runDetailsFailure = failure }
+  }
+
   func holdReports() {
     state.withLock { $0.holdsReports = true }
   }
@@ -97,6 +102,7 @@ final class FakeCIProvider: CIProvider {
     if holds {
       for await _ in heldReads.stream {}
     }
+    if let failure = state.withLock({ $0.runDetailsFailure }) { throw failure }
     return CIFailureReport(excerpts: [
       CIFailureExcerpt(workflow: "build", job: "test-macos", text: "test-macos failed")
     ])
@@ -119,7 +125,10 @@ final class FakeCIProvider: CIProvider {
     if holds {
       for await _ in heldReads.stream {}
     }
-    return state.withLock { $0.workflows }
+    return try state.withLock { state in
+      if let failure = state.runDetailsFailure { throw failure }
+      return state.workflows
+    }
   }
 
   func openJob(id: String, in directory: URL) async throws {

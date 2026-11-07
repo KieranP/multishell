@@ -17,8 +17,8 @@ extension Helper {
     environment[SessionEnvironment.worktreeVariable]
   }
 
-  /// The program that ran this, the walk stopping short of the app itself:
-  /// from a prompt in one of its tabs that leaves the shell, whose exit clears.
+  /// The program that ran this, the walk stopping short of the app itself: from a
+  /// prompt in one of its tabs, the shell or its `login`, which exits with it.
   static func reportingPID(in environment: [String: String]) -> Int32 {
     ProcessAncestry.reportingPID(
       stoppingAt: environment[SessionEnvironment.appPIDVariable].flatMap { Int32($0) }

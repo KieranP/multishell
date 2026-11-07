@@ -19,11 +19,7 @@ extension WorktreeServices {
     if let pullRequests {
       pullRequestIntegration = pullRequests.integration
       let shown = upstream.flatMap { upstream in
-        Self.headedPullRequest(
-          of: upstream,
-          remotes: pullRequests.remotes,
-          among: pullRequests.pullRequests,
-        )
+        Self.headedPullRequest(of: upstream, in: pullRequests)
       }
       // Outgrown where git says the tip has a change of its own the head lacks:
       // one behind it, or synced from another branch, left nothing out.
@@ -45,7 +41,12 @@ extension WorktreeServices {
       ciIntegration = ciRuns.integration
       ciRun = upstream.flatMap { upstream in
         ciRuns.runsByBranch[upstream.branch].flatMap { run in
-          Self.ran(run, inRepositoryOf: upstream, remotes: ciRuns.remotes) ? run : nil
+          Self.ran(
+            run,
+            inRepositoryOf: upstream,
+            remotes: ciRuns.remotes,
+            currentRepositories: pullRequests?.currentRepositories ?? [:],
+          ) ? run : nil
         }
       }
     }
@@ -78,14 +79,16 @@ extension WorktreeServices {
   /// so a fork's same-named branch is not taken for this one.
   private static func headedPullRequest(
     of upstream: BranchUpstream,
-    remotes: [GitRemote],
-    among pullRequests: [PullRequest],
+    in reading: ProjectPullRequests,
   ) -> PullRequest? {
-    guard let repository = RemoteRepository(pushedTo: upstream.remote, among: remotes) else {
-      return nil
-    }
-    let headed = pullRequests.filter { pullRequest in
-      pullRequest.headBranch == upstream.branch && pullRequest.headRepository.isSame(as: repository)
+    let repositories = PushedRepositories.of(
+      remote: upstream.remote,
+      among: reading.remotes,
+      currentRepositories: reading.currentRepositories,
+    )
+    let headed = reading.pullRequests.filter { pullRequest in
+      pullRequest.headBranch == upstream.branch
+        && repositories.contains(where: pullRequest.headRepository.isSame(as:))
     }
     return headed.filter { !$0.state.isSettled }.max(by: { $0.updatedAt < $1.updatedAt })
       ?? headed.max(by: { $0.updatedAt < $1.updatedAt })
@@ -97,11 +100,15 @@ extension WorktreeServices {
     _ run: CIRun,
     inRepositoryOf upstream: BranchUpstream,
     remotes: [GitRemote],
+    currentRepositories: [String: RemoteRepository],
   ) -> Bool {
-    guard let ranIn = run.repository,
-      let pushedTo = RemoteRepository(pushedTo: upstream.remote, among: remotes)
-    else { return true }
-    return ranIn.isSame(as: pushedTo)
+    let pushedTo = PushedRepositories.of(
+      remote: upstream.remote,
+      among: remotes,
+      currentRepositories: currentRepositories,
+    )
+    guard let ranIn = run.repository, !pushedTo.isEmpty else { return true }
+    return pushedTo.contains(where: ranIn.isSame(as:))
   }
 
   private static func readProblem(

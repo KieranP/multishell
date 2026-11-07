@@ -115,6 +115,16 @@ reloaded. Newest at the bottom.
   Solarized Light's sidebar, header and find bar in their own text, translucent,
   their source fills being too near the ground at any alpha. The same key paints
   the count capsule, the filter wells and the switches there.
+- **A text field's selection and caret are its area's `selection_background` and
+  text**, set on the window's field editor while the field has the keyboard.
+  AppKit takes both from the system accent, and SwiftUI's `tint` lightens the
+  selection towards white. `find_bar`, `tab_bar` and `terminal_tab` took a
+  `selection_background` for it, each built-in's `quick_switcher` one, as
+  `file_tab`'s is white in Multishell Light.
+- **A selection in a view without the keyboard stays AppKit's grey**, a file
+  tab's while its find bar has the keyboard, or a field's in a window not key.
+  No public API sets it; overriding the private `_selectionBackgroundColor`
+  worked and was declined (2026-11-07).
 
 ## Reviewed and left as is
 

@@ -57,15 +57,16 @@ public struct Appearance: Codable, Hashable, Sendable {
       Double.self,
       forKey: .terminalFontSize,
       or: Self.defaultTerminalFontSize,
-    )
+    ).clamped(to: Self.terminalFontSizes)
     uiFontName = try container.decodeIfPresent(String.self, forKey: .uiFontName)
     uiFontSize = try container.decode(Double.self, forKey: .uiFontSize, or: Self.defaultUIFontSize)
+      .clamped(to: Self.uiFontSizes)
     fileFontName = try container.decodeIfPresent(String.self, forKey: .fileFontName)
     fileFontSize = try container.decode(
       Double.self,
       forKey: .fileFontSize,
       or: Self.defaultFileFontSize,
-    )
+    ).clamped(to: Self.fileFontSizes)
   }
 
   /// Falls back to the built-in dark theme when a saved theme id no longer
