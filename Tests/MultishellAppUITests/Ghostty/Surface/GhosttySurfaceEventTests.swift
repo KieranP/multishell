@@ -1,4 +1,5 @@
 import GhosttyKit
+import MultishellCore
 import Testing
 
 @testable import MultishellAppUI
@@ -34,6 +35,23 @@ struct GhosttySurfaceEventTests {
     #expect(
       GhosttySurfaceEvent(action(GHOSTTY_ACTION_COMMAND_FINISHED, payload))
         == .commandFinished(exitCode: nil)
+    )
+  }
+
+  @Test func aProgramsStatusReportIsAnEvent() {
+    var payload = ghostty_action_u()
+    payload.program_status = ghostty_action_program_status_s(
+      state: GHOSTTY_PROGRAM_STATUS_ERROR,
+      kind: GHOSTTY_PROGRAM_STATUS_KIND_NONE,
+      progress: -1,
+      id: nil,
+      app: nil,
+      title: nil,
+      msg: nil,
+    )
+    #expect(
+      GhosttySurfaceEvent(action(GHOSTTY_ACTION_PROGRAM_STATUS, payload))
+        == .programStatus(.init(state: .failed))
     )
   }
 

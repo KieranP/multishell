@@ -22,6 +22,9 @@ extension AppModel {
     reconciler.onCommandFinished = { [weak self] id, code in
       self?.noteCommandFinished(in: id, exitCode: code)
     }
+    reconciler.onProgramStatus = { [weak self] id, status, pid in
+      self?.noteProgramStatus(status, from: pid, in: id)
+    }
     reconciler.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
     // A click into a pane is looking at it: seen is the pane with the
     // keyboard, and a click is how the keyboard moves without a reconcile.

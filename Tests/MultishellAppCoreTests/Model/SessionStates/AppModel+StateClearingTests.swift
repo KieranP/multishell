@@ -28,4 +28,19 @@ struct AppModelStateClearingTests {
     #expect(harness.model.sessionStates.showsNothing)
     #expect(harness.model.pidWatch == nil)
   }
+
+  @Test func clearingOnePaneByHandEndsAProgramsHoldSoItsHooksMoveTheDotAgain() {
+    let (harness, session) = Harness.withOnePane()
+    harness.engine.delegate?.terminalHost(
+      harness.engine,
+      didReceive: ProgramStatus(state: .working, app: "claude-code"),
+      from: nil,
+      in: session.id,
+    )
+
+    harness.model.clearState(ofPane: session.id)
+    harness.messageSource.send(SessionStateReport(state: .attention, sessionID: session.id))
+
+    #expect(harness.model.sessionStates[.session(session.id)] == .attention)
+  }
 }

@@ -14,4 +14,11 @@ struct ReportedAgent: Hashable, Sendable {
     guard let pid else { return true }
     return !KernelProcessTable.isGone(pid)
   }
+
+  /// A new report of an agent: with no pid, the one an earlier report of the
+  /// same agent gave stands, or the poll could never see it go.
+  static func reported(_ agentID: String, pid: Int32?, after known: Self?) -> Self {
+    let samePID = known?.agentID == agentID ? known?.pid : nil
+    return Self(agentID: agentID, pid: pid ?? samePID)
+  }
 }

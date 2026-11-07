@@ -23,7 +23,7 @@ extension SessionStates {
         pid: nil,
         for: ending.key,
         isSeen: false,
-      )
+      )?.state
     }
   }
 }

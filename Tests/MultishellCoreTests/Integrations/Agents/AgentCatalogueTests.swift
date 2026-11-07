@@ -51,6 +51,12 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
   }
 
+  @Test func claudeAndCodexAreKnownByTheAppTheirStatusReportsName() {
+    #expect(AgentCatalogue.agent(reportingStatusAs: "claude-code")?.id == "claude")
+    #expect(AgentCatalogue.agent(reportingStatusAs: "codex")?.id == "codex")
+    #expect(AgentCatalogue.agent(reportingStatusAs: "claude") == nil)
+  }
+
   @Test func everyCatalogueAgentsMarkIsItsOwn() {
     for agent in AgentCatalogue.agents {
       #expect(AgentCatalogue.mark(agent.id) == agent.mark)

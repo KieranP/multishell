@@ -16,6 +16,9 @@ extension GhosttySurfaceView {
     case .commandFinished(let exitCode):
       onCommandFinish?(exitCode)
 
+    case .programStatus(let status):
+      onProgramStatus?(status)
+
     case .directoryReported(let path):
       currentDirectory = path.map { URL(filePath: $0) } ?? startingDirectory
 

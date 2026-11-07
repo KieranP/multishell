@@ -11,23 +11,36 @@ extension SessionStates {
     }
   }
 
-  /// The user's own clear, for a Working dot whose agent is long gone.
+  /// The user's own clear, for a Working dot whose agent is long gone. A hold
+  /// goes too; see agents/program-status.md.
   mutating func clear(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
-    for id in sessions { clear(.session(id)) }
+    for id in sessions {
+      clear(.session(id))
+      update(.session(id)) { $0.forgetProgramHold() }
+    }
     if let worktree { clear(.worktree(worktree)) }
   }
 
-  /// The process a state was about has gone. Working and Waiting were claims
-  /// about it and go; Done and Failed are about the user and stay.
   mutating func noteProcessGone(_ pid: Int32) {
-    for (key, entry) in entries where entry.pid == pid {
-      update(key) { stored in
-        if stored.state?.isFinished != true { stored.state = nil }
-        stored.pid = nil
-        // Its workers went with it, so nothing is owed and nothing is out.
-        stored.settleTurn()
+    for (key, entry) in entries {
+      if entry.pid == pid || entry.programRecords.pid == pid {
+        dropProcessClaims(on: key)
+      } else if entry.agentReportedByHooks?.pid == pid {
+        // Its hooks' agent gone with no hold on its pid: only the name goes.
+        update(key) { $0.agentReportedByHooks = nil }
       }
-      ownConversationIDs[key] = nil
     }
+  }
+
+  /// Working and Waiting were claims about a process now gone, and go with
+  /// its workers and its program's hold; Done and Failed stay.
+  mutating func dropProcessClaims(on key: Key) {
+    endProgramHold(on: key)
+    update(key) { stored in
+      if stored.state?.isFinished != true { stored.state = nil }
+      stored.pid = nil
+      stored.settleTurn()
+    }
+    ownConversationIDs[key] = nil
   }
 }

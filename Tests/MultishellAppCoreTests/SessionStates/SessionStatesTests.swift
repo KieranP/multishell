@@ -259,7 +259,7 @@ struct SessionStatesTests {
   /// `nil` where the report was only bookkeeping.
   @discardableResult
   func report(_ states: inout SessionStates, _ report: SessionStateReport) -> SessionState? {
-    states.apply(report, pid: 99, for: .session(a), isSeen: false)
+    states.apply(report, pid: 99, for: .session(a), isSeen: false)?.state
   }
 
   func report(

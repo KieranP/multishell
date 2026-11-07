@@ -27,6 +27,7 @@ public enum AgentCatalogue {
       oneShot: claudeOneShot,
       resumeArguments: ["--continue"],
       fileMentionPrefix: "@",
+      programStatusApp: "claude-code",
     ),
     AgentDescriptor(
       id: codexID,
@@ -36,6 +37,7 @@ public enum AgentCatalogue {
       mark: .codex,
       oneShot: codexOneShot,
       resumeArguments: ["resume", "--last"],
+      programStatusApp: "codex",
     ),
     AgentDescriptor(
       id: geminiID,
@@ -91,6 +93,11 @@ public enum AgentCatalogue {
   public static func agent(runningCommand command: String) -> AgentDescriptor? {
     let name = command.lowercased()
     return agents.first { $0.executable.lowercased() == name }
+  }
+
+  /// The agent an OSC 7501 report came from, by the `app` it names.
+  public static func agent(reportingStatusAs app: String) -> AgentDescriptor? {
+    agents.first { $0.programStatusApp == app }
   }
 
   /// The id in force for a project: its override when it has one, else the

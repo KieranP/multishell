@@ -18,6 +18,7 @@ final class GhosttySurfaceView: NSView {
   var onRetitle: ((String) -> Void)?
   var onBell: (() -> Void)?
   var onCommandFinish: ((Int?) -> Void)?
+  var onProgramStatus: ((ProgramStatus) -> Void)?
   var onSearchCount: ((TerminalSearchCount) -> Void)?
   /// The shell's process ended and libghostty closed the pane.
   var onExit: (() -> Void)?

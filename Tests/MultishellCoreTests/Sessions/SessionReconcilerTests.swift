@@ -81,6 +81,24 @@ struct SessionReconcilerTests {
     #expect(activity.isEmpty)
   }
 
+  @Test func aProgramStatusIsForwardedWithThePidItCameFrom() {
+    let tab = store.openTab(in: worktree.id)!
+    var received: [(TerminalSession.ID, ProgramStatus, Int32?)] = []
+    reconciler.onProgramStatus = { received.append(($0, $1, $2)) }
+
+    host.delegate?.terminalHost(
+      host,
+      didReceive: ProgramStatus(state: .working, app: "codex"),
+      from: 77,
+      in: tab.focusedSessionID,
+    )
+
+    #expect(received.count == 1)
+    #expect(received.first?.0 == tab.focusedSessionID)
+    #expect(received.first?.1 == ProgramStatus(state: .working, app: "codex"))
+    #expect(received.first?.2 == 77)
+  }
+
   @Test func prepareDecidesWhatTheHostOpensWithoutTouchingTheStore() {
     let tab = store.openTab(in: worktree.id, title: "Claude Code", agentID: "claude")!
 

@@ -5,7 +5,9 @@ extension SessionStates {
   /// never downgrades a state the occupant reported.
   mutating func noteActivity(in id: TerminalSession.ID, isSeen: Bool) {
     let key = Key.session(id)
-    guard entries[key]?.state == nil, !isSeen else { return }
+    // A program's own report outranks it: an idle one says nothing happened.
+    guard entries[key]?.state == nil, !isHeldByProgram(key), !isSeen
+    else { return }
     update(key) { $0.state = .done }
   }
 
@@ -18,10 +20,19 @@ extension SessionStates {
   ) {
     let key = Key.session(id)
     let finished = SessionState.finished(exitCode: exitCode)
-    // An agent killed with a worker out sends no SubagentStop; the command
-    // it was has returned, so nothing is out and nothing is owed.
-    update(key) { $0.settleTurn() }
+    endProgramHold(on: key)
     ownConversationIDs[key] = nil
+    // A finish the program announced is not announced again, and a later
+    // command's end spends it; see agents/program-status.md.
+    let announced = entries[key]?.finishAnnouncedForCommandEnd
+    update(key) { stored in
+      // An agent killed with a worker out sends no SubagentStop; the command
+      // it was has returned, so nothing is out and nothing is owed.
+      stored.settleTurn()
+      stored.finishAnnouncedForCommandEnd = nil
+      if announced == nil { stored.finishAnnouncedForShellReport = nil }
+    }
+    if let announced, finished.repeatsFinish(announced: announced) { return }
     switch entries[key]?.state {
     case .running, .attention, nil:
       landFinished(finished, on: key, isSeen: isSeen)

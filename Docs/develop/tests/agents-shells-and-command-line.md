@@ -19,6 +19,9 @@ in `design/`.
   and ShellIntegrationScriptsTests+SessionReports runs the real shells. That
   caught a zsh word subscript taking characters for a command run by its path,
   which a syntax check cannot see.
+- **A program's OSC 7501 report and an agent's hook both moving a dot**:
+  SessionStatesTests+ProgramStatus, with ProgramStatusRecordsTests for what a
+  clear takes and GhosttySurfaceEventTests for what the patch's action carries.
 - **Remove leaves a hook the user put in our own group**:
   AgentHookIntegrationMergingTests.
 - **A comma-decimal locale still sends a report that parses**:

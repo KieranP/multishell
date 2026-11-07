@@ -1,6 +1,7 @@
 import AppKit
 import MultishellAppCore
 import MultishellCore
+import OSLog
 
 /// A `TerminalHost` backed by libghostty, which owns the pty, renderer and
 /// config. Three config layers; see Docs/design/terminals/engine-and-config.md.
@@ -8,6 +9,11 @@ import MultishellCore
 final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
   private static let bundleDirectories =
     Bundle.main.executableURL.flatMap(HelperHandOff.bundleDirectories(of:))
+  /// Each OSC 7501 report as it lands, for `multishell debug log --follow`.
+  private static let programStatusLog = Logger(
+    subsystem: AppBundle.identifier,
+    category: "program-status",
+  )
 
   weak var delegate: (any TerminalHostDelegate)?
 
@@ -55,6 +61,15 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
         )
       }
     }
+    view.onProgramStatus = { [weak self, weak view] status in
+      let pid = view?.foregroundPID
+      Self.programStatusLog.debug(
+        "\(id, privacy: .public) \(status.logLine, privacy: .public) pid=\(pid ?? 0)"
+      )
+      self.map { host in
+        host.delegate?.terminalHost(host, didReceive: status, from: pid, in: id)
+      }
+    }
     view.onSearchCount = { [weak self] count in
       self.map { $0.delegate?.terminalHost($0, didCount: count, in: id) }
     }
@@ -92,6 +107,7 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     view.onRetitle = nil
     view.onBell = nil
     view.onCommandFinish = nil
+    view.onProgramStatus = nil
     view.onSearchCount = nil
     view.onExit = nil
     view.onCloseRequest = nil

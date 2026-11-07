@@ -52,10 +52,52 @@ extension SessionStates {
     /// A turn of the agent's is running, or an end has woken one, so a Stop
     /// is coming that pays whatever is owed.
     var isTurnUnderway = false
+    /// What the pane's program said of itself over OSC 7501. While it holds
+    /// anything it decides the state, and hooks keep only the roster.
+    var programRecords = ProgramStatusRecords()
+    /// The finish the hold put on the dot, seen or not: a Done held over
+    /// workers is not one, and neither the command's end nor the shell repeats it.
+    var programFinishShown: SessionState?
+    /// The finish a program announced as its hold ended, which that command's
+    /// end and the shell's report of it may each repeat once.
+    var finishAnnouncedForCommandEnd: SessionState?
+    var finishAnnouncedForShellReport: SessionState?
+    /// The agent the pane's hooks last named and its process, for a program
+    /// whose `app` the catalogue does not know, as Antigravity's.
+    var agentReportedByHooks: ReportedAgent?
 
     var isEmpty: Bool {
       state == nil && pid == nil && since == nil && note == nil && roster.isEmpty
         && displaced == nil && promptRaisers.isEmpty && !isTurnUnderway
+        && !programRecords.isHolding && programFinishShown == nil
+        && finishAnnouncedForCommandEnd == nil
+        && finishAnnouncedForShellReport == nil && agentReportedByHooks == nil
+    }
+
+    /// The agent holding the pane through its own reports: named by its `app`,
+    /// else by its hooks; `nil` for any other program or no hold.
+    var programAgent: AgentDescriptor? {
+      programRecords.isHolding ? programRecords.agent : nil
+    }
+
+    /// What a hold shows: the program's Done is Working while the hooks list
+    /// work out, Claude saying Done with a background shell still running.
+    var programShownState: SessionState {
+      let shown = programRecords.shownState
+      return shown == .done && roster.hasWorkOut ? .running : shown
+    }
+
+    /// What a program announced as its hold ended is past.
+    mutating func forgetAnnouncedFinish() {
+      finishAnnouncedForCommandEnd = nil
+      finishAnnouncedForShellReport = nil
+    }
+
+    /// The hold and the hooks' agent it may have taken go together.
+    mutating func forgetProgramHold() {
+      programRecords = ProgramStatusRecords()
+      programFinishShown = nil
+      agentReportedByHooks = nil
     }
 
     /// A report about a worker recorded on the roster, an unnamed end taking the

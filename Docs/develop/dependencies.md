@@ -38,6 +38,10 @@
   for the debug tools (design/debug-tools.md), asked for upstream in
   ghostty-org/ghostty discussion #14524. Delete it once the pin has a
   surface-level call.
+- **0007 is ours too**: OSC 7501 program status. Libghostty-vt parses it but the
+  app surfaces' stream handler dropped every report and left the `?` query
+  unanswered (design/agents/program-status.md). Delete it once the pin passes
+  reports to the embedder.
 - **i18n is off**, which keeps GNU libintl, LGPL, out of the executable:
   Ghostty's Zig object then calls no gettext function, and the linker drops the
   archive's copy. The app's words are its own anyway.

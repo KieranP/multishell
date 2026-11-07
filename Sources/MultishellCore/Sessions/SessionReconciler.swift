@@ -20,6 +20,10 @@ public final class SessionReconciler: TerminalHostDelegate {
   /// the GUI can clear a Working state the engine has evidence against.
   public var onCommandFinished: (@MainActor (TerminalSession.ID, Int32?) -> Void)?
 
+  /// A program's own report of what it is doing, with the foreground pid
+  /// it came from; outranks an agent's hook for the session's state.
+  public var onProgramStatus: (@MainActor (TerminalSession.ID, ProgramStatus, Int32?) -> Void)?
+
   /// The title the shell reports through OSC. Runtime, like activity: a
   /// prompt would otherwise schedule a save per keystroke.
   public var onRetitle: (@MainActor (TerminalSession.ID, String) -> Void)?
@@ -103,6 +107,15 @@ public final class SessionReconciler: TerminalHostDelegate {
     exitCode: Int32?,
   ) {
     onCommandFinished?(id, exitCode)
+  }
+
+  public func terminalHost(
+    _ host: any TerminalHost,
+    didReceive status: ProgramStatus,
+    from pid: Int32?,
+    in id: TerminalSession.ID,
+  ) {
+    onProgramStatus?(id, status, pid)
   }
 
   public func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {

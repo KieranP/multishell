@@ -20,6 +20,8 @@ extension AppModel {
     _ id: TerminalSession.ID,
     orOpenedAs openedAs: @autoclosure () -> String?,
   ) -> String? {
+    // A program holding the pane says which agent it is, a nested one's hooks aside.
+    if let agent = sessionStates.programAgent(.session(id)) { return agent.id }
     if let reported = reportedAgents[id], reported.isAtThePrompt { return reported.agentID }
     return commandAgentIDs[id] ?? openedAs()
   }

@@ -2,9 +2,12 @@ import Foundation
 import MultishellCore
 
 extension SessionStates {
-  /// The agents' own pids and their background shells'.
+  /// The agents' own pids, their background shells' and the programs' holding a dot.
   var trackedPIDs: Set<Int32> {
-    Set(entries.values.flatMap { [$0.pid] + $0.roster.workers.map(\.pid) }.compactMap(\.self))
+    Set(
+      entries.values.flatMap { [$0.pid, $0.programRecords.pid] + $0.roster.workers.map(\.pid) }
+        .compactMap(\.self)
+    )
   }
 
   /// Panes showing Working, whoever reported it.
@@ -50,7 +53,33 @@ extension SessionStates {
   /// command's, an agent's only where `commandIsAgent`: one typed with no hooks.
   func isAgentWorking(in id: TerminalSession.ID, commandIsAgent: Bool) -> Bool {
     guard let entry = entries[.session(id)], entry.state == .running else { return false }
+    if isHeldByProgram(.session(id)) { return entry.programAgent != nil || commandIsAgent }
     return !entry.workingIsShellCommand || commandIsAgent
+  }
+
+  /// Whether a hook comes from another agent than the hold's, one the program
+  /// ran from its own tool shell. A pid cannot say: a wrapper's is not the agent's.
+  func isNestedAgent(_ agentID: String?, on key: Key) -> Bool {
+    guard let agent = programAgent(key), let agentID else { return false }
+    return agent.id != agentID
+  }
+
+  func isHeldByProgram(_ key: Key) -> Bool {
+    entries[key]?.programRecords.isHolding == true
+  }
+
+  func programAgent(_ key: Key) -> AgentDescriptor? {
+    entries[key]?.programAgent
+  }
+
+  /// The agents of the holds a process stood for, by pane, so its going can
+  /// take each off the prompt.
+  func programAgents(heldBy pid: Int32) -> [TerminalSession.ID: String] {
+    var agents: [TerminalSession.ID: String] = [:]
+    for (key, entry) in entries where entry.programRecords.pid == pid {
+      if case .session(let id) = key, let agent = entry.programAgent { agents[id] = agent.id }
+    }
+    return agents
   }
 
   subscript(key: Key) -> SessionState? { entries[key]?.state }

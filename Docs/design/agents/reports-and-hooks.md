@@ -204,9 +204,9 @@ user's settings file. Newest at the bottom.
   ran their whole process walks, which a 5 ms limit would have killed.
 - **Six events, and none says it waits for the user**: PreToolUse fires before
   the approval prompt, and nothing after it. A pane shows Working through a
-  permission prompt. Antigravity says waiting through OSC 7501, which it probes
-  for and our terminal does not answer; reading it is a Ghostty patch, not
-  taken.
+  permission prompt. Antigravity says waiting through OSC 7501 once the terminal
+  answers its check, which patch 0007 does, and its own reports then decide the
+  dot (agents/program-status.md); read from 1.5.3's binary.
 - **Each model call is a turn start**, PreInvocation firing per call with no
   sign of the user's prompt bar `invocationNum`. Antigravity has no worker the
   roster counts, so a start mid-turn clears nothing.

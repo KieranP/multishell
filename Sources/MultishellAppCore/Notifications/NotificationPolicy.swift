@@ -7,6 +7,9 @@ enum NotificationPolicy {
   /// `ls` and a build alike, and only the build should be heard from.
   static let minimumNotifiedSeconds: Double = 10
 
+  /// An agent's question, put in the catalogue's words where it gave none.
+  static var agentQuestion: String { t("notification.agent-question") }
+
   /// A pane on screen needs no banner: in view and the app frontmost. Wider
   /// than what clears a Done, which is the focused pane alone.
   static func shouldNotify(

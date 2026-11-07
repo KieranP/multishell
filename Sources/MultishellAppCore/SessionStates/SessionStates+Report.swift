@@ -10,13 +10,14 @@ extension SessionStates {
     pid: Int32?,
     for key: Key,
     isSeen: Bool,
-  ) -> SessionState? {
+  ) -> SessionNote? {
+    if spendOnProgramHold(report, pid: pid, on: key) { return nil }
     let resumesAfterWorkers = report.resumesAfterWorkers == true
     // Copilot's prompt mode starts its session after the first prompt, so a start
     // on a pane already working is dropped before it can re-point the conversation.
     if report.startsSession == true, report.workerChange == nil,
       entries[key]?.workingIsShellCommand != true,
-      [.running, .attention].contains(entries[key]?.state)
+      entries[key]?.state?.isUnderway == true
     {
       return nil
     }
@@ -38,6 +39,17 @@ extension SessionStates {
         stored.forgetPrompts(ofWorkers: stored.roster.recordKill(killed))
       }
     }
+    if isHeldByProgram(key) {
+      return applyWorkerToProgramHold(worker, on: key, isSeen: isSeen).map { moved in
+        SessionNote(
+          state: moved.state,
+          message: moved.message ?? report.shownMessage,
+          duration: report.duration,
+        )
+      }
+    }
+    if isHookRepeatingAnnouncedFinish(report, on: key) { return nil }
+    if report.state.isUnderway { forgetAnnouncedFinish(on: key) }
     guard
       let state = applyRoster(
         to: report.state,
@@ -56,20 +68,15 @@ extension SessionStates {
       if isOwnStop { update(key) { $0.resumesAfterWorkers = resumesAfterWorkers } }
 
     case .running, .attention:
-      update(key) { stored in
-        stored.state = state
-        if let pid { stored.pid = pid }
-      }
+      landUnderway(state, pid: pid, on: key)
     }
     update(key) { stored in
       stored.workingIsShellCommand =
         report.isFromShellIntegration == true && stored.state == .running
     }
-    noteIfStanding(
-      SessionNote(state: state, message: report.shownMessage, duration: report.duration),
-      on: key,
-    )
-    return state
+    let note = SessionNote(state: state, message: report.shownMessage, duration: report.duration)
+    noteIfStanding(note, on: key)
+    return note
   }
 
   /// The workers an agent's own Stop lists are all that is out; with no
@@ -133,9 +140,18 @@ extension SessionStates {
     }
   }
 
+  /// Working or Waiting is about a process: a report naming none leaves the
+  /// one an earlier report named.
+  mutating func landUnderway(_ state: SessionState, pid: Int32?, on key: Key) {
+    update(key) { stored in
+      stored.state = state
+      if let pid { stored.pid = pid }
+    }
+  }
+
   /// Only where a state survived: a Done about a tab the user is looking at
   /// leaves nothing to say something about.
-  private mutating func noteIfStanding(_ note: SessionNote, on key: Key) {
+  mutating func noteIfStanding(_ note: SessionNote, on key: Key) {
     guard entries[key]?.state != nil else { return }
     update(key) { $0.note = note }
   }

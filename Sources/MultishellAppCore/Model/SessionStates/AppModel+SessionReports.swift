@@ -26,12 +26,17 @@ extension AppModel {
     }
     if let id = report.sessionID {
       guard liveSessionIDs.contains(id), workspace.session(id) != nil else { return }
-      // Who is at that prompt, so a drop is written as that agent reads a file.
-      if let agentID = report.agentID {
-        setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agentID, pid: pid))
-        reportedAgentDirectories[id] = report.workingDirectory.map { path in
-          URL(fileURLWithPath: path, isDirectory: true)
-        }
+      // Who is at that prompt, so a drop is written as that agent reads a file;
+      // an agent a holding program ran from its tool shell is not.
+      if let agentID = report.agentID,
+        !sessionStates.isNestedAgent(agentID, on: .session(id))
+      {
+        noteReportedAgent(
+          agentID,
+          pid: pid,
+          directory: report.workingDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) },
+          in: id,
+        )
       }
       noteCommandAgent(report, of: id)
       apply(report, pid: pid, to: .session(id))
@@ -60,15 +65,25 @@ extension AppModel {
   }
 
   func apply(_ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key) {
-    guard let visibility = visibility(of: key) else { return }
-    var meant: SessionState?
-    mutateStates { states in
-      meant = states.apply(report, pid: pid, for: key, isSeen: visibility.isSeen)
+    applyAndNotify(to: key, isSilent: report.isSilent == true) { states, isSeen in
+      states.apply(report, pid: pid, for: key, isSeen: isSeen)
     }
-    if let meant {
+  }
+
+  /// A change to one key's state, and a banner where what it meant calls for
+  /// one; `change` returns that, `nil` for no news.
+  func applyAndNotify(
+    to key: SessionStates.Key,
+    isSilent: Bool,
+    _ change: (inout SessionStates, _ isSeen: Bool) -> SessionNote?,
+  ) {
+    guard let visibility = visibility(of: key) else { return }
+    var note: SessionNote?
+    mutateStates { note = change(&$0, visibility.isSeen) }
+    if let note {
       notifyIfNeeded(
-        report,
-        as: meant,
+        note,
+        isSilent: isSilent,
         key: key,
         worktreeID: visibility.worktreeID,
         isOnScreen: visibility.isOnScreen,

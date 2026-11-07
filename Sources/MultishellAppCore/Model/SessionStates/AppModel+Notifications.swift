@@ -2,22 +2,22 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// `state` is what the report meant, not what it said: a Done held back for
-  /// background workers raises no banner, and the one releasing it does.
+  /// The note's state is what a report meant, not what it said: a Done held
+  /// back for background workers raises no banner, and the one releasing it does.
   func notifyIfNeeded(
-    _ report: SessionStateReport,
-    as state: SessionState,
+    _ note: SessionNote,
+    isSilent: Bool,
     key: SessionStates.Key,
     worktreeID: Worktree.ID,
     isOnScreen: Bool,
   ) {
     guard
       NotificationPolicy.shouldNotify(
-        state,
+        note.state,
         preference: workspace.notificationPreference,
         isOnScreen: isOnScreen,
-        duration: report.duration,
-        isSilent: report.isSilent == true,
+        duration: note.duration,
+        isSilent: isSilent,
       ),
       let worktree = workspace.worktree(worktreeID)
     else { return }
@@ -41,7 +41,7 @@ extension AppModel {
     )
     postNotification(
       title: title,
-      body: NotificationPolicy.body(for: state, message: report.shownMessage),
+      body: NotificationPolicy.body(for: note.state, message: note.message),
       about: key,
     )
   }

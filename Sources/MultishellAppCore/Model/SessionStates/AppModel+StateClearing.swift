@@ -9,7 +9,7 @@ extension AppModel {
   /// One pane's own dot, for a card whose agent is long gone. The worktree's
   /// clear beside it takes every pane at once.
   public func clearState(ofPane id: TerminalSession.ID) {
-    mutateStates { $0.clear(.session(id)) }
+    mutateStates { $0.clear(sessions: [id], worktree: nil) }
     updatePIDWatch()
   }
 

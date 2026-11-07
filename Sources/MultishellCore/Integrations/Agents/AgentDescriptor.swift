@@ -16,6 +16,8 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   public let mark: AgentMark
   /// Auto Rename's run: one prompt, then exit.
   public let oneShot: AgentOneShot
+  /// The `app` its OSC 7501 reports name it by, where it sends them.
+  let programStatusApp: String?
 
   init(
     id: String,
@@ -26,6 +28,7 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     oneShot: AgentOneShot,
     resumeArguments: [String]? = nil,
     fileMentionPrefix: String? = nil,
+    programStatusApp: String? = nil,
   ) {
     self.id = id
     self.name = name
@@ -35,5 +38,6 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     self.fileMentionPrefix = fileMentionPrefix
     self.mark = mark
     self.oneShot = oneShot
+    self.programStatusApp = programStatusApp
   }
 }

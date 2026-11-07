@@ -30,6 +30,14 @@ public protocol TerminalHostDelegate: AnyObject {
     didFinishCommandIn id: TerminalSession.ID,
     exitCode: Int32?,
   )
+  /// A program in the session reported what it is doing through OSC 7501.
+  /// `pid` is the session's foreground process as the report landed.
+  func terminalHost(
+    _ host: any TerminalHost,
+    didReceive status: ProgramStatus,
+    from pid: Int32?,
+    in id: TerminalSession.ID,
+  )
   /// The engine's search counted its matches, or which one it is on.
   func terminalHost(
     _ host: any TerminalHost,

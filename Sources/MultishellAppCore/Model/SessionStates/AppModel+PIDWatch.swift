@@ -36,8 +36,15 @@ extension AppModel {
   func sweepGonePIDs() {
     let gone = watchedPIDs.filter(KernelProcessTable.isGone)
     for pid in gone {
+      let heldAgents = sessionStates.programAgents(heldBy: pid)
       mutateStates { $0.noteProcessGone(pid) }
       forgetReportedAgents(withPID: pid)
+      // A wrapper's pid stood for the hold, so the agent's own entry names another.
+      var forgotAny = false
+      for (id, agentID) in heldAgents where forgetReportedAgent(in: id, ifItIs: agentID) {
+        forgotAny = true
+      }
+      if forgotAny { updateDockBadge() }
     }
     // Agents first: a shell swept before its dead agent announced a Done.
     for pid in gone {
@@ -52,9 +59,11 @@ extension AppModel {
   }
 
   private func forgetReportedAgents(withPID pid: Int32) {
-    guard setIfChanged(\.reportedAgents, reportedAgents.filter { $0.value.pid != pid }) else {
-      return
-    }
+    let gone = Set(reportedAgents.filter { $0.value.pid == pid }.keys)
+    guard !gone.isEmpty else { return }
+    // The directories they gave go with them; one write for the whole sweep.
+    reportedAgentDirectories = reportedAgentDirectories.filter { !gone.contains($0.key) }
+    setIfChanged(\.reportedAgents, reportedAgents.filter { !gone.contains($0.key) })
     updateDockBadge()
   }
 }

@@ -51,6 +51,11 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
     self == .done || self == .failed
   }
 
+  /// Working and Waiting: claims about a process, which go with it.
+  public var isUnderway: Bool {
+    self == .running || self == .attention
+  }
+
   /// Whether looking is enough to clear it: Done alone. See
   /// Docs/design/agents/board-and-pane-rows.md for how Failed and Waiting part on a dead process.
   public var clearsWhenSeen: Bool { self == .done }
