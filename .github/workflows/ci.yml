@@ -32,8 +32,8 @@ jobs:
         with:
           version: ${{ steps.zig.outputs.version }}
           use-cache: false
-      # libghostty is keyed by its build script's own fingerprint, so a hit is a build
-      # it would keep, and the package by its toolchain, whose modules no other reads.
+      # libghostty by its build script's fingerprint, so a hit is a build it would keep;
+      # the package by its toolchain and libghostty's; continuous-integration.md.
       - name: Compute cache keys
         id: keys
         run: |
@@ -80,8 +80,8 @@ jobs:
         with:
           path: *zig-cache-paths
           key: ${{ steps.zig-cache.outputs.cache-primary-key }}
-      # The latest package build from any commit; with files dated by their
-      # commits, SwiftPM recompiles only what changed since.
+      # The latest package build from any commit on the same libghostty; with files
+      # dated by their commits, SwiftPM recompiles only what changed since.
       - name: Restore the package build
         id: swift-cache
         uses: actions/cache/restore@v5
@@ -89,8 +89,8 @@ jobs:
           path: &swift-build-paths |
             .build
             !.build/ghostty
-          key: swift-build-${{ steps.keys.outputs.swift }}-${{ github.sha }}
-          restore-keys: swift-build-${{ steps.keys.outputs.swift }}-
+          key: swift-build-${{ steps.keys.outputs.swift }}-${{ steps.keys.outputs.ghostty }}-${{ github.sha }}
+          restore-keys: swift-build-${{ steps.keys.outputs.swift }}-${{ steps.keys.outputs.ghostty }}-
       - name: Fetch the tree-sitter grammars
         run: Scripts/fetch-grammars.sh
       # No debug info: about a quarter off the build. Crash backtraces lose

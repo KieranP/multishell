@@ -24,11 +24,13 @@
   tree rebuilt in 31 s against 2 s dated. A shallow clone gives every file one
   date, so the script deepens one first, and not the submodule's 100 MB. A pull
   request's merge dates what it brought in by itself, or a file both sides
-  changed would keep main's date and go unrebuilt. The toolchain's version keys
-  the cache, and only a push to main saves one: at 400 MB a run, pull requests
-  saving theirs had the repository at 8.9 of its 10 GB, where GitHub evicts the
-  least recently used, libghostty's included. setup-zig caches nothing for the
-  same reason.
+  changed would keep main's date and go unrebuilt. The toolchain's version and
+  libghostty's fingerprint key the cache: restored across patch 0007, the build
+  compiled against the old GhosttyKit headers and failed, so a new libghostty
+  costs one cold package build. Only a push to main saves one: at 400 MB a run,
+  pull requests saving theirs had the repository at 8.9 of its 10 GB, where
+  GitHub evicts the least recently used, libghostty's included. setup-zig caches
+  nothing for the same reason.
 - **CI's test step is bound by the runner's three cores**, so the targets run
   one after another, as Swift Build runs them. AppCore beside the rest as two
   `swift test` processes took 3m48s against 3m52s, AppCore's own run going from
