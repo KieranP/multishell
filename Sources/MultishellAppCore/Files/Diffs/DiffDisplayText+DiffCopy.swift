@@ -5,17 +5,16 @@ extension DiffDisplayText {
   public func diffCopy(selections: [Range<Int>]) -> String {
     let touched = selections.map(rows(touching:))
     guard touched.joined().contains(where: { lines[$0].isChange }) else {
-      return selections.map(text(in:)).joined(separator: "\n")
+      return selections.map(uncutText(in:)).joined(separator: "\n")
     }
     return touched.joined().filter { lines[$0].kind != .padding }.map { index in
-      let line = lines[index]
       let marker =
-        switch line.kind {
+        switch lines[index].kind {
         case .added: "+"
         case .context, .padding: " "
         case .removed: "-"
         }
-      return marker + line.text + "\n"
+      return marker + uncutText(ofRow: index) + "\n"
     }.joined()
   }
 
@@ -24,7 +23,7 @@ extension DiffDisplayText {
     selections.map { selection in
       rows(touching: selection).compactMap { row -> String? in
         guard lines[row].kind != .padding else { return nil }
-        return text(in: range(ofRow: row).clamped(to: selection))
+        return uncutText(in: range(ofRow: row).clamped(to: selection))
       }.joined(separator: "\n")
     }.joined(separator: "\n")
   }

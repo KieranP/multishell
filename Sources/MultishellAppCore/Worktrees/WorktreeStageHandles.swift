@@ -9,6 +9,9 @@ struct WorktreeStageHandles: Sendable {
   /// The pre-create hook and `git worktree add` under the sheet, which run
   /// before there is a worktree to key a handle by; read by a test.
   private(set) var creationStopper: ProcessStopper?
+  /// Every create running, the command line's too, by project, so removing
+  /// the project stops what would land a worktree nothing lists.
+  private var creationStoppersByProject: [Project.ID: [ProcessStopper]] = [:]
 
   /// The file lists and post-create hook still running on `id`, as one task,
   /// so a test can await it.
@@ -55,13 +58,28 @@ struct WorktreeStageHandles: Sendable {
     creationStopper === stopper
   }
 
-  mutating func beginCreation(with stopper: ProcessStopper) {
-    creationStopper = stopper
+  /// `showsInSheet` false for a create from the command line, which leaves the
+  /// sheet's Cancel to one it shows.
+  mutating func beginCreation(
+    with stopper: ProcessStopper,
+    in projectID: Project.ID,
+    showsInSheet: Bool,
+  ) {
+    if showsInSheet { creationStopper = stopper }
+    creationStoppersByProject[projectID, default: []].append(stopper)
+  }
+
+  func stopCreations(in projectID: Project.ID) {
+    for stopper in creationStoppersByProject[projectID] ?? [] { stopper.stop() }
   }
 
   /// Only the create still showing lets go: two can overlap, and the first
   /// to end would otherwise take the other's Cancel with it.
-  mutating func endCreation(with stopper: ProcessStopper) {
+  mutating func endCreation(with stopper: ProcessStopper, in projectID: Project.ID) {
     if creationStopper === stopper { creationStopper = nil }
+    creationStoppersByProject[projectID]?.removeAll { $0 === stopper }
+    if creationStoppersByProject[projectID]?.isEmpty == true {
+      creationStoppersByProject[projectID] = nil
+    }
   }
 }

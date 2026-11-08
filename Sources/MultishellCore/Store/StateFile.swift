@@ -56,6 +56,6 @@ struct StateFile: Sendable {
   /// only the writes queue.
   func save(_ workspace: Workspace, as ticket: SaveOrder.Ticket) throws {
     let data = try JSONEncoder.forFile().encode(workspace)
-    try order.land(ticket) { try data.writeAtomicallyCreatingDirectory(to: fileURL) }
+    try order.land(ticket) { try data.writeAtomicallyCreatingDirectory(to: fileURL.linkTarget) }
   }
 }

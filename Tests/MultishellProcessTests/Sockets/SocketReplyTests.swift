@@ -35,6 +35,24 @@ struct SocketReplyTests {
     #expect(answer == "answer to ping\n")
   }
 
+  @Test func aProgramStartedWhileAnAnswerIsPendingDoesNotHoldItOpen() throws {
+    let started = Recorder<InheritingSpawn>()
+    let (server, path) = try server("rep") { _, channel in
+      let reply = channel.open()
+      if let shell = InheritingSpawn(["/bin/sleep", "30"]) { started.record(shell) }
+      reply?.send("answer\n")
+    }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
+
+    let answer = try UnixSocketClient.request("ping\n", to: path, timeout: .seconds(5))
+
+    #expect(answer == "answer\n")
+    #expect(started.received.count == 1)
+  }
+
   @Test func anAnswerLongerThanTheSocketBufferArrivesWhole() throws {
     let long = String(repeating: "x", count: 1_000_000) + "\n"
     let (server, path) = try server("rep") { _, channel in channel.open()?.send(long) }

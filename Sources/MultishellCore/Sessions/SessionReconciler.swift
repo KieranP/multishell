@@ -36,6 +36,11 @@ public final class SessionReconciler: TerminalHostDelegate {
   /// store has it, so the GUI reads the new focus when it marks it seen.
   public var onFocus: (@MainActor (TerminalSession.ID) -> Void)?
 
+  private var activeSessionID: TerminalSession.ID? {
+    guard let worktreeID = store.workspace.selectedWorktreeID else { return nil }
+    return store.workspace.activeTab(in: worktreeID)?.focusedSessionID
+  }
+
   /// The engine was asked to close a pane whose process still runs. Left to
   /// the GUI, whose close asks first where an agent is working.
   public var onCloseRequest: (@MainActor (TerminalSession.ID) -> Void)?
@@ -82,11 +87,8 @@ public final class SessionReconciler: TerminalHostDelegate {
   }
 
   public func focusActiveSession() {
-    guard
-      let worktreeID = store.workspace.selectedWorktreeID,
-      let tab = store.workspace.activeTab(in: worktreeID)
-    else { return }
-    host.focus(tab.focusedSessionID)
+    guard let activeSessionID else { return }
+    host.focus(activeSessionID)
   }
 
   public func terminalHost(
@@ -152,11 +154,13 @@ public final class SessionReconciler: TerminalHostDelegate {
   }
 
   /// The process is already gone, so the surface must go too; leaving it
-  /// until the next reconcile shows a dead terminal under a missing tab.
+  /// until the next reconcile shows a dead terminal under a missing tab. The
+  /// keyboard moves only off the pane that held it, not off a field in use.
   public func terminalHost(_ host: any TerminalHost, didExit id: TerminalSession.ID) {
+    let heldTheKeyboard = activeSessionID == id
     store.closeSession(id)
     host.close(id)
-    focusActiveSession()
+    if heldTheKeyboard { focusActiveSession() }
     onLiveSessionsChanged?()
   }
 }

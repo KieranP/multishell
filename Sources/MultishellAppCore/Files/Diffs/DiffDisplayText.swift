@@ -10,6 +10,8 @@ public struct DiffDisplayText: Equatable, Sendable {
 
   /// With each text capped.
   public let lines: [DiffLine]
+  /// What each cut line's mark stands for, by row, so a copy takes the line whole.
+  let cutRemainders: [Int: String]
   /// The lines joined by newlines, with none after the last.
   public let string: String
   /// Where each row starts in `string`, in UTF-16 units.
@@ -42,12 +44,14 @@ public struct DiffDisplayText: Equatable, Sendable {
     var starts: [Int] = []
     starts.reserveCapacity(lines.count)
     var offset = 0
-    let capped = lines.map { line in
+    var remainders: [Int: String] = [:]
+    let capped = lines.enumerated().map { row, line in
       starts.append(offset)
-      let text = Self.capped(line.text)
+      let (text, remainder) = Self.capped(line.text)
+      remainders[row] = remainder
       let length = text.utf16.count
       offset += length + 1
-      return text == line.text
+      return remainder == nil
         ? line
         : DiffLine(
           kind: line.kind,
@@ -59,6 +63,7 @@ public struct DiffDisplayText: Equatable, Sendable {
         )
     }
     self.lines = capped
+    self.cutRemainders = remainders
     self.rowStarts = starts
     self.changeStarts = capped.indices.filter { row in
       capped[row].kind != .context && (row == 0 || capped[row - 1].kind == .context)
@@ -74,11 +79,13 @@ public struct DiffDisplayText: Equatable, Sendable {
     return hasher.finalize()
   }
 
-  private static func capped(_ text: String) -> String {
+  /// The text as shown, and what its mark stands for where it was cut.
+  private static func capped(_ text: String) -> (shown: String, remainder: String?) {
     let units = text.utf16
-    guard units.count > lineLengthLimit else { return text }
+    guard units.count > lineLengthLimit else { return (text, nil) }
     let end = units.index(units.startIndex, offsetBy: lineLengthLimit)
-    return String(text[..<end]) + "…"
+    let kept = String(text[..<end])
+    return (kept + "…", String(text.utf16.dropFirst(kept.utf16.count)) ?? "")
   }
 
   /// The row holding a UTF-16 offset, the last row for one past the end.

@@ -55,6 +55,9 @@ _multishell_owns_debug_or_saves_theirs || trap "_multishell_debug" DEBUG'
   case "${PROMPT_COMMAND-}" in
     *_multishell_precmd*) ;;
     *)
+      # A profile's export would hand our hooks to every child bash, which
+      # has none of the functions they call and complains at each prompt.
+      export -n PROMPT_COMMAND
       # Before 5.1 bash runs only element 0 of an array, so the scalar form
       # below, which writes element 0, is the one that runs there.
       if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]] &&

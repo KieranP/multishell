@@ -71,6 +71,14 @@ struct FileChangeTargetsTests {
     #expect(targets(["/repos/demo/.git"]).projectsWithGitChanges == [project.id])
   }
 
+  @Test func anEmbeddedRepositorysIndexMovesItButItsObjectsDoNot() {
+    let found = targets([
+      "/repos/demo/vendor/lib/.git/index", "/repos/demo/vendor/other/.git/objects/ab",
+    ])
+
+    #expect(found.embeddedRepositoriesWithGitChanges == [main.id: ["vendor/lib"]])
+  }
+
   @Test func aChangeInAWorktreeIsTheDeepestWorktreeHoldingIt() {
     #expect(
       Set(targets(["/repos/demo/.worktrees/side/src"]).fileChangesByWorktree.keys) == [nested.id]

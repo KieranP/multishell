@@ -48,6 +48,7 @@ extension AppModel {
     // The sheet this project's windows left standing, the settings window
     // being its own scene. A stale sheet's Create would add a real worktree.
     if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }
+    stageHandles.stopCreations(in: project.id)
     if pendingProjectRemoval?.project.id == project.id { pendingProjectRemoval = nil }
     forgetWorktrees(store.removeProject(project.id))
     reconcileSessions(takingFocus: true)

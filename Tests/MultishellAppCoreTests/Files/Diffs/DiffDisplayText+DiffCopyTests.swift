@@ -26,6 +26,25 @@ struct DiffDisplayTextDiffCopyTests {
     )
   }
 
+  @Test func aLineCutForDisplayCopiesWhole() {
+    let long = String(repeating: "a", count: 10_000) + "tail"
+    let text = DiffDisplayText(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: long),
+        DiffLine(kind: .context, oldNumber: 2, newNumber: 2, text: "next"),
+        DiffLine(kind: .added, oldNumber: nil, newNumber: 3, text: long),
+      ],
+      marksStaging: true,
+    )
+    let firstRow = text.range(ofRow: 0)
+
+    #expect(text.diffCopy(selections: [firstRow]) == long)
+    #expect(text.diffCopy(selections: [9_998..<text.rowStarts[1] + 2]) == "aatail\nne")
+    #expect(text.diffCopy(selections: [0..<2]) == "aa")
+    #expect(text.diffCopy(selections: [text.range(ofRow: 2)]) == "+" + long + "\n")
+    #expect(text.plainCopy(selections: [firstRow]) == long)
+  }
+
   @Test func aRangeEndingAtALinesStartDoesNotReachIt() {
     #expect(Self.text.diffCopy(selections: [0..<4]) == "one\n")
   }

@@ -41,6 +41,18 @@ struct SessionReconcilerTests {
     #expect(host.log == ["close", "focus \(first.focusedSessionID.uuidString.prefix(4))"])
   }
 
+  @Test func aBackgroundTabsShellExitingLeavesTheKeyboardWhereItIs() {
+    let first = store.openTab(in: worktree.id)!
+    let second = store.openTab(in: worktree.id)!
+    reconciler.reconcile()
+    host.log.removeAll()
+
+    host.delegate?.terminalHost(host, didExit: first.focusedSessionID)
+
+    #expect(store.workspace.tabs.map(\.id) == [second.id])
+    #expect(host.log == ["close"])
+  }
+
   @Test func retitleReachesTheCallbackAndLeavesTheWorkspaceAlone() {
     let tab = store.openTab(in: worktree.id)!
     reconciler.reconcile()

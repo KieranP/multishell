@@ -334,6 +334,18 @@ struct WorktreeCoordinatorMergesTests {
     #expect(states["reused"] == .unmerged, "a first commit is not a merge")
   }
 
+  @Test func aRepositoryLaidOutInColumnsStillReadsEachMergedBranch() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    _ = try await fixture.runner.run(["config", "column.ui", "always"], in: path)
+    _ = try await fixture.runner.run(["branch", "landed"], in: path)
+
+    let merged = await fixture.git.mergedBranches(into: "main", in: fixture.project)
+
+    #expect(merged == ["landed", "main"])
+  }
+
   /// `git worktree add -b` cuts the branch at the trunk's tip, an ancestor of the trunk
   /// before a line is written, so ancestry alone would badge it.
   @Test func aBranchJustCutForANewWorktreeIsNotMerged() async throws {

@@ -671,6 +671,31 @@ extension SessionStatesTests {
     #expect(report(&states, .running, ended("w1")) == .done)
   }
 
+  @Test func aPromptAfterAHeldDoneKeepsTheWorkerItsStopSawOut() {
+    var states = SessionStates()
+    _ = status(&states, .working, app: "codex", pid: 99)
+    _ = report(&states, .running, started("w1"))
+    _ = report(&states, .done)
+    _ = status(&states, .done, app: "codex", pid: 99)
+
+    _ = report(&states, .init(state: .running, agentID: "codex", startsTurn: true))
+    _ = status(&states, .working, app: "codex", pid: 99)
+
+    #expect(workersOut(states) == ["w1"])
+    #expect(status(&states, .done, app: "codex", pid: 99) == nil, "w1 still holds the Done")
+    #expect(states[.session(a)] == .running)
+  }
+
+  @Test func anInterruptUnderAProgramsHoldEndsTheWorkersItKilled() {
+    var states = SessionStates()
+    _ = status(&states, .working, app: "codex", pid: 99)
+    _ = report(&states, .running, started("w1"))
+
+    _ = report(&states, .init(state: .idle, agentID: "codex"))
+
+    #expect(workersOut(states).isEmpty)
+  }
+
   @Test func aStopWhoseListEmptiesTheRosterPaysTheHeldDone() {
     var states = SessionStates()
     _ = status(&states, .working, pid: 99)

@@ -110,6 +110,22 @@ struct ThemeCatalogueTests {
     }
   }
 
+  @Test func seedingAnExampleReplacesALinkRatherThanWritingThroughIt() throws {
+    let directory = try Scratch.directory("themes")
+    defer { Scratch.remove(directory) }
+    let examples = directory.appendingPathComponent("examples")
+    try FileManager.default.createDirectory(at: examples, withIntermediateDirectories: true)
+    let mine = directory.appendingPathComponent("mine.json")
+    let words = #"{ "id": "mine", "name": "Mine" }"#
+    try Data(words.utf8).write(to: mine)
+    let link = examples.appendingPathComponent("\(Theme.multishellDark.id).json")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: mine)
+
+    try ThemeCatalogue.seedExamples(in: directory)
+
+    #expect(try String(contentsOf: mine, encoding: .utf8) == words)
+  }
+
   @Test func aHiddenFileSuchAsAnEditorsLockIsNotReadAsATheme() throws {
     let directory = try Scratch.directory("themes")
     defer { Scratch.remove(directory) }

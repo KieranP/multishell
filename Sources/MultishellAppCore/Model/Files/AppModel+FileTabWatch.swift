@@ -5,11 +5,14 @@ import MultishellCore
 /// ignored-folder guards; see Docs/design/files/file-tabs.md.
 extension AppModel {
   /// A change in a tab's folder re-reads it where its `lstat` moved, and one in
-  /// its project's git always, the diff's other side having moved.
+  /// the git it diffs against always, the diff's other side having moved.
   func noteFileTabChanges(_ targets: FileChangeTargets) {
     for tab in workspace.fileTabs {
       guard let worktree = workspace.worktree(tab.worktreeID) else { continue }
-      if targets.projectsWithGitChanges.contains(worktree.projectID) {
+      let embedded = targets.embeddedRepositoriesWithGitChanges[worktree.id] ?? []
+      if targets.projectsWithGitChanges.contains(worktree.projectID)
+        || embedded.contains(where: { tab.path.hasPrefix($0 + "/") })
+      {
         noteFileTabChanged(tab.id)
         continue
       }

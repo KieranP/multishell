@@ -9,7 +9,7 @@ public struct SocketReplyChannel: Sendable {
   /// A reply that outlives the connection, or `nil` where no descriptor is
   /// free. A duplicate, so the server closing its own leaves this one open.
   public func open() -> SocketReply? {
-    let copy = dup(descriptor)
+    let copy = fcntl(descriptor, F_DUPFD_CLOEXEC, 0)
     guard copy >= 0 else { return nil }
     return SocketReply(descriptor: copy, writingOn: connection.replyQueue)
   }

@@ -160,6 +160,20 @@ struct AppModelSharedSettingsExportTests {
     #expect(harness.model.effectiveSettings(for: project).postCreateHook == "npm ci")
   }
 
+  @Test func exportKeepsAPathListEntryTheRepositoryMayNotName() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    try harness.writeSharedSettings(#"{ "linkedPaths": "node_modules\n../shared-cache" }"#)
+    await harness.model.refreshWorktrees(of: harness.project)
+    try harness.answerTrust(true)
+
+    await harness.model.exportSharedSettings(for: harness.project)
+
+    let written = try #require(try SharedProjectSettings.load(from: harness.project.path))
+    #expect(written.linkedPaths == "node_modules\n../shared-cache")
+    #expect(harness.model.effectiveSettings(for: harness.project).linkedPaths == "node_modules")
+  }
+
   /// Export records an answer it has, never one it does not: writing the
   /// file back is not the user saying no to a teammate's hook.
   @Test func exportDoesNotAnswerAQuestionTheUserWasNeverAsked() async throws {

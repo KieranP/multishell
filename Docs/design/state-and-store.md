@@ -28,6 +28,10 @@
   the failed load having already said so. Each save asks whether it is still
   there, so one the user moves away lets this session save again. Cost: a file
   made readable mid-run is not read until relaunch.
+- **A linked state file is saved through the link**, as an agent's settings file
+  is: the atomic write put a plain file where a dotfiles repo's link was, and
+  the repo's copy went stale. A repository's `.multishell.json` is not: a
+  committed link would let Export write over whatever file it names.
 - **Duplicates are dropped after the prune, not before.** First entry wins, so a
   tab id written twice, once naming a worktree that has gone, kept the dead copy
   and lost the live one to the dangling prune.

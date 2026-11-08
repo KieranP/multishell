@@ -10,7 +10,7 @@ enum PipeDescriptors {
     var descriptors: [Int32] = [-1, -1]
     guard pipe(&descriptors) == 0 else { throw DescriptorUnavailable(code: errno) }
     // macOS has no pipe2, so a fork between the two calls still inherits them.
-    for descriptor in descriptors { _ = fcntl(descriptor, F_SETFD, FD_CLOEXEC) }
+    for descriptor in descriptors { DescriptorFlags.setClosesOnExec(descriptor) }
     return (
       FileHandle(fileDescriptor: descriptors[0], closeOnDealloc: true),
       FileDescriptor(rawValue: descriptors[1]),

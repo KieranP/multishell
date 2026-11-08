@@ -25,6 +25,8 @@ enum UnixSocket {
     guard descriptor >= 0 else {
       throw SocketFailure(kind: .system(operation: "socket", code: errno), path: path)
     }
+    // macOS has no SOCK_CLOEXEC, so a fork between the two calls still inherits it.
+    DescriptorFlags.setClosesOnExec(descriptor)
     suppressSIGPIPE(on: descriptor)
     return descriptor
   }

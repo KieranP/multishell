@@ -3,9 +3,6 @@ import Foundation
 /// A file an agent reads its hooks from: the user's settings JSON, refused unless
 /// plain JSON, or a file of ours written whole. See agents/reports-and-hooks.md.
 enum AgentHookFile {
-  /// The kernel's MAXSYMLINKS: a longer chain is a loop.
-  private static let maximumLinkHops = 32
-
   /// An empty object for a missing or blank file; anything else it cannot read back is an error.
   /// Numbers come back as `NumberLiteral` strings; see agents/reports-and-hooks.md.
   static func read(_ file: URL) throws -> [String: Any] {
@@ -13,7 +10,7 @@ enum AgentHookFile {
     let data = try Data(contentsOf: file)
     guard data.contains(where: { !" \t\r\n".utf8.contains($0) }) else { return [:] }
     // Strict: a lossy decode would write U+FFFD over bytes that were the user's.
-    guard let text = String(data: data, encoding: .utf8),
+    guard let text = String(data: data, encoding: .utf8), !RepeatedJSONKeys.occur(in: text),
       let object = try? JSONSerialization.jsonObject(with: Data(NumberLiteral.marking(text).utf8))
     else {
       throw UnparsableSettingsFile(file: file)
@@ -29,25 +26,10 @@ enum AgentHookFile {
     try writeWhole(render(settings), to: file)
   }
 
-  /// Where a write lands. A link at the end of the path is written through,
-  /// not over, so a dotfiles repo keeps seeing the file; see agents/reports-and-hooks.md.
-  private static func destination(of file: URL) -> URL {
-    var current = file
-    // Followed link by link: `resolvingSymlinksInPath` hands back a link whose
-    // target does not exist yet, and the write would replace it.
-    for _ in 0..<maximumLinkHops {
-      guard let target = try? FileManager.default.destinationOfSymbolicLink(atPath: current.path)
-      else { return current }
-      let directory = current.deletingLastPathComponent().resolvingSymlinksInPath()
-      current = URL(fileURLWithPath: target, relativeTo: directory).standardizedFileURL
-    }
-    return current
-  }
-
   /// A file of ours alone: written whole, with no copy kept, because there
   /// was nothing of the user's in it to keep.
   static func writeWhole(_ contents: String, to file: URL) throws {
-    try Data(contents.utf8).writeAtomicallyCreatingDirectory(to: destination(of: file))
+    try Data(contents.utf8).writeAtomicallyCreatingDirectory(to: file.linkTarget)
   }
 
   static func render(_ object: [String: Any]) -> String {
@@ -67,6 +49,6 @@ enum AgentHookFile {
     guard FileManager.default.fileExists(atPath: file.path),
       !FileManager.default.fileExists(atPath: backup.path)
     else { return }
-    try FileManager.default.copyItem(at: destination(of: file), to: backup)
+    try FileManager.default.copyItem(at: file.linkTarget, to: backup)
   }
 }

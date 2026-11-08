@@ -21,6 +21,9 @@ struct FileChangeTargets {
   private(set) var projectsWithGitDirectoryChanges: Set<Project.ID> = []
   /// The changes in each worktree's own files, as paths within it.
   private(set) var fileChangesByWorktree: [Worktree.ID: [String]] = [:]
+  /// The repositories inside each worktree whose git moved, by their folder in
+  /// it: a vendored clone, or a submodule never absorbed.
+  private(set) var embeddedRepositoriesWithGitChanges: [Worktree.ID: Set<String>] = [:]
   private(set) var projectsWithSharedSettingsChanges: Set<Project.ID> = []
   /// Worktrees one of whose `.gitignore` files changed.
   private(set) var worktreesWithIgnoreRuleChanges: Set<Worktree.ID> = []
@@ -60,10 +63,14 @@ struct FileChangeTargets {
       }
       // An embedded repository, or a submodule never absorbed, keeps its `.git`
       // in the worktree, and the outer status writes its monitor's cookie there.
-      if let worktree, let dotGit = worktree.subpath.firstIndex(of: ".git"),
-        Self.isGitScratch(worktree.subpath[(dotGit + 1)...])
-      {
-        continue
+      if let worktree, let dotGit = worktree.subpath.firstIndex(of: ".git") {
+        let inside = worktree.subpath[(dotGit + 1)...]
+        if Self.isGitScratch(inside) { continue }
+        if inside.first.map(Self.gitEntriesThatMoveRows.contains) ?? true {
+          embeddedRepositoriesWithGitChanges[worktree.id, default: []].insert(
+            worktree.subpath[..<dotGit].joined(separator: "/")
+          )
+        }
       }
       if let worktree {
         fileChangesByWorktree[worktree.id, default: []].append(

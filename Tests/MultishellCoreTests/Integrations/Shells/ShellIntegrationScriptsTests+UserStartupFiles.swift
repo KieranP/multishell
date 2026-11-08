@@ -43,6 +43,28 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains(PromptMarks.claim), "and our own hooks still reach the prompt")
   }
 
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func aBashStartedInsideAPaneInheritsNoneOfOurPromptHooks() async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "export PROMPT_COMMAND='history -a'\n")
+    var environment = files.environment(termProgram: "ghostty")
+    environment[SessionEnvironment.sessionVariable] = "exported-prompt-command"
+
+    let output = try await interactiveShellOutput(
+      "/bin/bash",
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "/bin/bash -c 'printf \"CHILD[%s]\\\\n\" \"${PROMPT_COMMAND-}\"'\nexit\n",
+    )
+
+    #expect(output.contains("CHILD["), "the child printed nothing: \(output)")
+    #expect(
+      !output.contains("CHILD[_multishell"),
+      "a child bash runs hooks it has no functions for",
+    )
+  }
+
   /// A terminal may leave `TERM_PROGRAM` unset. Under `nounset`, reading it makes zsh
   /// print an error at every startup and bash abandon the init file, hooks and all.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))

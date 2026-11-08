@@ -40,16 +40,16 @@ struct WorktreeStageHandlesTests {
     var handles = WorktreeStageHandles()
     let first = ProcessStopper()
     let second = ProcessStopper()
-    handles.beginCreation(with: first)
+    handles.beginCreation(with: first, in: "p", showsInSheet: true)
     #expect(handles.isCurrentCreation(first))
 
-    handles.beginCreation(with: second)
+    handles.beginCreation(with: second, in: "p", showsInSheet: true)
     #expect(!handles.isCurrentCreation(first), "the older create's steps are dropped")
     #expect(handles.isCurrentCreation(second))
     handles.stopCreation()
     #expect(second.isStopRequested && !first.isStopRequested)
 
-    handles.endCreation(with: second)
+    handles.endCreation(with: second, in: "p")
     #expect(!handles.isCurrentCreation(second))
   }
 
@@ -57,10 +57,10 @@ struct WorktreeStageHandlesTests {
     var handles = WorktreeStageHandles()
     let first = ProcessStopper()
     let second = ProcessStopper()
-    handles.beginCreation(with: first)
-    handles.beginCreation(with: second)
+    handles.beginCreation(with: first, in: "p", showsInSheet: true)
+    handles.beginCreation(with: second, in: "p", showsInSheet: true)
 
-    handles.endCreation(with: first)
+    handles.endCreation(with: first, in: "p")
     #expect(handles.isCurrentCreation(second))
     handles.stopCreation()
     #expect(second.isStopRequested)

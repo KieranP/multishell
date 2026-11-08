@@ -46,7 +46,7 @@ struct WorktreeActions: View {
       Button(t("action.remove-worktree"), role: .destructive) {
         model.requestWorktreeRemoval(of: worktree)
       }
-      .disabled(model.isBusy(worktree.id))
+      .disabled(!model.mayRemove(worktree))
     }
   }
 }

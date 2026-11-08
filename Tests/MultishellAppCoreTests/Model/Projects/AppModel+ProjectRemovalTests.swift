@@ -16,6 +16,31 @@ struct AppModelProjectRemovalTests {
   /// Fields meant to still name a departed project.
   private static let exempt: Set = [prunedByTheNextStatusRead, ignoredWhenItFires]
 
+  @Test func removingAProjectStopsACreateStillInItsPreCreateHook() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.model.setSettings(ProjectSettings(preCreateHook: "sleep 30"), for: harness.project)
+    let create = Task {
+      await harness.model.createWorktree(
+        branch: "orphan",
+        basedOn: nil,
+        createsBranch: true,
+        in: harness.project,
+      )
+    }
+    try await waitUntil({ harness.model.worktreeCreationStep == .preCreateHook }, seconds: 15)
+    let project = harness.project
+    let started = ContinuousClock.now
+
+    harness.model.removeProject(project)
+    let created = await create.value
+
+    #expect(created == nil)
+    #expect(started.duration(to: .now) < .seconds(20), "the hook was stopped, not waited out")
+    let branches = try await harness.git.run(["branch", "--list", "orphan"], in: project.path)
+    #expect(branches.isEmpty, "git never added it")
+  }
+
   /// Removing the project covers the hooks in it. A hook left running would
   /// still end, so only the time the setup took tells a signal from `sleep 30`.
   @Test func removingAProjectEndsAHookStillRunningInItsWorktrees() async throws {

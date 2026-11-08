@@ -70,6 +70,30 @@ struct AgentHookFileTests: AgentHookFixtures {
 
   /// Gemini's settings file takes comments and Gemini keeps them when it writes the file, so a
   /// strict rewrite would throw them away.
+  @Test func aFileNamingAKeyTwiceIsRefusedRatherThanRewrittenWithTheIgnoredCopy() throws {
+    let (directory, file) = try scratchSettingsFile()
+    defer { Scratch.remove(directory) }
+    let theirs =
+      #"{"permissions": {"allow": []}, "a": "x,\"y", "permissions": {"allow": ["Bash"]}}"#
+    try theirs.write(to: file, atomically: true, encoding: .utf8)
+
+    #expect(throws: UnparsableSettingsFile.self) {
+      try AgentHookCatalogue.claude.install(into: file, helper: helper)
+    }
+    #expect(try String(contentsOf: file, encoding: .utf8) == theirs)
+  }
+
+  @Test func theSameKeyInTwoObjectsIsNoRepeat() throws {
+    let (directory, file) = try scratchSettingsFile()
+    defer { Scratch.remove(directory) }
+    let theirs = #"{"a": {"type": "x"}, "b": [{"type": "y"}, {"type": "z"}], "hooks": {}}"#
+    try theirs.write(to: file, atomically: true, encoding: .utf8)
+
+    try AgentHookCatalogue.claude.install(into: file, helper: helper)
+
+    #expect(AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: file))
+  }
+
   @Test func aFileWithCommentsIsRefusedRatherThanRewrittenWithoutThem() throws {
     let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }

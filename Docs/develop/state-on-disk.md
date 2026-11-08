@@ -58,6 +58,10 @@ Under `~/Library/Application Support/Multishell`.
   until it execs, and this process spawns freely.
 - **A connect alone cannot tell**: a listener whose accept backlog is full
   refuses one exactly as a dead socket does.
+- **Every socket descriptor closes at exec**: libghostty forks a pane's shell
+  without closing what it inherits. A shell started while a reply was pending
+  held the connection open, and the helper waited on EOF for as long as that
+  shell lived.
 - **Symlinks to the helper are pointed at the launching build's at launch**: the
   shared one in `bin/`, which hook lines reference through the home directory,
   and the build's own in `cli/`.

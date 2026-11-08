@@ -40,6 +40,7 @@ extension SessionStates {
       }
     }
     if isHeldByProgram(key) {
+      keepTurnUnderProgramHold(report.state, worker: worker, on: key)
       return applyWorkerToProgramHold(worker, on: key, isSeen: isSeen).map { moved in
         SessionNote(
           state: moved.state,

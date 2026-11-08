@@ -7,7 +7,7 @@ extension AppModel {
   /// operation runs there. The task ends once the dialog is up or the removal is over.
   @discardableResult
   public func requestWorktreeRemoval(of worktree: Worktree) -> Task<Void, Never>? {
-    guard worktree.isRemovable, !isBusy(worktree.id) else { return nil }
+    guard mayRemove(worktree) else { return nil }
     if case .remove(let deletesBranch) = removalDecision(for: worktree) {
       return Task { await removeWorktree(worktree, deletesBranch: deletesBranch) }
     }
@@ -22,7 +22,7 @@ extension AppModel {
       if isLatest { removalRequests.latestID = nil }
       // A late read must not swap the dialog up, or a newer click's, for its own.
       guard isLatest, pendingWorktreeRemoval == nil, let current = workspace.worktree(worktree.id),
-        !isBusy(current.id)
+        mayRemove(current)
       else { return }
       switch removalDecision(for: current, isStatusUnread: isStatusUnread) {
       case .ask(let pending): pendingWorktreeRemoval = pending

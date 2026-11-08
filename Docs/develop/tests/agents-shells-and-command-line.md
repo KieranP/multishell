@@ -94,8 +94,10 @@ in `design/`.
   never**: SocketMessageSourceTests. **An answer sent after the client's EOF
   still arrives, and one held open runs the client out of time, one that stops
   reading holds up no other, and one read slowly but steadily arrives whole past
-  the timeout**: SocketReplyTests. **A request nobody reads runs out of time
-  while still being sent, and a timeout under a second still runs out**:
+  the timeout**: SocketReplyTests, which also holds an answer open from a
+  program started as libghostty starts a shell, and UnixSocketServerTests checks
+  the listener closes at exec. **A request nobody reads runs out of time while
+  still being sent, and a timeout under a second still runs out**:
   UnixSocketClientTests.
 - **The command line reaches its own build's app**: HelperControlTests and
   PathsVariantTests, the latter also giving two worktree names that start alike
@@ -161,8 +163,10 @@ in `design/`.
 - **A greeting holding an equals sign does not cost the login shell its first
   variable**: EnvironmentDumpParserTests.
 - **Numbers in an agent's settings file come back as written**, and a literal
-  the grammar refuses or bytes that are not UTF-8 are still refused untouched:
-  AgentHookFileTests.
+  the grammar refuses, bytes that are not UTF-8 or a key named twice are still
+  refused untouched: AgentHookFileTests.
+- **A bash started in a pane inherits none of our prompt hooks**:
+  ShellIntegrationScriptsTests+UserStartupFiles.
 - **What a zsh prompt tells the terminal now the engine's integration is off**,
   a command's end and status, the directory, the title and the cursor shape in
   each keymap, each only where the user's features ask:

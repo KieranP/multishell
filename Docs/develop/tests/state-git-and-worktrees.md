@@ -34,9 +34,11 @@ worktrees, status reads, services and debug sampling. Why each rule holds is in
   merged-badge test in AppModelBranchScansTests.
 - **State that will not open, not just will not decode, is moved aside**, and
   one that cannot be moved is never saved over: StateFileTests and
-  WorkspaceStoreTests+Restoring.
+  WorkspaceStoreTests+Restoring. StateFileTests also saves through a link, and
+  ThemeCatalogueTests seeds over one.
 - **The user's git config cannot change what a read means**: GitRunnerTests
-  reads the isolated keys back and watches an all-untracked worktree read dirty.
+  reads the isolated keys back and watches an all-untracked worktree read dirty,
+  and WorktreeCoordinatorMergesTests reads merged branches under `column.ui`.
 - **A tag sharing a branch's or the base's name decides nothing**:
   WorktreeCoordinatorMergesTests, its fixture merging by refname or git takes
   the tag. WorktreeGitBranchesTests holds the New Worktree sheet's names bare

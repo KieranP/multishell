@@ -92,8 +92,11 @@
 - **Verdicts are runtime state, never saved**: recomputed from git, no badge
   comes off disk describing a branch that has moved since.
 - **The user's git config cannot change what a read means.** Every runner turns
-  signature printing off and untracked files on, through the environment rather
-  than `-c`, which a failure would report in its arguments.
+  signature printing and columns off and untracked files on, through the
+  environment rather than `-c`, which a failure would report in its arguments.
+- **`column.ui=always` lays `branch --merged` out in columns**, `--format`
+  notwithstanding: one line of every name matched no branch, and each lost its
+  badge.
 - **A printed signature splits a reflog subject into an action no prefix
   matches**, so every freshly cut branch claims to have landed, and being clean
   and certain gets the dialog led by the delete button.

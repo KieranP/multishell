@@ -43,6 +43,9 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   window is often beside the editor making the change, and a tracked file can
   sit forced in under an ignored folder. By directory, FSEvents' file flags
   lingering for seconds.
+- **A tab in an embedded repository re-reads on that repository's git**, a
+  vendored clone or a submodule never absorbed: its `.git` is no project's, and
+  a commit there left the tab's lines marked uncommitted until the file moved.
 - **A hidden tab is owed its read until shown**, but a deletion strikes its
   title at once, the strip showing it.
 - **A hidden tab lets go of its rows**, keeping its corner dot and strike, so
@@ -59,7 +62,8 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   diffs 1 MiB in under 40 ms, but the forced view takes up to 186 MB laid out at
   that size. That side's size is asked first, so a small file whose last commit
   is huge never diffs into memory. A line is cut at 10,000 characters, a 1 MiB
-  file being able to be one line.
+  file being able to be one line. Copy takes it whole: the cut text and its mark
+  went on the pasteboard.
 - **Text is UTF-8, else the encoding a text editor would guess**, the open rule
   admitting any text-typed file; the diff is decoded the same way, git copying
   the file's bytes into it.

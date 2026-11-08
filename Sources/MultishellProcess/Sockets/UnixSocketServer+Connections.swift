@@ -31,6 +31,8 @@ extension UnixSocketServer {
           return
         }
       }
+      // A pane's shell holding the connection keeps its helper from reading EOF.
+      DescriptorFlags.setClosesOnExec(client)
       DescriptorFlags.setNonBlocking(client)
       let source = DispatchSource.makeReadSource(fileDescriptor: client, queue: queue)
       let connection = Connection(source: source)

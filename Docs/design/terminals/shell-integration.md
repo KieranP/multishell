@@ -32,6 +32,9 @@ Newest at the bottom.
 - **bash 5.1 made `PROMPT_COMMAND` an array**, so a user's array gets ours as
   elements; before 5.1 bash runs only element 0, so the string form goes there,
   or an array in the rc file silenced every hook.
+- **Our `PROMPT_COMMAND` is never exported**: a profile's `export` handed it to
+  every child bash, which has none of its functions and complained at each
+  prompt.
 - **The bash init file is read in place of the rc file**, so the generated one
   reproduces a login shell's chain and reads the rc file only where that found
   nothing, as a login shell does.

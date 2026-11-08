@@ -34,6 +34,20 @@ struct AppModelWorktreeRemovalTests {
     #expect(harness.model.liveTerminalCount == 0)
   }
 
+  @Test func aWorktreeListedWhileItsCreateStillRunsCannotBeRemoved() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let arriving = try await harness.createWorktree(onBranch: "arriving")
+    harness.model.pathClaims.claim(arriving.id)
+
+    #expect(!harness.model.mayRemove(arriving))
+    #expect(harness.model.requestWorktreeRemoval(of: arriving) == nil)
+    await harness.model.removeWorktree(arriving, deletesBranch: false)
+
+    #expect(harness.model.workspace.worktree(arriving.id) != nil)
+    #expect(!harness.model.isBusy(arriving.id))
+  }
+
   @Test func aFailingPreDeleteHookLeavesTheWorktreeAndItsShells() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

@@ -19,6 +19,21 @@ struct StateFileTests {
     #expect(workspace.appearance.themeID == Theme.multishellDark.id)
   }
 
+  @Test func aSaveWritesThroughALinkedStateFileRatherThanReplacingIt() throws {
+    let tracked = try scratchStateFile(holding: "{}")
+    let directory = tracked.deletingLastPathComponent()
+    defer { Scratch.remove(directory) }
+    let link = directory.appendingPathComponent("linked-state.json")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: tracked)
+    var workspace = Workspace()
+    workspace.projects = [Project(path: URL(fileURLWithPath: "/repos/demo"))]
+
+    try StateFile(fileURL: link).save(workspace)
+
+    #expect((try? FileManager.default.destinationOfSymbolicLink(atPath: link.path)) == tracked.path)
+    #expect(try StateFile(fileURL: tracked).load().projects.map(\.name) == ["demo"])
+  }
+
   @Test func unreadableStateIsMovedAsideNotOverwritten() throws {
     let file = try scratchStateFile(holding: "not json")
     let directory = file.deletingLastPathComponent()

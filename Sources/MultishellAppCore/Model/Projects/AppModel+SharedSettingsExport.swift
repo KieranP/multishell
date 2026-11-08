@@ -23,8 +23,11 @@ extension AppModel {
   /// rather than writing a file into a project the user removed.
   func prepareSharedSettingsExport(for project: Project) throws -> SharedSettingsExport? {
     guard let project = workspace.project(project.id) else { return nil }
-    let mine = SharedProjectSettings(exporting: effectiveSettings(for: project))
-    let kept = mine.carryingOver(from: project.sharedSettingsSnapshot.asWritten)
+    // Over the file as written, not as confined: a path list a teammate wrote
+    // goes back whole, the entries this checkout refuses included.
+    let asWritten = project.sharedSettingsSnapshot.asWritten
+    let mine = SharedProjectSettings(exporting: project.settings.layered(over: asWritten))
+    let kept = mine.carryingOver(from: asWritten)
     // Every word the user's own answers itself; otherwise the answer given
     // about the file this rewrites travels, and no answer leaves the question.
     let answer =

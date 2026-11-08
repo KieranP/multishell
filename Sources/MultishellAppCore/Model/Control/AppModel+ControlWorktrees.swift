@@ -78,7 +78,7 @@ extension AppModel {
     let id = order.worktreeID
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     guard worktree.isRemovable else { return .refused(.worktreeNotRemovable(id: id)) }
-    guard !isBusy(worktree.id) else { return .refused(.worktreeNotReady(id: id)) }
+    guard mayRemove(worktree) else { return .refused(.worktreeNotReady(id: id)) }
     let sessions = workspace.sessions(in: worktree.id).map(\.id)
     if refusesOverWorkingAgent(in: sessions, force: order.force) {
       return .refused(.agentWorking)

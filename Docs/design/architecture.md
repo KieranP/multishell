@@ -13,6 +13,8 @@
   keyboard off whatever is being typed. The exceptions are a held-back first tab
   opening in view (terminals/sessions.md) and a command-line request on the
   worktree in view, done as the click it stands for (agents/command-line.md).
+- **A shell exiting moves the keyboard only off its own pane**: one in a
+  background tab took it from the field being typed in.
 - **A refresh still reconciles.** Without it a worktree removed outside the app
   keeps its surfaces and its shells run on unreachable.
 - **Identity is the path.** A minted id would change under persisted selection.

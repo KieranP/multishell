@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import TestScratch
 import Testing
 
@@ -23,6 +24,20 @@ struct UnixSocketServerTests {
 
     try await waitUntil { recorder.received.count == 5 }
     #expect(recorder.received.sorted() == ["five", "four", "one", "three without newline", "two"])
+  }
+
+  @Test func theListeningSocketIsNotInheritedByAProgramTheAppStarts() throws {
+    let path = Scratch.socketPath("srv")
+    let server = UnixSocketServer(path: path)
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
+    try server.start()
+
+    let listener = try #require(server.state.withLock { $0.listener?.handle })
+
+    #expect(fcntl(Int32(listener), F_GETFD) & FD_CLOEXEC != 0)
   }
 
   @Test func aStaleSocketFileIsReplacedButALiveOneIsNot() throws {

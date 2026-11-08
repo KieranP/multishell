@@ -12,6 +12,10 @@ how it decides a pane's dot. Newest at the bottom.
   while a pane's program holds the dot, an agent's hook reports keep the roster
   and move nothing else
   (`anAgentsHookUnderAProgramsStatusListsItsWorkersAndMovesNoDot`).
+- **The roster keeps its turn rules under a hold**: a Stop vouches for the
+  workers out, and an Idle or a failure ends them. Skipped there, Codex's next
+  prompt dropped a worker still running, whose Stop lists none, and its next
+  Done landed over it; its interrupt left the killed workers standing.
 - **Libghostty reads the protocol; the app surfaces dropped it**, so patch 0007
   passes each report on as an action and answers the `?` query
   (develop/dependencies.md). Claude asks first and reports nothing without the

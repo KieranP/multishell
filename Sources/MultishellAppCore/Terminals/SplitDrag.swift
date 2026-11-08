@@ -11,7 +11,8 @@ public struct SplitDrag: Equatable, Sendable {
   public func shown(over weights: [Double]) -> [Double] { shownWeights ?? weights }
 
   /// Measured from where the drag began, so the weights it started from are
-  /// kept until it ends.
+  /// kept until it ends, unless a pane came or went: the old count's weights
+  /// laid out the panes that were left short of the split.
   public mutating func move(
     dividerAfter index: Int,
     by translation: Double,
@@ -19,8 +20,8 @@ public struct SplitDrag: Equatable, Sendable {
     available: Double,
     minimumPane: Double,
   ) {
+    if startWeights?.count != weights.count { startWeights = weights }
     let start = startWeights ?? weights
-    if startWeights == nil { startWeights = start }
     let updated = SplitMath.transferring(
       translation,
       acrossDividerAfter: index,

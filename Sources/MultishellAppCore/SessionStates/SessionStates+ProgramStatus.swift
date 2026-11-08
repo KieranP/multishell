@@ -151,6 +151,23 @@ extension SessionStates {
     update(key) { $0.forgetAnnouncedFinish() }
   }
 
+  /// The roster's turn as the agent's own hooks tell it, the dot aside: a Stop
+  /// vouches for the workers out, so the next prompt keeps them, and an Idle or
+  /// a failure ends them all, as Codex's interrupt does with no hold. A
+  /// worker's report says nothing of the turn.
+  mutating func keepTurnUnderProgramHold(
+    _ state: SessionState,
+    worker: WorkerReport?,
+    on key: Key,
+  ) {
+    guard worker == nil else { return }
+    switch state {
+    case .done: update(key) { $0.roster.markOutAtStop() }
+    case .idle, .failed: update(key) { $0.settleTurn() }
+    case .running, .attention: break
+    }
+  }
+
   /// Under a program's hold a hook's worker moves the dot only over the
   /// program's Done; see agents/program-status.md.
   mutating func applyWorkerToProgramHold(

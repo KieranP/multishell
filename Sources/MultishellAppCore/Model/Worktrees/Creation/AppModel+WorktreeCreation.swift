@@ -65,11 +65,10 @@ extension AppModel {
     // first file, and that directory is watched. See worktrees/creating-and-removing.md.
     let claimed = planned.flatMap(claimPath(_:))
     let stopper = ProcessStopper()
-    // A create from the command line leaves the sheet's Cancel and progress to one it shows.
-    if takesOverTheSheet { stageHandles.beginCreation(with: stopper) }
+    stageHandles.beginCreation(with: stopper, in: project.id, showsInSheet: takesOverTheSheet)
     defer {
       if stageHandles.isCurrentCreation(stopper) { worktreeCreationStep = nil }
-      stageHandles.endCreation(with: stopper)
+      stageHandles.endCreation(with: stopper, in: project.id)
       if let claimed { releasePathClaim(claimed, in: project) }
     }
     let path: URL

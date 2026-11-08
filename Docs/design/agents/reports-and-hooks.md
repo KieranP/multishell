@@ -139,6 +139,9 @@ user's settings file. Newest at the bottom.
   an agent runs its hooks through is not ours to choose.
 - **A settings file that is a symlink is written through, not over.** An atomic
   write would leave a regular file where a dotfiles repo's link was.
+- **A settings file that names a key twice is refused**, as JSONC is:
+  JSONSerialization keeps the first and the agents' `JSON.parse` the last, so a
+  rewrite kept the copy the agent ignores.
 - **The copy kept sits beside the link**, not in the repo it points into, where
   the user's next status would have to explain it.
 - **Nothing under an event is written over.** Absent means an empty list to add

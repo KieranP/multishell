@@ -6,7 +6,9 @@ import MultishellProcess
 struct GitRunner: Sendable {
   /// Set on every runner: signature lines read as reflog work, and untracked
   /// files hidden read as a clean tree. Both badge wrongly and offer a delete.
+  /// Columns put every merged branch on one line, which matched none.
   private static let forcedConfiguration = [
+    "column.ui": "never",
     "log.showSignature": "false",
     "status.showUntrackedFiles": "normal",
   ]

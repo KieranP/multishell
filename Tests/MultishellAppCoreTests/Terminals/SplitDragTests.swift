@@ -28,6 +28,17 @@ struct SplitDragTests {
     #expect(drag.shown(over: [1, 1, 1]) == [1.25, 0.75, 1], "50 from the start, not from 1.5")
   }
 
+  @Test func aPaneClosedMidDragIsMeasuredFromTheSplitThatIsLeft() {
+    var drag = SplitDrag()
+    move(&drag, by: 100, over: [1, 1, 1])
+
+    drag.forgetShownWeights()
+    move(&drag, by: 100, over: [1, 1])
+
+    #expect(drag.shown(over: [1, 1]).count == 2)
+    #expect(drag.end(over: [1, 1])?.count == 2)
+  }
+
   @Test func theEndHandsBackWhatTheDragMovedOnceAndStartsOver() {
     var drag = SplitDrag()
     move(&drag, by: 100, over: [1, 1, 1])

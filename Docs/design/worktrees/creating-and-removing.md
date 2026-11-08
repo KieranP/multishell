@@ -99,6 +99,10 @@ the bottom.
   the unforced remove, its new branch and the directories it made. Kept, it was
   selected and ran the file lists and the post-create hook of a create the user
   had cancelled. The same goes for a stop that lands as git is exiting.
+- **A row whose create still runs cannot be removed**: git lists it before its
+  checkout ends, and a removal then trashed the directory git was writing.
+- **Removing a project stops its creates**, a command line's too: left running,
+  the add landed a worktree nothing in the app lists.
 - **Only where git listed nothing at that path before the add.** An unforced
   remove still forgets a registered worktree whose directory is away, so a stop
   landing on git's refusal of such a path took the user's record with it. An
