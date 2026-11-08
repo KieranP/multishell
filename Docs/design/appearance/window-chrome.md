@@ -53,7 +53,8 @@ pointer. Newest at the bottom.
 - **The match count sits at the end of the well, as Chrome's "1/34"**, grey and
   in fixed-width digits so it does not jitter as it counts.
 - **A board card has two fixed lines, read top down as the sidebar is**: mark,
-  project, branch and git badge, then the tab title and elapsed time.
+  project, branch and git badge, then the tab title and elapsed time. A Failed
+  card's dot leads the first line, before the mark.
 - **The agent's name came off the card.** The tab title almost always repeated
   it, and the mark says what is at the prompt however the tab is named.
 - **The tab title is one line, truncated, and the badge shares the branch

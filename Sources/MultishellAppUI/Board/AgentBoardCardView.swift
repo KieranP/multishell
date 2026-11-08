@@ -79,9 +79,17 @@ struct AgentBoardCardView: View {
   /// the card has one right-hand rail. The name gives way first.
   private var locationLine: some View {
     HStack(spacing: 4) {
+      if let dotState = card.dotState {
+        StateDot(
+          state: dotState,
+          theme: theme,
+          palette: theme.agentsCard,
+          diameter: UIMetrics.inlineStateDotDiameter,
+        )
+      }
       PaneGlyph(
         agentID: card.occupant.agentID,
-        state: card.state.shownState,
+        state: nil,
         ringFill: theme.agentsCard.background,
         plainTint: theme.agentsCard.textSecondary,
         theme: theme,

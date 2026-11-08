@@ -1,8 +1,8 @@
 import MultishellCore
 import SwiftUI
 
-/// What a pane is running, with its state badged on the mark's corner; drawn
-/// by the strip, a card and a switcher row. See Docs/design/agents/board-and-pane-rows.md.
+/// What a pane is running, with its state badged on the mark's corner: a tab's
+/// and a switcher row's. A card's is unbadged; see Docs/design/agents/board-and-pane-rows.md.
 struct PaneGlyph: View {
   let agentID: String?
   var unmarkedSymbol = PaneSymbol.terminal
@@ -32,6 +32,7 @@ struct PaneGlyph: View {
     )
     .cornerBadge(
       onGlyphOf: size,
+      badgeScale: theme.stateDotScale,
       ringFill: ringFill,
       ringWash: ringWash,
       state.map { StateDot(state: $0, theme: theme, palette: palette, diameter: dotSize) },

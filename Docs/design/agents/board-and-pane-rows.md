@@ -152,7 +152,7 @@ is drawn as. Newest at the bottom.
   tab floor holds only what a tab already draws at the smallest UI font and a
   short title.
 - **The tab's dot keeps its click**, which clears a stale Working state, and the
-  whole glyph is now that target.
+  whole glyph is now that target, reaching as far as the scaled badge does.
 - **A split tab loses its split symbol where an agent is at the prompt**: one
   slot draws one thing, and which agent is working matters more from across a
   strip than which tabs hold two panes. The row still says split to a screen
@@ -160,16 +160,25 @@ is drawn as. Newest at the bottom.
 - **A pane row says its state on its right edge, with how long**, as a board
   card's rail does, and its mark carries no corner dot. The corner dot was small
   beside the mark and said nothing of time. An idle pane leaves the edge empty,
-  most shells resting there. The tab strip and the cards keep the corner dot.
-  Cost: the selected worktree's pane rows keep a ten-second clock of their own,
-  board open or not; a row drawing no time sits each tick out, and a time under
-  a minute lags by up to the tick, as a card's does.
+  most shells resting there. The tab strip keeps the corner dot; a card draws
+  Failed's before its mark. Cost: the selected worktree's pane rows keep a
+  ten-second clock of their own, board open or not; a row drawing no time sits
+  each tick out, and a time under a minute lags by up to the tick, as a card's
+  does.
 - **A pane row's title is caption-sized**, 11 pt at the default 13, where at
   badge size it was the smallest text in the sidebar. The row keeps its height,
   so nothing below moves (mockups, 2026-11-05).
+- **A board card draws a dot only where its column does not say the state**,
+  which leaves Failed, waiting in the Waiting column (2026-11-08). A dot
+  repeating its column's name was noise on every card. Failed's sits before the
+  mark rather than on its corner, so it covers nothing and needs no room
+  reserved past the mark as it scales.
 
 ## Reviewed and left as is
 
 - **The pane rows' clock runs while every pane is idle** (round 1, 2026-11-04):
   one body run every ten seconds, each idle row comparing equal and skipping its
   redraw. Gating the task on a rail would restart it as panes change state.
+- **A card passes `PaneGlyph` a ring fill it never draws** (round 3 of the dot
+  scale review, 2026-11-08): the card's mark has no badge now, and a second
+  initialiser for one caller would be more than the unused argument costs.

@@ -24,6 +24,7 @@ public struct Theme: Identifiable, Decodable, Hashable, Sendable {
   private static let inactivePaneOpacityKey = RawCodingKey(stringValue: "inactive_pane_opacity")
   private static let projectIconsKey = RawCodingKey(stringValue: "project_icons")
   private static let agentMarksKey = RawCodingKey(stringValue: "agent_marks")
+  private static let stateDotScaleKey = RawCodingKey(stringValue: "state_dot_scale")
 
   public let id: String
   public let name: String
@@ -40,6 +41,7 @@ public struct Theme: Identifiable, Decodable, Hashable, Sendable {
   let projectIconColors: [Int: String]
   /// Keyed by agent id; `""` draws the mark in the text around it.
   var agentMarkColors: [String: String]
+  let ownStateDotScale: Double?
 
   /// A colour of the wrong type, a key nothing reads and a section that is
   /// not an object are all skipped: a typo should cost that colour, not the theme.
@@ -85,6 +87,7 @@ public struct Theme: Identifiable, Decodable, Hashable, Sendable {
       agentMarkColors[key.stringValue] = marks?.decodeTolerantly(String.self, forKey: key)
     }
     self.agentMarkColors = agentMarkColors
+    ownStateDotScale = interface?.decodeTolerantly(Double.self, forKey: Self.stateDotScaleKey)
   }
 
   /// A file from before sections would otherwise load as its base theme under

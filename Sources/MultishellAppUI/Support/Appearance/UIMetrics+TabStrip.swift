@@ -1,5 +1,5 @@
-import Foundation
 import MultishellAppCore
+import SwiftUI
 
 /// The sizes of a group's tab strip: its tabs, buttons and arrows.
 extension UIMetrics {
@@ -8,6 +8,7 @@ extension UIMetrics {
   static let menuChevronGap: Double = 2
   /// The least a strip button's lit square stands in, clear of the strip's hairlines.
   private static let stripButtonHoverMinimumInset: Double = 2
+  private static let tabStateTargetMargin: Double = 2
 
   var tabHeight: Double { (bodySize * 2.6).rounded() }
   /// What a tab is drawn at when the strip has room for it.
@@ -50,6 +51,19 @@ extension UIMetrics {
       newTabMenu: newTabMenuWidth,
       arrow: tabArrowWidth,
       minimumTab: tabMinWidth,
+    )
+  }
+
+  /// How far a tab's clear-state target reaches past its mark: 2 pt round
+  /// it, and on the badge's corner as far as the badge does.
+  func tabStateTargetInsets(badgeScale: Double) -> EdgeInsets {
+    let badge = Self.cornerBadgeOffset(onGlyphOf: paneGlyphSize, badgeScale: badgeScale)
+    let margin = Self.tabStateTargetMargin
+    return EdgeInsets(
+      top: margin,
+      leading: margin,
+      bottom: max(margin, badge.height),
+      trailing: max(margin, badge.width),
     )
   }
 }

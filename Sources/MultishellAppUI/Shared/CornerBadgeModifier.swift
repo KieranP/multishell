@@ -4,6 +4,8 @@ import SwiftUI
 /// reads as a gap rather than a second ring of colour. See agents/board-and-pane-rows.md.
 struct CornerBadgeModifier<Badge: View>: ViewModifier {
   let glyphSize: Double
+  /// The theme's dot scale the badge is drawn at, which moves it out to keep its centre.
+  let badgeScale: Double
   let ringFill: Color
   /// A wash laid over `ringFill` where the glyph's ground wears one too.
   let ringWash: Color?
@@ -17,9 +19,7 @@ struct CornerBadgeModifier<Badge: View>: ViewModifier {
           .padding(1.2)
           .background(ringWash ?? .clear, in: Circle())
           .background(ringFill, in: Circle())
-          // Pushed out to the corner, so what it covers is the mark's edge
-          // rather than the middle that carries the shape.
-          .offset(x: glyphSize * 0.26, y: glyphSize * 0.2)
+          .offset(UIMetrics.cornerBadgeOffset(onGlyphOf: glyphSize, badgeScale: badgeScale))
       }
     }
   }

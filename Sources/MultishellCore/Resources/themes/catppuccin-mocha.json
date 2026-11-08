@@ -209,6 +209,7 @@
       "running": "#f9e2af",
       "on_hold": "#89b4fa"
     },
+    "state_dot_scale": 1.3,
     "project_icons": {
       "black": "#45475a",
       "red": "#f38ba8",

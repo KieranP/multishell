@@ -110,6 +110,18 @@ struct ThemeTests {
     #expect(try opacity(#""half""#) == dark.inactivePaneOpacity)
   }
 
+  @Test func aDotScaleOutsideTheUsableRangeIsClampedAndOneOfTheWrongTypeIsTheBases() throws {
+    func scale(_ value: String) throws -> Double {
+      try theme(#""ui": { "state_dot_scale": \#(value) }"#).stateDotScale
+    }
+    #expect(try scale("0") == Theme.stateDotScaleRange.lowerBound)
+    #expect(try scale("0.5") == Theme.stateDotScaleRange.lowerBound)
+    #expect(try scale("9") == Theme.stateDotScaleRange.upperBound)
+    #expect(try scale("1.2") == 1.2)
+    #expect(try scale(#""big""#) == dark.stateDotScale)
+    #expect(try theme("").stateDotScale == dark.stateDotScale)
+  }
+
   private func theme(_ keys: String) throws -> Theme {
     try decodeJSON(Theme.self, #"{ "id": "x", "name": "X"\#(keys.isEmpty ? "" : ", " + keys) }"#)
   }

@@ -107,7 +107,8 @@ struct TerminalTabFace: View {
       } label: {
         // The target the dot had before the mark took the slot, without the
         // width: `tabMinWidth` has none to give. See Docs/design/agents/board-and-pane-rows.md.
-        glyph.padding(2).contentShape(.rect).padding(-2)
+        let reach = model.metrics.tabStateTargetInsets(badgeScale: theme.stateDotScale)
+        glyph.padding(reach).contentShape(.rect).padding(reach.negated)
       }
       .buttonStyle(.plain)
       .help(t("tab.state-click-to-clear", state.displayName))

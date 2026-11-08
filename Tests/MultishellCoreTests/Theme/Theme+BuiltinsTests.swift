@@ -9,6 +9,10 @@ struct ThemeBuiltinsTests {
       #expect(Set(theme.terminalColors.keys) == Set(TerminalColorKey.allCases), "\(theme.id)")
       #expect(theme.ansiColors.count == Theme.ansiSlotCount, "\(theme.id)")
       #expect(theme.ownInactivePaneOpacity != nil, "\(theme.id)")
+      #expect(
+        theme.ownStateDotScale.map(Theme.stateDotScaleRange.contains) == true,
+        "\(theme.id) sets no dot scale, or one the app clamps",
+      )
       #expect(Set(theme.fileColors.keys) == Set(FileColorKey.allCases), "\(theme.id)")
       for section in InterfaceSection.allCases {
         #expect(

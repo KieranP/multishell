@@ -40,9 +40,6 @@ struct UIMetrics: Equatable {
   /// Between the segments in a well, a switch's and the file bar's arrows alike.
   static let segmentSpacing: Double = 2
 
-  /// A state dot inside a line of text: the agents row's lanes, a pane row's
-  /// rail, a worker's.
-  static let inlineStateDotDiameter: Double = 6
   /// Paths, hook scripts and logs that do not follow the UI font: the settings
   /// window, the New Worktree sheet's path and a worktree's operation pane.
   static let unscaledMonospacedSize: Double = 11
@@ -163,6 +160,20 @@ struct UIMetrics: Equatable {
   /// mark: 0.6 of the glyph in whole points, and never below a legible seven.
   static func cornerBadgeSize(onGlyphOf size: Double) -> Double {
     max(7, (size * 0.6).rounded())
+  }
+
+  /// A corner badge's drawn size under the theme's dot scale.
+  static func scaledCornerBadgeSize(onGlyphOf size: Double, badgeScale: Double) -> Double {
+    scaledDotDiameter(cornerBadgeSize(onGlyphOf: size), by: badgeScale)
+  }
+
+  /// How far a corner badge sits past its glyph's corner, so what it covers is
+  /// the mark's edge rather than the middle. A scaled badge keeps its centre.
+  static func cornerBadgeOffset(onGlyphOf size: Double, badgeScale: Double) -> CGSize {
+    let growth =
+      (scaledCornerBadgeSize(onGlyphOf: size, badgeScale: badgeScale)
+        - cornerBadgeSize(onGlyphOf: size)) / 2
+    return CGSize(width: size * 0.26 + growth, height: size * 0.2 + growth)
   }
 
   /// Chrome text and its glyphs in the UI font; code and paths keep the system

@@ -1,9 +1,10 @@
 import Foundation
-import MultishellCore
+import SwiftUI
 import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellAppUI
+@testable import MultishellCore
 
 @Suite
 struct UIMetricsTests {
@@ -101,6 +102,68 @@ struct UIMetricsTests {
     #expect(UIMetrics.cornerBadgeSize(onGlyphOf: 8) == 7)
     #expect(UIMetrics.cornerBadgeSize(onGlyphOf: 13) == 8)
     #expect(UIMetrics.cornerBadgeSize(onGlyphOf: 16) == 10)
+  }
+
+  @Test func aScaledCornerBadgeKeepsTheCentreItsDesignSizeGaveIt() {
+    let glyph = 13.0
+    let designed = UIMetrics.cornerBadgeSize(onGlyphOf: glyph)
+    let scale = 1.3
+    let scaled = UIMetrics.scaledDotDiameter(designed, by: scale)
+    let designedOffset = UIMetrics.cornerBadgeOffset(onGlyphOf: glyph, badgeScale: 1)
+    let scaledOffset = UIMetrics.cornerBadgeOffset(onGlyphOf: glyph, badgeScale: scale)
+    #expect(abs((scaledOffset.width - scaled / 2) - (designedOffset.width - designed / 2)) < 1e-9)
+    #expect(abs((scaledOffset.height - scaled / 2) - (designedOffset.height - designed / 2)) < 1e-9)
+  }
+
+  @Test func aDotAtTheLargestScaleFitsTheSidebarsGlyphColumnAtEverySize() {
+    let largest = UIMetrics.scaledDotDiameter(
+      UIMetrics.stateDotDiameter,
+      by: Theme.stateDotScaleRange.upperBound,
+    )
+    for size in stride(
+      from: Appearance.uiFontSizes.lowerBound,
+      through: Appearance.uiFontSizes.upperBound,
+      by: 1,
+    ) {
+      let metrics = UIMetrics(fontSize: size, fontFamily: nil)
+      #expect(largest <= metrics.sidebarGlyphColumn, "size \(size)")
+    }
+  }
+
+  @Test func aTabsClearStateTargetCoversItsScaledBadgeAtEverySize() {
+    for size in stride(
+      from: Appearance.uiFontSizes.lowerBound,
+      through: Appearance.uiFontSizes.upperBound,
+      by: 1,
+    ) {
+      let metrics = UIMetrics(fontSize: size, fontFamily: nil)
+      for scale in [Theme.stateDotScaleRange.lowerBound, Theme.stateDotScaleRange.upperBound] {
+        let badge = UIMetrics.cornerBadgeOffset(
+          onGlyphOf: metrics.paneGlyphSize,
+          badgeScale: scale,
+        )
+        let target = metrics.tabStateTargetInsets(badgeScale: scale)
+        #expect(target.trailing >= badge.width, "size \(size), scale \(scale)")
+        #expect(target.bottom >= badge.height, "size \(size), scale \(scale)")
+      }
+    }
+  }
+
+  @Test func aTabsCornerBadgeAtEveryScaleClearsItsTitleAtEverySize() {
+    for size in stride(
+      from: Appearance.uiFontSizes.lowerBound,
+      through: Appearance.uiFontSizes.upperBound,
+      by: 1,
+    ) {
+      let metrics = UIMetrics(fontSize: size, fontFamily: nil)
+      for scale in [Theme.stateDotScaleRange.lowerBound, Theme.stateDotScaleRange.upperBound] {
+        let reach = UIMetrics.cornerBadgeOffset(
+          onGlyphOf: metrics.paneGlyphSize,
+          badgeScale: scale,
+        )
+        #expect(reach.width <= UIMetrics.tabItemGap, "size \(size), scale \(scale)")
+      }
+    }
   }
 
   @Test func rowsAreTallEnoughForTheirText() {

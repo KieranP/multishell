@@ -17,26 +17,37 @@ struct StateDot: View {
   let theme: Theme
   /// What the dot sits on, for idle's grey.
   let palette: AreaPalette
-  var diameter: Double = 7
+  /// The design size, before the theme's `ui.state_dot_scale`.
+  var diameter = UIMetrics.stateDotDiameter
   /// Off where the dot names a state rather than reports one, as an empty column's header.
   var isAnimated = true
 
   @Environment(\.accessibilityReduceMotion) private var reducesMotion
 
-  private var lineWidth: Double { max(1.2, diameter * 0.18) }
-  /// Heavier than the other rings: working's arc covers a fifth of its circle,
-  /// so at the rings' weight it read as a hairline.
-  private var orbitLineWidth: Double { max(1.6, diameter * 0.24) }
   private var moves: Bool { isAnimated && !reducesMotion }
 
   var body: some View {
-    let color = theme.color(for: state, on: palette)
-    glyph(for: StateDotKind(state), color: color)
-      .frame(width: diameter, height: diameter)
+    let drawnDiameter = UIMetrics.scaledDotDiameter(diameter, by: theme.stateDotScale)
+    glyph(
+      for: StateDotKind(state),
+      color: theme.color(for: state, on: palette),
+      drawnDiameter: drawnDiameter,
+    )
+    .frame(width: drawnDiameter, height: drawnDiameter)
+  }
+
+  private func strokeWidth(at drawnDiameter: Double) -> Double { max(1.2, drawnDiameter * 0.18) }
+
+  /// Heavier than the other rings: working's arc covers a fifth of its circle,
+  /// so at the rings' weight it read as a hairline.
+  private func orbitStrokeWidth(at drawnDiameter: Double) -> Double {
+    max(1.6, drawnDiameter * 0.24)
   }
 
   @ViewBuilder
-  private func glyph(for kind: StateDotKind, color: Color) -> some View {
+  private func glyph(for kind: StateDotKind, color: Color, drawnDiameter: Double) -> some View {
+    let lineWidth = strokeWidth(at: drawnDiameter)
+    let orbitLineWidth = orbitStrokeWidth(at: drawnDiameter)
     switch kind {
     case .filled:
       Circle().fill(color)
@@ -64,11 +75,14 @@ struct StateDot: View {
         }
         Circle()
           .fill(color)
-          .frame(width: diameter * Self.centreShare, height: diameter * Self.centreShare)
+          .frame(
+            width: drawnDiameter * Self.centreShare,
+            height: drawnDiameter * Self.centreShare,
+          )
       }
 
     case .square:
-      let side = diameter * Self.squareSideShare
+      let side = drawnDiameter * Self.squareSideShare
       RoundedRectangle(cornerRadius: side * Self.squareCornerShare)
         .fill(color)
         .frame(width: side, height: side)

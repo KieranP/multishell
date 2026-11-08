@@ -52,4 +52,11 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   public internal(set) var position: PanePosition?
 
   var lane: AgentBoardLane { AgentBoardLane.of(state) }
+
+  /// The state the card draws a dot for, `nil` where its column already says
+  /// it: only a failure, waiting in the Waiting column, keeps a dot.
+  public var dotState: SessionState? {
+    let shown = state.shownState
+    return shown == lane.headerState ? nil : shown
+  }
 }

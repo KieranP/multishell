@@ -8,8 +8,6 @@ struct WorkerList: View {
   private static let rowSpacing: CGFloat = 7
   /// A description runs to 200 characters, which is cut short of this.
   static let maximumWidth: CGFloat = 420
-  /// A nested worker's dot sits under its parent's name.
-  private static let nestingIndent = UIMetrics.inlineStateDotDiameter + rowSpacing
 
   let workers: [Worker]
   let theme: Theme
@@ -20,7 +18,11 @@ struct WorkerList: View {
   private var palette: AreaPalette { theme.projectsPanel }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 4) {
+    // A nested worker's dot sits under its parent's name.
+    let nestingIndent =
+      UIMetrics.scaledDotDiameter(UIMetrics.inlineStateDotDiameter, by: theme.stateDotScale)
+      + Self.rowSpacing
+    return VStack(alignment: .leading, spacing: 4) {
       HStack(spacing: 5) {
         WorkerGlyph(metrics: metrics)
           .foregroundStyle(theme.color(for: .running, on: palette))
@@ -38,7 +40,7 @@ struct WorkerList: View {
             palette: palette,
             diameter: UIMetrics.inlineStateDotDiameter,
           )
-          .padding(.leading, CGFloat(nested.depth) * Self.nestingIndent)
+          .padding(.leading, CGFloat(nested.depth) * nestingIndent)
           Text(worker.displayName)
             .font(metrics.font(size: metrics.badge, weight: .medium))
             .foregroundStyle(palette.text)

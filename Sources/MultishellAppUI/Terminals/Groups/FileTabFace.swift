@@ -62,21 +62,21 @@ struct FileTabFace: View {
 
   private func leadingGlyph(change: StatusChange.Kind?, tint: Color) -> some View {
     let size = model.metrics.paneGlyphSize
+    let badgeScale = theme.stateDotScale
+    let badgeDiameter = UIMetrics.scaledCornerBadgeSize(onGlyphOf: size, badgeScale: badgeScale)
     return Image(systemName: "doc.text")
       .font(model.metrics.font(size: model.metrics.glyph))
       .foregroundStyle(tint)
       .frame(width: size, height: size)
       .cornerBadge(
         onGlyphOf: size,
+        badgeScale: badgeScale,
         ringFill: palette.background,
         ringWash: hoverWash,
         change.map { change in
           Circle()
             .fill(theme.color(for: change))
-            .frame(
-              width: UIMetrics.cornerBadgeSize(onGlyphOf: size),
-              height: UIMetrics.cornerBadgeSize(onGlyphOf: size),
-            )
+            .frame(width: badgeDiameter, height: badgeDiameter)
         },
       )
       .accessibilityHidden(true)

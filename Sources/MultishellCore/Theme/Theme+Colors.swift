@@ -1,25 +1,9 @@
 /// Every colour the app draws: the theme's own where it sets one that parses,
 /// else its base theme's, so a user theme need only write what it changes.
 extension Theme {
-  /// Anything less would be a pane nobody can read, which looks broken
-  /// rather than unfocused.
-  static let minimumInactivePaneOpacity = 0.25
-
   /// A key no theme sets: one its section does not list, or a slot past the
   /// sixteenth. The base themes set every listed key: ThemeBuiltinsTests.
   private static let missing = RGB(red: 128, green: 128, blue: 128)
-
-  /// Multishell Dark or Light, whichever matches `isDark`.
-  private var base: Theme { isDark ? .multishellDark : .multishellLight }
-
-  /// What every pane but the focused one draws at, faded towards the
-  /// terminal's background, clamped before a pane looks broken.
-  public var inactivePaneOpacity: Double {
-    let opacity =
-      [ownInactivePaneOpacity, base.ownInactivePaneOpacity].lazy
-      .compactMap(\.self).first(where: \.isFinite) ?? 1
-    return opacity.clamped(to: Self.minimumInactivePaneOpacity...1)
-  }
 
   /// `nil` for a key set to `""`, which only the keys that take none allow.
   public func terminalRGB(_ key: TerminalColorKey) -> RGB? {

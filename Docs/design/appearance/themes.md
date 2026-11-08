@@ -125,6 +125,16 @@ reloaded. Newest at the bottom.
   tab's while its find bar has the keyboard, or a field's in a window not key.
   No public API sets it; overriding the private `_selectionBackgroundColor`
   worked and was declined (2026-11-07).
+- **A theme sets how big the state dots draw**, `ui.state_dot_scale`, one
+  multiplier over every dot's design size, so they keep their proportions to
+  each other. Built in at 1.3 (2026-11-08): at their design sizes the dots read
+  too small. A file tab's change dot scales with them, matching the state badges
+  beside it in the strip, and a scaled corner badge keeps its centre, growing
+  evenly rather than all inward over the mark.
+- **The dot scale is clamped to 1 to 1.4.** Under 1 the rings' minimum strokes
+  fill a dot and working reads as done; past 1.4 a worktree's dot outgrows the
+  sidebar's glyph column at the 10 pt UI font. UIMetricsTests holds the upper
+  bound to that column.
 
 ## Reviewed and left as is
 
@@ -134,3 +144,10 @@ reloaded. Newest at the bottom.
   (round 16): GlyphHoverModifierTests, PlaceholderButtonTests and
   Theme+TabStripColorsTests, as View+RowSelectionTests is, the view being where
   a reader looks for what its colours must clear.
+- **The missing-project badge keeps its design size under the dot scale** (round
+  1 of the dot scale review, 2026-11-08): it is a question mark saying the
+  folder is gone, not a state or a change, and nothing beside it scales.
+- **A corner badge's caller passes the scale its badge draws at** (round 2 of
+  the dot scale review): `StateDot` reads the theme's itself, so the modifier is
+  told rather than reading the badge. A badge that does not scale passes 1 and
+  still sits right.
