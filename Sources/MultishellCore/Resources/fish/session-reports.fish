@@ -12,6 +12,9 @@ function _multishell_preexec --on-event fish_preexec
     # splits them, past any prefix. Docs/design/agents/board-and-pane-rows.md.
     set -l words
     printf '%s' $argv[1] | read --null --tokenize --list --local words
+    # A comment alone runs nothing, and its postexec would repeat the last status.
+    set -g _multishell_ran (count $words)
+    test $_multishell_ran -gt 0; or return
     set -l command_word ""
     for word in $words
         switch $word
@@ -28,6 +31,8 @@ end
 
 function _multishell_postexec --on-event fish_postexec
     set -l exit_code $status
+    test "$_multishell_ran" -gt 0 2>/dev/null; or return
+    set -g _multishell_ran 0
     # The helper takes seconds, and fish counts whole milliseconds.
     set -l ms (string pad --char 0 --width 4 -- $CMD_DURATION)
     set -l duration (string sub --end -3 -- $ms).(string sub --start -3 -- $ms)

@@ -45,7 +45,7 @@ extension AppModel {
   /// list git's records say changed, then every status and branch scan.
   func refreshAll() async {
     // A `.gitignore` edited while the app was behind raised an event nothing read.
-    ignoreVerdicts = [:]
+    forgetEveryIgnoreVerdict()
     await refreshProjectsIfChanged()
     await refreshStatuses()
     await refreshBranchScans()
@@ -55,7 +55,7 @@ extension AppModel {
   /// The global excludes file sits outside every watched directory, so what
   /// git said it ignores is forgotten each round.
   func pollRound() async {
-    ignoreVerdicts = [:]
+    forgetEveryIgnoreVerdict()
     // Another machine adding a worktree on a share raises no event here.
     await refreshProjectsIfChanged()
     await refreshWorktreesWithUnfinishedAdds()

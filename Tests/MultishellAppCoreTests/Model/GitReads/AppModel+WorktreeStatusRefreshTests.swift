@@ -25,6 +25,66 @@ struct AppModelWorktreeStatusRefreshTests {
     )
   }
 
+  @Test func aPollReadLandingAfterAForcedOneLeavesTheForcedOnesNewerStatus() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*)
+          if [ ! -f "$SCRATCH/first" ]; then
+            touch "$SCRATCH/first"
+            \(harness.holdLine(until: gate))
+            printf '## main\\0'
+          else
+            printf '## main\\0 M README.md\\0'
+          fi ;;
+      esac
+      exit 0
+      """
+    )
+    let main = try #require(fake.workspace.worktrees.first)
+    let poll = Task { await fake.refreshStatuses() }
+    try await waitUntil { harness.statusRunCount() > 0 }
+
+    await fake.refreshStatus(of: main.id, forced: true)
+    try #require(fake.statuses[main.id]?.changedFiles == 1)
+    try Data().write(to: gate)
+    await poll.value
+
+    #expect(fake.statuses[main.id]?.changedFiles == 1)
+  }
+
+  @Test func aForcedReadOvertakenByANewerOneStillCountsAsFresh() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*)
+          if [ ! -f "$SCRATCH/first" ]; then
+            touch "$SCRATCH/first"
+            \(harness.holdLine(until: gate))
+          fi
+          printf '## main\\0' ;;
+      esac
+      exit 0
+      """
+    )
+    let main = try #require(fake.workspace.worktrees.first)
+    let first = Task { await fake.refreshStatus(of: main.id, forced: true) }
+    try await waitUntil { harness.statusRunCount() > 0 }
+
+    let second = await fake.refreshStatus(of: main.id, forced: true)
+    try Data().write(to: gate)
+    let firstLanded = await first.value
+
+    #expect(second)
+    #expect(firstLanded, "a newer status is in, so the asker's is fresh")
+  }
+
   /// Landing last, the read in flight would put the old setting's counts
   /// back. The fake git holds the diff only that read uses until the setting has changed.
   @Test func aReadStartedBeforeTheIndicatorChangedBadgesNothing() async throws {

@@ -70,6 +70,7 @@ extension AppModel {
       }
       let unasked = verdicts.unasked(on: paths)
       guard !unasked.isEmpty else { return false }
+      let rulesAsked = ignoreRuleChanges[worktree.id]
       guard let ignored = await coordinator.git.ignoredPaths(unasked, in: worktree.path) else {
         return true
       }
@@ -83,6 +84,7 @@ extension AppModel {
           FileManager.default.fileExists(atPath: worktreePath.appending(path: path).path)
         }
       }
+      guard ignoreRuleChanges[worktree.id] == rulesAsked else { return true }
       ignoreVerdicts[worktree.id, default: IgnoreVerdicts()].record(
         asked: present,
         ignored: ignored,
@@ -93,11 +95,25 @@ extension AppModel {
   /// A `.gitignore` changed, or the project's git state did: `info/exclude`,
   /// or the index taking a file forced in under an ignored directory.
   private func forgetIgnoreVerdicts(changedBy targets: FileChangeTargets) {
-    for worktree in workspace.worktrees
-    where targets.worktreesWithIgnoreRuleChanges.contains(worktree.id)
-      || targets.projectsWithGitChanges.contains(worktree.projectID)
-    {
-      ignoreVerdicts[worktree.id] = nil
+    forgetIgnoreVerdicts(
+      of: workspace.worktrees.filter { worktree in
+        targets.worktreesWithIgnoreRuleChanges.contains(worktree.id)
+          || targets.projectsWithGitChanges.contains(worktree.projectID)
+      }.map(\.id)
+    )
+  }
+
+  /// Every worktree's, and any kept for one gone while git was being asked.
+  func forgetEveryIgnoreVerdict() {
+    forgetIgnoreVerdicts(of: workspace.worktrees.map(\.id))
+    ignoreVerdicts = [:]
+  }
+
+  /// What git said these worktrees ignore, and any answer it is still giving.
+  func forgetIgnoreVerdicts(of ids: [Worktree.ID]) {
+    for id in ids {
+      ignoreVerdicts[id] = nil
+      ignoreRuleChanges[id, default: 0] += 1
     }
   }
 }

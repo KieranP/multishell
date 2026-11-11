@@ -9,7 +9,7 @@ struct NewWorktreeProjectPicker: View {
   @Binding var projectID: Project.ID?
 
   var body: some View {
-    let labels = NewWorktreeDraft.labels(for: model.workspace.projects)
+    let labels = model.workspace.projects.pickerLabels
     Picker(t("sheet.project"), selection: $projectID) {
       if projectID == nil {
         Text(t("sheet.choose-project")).tag(Project.ID?.none)

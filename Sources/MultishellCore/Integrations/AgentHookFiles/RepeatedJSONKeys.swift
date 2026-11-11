@@ -1,6 +1,5 @@
-/// Whether an object in a JSON text names a key twice. JSONSerialization keeps
-/// the first and the agents' `JSON.parse` the last, so a rewrite kept the copy
-/// the agent ignores. Keys are compared as spelled, escapes and all.
+/// Whether an object names a key twice, compared as spelled. JSONSerialization keeps
+/// the first and the agents' `JSON.parse` the last, so a rewrite kept the ignored one.
 enum RepeatedJSONKeys {
   static func occur(in json: String) -> Bool {
     let bytes = Array(json.utf8)

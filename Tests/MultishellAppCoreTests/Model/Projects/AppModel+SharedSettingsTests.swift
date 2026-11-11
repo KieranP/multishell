@@ -1,5 +1,6 @@
 import Foundation
 import MultishellProcess
+import TestScratch
 import TestSupport
 import Testing
 
@@ -9,6 +10,45 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelSharedSettingsTests {
+  /// A list refresh reads the file before it awaits git, so a tick's newer read
+  /// could land first; the fake holds the list until the gate.
+  @Test func aReadLandingAfterANewerOneLeavesTheNewerSettings() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    try harness.writeSharedSettings(#"{ "branchPrefix": "old/" }"#)
+    let gate = harness.root.appendingPathComponent("go")
+    let held = harness.root.appendingPathComponent("held")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *"worktree list"*)
+          if [ ! -f "$SCRATCH/held" ]; then
+            touch "$SCRATCH/held"
+            \(harness.holdLine(until: gate))
+          fi ;;
+      esac
+      exec /usr/bin/git "$@"
+      """
+    )
+    let older = Task { await fake.refreshWorktrees(of: harness.project) }
+    try await waitUntil { FileManager.default.fileExists(atPath: held.path) }
+    try harness.writeSharedSettings(#"{ "branchPrefix": "new/" }"#)
+    let current = try #require(fake.workspace.project(harness.project.id))
+    await fake.refreshSharedSettingsIfChanged(current)
+    try #require(
+      fake.workspace.project(harness.project.id)?.sharedSettingsSnapshot.asWritten?.branchPrefix
+        == "new/"
+    )
+
+    try Data().write(to: gate)
+    await older.value
+
+    #expect(
+      fake.workspace.project(harness.project.id)?.sharedSettingsSnapshot.asWritten?.branchPrefix
+        == "new/"
+    )
+  }
+
   @Test func anEditorOpenedAsATabAsksAboutTheSharedSettingsAsSelectingDoes() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

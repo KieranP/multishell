@@ -139,6 +139,21 @@ extension AgentHookIntegrationReportsTests {
     )
   }
 
+  @Test func codexsRequestIsItsOnlyWordOfAPromptSoItRaisesTheBanner() throws {
+    let codex = AgentHookCatalogue.codex
+    let request = try #require(
+      codex.event(for: AgentHookPayload(eventName: "PermissionRequest", permissionMode: "default"))
+    )
+    #expect(!request.isSilent)
+    for integration in AgentHookCatalogue.integrations
+    where integration.events.contains(where: \.isSilent) {
+      #expect(
+        integration.events.contains { !$0.isSilent && $0.state == .attention },
+        "\(integration.id) silences a prompt nothing else announces",
+      )
+    }
+  }
+
   /// An MCP server's question comes as Elicitation at once and as a Notification
   /// six seconds later, and ElicitationResult is the answer a permission never sends.
   @Test func claudeAsksTwiceForAnMCPServersQuestionAndHearsTheAnswer() throws {

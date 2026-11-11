@@ -136,8 +136,13 @@ extension AppModel {
       previous: fileTabReadings[id],
       imageRule: imageRule,
     )
+    let isSuperseded = fileTabReadLog.isSuperseded(id)
     let readsAgain = fileTabReadLog.finish(id, cost: started.duration(to: .now))
     guard workspace.fileTab(id) != nil else { return }
+    guard !isSuperseded else {
+      if isFileTabShown(id) { scheduleFileTabRead(id) } else { fileTabReadLog.owe(id) }
+      return
+    }
     setIfChanged(\.fileTabReadings[id], reading)
     // A find opened before an image read has no bar to draw, nor any lines; a
     // field that had the keyboard hands it back, as closing the bar does.

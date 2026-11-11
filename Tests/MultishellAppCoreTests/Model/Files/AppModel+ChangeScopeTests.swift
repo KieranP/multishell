@@ -88,4 +88,22 @@ struct AppModelChangeScopeTests {
     #expect(harness.model.pendingFileTabReads[tab.id] != waiting)
     #expect(harness.model.fileTabReadLog.nextDue(tab.id) == nil, "a read due at once")
   }
+
+  @Test func switchingScopeDuringAReadLeavesTheReadAfterItDueAtOnce() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let feature = try await harness.featureInChangesList()
+    let tab = try #require(harness.model.openFileTab("README.md", in: feature))
+    _ = try await harness.rowsArrive(in: tab.id)
+    harness.model.fileTabReadLog.begin(tab.id)
+
+    harness.model.setChangeScope(.branch)
+    let readsAgain = harness.model.fileTabReadLog.finish(tab.id, cost: .seconds(60))
+
+    #expect(readsAgain)
+    #expect(
+      harness.model.fileTabReadLog.nextDue(tab.id) == nil,
+      "the old scope's cost paces nothing",
+    )
+  }
 }

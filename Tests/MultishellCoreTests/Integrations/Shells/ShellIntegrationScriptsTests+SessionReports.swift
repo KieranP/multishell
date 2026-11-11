@@ -121,6 +121,110 @@ extension ShellIntegrationScriptsTests {
     #expect(Self.lines(of: log).contains { $0.hasPrefix("command-started") })
   }
 
+  /// bash-preexec appends its entry to PROMPT_COMMAND at the first prompt, after our
+  /// arm, and running it took the arm meant for the agent typed next.
+  @Test(arguments: InstalledBashes.all)
+  func aPromptEntryBashPreexecAddsLateLeavesTheNextCommandReported(bash: String) async throws {
+    let scratch = try Scratch.directory("late-entry")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let codex = try Scratch.script("true", at: scratch.appendingPathComponent("codex"))
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      __bp_interactive_mode() { :; }
+      __bp_install() { PROMPT_COMMAND+=$'\\n__bp_interactive_mode'; installed=1; }
+      PROMPT_COMMAND='[ -n "$installed" ] || __bp_install'
+
+      """,
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "late-entry"
+    environment["PATH"] = scratch.path + ":" + (environment["PATH"] ?? "")
+    _ = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "true\n\(codex.path)\nexit\n",
+    )
+
+    try await waitUntil {
+      Self.lines(of: log).filter { $0.hasPrefix("command-started") }.count >= 3
+    }
+    let started = Self.lines(of: log).filter { $0.hasPrefix("command-started") }
+    #expect(started.contains { $0.hasSuffix(" codex") }, "\(started)")
+    #expect(started.count == 3, "true, the agent and exit: \(started)")
+  }
+
+  /// Theirs is run from inside ours, whose argument it must not see as its own.
+  @Test(arguments: InstalledBashes.all)
+  func theUsersDebugTrapSeesNoArgumentsOfOurs(bash: String) async throws {
+    let scratch = try Scratch.directory("trap-arguments")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      theirs() { case "$BASH_COMMAND" in true) echo "[args:$#]" ;; esac; }
+      PROMPT_COMMAND='[ -n "$installed" ] || { trap '"'"'theirs "$@"'"'"' DEBUG; installed=1; }'
+
+      """,
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "trap-arguments"
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "true\nexit\n",
+    )
+
+    #expect(output.contains("[args:0]"), "\(output)")
+  }
+
+  /// bash sets `$_` after a trap to the trap command's last word, so a bare
+  /// `_multishell_debug` broke `mkdir x && cd $_`, and bash-preexec's own `"$_"`.
+  @Test(arguments: InstalledBashes.all)
+  func theLastArgumentSurvivesTheReportsForTheUserAndTheirOwnTrap(bash: String) async throws {
+    let scratch = try Scratch.directory("last-argument")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      theirs() { case "$BASH_COMMAND" in true) echo "[theirs:$1]" ;; esac; }
+      PROMPT_COMMAND='[ -n "$installed" ] || { trap '"'"'theirs "$_"'"'"' DEBUG; installed=1; }'
+
+      """,
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "last-argument"
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "echo foo bar\necho \"last=$_\"\necho one two\ntrue\nexit\n",
+    )
+
+    #expect(output.contains("last=bar"), "\(output)")
+    #expect(output.contains("[theirs:two]"), "\(output)")
+  }
+
   /// zsh writes the report's JSON itself, so its own line is the only place
   /// the field can be malformed.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
@@ -192,6 +296,79 @@ extension ShellIntegrationScriptsTests {
     #expect(lines[3].contains("command") == false, "an assignment naming an agent is not one")
   }
 
+  /// Our hooks read `precmd_functions`, which a pane outside Ghostty may not
+  /// have yet; under the user's `no_unset` that read ended the file.
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshUnderNoUnsetStillInstallsTheReports() async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    let script = """
+      setopt no_unset
+      source \(files.zshDirectory.appendingPathComponent(".zshrc").path)
+      print -r -- "hooks=${precmd_functions[*]-}"
+      """
+    var environment = files.zshEnvironment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "zsh-no-unset"
+    environment[SessionEnvironment.socketVariable] = "/tmp/nothing.sock"
+    environment[SessionEnvironment.worktreeVariable] = "/w"
+
+    let output = try await Detached.output(
+      of: "/bin/zsh",
+      ["-c", script],
+      environment: environment,
+    )
+
+    #expect(output.contains("hooks=_multishell_precmd"), "\(output)")
+  }
+
+  /// `zsocket` hands back its descriptor in `REPLY`, so a send that connects
+  /// left the user's `read` answer as a number. zsh listens itself here.
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshReportsLeaveTheUsersReplyAlone() async throws {
+    let scratch = try Scratch.directory("zsh-reply")
+    defer { Scratch.remove(scratch) }
+    let socket = scratch.appendingPathComponent("s").path
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    let script = """
+      zmodload zsh/net/socket
+      zsocket -l \(socket)
+      source \(files.zshDirectory.appendingPathComponent(".zshrc").path)
+      REPLY=kept
+      _multishell_preexec true
+      _multishell_precmd
+      print -r -- "REPLY=[$REPLY]"
+      """
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "zsh-reply"
+    environment[SessionEnvironment.socketVariable] = socket
+    environment[SessionEnvironment.worktreeVariable] = "/w"
+
+    let output = try await Detached.output(
+      of: "/bin/zsh",
+      ["-c", script],
+      environment: environment,
+    )
+
+    #expect(output.contains("REPLY=[kept]"), "\(output)")
+  }
+
+  /// A slow prompt hook, vcs_info or a git theme, was billed to every command
+  /// and held its Done until the prompt was drawn.
+  @Test func zshReportsACommandsEndBeforeTheUsersPromptHooksRun() async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: "_multishell_send() { print -r -- \"sent $1\" }\ntrue\nexit\n",
+      usersRC: "theirs() { print -r -- theirs-ran }\nprecmd_functions+=(theirs)\n",
+    )
+
+    let started = try #require(output.range(of: "\"state\":\"running\""))
+    let rest = output[started.upperBound...]
+    let done = try #require(rest.range(of: "\"state\":\"done\""), "\(output)")
+    let theirs = try #require(rest.range(of: "theirs-ran"), "\(output)")
+    #expect(done.lowerBound < theirs.lowerBound, "\(output)")
+  }
+
   @Test func aUsersErrExitDoesNotEndTheShellAtItsFirstPrompt() async throws {
     let output = try await zshOutput(
       features: nil,
@@ -252,6 +429,18 @@ extension ShellIntegrationScriptsTests {
       input: input,
     )
     return (output, Self.lines(of: log))
+  }
+
+  /// fish fires both events for a line holding only a comment, and its postexec
+  /// carried the last command's status, so a comment after `false` read as failed.
+  @Test(arguments: InstalledShells.fishes)
+  func fishReportsNothingForALineHoldingOnlyAComment(fish: String) async throws {
+    let sent = try await fishRun(
+      fish,
+      input: "false; emit fish_preexec '# a note'; emit fish_postexec '# a note'\nexit\n",
+    ).sent
+
+    #expect(!sent.contains { $0.hasPrefix("command-") }, "\(sent)")
   }
 
   @Test(arguments: InstalledShells.fishes)

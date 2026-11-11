@@ -20,6 +20,20 @@ struct AppModelControlProjectSettingsTests {
     #expect(reply.outputFields["sharedHooks"] == nil)
   }
 
+  @Test func aNumberJSONCannotWriteIsRefusedRatherThanCrashing() async throws {
+    let harness = Harness()
+
+    let reply = await harness.messageSource.ask(
+      .writeProjectSetting(
+        project: ControlID.project(harness.project.id),
+        key: "iconTint",
+        value: "-1e400",
+      )
+    )
+
+    #expect(reply == .refused(.invalidValue(key: "iconTint", value: "-1e400")))
+  }
+
   @Test func aValueIsReadAsJSONWhereItParsesAndAsTextOtherwise() async throws {
     let harness = Harness()
     let project = ControlID.project(harness.project.id)

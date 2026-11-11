@@ -14,14 +14,15 @@ extension AppModel {
       return false
     }
     guard forced || statusReadLog.isDue(worktreeID, at: .now) else { return false }
-    let readings = await readStatuses(of: [worktree], with: coordinator)
+    let (readings, overtaken) = await readStatuses(of: [worktree], with: coordinator)
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
     guard let still = workspace.worktree(worktreeID), mayReadStatus(of: still) else {
       return false
     }
     statusReadLog.remember(readings.mapValues(\.duration))
-    guard let reading = readings[worktreeID] else { return false }
+    // A later read's newer badge already in counts as this asker's answer.
+    guard let reading = readings[worktreeID] else { return overtaken.contains(worktreeID) }
     noteDirectoryPresent(of: worktreeID)
     setIfChanged(\.statuses[worktreeID], reading.status)
     await noteStatusesLanded([worktreeID: reading.status])

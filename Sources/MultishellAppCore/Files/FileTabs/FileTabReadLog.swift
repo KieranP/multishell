@@ -13,11 +13,15 @@ struct FileTabReadLog {
   private var lastFinished: [FileTab.ID: ContinuousClock.Instant] = [:]
   private var reading: Set<FileTab.ID> = []
   private var askedAgain: Set<FileTab.ID> = []
+  /// Running when what they diff changed, so their answer is the old diff's.
+  private var superseded: Set<FileTab.ID> = []
   private(set) var owed: Set<FileTab.ID> = []
   /// What each tab's file looked like when last checked, `nil` for gone.
   private var signatures: [FileTab.ID: FileSignature?] = [:]
 
   func isReading(_ id: FileTab.ID) -> Bool { reading.contains(id) }
+
+  func isSuperseded(_ id: FileTab.ID) -> Bool { superseded.contains(id) }
 
   /// `.some(nil)` for a file seen gone, `nil` for one never looked at.
   func signature(of id: FileTab.ID) -> FileSignature?? { signatures[id] }
@@ -38,9 +42,14 @@ struct FileTabReadLog {
     owed.remove(id)
   }
 
-  /// Whether a change landed during the read, which then runs once more.
+  /// Whether the read runs once more, a change having landed during it. One
+  /// superseded paces nothing, its cost being the old diff's.
   mutating func finish(_ id: FileTab.ID, cost: Duration) -> Bool {
     reading.remove(id)
+    if superseded.remove(id) != nil {
+      askedAgain.remove(id)
+      return true
+    }
     lastCost[id] = cost
     lastHighlightCost[id] = nil
     lastFinished[id] = .now
@@ -62,6 +71,7 @@ struct FileTabReadLog {
   /// A tab's reads forgotten, as a change of what it diffs wants: the cost of
   /// a diff the tab no longer shows says nothing about the next.
   mutating func forgetPace(of id: FileTab.ID) {
+    if reading.contains(id) { superseded.insert(id) }
     lastCost[id] = nil
     lastHighlightCost[id] = nil
     lastFinished[id] = nil
@@ -73,6 +83,7 @@ struct FileTabReadLog {
     lastFinished = lastFinished.filter { ids.contains($0.key) }
     reading.formIntersection(ids)
     askedAgain.formIntersection(ids)
+    superseded.formIntersection(ids)
     owed.formIntersection(ids)
     signatures = signatures.filter { ids.contains($0.key) }
   }

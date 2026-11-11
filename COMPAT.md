@@ -96,8 +96,8 @@ time and Remove taking out only our own entries; in Antigravity's, ours is the
 set named `multishell`. One holding comments or a trailing comma, as Gemini's
 may, is refused rather than rewritten; add the entries by hand. A file of ours
 alone is written whole and deleted again. Where either holds hooks an older
-build wrote, Settings > Agents > Hooks offers Update, which puts this build's in
-their place. Nothing rewrites them unasked.
+build wrote, Settings > Agents > Agent hooks offers Update, which puts this
+build's in their place. Nothing rewrites them unasked.
 
 An agent is listed once its executable is on the login shell's PATH, and a saved
 tab resumes it, or runs the custom line again. Typing an agent at a supported

@@ -26,6 +26,16 @@ struct SessionStateReportTests {
     #expect(SessionStateReport.parse(line) == report)
   }
 
+  @Test func aResumableConversationIsKeptOnlyWhereItCannotReadAsAFlag() {
+    func kept(_ id: String) -> String? {
+      SessionStateReport(state: .running, resumableConversationID: id).resumableConversationID
+    }
+    #expect(kept("0cb916d2-4a1e-4b9f-9c1d-6f2e1a3b5c7d") == "0cb916d2-4a1e-4b9f-9c1d-6f2e1a3b5c7d")
+    #expect(kept("--dangerously-skip-permissions") == nil)
+    #expect(kept("a b") == nil)
+    #expect(kept("a;rm") == nil)
+  }
+
   @Test func onlyTheStateIsRequiredAndTheVersionDefaultsToOne() {
     let report = SessionStateReport.parse(#"{"state":"running"}"#)
     #expect(report?.state == .running)

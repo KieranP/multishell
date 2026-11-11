@@ -27,6 +27,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case workersOut = "out"
     case turnFollows = "follows"
     case asksQuestion = "question"
+    case resumableConversationID = "resumable"
   }
 
   public static let protocolVersion = 1
@@ -93,6 +94,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Set where the agent waits on its own question though its message says
   /// permission; the app words it, the helper having no catalogue.
   public internal(set) var asksQuestion: Bool?
+  /// The agent's own id for the conversation at the pane, which a relaunch
+  /// resumes by; see Docs/design/terminals/sessions.md.
+  public internal(set) var resumableConversationID: String?
 
   public init(
     state: SessionState,
@@ -116,6 +120,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     workersOut: [WorkerReport]? = nil,
     turnFollows: Bool? = nil,
     asksQuestion: Bool? = nil,
+    resumableConversationID: String? = nil,
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -140,6 +145,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.workersOut = Self.boundedWorkers(workersOut)
     self.turnFollows = turnFollows
     self.asksQuestion = asksQuestion
+    self.resumableConversationID = Self.resumableConversation(resumableConversationID)
   }
 
   public init(from decoder: any Decoder) throws {
@@ -171,6 +177,10 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
       workersOut: try container.decodeIfPresent([WorkerReport].self, forKey: .workersOut),
       turnFollows: try container.decodeIfPresent(Bool.self, forKey: .turnFollows),
       asksQuestion: try container.decodeIfPresent(Bool.self, forKey: .asksQuestion),
+      resumableConversationID: try container.decodeIfPresent(
+        String.self,
+        forKey: .resumableConversationID,
+      ),
     )
     version = try container.decode(Int.self, forKey: .version, or: 1)
     legacyWorkerCount = try container.decodeIfPresent(Int.self, forKey: .legacyWorkerCount)

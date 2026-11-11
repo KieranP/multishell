@@ -121,6 +121,43 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("%{") == false, "and no brace leaks into the prompt")
   }
 
+  /// A deferred loader, zinit's turbo or zsh-defer, adds a theme's hook after ours,
+  /// and its PS1 dropped the marks from every prompt after.
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aPromptHookAddedAfterOursStillGetsTheMarks() async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: "true\ntrue\ntrue\nexit\n",
+      usersRC: """
+        PS1='> '
+        theme() { PS1='themed> ' }
+        late() { precmd_functions=(${precmd_functions:#late} theme) }
+        precmd_functions+=(late)
+
+        """,
+    )
+    #expect(output.contains(PromptMarks.claim + "themed> " + PromptMarks.input), "\(output)")
+  }
+
+  /// Our hooks reorder `precmd_functions`, which under the user's `ksh_arrays`
+  /// read as its first element alone and dropped every other hook.
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aUsersKshArraysKeepsEveryPromptHookAndTheMarks() async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: "true\ntrue\nexit\n",
+      usersRC: """
+        setopt ksh_arrays
+        PS1='> '
+        mine() { print -r -- mine-ran }
+        precmd_functions+=(mine)
+
+        """,
+    )
+    #expect(output.contains(PromptMarks.claim + "> "), "\(output)")
+    #expect(output.components(separatedBy: "mine-ran").count >= 3, "\(output)")
+  }
+
   /// Hooks run through `$SHELL -l -i -c`, which reads the rc files, so a mark written
   /// anywhere but a prompt hook would land in the output a hook is judged by.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))

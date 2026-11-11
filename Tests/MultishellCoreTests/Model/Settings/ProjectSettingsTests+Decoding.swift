@@ -104,7 +104,11 @@ extension ProjectSettingsTests {
 
   @Test func anIconTintOutsideTheThemeOrOfTheWrongTypeIsDropped() throws {
     #expect(try decodeJSON(ProjectSettings.self, #"{ "iconTint": 16 }"#).iconTint == nil)
-    #expect(try decodeJSON(ProjectSettings.self, #"{ "iconTint": -1 }"#).iconTint == nil)
+    #expect(try decodeJSON(ProjectSettings.self, #"{ "iconTint": -2 }"#).iconTint == nil)
+    #expect(
+      try decodeJSON(ProjectSettings.self, #"{ "iconTint": -1 }"#).iconTint == ProjectIcon.noTint,
+      "the stored none that stands over a repository's tint",
+    )
     #expect(try decodeJSON(ProjectSettings.self, #"{ "iconTint": "red" }"#).iconTint == nil)
     #expect(try decodeJSON(ProjectSettings.self, #"{ "iconTint": 3 }"#).iconTint == 3)
     #expect(

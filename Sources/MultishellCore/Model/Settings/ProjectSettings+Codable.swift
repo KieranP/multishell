@@ -66,7 +66,7 @@ extension ProjectSettings {
     )?.nonEmpty
     iconGlyph = try container.decodeIfPresent(String.self, forKey: .iconGlyph)?.nonEmpty
     // Tolerated: a tint that is not a number costs the tint, not the file.
-    iconTint = ProjectIcon.usableTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
+    iconTint = ProjectIcon.ownTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an integration a newer build named costs that entry alone.
     disabledIntegrations = container.decodeLossy(
       ServiceIntegration.self,

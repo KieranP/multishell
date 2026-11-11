@@ -97,6 +97,9 @@ pointer. Newest at the bottom.
 - **An untinted icon in project settings is the system's grey**, not the
   theme's: that window follows the system appearance, and a dark theme's grey
   vanished on a light page. The sidebar keeps the theme's.
+- **Picking the folder or no tint over a repository's icon is stored**, as
+  `folder` and as slot -1, read as none: stored as nothing, the file's glyph or
+  tint showed through, and the pick did nothing.
 - **A missing project's badge is ringed in what the icon sits on**, the
   sidebar's colour in a row and the header's in the header, as a pane's state
   dot is. One fill for both drew a patch of sidebar on the header:

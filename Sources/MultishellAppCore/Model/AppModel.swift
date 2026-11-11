@@ -130,6 +130,7 @@ public final class AppModel<Surface> {
   var fileTreeBuildLandings = 0
   /// One coalesced listing read per worktree; see `scheduleTrackedFilesRead`.
   @ObservationIgnored var pendingTrackedFilesReads: [Worktree.ID: Task<Void, Never>] = [:]
+  @ObservationIgnored var trackedFilesReadsAskedAgain: Set<Worktree.ID> = []
   /// What each worktree changed since its base branch, read while its panel
   /// shows Branch.
   var branchChanges: [Worktree.ID: BranchChanges] = [:]
@@ -330,6 +331,10 @@ public final class AppModel<Surface> {
   /// What the last refresh of each project was computed from; see
   /// `refreshProjectsIfChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
+  /// Each project's `git worktree list` and `.multishell.json` reads, an older
+  /// one landing after a newer is dropped.
+  @ObservationIgnored var worktreeListReads = LandingOrder<Project.ID>()
+  @ObservationIgnored var sharedSettingsReads = LandingOrder<Project.ID>()
   @ObservationIgnored var statusPolling: Task<Void, Never>?
   /// When each worktree's status was last read and how often it is read; a
   /// test reading right after a change sets `pace` to `.unpaced`.
@@ -340,6 +345,9 @@ public final class AppModel<Surface> {
   @ObservationIgnored var pendingBranchScans: [Project.ID: Task<Void, Never>] = [:]
   /// What git ignores in each worktree, as far as file changes have asked it.
   @ObservationIgnored var ignoreVerdicts: [Worktree.ID: IgnoreVerdicts] = [:]
+  /// Bumped as a worktree's rules change: an answer git gave across one is the
+  /// old rules', and recorded it would put back the verdicts just forgotten.
+  @ObservationIgnored var ignoreRuleChanges: [Worktree.ID: Int] = [:]
   /// The read after the filter text changes, one per pause in typing, and
   /// the rows the poll kept reading through every keystroke of that burst.
   @ObservationIgnored var pendingRevealedRowsRead:

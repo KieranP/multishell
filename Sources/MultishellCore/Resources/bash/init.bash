@@ -47,11 +47,12 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   # Both halves at the top level of PROMPT_COMMAND: inside a function bash
   # reports no DEBUG trap and puts back the one set, functrace being off.
   _multishell_claim_debug='_multishell_seen_debug="$(trap -p DEBUG)"
-_multishell_owns_debug_or_saves_theirs || trap "_multishell_debug" DEBUG'
+_multishell_owns_debug_or_saves_theirs || trap '\''_multishell_debug "$_"'\'' DEBUG'
   _multishell_seen_debug=""
   _multishell_capture_debug "$(trap -p DEBUG)"
 
-  trap '_multishell_debug' DEBUG
+  # bash sets `$_` to a trap's last word once it ends, so that word is `$_` itself.
+  trap '_multishell_debug "$_"' DEBUG
   case "${PROMPT_COMMAND-}" in
     *_multishell_precmd*) ;;
     *)

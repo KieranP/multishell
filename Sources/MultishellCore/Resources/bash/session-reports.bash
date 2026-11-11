@@ -109,13 +109,23 @@ _multishell_debug() {
   # Before theirs is called, so their trap never sees our own prompt
   # functions: without us it would not have.
   case "$BASH_COMMAND" in _multishell_*) return 0 ;; esac
-  if [ -n "$_multishell_prior_debug" ]; then eval "$_multishell_prior_debug"; fi
+  # Theirs sees no arguments of ours, and `:` puts the user's `$_` back for it.
+  if [ -n "$_multishell_prior_debug" ]; then
+    local last_argument="${1-}"
+    set --
+    : "$last_argument"
+    eval "$_multishell_prior_debug"
+  fi
   # bash has no cd hook, so the next command finds the change; only once a
   # prompt has reported, which it does only in a Ghostty pane.
   case "${_multishell_last_reported_directory-$PWD}" in "$PWD") ;; *) _multishell_report_directory ;; esac
 
   [ "$_multishell_armed" = 1 ] || return 0
+  # A completion or a `bind -x` widget, fzf's Ctrl-R, runs before the line does.
   [ -n "${COMP_LINE-}" ] && return 0
+  [ -n "${READLINE_POINT-}" ] && return 0
+  # bash-preexec adds its prompt entry after our arm, at the first prompt.
+  case "$BASH_COMMAND" in __bp_*) return 0 ;; esac
   _multishell_armed=0
   _multishell_command_started "$BASH_COMMAND"
 }

@@ -76,6 +76,36 @@ struct AppModelFilesPanelReadsTests {
     #expect(harness.model.trackedFiles[other.id] == nil)
   }
 
+  @Test func aTrackedFilesReadAskedForDuringOneRunsAgainOnceItLands() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let gate = harness.root.appendingPathComponent("go")
+    let record = "H 100644 0000000000000000000000000000000000000000 0\\t"
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *ls-files*)
+          if [ ! -f "$SCRATCH/first" ]; then
+            touch "$SCRATCH/first"
+            \(harness.holdLine(until: gate))
+            printf '\(record)before\\0'
+          else
+            printf '\(record)after\\0'
+          fi ;;
+      esac
+      """
+    )
+
+    fake.scheduleTrackedFilesRead(of: main.id)
+    try await waitUntil { harness.gitCallCount(startingWith: "--no-optional-locks ls-files") > 0 }
+    fake.scheduleTrackedFilesRead(of: main.id)
+    try Data().write(to: gate)
+
+    try await waitUntil { fake.trackedFiles[main.id]?.paths == ["after"] }
+    #expect(fake.trackedFiles[main.id]?.paths == ["after"])
+  }
+
   @Test func aListingReadThatFailsStillRedrawsWhatWaitedOnIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

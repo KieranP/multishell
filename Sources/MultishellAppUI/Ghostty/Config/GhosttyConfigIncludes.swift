@@ -14,32 +14,37 @@ enum GhosttyConfigIncludes {
     while next < queue.count {
       let url = queue[next]
       next += 1
-      guard seen.insert(url.comparablePath).inserted,
-        let text = try? String(contentsOf: url, encoding: .utf8)
+      // Decoded leniently: Ghostty reads lines as bytes, so a Latin-1 comment cost it nothing.
+      guard seen.insert(url.comparablePath).inserted, let data = try? Data(contentsOf: url)
       else { continue }
+      // Ghostty skips a byte order mark; kept, it joins the first line's key.
+      let text = String(String(decoding: data, as: UTF8.self).trimmingPrefix("\u{FEFF}"))
       texts.append(text)
       queue += includes(in: text, from: url.deletingLastPathComponent(), home: home)
     }
     return texts
   }
 
-  /// A leading `?` makes a missing file quiet, which a missing one is here
-  /// anyway; it goes before the quotes are taken off, `"?x"` naming a file.
+  /// A `?` quiets a missing file, as any is here. Ghostty unquotes the line before
+  /// its path parser reads the `?` and unquotes again, so `"?x"` and `?"x"` name x.
   private static func includes(in text: String, from directory: URL, home: URL) -> [URL] {
     GhosttyConfigLine.lines(of: text).compactMap { line in
       guard GhosttyConfigLine.key(of: line) == "config-file", let equals = line.firstIndex(of: "=")
       else {
         return nil
       }
-      var value = line[line.index(after: equals)...].trimmingCharacters(in: .whitespaces)
+      var value = unquoted(line[line.index(after: equals)...].trimmingCharacters(in: .whitespaces))
       if value.hasPrefix("?") { value.removeFirst() }
-      if value.count >= 2, value.hasPrefix("\""), value.hasSuffix("\"") {
-        value = String(value.dropFirst().dropLast())
-      }
+      value = unquoted(value)
       guard !value.isEmpty else { return nil }
       if value.hasPrefix("~/") { return home.appendingPathComponent(String(value.dropFirst(2))) }
       if value.hasPrefix("/") { return URL(fileURLWithPath: value) }
       return directory.appendingPathComponent(value)
     }
+  }
+
+  private static func unquoted(_ value: String) -> String {
+    guard value.count >= 2, value.hasPrefix("\""), value.hasSuffix("\"") else { return value }
+    return String(value.dropFirst().dropLast())
   }
 }

@@ -12,6 +12,10 @@ public enum Detached {
     case withOutput
   }
 
+  /// Input written to a shell that has already exited raised SIGPIPE, killing
+  /// the whole test process under load; ignored, the write fails on its own.
+  private static let ignoringBrokenPipes: Void = { signal(SIGPIPE, SIG_IGN) }()
+
   /// Everything the child wrote before it and every inheritor of its output
   /// closed it. `environment` is the whole environment, nothing inherited.
   public static func output(
@@ -22,6 +26,7 @@ public enum Detached {
     input: String = "",
     standardError: StandardError = .withOutput,
   ) async throws -> String {
+    _ = ignoringBrokenPipes
     let configuration = Configuration(
       executable: .path(FilePath(executable)),
       arguments: Arguments(arguments),

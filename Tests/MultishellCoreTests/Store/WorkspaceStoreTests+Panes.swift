@@ -28,6 +28,42 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.sessions.count == 1)
   }
 
+  @Test func closingTheFocusedPaneFocusesTheOneThatTookItsPlace() {
+    let (store, _, worktree) = demoStore()
+    let tab = store.openTab(in: worktree.id)!
+    let middle = store.splitFocusedPane(of: tab.id, axis: .horizontal)!
+    let last = store.splitFocusedPane(of: tab.id, axis: .vertical)!
+
+    store.closeSession(last.id)
+
+    #expect(store.workspace.tab(tab.id)?.focusedSessionID == middle.id)
+  }
+
+  @Test func closingTheFocusedFirstPaneOfANestedSplitFocusesItsSibling() {
+    let (store, _, worktree) = demoStore()
+    let tab = store.openTab(in: worktree.id)!
+    let middle = store.splitFocusedPane(of: tab.id, axis: .horizontal)!
+    let last = store.splitFocusedPane(of: tab.id, axis: .vertical)!
+    store.focusSession(middle.id)
+
+    store.closeSession(middle.id)
+
+    #expect(store.workspace.tab(tab.id)?.focusedSessionID == last.id)
+  }
+
+  @Test func closingTheFocusedFirstPaneFocusesTheNextOne() {
+    let (store, _, worktree) = demoStore()
+    let tab = store.openTab(in: worktree.id)!
+    let first = tab.focusedSessionID
+    let second = store.splitFocusedPane(of: tab.id, axis: .horizontal)!
+    store.splitFocusedPane(of: tab.id, axis: .horizontal)
+    store.focusSession(first)
+
+    store.closeSession(first)
+
+    #expect(store.workspace.tab(tab.id)?.focusedSessionID == second.id)
+  }
+
   @Test func splittingAddsAPaneToTheSameTab() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!

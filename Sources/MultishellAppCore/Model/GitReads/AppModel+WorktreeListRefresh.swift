@@ -38,6 +38,7 @@ extension AppModel {
 
   func refreshWorktrees(of project: Project) async {
     guard let coordinator else { return }
+    let serial = worktreeListReads.begin()
     let path = project.path
     guard await runOnDispatch({ FileManager.default.fileExists(atPath: path.path) }) else {
       if workspace.project(project.id) != nil { missingProjects.insert(project.id) }
@@ -51,10 +52,13 @@ extension AppModel {
     if let common = await commonGitDirectory(of: project) {
       records = await runOnDispatch { WorktreeRecords.read(in: common) }
     }
+    let sharedSerial = sharedSettingsReads.begin()
     let shared = await runOnDispatch { SharedSettingsReading.read(from: project) }
     do {
       let discovered = try await coordinator.git.list(project)
       guard forgetCacheUnlessListed(project.id) else { return }
+      // Landing over a newer list would discard a worktree it lists, tabs and shells too.
+      guard worktreeListReads.lands(serial, for: project.id) else { return }
       let branchesBefore = Dictionary(
         keepingFirst: workspace.worktrees(of: project.id).map { ($0.id, $0.branch) }
       )
@@ -71,7 +75,9 @@ extension AppModel {
       forgetBranchServices(of: Set(checkedOutElsewhere.map(\.id)))
       worktreeRecords[project.id] = records
       let wasMissing = missingProjects.remove(project.id) != nil
-      applySharedSettingsReading(shared, for: project)
+      if sharedSettingsReads.lands(sharedSerial, for: project.id) {
+        applySharedSettingsReading(shared, for: project)
+      }
       // A worktree removed outside the app loses its tabs and sessions here,
       // and without this the host keeps their surfaces and the shells run on.
       reconcileSessions(takingFocus: false)
@@ -79,7 +85,9 @@ extension AppModel {
       await rearmWatcher(evenIfUnchanged: wasMissing)
     } catch {
       // Nothing to dim for a project removed meanwhile.
-      guard forgetCacheUnlessListed(project.id) else { return }
+      guard forgetCacheUnlessListed(project.id),
+        !worktreeListReads.isOvertaken(serial, for: project.id)
+      else { return }
       // Every tick and every return to the front refreshes a project git
       // cannot read, so the alert goes up once; the row stays dimmed.
       if missingProjects.insert(project.id).inserted { present(error) }

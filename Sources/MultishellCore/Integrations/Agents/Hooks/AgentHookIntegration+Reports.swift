@@ -68,7 +68,18 @@ extension AgentHookIntegration {
         ? payload.backgroundTasks.map(workers(from:)) : nil,
       turnFollows: (isStop && turnFollows(at: payload)).trueOrNil,
       asksQuestion: asksQuestion(payload).trueOrNil,
+      resumableConversationID: namesResumableConversation(event, payload)
+        ? payload.conversationID : nil,
     )
+  }
+
+  /// From a prompt on: a start's conversation may never be written, and resuming
+  /// it fails; an ending can land after the next start. Not a subagent's either.
+  private func namesResumableConversation(
+    _ event: AgentHookEvent,
+    _ payload: AgentHookPayload,
+  ) -> Bool {
+    event.state != .idle && payload.subagentID == nil
   }
 
   /// Claude asks its questions through the permission prompt, whose

@@ -5,7 +5,7 @@ import Foundation
 public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// `shellOverride` and `port` are left out on purpose; see their doc comments.
   enum CodingKeys: String, CodingKey {
-    case id, worktreeID, workingDirectory, title, command, agentID
+    case id, worktreeID, workingDirectory, title, command, agentID, agentConversationID
   }
 
   public let id: UUID
@@ -17,6 +17,9 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// The agent this tab was opened for. The command line is built when the
   /// shell starts, so a saved tab resumes and a new install applies.
   public internal(set) var agentID: String?
+  /// The conversation that agent last reported, which a relaunch resumes by id:
+  /// its own resume flag takes the latest, so two tabs of it came back as one.
+  public internal(set) var agentConversationID: String?
   /// The shell to run when `command` is nil. Runtime only, never saved: a
   /// relaunched tab reads the setting again.
   public var shellOverride: String?

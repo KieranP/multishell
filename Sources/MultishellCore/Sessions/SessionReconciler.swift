@@ -32,6 +32,10 @@ public final class SessionReconciler: TerminalHostDelegate {
   /// observable, so the GUI mirrors `liveSessionIDs` from here.
   public var onLiveSessionsChanged: (@MainActor () -> Void)?
 
+  /// A shell exited and its pane is closed, with whether that pane was the
+  /// active one: a file tab its close brought in front is the GUI's to focus.
+  public var onExit: (@MainActor (_ heldTheKeyboard: Bool) -> Void)?
+
   /// The engine gave a pane the keyboard, on a click into it. After the
   /// store has it, so the GUI reads the new focus when it marks it seen.
   public var onFocus: (@MainActor (TerminalSession.ID) -> Void)?
@@ -153,14 +157,14 @@ public final class SessionReconciler: TerminalHostDelegate {
     onSearchCount?(id, count)
   }
 
-  /// The process is already gone, so the surface must go too; leaving it
-  /// until the next reconcile shows a dead terminal under a missing tab. The
-  /// keyboard moves only off the pane that held it, not off a field in use.
+  /// The process is gone, so its surface goes now, not under a missing tab until the
+  /// next reconcile. The keyboard moves only off the pane that held it, not a field.
   public func terminalHost(_ host: any TerminalHost, didExit id: TerminalSession.ID) {
     let heldTheKeyboard = activeSessionID == id
     store.closeSession(id)
     host.close(id)
     if heldTheKeyboard { focusActiveSession() }
     onLiveSessionsChanged?()
+    onExit?(heldTheKeyboard)
   }
 }

@@ -58,6 +58,9 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
 - **A 75 ms settle and a pace of ten times the last re-read's cost**, so a save
   shows in about a quarter second and an agent rewriting a file in bursts costs
   at most a tenth of a core. A change during a read reads once after it.
+- **A read running as the scope, algorithm or base changes is thrown away**, and
+  the next runs at once: it landed the old diff under the new switch and paced
+  the right read out by ten times its own cost.
 - **A file tab is capped at 1 MiB, on disk and on its committed side.** git
   diffs 1 MiB in under 40 ms, but the forced view takes up to 186 MB laid out at
   that size. That side's size is asked first, so a small file whose last commit

@@ -98,7 +98,7 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
       worktreeSortOrder: settings.worktreeSortOrder,
       showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
       iconGlyph: ProjectIcon.normalizedGlyph(settings.iconGlyph),
-      iconTint: settings.iconTint,
+      iconTint: ProjectIcon.usableTint(settings.iconTint),
     )
   }
 

@@ -18,8 +18,12 @@ extension AppModel {
       }
     }
 
+    let live = liveSessionIDs
+    let agents = promptAgents
+    let states = sessionStates
+    let statuses = statuses
     return workspace.sessions.compactMap { session in
-      guard liveSessionIDs.contains(session.id), let (tab, position) = tabsBySession[session.id],
+      guard live.contains(session.id), let (tab, position) = tabsBySession[session.id],
         let worktree = worktreesByID[session.worktreeID]
       else { return nil }
       let key = SessionStates.Key.session(session.id)
@@ -27,15 +31,15 @@ extension AppModel {
         id: session.id,
         tabID: tab.id,
         worktreeID: worktree.id,
-        occupant: occupant(of: session, in: worktree),
+        occupant: occupant(agentID: agents.agentID(of: session), in: worktree),
         title: shownTitle(ofPane: session, in: tab, of: worktree),
         projectName: projectNames[worktree.projectID] ?? "",
         worktreeName: workspace.displayName(of: worktree),
-        state: sessionStates[key],
-        since: sessionStates.since(key),
-        note: sessionStates.note(key),
+        state: states[key],
+        since: states.since(key),
+        note: states.note(key),
         status: statuses[worktree.id],
-        workers: sessionStates.workers(key),
+        workers: states.workers(key),
         position: position,
       )
     }
@@ -60,10 +64,13 @@ extension AppModel {
   /// How many cards each column holds, without building one: a card carries
   /// a title, and the sidebar would re-render on every prompt.
   var boardLaneCounts: [AgentBoardLane: Int] {
+    let live = liveSessionIDs
+    let agents = promptAgents
+    let showsAll = showsAllTerminals
     var counts: [AgentBoardLane: Int] = [:]
     for session in workspace.sessions
-    where liveSessionIDs.contains(session.id) && (showsAllTerminals || isAgentPane(session)) {
-      counts[AgentBoardLane.of(sessionStates[.session(session.id)]), default: 0] += 1
+    where live.contains(session.id) && (showsAll || agents.agentID(of: session) != nil) {
+      counts[AgentBoardLane.of(agents.states[.session(session.id)]), default: 0] += 1
     }
     return counts
   }
@@ -83,11 +90,8 @@ extension AppModel {
   }
 
   /// Who is at the prompt, by name.
-  private func occupant(
-    of session: TerminalSession,
-    in worktree: Worktree,
-  ) -> AgentBoardCard.Occupant {
-    if let agentID = agentIDAtThePrompt(of: session) {
+  private func occupant(agentID: String?, in worktree: Worktree) -> AgentBoardCard.Occupant {
+    if let agentID {
       return .agent(id: agentID, name: agentDisplayName(agentID))
     }
     return .shell(shellPath(for: worktree).executableName)

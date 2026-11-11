@@ -97,6 +97,9 @@ The conventions a new test follows. Why each rule holds is in `design/`.
 - **A hook or the login capture leaves a named history file alone**:
   ShellCommandTests+HookShells under bash, sh and ksh, and
   LoginShellEnvironmentTests.
+- **The test process ignores SIGPIPE**, set by `Detached.output`: input written
+  to a shell that had already exited killed the whole run about one time in
+  three under the shell suites' load.
 - **An interactive shell starts through `Detached.output`**, never `Process`:
   `Process` hands on the terminal `make test` runs under, and a shell outside
   its foreground group stops itself on SIGTTIN, with no timeout to end it. The

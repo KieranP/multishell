@@ -8,9 +8,8 @@ extension AppModel {
     await suggestedBase(of: project, among: await branches(of: project))
   }
 
-  /// The default branch, local before remote, as the picker lists it; the
-  /// checkout's own branch only where there is none, as it may be other work.
-  /// Branches git could not list are no answer: the scan's own ref still is.
+  /// The default branch, local before remote; the checkout's own, maybe other work,
+  /// only where there is none. Branches git could not list leave the scan's ref.
   func suggestedBase(
     of project: Project,
     among branches: (local: [String], remote: [String])?,

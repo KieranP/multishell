@@ -16,8 +16,9 @@ struct SettingsScopePicker: View {
       ) {
         Text(t("settings.all-projects")).tag(SettingsScope.allProjects)
         Divider()
+        let labels = model.settingsScopeLabels
         ForEach(model.workspace.projects) { project in
-          Text(project.name).tag(SettingsScope.project(project.id))
+          Text(labels[project.id] ?? project.name).tag(SettingsScope.project(project.id))
         }
       }
       .pickerStyle(.inline)

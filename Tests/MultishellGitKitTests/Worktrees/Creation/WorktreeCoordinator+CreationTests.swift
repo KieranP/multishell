@@ -222,6 +222,25 @@ struct WorktreeCoordinatorCreationTests {
     #expect(
       !FileManager.default.fileExists(atPath: project.path.appendingPathComponent("hook-ran").path)
     )
+    #expect(await fixture.git.lacksBranch("busy", in: project), "git made it before refusing")
+  }
+
+  @Test func aRefusedCreateKeepsABranchThatWasAlreadyThere() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(["branch", "busy"], in: fixture.project.path)
+    let target = fixture.worktreeSettings.worktreePath(forBranch: "busy", in: fixture.project)
+    try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+    try "x".write(to: target.appendingPathComponent("file"), atomically: true, encoding: .utf8)
+
+    await #expect(throws: ProcessFailure.self) {
+      try await fixture.coordinator.createThenRunPostCreateHook(
+        branch: "busy",
+        in: fixture.project,
+        settings: fixture.worktreeSettings,
+      )
+    }
+    #expect(await !fixture.git.lacksBranch("busy", in: fixture.project))
   }
 
   /// The sheet cannot send these, Create being off for a name not in the

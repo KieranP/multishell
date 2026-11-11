@@ -41,6 +41,7 @@ extension AppModel {
       task.cancel()
       pendingTrackedFilesReads[id] = nil
     }
+    trackedFilesReadsAskedAgain = trackedFilesReadsAskedAgain.filter { !isForgotten($0) }
     ignoredEntriesReads.cancel(where: isForgotten)
     branchChangesReads.cancel(where: isForgotten)
     setIfChanged(\.branchChanges, branchChanges.filter { !isForgotten($0.key) })
@@ -60,16 +61,19 @@ extension AppModel {
     fileTreeChanges = fileTreeChanges.filter { !isForgotten($0.key) }
   }
 
-  /// The tracked files change only with the index, so are read on git changes,
-  /// never because a count moved; one at a time per worktree.
+  /// Read on git changes, never because a count moved; one at a time per worktree,
+  /// one asked for meanwhile running after it, the index maybe past what it read.
   func scheduleTrackedFilesRead(of id: Worktree.ID) {
-    guard pendingTrackedFilesReads[id] == nil, let coordinator,
-      let worktree = workspace.worktree(id)
-    else { return }
+    guard pendingTrackedFilesReads[id] == nil else {
+      trackedFilesReadsAskedAgain.insert(id)
+      return
+    }
+    guard let coordinator, let worktree = workspace.worktree(id) else { return }
     pendingTrackedFilesReads[id] = Task { @MainActor [weak self] in
       let tracked = await coordinator.git.trackedFiles(in: worktree.path)
       guard let self, !Task.isCancelled else { return }
       pendingTrackedFilesReads[id] = nil
+      if trackedFilesReadsAskedAgain.remove(id) != nil { scheduleTrackedFilesRead(of: id) }
       guard workspace.worktree(id) != nil, let tracked else {
         // Nothing observed moved, and what waited on the read must still redraw.
         fileTreeBuildLandings += 1

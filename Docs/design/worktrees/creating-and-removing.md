@@ -116,6 +116,9 @@ the bottom.
   record but not a new branch, so a stopped add deletes the branch it made where
   no worktree lists it, and the empty directories it made, or the same name
   could not be tried again.
+- **A refused add deletes its new branch too.** git makes the branch before it
+  checks the path, so a taken directory, or a slug two branch names share, left
+  a branch the user never got a worktree for.
 - **A tree still being built wears no badge.** The add writes the record
   directory before checking a file out, and that is what is watched, so a tick
   lands mid-checkout where status counts every file not there yet.

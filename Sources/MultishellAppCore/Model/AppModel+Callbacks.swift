@@ -30,6 +30,9 @@ extension AppModel {
     // keyboard, and a click is how the keyboard moves without a reconcile.
     reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
     reconciler.onLiveSessionsChanged = { [weak self] in self?.noteLiveSessionsChanged() }
+    reconciler.onExit = { [weak self] heldTheKeyboard in
+      self?.noteSessionExited(heldTheKeyboard: heldTheKeyboard)
+    }
     reconciler.onCloseRequest = { [weak self] id in self?.closePane(id) }
     reconciler.onEditRequest = { [weak self] file, id in
       self?.openInEditor(file: file, clickedIn: id)

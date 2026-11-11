@@ -24,6 +24,72 @@ struct AppModelWorktreeListRefreshTests {
     )
   }
 
+  /// The fake lists with real git, then holds that older answer until the gate.
+  @Test func anOlderListLandingAfterANewerOneKeepsTheWorktreeItMissed() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    let stale = harness.root.appendingPathComponent("stale")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *"worktree list"*)
+          if [ ! -f "$SCRATCH/first" ]; then
+            touch "$SCRATCH/first"
+            /usr/bin/git "$@" > "$SCRATCH/stale.part"
+            mv "$SCRATCH/stale.part" "$SCRATCH/stale"
+            \(harness.holdLine(until: gate))
+            cat "$SCRATCH/stale"
+            exit 0
+          fi ;;
+      esac
+      exec /usr/bin/git "$@"
+      """
+    )
+    let older = Task { await fake.refreshWorktrees(of: harness.project) }
+    try await waitUntil { FileManager.default.fileExists(atPath: stale.path) }
+    let feature = try await harness.createWorktree(onBranch: "feature")
+    await fake.refreshWorktrees(of: harness.project)
+    try #require(fake.workspace.worktree(feature.id) != nil)
+
+    try Data().write(to: gate)
+    await older.value
+
+    #expect(fake.workspace.worktree(feature.id) != nil)
+  }
+
+  @Test func aNewerListThatFailsLeavesAnOlderOneThatWorkedToLand() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    let held = harness.root.appendingPathComponent("held")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *"worktree list"*)
+          if [ ! -f "$SCRATCH/held" ]; then
+            touch "$SCRATCH/held"
+            \(harness.holdLine(until: gate))
+          else
+            exit 128
+          fi ;;
+      esac
+      exec /usr/bin/git "$@"
+      """
+    )
+    let older = Task { await fake.refreshWorktrees(of: harness.project) }
+    try await waitUntil { FileManager.default.fileExists(atPath: held.path) }
+    let feature = try await harness.createWorktree(onBranch: "feature")
+    await fake.refreshWorktrees(of: harness.project)
+    fake.presentedError = nil
+
+    try Data().write(to: gate)
+    await older.value
+
+    #expect(fake.workspace.worktree(feature.id) != nil)
+    #expect(!fake.missingProjects.contains(harness.project.id))
+  }
+
   @Test func aRefreshLandingAfterTheProjectWasRemovedLeavesNoTrace() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

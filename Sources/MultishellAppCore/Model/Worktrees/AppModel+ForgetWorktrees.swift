@@ -44,6 +44,7 @@ extension AppModel {
       pendingStatusRefreshes[id]?.cancel()
       pendingStatusRefreshes[id] = nil
       ignoreVerdicts[id] = nil
+      ignoreRuleChanges[id] = nil
       filesPanelStates[id] = nil
     }
     forgetFileListings(where: gone.contains)

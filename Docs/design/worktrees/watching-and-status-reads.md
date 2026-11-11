@@ -20,6 +20,23 @@ that write nothing. Newest at the bottom.
   it, and changing the indicator frees every row, the read in flight no longer
   counting. Cost: `worktrees show` runs git every call, past the pace, so a
   script polling it on a slow repository reads as often as it asks.
+- **A read beside another counts only for rows no later read has answered.** A
+  poll landing after a removal's forced read wrote its older, cleaner counts
+  over the newer ones the dialog was built from. Dropping it for a later read
+  merely begun, or one whose git failed, left the dialog reading "changes
+  unread". An asker whose read a newer one overtook is told its status is fresh,
+  the newer badge being in. A read begun before its worktree was forgotten
+  counts for nothing.
+- **So is an older read of `.multishell.json`**: a list refresh reads it before
+  awaiting git, and landing after a tick's newer read put the old settings back,
+  a trust question about bytes gone included. An export's read is the newest.
+- **What git says it ignores, asked across a rule change, is not kept**: it put
+  back the verdicts the change had just forgotten, and edits under a folder no
+  longer ignored read no status until the next round.
+- **An older worktree list landing after a newer one is dropped.** It discarded
+  a worktree the newer list held, with its tabs and shells. A list that failed
+  is no newer list, so it takes no place: it held off an older one that worked.
+  A list awaited by its caller still lands when a later one is only begun.
 - **A change seen during that read is read again once it lands**, when the pace
   allows. Dropped, a command finishing mid-read left the badge on what git saw
   before it until the next read due, ten times a slow read.

@@ -68,6 +68,11 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
   # include session-reports.zsh
 
   add-zsh-hook preexec _multishell_preexec
-  add-zsh-hook precmd _multishell_precmd
+  # First, so the user's slow prompt hook is not billed to the command. zsh's
+  # options: ksh_arrays reads the list as one hook, and no_unset ends the file.
+  () {
+    emulate -L zsh
+    precmd_functions=(_multishell_precmd ${precmd_functions:#_multishell_precmd})
+  }
   add-zsh-hook zshexit _multishell_zshexit
 fi

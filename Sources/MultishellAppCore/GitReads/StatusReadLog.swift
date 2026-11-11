@@ -14,6 +14,10 @@ struct StatusReadLog: Sendable {
   private var reads = LastReads()
   private var generation = 0
   private var inFlightSerial: [Worktree.ID: Int] = [:]
+  private var landedSerial: [Worktree.ID: Int] = [:]
+  /// A forgotten worktree's reads still running, which count for nothing:
+  /// one re-made at the path is another checkout.
+  private var forgottenWhileReading: [Worktree.ID: Int] = [:]
   private var askedAgain: Set<Worktree.ID> = []
   private var serial = 0
 
@@ -40,6 +44,10 @@ struct StatusReadLog: Sendable {
   mutating func forget(_ gone: some Sequence<Worktree.ID>) {
     reads.forget(gone)
     askedAgain.subtract(gone)
+    for id in gone {
+      landedSerial[id] = nil
+      if inFlightSerial[id] != nil { forgottenWhileReading[id] = serial }
+    }
   }
 
   /// Whether a read that still counts is under way for this worktree.
@@ -63,11 +71,24 @@ struct StatusReadLog: Sendable {
     return Ticket(generation: generation, serial: serial, ids: ids)
   }
 
-  /// Git answered: the rows go free, bar any a later read has taken, and the
-  /// result says whether the answer still counts.
-  mutating func finish(_ ticket: Ticket) -> Bool {
+  /// Git answered for the `answered` rows: every row goes free, bar any a later
+  /// read has taken, and the result is the answers no later read landed over.
+  mutating func finish(_ ticket: Ticket, answered: Set<Worktree.ID>) -> Set<Worktree.ID> {
     for id in ticket.ids where inFlightSerial[id] == ticket.serial { inFlightSerial[id] = nil }
-    return ticket.generation == generation
+    guard ticket.generation == generation else { return [] }
+    let counted = ticket.ids.filter { id in
+      answered.contains(id)
+        && ticket.serial
+          > max(landedSerial[id, default: 0], forgottenWhileReading[id, default: 0])
+    }
+    for id in counted { landedSerial[id] = ticket.serial }
+    for id in ticket.ids where inFlightSerial[id] == nil { forgottenWhileReading[id] = nil }
+    return Set(counted)
+  }
+
+  /// Rows of a finished read a later one has answered, the newer badge in.
+  func overtaken(_ ticket: Ticket) -> Set<Worktree.ID> {
+    Set(ticket.ids.filter { landedSerial[$0, default: 0] > ticket.serial })
   }
 
   /// What a badge counts has changed, so every reading is worthless and every
@@ -76,5 +97,6 @@ struct StatusReadLog: Sendable {
     generation += 1
     reads.removeAll()
     inFlightSerial.removeAll()
+    forgottenWhileReading.removeAll()
   }
 }

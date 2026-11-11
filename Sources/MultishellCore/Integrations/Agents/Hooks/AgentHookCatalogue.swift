@@ -84,12 +84,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
-      AgentHookEvent(
-        "PermissionRequest",
-        .attention,
-        meansWaitingOnlyWhenPrompting: true,
-        isSilent: true,
-      ),
+      AgentHookEvent("PermissionRequest", .attention, meansWaitingOnlyWhenPrompting: true),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),

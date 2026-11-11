@@ -280,6 +280,92 @@ struct AppModelSessionLaunchTests {
     #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Flagless")
   }
 
+  /// Each agent's own resume flag picks the latest conversation in the directory,
+  /// so two tabs of one agent in a worktree both came back as the later one.
+  @Test func twoAgentTabsInOneWorktreeEachResumeTheirOwnConversation() {
+    let file = Scratch.statePath("agent-conversations")
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
+    let before = Harness(stateFile: file)
+    before.model.select(before.main)
+    let first = before.store.openTab(in: before.main.id, title: "A", agentID: "claude")!
+    let second = before.store.openTab(in: before.main.id, title: "B", agentID: "claude")!
+    before.model.reconcileSessions(takingFocus: false)
+    for (tab, conversation) in [(first, "conv-a"), (second, "conv-b")] {
+      before.messageSource.send(
+        SessionStateReport(
+          state: .running,
+          sessionID: tab.focusedSessionID,
+          agentID: "claude",
+          resumableConversationID: conversation,
+        )
+      )
+    }
+
+    let (after, engine, store, _) = before.relaunched()
+    after.select(before.main)
+
+    let byTitle = Dictionary(
+      uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) }
+    )
+    #expect(
+      byTitle["A"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-a; ")
+        == true,
+      "\(byTitle["A"]?.command ?? [])",
+    )
+    #expect(
+      byTitle["B"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-b; ")
+        == true
+    )
+  }
+
+  @Test func anotherAgentRunAtATabsPromptLeavesTheTabsConversationAlone() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.store.openTab(in: harness.main.id, agentID: "claude"))
+    harness.model.reconcileSessions(takingFocus: false)
+    let id = tab.focusedSessionID
+
+    for (agent, conversation) in [("claude", "mine"), ("codex", "theirs")] {
+      harness.messageSource.send(
+        SessionStateReport(
+          state: .running,
+          sessionID: id,
+          agentID: agent,
+          resumableConversationID: conversation,
+        )
+      )
+    }
+
+    #expect(harness.model.workspace.session(id)?.agentConversationID == "mine")
+  }
+
+  /// Copilot runs a subagent as a conversation of its own, whose prompt and
+  /// tool events name the child's id and no transcript to tell it by.
+  @Test func aCopilotSubagentLeavesTheTabOnItsOwnConversation() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.store.openTab(in: harness.main.id, agentID: "copilot"))
+    harness.model.reconcileSessions(takingFocus: false)
+    let id = tab.focusedSessionID
+
+    for json in [
+      CopilotPayload.sessionStart, CopilotPayload.prompt, CopilotPayload.taskCall,
+      CopilotPayload.childPrompt, CopilotPayload.childTool,
+    ] {
+      let payload = try #require(AgentHookPayload(json: Data(json.utf8)))
+      if let report = AgentHookCatalogue.copilot.report(
+        for: payload,
+        sessionID: id,
+        workingDirectory: nil,
+        pid: nil,
+      ) {
+        harness.messageSource.send(report)
+      }
+    }
+
+    #expect(harness.model.workspace.session(id)?.agentConversationID == CopilotPayload.parent)
+  }
+
   @Test func anAgentThatIsNotInstalledOpensAShellAndSaysSoOnce() {
     let harness = Harness()
     harness.model.loginEnvironment = LoginShellEnvironment(

@@ -8,6 +8,7 @@ extension ProjectSettings {
     // the two disagree over the same stored value.
     var result = self
     result.iconGlyph = ProjectIcon.normalizedGlyph(iconGlyph)
+    result.iconTint = ProjectIcon.usableTint(iconTint)
     guard let shared = shared.map(sharedSettingsInForce) else { return result }
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
     result.defaultBranch = defaultBranch ?? shared.defaultBranch
@@ -19,7 +20,8 @@ extension ProjectSettings {
     result.showsActiveWorktreesFirst =
       showsActiveWorktreesFirst ?? shared.showsActiveWorktreesFirst
     result.iconGlyph = result.iconGlyph ?? ProjectIcon.normalizedGlyph(shared.iconGlyph)
-    result.iconTint = iconTint ?? ProjectIcon.usableTint(shared.iconTint)
+    // An own `noTint` stands over the file's, drawn as none.
+    result.iconTint = ProjectIcon.usableTint(iconTint ?? shared.iconTint)
     result.preCreateHook = preCreateHook.isEmpty ? shared.preCreateHook ?? "" : preCreateHook
     result.postCreateHook = postCreateHook.isEmpty ? shared.postCreateHook ?? "" : postCreateHook
     result.preDeleteHook = preDeleteHook.isEmpty ? shared.preDeleteHook ?? "" : preDeleteHook

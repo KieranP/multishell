@@ -64,6 +64,9 @@ extension AppModel {
       present(error)
 
     case .success(let reading?) where export.order.isLastLanded(export.ticket):
+      // Numbered as it lands, its bytes being the newest: a poll's read begun
+      // before the write and landing after would put the old file back.
+      _ = sharedSettingsReads.lands(sharedSettingsReads.begin(), for: project.id)
       applySharedSettingsReading(reading, for: project)
 
     case .success:

@@ -55,7 +55,7 @@ extension AppModel {
     for worktree in wanted where !statusReadLog.isDue(worktree.id, at: now) {
       scheduleStatusRefresh(of: worktree.id)
     }
-    let readings = await readStatuses(
+    let (readings, _) = await readStatuses(
       of: wanted.filter { statusReadLog.isDue($0.id, at: now) },
       with: coordinator,
     )
@@ -88,10 +88,11 @@ extension AppModel {
         && workspace.sessions(in: worktree.id).contains { liveSessionIDs.contains($0.id) })
   }
 
+  /// The readings that count, and the rows a later read answered first.
   func readStatuses(
     of worktrees: [Worktree],
     with coordinator: WorktreeCoordinator,
-  ) async -> [Worktree.ID: StatusReading] {
+  ) async -> (readings: [Worktree.ID: StatusReading], overtaken: Set<Worktree.ID>) {
     let ticket = statusReadLog.begin(worktrees.map(\.id))
     let readings = await coordinator.readStatuses(
       of: worktrees,
@@ -99,11 +100,10 @@ extension AppModel {
       diffAlgorithm: workspace.diffAlgorithm,
       bases: defaultBranchScans.compactMapValues(\.branch),
     )
-    let stillCounts = statusReadLog.finish(ticket)
+    let counted = statusReadLog.finish(ticket, answered: Set(readings.keys))
     let again = statusReadLog.takeAskedAgain(of: ticket)
     for id in again { scheduleStatusRefresh(of: id) }
-    guard stillCounts else { return [:] }
-    return readings
+    return (readings.filter { counted.contains($0.key) }, statusReadLog.overtaken(ticket))
   }
 
   /// What every status read's landing sets off, from the poll or one worktree's.

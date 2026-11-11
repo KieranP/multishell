@@ -4,9 +4,8 @@ import MultishellProcess
 /// Runs git and hands back its standard output. Shelling out rather than
 /// linking libgit2; see Docs/design/architecture.md.
 struct GitRunner: Sendable {
-  /// Set on every runner: signature lines read as reflog work, and untracked
-  /// files hidden read as a clean tree. Both badge wrongly and offer a delete.
-  /// Columns put every merged branch on one line, which matched none.
+  /// Signature lines read as reflog work, hidden untracked files as a clean tree,
+  /// and columns put every merged branch on one line: each badged a branch wrongly.
   private static let forcedConfiguration = [
     "column.ui": "never",
     "log.showSignature": "false",

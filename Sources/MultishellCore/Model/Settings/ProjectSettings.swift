@@ -111,7 +111,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.preferredShellID = preferredShellID
     self.iconGlyph = iconGlyph
-    self.iconTint = ProjectIcon.usableTint(iconTint)
+    self.iconTint = ProjectIcon.ownTint(iconTint)
     self.disabledIntegrations = disabledIntegrations
     self.trustDecisions = []
   }

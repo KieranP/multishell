@@ -50,7 +50,9 @@ extension AppModel {
   ) -> ProjectSettings? {
     var fields = encodedFields(of: ownSettings(of: project))
     fields[key] = value is NSNull ? nil : value
-    guard let data = try? JSONSerialization.data(withJSONObject: fields),
+    // The parser reads `-1e400` as -inf, which the writer raises on, past `try?`.
+    guard JSONSerialization.isValidJSONObject(fields),
+      let data = try? JSONSerialization.data(withJSONObject: fields),
       let settings = try? JSONDecoder().decode(ProjectSettings.self, from: data)
     else { return nil }
     let kept = encodedFields(of: settings)[key]

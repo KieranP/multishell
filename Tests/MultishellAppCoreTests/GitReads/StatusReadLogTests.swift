@@ -51,8 +51,7 @@ struct StatusReadLogTests {
     #expect(!log.isReading(firstTree), "the read that replaces it may start")
     #expect(log.hasNoReadings, "and every worktree is due again")
     #expect(log.isDue(firstTree, at: .now))
-    let counted = log.finish(stale)
-    #expect(!counted)
+    #expect(log.finish(stale, answered: [firstTree, secondTree]).isEmpty)
   }
 
   @Test func aRowIsHeldUntilTheReadThatTookItLastFinishes() {
@@ -61,11 +60,11 @@ struct StatusReadLogTests {
     #expect(log.isReading(firstTree) && log.isReading(secondTree))
 
     let second = log.begin([firstTree])
-    _ = log.finish(first)
+    _ = log.finish(first, answered: [firstTree, secondTree])
     #expect(log.isReading(firstTree), "the later read still holds it")
     #expect(!log.isReading(secondTree))
 
-    _ = log.finish(second)
+    _ = log.finish(second, answered: [firstTree, secondTree])
     #expect(!log.isReading(firstTree))
   }
 
@@ -75,10 +74,43 @@ struct StatusReadLogTests {
     log.invalidate()
     let fresh = log.begin([firstTree])
 
-    let staleCounted = log.finish(stale)
-    #expect(!staleCounted)
+    #expect(log.finish(stale, answered: [firstTree, secondTree]).isEmpty)
     #expect(log.isReading(firstTree))
-    let freshCounted = log.finish(fresh)
-    #expect(freshCounted)
+    #expect(log.finish(fresh, answered: [firstTree, secondTree]) == [firstTree])
+  }
+
+  @Test func aLaterReadThatGotNoAnswerLeavesTheEarlierOnesAnswerCounting() {
+    var log = StatusReadLog()
+    let older = log.begin([firstTree])
+    let newer = log.begin([firstTree])
+
+    #expect(log.finish(newer, answered: []).isEmpty)
+    #expect(log.finish(older, answered: [firstTree]) == [firstTree])
+  }
+
+  @Test func aReadBegunBeforeItsWorktreeWasForgottenCountsForNothing() {
+    var log = StatusReadLog()
+    let read = log.begin([firstTree])
+    log.forget([firstTree])
+
+    #expect(log.finish(read, answered: [firstTree, secondTree]).isEmpty)
+  }
+
+  @Test func anOlderReadLandingFirstStillCountsWhileTheLaterOneRuns() {
+    var log = StatusReadLog()
+    let older = log.begin([firstTree])
+    let newer = log.begin([firstTree])
+
+    #expect(log.finish(older, answered: [firstTree, secondTree]) == [firstTree])
+    #expect(log.finish(newer, answered: [firstTree, secondTree]) == [firstTree])
+  }
+
+  @Test func anOlderReadLandingLastCountsOnlyTheRowsNoLaterReadLandedOn() {
+    var log = StatusReadLog()
+    let older = log.begin([firstTree, secondTree])
+    let newer = log.begin([firstTree])
+
+    #expect(log.finish(newer, answered: [firstTree, secondTree]) == [firstTree])
+    #expect(log.finish(older, answered: [firstTree, secondTree]) == [secondTree])
   }
 }

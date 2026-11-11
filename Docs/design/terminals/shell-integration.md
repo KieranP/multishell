@@ -50,6 +50,25 @@ Newest at the bottom.
   untraced function bash reports no debug trap and puts back the one set, so a
   function could neither see theirs nor install ours. Cost: a subshell per
   prompt.
+- **Our trap passes `"$_"` as its last word**, bash setting `$_` to a trap's
+  last word once it ends: a bare call broke `mkdir x && cd $_` in every bash
+  tab, and handed bash-preexec's own `"$_"` our function's name. Theirs runs
+  with no arguments of ours: it saw one, where bash gives a trap none.
+- **A `bind -x` widget does not take the arm either**, fzf's and Atuin's Ctrl-R
+  running commands before the line they fill does. bash sets READLINE_POINT only
+  inside one. Cost: bash 3.2 sets none, so there the widget still takes it. No
+  suite test holds this: under `script` in the suite the reports never reached
+  the fake helper, guard or not; a pty run outside it showed both sides.
+- **bash-preexec's prompt entry does not take the arm.** It lands after ours at
+  the first prompt, and running it took the arm meant for the command typed
+  next, so an agent typed there went unreported.
+- **zsh's send keeps `REPLY` local**: `zsocket` answers in it, so every report
+  left a `read`'s line as a descriptor number.
+- **zsh's command end is the first prompt hook and its marks the last**, moved
+  back there at each prompt: a slow theme hook was billed to every command, and
+  one a deferred loader added after ours rebuilt the prompt without the marks.
+- **fish reports nothing for a line holding only a comment**, whose postexec
+  repeated the last command's status, so a comment after a failure failed.
 - **Theirs is unquoted before it is kept**, the print form being quoted for
   re-input: eval of a body still in its quotes runs it as one word, a line of
   shell complaint per command.

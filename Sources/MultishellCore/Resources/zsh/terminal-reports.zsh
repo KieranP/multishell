@@ -41,6 +41,13 @@ _multishell_report_directory() {
 
 # Put back on every prompt, as a framework rebuilds PS1.
 _multishell_prompt_marks() {
+  # Last from the next prompt on: a theme's hook a deferred loader adds after
+  # ours would rebuild PS1 without the marks. zsh's options, as init.zsh says.
+  () {
+    emulate -L zsh
+    (( ${precmd_functions[(I)_multishell_prompt_marks]} == $#precmd_functions )) ||
+      precmd_functions=(${precmd_functions:#_multishell_prompt_marks} _multishell_prompt_marks)
+  }
   # A prompt that does not take `%{ %}` would show the escape instead.
   [[ -o prompt_percent ]] || return 0
   [[ "$PS1" == *"$_multishell_prompt_mark"* ]] || PS1="$_multishell_prompt_mark$PS1"

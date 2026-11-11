@@ -26,6 +26,7 @@ public enum AgentCatalogue {
       mark: .claude,
       oneShot: claudeOneShot,
       resumeArguments: ["--continue"],
+      conversationResumeArguments: ["--resume", AgentDescriptor.conversationPlaceholder],
       fileMentionPrefix: "@",
       programStatusApp: "claude-code",
     ),
@@ -37,6 +38,7 @@ public enum AgentCatalogue {
       mark: .codex,
       oneShot: codexOneShot,
       resumeArguments: ["resume", "--last"],
+      conversationResumeArguments: ["resume", AgentDescriptor.conversationPlaceholder],
       programStatusApp: "codex",
     ),
     AgentDescriptor(
@@ -47,6 +49,7 @@ public enum AgentCatalogue {
       mark: .gemini,
       oneShot: geminiOneShot,
       resumeArguments: ["--resume", "latest"],
+      conversationResumeArguments: ["--resume", AgentDescriptor.conversationPlaceholder],
     ),
     AgentDescriptor(
       id: antigravityID,
@@ -65,6 +68,7 @@ public enum AgentCatalogue {
       mark: .copilot,
       oneShot: copilotOneShot,
       resumeArguments: ["--continue"],
+      conversationResumeArguments: ["--resume=" + AgentDescriptor.conversationPlaceholder],
     ),
     AgentDescriptor(
       id: openCodeID,

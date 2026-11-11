@@ -41,6 +41,8 @@ extension AppModel {
     missingProjects.remove(project.id)
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
+    worktreeListReads.forget(project.id)
+    sharedSettingsReads.forget(project.id)
     worktreeSortCache.forget(project.id)
     dismissSharedSettingsTrust(for: project.id)
     // Or the settings window would stay on a project it can no longer show.

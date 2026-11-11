@@ -14,6 +14,13 @@ extension AppModel {
     markInViewSeen()
   }
 
+  /// A close question or rename field on the gone pane goes with it, and a
+  /// file tab it brought in front is read, taking the keyboard where the pane had it.
+  func noteSessionExited(heldTheKeyboard: Bool) {
+    reconcile()
+    if heldTheKeyboard { requestFocusForFileTabInView() }
+  }
+
   /// For a control that is leaving, such as the sidebar filter on Escape: the
   /// keyboard would otherwise fall to the window and type into nothing.
   func focusActivePane() {

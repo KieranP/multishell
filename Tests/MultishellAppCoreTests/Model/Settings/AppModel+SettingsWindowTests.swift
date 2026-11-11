@@ -18,6 +18,20 @@ struct AppModelSettingsWindowTests {
     )
   }
 
+  @Test func theScopeMenuTellsTwoProjectsOfOneNameApartByPath() {
+    let harness = Harness()
+    let other = harness.store.addProject(
+      at: URL(fileURLWithPath: "/repos/elsewhere/\(harness.project.name)")
+    )
+
+    let labels = harness.model.settingsScopeLabels
+
+    #expect(labels[harness.project.id] != labels[other.id])
+    #expect(
+      labels[other.id] == "\(harness.project.name)  (/repos/elsewhere/\(harness.project.name))"
+    )
+  }
+
   @Test func aProjectsMenuEmptiesASearchThatMayHideItsFirstPage() {
     let harness = Harness()
     harness.model.showSettings(of: harness.project)

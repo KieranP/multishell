@@ -18,8 +18,11 @@ extension AppModel {
       SharedSettingsReading.modificationDate(of: SharedProjectSettings.file(in: path))
     }
     guard project.sharedSettingsSnapshot.needsRead(at: stamp) else { return }
+    let serial = sharedSettingsReads.begin()
     let reading = await runOnDispatch { SharedSettingsReading.read(from: project) }
-    guard workspace.project(project.id) != nil else { return }
+    guard workspace.project(project.id) != nil,
+      sharedSettingsReads.lands(serial, for: project.id)
+    else { return }
     applySharedSettingsReading(reading, for: project)
   }
 

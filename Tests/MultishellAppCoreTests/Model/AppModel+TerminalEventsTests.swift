@@ -53,6 +53,28 @@ struct AppModelTerminalEventsTests {
     #expect(harness.model.sessionStates.showsNothing, "nothing left to look at")
   }
 
+  @Test func aShellExitingInATabBeingRenamedTakesTheFieldWithIt() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.beginRenamingTab(tab.id)
+
+    harness.engine.delegate?.terminalHost(harness.engine, didExit: tab.focusedSessionID)
+
+    #expect(harness.model.renamingTabID == nil)
+  }
+
+  @Test func aShellExitingUnderACloseQuestionTakesTheQuestionWithIt() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.pendingClose = .pane(tab.focusedSessionID)
+
+    harness.engine.delegate?.terminalHost(harness.engine, didExit: tab.focusedSessionID)
+
+    #expect(harness.model.pendingClose == nil)
+  }
+
   @Test func aProcessExitDropsTheTabAndTheLiveCount() {
     let (harness, session) = Harness.withOnePane()
 

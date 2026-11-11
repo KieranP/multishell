@@ -14,6 +14,9 @@ extension AppModel {
     }
   }
 
+  /// The scope menu's rows, which tell two projects of one name apart.
+  public var settingsScopeLabels: [Project.ID: String] { workspace.projects.pickerLabels }
+
   /// Whose settings a scope holds, as the window's title names them.
   public func settingsScopeName(of scope: SettingsScope) -> String {
     switch scope {

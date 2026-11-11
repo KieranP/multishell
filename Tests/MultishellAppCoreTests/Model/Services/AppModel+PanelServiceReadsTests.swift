@@ -119,6 +119,25 @@ struct AppModelPanelServiceReadsTests {
     #expect(harness.model.ciPage(of: feat) == .noRuns(branch: "feat"))
   }
 
+  @Test func theCIPageBeforeTheProjectsFirstRunReadListsNoRunOfAnotherRepository() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, _, provider) = try await showingFeat(harness)
+    let theirs = CIRun.sample(
+      id: "theirs",
+      branch: "feat",
+      repository: RemoteRepository(owner: "team", name: "demo"),
+    )
+    provider.answer(recent: [], history: [theirs])
+    harness.model.remoteState.ciRuns[harness.project.id] = nil
+
+    harness.model.setFilesPanelMode(.ciRuns)
+    try await waitUntil { harness.model.remoteState.ciHistories[feat.id] != nil }
+    try #require(harness.model.remoteState.ciHistories[feat.id] != nil)
+
+    #expect(harness.model.remoteState.ciHistories[feat.id]?.runs.isEmpty == true)
+  }
+
   @Test func aToolGoneFromThePathTurnsThePanelBackToItsListedFiles() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

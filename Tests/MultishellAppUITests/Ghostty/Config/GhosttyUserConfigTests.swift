@@ -174,6 +174,48 @@ struct GhosttyUserConfigTests {
     #expect(!rendered.contains("config-file"))
   }
 
+  /// Ghostty's file reader takes a line's quotes off before its path parser
+  /// reads the `?`, so a quoted optional include names the file after it.
+  @Test func aQuotedOptionalIncludeIsFollowed() throws {
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
+    let config = directory.appendingPathComponent("config", isDirectory: false)
+    try "config-file = \"?extra\"\n".write(to: config, atomically: true, encoding: .utf8)
+    try "font-size = 21\n".write(
+      to: directory.appendingPathComponent("extra"),
+      atomically: true,
+      encoding: .utf8,
+    )
+
+    let rendered = GhosttyUserConfig.base(reading: [config])
+
+    #expect(rendered.contains("font-size = 21"), "\(rendered)")
+  }
+
+  /// Ghostty reads a file's lines as bytes, so a Latin-1 comment costs it nothing.
+  @Test func aFileWithABytePastUTF8IsStillRead() throws {
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
+    let config = directory.appendingPathComponent("config", isDirectory: false)
+    try (Data("cursor-style = bar\n# caf".utf8) + Data([0xE9]) + Data("\n".utf8)).write(to: config)
+
+    let rendered = GhosttyUserConfig.base(reading: [config])
+
+    #expect(rendered.contains("cursor-style = bar"), "\(rendered)")
+  }
+
+  /// Ghostty skips a UTF-8 byte order mark; kept, it joined the first key.
+  @Test func aFileOpeningWithAByteOrderMarkKeepsItsFirstLine() throws {
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
+    let config = directory.appendingPathComponent("config", isDirectory: false)
+    try (Data([0xEF, 0xBB, 0xBF]) + Data("font-size = 21\n".utf8)).write(to: config)
+
+    let rendered = GhosttyUserConfig.base(reading: [config])
+
+    #expect(rendered.contains("font-size = 21"), "\(rendered)")
+  }
+
   @Test func anIncludeInAFileWithWindowsLineEndingsIsFollowed() throws {
     let directory = try Scratch.directory("ghostty-config")
     defer { Scratch.remove(directory) }

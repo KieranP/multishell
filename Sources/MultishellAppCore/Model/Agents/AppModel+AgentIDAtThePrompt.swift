@@ -1,29 +1,24 @@
 import MultishellCore
 
 extension AppModel {
+  /// What a loop over every pane asks which agent is at each prompt.
+  var promptAgents: PromptAgents {
+    PromptAgents(states: sessionStates, reported: reportedAgents, typed: commandAgentIDs)
+  }
+
   /// Which agent a pane holds: the one that reported while its process is up,
   /// else the tab's own. Most panes get theirs typed at a shell prompt.
   func agentIDAtThePrompt(of session: TerminalSession) -> String? {
-    agentIDAtThePrompt(session.id, orOpenedAs: session.agentID)
+    promptAgents.agentID(of: session)
   }
 
   /// Which agent a tab draws the mark of, `nil` for a shell. The last step
   /// is a scan of every session, so a strip asks this once per tab.
   public func agentIDAtThePrompt(of tab: TerminalTab) -> String? {
-    agentIDAtThePrompt(
-      tab.focusedSessionID,
+    promptAgents.agentID(
+      of: tab.focusedSessionID,
       orOpenedAs: workspace.session(tab.focusedSessionID)?.agentID,
     )
-  }
-
-  private func agentIDAtThePrompt(
-    _ id: TerminalSession.ID,
-    orOpenedAs openedAs: @autoclosure () -> String?,
-  ) -> String? {
-    // A program holding the pane says which agent it is, a nested one's hooks aside.
-    if let agent = sessionStates.programAgent(.session(id)) { return agent.id }
-    if let reported = reportedAgents[id], reported.isAtThePrompt { return reported.agentID }
-    return commandAgentIDs[id] ?? openedAs()
   }
 
   /// Whether an agent is at this pane's prompt, the report winning over the

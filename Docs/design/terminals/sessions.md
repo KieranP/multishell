@@ -57,6 +57,21 @@ What a shell is launched as, and what its state means. Newest at the bottom.
   not start four agents. Cost: where the login shell cannot take the
   login-interactive form, as nu cannot, the agent runs under `/bin/sh` as a hook
   does, reading no startup file.
+- **It resumes by the conversation its agent last reported**, where the agent
+  takes an id: each one's own flag reopens the latest conversation in the
+  directory, so two tabs of one agent in a worktree both came back as the later
+  one, two processes writing one transcript. Hooks send the agent's session id;
+  only the tab's own agent's is kept, and one that could read as a flag is not.
+- **Taken from the first prompt on, never a start, an ending or a subagent's**:
+  a conversation started but never prompted may be written nowhere, and resuming
+  it fails where the latest flag reopened something; an ending can land after
+  the next start on /clear or /resume. Copilot's child events name the child
+  with no transcript to tell it by, so its id is kept only where it is the
+  conversation the pane's state took as its own.
+- **Cost: OpenCode and Antigravity still resume the latest**, reporting no id
+  through a hook. A tab moved to another worktree keeps its id, which an agent
+  that files conversations by directory may not find there; it no longer reopens
+  another tab's.
 - **One login-shell environment is captured at launch**, agents living under
   Homebrew, npm or a version manager, none of which a Finder-launched app has on
   PATH. Past a time limit a poorer PATH beats empty dropdowns.

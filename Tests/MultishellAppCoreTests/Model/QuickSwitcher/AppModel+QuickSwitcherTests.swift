@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 @Suite @MainActor
@@ -596,5 +596,25 @@ struct AppModelQuickSwitcherTests {
     harness.model.closeQuickSwitcher()
 
     #expect(harness.model.trackedFiles[harness.main.id] == .empty)
+  }
+
+  @Test func aProjectRowDrawsTheIconTheRepositorysFileSets() throws {
+    let harness = Harness()
+    let shared = SharedProjectSettings(iconGlyph: "hammer", iconTint: 3)
+    harness.store.setSharedSettingsSnapshot(
+      SharedSettingsSnapshot(asWritten: shared, confined: shared, hasBeenRead: true),
+      forProject: harness.project.id,
+    )
+
+    let row = try #require(
+      harness.model.quickSwitcherPlaces().first { $0.target == .project(harness.project.id) }
+    )
+
+    guard case .project(let settings, _) = row.kind else {
+      Issue.record("not a project row: \(row.kind)")
+      return
+    }
+    #expect(settings.iconKind == .symbol("hammer"))
+    #expect(settings.iconTint == 3)
   }
 }

@@ -12,6 +12,22 @@ extension AppModel {
     )
   }
 
+  /// The conversation the tab's own agent is in; another agent run at its
+  /// prompt is not what the tab resumes. Read after the report is applied.
+  private func noteAgentConversation(_ report: SessionStateReport, of id: TerminalSession.ID) {
+    guard let conversation = report.resumableConversationID, let agentID = report.agentID,
+      workspace.session(id)?.agentID == agentID
+    else { return }
+    // An agent whose subagents are conversations of their own names the child's
+    // id on its events; only the one the pane's state took as its own is kept.
+    if report.conversationID != nil,
+      sessionStates.ownConversationIDs[.session(id)] != conversation
+    {
+      return
+    }
+    store.setAgentConversation(conversation, of: id)
+  }
+
   /// A report names a live session, or only a directory. One naming an
   /// unknown session is dropped, never matched by directory.
   func receive(_ report: SessionStateReport) {
@@ -40,6 +56,7 @@ extension AppModel {
       }
       noteCommandAgent(report, of: id)
       apply(report, pid: pid, to: .session(id))
+      noteAgentConversation(report, of: id)
     } else if let workingDirectory = report.workingDirectory,
       let worktree = worktree(atPath: workingDirectory)
     {

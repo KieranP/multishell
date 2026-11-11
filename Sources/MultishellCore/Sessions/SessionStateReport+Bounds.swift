@@ -52,6 +52,21 @@ extension SessionStateReport {
     return duration
   }
 
+  /// Letters, digits and `-_.` alone, and no leading dash, as it goes on the
+  /// agent's command line, where it must not read as a flag.
+  static func resumableConversation(_ id: String?) -> String? {
+    guard let id = boundedIdentifier(id), !id.hasPrefix("-"),
+      id.unicodeScalars.allSatisfy(isConversationCharacter)
+    else { return nil }
+    return id
+  }
+
+  private static func isConversationCharacter(_ scalar: Unicode.Scalar) -> Bool {
+    scalar.isASCII
+      && (scalar.properties.isAlphabetic || ("0"..."9").contains(scalar)
+        || "-_.".unicodeScalars.contains(scalar))
+  }
+
   static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
     return id

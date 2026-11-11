@@ -154,7 +154,9 @@ extension AppModel {
       ?? CIRunHistory(branch: upstream.branch, runs: [])
     history.askedForRun = services(of: worktree).ciRun?.id
     do {
-      let remotes = remoteState.ciRuns[project.id]?.remotes ?? []
+      // None are kept before the project's first read; an empty list lets any repository's in.
+      var remotes = remoteState.ciRuns[project.id]?.remotes
+      if remotes == nil { remotes = await coordinator?.git.remotes(project) }
       history.runs = try await provider.runs(
         onBranch: upstream.branch,
         limit: Self.ciHistoryLength,
@@ -164,7 +166,7 @@ extension AppModel {
         WorktreeServices.ran(
           run,
           inRepositoryOf: upstream,
-          remotes: remotes,
+          remotes: remotes ?? [],
           currentRepositories: remoteState.pullRequests[project.id]?.currentRepositories ?? [:],
         )
       }

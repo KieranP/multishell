@@ -102,8 +102,13 @@ extension WorktreeCoordinator {
           stopReason: .byUser,
         )
       }
-    } catch  where stopper?.isStopRequested == true {
-      await undoStoppedAdd(undo, in: project)
+    } catch {
+      if stopper?.isStopRequested == true {
+        await undoStoppedAdd(undo, in: project)
+      } else if let newBranch = undo.newBranch {
+        // git makes the branch before it checks the path, and keeps it on refusing.
+        await git.deleteBranchIfUnlisted(newBranch, in: project)
+      }
       throw error
     }
     return path

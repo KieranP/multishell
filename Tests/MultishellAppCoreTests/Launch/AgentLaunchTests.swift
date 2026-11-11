@@ -26,4 +26,24 @@ struct AgentLaunchTests {
       "no resume flag: plain shell",
     )
   }
+
+  @Test func aReportedConversationIsResumedByIdWhereTheAgentTakesOne() {
+    func resumed(_ id: String) -> [String]? {
+      AgentLaunch.arguments(for: AgentCatalogue.agent(id)!, resume: true, conversation: "c1")
+    }
+    #expect(resumed("claude") == ["claude", "--resume", "c1"])
+    #expect(resumed("codex") == ["codex", "resume", "c1"])
+    #expect(resumed("gemini") == ["gemini", "--resume", "c1"])
+    #expect(resumed("copilot") == ["copilot", "--resume=c1"])
+    #expect(resumed("opencode") == ["opencode", "--continue"], "no hook reports its id")
+    #expect(
+      AgentLaunch.arguments(
+        for: AgentCatalogue.agent("claude")!,
+        resume: false,
+        conversation: "c1",
+      )
+        == ["claude"],
+      "a new tab starts afresh",
+    )
+  }
 }

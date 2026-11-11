@@ -10,7 +10,7 @@ extension AppModel {
       QuickSwitcherItem(
         target: .project(project.id),
         kind: .project(
-          settings: project.settings,
+          settings: effectiveSettings(for: project),
           isMissing: missingProjects.contains(project.id),
         ),
         title: project.name,
@@ -146,7 +146,7 @@ extension AppModel {
   ) -> [QuickSwitcherItem] {
     let sessions = workspace.sessions.keyedByID()
     let tabsByWorktree = workspace.workspaceTabsByWorktree()
-    let states = sessionStates
+    let agents = promptAgents
     return order.flatMap { project, worktree in
       let place = quickSwitcherPlace(of: worktree, in: project)
       return (tabsByWorktree[worktree.id] ?? []).flatMap { tab -> [QuickSwitcherItem] in
@@ -154,7 +154,7 @@ extension AppModel {
         case .terminal(let tab):
           tab.sessionIDs.enumerated().compactMap { offset, id in
             guard let session = sessions[id] else { return nil }
-            let agentID = agentIDAtThePrompt(of: session)
+            let agentID = agents.agentID(of: session)
             guard !agentsOnly || agentID != nil else { return nil }
             return quickSwitcherPane(
               session,
@@ -163,7 +163,7 @@ extension AppModel {
               of: worktree,
               at: offset,
               place: place,
-              states: states,
+              states: agents.states,
             )
           }
 

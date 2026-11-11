@@ -13,6 +13,7 @@ extension AppModel {
     prepared.command = agentCommand(
       agentID,
       resume: restoredSessionIDs.contains(session.id),
+      conversation: session.agentConversationID,
       shell: prepared.shellPath,
       in: session.worktreeID,
       task: pendingAgentTasks.removeValue(forKey: session.id),
@@ -34,6 +35,7 @@ extension AppModel {
   private func agentCommand(
     _ id: String,
     resume: Bool,
+    conversation: String?,
     shell tabShell: String,
     in worktreeID: Worktree.ID,
     task: String?,
@@ -57,7 +59,13 @@ extension AppModel {
       alertMissingAgentOnce(id, name: AgentCatalogue.agent(id)?.name ?? id)
       return nil
     }
-    guard let arguments = AgentLaunch.arguments(for: agent, resume: resume) else { return nil }
+    guard
+      let arguments = AgentLaunch.arguments(
+        for: agent,
+        resume: resume,
+        conversation: conversation,
+      )
+    else { return nil }
     // No flag line and each placeholder left as typed where the project has gone.
     let flagLine = place.map { workspace.effectiveAgentFlags(for: $0.project, agent: id) } ?? ""
     let flags = AgentFlags.arguments(flagLine, values: values)

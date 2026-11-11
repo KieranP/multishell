@@ -548,14 +548,24 @@ extension WorkspaceStore {
     guard let index = workspace.tabIndex(owning: id) else { return }
     workspace.sessions.removeAll { $0.id == id }
 
+    let neighbour = workspace.tabs[index].root.neighbour(of: id)
     guard let remaining = workspace.tabs[index].root.removing(id) else {
       removeTab(at: index)
       return
     }
     workspace.tabs[index].root = remaining
     if workspace.tabs[index].focusedSessionID == id {
-      workspace.tabs[index].focusedSessionID = remaining.sessionIDs[0]
+      workspace.tabs[index].focusedSessionID = neighbour ?? remaining.sessionIDs[0]
     }
+  }
+
+  /// The conversation a tab's own agent reports, kept for a relaunch to resume.
+  /// Guarded: every report repeats it, and each write re-arms autosave.
+  public func setAgentConversation(_ conversationID: String, of id: TerminalSession.ID) {
+    guard let index = workspace.sessions.firstIndex(where: { $0.id == id }),
+      workspace.sessions[index].agentConversationID != conversationID
+    else { return }
+    workspace.sessions[index].agentConversationID = conversationID
   }
 
   /// A click in a pane, reported back by the engine: the pane takes the

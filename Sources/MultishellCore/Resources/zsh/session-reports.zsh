@@ -5,7 +5,8 @@
 _multishell_send() {
   local line="$1"; shift
   if (( ${+builtins[zsocket]} )); then
-    local fd
+    # zsocket answers in REPLY, which is the user's: a `read` leaves its line there.
+    local fd REPLY
     zsocket "$MULTISHELL_SOCKET" 2>/dev/null || return 0
     fd=$REPLY
     print -r -u $fd -- "$line"

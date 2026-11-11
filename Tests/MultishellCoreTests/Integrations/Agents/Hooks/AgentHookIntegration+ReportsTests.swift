@@ -28,6 +28,64 @@ struct AgentHookIntegrationReportsTests {
     #expect(follows(AgentHookCatalogue.codex, "Stop") == nil, "Claude's transcript alone")
   }
 
+  @Test func aReportCarriesTheConversationThePaneResumes() throws {
+    func resumable(
+      _ integration: AgentHookIntegration,
+      _ json: String,
+    ) -> String? {
+      let payload = AgentHookPayload(json: Data(json.utf8))!
+      return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
+        .resumableConversationID
+    }
+    let main = #"{"hook_event_name":"UserPromptSubmit","session_id":"conv-1"}"#
+    #expect(resumable(AgentHookCatalogue.claude, main) == "conv-1")
+    #expect(resumable(AgentHookCatalogue.codex, main) == "conv-1")
+  }
+
+  /// Gemini files a session under its start time and the id's first eight characters.
+  @Test func geminisConversationIsResumableThoughItsTranscriptIsNotNamedForIt() {
+    let id = "0cb916d2-4a1e-4b9f-9c1d-6f2e1a3b5c7d"
+    let payload = AgentHookPayload(
+      json: Data(
+        (#"{"hook_event_name":"BeforeAgent","session_id":"\#(id)","#
+          + #""transcript_path":"/u/.gemini/tmp/p/chats/session-2026-11-11T09-00-0cb916d2.jsonl"}"#)
+          .utf8
+      )
+    )!
+
+    let report = AgentHookCatalogue.gemini.report(
+      for: payload,
+      sessionID: nil,
+      workingDirectory: nil,
+      pid: nil,
+    )
+
+    #expect(report?.resumableConversationID == id)
+  }
+
+  /// Claude ends the old conversation before it starts the new one on /clear and
+  /// /resume, and hooks can land out of order; a subagent's events are not the pane's.
+  @Test func aStartAnEndingOrASubagentsEventNamesNoConversationToResume() {
+    func resumable(_ json: String) -> String? {
+      let payload = AgentHookPayload(json: Data(json.utf8))!
+      return AgentHookCatalogue.claude.report(
+        for: payload,
+        sessionID: nil,
+        workingDirectory: nil,
+        pid: nil,
+      )?.resumableConversationID
+    }
+    #expect(resumable(#"{"hook_event_name":"UserPromptSubmit","session_id":"new"}"#) == "new")
+    #expect(
+      resumable(#"{"hook_event_name":"SessionStart","session_id":"unwritten"}"#) == nil,
+      "nothing may be written under it until the first prompt",
+    )
+    #expect(resumable(#"{"hook_event_name":"SessionEnd","session_id":"old"}"#) == nil)
+    #expect(
+      resumable(#"{"hook_event_name":"PreToolUse","session_id":"main","agent_id":"sub"}"#) == nil
+    )
+  }
+
   @Test func claudesPermissionNotificationForAQuestionIsMarkedAsOne() throws {
     let directory = try Scratch.directory("hooks")
     defer { Scratch.remove(directory) }

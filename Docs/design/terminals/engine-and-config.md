@@ -24,6 +24,11 @@ it reads. Newest at the bottom.
 - **A line ends at `\n` or `\r\n`**, as in Ghostty. Swift reads `\r\n` as one
   character, so a CRLF file split on `\n` was one line: its includes were lost
   and every key after the first rode through the allow list behind it.
+- **A file is read as bytes, as Ghostty reads it**: a Latin-1 comment made a
+  strict UTF-8 read drop the whole file and its includes. A byte order mark is
+  skipped, as Ghostty skips it; kept, it joined the first key. `"?x"` names an
+  optional `x`, Ghostty's reader unquoting the line before its path parser reads
+  the `?`; read the other way round it named a file called `?x`.
 - **The merged text reaches the engine through a file under the temp
   directory**, libghostty reading config from nothing else. The file goes the
   moment it is read, so no copy of the build leaves one for another to sweep.

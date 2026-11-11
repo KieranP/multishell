@@ -151,10 +151,8 @@ extension SessionStates {
     update(key) { $0.forgetAnnouncedFinish() }
   }
 
-  /// The roster's turn as the agent's own hooks tell it, the dot aside: a Stop
-  /// vouches for the workers out, so the next prompt keeps them, and an Idle or
-  /// a failure ends them all, as Codex's interrupt does with no hold. A
-  /// worker's report says nothing of the turn.
+  /// The roster's turn as the agent's hooks tell it: a Stop vouches for the workers out,
+  /// and an Idle or a failure ends them all. A worker's report says nothing of the turn.
   mutating func keepTurnUnderProgramHold(
     _ state: SessionState,
     worker: WorkerReport?,

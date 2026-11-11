@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -76,6 +77,44 @@ extension AppModelFileChangesTests {
     await harness.model.noteFileChanges([main.path.appending(path: "node_modules/a")])
 
     #expect(Set(harness.model.pendingStatusRefreshes.keys) == [main.id])
+  }
+
+  /// The fake asks real git, then holds that answer until the gate, so the
+  /// `.gitignore` changes while the old rules' answer is in flight.
+  @Test func aGitignoreChangedWhileGitWasAskedIsNotOverwrittenByTheOldAnswer() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try ignore("node_modules/\n", in: main)
+    try makeDirectories(["node_modules/a"], in: main)
+    let gate = harness.root.appendingPathComponent("go")
+    let held = harness.root.appendingPathComponent("held")
+    let fake = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        *check-ignore*)
+          if [ ! -f "$SCRATCH/held" ]; then
+            /usr/bin/git "$@" > "$SCRATCH/answer"
+            touch "$SCRATCH/held"
+            \(harness.holdLine(until: gate))
+            cat "$SCRATCH/answer"
+            exit 0
+          fi ;;
+      esac
+      exec /usr/bin/git "$@"
+      """
+    )
+    let asking = Task { await fake.noteFileChanges([main.path.appending(path: "node_modules/a")]) }
+    try await waitUntil { FileManager.default.fileExists(atPath: held.path) }
+    try ignore("", in: main)
+    await fake.noteFileChanges([main.path.appending(path: ".gitignore")])
+    try Data().write(to: gate)
+    await asking.value
+    fake.pendingStatusRefreshes = [:]
+
+    await fake.noteFileChanges([main.path.appending(path: "node_modules/a")])
+
+    #expect(Set(fake.pendingStatusRefreshes.keys) == [main.id])
   }
 
   @Test func aWorktreeInsideADirectoryTheMainOneIgnoresIsStillRead() async throws {
