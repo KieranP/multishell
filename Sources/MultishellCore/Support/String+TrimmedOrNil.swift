@@ -6,4 +6,10 @@ extension String {
     let trimmed = trimmingCharacters(in: .whitespaces)
     return trimmed.isEmpty ? nil : trimmed
   }
+
+  /// Trimmed of spaces, tabs and newlines, or `nil` where nothing is left.
+  var trimmedOfAllWhitespaceOrNil: String? {
+    let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : trimmed
+  }
 }

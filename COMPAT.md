@@ -121,10 +121,10 @@ agent.
 Both tools are optional and never shipped. They are found on the login shell's
 PATH and run with its environment, so `GH_TOKEN` or `CIRCLECI_CLI_TOKEN` set
 there reaches them; the app never reads or stores a token. A GitHub Enterprise
-host counts once `gh auth login` names it. Reads run one call per project while
-the app is in front. Only the newest hundred pull requests are listed, so an
-older one shows as none and the row falls back to the merged badge. Pushing for
-Create Pull Request is the only write to a remote, and it asks every time.
+host counts once `gh auth login` names it. Reads run while the app is in front:
+one call per project for the newest hundred pull requests, and one more for each
+pushed worktree branch the hundred left out. Pushing for Create Pull Request is
+the only write to a remote, and it asks every time.
 
 ## Reporting from anything else
 

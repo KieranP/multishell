@@ -47,6 +47,21 @@ struct AppModelControlProjectsTests {
     #expect(harness.model.pendingProjectRemoval == nil)
   }
 
+  @Test func removingAProjectOutOfViewLeavesTheKeyboardWhereItWas() async throws {
+    let harness = Harness()
+    let other = harness.store.addProject(at: URL(fileURLWithPath: "/repos/elsewhere"))
+    harness.model.select(harness.main)
+    harness.model.openQuickSwitcher(.all)
+
+    #expect(
+      await harness.messageSource.ask(
+        .removeProject(id: ControlID.project(other.id), force: false)
+      ) == .done
+    )
+    #expect(harness.model.workspace.project(other.id) == nil)
+    #expect(harness.model.quickSwitcher != nil)
+  }
+
   @Test func addingAFolderInARepositoryAddsTheRepository() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

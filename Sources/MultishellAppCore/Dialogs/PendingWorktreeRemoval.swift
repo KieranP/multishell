@@ -9,7 +9,6 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     /// Settled before the dialog: the worktree is detached, or the setting
     /// deletes the branch every time.
     case decided(deletesBranch: Bool)
-    /// The dialog offers both.
     case offersBoth
   }
 

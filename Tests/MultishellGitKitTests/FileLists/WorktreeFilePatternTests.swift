@@ -22,12 +22,20 @@ final class WorktreeFilePatternTests {
     #expect(WorktreeFilePattern.matches("", pattern: "*"))
   }
 
+  @Test func aNameStoredDecomposedMatchesAPatternTypedPrecomposed() {
+    #expect(
+      WorktreeFilePattern.matches("Re\u{0301}sume\u{0301}.pdf", pattern: "R\u{e9}sum\u{e9}*")
+    )
+  }
+
   /// `*` taking `.git` with it would copy a repository into a worktree.
   @Test func aPatternTakesAHiddenNameOnlyWhenItSpellsTheDot() {
     #expect(!WorktreeFilePattern.matches(".git", pattern: "*"))
     #expect(!WorktreeFilePattern.matches(".env", pattern: "*env"))
     #expect(WorktreeFilePattern.matches(".env", pattern: ".*"))
     #expect(WorktreeFilePattern.matches(".env.local", pattern: ".env.*"))
+    #expect(!WorktreeFilePattern.matches(".\u{0301}env", pattern: "*"), "a mark after the dot")
+    #expect(WorktreeFilePattern.matches(".\u{0301}env", pattern: ".*"))
   }
 
   @Test func aPatternStandsForTheNamesItMatchesAndAPlainPathForItself() throws {

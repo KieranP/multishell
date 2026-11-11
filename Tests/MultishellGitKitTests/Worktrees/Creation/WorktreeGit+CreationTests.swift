@@ -106,6 +106,25 @@ struct WorktreeGitCreationTests {
     )
   }
 
+  @Test func aStartPointSpelledLikeAnOptionIsRefusedAsARevision() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let tree = fixture.project.path.deletingLastPathComponent().appending(path: "dashed-tree")
+
+    await #expect(throws: (any Error).self) {
+      try await WorktreeGit(runner: fixture.runner).add(
+        branch: "dashed",
+        at: tree,
+        basedOn: "--lock",
+        createsBranch: true,
+        tracksStartPoint: false,
+        in: fixture.project,
+        stopper: nil,
+      )
+    }
+    #expect(!FileManager.default.fileExists(atPath: tree.path))
+  }
+
   /// The fake answers the user's config with `userConfig`, and at the add asks a
   /// real git what the environment alone sets, git's `command` scope.
   private func workersTheAddSees(

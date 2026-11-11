@@ -15,7 +15,7 @@ struct FileListPage: View {
     if model.filesPanelShowsChangeScopeSwitch {
       // The header's palette: the panel's selection is its fill, so a pill would vanish.
       ChangeScopeSwitch(model: model, palette: theme.header, fillsWidth: true)
-        .padding(.horizontal, UIMetrics.sidebarListSideInset)
+        .padding(.horizontal, UIMetrics.filesPanelListSideInset)
         .padding(.top, 8)
     }
     FilesPanelFilterField(model: model, worktreeID: worktree.id, theme: theme)

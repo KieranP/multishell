@@ -59,6 +59,7 @@ extension WorktreeGit {
       in: path,
       counting: indicator,
       diffAlgorithm: diffAlgorithm,
+      isUnborn: status.isUnborn,
     )
     // Kept at status's collapsed count where the list fails, so a tree with new
     // files never reads as clean.
@@ -92,12 +93,13 @@ extension WorktreeGit {
     in path: URL,
     counting indicator: GitStatusIndicator,
     diffAlgorithm: DiffAlgorithm,
+    isUnborn: Bool,
   ) async -> [StatusChange] {
     let options = Self.numstatOptions(diffAlgorithm)
     let cachedOnly = ["--no-optional-locks", "diff"] + options + ["--cached"]
     var linesByPath: [String: StatusChange.Lines] = [:]
     if indicator == .stagedAndUnstaged,
-      let output = await numstatSinceLastCommit(in: path, options: options)
+      let output = await numstatSinceLastCommit(in: path, options: options, isUnborn: isUnborn)
     {
       linesByPath = NumstatParser.parse(output)
     } else if let cached = await runner.output(cachedOnly, in: path) {
@@ -115,14 +117,16 @@ extension WorktreeGit {
 
   /// `diff-index`, as `diff HEAD` writes a new index the watcher reads as a change. Before the
   /// first commit, from the empty tree; see worktrees/watching-and-status-reads.md.
-  private func numstatSinceLastCommit(in path: URL, options: [String]) async -> String? {
+  private func numstatSinceLastCommit(
+    in path: URL,
+    options: [String],
+    isUnborn: Bool,
+  ) async -> String? {
     let diffIndex = ["--no-optional-locks", "diff-index"] + options
-    if let output = await runner.output(diffIndex + ["HEAD"], in: path) { return output }
-    // Only where HEAD is unborn: after any other failure the empty tree would
-    // count the whole checkout as added.
-    guard !(await hasCommits(in: path)),
-      let emptyTree = await emptyTreeID(in: path)
-    else { return nil }
+    // Only where status said HEAD is unborn: after any other failure the empty
+    // tree would count the whole checkout as added.
+    guard isUnborn else { return await runner.output(diffIndex + ["HEAD"], in: path) }
+    guard let emptyTree = await emptyTreeID(in: path) else { return nil }
     return await runner.output(diffIndex + [emptyTree], in: path)
   }
 

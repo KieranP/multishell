@@ -59,23 +59,21 @@ extension WorktreeGit {
   public func startPoint(ofBranch branch: String, in project: Project) async throws -> String? {
     let prefix = "branch: Created from "
     let output = try await runner.run(
-      ["reflog", "show", "--format=%gs", RefName.local(branch)],
+      ["reflog", "show", "--format=%gs", RefName.local(branch), "--"],
       in: project.path,
     )
-    guard let creationEntry = output.split(whereSeparator: \.isNewline).last,
-      creationEntry.hasPrefix(prefix)
-    else { return nil }
-    return String(creationEntry.dropFirst(prefix.count))
+    guard let creationEntry = output.gitLines.last else { return nil }
+    return creationEntry.removingPrefix(prefix)
   }
 
   /// Every commit the branch has pointed at, as its reflog keeps them; empty
   /// where git keeps none for it, and a throw where git failed.
   public func tipsHeld(byBranch branch: String, in project: Project) async throws -> Set<String> {
     let output = try await runner.run(
-      ["reflog", "show", "--format=%H", RefName.local(branch)],
+      ["reflog", "show", "--format=%H", RefName.local(branch), "--"],
       in: project.path,
     )
-    return Set(output.split(whereSeparator: \.isNewline).map(String.init))
+    return Set(output.gitLines)
   }
 
   /// `nil` where the branch is gone or git failed.

@@ -45,8 +45,14 @@ extension AppModel {
       return .refused(.noProject(id: order.projectID))
     }
     let branch = order.branch.trimmingCharacters(in: .whitespaces)
-    guard !order.createsBranch || GitBranchName.isValid(branch) else {
-      return .refused(.invalidBranchName(branch))
+    // Judged with the prefix added, as the sheet judges it and git will see it.
+    let qualified = WorktreeCoordinator.qualifiedBranchName(
+      branch,
+      createsBranch: order.createsBranch,
+      settings: effectiveWorktreeSettings(for: project),
+    )
+    guard !order.createsBranch || GitBranchName.isValid(qualified) else {
+      return .refused(.invalidBranchName(qualified))
     }
     let fallback = workspace.effectiveAgentID(for: effectiveProject(project))
     let firstTab: NewWorktreeFirstTab?

@@ -23,8 +23,7 @@ extension AppModel {
     let changedEverything = changed.contains(FileChangeTargets.wholeWorktree)
     if !gitMoved {
       for path in expanded
-      where changedEverything || changed.contains(where: { $0.hasPrefix(path + "/") || $0 == path })
-      {
+      where changedEverything || changed.contains(where: { $0.isPath(under: path) || $0 == path }) {
         scheduleSubmoduleRead(path, in: worktree.id)
       }
     }

@@ -60,7 +60,8 @@ extension AppModel {
 
   private var agentSettings: [ControlSetting] {
     let known = Set(AgentCatalogue.startableIDs)
-    let flagSettings = known.sorted().map { id in
+    // The custom command is a whole line of its own, which takes no flags.
+    let flagSettings = AgentCatalogue.agents.map(\.id).sorted().map { id in
       ControlSetting.text(
         "agentFlags.\(id)",
         { self.workspace.agentFlags[id] ?? "" },

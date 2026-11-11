@@ -9,7 +9,7 @@ enum GhosttyConfigLine {
 
   /// What a line sets, before its first `=`, and empty for a line with none.
   static func key(of line: Substring) -> String {
-    guard let separator = line.firstIndex(of: "=") else { return "" }
+    guard let separator = line.unicodeScalars.firstIndex(of: "=") else { return "" }
     return line[..<separator].trimmingCharacters(in: .whitespaces).lowercased()
   }
 }

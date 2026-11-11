@@ -23,6 +23,11 @@ struct EnvironmentDumpParserTests {
     #expect(parsed.count == 2)
   }
 
+  @Test func aValueStartingWithACombiningMarkIsKept() {
+    let parsed = EnvironmentDumpParser.parse(nulSeparated: "FOO=\u{0301}bar\0HOME=/Users/dev\0")
+    #expect(parsed["FOO"] == "\u{0301}bar")
+  }
+
   @Test func aGreetingHoldingAnEqualsSignStillLeavesTheFirstEntryItsKey() {
     let text = "==== welcome ====\nPATH=/bin\0HOME=/Users/dev\0"
     let parsed = EnvironmentDumpParser.parse(nulSeparated: text)

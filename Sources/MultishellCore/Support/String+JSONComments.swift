@@ -1,37 +1,36 @@
 extension String {
-  /// The text with `//` and `/* */` comments stripped, outside strings only,
-  /// where a URL's `//` is text.
+  /// `//` and `/* */` comments stripped outside strings, where a URL's `//` is text.
+  /// By scalar: a combining mark after a quote joins it into one `Character`.
   var withoutJSONComments: String {
-    var stripped = ""
-    var characters = makeIterator()
+    var stripped = Self.UnicodeScalarView()
+    var scalars = unicodeScalars.makeIterator()
     var inString = false
-    var pending = characters.next()
-    while let character = pending {
-      pending = characters.next()
+    var pending = scalars.next()
+    while let scalar = pending {
+      pending = scalars.next()
       if inString {
-        stripped.append(character)
-        if character == "\\", let escaped = pending {
+        stripped.append(scalar)
+        if scalar == "\\", let escaped = pending {
           stripped.append(escaped)
-          pending = characters.next()
-        } else if character == "\"" {
+          pending = scalars.next()
+        } else if scalar == "\"" {
           inString = false
         }
-      } else if character == "/", pending == "/" {
-        // Not `!= "\n"`: a CRLF file's `\r\n` is one Character, never equal to it.
-        while let skipped = pending, !skipped.isNewline { pending = characters.next() }
-      } else if character == "/", pending == "*" {
-        pending = characters.next()
-        var previous: Character?
+      } else if scalar == "/", pending == "/" {
+        while let skipped = pending, skipped != "\n", skipped != "\r" { pending = scalars.next() }
+      } else if scalar == "/", pending == "*" {
+        pending = scalars.next()
+        var previous: Unicode.Scalar?
         while let skipped = pending {
-          pending = characters.next()
+          pending = scalars.next()
           if previous == "*", skipped == "/" { break }
           previous = skipped
         }
       } else {
-        if character == "\"" { inString = true }
-        stripped.append(character)
+        if scalar == "\"" { inString = true }
+        stripped.append(scalar)
       }
     }
-    return stripped
+    return String(stripped)
   }
 }

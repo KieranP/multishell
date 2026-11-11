@@ -57,13 +57,21 @@ _multishell_command_started() {
 
   # The program being started, sent only where it is an agent: the words
   # of the line, past any prefix. Docs/design/agents/board-and-pane-rows.md.
-  local line="$1" command_word=""
+  local line="$1" command_word="" quote=""
   while [ -n "$line" ]; do
     command_word="${line%% *}"
-    case "$command_word" in
-      ""|*=*|command|env|exec) ;;
-      *) break ;;
-    esac
+    # A quoted value holding a space spans words, skipped to its closing quote.
+    if [ -n "$quote" ]; then
+      case "$command_word" in (*"$quote"*) quote="" ;; esac
+    else
+      case "$command_word" in
+        ""|command|env|exec) ;;
+        *=\"*) case "${command_word#*=\"}" in (*\"*) ;; (*) quote='"' ;; esac ;;
+        *=\'*) case "${command_word#*=\'}" in (*\'*) ;; (*) quote="'" ;; esac ;;
+        *=*) ;;
+        *) break ;;
+      esac
+    fi
     command_word=""
     case "$line" in
       *" "*) line="${line#* }" ;;

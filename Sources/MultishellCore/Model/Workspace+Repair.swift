@@ -28,7 +28,7 @@ extension Workspace {
     // A name outliving its worktree returns if one is made at that path
     // again; a blank one draws an empty line over the branch.
     customWorktreeNames = customWorktreeNames.filter { id, name in
-      worktreeIDs.contains(id) && name.trimmedOrNil != nil
+      worktreeIDs.contains(id) && name.trimmedOfAllWhitespaceOrNil != nil
     }
     hiddenWorktreeIDs.formIntersection(worktreeIDs)
 

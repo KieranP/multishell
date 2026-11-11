@@ -10,6 +10,10 @@ struct NewWorktreeDraftTypedBranchTests {
     return draft.branch
   }
 
+  @Test func aSlashBeforeACombiningMarkIsKeptWithTheMark() {
+    #expect(branchAfterTyping("feat/\u{0301}x") == "feat/\u{0301}x")
+  }
+
   @Test func aPastedControllerActionBecomesOneDashPerRunOfUnusualCharacters() {
     #expect(branchAfterTyping("Admin::UsersController#index") == "Admin-UsersController-index")
   }
@@ -71,7 +75,7 @@ struct NewWorktreeDraftTypedBranchTests {
     var draft = NewWorktreeDraft(projectID: "/repos/a")
     draft.typeBranch("-x")
     #expect(draft.branch == "-x")
-    #expect(draft.branchNameIsRefused)
+    #expect(draft.isBranchNameRefused(withPrefix: ""))
   }
 
   @Test func namesBrokenOnlyInShapeAreLeftForTheWarning() {
@@ -79,14 +83,14 @@ struct NewWorktreeDraftTypedBranchTests {
       var draft = NewWorktreeDraft(projectID: "/repos/a")
       draft.typeBranch(shaped)
       #expect(draft.branch == shaped)
-      #expect(draft.branchNameIsRefused, "\(shaped)")
+      #expect(draft.isBranchNameRefused(withPrefix: ""), "\(shaped)")
     }
   }
 
   @Test func aFixedNameIsNotFlagged() {
     var draft = NewWorktreeDraft(projectID: "/repos/a")
     draft.typeBranch("Admin::UsersController#index")
-    #expect(!draft.branchNameIsRefused)
+    #expect(!draft.isBranchNameRefused(withPrefix: ""))
   }
 
   @Test func fixingAFixedNameChangesNothing() {

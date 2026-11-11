@@ -38,10 +38,12 @@ extension AppModel {
     // one collapsed or under a shut panel is no longer read again.
     let isRead = showsFilesPanel && filesPanelWorktree?.id == tab.worktreeID
     let read = isRead ? expandedSubmodules(of: tab.worktreeID) : [:]
-    let submodule = read.filter { path, _ in tab.path.hasPrefix(path + "/") }
+    let submodule = read.filter { path, _ in tab.path.isPath(under: path) }
       .max { $0.key.count < $1.key.count }
     guard let (folder, reading) = submodule else { return worktreeChangeKind(of: tab) }
-    let inside = String(tab.path.dropFirst(folder.count + 1))
+    let inside = String(
+      Substring(tab.path.unicodeScalars.dropFirst(folder.unicodeScalars.count + 1))
+    )
     return reading.status?.kind(of: inside)
   }
 

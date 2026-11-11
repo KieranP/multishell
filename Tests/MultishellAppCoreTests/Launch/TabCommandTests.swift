@@ -17,7 +17,7 @@ struct TabCommandTests {
     #expect(
       command == [
         "/bin/zsh", "-l", "-i", "-c",
-        LeadingPathStatement.line(for: .loginZsh) + "claude --continue; exec /bin/zsh -l",
+        LeadingPathStatement.line(for: .loginZsh) + "claude --continue\nexec /bin/zsh -l",
       ]
     )
   }
@@ -30,7 +30,7 @@ struct TabCommandTests {
     )
     #expect(
       command.last?.withoutLeadingPathStatement
-        == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l"
+        == "'my agent' --name 'it'\\''s'\nexec /opt/homebrew/bin/nu -l"
     )
   }
 
@@ -137,6 +137,36 @@ struct TabCommandTests {
     }
   }
 
+  @Test(
+    arguments: InstalledShells.only([
+      ("/bin/zsh", ["-f", "-i", "-c"]), ("/bin/bash", ["--norc", "-i", "-c"]),
+      ("/bin/sh", ["-c"]), ("/bin/tcsh", ["-f", "-i", "-c"]),
+    ])
+  )
+  func aCustomLineEndingInASemicolonStillRunsAndHandsOver(
+    shell: String,
+    flags: [String],
+  ) async throws {
+    let home = try Scratch.directory("tab-command")
+    defer { Scratch.remove(home) }
+    let command = try #require(
+      TabCommand.running(
+        customLine: ShellLine(text: "/usr/bin/printf '[agent]\\n';"),
+        shell: ShellInvocation(executable: URL(fileURLWithPath: shell), arguments: flags),
+        handOver: "/usr/bin/printf '[shell]\\n'",
+      )
+    )
+
+    let text = try await Detached.output(
+      of: command[0],
+      Array(command.dropFirst()),
+      environment: Scratch.bareShellEnvironment(home: home),
+      standardError: .discarded,
+    )
+
+    #expect(text == "[agent]\n[shell]\n", "\(shell)")
+  }
+
   /// Each user's file stands in for the `path_helper` a login profile runs.
   @Test(
     arguments: InstalledShells.only(["/bin/zsh", "/bin/sh", "/bin/ksh", "/bin/dash"])
@@ -197,7 +227,7 @@ struct TabCommandTests {
       )
         == [
           "/bin/zsh", "-l", "-i", "-c",
-          LeadingPathStatement.line(for: .loginZsh) + "my-agent --model x; exec /bin/zsh -l",
+          LeadingPathStatement.line(for: .loginZsh) + "my-agent --model x\nexec /bin/zsh -l",
         ]
     )
   }
@@ -212,7 +242,7 @@ struct TabCommandTests {
         "/usr/bin/env", "MULTISHELL_BRANCH=feat$(x)", "MULTISHELL_PROJECT_NAME=demo",
         "/bin/zsh", "-l", "-i", "-c",
         LeadingPathStatement.line(for: .loginZsh)
-          + #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
+          + #"my-agent --name "$MULTISHELL_BRANCH"\#nexec /bin/zsh -l"#,
       ]
     )
   }

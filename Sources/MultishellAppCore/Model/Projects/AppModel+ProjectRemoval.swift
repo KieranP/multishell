@@ -52,8 +52,10 @@ extension AppModel {
     if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }
     stageHandles.stopCreations(in: project.id)
     if pendingProjectRemoval?.project.id == project.id { pendingProjectRemoval = nil }
+    // Only the view changing hands the keyboard on; see Docs/design/architecture.md.
+    let wasInView = worktreeInView?.projectID == project.id
     forgetWorktrees(store.removeProject(project.id))
-    reconcileSessions(takingFocus: true)
+    reconcileSessions(takingFocus: wasInView)
     Task { await rearmWatcher() }
   }
 }

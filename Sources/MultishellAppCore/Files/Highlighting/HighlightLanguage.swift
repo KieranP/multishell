@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// A language a file tab highlights, each a grammar built into the app.
 /// The list grows on request, each grammar costing build time and binary size.
 public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
@@ -72,7 +74,7 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
   /// By extension, then by the file's name, then by a shebang; anything else
   /// is plain text.
   public static func language(forPath path: String, firstLine: String?) -> Self? {
-    let name = path.split(separator: "/").last.map(String.init) ?? path
+    let name = path.slashSeparatedParts.last.map(String.init) ?? path
     if let dot = name.lastIndex(of: "."), dot != name.startIndex,
       let found = byExtension[name[name.index(after: dot)...].lowercased()]
     {

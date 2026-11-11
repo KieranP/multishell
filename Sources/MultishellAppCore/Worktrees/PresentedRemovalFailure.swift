@@ -5,8 +5,8 @@ import MultishellProcess
 /// How a failed stage of a worktree removal is shown: a pre-delete veto in
 /// the pane, a stop silently, everything else an alert.
 enum PresentedRemovalFailure: Equatable, Sendable {
-  /// An alert. `wasWorktreeRemoved` says whether the sidebar still has the
-  /// worktree, which decides whether the model refreshes or restores it.
+  /// An alert. `wasWorktreeRemoved` says whether the worktree is gone: the model
+  /// refreshes the list, or ends the removal so the row comes back.
   case alert(title: String, message: String, retry: ForcedRetry?, wasWorktreeRemoved: Bool)
   /// The user stopped the pre-delete hook. The worktree stays, quietly.
   case stopped
@@ -64,8 +64,8 @@ enum PresentedRemovalFailure: Equatable, Sendable {
       )
 
     default:
-      // The Trash refused, so nothing moved and the worktree and its
-      // terminals come back.
+      // The directory never moved, most often because the Trash refused it,
+      // so the worktree and its terminals come back.
       self = .presenting(error, wasWorktreeRemoved: false)
     }
   }

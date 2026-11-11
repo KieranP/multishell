@@ -25,10 +25,10 @@ extension WorktreeSettings {
   /// Where a branch's worktree goes: the container plus a slug, always
   /// strictly inside it, this path being shown before git is asked.
   public func worktreePath(forBranch branch: String, in project: Project) -> URL {
-    var slug =
-      branch
-      .replacingOccurrences(of: "/", with: "-")
-      .replacingOccurrences(of: " ", with: "-")
+    // By scalar: a slash before a combining mark is one Character a string search misses.
+    var slug = String(
+      String.UnicodeScalarView(branch.unicodeScalars.map { $0 == "/" || $0 == " " ? "-" : $0 })
+    )
     if slug.isEmpty || slug == "." || slug == ".." { slug = "_" }
     return worktreeContainer(for: project).appendingPathComponent(slug, isDirectory: true)
   }

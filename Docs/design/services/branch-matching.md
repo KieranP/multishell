@@ -160,3 +160,10 @@ upstream, and a merged pull request as proof the branch landed.
   fetch once it merged, leave the branch merged. git sees the same thing in
   both, a commit no branch holds but this one. Kept: such a commit is the
   branch's own, and Create asks before it pushes.
+- **The pull request read and the row disagree on a remote whose URL names no
+  repository** (2026-11-12): the read counts any same-named pull request as
+  listed, the row matches none. Both show the branch with no pull request, and
+  tests rely on such a branch being asked alone where the list has none.
+- **`publishedTipChecks` and `branchStartPoints` can be written for a project
+  removed during the git call** (2026-11-12). Each entry is checked against its
+  tips on read, and a re-added project has the same id and the same facts.

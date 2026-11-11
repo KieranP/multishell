@@ -18,7 +18,7 @@ extension AppModelWorktreeCreationTests {
       ),
       checkedOut: ["main"],
     )
-    #expect(draft.canCreate(checkedOut: ["main"]), "\(text.debugDescription)")
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: ""), "\(text.debugDescription)")
     await harness.model.createWorktree(
       branch: draft.branch,
       basedOn: draft.startPoint,

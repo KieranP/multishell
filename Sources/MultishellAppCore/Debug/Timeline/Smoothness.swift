@@ -7,7 +7,7 @@ public enum Smoothness: Sendable, Equatable {
   /// A tenth of a second or more, which reads as the app hanging.
   case stalled
 
-  static let hitchThreshold = Duration.milliseconds(50)
+  private static let hitchThreshold = Duration.milliseconds(50)
   static let stallThreshold = Duration.milliseconds(100)
 
   static func of(longestFrame: Duration?) -> Self {

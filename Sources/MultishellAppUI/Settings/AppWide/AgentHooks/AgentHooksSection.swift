@@ -1,7 +1,7 @@
 import MultishellAppCore
 import SwiftUI
 
-/// Settings > Agents > Hooks: a row per agent found, each with its file shown
+/// All Projects > Agents > Agent hooks: a row per agent found, each with its file shown
 /// in a popover on request.
 struct AgentHooksSection: View {
   let model: AppModel

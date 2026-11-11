@@ -135,7 +135,7 @@ struct AppModelTests {
       case 20:
         if let group = workspace.tabGroups.randomElement(using: &generator) {
           Bool.random(using: &generator)
-            ? harness.model.newTab(in: group.id)
+            ? harness.model.newShellTab(in: group.id)
             : harness.model.setGroupWeights(
               (0..<Int.random(in: 1...3, using: &generator)).map { _ in
                 Double.random(in: 0.1...3, using: &generator)

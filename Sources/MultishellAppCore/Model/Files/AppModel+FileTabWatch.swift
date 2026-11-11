@@ -11,12 +11,12 @@ extension AppModel {
       guard let worktree = workspace.worktree(tab.worktreeID) else { continue }
       let embedded = targets.embeddedRepositoriesWithGitChanges[worktree.id] ?? []
       if targets.projectsWithGitChanges.contains(worktree.projectID)
-        || embedded.contains(where: { tab.path.hasPrefix($0 + "/") })
+        || embedded.contains(where: tab.path.isPath(under:))
       {
         noteFileTabChanged(tab.id)
         continue
       }
-      let folder = tab.path.split(separator: "/").dropLast().joined(separator: "/")
+      let folder = tab.path.slashSeparatedParts.dropLast().joined(separator: "/")
       let isTouched = (targets.fileChangesByWorktree[worktree.id] ?? []).contains { path in
         path == FileChangeTargets.wholeWorktree || path == folder || path == tab.path
       }

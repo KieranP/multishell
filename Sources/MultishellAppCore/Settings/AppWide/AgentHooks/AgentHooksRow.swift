@@ -17,7 +17,7 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   /// Installed by an older build and not what this one writes, so Add would
   /// write something else: offered as an update.
   let isStale: Bool
-  /// What the disclosure button offers to show: the file is JSON for every
+  /// What the Show button's popover holds: the file is JSON for every
   /// agent but OpenCode, which is given a plugin.
   public let contentsLabel: String
   public let info: String

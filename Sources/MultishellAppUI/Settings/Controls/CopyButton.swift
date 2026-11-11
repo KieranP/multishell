@@ -8,6 +8,8 @@ struct CopyButton: View {
   let text: String
 
   @State private var showsCopiedTick = false
+  /// Each click restarts the tick's time, `.task(id:)` cancelling the last.
+  @State private var copyCount = 0
 
   var body: some View {
     PlainGlyphButton(help: t("action.copy-value", text), action: copy) {
@@ -19,6 +21,7 @@ struct CopyButton: View {
         )
         .accessibilityHidden(true)
     }
+    .task(id: copyCount) { await hideTickWhenItsTimeIsUp() }
   }
 
   init(_ text: String, model: AppModel) {
@@ -29,9 +32,12 @@ struct CopyButton: View {
   private func copy() {
     model.copyToClipboard(text)
     showsCopiedTick = true
-    Task {
-      try? await Task.sleep(for: .seconds(1.2))
-      showsCopiedTick = false
-    }
+    copyCount += 1
+  }
+
+  private func hideTickWhenItsTimeIsUp() async {
+    guard showsCopiedTick else { return }
+    try? await Task.sleep(for: .seconds(1.2))
+    if !Task.isCancelled { showsCopiedTick = false }
   }
 }

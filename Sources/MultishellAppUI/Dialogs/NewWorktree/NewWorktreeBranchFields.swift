@@ -24,7 +24,7 @@ struct NewWorktreeBranchFields: View {
         NewWorktreeBranchNameField(text: branchFieldText, prompt: t("sheet.branch-prompt"))
       }
     }
-    if draft.branchNameIsRefused {
+    if draft.isBranchNameRefused(withPrefix: prefix) {
       NewWorktreeFormNote(
         text: t("sheet.branch-refused"),
         symbol: "exclamationmark.triangle.fill",

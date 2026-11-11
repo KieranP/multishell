@@ -163,7 +163,8 @@ the bottom.
   minute while an add runs.
 - **A branch name git will reject is refused before anything runs.** Nothing
   between the sheet and the add judged it, so a bad name ran the pre-create hook
-  and git refused after.
+  and git refused after. The sheet judges the name with the project's prefix
+  added, as git sees it: `kp.` and `lock` make `kp.lock`, which git refuses.
 - **The rules are git's own, in Swift, less the ones about slashes** that apply
   only to a full refname, the sheet asking on every keystroke.
   `GitBranchNameTests` holds it against real git over a table of names.
@@ -233,3 +234,9 @@ the bottom.
   went from 2.8s to 1.2s cold and 1.4s to 0.9s warm. A count the user set wins,
   read with one `config --get` first, the runner's config beating theirs. A git
   before 2.32 ignores the key; git stays sequential below 100 files.
+
+## Reviewed and left as is
+
+- **Each keystroke in the branch field rebuilds the "Based on" picker over every
+  branch** (2026-11-12). Unmeasured; settling it needs a run against a
+  repository with thousands of remote branches.

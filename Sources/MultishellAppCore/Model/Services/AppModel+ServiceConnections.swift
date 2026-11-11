@@ -86,6 +86,17 @@ extension AppModel {
     firstEnabled(of: remoteState.connections.pullRequestHosts, for: project)
   }
 
+  /// The pull request a worktree's page shows, and the host that answers for it.
+  func shownPullRequest(
+    of worktree: Worktree
+  ) -> (integration: ServiceIntegration, host: any PullRequestHost, pullRequest: PullRequest)? {
+    guard let project = workspace.project(worktree.projectID),
+      let (integration, host) = pullRequestHost(for: project),
+      let pullRequest = services(of: worktree).shownPullRequest
+    else { return nil }
+    return (integration, host, pullRequest)
+  }
+
   /// The same for CI. Whether the repository runs on it is asked at the read.
   func ciProvider(for project: Project) -> (ServiceIntegration, any CIProvider)? {
     firstEnabled(of: readableCIProviders, for: project)

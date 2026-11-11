@@ -19,7 +19,7 @@ extension Helper {
         Ask git for its worktrees again, as its Refresh does, and return once
         it has answered.
     usage: multishell projects fetch PROJECT_ID
-        Fetch from its remotes, as its Fetch does, and return once the
+        Fetch from its default remote, as its Fetch does, and return once the
         worktrees and merge badges are read again. One under way already
         answers at once.
 

@@ -10,6 +10,11 @@ struct WorktreeSettingsBranchPrefixTests {
     #expect(settings.qualifiedBranch("kieran/tabs") == "kieran/tabs")
   }
 
+  @Test func aTypedPrefixFollowedByACombiningMarkIsNotAddedAgain() {
+    let settings = WorktreeSettings(branchPrefix: "kp/")
+    #expect(settings.qualifiedBranch("kp/\u{0301}foo") == "kp/\u{0301}foo")
+  }
+
   @Test func anEmptyPrefixLeavesTheNameAlone() {
     #expect(WorktreeSettings().qualifiedBranch(" tabs ") == "tabs")
   }

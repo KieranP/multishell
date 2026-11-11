@@ -14,11 +14,14 @@ enum EnvironmentDumpParser {
     var variables: [String: String] = [:]
     for whole in (marked ?? text[...]).split(separator: "\0", omittingEmptySubsequences: true) {
       guard let entry = marked == nil ? entryAfterGreeting(whole) : whole,
-        let equals = entry.firstIndex(of: "=")
+        let equals = entry.unicodeScalars.firstIndex(of: "=")
       else {
         continue
       }
-      variables[String(entry[..<equals])] = String(entry[entry.index(after: equals)...])
+      // By scalar: a value starting with a combining mark joins the `=` into one Character.
+      variables[String(entry[..<equals])] = String(
+        entry[entry.unicodeScalars.index(after: equals)...]
+      )
     }
     return variables
   }
@@ -28,7 +31,7 @@ enum EnvironmentDumpParser {
     var start = entry.startIndex
     while start < entry.endIndex {
       let rest = entry[start...]
-      if let equals = rest.firstIndex(of: "=") {
+      if let equals = rest.unicodeScalars.firstIndex(of: "=") {
         let key = rest[..<equals]
         if !key.isEmpty, !key.contains(where: { $0 == " " || $0 == "\n" }) { return rest }
       }

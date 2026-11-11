@@ -24,36 +24,6 @@ struct AgentFlagsTests {
       AgentFlags.arguments("--prompt 'be brief' --cwd {{worktree_path}}", values: values)
         == ["--prompt", "be brief", "--cwd", "/Users/dev/Work/multishell-worktrees/fix"]
     )
-    #expect(AgentFlags.split(#"--a "b c" d\ e"#) == ["--a", "b c", "d e"])
-    #expect(AgentFlags.split("--a ''") == ["--a", ""], "an empty quoted word is an argument")
-    #expect(AgentFlags.split("--a 'b c") == ["--a", "b c"], "a quote left open takes the rest")
-  }
-
-  /// Checked case by case against zsh, and the whole rule against it by
-  /// random lines over letters, spaces and the three quoting characters.
-  @Test func aBackslashInsideDoubleQuotesGuardsOnlyTheFourTheShellGuards() {
-    #expect(AgentFlags.split(#""\d+""#) == [#"\d+"#], "a regex keeps its backslashes")
-    #expect(AgentFlags.split(##""\\""##) == [#"\"#], "two guard one")
-    #expect(AgentFlags.split(##""\"""##) == [#"""#], "and one guards the quote that would end it")
-    #expect(AgentFlags.split(##""\$""##) == ["$"])
-    #expect(AgentFlags.split(##""\`""##) == ["`"])
-    #expect(AgentFlags.split(#"\d"#) == ["d"], "outside quotes it guards everything")
-    #expect(AgentFlags.split(#"'\d'"#) == [#"\d"#], "inside single quotes it guards nothing")
-  }
-
-  @Test func anUnterminatedQuoteWithNothingInItPassesNothing() {
-    #expect(AgentFlags.split("--prompt \"") == ["--prompt"])
-    #expect(AgentFlags.split("--prompt '") == ["--prompt"])
-    #expect(AgentFlags.split("--prompt ''") == ["--prompt", ""], "closed, so it is an argument")
-    #expect(AgentFlags.split("--prompt 'b") == ["--prompt", "b"], "it did carry something")
-  }
-
-  /// An escape nothing completed used to end the line with an empty word,
-  /// which reached the agent as an argument of its own.
-  @Test func aTrailingBackslashPassesNothingRatherThanAnEmptyArgument() {
-    #expect(AgentFlags.split("--model opus \\") == ["--model", "opus"])
-    #expect(AgentFlags.split("\\") == [])
-    #expect(AgentFlags.split("\\a") == ["a"], "the word still starts on the escaped character")
   }
 
   @Test func anUnknownPlaceholderIsLeftAsTyped() {

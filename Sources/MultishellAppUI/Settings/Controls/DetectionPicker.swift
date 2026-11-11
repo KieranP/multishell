@@ -7,7 +7,7 @@ struct DetectionPicker: View {
   let label: String
   @Binding var selection: String
   let options: (String) -> [DetectionOption]
-  /// `nil` for a list the catalogue fixes, which no PATH scan changes.
+  /// `nil` for a list the catalogue fixes, which no rescan changes.
   var refresh: (() -> Void)?
   let info: String
   /// Greys the control while it has nothing to choose; the (i) stays readable.

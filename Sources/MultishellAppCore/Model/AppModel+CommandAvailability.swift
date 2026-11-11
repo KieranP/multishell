@@ -11,7 +11,7 @@ extension AppModel {
 
   /// Split Right and Down: a terminal tab in view to split.
   public var canSplitPane: Bool {
-    canOpenTab && worktreeIDInView.flatMap(workspace.activeTab(in:)) != nil
+    canOpenTab && tabInView != nil
   }
 
   /// Next and Previous Tab: another tab in the strip to go to.

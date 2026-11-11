@@ -12,7 +12,7 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
   let select: () -> Void
 
   var body: some View {
-    HStack(spacing: 7) {
+    HStack(spacing: UIMetrics.sidebarGlyphGap) {
       Image(systemName: "square.grid.2x2")
         .font(metrics.font(size: metrics.glyph, weight: .medium))
         .foregroundStyle(

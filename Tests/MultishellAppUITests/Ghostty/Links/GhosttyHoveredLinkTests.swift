@@ -26,6 +26,53 @@ struct GhosttyHoveredLinkTests {
     #expect(path == "Sources/App/Model.swift:12")
   }
 
+  @Test func aFileNameStartingWithACombiningMarkKeepsItAndLosesTheQuoteBeforeIt() {
+    let quoted = GhosttyHoveredLink.link(
+      word: "x.swift",
+      startingAt: 6,
+      in: "open \"\u{0301}x.swift\" now",
+    )
+    let spaced = GhosttyHoveredLink.link(
+      word: "x.swift",
+      startingAt: 7,
+      in: "a.txt  \u{0301}x.swift",
+    )
+
+    #expect(quoted == "\u{0301}x.swift")
+    #expect(spaced == "\u{0301}x.swift")
+  }
+
+  @Test func emojiBeforeTheWordDoNotTakeThePointerToAnotherCopyOfIt() {
+    let family = "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}"
+    let line = family + family + family + " x/a.swift a.swift"
+
+    #expect(GhosttyHoveredLink.link(word: "a.swift", startingAt: 17, in: line) == "a.swift")
+  }
+
+  @Test func aRunOfBoundaryCharactersIsNoLinkEvenWithAColonInIt() {
+    #expect(
+      GhosttyHoveredLink.link(word: "\": \"", startingAt: 7, in: "  \"path\": \"README.md\",")
+        == nil
+    )
+  }
+
+  @Test func onlyCombiningMarksCarryFromTheSeparatorIntoTheName() {
+    #expect(
+      GhosttyHoveredLink.link(word: "x.swift", startingAt: 7, in: "open \"\u{FE0F}x.swift\"")
+        == "x.swift"
+    )
+    #expect(
+      GhosttyHoveredLink.link(word: "x.swift", startingAt: 1, in: "(\u{200D}x.swift)") == "x.swift"
+    )
+  }
+
+  @Test func wideCharactersBeforeTheWordAreCountedAsTheTwoCellsTheyTake() {
+    let line = "日本語のファイル a.swift x/a.swift"
+
+    #expect(GhosttyHoveredLink.link(word: "a.swift", startingAt: 17, in: line) == "a.swift")
+    #expect(GhosttyHoveredLink.link(word: "x", startingAt: 25, in: line) == "x/a.swift")
+  }
+
   @Test func aWebAddressIsALinkFromItsSchemeToItsEnd() {
     let line = "  see https://github.com/acme/app/pull/12 for more"
     #expect(isLink("https", in: line))

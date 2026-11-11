@@ -191,6 +191,9 @@ Raised by reviews and settled; a review need not raise these again.
   where the sidebar asks with the rows it shows.** Under a filter or with hidden
   rows the two key lists differ, so each re-sorts the project when both draw: 85
   µs at 40 rows.
+- **`FoldedCharacters` maps offsets one to one where the fold kept the count**
+  (2026-11-12). A lone combining mark survives folding, so no title was found
+  whose fold drops one character and doubles another.
 
 ## Checked by hand
 

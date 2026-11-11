@@ -13,6 +13,10 @@ struct IgnoreVerdictsTests {
     #expect(verdicts.unasked(on: ["node_modules/a/b", "src/deep"]) == ["src/deep"])
   }
 
+  @Test func aDirectoryNameStartingWithACombiningMarkIsAskedAfterTheOneAboveIt() {
+    #expect(IgnoreVerdicts().unasked(on: ["a/\u{0301}b/c"]) == ["a"])
+  }
+
   @Test func aPathIsIgnoredWhereAnyDirectoryOnItsWayIs() {
     var verdicts = IgnoreVerdicts()
     verdicts.record(asked: ["node_modules", "src"], ignored: ["node_modules"])

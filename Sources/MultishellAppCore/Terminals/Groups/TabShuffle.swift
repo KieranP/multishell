@@ -18,7 +18,7 @@ enum TabShuffle {
     var shuffled = order
     shuffled.remove(at: from)
     // Taking the tab out shifts the anchor down by one where it sat after
-    // it; `WorkspaceStore.moveTab` does the same sum on the flat array.
+    // it; `WorkspaceStore.moveTab` does the same sum on the group's order.
     let slot = to > from ? to - 1 : to
     shuffled.insert(moving, at: placement == .before ? slot : slot + 1)
     return shuffled != order

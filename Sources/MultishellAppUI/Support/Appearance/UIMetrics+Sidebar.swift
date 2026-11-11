@@ -10,6 +10,8 @@ extension UIMetrics {
   /// The list's gap to the sidebar's edges, which the filter field above it
   /// keeps so its background lines up with the rows' selection.
   static let sidebarListSideInset: Double = 8
+  /// The gap between a sidebar row's glyph column and its text.
+  static let sidebarGlyphGap: Double = 7
   /// The + on a project's row, and the sort menu above it sharing its column.
   static let sidebarRowButtonWidth: Double = 24
   /// The Projects header and the sort menu inside it, and the quick
@@ -19,8 +21,8 @@ extension UIMetrics {
   /// A sidebar row carrying a user's name over its branch. Two lines of
   /// text where `rowHeight` holds one, so the branch is not clipped.
   var customNameRowHeight: Double { (bodySize * 3.2).rounded() }
-  /// The column a sidebar row's leading glyph sits in, one width for every
-  /// row so the worktree, pane and agents rows line up.
+  /// The column a sidebar row's leading glyph sits in, one width for the
+  /// worktree, pane, agents and Hidden rows so their text starts alike past it.
   var sidebarGlyphColumn: Double { paneGlyphSize }
 
   /// A pane's row under the selected worktree: one line of caption-sized text,

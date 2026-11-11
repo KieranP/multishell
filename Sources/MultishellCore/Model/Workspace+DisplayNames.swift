@@ -9,10 +9,10 @@ extension Workspace {
   /// The file's name, lengthened to the shortest trailing path that tells it
   /// from every other open file of that name in the worktree: `lib/user.rb`.
   public func title(of tab: FileTab) -> String {
-    let parts = tab.path.split(separator: "/")
+    let parts = tab.path.slashSeparatedParts
     let namesakes = fileTabs(in: tab.worktreeID).filter { other in
       other.id != tab.id && other.fileName == tab.fileName
-    }.map { $0.path.split(separator: "/") }
+    }.map(\.path.slashSeparatedParts)
     var length = 1
     while length < parts.count,
       namesakes.contains(where: { $0.suffix(length) == parts.suffix(length) })

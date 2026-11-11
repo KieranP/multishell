@@ -66,6 +66,15 @@ struct ShellDetectionTests {
     #expect(there.isInstalled(ShellChoice.loginShellID))
   }
 
+  @Test func aMissingLoginShellIsOneRowMarkedNotInstalled() {
+    let gone = ShellDetection(found: ["/bin/zsh"], loginShell: "/opt/gone/fish")
+
+    let options = gone.options(selected: ShellChoice.loginShellID)
+
+    #expect(options.map(\.id) == ["login", "/bin/zsh", "custom"])
+    #expect(options[0].label == "Login shell (/opt/gone/fish) (not installed)")
+  }
+
   @Test func aMissingSystemListIsNotAnError() {
     let detection = ShellDetection(
       searchPath: "/nowhere",

@@ -27,7 +27,8 @@ algorithm. Newest at the bottom, above "Reviewed and left as is".
   empty tree, whose id `hash-object` gives without writing it: the cached form
   there counted a staged file's staged lines and none added since. Only an
   unborn HEAD gets the empty tree, or a failed read would badge the whole
-  checkout as added.
+  checkout as added. Status's own header says HEAD is unborn, so no read asks
+  git again first.
 - **An untracked file has no diff at all**, so they are listed and their lines
   counted by reading the files: without that a deleted file's lines counted and
   a new file's did not, which is the shape of most branches early on.

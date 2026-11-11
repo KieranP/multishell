@@ -45,7 +45,7 @@ struct WorktreeRow: View, @MainActor Equatable {
   }
 
   var body: some View {
-    HStack(spacing: 7) {
+    HStack(spacing: UIMetrics.sidebarGlyphGap) {
       StateDot(state: state.shownState, theme: theme, palette: theme.projectsPanel)
         .frame(width: metrics.sidebarGlyphColumn)
         .help(t("sidebar.kind-and-state", kind, state.shownState.displayName))

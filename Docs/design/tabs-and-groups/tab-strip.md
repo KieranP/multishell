@@ -208,3 +208,8 @@ draws. Newest at the bottom.
   so a `cd` typed in another case, or through a symlink, keeps its full path.
   Folding case would match wrong folders on a case-sensitive volume, and
   resolving links means reading the disk for every title drawn.
+- **The terminal and file tab faces each derive `isShown`, the palette, the text
+  colour and the title weight** (2026-11-12). Three one-line rules; a shared
+  type for them would add more than it removes.
+- **A status title whose text starts with a combining mark loses the mark** with
+  the glyph and space before it (2026-11-12). No agent's status starts with one.

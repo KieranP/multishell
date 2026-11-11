@@ -153,6 +153,18 @@ struct FileTreeTests {
     #expect(rows.first?.parentFolder == "Sources/App")
   }
 
+  @Test func aFilteredFileWhoseNameStartsWithACombiningMarkKeepsTheMark() {
+    let tracked = TrackedFiles.sample(paths: ["docs/\u{0301}e.txt"])
+    let tree = FileTree(FileTreeSources(tracked: tracked, status: nil))
+    var state = FilesPanelState()
+    state.filterText = "txt"
+
+    let rows = tree.rows(state: state)
+
+    #expect(rows.map(\.name) == ["\u{0301}e.txt"])
+    #expect(rows.first?.parentFolder == "docs")
+  }
+
   @Test func aFilterListsASubmoduleOrNestedRepositoryAsARepositoryByName() {
     let submoduleMoved = StatusChange(
       path: "vendor",
@@ -251,6 +263,20 @@ struct FileTreeTests {
     #expect(ignored == ["node_modules", "node_modules/left-pad", "debug.log"])
     #expect(rows.first { $0.path == "node_modules/left-pad" }?.isFolder == true)
     #expect(rows.first { $0.path == "README.md" }?.isIgnored == false)
+  }
+
+  @Test func aFilterLeavesOutAShutFoldersFileWhoseNameStartsWithACombiningMark() {
+    var sources = FileTreeSources(tracked: Self.tracked)
+    sources.ignoredEntries = ["node_modules/"]
+    sources.ignoredFolderEntries = [
+      "node_modules": [IgnoredFolderEntry(name: "\u{0301}pad.js", isFolder: false)]
+    ]
+    var state = FilesPanelState()
+    state.filterText = "pad"
+
+    let rows = FileTree(sources).rows(state: state)
+
+    #expect(rows.isEmpty, "\(rows.map(\.path))")
   }
 
   @Test func anIgnoredOrUnopenableNameIsFaintAnUnchangedFileQuietAndAChangeStrong() {

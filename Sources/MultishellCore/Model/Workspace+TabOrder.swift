@@ -1,5 +1,5 @@
-/// `tabs` kept in the order the groups draw, which every open, move and repair
-/// ends with; see Docs/design/files/file-tabs.md.
+/// `tabs` kept in the order the groups draw, which opens, moves and repairs end
+/// with, bar a move into a new group of one; see Docs/design/files/file-tabs.md.
 extension Workspace {
   /// Orders each group's tabs in `tabs` as the group does, keeping its places,
   /// for an older build reading order there; one missing a tab is left alone.

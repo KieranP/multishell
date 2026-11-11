@@ -96,6 +96,19 @@ struct AppModelWorktreeRemovalTests {
     )
   }
 
+  @Test func removingAWorktreeOutOfViewLeavesTheKeyboardWhereItWas() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let worktree = try await harness.createWorktree(onBranch: "gone")
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.openQuickSwitcher(.all)
+
+    await harness.model.removeWorktree(worktree, deletesBranch: false)
+
+    #expect(harness.worktree(onBranch: "gone") == nil)
+    #expect(harness.model.quickSwitcher != nil)
+  }
+
   @Test func aRemovedWorktreeGoesToTheTrashWithItsUncommittedWork() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

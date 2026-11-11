@@ -188,7 +188,7 @@ extension WorkspaceStore {
   /// Empty or whitespace clears it, so the branch takes over again.
   public func setCustomName(_ name: String?, forWorktree id: Worktree.ID) {
     guard workspace.worktree(id) != nil else { return }
-    workspace.customWorktreeNames[id] = name?.trimmedOrNil
+    workspace.customWorktreeNames[id] = name?.trimmedOfAllWhitespaceOrNil
   }
 
   /// Moves a worktree into its project's Hidden section or back out. The main
@@ -366,7 +366,7 @@ extension WorkspaceStore {
   /// again.
   public func setCustomTitle(_ title: String?, forTab id: TerminalTab.ID) {
     guard let index = workspace.tabIndex(id) else { return }
-    workspace.tabs[index].customTitle = title?.trimmedOrNil
+    workspace.tabs[index].customTitle = title?.trimmedOfAllWhitespaceOrNil
   }
 
   /// Shows a tab of either kind in its own group and hands that group the

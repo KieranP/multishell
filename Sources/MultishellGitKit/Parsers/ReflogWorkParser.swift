@@ -4,7 +4,7 @@ import Foundation
 /// work of the branch's own. A deny list; see Docs/design/merged-branch.md.
 enum ReflogWorkParser {
   static func parse(_ output: String) -> Bool {
-    for line in output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline) {
+    for line in output.gitLines {
       let entry = line.trimmingCharacters(in: .whitespaces)
       let parts = entry.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: false)
       let tipSHA = String(parts[0])

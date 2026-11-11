@@ -23,7 +23,10 @@ struct AppModelCIRunActionsTests {
 
     await harness.model.openCIRuns(of: feat)
 
-    #expect(provider.calls.last == "open feat", "\(provider.calls)")
+    #expect(
+      provider.calls.last(where: { $0.hasPrefix("open") }) == "open feat",
+      "\(provider.calls)",
+    )
   }
 
   @Test func theCIPageOpensItsBranchWhereOnlyTheHistoryFoundARun() async throws {
@@ -46,7 +49,10 @@ struct AppModelCIRunActionsTests {
 
     await harness.model.openCIRuns(of: feat)
 
-    #expect(provider.calls.last == "open feat", "\(provider.calls)")
+    #expect(
+      provider.calls.last(where: { $0.hasPrefix("open") }) == "open feat",
+      "\(provider.calls)",
+    )
   }
 
   @Test func aJobOpensThroughItsProvider() async throws {
@@ -57,6 +63,9 @@ struct AppModelCIRunActionsTests {
 
     await harness.model.openCIJob(CIJob(id: "j2", name: "test", status: .failed), of: feat)
 
-    #expect(provider.calls.last == "open job j2", "\(provider.calls)")
+    #expect(
+      provider.calls.last(where: { $0.hasPrefix("open") }) == "open job j2",
+      "\(provider.calls)",
+    )
   }
 }

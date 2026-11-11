@@ -133,7 +133,8 @@ is drawn as. Newest at the bottom.
   with no agent and no command; read as the shell's, it would blank the mark.
 - **Matched on the executable alone**, so a wrapper invocation is nobody: the
   word is the command. A leading assignment, `command`, `env` or `exec` is
-  stepped over first.
+  stepped over first, and bash, which splits the line on spaces itself, steps
+  over a quoted value holding one up to its closing quote.
 - **Only a word naming an agent's executable goes on the shell's own line**, the
   shell matching it against the list it was generated with, so no word needs a
   JSON escape. Cost: a script of the user's named after an agent marks its pane

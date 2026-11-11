@@ -23,7 +23,7 @@ extension AppModelControlTabsTests {
     let opened = try #require(harness.engine.opened.last)
     #expect(opened.id == tab.focusedSessionID)
     #expect(
-      opened.command?.last?.withoutLeadingPathStatement.hasPrefix("npm run dev; ") == true,
+      opened.command?.last?.withoutLeadingPathStatement.hasPrefix("npm run dev\n") == true,
       "\(opened.command ?? [])",
     )
     #expect(harness.engine.focused.last == tab.focusedSessionID)

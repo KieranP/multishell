@@ -56,6 +56,11 @@ struct ShownPaneTitleTests {
     #expect(shown("…/feat-auth/src/routes") == "src/routes")
   }
 
+  @Test func aFolderStartingWithACombiningMarkIsNamedFromTheRootToo() {
+    #expect(shown(worktree + "/\u{0301}sub") == "\u{0301}sub")
+    #expect(shown("…/feat-auth/\u{0301}sub") == "\u{0301}sub")
+  }
+
   @Test func aShellOutsideTheWorktreeKeepsItsTitle() {
     #expect(shown("~/Downloads") == "~/Downloads")
     #expect(

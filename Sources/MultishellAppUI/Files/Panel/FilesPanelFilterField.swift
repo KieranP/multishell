@@ -47,7 +47,11 @@ struct FilesPanelFilterField: View {
         }
       }
     }
-    .filterWell(palette: theme.filesPanel, metrics: metrics)
+    .filterWell(
+      palette: theme.filesPanel,
+      metrics: metrics,
+      listSideInset: UIMetrics.filesPanelListSideInset,
+    )
     .padding(.top, 8)
     .padding(.bottom, 6)
   }

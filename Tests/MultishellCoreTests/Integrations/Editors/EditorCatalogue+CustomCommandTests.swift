@@ -32,6 +32,28 @@ struct EditorCatalogueCustomCommandTests {
     )
   }
 
+  @Test func anAppendedPathGoesBeforeATrailingSeparatorOrComment() {
+    let worktree = EditorTarget.worktree(URL(fileURLWithPath: "/repo"))
+    let lines = [
+      "subl &", "nvim;", "code # mine", "vim ; # x", "nvim;# mine", "code # opens {path}",
+      #"tool {} \;"#,
+    ].map { template in
+      EditorCatalogue.customCommandLine(template, target: worktree, forShellNamed: "zsh")?.text
+    }
+
+    #expect(
+      lines == [
+        #"subl "$MULTISHELL_WORKTREE_PATH" &"#,
+        #"nvim "$MULTISHELL_WORKTREE_PATH";"#,
+        #"code "$MULTISHELL_WORKTREE_PATH" # mine"#,
+        #"vim "$MULTISHELL_WORKTREE_PATH" ; # x"#,
+        #"nvim "$MULTISHELL_WORKTREE_PATH";# mine"#,
+        #"code "$MULTISHELL_WORKTREE_PATH" # opens "$MULTISHELL_WORKTREE_PATH""#,
+        #"tool {} \; "$MULTISHELL_WORKTREE_PATH""#,
+      ]
+    )
+  }
+
   @Test func aFilesPathComesFromItsOwnVariableNotTheWorktrees() {
     let file = URL(fileURLWithPath: "/Users/me/My Work/repo/run.py")
     #expect(

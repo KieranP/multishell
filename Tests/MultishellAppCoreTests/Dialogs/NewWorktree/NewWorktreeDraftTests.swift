@@ -32,10 +32,10 @@ struct NewWorktreeDraftTests {
   @Test func nothingCanBeCreatedUntilThePickedProjectHasLoaded() {
     var draft = NewWorktreeDraft(projectID: firstProject)
     draft.branch = "feat"
-    #expect(!draft.canCreate(checkedOut: []), "no load yet")
+    #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""), "no load yet")
 
     draft.beginLoading()
-    #expect(!draft.canCreate(checkedOut: []), "loading")
+    #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""), "loading")
 
     draft.finishLoading(
       firstProject,
@@ -47,8 +47,31 @@ struct NewWorktreeDraftTests {
       ),
       checkedOut: ["main"],
     )
-    #expect(draft.canCreate(checkedOut: ["main"]))
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
     #expect(draft.startPoint == "main")
+  }
+
+  @Test func aNameGitRefusesOnceThePrefixIsAddedIsRefusedBeforeCreate() {
+    var draft = NewWorktreeDraft(projectID: firstProject)
+    draft.branch = "lock"
+    draft.beginLoading()
+    draft.finishLoading(
+      firstProject,
+      with: NewWorktreeBranches(
+        hasCommits: true,
+        localBranches: ["main"],
+        remoteBranches: [],
+        suggestedBase: "main",
+      ),
+      checkedOut: ["main"],
+    )
+
+    #expect(draft.isBranchNameRefused(withPrefix: "kp."))
+    #expect(!draft.canCreate(checkedOut: ["main"], branchPrefix: "kp."))
+
+    draft.branch = "kp.fix"
+    #expect(!draft.isBranchNameRefused(withPrefix: "kp."), "a typed prefix is not doubled")
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: "kp."))
   }
 
   /// A switch used to cancel the first project's load, whose late return cleared a "loading"
@@ -71,7 +94,7 @@ struct NewWorktreeDraftTests {
       checkedOut: [],
     )
 
-    #expect(!draft.canCreate(checkedOut: []))
+    #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""))
     #expect(
       draft.localBranches.isEmpty && draft.baseBranch.isEmpty,
       "nothing of firstProject's arrived",
@@ -88,7 +111,7 @@ struct NewWorktreeDraftTests {
       ),
       checkedOut: [],
     )
-    #expect(draft.canCreate(checkedOut: []))
+    #expect(draft.canCreate(checkedOut: [], branchPrefix: ""))
     #expect(draft.startPoint == "dev")
   }
 
@@ -111,15 +134,15 @@ struct NewWorktreeDraftTests {
 
   @Test func aNewBranchNeedsANameAndAnExistingOneNeedsAnAvailableChoice() {
     var draft = loaded(firstProject, branch: "   ")
-    #expect(!draft.canCreate(checkedOut: ["main"]))
+    #expect(!draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
     draft.branch = "feat"
-    #expect(draft.canCreate(checkedOut: ["main"]))
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
 
     draft.createsBranch = false
     draft.branch = "main"
-    #expect(!draft.canCreate(checkedOut: ["main"]), "checked out already")
+    #expect(!draft.canCreate(checkedOut: ["main"], branchPrefix: ""), "checked out already")
     draft.branch = "release"
-    #expect(draft.canCreate(checkedOut: ["main"]))
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
     #expect(draft.startPoint == nil, "an existing branch has no start point")
   }
 
@@ -186,7 +209,7 @@ struct NewWorktreeDraftTests {
       ),
       checkedOut: [],
     )
-    #expect(!draft.canCreate(checkedOut: []))
+    #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""))
   }
 
   @Test func theNoCommitsNoteShowsOnlyForAPickedProjectGitFoundNoCommitsIn() {
@@ -216,7 +239,7 @@ struct NewWorktreeDraftTests {
     #expect(draft.projectID == firstProject)
     draft.forgetProject(unlessIn: [secondProject])
     #expect(draft.projectID == nil)
-    #expect(!draft.canCreate(checkedOut: []))
+    #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""))
   }
 
   @Test func aRepositoryWithOnlyItsCheckedOutBranchHasNothingToPick() {
@@ -239,18 +262,18 @@ struct NewWorktreeDraftTests {
       "remote branches are not offered",
     )
     #expect(draft.branch == "")
-    #expect(!draft.canCreate(checkedOut: ["main"]))
+    #expect(!draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
     draft.createsBranch = true
     draft.fitBranchToMode(checkedOut: ["main"])
     draft.branch = "feature"
-    #expect(draft.canCreate(checkedOut: ["main"]), "a new branch is the way")
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: ""), "a new branch is the way")
   }
 
   @Test func creatingLocksTheDraft() {
     var draft = loaded(firstProject)
-    #expect(draft.canCreate(checkedOut: ["main"]))
+    #expect(draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
     draft.isCreating = true
-    #expect(!draft.canCreate(checkedOut: ["main"]))
+    #expect(!draft.canCreate(checkedOut: ["main"], branchPrefix: ""))
   }
 
   /// Create used to take any non-empty name, so the hook ran and git then
@@ -271,15 +294,15 @@ struct NewWorktreeDraftTests {
 
     for refused in ["my branch", "foo..bar", "feat.lock", "-leading", "a~b"] {
       draft.branch = refused
-      #expect(!draft.canCreate(checkedOut: []), "\(refused)")
-      #expect(draft.branchNameIsRefused, "\(refused)")
+      #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""), "\(refused)")
+      #expect(draft.isBranchNameRefused(withPrefix: ""), "\(refused)")
     }
     draft.branch = "feat/tabs"
-    #expect(draft.canCreate(checkedOut: []))
-    #expect(!draft.branchNameIsRefused)
+    #expect(draft.canCreate(checkedOut: [], branchPrefix: ""))
+    #expect(!draft.isBranchNameRefused(withPrefix: ""))
     draft.branch = "  "
-    #expect(!draft.canCreate(checkedOut: []))
-    #expect(!draft.branchNameIsRefused, "an empty field is not yet wrong")
+    #expect(!draft.canCreate(checkedOut: [], branchPrefix: ""))
+    #expect(!draft.isBranchNameRefused(withPrefix: ""), "an empty field is not yet wrong")
   }
 
   @Test func theAllCheckedOutNoteWaitsForTheLoadAndThenForAnEmptyList() {

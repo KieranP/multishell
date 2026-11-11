@@ -87,12 +87,14 @@ struct FilesPanelRow: View {
   @ViewBuilder
   private var chevron: some View {
     if row.isFolder {
-      Image(systemName: "chevron.right")
-        .font(model.metrics.font(size: model.metrics.small, weight: .semibold))
-        .foregroundStyle(theme.filesPanel.textTertiary)
-        .rotationEffect(row.isExpanded ? .degrees(90) : .zero)
-        .frame(width: Self.chevronWidth)
-        .accessibilityHidden(true)
+      DisclosureChevron(
+        isExpanded: row.isExpanded,
+        size: model.metrics.small,
+        weight: .semibold,
+        metrics: model.metrics,
+      )
+      .foregroundStyle(theme.filesPanel.textTertiary)
+      .frame(width: Self.chevronWidth)
     } else {
       Color.clear.frame(width: Self.chevronWidth)
     }

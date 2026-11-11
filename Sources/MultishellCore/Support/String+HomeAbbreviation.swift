@@ -8,7 +8,7 @@ extension String {
     as replacement: String = "~",
   ) -> String {
     if self == home { return replacement }
-    guard hasPrefix(home + "/") else { return self }
+    guard isPath(under: home) else { return self }
     return replacement + dropFirst(home.count)
   }
 }

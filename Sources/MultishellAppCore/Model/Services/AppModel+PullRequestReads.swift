@@ -69,12 +69,9 @@ extension AppModel {
     with host: any PullRequestHost,
     in directory: URL,
   ) async {
-    let remotes = reading.remotes
     let urls = Set(
-      remotes.compactMap { remote in
-        RemoteRepository(pushedTo: remote.name, among: remotes).map { _ in
-          remote.pushURL ?? remote.url
-        }
+      reading.remotes.compactMap { remote in
+        RemoteRepository(pushedBy: remote).map { _ in remote.effectivePushURL }
       }
     )
     reading.currentRepositories = reading.currentRepositories.filter { urls.contains($0.key) }

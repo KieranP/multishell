@@ -10,7 +10,10 @@ struct AnyShellQuotingTests {
     arguments: InstalledShells.only(["/bin/sh", "/bin/zsh", "/bin/bash", "/bin/dash", "/bin/tcsh"])
   )
   func aWordQuotedForAnyShellReadsTheSameInEach(shell: String) async throws {
-    let words = [#"a\"#, "it's", #"\'"#, #"back\slash"#, "My Projects", "$HOME", "plain"]
+    let words = [
+      #"a\"#, "it's", #"\'"#, #"back\slash"#, "My Projects", "$HOME", "plain",
+      "it'\u{0301}s", "x'\u{0301};echo INJECTED;:'",
+    ]
     let output = try await Detached.output(
       of: shell,
       ["-c", "/usr/bin/printf '%s\\n' " + words.map(AnyShellQuoting.quote).joined(separator: " ")],

@@ -132,7 +132,7 @@ struct WorkspaceRepairTests {
     )
     workspace.worktrees.append(other)
     workspace.customWorktreeNames = [
-      worktree.id: "Checkout", other.id: "  ", "/repos/nowhere": "Ghost",
+      worktree.id: "Checkout", other.id: " \n ", "/repos/nowhere": "Ghost",
     ]
 
     workspace.repair()

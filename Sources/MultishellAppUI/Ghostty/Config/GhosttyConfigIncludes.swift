@@ -29,22 +29,26 @@ enum GhosttyConfigIncludes {
   /// its path parser reads the `?` and unquotes again, so `"?x"` and `?"x"` name x.
   private static func includes(in text: String, from directory: URL, home: URL) -> [URL] {
     GhosttyConfigLine.lines(of: text).compactMap { line in
-      guard GhosttyConfigLine.key(of: line) == "config-file", let equals = line.firstIndex(of: "=")
+      guard GhosttyConfigLine.key(of: line) == "config-file",
+        let equals = line.unicodeScalars.firstIndex(of: "=")
       else {
         return nil
       }
-      var value = unquoted(line[line.index(after: equals)...].trimmingCharacters(in: .whitespaces))
-      if value.hasPrefix("?") { value.removeFirst() }
-      value = unquoted(value)
+      let afterEquals = line[line.unicodeScalars.index(after: equals)...]
+      var value = unquoted(afterEquals.trimmingCharacters(in: .whitespaces))
+      value = unquoted(value.removingPrefix("?") ?? value)
       guard !value.isEmpty else { return nil }
-      if value.hasPrefix("~/") { return home.appendingPathComponent(String(value.dropFirst(2))) }
-      if value.hasPrefix("/") { return URL(fileURLWithPath: value) }
+      if let inHome = value.removingPrefix("~/") { return home.appendingPathComponent(inHome) }
+      if value.utf8.first == UInt8(ascii: "/") { return URL(fileURLWithPath: value) }
       return directory.appendingPathComponent(value)
     }
   }
 
+  /// By byte, as each check above: a combining mark after a quote joins it into one `Character`.
   private static func unquoted(_ value: String) -> String {
-    guard value.count >= 2, value.hasPrefix("\""), value.hasSuffix("\"") else { return value }
-    return String(value.dropFirst().dropLast())
+    let quote = UInt8(ascii: "\"")
+    let bytes = value.utf8
+    guard bytes.count >= 2, bytes.first == quote, bytes.last == quote else { return value }
+    return String(Substring(bytes.dropFirst().dropLast()))
   }
 }

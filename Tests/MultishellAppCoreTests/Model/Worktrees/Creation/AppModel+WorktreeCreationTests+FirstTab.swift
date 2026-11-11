@@ -35,7 +35,7 @@ extension AppModelWorktreeCreationTests {
 
     let first = try firstSession(of: "redirect", harness)
     #expect(first.session.agentID == "codex", "the sheet's pick, not the project's agent")
-    #expect(first.command?.hasPrefix("codex -- 'Fix the redirect'; ") == true)
+    #expect(first.command?.hasPrefix("codex -- 'Fix the redirect'\n") == true)
     #expect(harness.model.newWorktreeFirstTabs.isEmpty && harness.model.pendingAgentTasks.isEmpty)
   }
 
@@ -88,7 +88,7 @@ extension AppModelWorktreeCreationTests {
 
     let first = try firstSession(of: "hooked", harness)
     #expect(first.session.agentID == "claude")
-    #expect(first.command?.hasPrefix("claude -- 'Fix the redirect'; ") == true)
+    #expect(first.command?.hasPrefix("claude -- 'Fix the redirect'\n") == true)
     #expect(harness.model.newWorktreeFirstTabs.isEmpty)
   }
 
@@ -110,7 +110,7 @@ extension AppModelWorktreeCreationTests {
 
     let first = try firstSession(of: "hooked", harness)
     #expect(first.session.agentID == "claude")
-    #expect(first.command?.hasPrefix("claude -- 'Fix the redirect'; ") == true)
+    #expect(first.command?.hasPrefix("claude -- 'Fix the redirect'\n") == true)
   }
 
   @Test func aWorktreeRemadeWhereAFailedOneWasRemovedDoesNotInheritItsSheetsAgent() async throws {

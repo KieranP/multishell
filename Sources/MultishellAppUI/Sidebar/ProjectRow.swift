@@ -42,12 +42,15 @@ struct ProjectRow: View, @MainActor Equatable {
   /// slightly-missed click on the + collapse the project instead.
   private var toggleArea: some View {
     HStack(spacing: 6) {
-      Image(systemName: "chevron.right")
-        .font(metrics.font(size: metrics.small, weight: .bold))
-        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-        .foregroundStyle(theme.projectsPanel.textTertiary)
-        .frame(width: 10)
-        .help(expansionActionName)
+      DisclosureChevron(
+        isExpanded: isExpanded,
+        size: metrics.small,
+        weight: .bold,
+        metrics: metrics,
+      )
+      .foregroundStyle(theme.projectsPanel.textTertiary)
+      .frame(width: 10)
+      .help(expansionActionName)
 
       switch ProjectRowSlot(isFetching: isFetching, state: state) {
       case .fetching:

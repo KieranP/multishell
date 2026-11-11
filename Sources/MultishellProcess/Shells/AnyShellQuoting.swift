@@ -15,12 +15,14 @@ public enum AnyShellQuoting {
   public static func quote(_ word: String) -> String {
     if !word.isEmpty, word.unicodeScalars.allSatisfy(bare.contains) { return word }
     var quoted = "'"
-    for character in word {
-      switch character {
+    // By scalar: a combining mark after a quote joins it into one Character,
+    // which a Character match would leave unescaped, closing the quote early.
+    for scalar in word.unicodeScalars {
+      switch scalar {
       case "'": quoted += #"'\''"#
       case "\\": quoted += #"'\\'"#
       case "!": quoted += #"'\!'"#
-      default: quoted.append(character)
+      default: quoted.unicodeScalars.append(scalar)
       }
     }
     return quoted + "'"

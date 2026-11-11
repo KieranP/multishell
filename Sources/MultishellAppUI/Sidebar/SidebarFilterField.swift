@@ -44,6 +44,10 @@ struct SidebarFilterField: View {
         }
       }
     }
-    .filterWell(palette: theme.projectsPanel, metrics: metrics)
+    .filterWell(
+      palette: theme.projectsPanel,
+      metrics: metrics,
+      listSideInset: UIMetrics.sidebarListSideInset,
+    )
   }
 }

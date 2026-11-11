@@ -105,7 +105,10 @@ extension AppModel {
   private func forgetFoldersNoLongerIgnored(in id: Worktree.ID) {
     guard let read = ignoredFolderEntries[id] else { return }
     let ignoredFolders = (ignoredEntries[id] ?? []).filter { $0.hasSuffix("/") }
-    let kept = read.filter { path, _ in ignoredFolders.contains { (path + "/").hasPrefix($0) } }
+      .map { String($0.dropLast()) }
+    let kept = read.filter { path, _ in
+      ignoredFolders.contains { path == $0 || path.isPath(under: $0) }
+    }
     guard kept.count != read.count else { return }
     ignoredFolderEntries[id] = kept
     // A read already asked for would put the folder back, greyed again.

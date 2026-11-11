@@ -4,6 +4,7 @@ extension AppModel {
   /// The icon picker's glyph, written into the project's own settings over
   /// whatever the repository's file sets.
   public func setIconGlyph(_ glyph: String?, for project: Project) {
+    let project = currentCopy(of: project)
     var settings = ownSettings(of: project)
     settings.iconGlyph = ProjectIcon.storedGlyph(
       picking: glyph,
@@ -14,6 +15,7 @@ extension AppModel {
 
   /// A theme slot to tint the icon from, or `nil` for none.
   public func setIconTint(_ slot: Int?, for project: Project) {
+    let project = currentCopy(of: project)
     var settings = ownSettings(of: project)
     settings.iconTint = ProjectIcon.storedTint(
       picking: slot,

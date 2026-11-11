@@ -37,9 +37,9 @@ extension WorktreeGit {
     -> URL?
   {
     guard let text = try? String(contentsOf: file, encoding: .utf8),
-      let line = text.split(whereSeparator: \.isNewline).first, line.hasPrefix(prefix)
+      let path = text.gitLines.first?.removingPrefix(prefix)
     else { return nil }
-    return directoryURL(String(line.dropFirst(prefix.count)), relativeTo: base)
+    return directoryURL(path, relativeTo: base)
   }
 
   /// A dangling link kept by name, as git lists a worktree below one.

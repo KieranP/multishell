@@ -24,14 +24,13 @@ struct BranchRef: Hashable, Sendable {
   /// last-commit orders. Read here for the same reason as `symref`.
   let committedAt: Date?
 
-  var isLocal: Bool { fullName.hasPrefix(RefName.localPrefix) }
-  var isRemote: Bool { fullName.hasPrefix(RefName.remotePrefix) }
+  var isLocal: Bool { fullName.removingPrefix(RefName.localPrefix) != nil }
+  var isRemote: Bool { fullName.removingPrefix(RefName.remotePrefix) != nil }
 
   /// `feat`, `origin/main`: `%(refname:lstrip=2)`, never `:short`'s `heads/feat`
   /// where a tag ties.
   var shortName: String {
-    if isRemote { return String(fullName.dropFirst(RefName.remotePrefix.count)) }
-    return RefName.shortLocal(fullName)
+    fullName.removingPrefix(RefName.remotePrefix) ?? RefName.shortLocal(fullName)
   }
 
   /// The branch with no remote in front of it, so the default branch's own
@@ -39,8 +38,8 @@ struct BranchRef: Hashable, Sendable {
   var nameWithoutRemote: String {
     guard isRemote else { return shortName }
     let short = shortName
-    guard let slash = short.firstIndex(of: "/") else { return short }
-    return String(short[short.index(after: slash)...])
+    guard let slash = short.unicodeScalars.firstIndex(of: "/") else { return short }
+    return String(short[short.unicodeScalars.index(after: slash)...])
   }
 
   init(

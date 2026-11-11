@@ -89,9 +89,7 @@ extension AppModel {
   /// The app's second write to a remote, after the push. The form is the
   /// question asked every time; see services/create-and-merge.md for what it is held to.
   public func confirmMerge(of worktree: Worktree) async {
-    guard let project = workspace.project(worktree.projectID),
-      let (_, host) = pullRequestHost(for: project),
-      let pullRequest = services(of: worktree).shownPullRequest,
+    guard let (_, host, pullRequest) = shownPullRequest(of: worktree),
       var pending = pendingMerge(of: worktree), let merge = pending.merge,
       pullRequest.url == pending.pullRequestURL
     else { return }
@@ -117,7 +115,7 @@ extension AppModel {
     }
     // A refusal for a moved head, or a merge that landed past its timeout,
     // shows in the list too.
-    await refreshServices(ofProject: project.id)
+    await refreshServices(ofProject: worktree.projectID)
   }
 
   /// Weighs each form and cancel against the list and the checks, run wherever
@@ -168,9 +166,7 @@ extension AppModel {
   /// Merge or Merge When Ready: the page turns to the form, and the host is
   /// asked what it allows and what it would write.
   func beginMerge(of worktree: Worktree) async {
-    guard let project = workspace.project(worktree.projectID),
-      let (_, host) = pullRequestHost(for: project),
-      let pullRequest = services(of: worktree).shownPullRequest,
+    guard let (_, host, pullRequest) = shownPullRequest(of: worktree),
       let action = mergeAction(for: mergeReadiness(of: pullRequest, in: worktree), in: worktree),
       action != .cancelAutoMerge, pendingMerge(of: worktree) == nil
     else { return }
@@ -199,9 +195,7 @@ extension AppModel {
   /// Asks nothing first: it only takes back a merge not yet made. Off until the
   /// list shows it taken back; see `reconcileMerges`.
   func cancelAutoMerge(of worktree: Worktree) async {
-    guard let project = workspace.project(worktree.projectID),
-      let (_, host) = pullRequestHost(for: project),
-      let pullRequest = services(of: worktree).shownPullRequest,
+    guard let (_, host, pullRequest) = shownPullRequest(of: worktree),
       pullRequest.autoMergesWhenReady,
       remoteState.autoMergeCancellations[worktree.id] == nil
     else { return }
@@ -228,7 +222,7 @@ extension AppModel {
         remoteState.autoMergeCancellations[worktree.id] = nil
       }
     }
-    await refreshServices(ofProject: project.id)
+    await refreshServices(ofProject: worktree.projectID)
   }
 
   /// `nil` where the pull request is gone, closed, merged or pushed to, or

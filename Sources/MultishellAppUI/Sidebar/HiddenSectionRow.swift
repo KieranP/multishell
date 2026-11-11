@@ -12,11 +12,14 @@ struct HiddenSectionRow: View, @MainActor Equatable {
   let toggleExpansion: () -> Void
 
   var body: some View {
-    HStack(spacing: 6) {
-      Image(systemName: "chevron.right")
-        .font(metrics.font(size: metrics.small, weight: .bold))
-        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-        .frame(width: metrics.sidebarGlyphColumn)
+    HStack(spacing: UIMetrics.sidebarGlyphGap) {
+      DisclosureChevron(
+        isExpanded: isExpanded,
+        size: metrics.small,
+        weight: .bold,
+        metrics: metrics,
+      )
+      .frame(width: metrics.sidebarGlyphColumn)
       Text(t("sidebar.hidden"))
         .font(metrics.font(size: metrics.secondary))
       Text("\(worktreeCount)")

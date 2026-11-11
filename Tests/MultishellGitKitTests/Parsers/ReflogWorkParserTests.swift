@@ -75,6 +75,14 @@ struct ReflogWorkParserTests {
     #expect(!ReflogWorkParser.parse("\(firstSHA) clone: from /tmp/origin.git\n"))
   }
 
+  @Test func aLineSeparatorInsideARefNameIsNotALineBreak() {
+    #expect(
+      !ReflogWorkParser.parse(
+        "\(secondSHA) merge origin/fe\u{2028}at: Fast-forward\n\(firstSHA) branch: Created from main\r\n"
+      )
+    )
+  }
+
   @Test func aRenamedOrCopiedBranchWithNoCommitsOfItsOwnHasNoWork() {
     #expect(
       !ReflogWorkParser.parse(

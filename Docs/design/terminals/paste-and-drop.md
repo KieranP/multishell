@@ -103,3 +103,10 @@ What can be dropped or pasted on a shell. Newest at the bottom.
   typed a path that does not exist there, as a dropped file is.
 - **Cost: an image offered only as TIFF is made a PNG on the main thread**,
   inside libghostty's read, measured at 144 ms for a 5K one.
+
+## Reviewed and left as is
+
+- **A word holding a newline is quoted as sh reads it, which tcsh refuses**
+  (2026-11-12): tcsh wants a backslash before a newline inside single quotes,
+  which every other shell keeps as text. A dropped name holding one is left out
+  before quoting; Open in Editor on such a path under a tcsh login shell fails.

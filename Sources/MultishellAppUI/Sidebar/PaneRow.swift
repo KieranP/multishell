@@ -14,7 +14,7 @@ struct PaneRow: View, @MainActor Equatable {
   let select: () -> Void
 
   var body: some View {
-    HStack(spacing: 7) {
+    HStack(spacing: UIMetrics.sidebarGlyphGap) {
       AgentMarkView(
         agentID: pane.agentID,
         markTint: pane.agentID.flatMap(theme.agentMarkRGB),

@@ -174,6 +174,29 @@ struct GhosttyUserConfigTests {
     #expect(!rendered.contains("config-file"))
   }
 
+  @Test func anIncludeWhoseNameStartsWithACombiningMarkIsFollowedQuotedOrNot() throws {
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
+    let config = directory.appendingPathComponent("config", isDirectory: false)
+    try "config-file = \"\u{0301}one\"\nconfig-file=\u{0301}two\n".write(
+      to: config,
+      atomically: true,
+      encoding: .utf8,
+    )
+    for (name, size) in [("\u{0301}one", 21), ("\u{0301}two", 22)] {
+      try "font-size = \(size)\n".write(
+        to: directory.appendingPathComponent(name),
+        atomically: true,
+        encoding: .utf8,
+      )
+    }
+
+    let rendered = GhosttyUserConfig.base(reading: [config])
+
+    #expect(rendered.contains("font-size = 21"), "\(rendered)")
+    #expect(rendered.contains("font-size = 22"), "\(rendered)")
+  }
+
   /// Ghostty's file reader takes a line's quotes off before its path parser
   /// reads the `?`, so a quoted optional include names the file after it.
   @Test func aQuotedOptionalIncludeIsFollowed() throws {

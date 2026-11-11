@@ -21,7 +21,7 @@ struct AppModelTabOpeningTests {
     let opened = harness.engine.opened.last!
     #expect(opened.id == session.id)
     #expect(
-      opened.command?.last?.withoutLeadingPathStatement.hasPrefix("claude; ") == true,
+      opened.command?.last?.withoutLeadingPathStatement.hasPrefix("claude\n") == true,
       "\(opened.command ?? [])",
     )
     #expect(

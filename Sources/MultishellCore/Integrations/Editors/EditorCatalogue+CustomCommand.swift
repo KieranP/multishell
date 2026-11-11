@@ -8,10 +8,9 @@ extension EditorCatalogue {
     target: EditorTarget,
     forShellNamed shellName: String,
   ) -> ShellLine? {
-    let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return nil }
+    guard let trimmed = template.trimmedOfAllWhitespaceOrNil else { return nil }
     let token = "{path}"
-    let line = trimmed.contains(token) ? trimmed : "\(trimmed) \(token)"
+    let line = EditorTemplate.placing(token, in: trimmed)
     return ShellLine(
       line,
       substituting: [token: (target.pathVariable, target.path.path)],

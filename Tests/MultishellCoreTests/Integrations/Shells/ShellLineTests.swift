@@ -35,6 +35,7 @@ struct ShellLineTests {
       "printf '%s|' 'on {{branch}}'": "on \(hostile)|",
       "printf '%s|' \"{{branch}}\"x": "\(hostile)x|",
       "printf '%s|' {{branch}}{{branch}}": "\(hostile)\(hostile)|",
+      "printf '%s|' '\u{0301}on {{branch}}'": "\u{0301}on \(hostile)|",
     ]
     for (template, expected) in expectations {
       let line = AgentCatalogue.customCommandLine(

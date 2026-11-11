@@ -6,12 +6,14 @@ public struct BranchNameParts: Equatable, Sendable {
   public let leaf: String
 
   public init(_ name: String) {
-    guard let slash = name.lastIndex(of: "/") else {
+    // By scalar: a leaf starting with a combining mark joins the slash into one Character.
+    guard let slash = name.unicodeScalars.lastIndex(of: "/") else {
       prefix = ""
       leaf = name
       return
     }
-    prefix = String(name[...slash])
-    leaf = String(name[name.index(after: slash)...])
+    let leafStart = name.unicodeScalars.index(after: slash)
+    prefix = String(name[..<leafStart])
+    leaf = String(name[leafStart...])
   }
 }

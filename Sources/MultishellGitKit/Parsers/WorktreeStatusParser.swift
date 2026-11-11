@@ -12,7 +12,8 @@ enum WorktreeStatusParser {
     var entries: [StatusEntry] = []
 
     for record in output.split(separator: "\0", omittingEmptySubsequences: true) {
-      if record.hasPrefix("## ") {
+      // By byte, as `entry` reads: a branch starting with a combining mark joins the space.
+      if record.utf8.starts(with: "## ".utf8) {
         parseBranchLine(record, into: &status)
         continue
       }
@@ -49,7 +50,7 @@ enum WorktreeStatusParser {
   /// `## main...origin/main [ahead 1]`, `## main`, `## HEAD (no branch)`,
   /// `## No commits yet on main`, `## No commits yet on main...origin/main`.
   private static func parseBranchLine(_ line: Substring, into status: inout WorktreeStatus) {
-    var header = line.dropFirst(3)
+    var header = Substring(line.utf8.dropFirst(3))
     if let bracket = header.firstIndex(of: "[") { header = header[..<bracket] }
     var name = header.trimmingCharacters(in: .whitespaces)
     if name.hasPrefix("HEAD (") {
@@ -57,12 +58,12 @@ enum WorktreeStatusParser {
     } else {
       // The upstream goes first: a clone of an empty repository has one from
       // clone time, and reads `No commits yet on main...origin/main`.
-      if let dots = name.range(of: "...") {
+      if let dots = name.utf8.firstRange(of: "...".utf8) {
         status.upstream = String(name[dots.upperBound...])
         name = String(name[..<dots.lowerBound])
       }
-      if let prefix = unbornPrefixes.first(where: name.hasPrefix) {
-        name = String(name.dropFirst(prefix.count))
+      if let prefix = unbornPrefixes.first(where: { name.utf8.starts(with: $0.utf8) }) {
+        name = String(Substring(name.utf8.dropFirst(prefix.utf8.count)))
         status.isUnborn = true
       }
       status.branch = name.isEmpty ? nil : name

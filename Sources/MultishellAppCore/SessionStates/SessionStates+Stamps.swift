@@ -1,10 +1,10 @@
 import Foundation
 
 extension SessionStates {
-  /// Records when each key's state changed, once per mutation, and stamps a
-  /// worker's start and failure. A state put back with its own stamp keeps it.
+  /// Stamps each key whose state changed, once per mutation, and a worker's start and
+  /// failure. A state put back keeps its own stamp; a key the mutation dropped stays out.
   mutating func stampChanges(against previous: SessionStates, at now: Date) {
-    for key in Set(entries.keys).union(previous.entries.keys)
+    for key in Array(entries.keys)
     where entries[key]?.state != previous.entries[key]?.state
       && (entries[key]?.since == nil || entries[key]?.since == previous.entries[key]?.since)
     {

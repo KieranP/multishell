@@ -74,6 +74,15 @@ struct FilePathTextTests {
     #expect(text == "@My\\ Notes.md")
   }
 
+  @Test func aMentionEscapesASpaceFollowedByACombiningMark() {
+    let text = FilePathText.pastedText(
+      for: [URL(fileURLWithPath: "/repos/demo/a \u{0301}b.md")],
+      relativeTo: directory,
+      mentionPrefix: "@",
+    )
+    #expect(text == "@a\\ \u{0301}b.md")
+  }
+
   @Test func severalFilesAreOneSpaceSeparatedLineWithNoNewline() {
     let text = FilePathText.pastedText(
       for: [

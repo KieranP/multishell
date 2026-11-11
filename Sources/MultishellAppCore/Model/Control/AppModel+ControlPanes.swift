@@ -8,6 +8,9 @@ extension AppModel {
     if let id {
       // Refused before it is brought into view, which would switch to it.
       if workspace.fileTab(id) != nil { return .refused(.tabShowsAFile(id: id)) }
+      if let tab = workspace.tab(id), isBusy(tab.worktreeID) {
+        return .refused(.worktreeNotReady(id: ControlID.worktree(tab.worktreeID)))
+      }
       let selected = replyToSelectTab(id)
       guard selected == .done else { return selected }
     }

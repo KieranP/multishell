@@ -96,6 +96,22 @@ struct QuickSwitcherFileMatchesTests {
     #expect(Self.paths("lib", in: tree) == ["src/lib.swift"])
   }
 
+  @Test func anOpenedSubmodulesFileStartingWithACombiningMarkIsLeftOut() {
+    let tree = FileTree(
+      FileTreeSources(
+        tracked: .sample(paths: ["vendor/lib", "src/lib.swift"], submodulePaths: ["vendor/lib"]),
+        submodules: [
+          "vendor/lib": SubmoduleReading(
+            tracked: .sample(paths: ["\u{0301}lib.c"]),
+            status: nil,
+          )
+        ],
+      )
+    )
+
+    #expect(Self.paths("lib", in: tree) == ["src/lib.swift"])
+  }
+
   @Test func theNameIsBoldWhereAWordWasFoundInIt() {
     let query = QuickSwitcherQuery("app ts")
 

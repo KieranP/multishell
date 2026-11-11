@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// The file on disk a link's text names. libghostty joins a relative path to the
 /// shell's directory only where the file is there; the rest is looked for here.
@@ -23,9 +24,8 @@ enum GhosttyLinkPath {
   /// libghostty's pattern takes a `$VAR/` path; only these two have the
   /// pane's own value here, its other variables being the shell's.
   private static func withVariablesExpanded(_ path: String, in directory: URL) -> String {
-    for (name, value) in [("$HOME/", NSHomeDirectory()), ("$PWD/", directory.path)]
-    where path.hasPrefix(name) {
-      return value + "/" + path.dropFirst(name.count)
+    for (name, value) in [("$HOME/", NSHomeDirectory()), ("$PWD/", directory.path)] {
+      if let rest = path.removingPrefix(name) { return value + "/" + rest }
     }
     return path
   }
@@ -38,8 +38,7 @@ enum GhosttyLinkPath {
 
   /// `git diff` names both sides from the repository root, as `a/…` and `b/…`.
   private static func withoutDiffSide(_ path: String) -> String? {
-    guard path.hasPrefix("a/") || path.hasPrefix("b/") else { return nil }
-    return String(path.dropFirst(2))
+    path.removingPrefix("a/") ?? path.removingPrefix("b/")
   }
 
   /// A worktree's `.git` is a file and a repository's a folder; either marks it.

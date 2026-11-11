@@ -84,16 +84,16 @@ struct FileTree: Sendable {
       let folded = isChangesList ? changes.foldedPaths : listing.foldedFilePaths
       let filter = state.filterText.foldedForMatching
       // What a shut folder read from disk holds stays out, as when unread.
-      let shut = listing.readFolders.subtracting(state.expandedFolders).map { $0 + "/" }
+      let shut = listing.readFolders.subtracting(state.expandedFolders)
       let matches = zip(candidates, folded).filter { path, foldedPath in
-        foldedPath.prefoldedContains(filter) && !shut.contains(where: path.hasPrefix)
+        foldedPath.prefoldedContains(filter) && !shut.contains(where: path.isPath(under:))
       }
       // A split and join per row took 200 ms of a 200,000-match filter.
       return matches.map { listedPath, _ in
         // Changes lists a nested repository with its slash, as git's status does.
         let path = listedPath.hasSuffix("/") ? String(listedPath.dropLast()) : listedPath
         let slash = path.utf8.lastIndex(of: UInt8(ascii: "/"))
-        let name = slash.map { String(path[path.index(after: $0)...]) } ?? path
+        let name = slash.map { String(path[path.utf8.index(after: $0)...]) } ?? path
         let parentFolder = slash.map { String(path[..<$0]) }
         guard !listing.repositories.contains(path) else {
           return repositoryRow(path: path, name: name, parentFolder: parentFolder, state: state)

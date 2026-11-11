@@ -47,6 +47,22 @@ struct GhosttyLinkPathTests {
     }
   }
 
+  @Test func aDiffsSideBeforeACombiningMarkIsStillTakenOff() throws {
+    let worktree = try Scratch.directory("link-worktree")
+    defer { Scratch.remove(worktree) }
+    try "gitdir: /elsewhere".write(
+      to: worktree.appendingPathComponent(".git"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    let docs = worktree.appendingPathComponent("docs")
+    try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+    let notes = worktree.appendingPathComponent("\u{0301}notes.md")
+    try "x".write(to: notes, atomically: true, encoding: .utf8)
+
+    #expect(existingPath("b/\u{0301}notes.md", in: docs) == notes.path)
+  }
+
   @Test func aPathInThePanesDirectoryWinsOverTheSameOneUnderTheRoot() throws {
     let worktree = try Scratch.directory("link-worktree")
     defer { Scratch.remove(worktree) }

@@ -33,12 +33,15 @@ public enum FilePathText {
     !url.standardizedFileURL.path.holdsTerminalControl
   }
 
-  /// A mention ends at whitespace, so a space is escaped rather than quoted,
-  /// a quote landing in the prompt as a character.
+  /// A space is escaped, not quoted: a mention ends at whitespace and a quote lands as text.
+  /// By scalar, as a space before a combining mark is one Character a search misses.
   private static func escaping(_ path: String) -> String {
-    path
-      .replacingOccurrences(of: "\\", with: "\\\\")
-      .replacingOccurrences(of: " ", with: "\\ ")
+    var escaped = ""
+    for scalar in path.unicodeScalars {
+      if scalar == "\\" || scalar == " " { escaped.unicodeScalars.append("\\") }
+      escaped.unicodeScalars.append(scalar)
+    }
+    return escaped
   }
 
   /// Relative inside the directory, absolute otherwise. Both sides as spelled

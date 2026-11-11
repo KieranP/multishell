@@ -60,6 +60,11 @@ struct WorktreeSettingsPathsTests {
     #expect(path.path == "/Users/dev/Work/multishell-worktrees/feat-tabs")
   }
 
+  @Test func aSlashBeforeACombiningMarkStillBecomesADash() {
+    let path = WorktreeSettings().worktreePath(forBranch: "feature/\u{0301}x", in: project)
+    #expect(path.lastPathComponent == "feature-\u{0301}x")
+  }
+
   @Test func noBranchNameCanPutAWorktreeOutsideTheContainer() {
     // git rejects most of these as branch names, but the path is computed
     // and shown, and its parent created, before git is asked.

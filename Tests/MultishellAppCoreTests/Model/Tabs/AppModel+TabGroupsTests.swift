@@ -78,14 +78,14 @@ struct AppModelTabGroupsTests {
     #expect(harness.model.workspace == before)
   }
 
-  /// Cmd+T opens in the focused group; a strip's own New Tab button names
-  /// its group, so a click in one never opens a tab in another.
+  /// A strip's own New Tab menu names its group, so a click in one never opens
+  /// a tab in another; Cmd+T opens in the focused group.
   @Test func aNewTabOpensInTheGroupThatAskedForIt() {
     let harness = Harness()
     let groups = twoGroups(harness)
     let before = harness.model.workspace.workspaceTabs(inGroup: groups.first.id).count
 
-    harness.model.newTab(in: groups.first.id)
+    harness.model.newShellTab(in: groups.first.id)
 
     #expect(harness.model.workspace.workspaceTabs(inGroup: groups.first.id).count == before + 1)
     #expect(
@@ -107,7 +107,7 @@ struct AppModelTabGroupsTests {
   @Test func aGroupLastsAsLongAsItHasATab() {
     let harness = Harness()
     let groups = twoGroups(harness)
-    harness.model.newTab(in: groups.second.id)
+    harness.model.newShellTab(in: groups.second.id)
     #expect(harness.model.workspace.workspaceTabs(inGroup: groups.second.id).count == 2)
 
     harness.model.closeActiveTab()

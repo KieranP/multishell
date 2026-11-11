@@ -57,13 +57,15 @@ public struct ShellDetection: Equatable, Sendable {
       ? loginShellExists : id == ShellChoice.customID || found.contains(id)
   }
 
-  /// The login shell first, then every installed shell, then the selected
-  /// one if it is not installed, then the custom path.
+  /// The login shell, marked where `$SHELL` is gone, the installed shells, the
+  /// selected one if not installed, then the custom path.
   public func options(selected: String?) -> [DetectionOption] {
     var options = [
       DetectionOption(
         id: ShellChoice.loginShellID,
-        label: t("option.login-shell", loginShell),
+        label: loginShellExists
+          ? t("option.login-shell", loginShell)
+          : t("option.login-shell-not-installed", loginShell),
       )
     ]
     for path in found {
@@ -71,7 +73,7 @@ public struct ShellDetection: Equatable, Sendable {
         DetectionOption(id: path, label: t("option.shell-path", path.executableName, path))
       )
     }
-    if let selected, !isInstalled(selected) {
+    if let selected, selected != ShellChoice.loginShellID, !isInstalled(selected) {
       options.append(
         DetectionOption(
           id: selected,

@@ -94,3 +94,13 @@ What a link clicked in a pane opens. Newest at the bottom.
   open until the file closed.
 - **Cost: another app's scheme, `vscode://` or `slack://`, opens nothing.**
   Ghostty's app asks before handing a scheme on.
+
+## Reviewed and left as is
+
+- **A `:line:column` strip can cut a path whose part after `/` starts with a
+  combining mark** (2026-11-12). The whole text is tried first, so the strip
+  only adds a fallback.
+- **The pointer on a colon inside a run such as `": "` or `]:` finds no link**
+  (2026-11-12). libghostty hands over the whole run, not the hovered cell, so a
+  colon there is not told from the space or bracket beside it; no link on
+  punctuation beats a link to the wrong file.

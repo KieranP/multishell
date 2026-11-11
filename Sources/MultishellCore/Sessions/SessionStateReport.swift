@@ -189,8 +189,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// `nil` for anything that is not one well-formed report: any process may
   /// write to the channel, so a bad line costs that line only.
   public static func parse(_ line: String) -> Self? {
-    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return nil }
+    guard let trimmed = line.trimmedOfAllWhitespaceOrNil else { return nil }
     return try? JSONDecoder().decode(Self.self, from: Data(trimmed.utf8))
   }
 

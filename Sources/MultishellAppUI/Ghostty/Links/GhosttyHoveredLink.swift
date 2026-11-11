@@ -5,16 +5,18 @@ import UniformTypeIdentifiers
 /// a program holding the mouse, whose links libghostty never looks for.
 enum GhosttyHoveredLink {
   /// libghostty's word stops at `:`, so `https` is judged with the rest of its address.
-  private static let tokenSeparators: Set<Character> = [
+  private static let tokenSeparators: Set<Unicode.Scalar> = [
     "\"", "'", "`", "(", ")", "[", "]", "{", "}", "<", ">", "|", "│", ",",
   ]
   private static let trailingPunctuation: Set<Character> = [".", ",", ";", ":", "!", "?"]
 
-  /// `column` is where libghostty's word starts, counted in characters, which a
-  /// wide character before it puts off by one; the nearest copy of the word wins.
+  /// `column` is the cell libghostty's word starts at; of several copies of the
+  /// word in the line, the one starting nearest that cell is taken.
   static func link(word: String, startingAt column: Int, in line: String) -> String? {
-    // libghostty's word over a gap or a bracket is that run, which sits in no link.
-    guard !word.allSatisfy(isSeparator) else { return nil }
+    // libghostty's word is a run of name or of boundary, never both, so one
+    // separator makes it a boundary run, `": "` among them, in no link.
+    guard !word.contains(where: isSeparator) else { return nil }
+    // By Character, which tracks cells where a scalar count drifts past an emoji.
     let characters = Array(line)
     let wordCharacters = Array(word)
     guard let start = nearestOccurrence(of: wordCharacters, in: characters, to: column) else {
@@ -24,22 +26,43 @@ enum GhosttyHoveredLink {
     while lower > 0, !isSeparator(characters[lower - 1]) { lower -= 1 }
     var upper = start + wordCharacters.count
     while upper < characters.count, !isSeparator(characters[upper]) { upper += 1 }
-    return link(inToken: String(characters[lower..<upper]))
+    let carried = lower > 0 ? combiningMarks(fusedOnto: characters[lower - 1]) : ""
+    return link(inToken: carried + String(characters[lower..<upper]))
   }
 
+  /// The copy whose first cell is nearest `column`, a wide character before it
+  /// counting the two cells it takes.
   private static func nearestOccurrence(
     of word: [Character],
     in line: [Character],
     to column: Int,
   ) -> Int? {
     guard !word.isEmpty, word.count <= line.count else { return nil }
+    var cellOffsets: [Int] = []
+    var cells = 0
+    for character in line {
+      cellOffsets.append(cells)
+      cells += TerminalCellWidth.cells(of: character)
+    }
     return (0...(line.count - word.count))
       .filter { line[$0..<($0 + word.count)].elementsEqual(word) }
-      .min { abs($0 - column) < abs($1 - column) }
+      .min { abs(cellOffsets[$0] - column) < abs(cellOffsets[$1] - column) }
   }
 
+  /// libghostty judges a cell by its base code point, so a combining mark fused
+  /// onto the separator before a name is the name's; a variation selector is not.
+  private static func combiningMarks(fusedOnto separator: Character) -> String {
+    let marks = separator.unicodeScalars.dropFirst().filter { scalar in
+      [.nonspacingMark, .spacingMark, .enclosingMark].contains(scalar.properties.generalCategory)
+        && !scalar.properties.isVariationSelector
+    }
+    return String(String.UnicodeScalarView(marks))
+  }
+
+  /// Judged by its base code point, as libghostty judges a cell.
   private static func isSeparator(_ character: Character) -> Bool {
-    character.isWhitespace || tokenSeparators.contains(character)
+    guard let base = character.unicodeScalars.first else { return false }
+    return base.properties.isWhitespace || tokenSeparators.contains(base)
   }
 
   private static func link(inToken token: String) -> String? {

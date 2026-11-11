@@ -43,13 +43,12 @@ enum ShownPaneTitle {
   /// A shell's directory title relative to the worktree, empty at its root, `nil` outside
   /// it. Shells write it whole, from `~`, or as `…/` and the last parts.
   private static func path(_ title: String, relativeTo worktree: String, home: String) -> String? {
-    if title.hasPrefix(String.elidedPathStart) {
-      let shown = title.dropFirst(String.elidedPathStart.count).split(separator: "/")
-      return tail(shown, after: worktree)
+    if let elided = title.removingPrefix(String.elidedPathStart) {
+      return tail(elided.slashSeparatedParts, after: worktree)
     }
     for root in [worktree, worktree.abbreviatingHomeDirectory(home: home)] {
       if title == root { return "" }
-      if title.hasPrefix(root + "/") { return String(title.dropFirst(root.count + 1)) }
+      if let below = title.removingPrefix(root + "/") { return below }
     }
     return nil
   }
@@ -57,7 +56,7 @@ enum ShownPaneTitle {
   /// What follows the worktree's own last parts in a title cut to its end,
   /// matching as many of them as the title still holds.
   private static func tail(_ shown: [Substring], after worktree: String) -> String? {
-    let parts = worktree.split(separator: "/")
+    let parts = worktree.slashSeparatedParts
     for count in stride(from: min(shown.count, parts.count), through: 1, by: -1)
     where parts.suffix(count).elementsEqual(shown.prefix(count)) {
       return shown.dropFirst(count).joined(separator: "/")

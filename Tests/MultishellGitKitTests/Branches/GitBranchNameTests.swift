@@ -14,6 +14,7 @@ struct GitBranchNameTests {
     "has?question", "has*star", "has[bracket", "back\\slash", "-leading", "trailing.",
     "@", "ref@{0}", ".hidden", "a//b", "nested/.hidden", "", "   ",
     "HEAD", "head", "Head", "x@", "@x", "refs/heads/x", "a.locket", "x/y.lock",
+    "feat~\u{0301}1", "a..\u{0301}b", "a/.\u{0301}x", "feat:\u{0301}x", "\u{0301}feat",
   ]
 
   /// `check-ref-format --branch` takes `HEAD` and `@` as shorthands for the current branch,

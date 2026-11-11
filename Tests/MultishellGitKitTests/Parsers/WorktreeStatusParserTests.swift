@@ -35,6 +35,25 @@ struct WorktreeStatusParserTests {
     #expect(status.summary == "Clean")
   }
 
+  @Test func aBranchStartingWithACombiningMarkIsReadAsTheBranchNotAChange() {
+    let clean = WorktreeStatusParser.parse(zeroTerminated("## \u{0301}feat\n")).status
+    #expect(clean.branch == "\u{0301}feat")
+    #expect(!clean.isDirty)
+
+    let unborn = WorktreeStatusParser.parse(zeroTerminated("## No commits yet on \u{0301}feat\n"))
+      .status
+    #expect(unborn.isUnborn)
+    #expect(unborn.branch == "\u{0301}feat")
+  }
+
+  @Test func anUpstreamStartingWithACombiningMarkIsSplitFromTheBranch() {
+    let status = WorktreeStatusParser.parse(zeroTerminated("## feature...\u{0301}base [ahead 1]\n"))
+      .status
+    #expect(status.branch == "feature")
+    #expect(status.upstream == "\u{0301}base")
+    #expect(status.ahead == 1)
+  }
+
   @Test func aheadOnlyIsNotDirtyButNotInSync() {
     let status = WorktreeStatusParser.parse(zeroTerminated("## feat...origin/feat [ahead 3]\n"))
       .status

@@ -8,8 +8,8 @@ struct IgnoreVerdicts {
   private static func directories(leadingTo path: String) -> some Sequence<String> {
     sequence(state: path.startIndex) { start -> String? in
       while start < path.endIndex {
-        let end = path[start...].firstIndex(of: "/") ?? path.endIndex
-        defer { start = end < path.endIndex ? path.index(after: end) : end }
+        let end = path[start...].unicodeScalars.firstIndex(of: "/") ?? path.endIndex
+        defer { start = end < path.endIndex ? path.unicodeScalars.index(after: end) : end }
         if end > start { return String(path[..<end]) }
       }
       return nil

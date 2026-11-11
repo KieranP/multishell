@@ -23,30 +23,33 @@ public struct ShellLine: Hashable, Sendable {
     let escapesInSingleQuotes = shellName == "fish"
     var text = ""
     var environment: [String: String] = [:]
-    var quote: Character?
+    var quote: Unicode.Scalar?
     var escaping = false
-    var rest = Substring(line)
-    while let character = rest.first {
-      if !escaping, let token = tokens.first(where: { rest.hasPrefix($0.key) }) {
+    // By scalar: a combining mark after a quote joins it into one Character.
+    var rest = Substring(line).unicodeScalars
+    while let scalar = rest.first {
+      if !escaping,
+        let token = tokens.first(where: { rest.starts(with: $0.key.unicodeScalars) })
+      {
         text += Self.reading(token.value.variable, inside: quote)
         environment[token.value.variable] = token.value.value
-        rest = rest.dropFirst(token.key.count)
+        rest = rest.dropFirst(token.key.unicodeScalars.count)
         continue
       }
       if escaping {
         escaping = false
-      } else if character == "\\", quote != "'" {
+      } else if scalar == "\\", quote != "'" {
         escaping = true
-      } else if character == "\\", escapesInSingleQuotes,
+      } else if scalar == "\\", escapesInSingleQuotes,
         ["'", "\\"].contains(rest.dropFirst().first)
       {
         escaping = true
       } else if let open = quote {
-        if character == open { quote = nil }
-      } else if character == "'" || character == "\"" {
-        quote = character
+        if scalar == open { quote = nil }
+      } else if scalar == "'" || scalar == "\"" {
+        quote = scalar
       }
-      text.append(character)
+      text.unicodeScalars.append(scalar)
       rest = rest.dropFirst()
     }
     self.init(text: text, environment: environment)
@@ -54,7 +57,7 @@ public struct ShellLine: Hashable, Sendable {
 
   /// Closes the user's quote, reads the variable double-quoted, and reopens
   /// it: one spelling that sh, zsh, bash, dash, tcsh and fish read as one word.
-  private static func reading(_ variable: String, inside quote: Character?) -> String {
+  private static func reading(_ variable: String, inside quote: Unicode.Scalar?) -> String {
     let read = "\"$\(variable)\""
     guard let quote else { return read }
     return "\(quote)\(read)\(quote)"

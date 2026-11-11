@@ -60,7 +60,7 @@ struct AppModelSessionLaunchTests {
 
     let prepared = harness.model.preparedForLaunch(session)
 
-    #expect(prepared.command?.last?.withoutLeadingPathStatement == "my-agent; exec /bin/sh -l")
+    #expect(prepared.command?.last?.withoutLeadingPathStatement == "my-agent\nexec /bin/sh -l")
   }
 
   /// The flags are the user's, so they reach the command line whole, with
@@ -82,20 +82,20 @@ struct AppModelSessionLaunchTests {
 
     #expect(
       harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
-        == "claude '--name=feature' --model opus; exec /bin/sh -l"
+        == "claude '--name=feature' --model opus\nexec /bin/sh -l"
     )
 
     harness.model.setSettings(ProjectSettings(agentFlags: "--model haiku"), for: harness.project)
     #expect(
       harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
-        == "claude --model haiku; exec /bin/sh -l",
+        == "claude --model haiku\nexec /bin/sh -l",
       "the project's line replaces the global one",
     )
 
     harness.model.setSettings(ProjectSettings(agentFlags: ""), for: harness.project)
     #expect(
       harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
-        == "claude; exec /bin/sh -l",
+        == "claude\nexec /bin/sh -l",
       "blank runs it bare under a global that passes flags",
     )
   }
@@ -119,7 +119,7 @@ struct AppModelSessionLaunchTests {
     #expect(prepared.port == 3010)
     #expect(
       prepared.command?.last?.withoutLeadingPathStatement
-        == "claude --port 3010; exec /bin/sh -l"
+        == "claude --port 3010\nexec /bin/sh -l"
     )
     harness.model.select(harness.feature)
     let opened = try #require(harness.engine.opened.last)
@@ -153,7 +153,7 @@ struct AppModelSessionLaunchTests {
     let opened = engine.opened.first { store.workspace.session($0.id)?.title == "Claude Code" }
     #expect(
       opened?.command?.last?.withoutLeadingPathStatement.hasPrefix(
-        "claude --continue '--name=main'; "
+        "claude --continue '--name=main'\n"
       ) == true
     )
   }
@@ -175,11 +175,11 @@ struct AppModelSessionLaunchTests {
 
     #expect(
       harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
-        == "claude --model opus -- 'Fix the redirect'; exec /bin/sh -l"
+        == "claude --model opus -- 'Fix the redirect'\nexec /bin/sh -l"
     )
     #expect(
       harness.model.preparedForLaunch(session).command?.last?.withoutLeadingPathStatement
-        == "claude --model opus; exec /bin/sh -l",
+        == "claude --model opus\nexec /bin/sh -l",
       "a relaunch in the same run does not ask again",
     )
   }
@@ -221,7 +221,7 @@ struct AppModelSessionLaunchTests {
     let command = harness.model.preparedForLaunch(session).command
     #expect(
       command?.last?.withoutLeadingPathStatement
-        == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#
+        == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"\#nexec /bin/sh -l"#
     )
     #expect(
       command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_WORKTREE_NAME=The fix"],
@@ -270,7 +270,7 @@ struct AppModelSessionLaunchTests {
     )
     #expect(
       byTitle["Claude Code"]?.command?.last?.withoutLeadingPathStatement.hasPrefix(
-        "claude --continue; "
+        "claude --continue\n"
       ) == true
     )
     #expect(
@@ -308,12 +308,12 @@ struct AppModelSessionLaunchTests {
       uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) }
     )
     #expect(
-      byTitle["A"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-a; ")
+      byTitle["A"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-a\n")
         == true,
       "\(byTitle["A"]?.command ?? [])",
     )
     #expect(
-      byTitle["B"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-b; ")
+      byTitle["B"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-b\n")
         == true
     )
   }
@@ -395,7 +395,7 @@ struct AppModelSessionLaunchTests {
     harness.model.newAgentTab()
     #expect(
       harness.engine.opened.last?.command?.last?.withoutLeadingPathStatement.hasPrefix(
-        "my-agent --fast; "
+        "my-agent --fast\n"
       ) == true
     )
     #expect(

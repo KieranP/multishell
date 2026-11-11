@@ -65,9 +65,11 @@ extension AppModel {
       guard worktreeIsGone else { return failure }
     }
     worktreeOperations.clear(worktree.id)
+    // Only the view changing hands the keyboard on; see Docs/design/architecture.md.
+    let wasInView = worktreeIDInView == worktree.id
     await refreshWorktrees(of: project)
     await rearmWatcher()
-    reconcileSessions(takingFocus: true)
+    reconcileSessions(takingFocus: wasInView)
     return failure
   }
 

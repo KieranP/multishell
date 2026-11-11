@@ -10,8 +10,8 @@ enum EditorLaunch {
     /// A terminal editor, or the custom command: a new tab in the worktree
     /// running it, with a shell taking over when it exits.
     case openTab(title: String, command: [String])
-    /// Run the editor's command line shim through the login shell, in the
-    /// background: the application it starts is what the user sees.
+    /// Run the editor's command line shim through the worktree's shell, in
+    /// the background: the application it starts is what the user sees.
     case runInBackground(String)
 
     var startsAShell: Bool {
@@ -69,9 +69,8 @@ enum EditorLaunch {
     }
   }
 
-  /// The command's first word, for the tab.
+  /// The program the command runs, for the tab.
   private static func title(of line: String) -> String {
-    let first = line.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? t("tab.editor")
-    return first.executableName
+    ShellWords.program(of: line)?.executableName ?? t("tab.editor")
   }
 }

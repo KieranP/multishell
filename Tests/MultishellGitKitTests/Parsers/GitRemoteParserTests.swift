@@ -26,6 +26,15 @@ struct GitRemoteParserTests {
     )
   }
 
+  @Test func aLineSeparatorInsideARemotesNameOrURLIsNotALineBreak() {
+    let remotes = GitRemoteParser.parse(
+      "up\u{2028}stream\thttps://example.com/a.git (fetch)\norigin\t/tmp/x\u{2028}y (fetch)\n"
+    )
+
+    #expect(remotes.map(\.name) == ["up\u{2028}stream", "origin"])
+    #expect(remotes.last?.url == "/tmp/x\u{2028}y")
+  }
+
   @Test func aLineOfAnyOtherShapeIsDroppedAndTheRestSurvive() {
     let remotes = GitRemoteParser.parse(
       "nonsense\n\tno-name (fetch)\nnourl\t (fetch)\norigin\t/srv/repo.git (fetch)\n"

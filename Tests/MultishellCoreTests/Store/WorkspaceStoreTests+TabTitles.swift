@@ -12,7 +12,7 @@ extension WorkspaceStoreTests {
     store.setCustomTitle("  build  ", forTab: tab.id)
     #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "build")
 
-    store.setCustomTitle("", forTab: tab.id)
+    store.setCustomTitle("\n", forTab: tab.id)
     #expect(store.workspace.tab(tab.id)?.customTitle == nil)
     #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "Shell")
   }

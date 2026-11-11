@@ -22,6 +22,16 @@ struct AppModelControlGlobalSettingsTests {
     #expect(reply.outputFields["preferredAgentID"] is NSNull)
   }
 
+  @Test func theCustomCommandTakesNoFlagsSetting() async throws {
+    let harness = Harness()
+
+    #expect(
+      await harness.messageSource.ask(
+        .writeGlobalSetting(key: "agentFlags.custom", value: "--x")
+      ) == .refused(.noSetting(key: "agentFlags.custom"))
+    )
+  }
+
   @Test func aSettingWrittenGoesThroughTheSettingsWindowsSetter() async throws {
     let harness = Harness()
 

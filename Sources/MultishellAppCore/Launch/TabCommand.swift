@@ -42,6 +42,8 @@ enum TabCommand {
     handOver: String,
   ) -> [String] {
     let leadingPath = LeadingPathStatement.line(for: shell)
-    return [shell.executable.path] + shell.arguments + ["\(leadingPath)\(commandLine); \(handOver)"]
+    // A newline, not `; `: a custom line ending in `;` or `&` made `;;`, which sh, bash and zsh
+    // refuse whole, and one ending in a comment swallowed the hand-over.
+    return [shell.executable.path] + shell.arguments + ["\(leadingPath)\(commandLine)\n\(handOver)"]
   }
 }

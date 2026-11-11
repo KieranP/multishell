@@ -110,7 +110,12 @@ struct NewWorktreeForm: View {
       .keyboardShortcut(.cancelAction)
       Button(draft.createTitle, action: create)
         .keyboardShortcut(.defaultAction)
-        .disabled(!draft.canCreate(checkedOut: model.checkedOutBranches(for: draft)))
+        .disabled(
+          !draft.canCreate(
+            checkedOut: model.checkedOutBranches(for: draft),
+            branchPrefix: model.branchPrefix(for: draft),
+          )
+        )
     }
     .padding(.top, 8)
   }

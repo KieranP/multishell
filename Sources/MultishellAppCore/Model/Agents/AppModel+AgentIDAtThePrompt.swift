@@ -20,10 +20,4 @@ extension AppModel {
       orOpenedAs: workspace.session(tab.focusedSessionID)?.agentID,
     )
   }
-
-  /// Whether an agent is at this pane's prompt, the report winning over the
-  /// tab's own id.
-  func isAgentPane(_ session: TerminalSession) -> Bool {
-    agentIDAtThePrompt(of: session) != nil
-  }
 }

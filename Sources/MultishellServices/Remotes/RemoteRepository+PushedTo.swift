@@ -5,6 +5,10 @@ extension RemoteRepository {
   /// triangular set-up sets apart from where it fetches.
   public init?(pushedTo remote: String, among remotes: [GitRemote]) {
     guard let found = remotes.first(where: { $0.name == remote }) else { return nil }
-    self.init(remoteURL: found.pushURL ?? found.url)
+    self.init(pushedBy: found)
+  }
+
+  public init?(pushedBy remote: GitRemote) {
+    self.init(remoteURL: remote.effectivePushURL)
   }
 }

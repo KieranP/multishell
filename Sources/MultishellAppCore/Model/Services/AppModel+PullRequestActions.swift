@@ -30,10 +30,7 @@ extension AppModel {
   }
 
   public func openPullRequest(of worktree: Worktree) async {
-    guard let project = workspace.project(worktree.projectID),
-      let (integration, host) = pullRequestHost(for: project),
-      let pullRequest = services(of: worktree).shownPullRequest
-    else { return }
+    guard let (integration, host, pullRequest) = shownPullRequest(of: worktree) else { return }
     do {
       try await host.open(pullRequest, in: worktree.path)
     } catch {

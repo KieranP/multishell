@@ -1,5 +1,6 @@
 /// The Files panel's list, whose rows otherwise take the sidebar's sizes.
 extension UIMetrics {
-  /// The list's gap to the panel's edges, which its fit adds to the rows.
+  /// The list's gap to the panel's edges, which its fit adds to the rows and
+  /// the filter and scope switch above it keep.
   static let filesPanelListSideInset: Double = 6
 }

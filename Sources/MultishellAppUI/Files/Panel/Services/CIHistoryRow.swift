@@ -39,8 +39,13 @@ struct CIHistoryRow: View {
               .lineLimit(1)
           }
           Spacer(minLength: 0)
-          DisclosureChevron(isExpanded: isExpanded, metrics: metrics)
-            .foregroundStyle(theme.filesPanel.textTertiary)
+          DisclosureChevron(
+            isExpanded: isExpanded,
+            size: metrics.servicePageMarkSize,
+            weight: .semibold,
+            metrics: metrics,
+          )
+          .foregroundStyle(theme.filesPanel.textTertiary)
         }
         .padding(.horizontal, UIMetrics.servicePageSideInset)
         .padding(.vertical, 6)

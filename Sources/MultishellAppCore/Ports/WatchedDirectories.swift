@@ -43,10 +43,13 @@ struct WatchedDirectories: Sendable {
     let path = path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
     if let index = entryIndexByRealPath[path] { return Location(entryIndex: index, relative: "") }
     var end = path.endIndex
-    while let slash = path[..<end].lastIndex(of: "/") {
+    while let slash = path[..<end].unicodeScalars.lastIndex(of: "/") {
       let directory = slash == path.startIndex ? "/" : String(path[..<slash])
       if let index = entryIndexByRealPath[directory] {
-        return Location(entryIndex: index, relative: String(path[path.index(after: slash)...]))
+        return Location(
+          entryIndex: index,
+          relative: String(path[path.unicodeScalars.index(after: slash)...]),
+        )
       }
       end = slash
     }
@@ -59,7 +62,7 @@ struct WatchedDirectories: Sendable {
     let root = entries[location.entryIndex].url
     let relative = location.relative
     guard !relative.isEmpty else { return root }
-    let components = relative.split(separator: "/")
+    let components = relative.slashSeparatedParts
     let parent = components.dropLast().joined(separator: "/")
     let name = components.last ?? ""
     let keepsWholePath =

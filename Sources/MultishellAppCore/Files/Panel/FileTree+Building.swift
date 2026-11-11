@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Building a worktree's tree from its paths, once per listing.
 extension FileTree {
@@ -21,7 +22,7 @@ extension FileTree {
       repositories: repositories,
       ignored: ignored,
     )
-    return nodes(below: "", from: paths.map { $0.split(separator: "/") }, depth: 0, marks: marks)
+    return nodes(below: "", from: paths.map(\.slashSeparatedParts), depth: 0, marks: marks)
   }
 
   /// Each path split once and grouped by its part at `depth`, so a level is

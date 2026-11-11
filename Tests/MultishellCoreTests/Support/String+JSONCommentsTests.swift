@@ -17,4 +17,10 @@ struct StringJSONCommentsTests {
 
     #expect(text.withoutJSONComments == #"{"url": "https://example.com"} "#)
   }
+
+  @Test func aStringStartingWithACombiningMarkIsStillAString() {
+    let text = #"{"a": "\#u{0301}see https://x", "b": 1} // note"#
+
+    #expect(text.withoutJSONComments == #"{"a": "\#u{0301}see https://x", "b": 1} "#)
+  }
 }

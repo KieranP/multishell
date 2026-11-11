@@ -31,14 +31,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// the picker, so a stale load cannot enable it.
   private var loadedProjectID: Project.ID?
 
-  /// Whether what is typed is a name git would refuse, for the sheet to say
-  /// so. An empty field is not yet wrong.
-  public var branchNameIsRefused: Bool {
-    guard createsBranch else { return false }
-    return !trimmedBranch.isEmpty && !GitBranchName.isValid(trimmedBranch)
-  }
-
-  /// The name as git would be handed it, the field's stray spaces dropped.
+  /// What was typed, the field's stray spaces dropped.
   var trimmedBranch: String {
     branch.trimmingCharacters(in: .whitespaces)
   }
@@ -116,12 +109,24 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     return availableBranches(checkedOut: checkedOut).isEmpty
   }
 
-  public func canCreate(checkedOut: Set<String>) -> Bool {
+  /// Whether what is typed, given the project's `prefix`, is a name git would
+  /// refuse, for the sheet to say so. An empty field is not yet wrong.
+  public func isBranchNameRefused(withPrefix prefix: String) -> Bool {
+    guard createsBranch else { return false }
+    return !trimmedBranch.isEmpty && !isValidBranch(withPrefix: prefix)
+  }
+
+  public func canCreate(checkedOut: Set<String>, branchPrefix: String) -> Bool {
     guard let projectID, loadedProjectID == projectID, hasCommits, !isCreating else {
       return false
     }
     return createsBranch
-      ? GitBranchName.isValid(branch)
+      ? isValidBranch(withPrefix: branchPrefix)
       : availableBranches(checkedOut: checkedOut).contains(branch)
+  }
+
+  /// Judged as git sees it, `prefix` added: `kp.` and `lock` make `kp.lock`.
+  private func isValidBranch(withPrefix prefix: String) -> Bool {
+    GitBranchName.isValid(WorktreeSettings.qualifiedBranch(branch, prefix: prefix))
   }
 }

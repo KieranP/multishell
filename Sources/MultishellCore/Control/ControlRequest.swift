@@ -136,8 +136,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   /// `nil` for anything else: a report, a stray line, or a request from a
   /// newer helper, whose cases may mean something else by now.
   public static func parse(_ line: String) -> Self? {
-    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty,
+    guard let trimmed = line.trimmedOfAllWhitespaceOrNil,
       let envelope = try? JSONDecoder().decode(Envelope.self, from: Data(trimmed.utf8)),
       envelope.version <= protocolVersion
     else { return nil }

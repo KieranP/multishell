@@ -214,6 +214,20 @@ struct AppModelControlPanesTests {
     )
   }
 
+  @Test func aSplitOfATabInABusyWorktreeIsRefusedWithoutSwitchingToIt() async throws {
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    let busyTab = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+    harness.model.select(harness.main)
+    harness.model.worktreeOperations.begin(.removingWorktree, on: harness.feature.id)
+
+    #expect(
+      await harness.messageSource.ask(.splitPane(axis: .vertical, tab: busyTab.id))
+        == .refused(.worktreeNotReady(id: ControlID.worktree(harness.feature.id)))
+    )
+    #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
+  }
+
   @Test func aKeyTheHelperWouldNotHaveSentIsRefusedBeforeAnyKeyIsPressed() async throws {
     let (harness, onlyPane) = Harness.withOnePane()
     let known = try #require(ControlKey(parsing: "a"))

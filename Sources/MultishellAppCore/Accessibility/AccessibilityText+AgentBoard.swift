@@ -5,8 +5,8 @@ import MultishellGitKit
 /// What a screen reader says for the Agents board, which is drawn by hand
 /// like the sidebar rows beside it.
 extension AccessibilityText {
-  /// In the order the card draws them, with the occupant after the title,
-  /// which the card itself no longer shows; see Docs/design/appearance/window-chrome.md.
+  /// State and place first, then the title, the occupant the card no longer
+  /// shows, and the rest of the card; see Docs/design/appearance/window-chrome.md.
   public static func card(_ card: AgentBoardCard, at now: Date) -> String {
     var parts = [card.state.shownState.displayName]
     parts.append(t("spoken.named", card.projectName, card.worktreeName))

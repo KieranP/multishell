@@ -8,7 +8,7 @@ extension AppModel {
 
   /// What the sidebar draws for one worktree. git's own proof stands; a merged
   /// pull request headed by the branch's tip is proof beside it; see services/branch-matching.md.
-  public func mergeState(of worktree: Worktree) -> WorktreeMergeState {
+  func mergeState(of worktree: Worktree) -> WorktreeMergeState {
     let gitVerdict = mergeStates[worktree.id] ?? .unknown
     if gitVerdict.isCertain { return gitVerdict }
     // Named as git's evidence names it, `origin/main`, not the host's `main`.

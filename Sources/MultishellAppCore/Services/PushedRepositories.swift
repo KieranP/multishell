@@ -11,8 +11,8 @@ enum PushedRepositories {
     currentRepositories: [String: RemoteRepository],
   ) -> [RemoteRepository] {
     guard let found = remotes.first(where: { $0.name == remote }) else { return [] }
-    let named = RemoteRepository(pushedTo: remote, among: remotes)
-    let current = currentRepositories[found.pushURL ?? found.url]
+    let named = RemoteRepository(pushedBy: found)
+    let current = currentRepositories[found.effectivePushURL]
     guard let current, named.map(current.isSame(as:)) != true else {
       return [named].compactMap(\.self)
     }

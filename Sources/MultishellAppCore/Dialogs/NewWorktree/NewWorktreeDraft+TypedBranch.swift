@@ -32,8 +32,10 @@ extension NewWorktreeDraft {
     return result
   }
 
+  /// A `/` with a combining mark after it is one Character, judged by the slash.
   private static func isUsualInBranchNames(_ character: Character) -> Bool {
-    character.isLetter || character.isNumber || "./_".contains(character)
+    guard let first = character.unicodeScalars.first else { return false }
+    return character.isLetter || character.isNumber || "./_".unicodeScalars.contains(first)
   }
 
   /// What the branch field hands in, pasted or typed. A run of characters

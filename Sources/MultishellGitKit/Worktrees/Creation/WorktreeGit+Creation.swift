@@ -17,8 +17,8 @@ extension WorktreeGit {
     var arguments = ["worktree", "add"]
     if createsBranch { arguments += ["-b", branch] }
     if createsBranch, !tracksStartPoint { arguments.append("--no-track") }
-    arguments.append(path.path)
-    arguments.append(createsBranch ? (startPoint ?? "HEAD") : branch)
+    // `--` keeps a start point from the command line, such as `--lock`, from being read as a flag.
+    arguments += ["--", path.path, createsBranch ? (startPoint ?? "HEAD") : branch]
     _ = try await runner.run(
       arguments,
       in: project.path,

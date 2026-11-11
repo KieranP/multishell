@@ -212,3 +212,6 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
 - **A file open's listing is dropped by its callers**, not inside
   `openFileAsTab`: the switcher's open drops it only once the cover it was
   chosen over has come down, so the panel that cover hid keeps the one it shows.
+- **A tab read through a git change records no signature** (2026-11-12), so the
+  next change in its folder reads it once more. Recording one after the read
+  could hide an edit made between the read and the stat.

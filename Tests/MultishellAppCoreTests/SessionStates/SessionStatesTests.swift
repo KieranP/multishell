@@ -248,6 +248,19 @@ struct SessionStatesTests {
     #expect(Array(states.notes.keys) == [.session(a)])
   }
 
+  @Test func aPruneStampsNothingBackForTheKeysItDropped() {
+    var states = SessionStates()
+    states.apply(.init(state: .done), pid: nil, for: .session(a), isSeen: false)
+    states.apply(.init(state: .running), pid: 1, for: .session(b), isSeen: false)
+    states.stampChanges(against: SessionStates(), at: Date(timeIntervalSince1970: 1))
+    let beforePrune = states
+
+    states.retain(sessions: [b], worktrees: [])
+    states.stampChanges(against: beforePrune, at: Date(timeIntervalSince1970: 2))
+
+    #expect(Array(states.sinceDates.keys) == [.session(b)])
+  }
+
   @Test func clearingByHandTakesEverythingForTheKeys() {
     var states = SessionStates()
     states.apply(.init(state: .running), pid: 1, for: .session(a), isSeen: false)

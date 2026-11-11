@@ -46,7 +46,7 @@ struct AppModelNewWorktreeSheetTests {
     draft.createsBranch = false
     draft.fitBranchToMode(checkedOut: checkedOut)
     #expect(draft.branch == "release")
-    #expect(draft.canCreate(checkedOut: checkedOut))
+    #expect(draft.canCreate(checkedOut: checkedOut, branchPrefix: ""))
   }
 
   @Test func thePlannedLocationPlacesTheTrimmedNameAndIsADashWithoutOne() async throws {

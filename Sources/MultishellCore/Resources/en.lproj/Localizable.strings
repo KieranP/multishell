@@ -309,6 +309,7 @@
 "option.custom-command-item" = "Custom command…";
 "option.custom-path" = "Custom path…";
 "option.login-shell" = "Login shell (%@)";
+"option.login-shell-not-installed" = "Login shell (%@) (not installed)";
 "option.none" = "None";
 "option.not-installed" = "%@ (not installed)";
 "option.project-agent" = "The project's agent";

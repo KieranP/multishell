@@ -30,21 +30,26 @@ extension AppModelControlWorktreesTests {
     #expect(harness.model.workspace.worktrees(of: harness.project.id).count == 1)
   }
 
-  @Test func aBranchThePrefixMakesInvalidIsRefusedWithAnAlertNamingThePrefixedBranch() async throws
-  {
+  @Test func aBranchThePrefixMakesInvalidIsRefusedNamingThePrefixedBranch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setSettings(ProjectSettings(branchPrefix: "bad.."), for: harness.project)
 
     let reply = await harness.model.answer(.newWorktree(order("x", in: harness)))
 
-    guard case .alert(let title, let message)? = reply.refusal else {
-      Issue.record("not an alert: \(reply)")
-      return
-    }
-    #expect((title + message).contains("bad..x"), "\(title) \(message)")
+    #expect(reply == .refused(.invalidBranchName("bad..x")))
     #expect(harness.model.presentedError == nil)
     #expect(harness.model.workspace.worktrees(of: harness.project.id).count == 1)
+  }
+
+  @Test func aNameValidOnceThePrefixIsAddedIsMadeAsTheSheetWouldMakeIt() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.model.setSettings(ProjectSettings(branchPrefix: "kp-"), for: harness.project)
+
+    let reply = await harness.model.answer(.newWorktree(order("-foo", in: harness)))
+
+    #expect(reply.outputFields["branch"] as? String == "kp--foo", "\(reply)")
   }
 
   @Test func aTaskWithNoAgentNamedOrPreferredIsRefused() async throws {

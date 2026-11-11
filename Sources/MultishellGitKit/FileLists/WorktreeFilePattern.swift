@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// A list entry's `*` and `?`, matched one path component at a time against
 /// what is on disk, as a shell would.
@@ -6,7 +7,7 @@ enum WorktreeFilePattern {
   /// The paths a listed one stands for. One with no pattern is itself, never
   /// looked up; a pattern matching nothing yields nothing. Sorted.
   static func expand(_ path: String, in base: URL) -> [String] {
-    let components = path.split(separator: "/").map(String.init)
+    let components = path.slashSeparatedParts.map(String.init)
     guard components.contains(where: isPattern) else { return [path] }
     var expanded: [String] = [""]
     for component in components {
@@ -28,11 +29,11 @@ enum WorktreeFilePattern {
   /// Whether one name matches one pattern component. `*` and `?` only; a
   /// bracket expression is taken literally.
   static func matches(_ name: String, pattern: String) -> Bool {
-    // As a shell does: a name a person meant to hide is matched only by a
-    // pattern that says the dot, or `*` would take `.git` with it.
-    guard !name.hasPrefix(".") || pattern.hasPrefix(".") else { return false }
-    let name = Array(name)
-    let pattern = Array(pattern)
+    // A hidden name is matched only by a pattern spelling the dot, or `*` would take `.git`.
+    // By code point of the composed form, unlike a shell, so an accent typed or on disk agrees.
+    let name = Array(name.precomposedStringWithCanonicalMapping.unicodeScalars)
+    let pattern = Array(pattern.precomposedStringWithCanonicalMapping.unicodeScalars)
+    guard name.first != "." || pattern.first == "." else { return false }
     var nameIndex = 0
     var patternIndex = 0
     var lastStar = -1

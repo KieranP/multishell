@@ -21,4 +21,17 @@ struct WorktreeGitPathsTests {
         == resolvedRoot + "/link/wt"
     )
   }
+
+  @Test func aGitFileNamesItsDirectoryWhateverItsLineEndingOrALineSeparatorInThePath() throws {
+    let root = try Scratch.directory("git-file")
+    defer { Scratch.remove(root) }
+    let file = root.appendingPathComponent(".git")
+    for (text, expected) in [
+      ("gitdir: /a/b\r\n", "/a/b"), ("gitdir: /a/x\u{2028}y\n", "/a/x\u{2028}y"),
+    ] {
+      try text.write(to: file, atomically: true, encoding: .utf8)
+      let directory = WorktreeGit.directoryNamed(inFile: file, relativeTo: root, after: "gitdir: ")
+      #expect(directory?.path == expected, "\(text.debugDescription)")
+    }
+  }
 }

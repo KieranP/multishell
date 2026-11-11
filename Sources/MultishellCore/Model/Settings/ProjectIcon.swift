@@ -26,7 +26,7 @@ public enum ProjectIcon {
 
   /// What a project with no glyph is drawn as, and the palette's first cell.
   /// Stored by name only to stand over a repository's glyph; either way it is `.folder`.
-  public static let folderSymbol = "folder"
+  static let folderSymbol = "folder"
 
   /// A project's own "no tint", stored to stand over a repository's tint, as nothing
   /// would let it show through. Layering reads it as none, so no view meets it.
@@ -50,9 +50,9 @@ public enum ProjectIcon {
   /// The glyph as a symbol name, or `nil`. A name this build lacks is still
   /// a name, a teammate's build drawing it; an emoji is not.
   static func normalizedGlyph(_ glyph: String?) -> String? {
-    guard let glyph else { return nil }
-    let trimmed = glyph.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty, trimmed.unicodeScalars.allSatisfy(\.isASCII) else { return nil }
+    guard let trimmed = glyph?.trimmedOfAllWhitespaceOrNil,
+      trimmed.unicodeScalars.allSatisfy(\.isASCII)
+    else { return nil }
     return trimmed
   }
 

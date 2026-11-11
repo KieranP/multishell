@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// How git spells a branch as a full refname, and back.
 enum RefName {
   /// The ref a clone records as the remote's default branch.
@@ -15,6 +17,6 @@ enum RefName {
 
   /// `refs/heads/feat` as `feat`, and any other name as it is.
   static func shortLocal(_ ref: String) -> String {
-    ref.hasPrefix(localPrefix) ? String(ref.dropFirst(localPrefix.count)) : ref
+    ref.removingPrefix(localPrefix) ?? ref
   }
 }

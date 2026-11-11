@@ -12,9 +12,10 @@ extension AppModel {
     let worktrees = workspace.worktrees(of: project.id)
     let checkedOut = Set(worktrees.compactMap(\.branch))
     // Only a worktree where the app makes them: one a user made follows by choice.
-    let folder = effectiveWorktreeSettings(for: project).worktreeContainer(for: project).path + "/"
+    let folder = effectiveWorktreeSettings(for: project).worktreeContainer(for: project)
     let madeByTheApp = Set(
-      worktrees.filter { $0.path.standardizedFileURL.path.hasPrefix(folder) }.compactMap(\.branch)
+      worktrees.filter { $0.path.pathComponents(under: folder)?.isEmpty == false }
+        .compactMap(\.branch)
     )
     let trunk = defaultBranchName(of: project)
     remoteState.branchStartPoints[project.id] = remoteState.branchStartPoints[project.id]?

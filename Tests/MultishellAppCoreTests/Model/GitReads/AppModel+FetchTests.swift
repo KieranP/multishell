@@ -51,6 +51,37 @@ struct AppModelFetchTests {
 
   /// A fetch waits on a network, so the sidebar has to say it is happening
   /// and a second click must not start another one.
+  @Test func aFetchFailingAfterItsProjectWasRemovedRaisesNoAlert() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let fetchGate = harness.root.appendingPathComponent("fetch-gate")
+    let model = try harness.modelOnFakeGit(
+      """
+      case "$*" in
+        fetch*)
+          touch "$SCRATCH/fetching"
+          \(harness.holdLine(until: fetchGate))
+          echo "fatal: unable to access remote" >&2
+          exit 128 ;;
+        worktree\\ list*)
+          printf 'worktree %s\\nHEAD abc\\nbranch refs/heads/main\\n\\n' "$SCRATCH/demo" ;;
+        *) exit 0 ;;
+      esac
+      """
+    )
+    let project = harness.project
+    let running = Task { await model.fetch(project) }
+    let fetching = harness.root.appendingPathComponent("fetching")
+    try await waitUntil { FileManager.default.fileExists(atPath: fetching.path) }
+
+    model.removeProject(project)
+    try Data().write(to: fetchGate)
+    await running.value
+
+    #expect(model.workspace.project(project.id) == nil)
+    #expect(model.presentedError == nil)
+  }
+
   @Test func aFetchMarksItsProjectForAllOfItAndRefusesASecond() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

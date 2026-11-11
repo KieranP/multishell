@@ -19,7 +19,8 @@ extension AppModel {
     do {
       try await coordinator.git.fetch(project)
     } catch {
-      present(error)
+      // A project removed while git waited on the network is no one's to alert about.
+      if workspace.project(project.id) != nil { present(error) }
       return
     }
     await refreshWorktrees(of: project)

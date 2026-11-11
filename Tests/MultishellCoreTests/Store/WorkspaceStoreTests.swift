@@ -33,7 +33,7 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.customName(of: worktree.id) == "Checkout flow")
     #expect(store.workspace.displayName(of: worktree) == "Checkout flow")
 
-    store.setCustomName("   ", forWorktree: worktree.id)
+    store.setCustomName(" \n\t ", forWorktree: worktree.id)
     #expect(store.workspace.customWorktreeNames.isEmpty, "a blank name is not a name")
     #expect(store.workspace.displayName(of: worktree) == "main", "the branch takes the row back")
 

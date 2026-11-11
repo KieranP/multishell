@@ -2,12 +2,12 @@ import MultishellAppCore
 import SwiftUI
 
 /// What detection found, an agent, shell, editor or font, with Refresh where a
-/// PATH scan can change it. `options(selected:)` keeps a stale choice listed.
+/// rescan of the PATH or the fonts can change it. `options(selected:)` keeps a stale choice.
 struct DetectionMenu: View {
   let label: String
   @Binding var selection: String
   let options: (String) -> [DetectionOption]
-  /// `nil` for a list the catalogue fixes, which no PATH scan changes.
+  /// `nil` for a list the catalogue fixes, which no rescan changes.
   let refresh: (() -> Void)?
 
   var body: some View {

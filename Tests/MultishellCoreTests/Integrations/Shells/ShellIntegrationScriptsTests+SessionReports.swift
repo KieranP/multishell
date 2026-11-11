@@ -71,14 +71,22 @@ extension ShellIntegrationScriptsTests {
       bash,
       arguments: ["--init-file", files.bashInit.path, "-i"],
       environment: environment,
-      input: "\(codex.path) --continue\nFOO=1 \(codex.path)\ntrue\nexit\n",
+      input: """
+        \(codex.path) --continue
+        FOO=1 \(codex.path)
+        FOO="a b" \(codex.path)
+        env NAME='a  b' \(codex.path)
+        true
+        exit
+
+        """,
     )
 
-    try await waitUntil { Self.lines(of: log).count >= 7 }
+    try await waitUntil { Self.lines(of: log).count >= 11 }
     let lines = Self.lines(of: log).filter { $0.hasPrefix("command-started ") }
     #expect(
-      lines.filter { $0.hasSuffix(" codex") }.count == 2,
-      "the agent it ran, by name without its path or an assignment before it: \(lines)",
+      lines.filter { $0.hasSuffix(" codex") }.count == 4,
+      "the agent it ran, by name without its path or an assignment, quoted or not, before it: \(lines)",
     )
     #expect(
       !lines.contains { $0.hasSuffix(" true") },

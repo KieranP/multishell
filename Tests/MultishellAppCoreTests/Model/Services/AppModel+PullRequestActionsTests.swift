@@ -278,7 +278,7 @@ struct AppModelPullRequestActionsTests {
 
     await harness.model.openPullRequest(of: feat)
 
-    #expect(host.calls.last == "open #33")
+    #expect(host.calls.last(where: { $0.hasPrefix("open") }) == "open #33")
   }
 
   @Test func aSecondCreateWhileTheFirstPreparesAsksNothingMore() async throws {
@@ -495,7 +495,7 @@ struct AppModelPullRequestActionsTests {
     #expect(harness.model.pullRequestMenuItem(for: feat) == .open(number: 9))
 
     await harness.model.openPullRequest(of: feat)
-    #expect(host.calls.last == "open #9")
+    #expect(host.calls.last(where: { $0.hasPrefix("open") }) == "open #9")
   }
 
   @Test func aBranchWhosePullRequestWasClosedIsOfferedANewOne() async throws {

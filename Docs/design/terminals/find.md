@@ -100,3 +100,9 @@ Searching a pane's scrollback. Newest at the bottom.
   alternate screen posts that screen's total but no cleared match, and the bar
   read `-17/3` (`aSelectedMatchPastANewTotalIsShownAsNoneSelected`). Cost: a
   stale match inside the new total still shows until the next step.
+
+## Reviewed and left as is
+
+- **Closing the first pane of a split may hand its open find bar's focus to the
+  pane that moves into its place** (2026-11-12): split children are keyed by
+  position, which `SurfaceFrame` relies on. Unproven on screen.

@@ -101,6 +101,31 @@ struct WorktreeGitStatusTests {
     #expect(!FakeGit.calls(in: fake.directory).contains { $0.contains("hash-object") })
   }
 
+  @Test func aRepositoryWithNoCommitCountsFromTheEmptyTreeWithoutAskingHEADFirst() async throws {
+    let fake = try FakeGit.make("exec git \"$@\"", loggingCalls: true)
+    defer { fake.tearDown() }
+    let repository = try Scratch.directory("unborn")
+    defer { Scratch.remove(repository) }
+    _ = try await fake.runner.run(["init", "-q"], in: repository)
+    try "one\ntwo\n".write(
+      to: repository.appending(path: "new.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    _ = try await fake.runner.run(["add", "new.txt"], in: repository)
+    let worktree = Worktree(path: repository, projectID: repository.path, head: "")
+
+    let status = try await WorktreeGit(runner: fake.runner).status(
+      of: worktree,
+      counting: .stagedAndUnstaged,
+    )
+
+    #expect(status.insertions == 2)
+    let calls = FakeGit.calls(in: fake.directory)
+    #expect(!calls.contains { $0.contains("diff-index") && $0.hasSuffix("HEAD") }, "\(calls)")
+    #expect(!calls.contains { $0.contains("rev-parse") }, "\(calls)")
+  }
+
   @Test func theChosenDiffAlgorithmDecidesTheCountsForBothIndicators() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

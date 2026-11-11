@@ -12,7 +12,7 @@ enum GitRemoteParser {
     var names: [String] = []
     var fetchURLs: [String: String] = [:]
     var pushURLs: [String: String] = [:]
-    for line in output.split(whereSeparator: \.isNewline) {
+    for line in output.gitLines {
       guard let (name, url, direction) = entry(line) else { continue }
       switch direction {
       case .fetch:
@@ -32,7 +32,7 @@ enum GitRemoteParser {
     }
   }
 
-  private static func entry(_ line: Substring) -> (String, String, Direction)? {
+  private static func entry(_ line: String) -> (String, String, Direction)? {
     let fields = line.split(separator: "\t", maxSplits: 1)
     guard fields.count == 2, !fields[0].isEmpty else { return nil }
     for direction in [Direction.fetch, .push] {

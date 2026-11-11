@@ -110,7 +110,7 @@ extension AppModel {
   }
 
   /// What git said these worktrees ignore, and any answer it is still giving.
-  func forgetIgnoreVerdicts(of ids: [Worktree.ID]) {
+  private func forgetIgnoreVerdicts(of ids: [Worktree.ID]) {
     for id in ids {
       ignoreVerdicts[id] = nil
       ignoreRuleChanges[id, default: 0] += 1

@@ -112,3 +112,9 @@
   not SwiftUI's `TextEditor`**: that one turned `"` and `--` into curly quotes
   and a dash as they were typed, which broke the script, and has no switch for
   it; the app's Edit menu drops the Substitutions menu that would.
+
+## Reviewed and left as is
+
+- **A list entry with a combining mark straight after `*` or `?` is copied as a
+  literal path** (2026-11-12): matching composes names first, so such a pattern
+  would match no composed name either way.

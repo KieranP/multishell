@@ -78,7 +78,7 @@ struct EditorLaunchTests {
           command: [
             "/bin/zsh", "-l", "-i", "-c",
             LeadingPathStatement.line(for: .loginZsh)
-              + "/opt/homebrew/bin/nvim .; exec /bin/zsh -l",
+              + "/opt/homebrew/bin/nvim .\nexec /bin/zsh -l",
           ],
         )
     )
@@ -94,7 +94,7 @@ struct EditorLaunchTests {
             "/usr/bin/env", "MULTISHELL_WORKTREE_PATH=/Users/me/Work/repo trees/feat",
             "/bin/zsh", "-l", "-i", "-c",
             LeadingPathStatement.line(for: .loginZsh)
-              + #"code-insiders "$MULTISHELL_WORKTREE_PATH"; exec /bin/zsh -l"#,
+              + #"code-insiders "$MULTISHELL_WORKTREE_PATH"\#nexec /bin/zsh -l"#,
           ],
         )
     )
@@ -113,7 +113,7 @@ struct EditorLaunchTests {
           command: [
             "/bin/zsh", "-l", "-i", "-c",
             LeadingPathStatement.line(for: .loginZsh)
-              + "/opt/homebrew/bin/nvim '/Users/me/Work/repo trees/feat/run.py'; exec /bin/zsh -l",
+              + "/opt/homebrew/bin/nvim '/Users/me/Work/repo trees/feat/run.py'\nexec /bin/zsh -l",
           ],
         )
     )
@@ -121,6 +121,12 @@ struct EditorLaunchTests {
       action("vscode", found: .init(application: nil, executable: shim), file: file)
         == .runInBackground("/opt/homebrew/bin/code '/Users/me/Work/repo trees/feat/run.py'")
     )
+  }
+
+  @Test func aCustomTemplatesTabIsNamedForTheProgramPastItsAssignmentsAndEnv() {
+    #expect(openTabTitle(action("custom", custom: "NVIM_APPNAME=lazy nvim {path}")) == "nvim")
+    #expect(openTabTitle(action("custom", custom: "env FOO=1 /opt/bin/hx {path}")) == "hx")
+    #expect(openTabTitle(action("custom", custom: "env -i nvim {path}")) == "nvim")
   }
 
   private func openTabTitle(_ action: EditorLaunch.Action?) -> String? {

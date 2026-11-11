@@ -141,7 +141,8 @@ user's settings file. Newest at the bottom.
   write would leave a regular file where a dotfiles repo's link was.
 - **A settings file that names a key twice is refused**, as JSONC is:
   JSONSerialization keeps the first and the agents' `JSON.parse` the last, so a
-  rewrite kept the copy the agent ignores.
+  rewrite kept the copy the agent ignores. Keys are compared once their escapes
+  are decoded, as both parsers compare them.
 - **The copy kept sits beside the link**, not in the repo it points into, where
   the user's next status would have to explain it.
 - **Nothing under an event is written over.** Absent means an empty list to add

@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// The selected worktree's files holding every word of a query, best first, by
 /// the byte search the Files panel's filter uses. See quick-switcher/lists-and-matching.md.
 enum QuickSwitcherFileMatches {
@@ -15,14 +17,15 @@ enum QuickSwitcherFileMatches {
     let listing = tree.listing
     // An opened submodule's files are listed under its folder, its own repository's;
     // one never opened has none to leave out.
-    let submoduleFolders = listing.readFolders.intersection(listing.repositories).map { $0 + "/" }
+    let submoduleFolders = listing.readFolders.intersection(listing.repositories)
     var best = QuickSwitcherBestPaths(limit: limit)
     for (path, folded) in zip(listing.filePaths, listing.foldedFilePaths)
     where query.foldedWords.allSatisfy(folded.prefoldedContains) {
       let score = score(of: folded, for: query)
       // The exclusions after the cheap test, only for a path that would be kept.
       guard best.wouldKeep(path, score: score), !listing.ignoredFiles.contains(path),
-        !listing.repositories.contains(path), !submoduleFolders.contains(where: path.hasPrefix),
+        !listing.repositories.contains(path),
+        !submoduleFolders.contains(where: path.isPath(under:)),
         tree.isOpenable(path)
       else { continue }
       best.offer(path, score: score)

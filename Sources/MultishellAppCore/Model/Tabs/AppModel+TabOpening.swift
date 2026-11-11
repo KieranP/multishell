@@ -1,11 +1,11 @@
 import MultishellCore
 
 extension AppModel {
-  /// Cmd+T: the preferred agent where auto-start is on, else a plain shell.
-  /// A strip's button names its group; the keystroke names none.
-  public func newTab(in group: TabGroup.ID? = nil) {
+  /// Cmd+T: the preferred agent where auto-start is on, else a plain shell, in
+  /// the focused group.
+  public func newTab() {
     guard let worktree = requireWorktreeForShell() else { return }
-    addDefaultTab(in: worktree, for: .byUser, group: group)
+    addDefaultTab(in: worktree, for: .byUser)
     reconcileSessions(takingFocus: true)
   }
 
@@ -61,15 +61,11 @@ extension AppModel {
 
   /// What a new tab is by default here, and the first tab a worktree gets
   /// when selected or created.
-  func addDefaultTab(
-    in worktree: Worktree,
-    for reason: TabOpeningReason,
-    group: TabGroup.ID? = nil,
-  ) {
+  func addDefaultTab(in worktree: Worktree, for reason: TabOpeningReason) {
     if let agent = defaultAgent(in: worktree, for: reason) {
-      addAgentTab(agent.id, in: worktree, group: group, task: agent.task)
+      addAgentTab(agent.id, in: worktree, group: nil, task: agent.task)
     } else {
-      store.openTab(in: worktree.id, group: group)
+      store.openTab(in: worktree.id)
     }
   }
 

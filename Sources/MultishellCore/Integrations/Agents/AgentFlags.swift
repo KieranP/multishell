@@ -9,7 +9,7 @@ public enum AgentFlags {
     _ line: String,
     values: [WorktreePlaceholder: String],
   ) -> [String] {
-    split(line).map { expanded($0, values: values) }
+    ShellWords.split(line).map { expanded($0, values: values) }
   }
 
   /// One pass over what was typed. A token appearing in a value is text the
@@ -30,45 +30,5 @@ public enum AgentFlags {
       rest = rest[close.upperBound...]
     }
     return result + rest
-  }
-
-  /// Words the way a shell reads them. A quote left open takes the rest of
-  /// the line, there being nobody here to ask.
-  static func split(_ line: String) -> [String] {
-    var words: [String] = []
-    var word = ""
-    var hasWord = false
-    var quote: Character?
-    var escaping = false
-    for character in line {
-      if escaping {
-        // Inside double quotes a backslash guards only these four, so
-        // `"\d+"` keeps its backslash where `\d` outside quotes loses it.
-        if quote == "\"", !#"\"$`"#.contains(character) { word.append("\\") }
-        word.append(character)
-        hasWord = true
-        escaping = false
-      } else if character == "\\", quote != "'" {
-        // A word starts on the escaped character, not the backslash: a
-        // trailing one would otherwise pass an empty final argument.
-        escaping = true
-      } else if let open = quote {
-        if character == open { quote = nil } else { word.append(character) }
-        hasWord = true
-      } else if character == "'" || character == "\"" {
-        // As with the escape, the word starts on what the quote carries,
-        // never the opening mark: half a flag being typed passes nothing.
-        quote = character
-      } else if character.isWhitespace {
-        if hasWord { words.append(word) }
-        word = ""
-        hasWord = false
-      } else {
-        word.append(character)
-        hasWord = true
-      }
-    }
-    if hasWord { words.append(word) }
-    return words
   }
 }

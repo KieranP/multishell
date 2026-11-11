@@ -14,7 +14,12 @@ struct ServicePageSectionHeader: View {
       isExpanded.toggle()
     } label: {
       HStack(spacing: 6) {
-        DisclosureChevron(isExpanded: isExpanded, metrics: metrics)
+        DisclosureChevron(
+          isExpanded: isExpanded,
+          size: metrics.servicePageMarkSize,
+          weight: .semibold,
+          metrics: metrics,
+        )
         Text(title.uppercased())
           .font(metrics.font(size: metrics.small, weight: .semibold))
           .tracking(0.4)

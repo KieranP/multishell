@@ -19,6 +19,18 @@ struct WatchedDirectoriesTests {
     #expect(watched.reportedURL(forEventAt: "\(real)/src/deep/") == root.appending(path: "src"))
   }
 
+  @Test func aFolderWhoseNameStartsWithACombiningMarkIsReportedAsItsOwnFolder() throws {
+    let root = try Scratch.directory("watched")
+    defer { Scratch.remove(root) }
+    let watched = WatchedDirectories([root])
+    let real = try #require(watched.realPaths.first)
+
+    #expect(
+      watched.reportedURL(forEventAt: "\(real)/\u{0301}b/a.swift")
+        == root.appending(path: "\u{0301}b")
+    )
+  }
+
   @Test func anEntryAtTheTopOfAWatchedDirectoryIsReportedAsItself() throws {
     let root = try Scratch.directory("watched")
     defer { Scratch.remove(root) }

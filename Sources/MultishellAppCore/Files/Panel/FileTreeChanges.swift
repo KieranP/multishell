@@ -24,7 +24,7 @@ struct FileTreeChanges: Sendable {
     // A folder already held has its parents held too, so the walk up stops there.
     for path in paths {
       var end = path.hasSuffix("/") ? path.index(before: path.endIndex) : path.endIndex
-      while let slash = path[..<end].lastIndex(of: "/"),
+      while let slash = path[..<end].unicodeScalars.lastIndex(of: "/"),
         holding.insert(String(path[..<slash])).inserted
       {
         end = slash

@@ -10,6 +10,12 @@ struct BranchNamePartsTests {
     #expect(parts.leaf == "dashboard")
   }
 
+  @Test func aLeafStartingWithACombiningMarkStillSplitsAtTheSlashBeforeIt() {
+    let parts = BranchNameParts("kp/\u{0301}x")
+    #expect(parts.prefix == "kp/")
+    #expect(parts.leaf == "\u{0301}x")
+  }
+
   @Test func aNameWithoutASlashIsAllLeaf() {
     let parts = BranchNameParts("main")
     #expect(parts.prefix == "")
