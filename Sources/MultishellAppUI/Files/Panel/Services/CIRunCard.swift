@@ -19,7 +19,7 @@ struct CIRunCard: View {
     let provider = model.ciProviderName(of: worktree) ?? ""
     ServicePageCard(theme: theme) {
       VStack(alignment: .leading, spacing: 6) {
-        HStack(spacing: UIMetrics.servicePageCardGlyphSpacing) {
+        HStack(spacing: UIMetrics.servicePageGlyphSpacing) {
           CIRunGlyph(
             status: run.status,
             theme: theme,

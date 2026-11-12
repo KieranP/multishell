@@ -184,7 +184,7 @@ struct AppModelPullRequestMergeTests {
     #expect(host.calls.contains("merge #44 squash at tip T (#44)|* one\n\n* two"))
   }
 
-  @Test func checksPassedBehindGitHubsUnknownStillWaitAsTheBannerWould() async throws {
+  @Test func checksPassedBehindGitHubsUnknownStillWaitAsThePageWould() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (host, feat) = try await Self.worktree(showing: .sample(), in: harness)
@@ -196,9 +196,8 @@ struct AppModelPullRequestMergeTests {
     await harness.model.refreshServices(ofProject: harness.project.id)
 
     let shown = try #require(harness.model.services(of: feat).shownPullRequest)
-    let readiness = harness.model.mergeReadiness(of: shown, in: feat)
     #expect(harness.model.pendingMerge(of: feat)?.waitsForChecks == true)
-    #expect(harness.model.mergeAction(for: readiness, in: feat) == .mergeWhenReady)
+    #expect(harness.model.mergePath(of: shown, in: feat).end == .offers(.mergeWhenReady))
   }
 
   @Test func aCheckFailingDropsTheForm() async throws {
@@ -257,18 +256,36 @@ struct AppModelPullRequestMergeTests {
 
     #expect(harness.model.pendingMerge(of: feat) == nil)
     #expect(
-      harness.model.mergeAction(for: harness.model.mergeReadiness(of: shown, in: feat), in: feat)
-        == nil,
+      harness.model.mergePath(of: shown, in: feat).end == .taken,
       "the list predates the merge",
     )
     host.releaseHeldReads()
     await poll.value
     try await waitUntil { harness.model.remoteState.pendingMerges[feat.id] == nil }
     #expect(
-      harness.model.mergeAction(for: harness.model.mergeReadiness(of: shown, in: feat), in: feat)
-        == .merge,
+      harness.model.mergePath(of: shown, in: feat).end == .offers(.merge),
       "the list answered since",
     )
+  }
+
+  @Test func aMergeWhenReadyTheHostTookEndsThePathOnNoButtonUntilTheListAnswers() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, feat) = try await Self.worktree(showing: .sample(), in: harness)
+    defer { host.releaseHeldReads() }
+    harness.model.remoteState.checks[feat.id] = Self.checks(.running)
+    await harness.model.beginMerge(of: feat)
+    let poll = try await Self.holdAPollRead(of: host, in: harness)
+    await harness.model.confirmMerge(of: feat)
+    let shown = try #require(harness.model.services(of: feat).shownPullRequest)
+
+    harness.model.dismissMergeForm(of: feat)
+
+    #expect(harness.model.mergePath(of: shown, in: feat).end == .taken)
+    host.releaseHeldReads()
+    await poll.value
+    try await waitUntil { harness.model.remoteState.pendingMerges[feat.id] == nil }
+    #expect(harness.model.mergePath(of: shown, in: feat).end == .offers(.mergeWhenReady))
   }
 
   @Test func aReadBegunByAnEarlierOpeningDoesNotFillALaterOne() async throws {
@@ -425,7 +442,7 @@ struct AppModelPullRequestMergeTests {
     await cancel.value
   }
 
-  @Test func anAcceptedMergeKeepsTheBannersHoldAcrossACheckout() async throws {
+  @Test func anAcceptedMergeKeepsThePagesHoldAcrossACheckout() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (host, feat) = try await Self.worktree(showing: .sample(), in: harness)
@@ -439,8 +456,7 @@ struct AppModelPullRequestMergeTests {
     await harness.model.refreshBranchScan(of: harness.project)
 
     let shown = try #require(harness.model.services(of: feat).shownPullRequest)
-    let readiness = harness.model.mergeReadiness(of: shown, in: feat)
-    #expect(harness.model.mergeAction(for: readiness, in: feat) == nil, "GitHub already took it")
+    #expect(harness.model.mergePath(of: shown, in: feat).end == .taken, "GitHub already took it")
     host.releaseHeldReads()
     await poll.value
   }

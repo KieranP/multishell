@@ -114,9 +114,11 @@ extension AppModel {
         checks: nil,
       )
     let changesBefore = remoteState.integrationChanges[project.id]
-    // A merged or closed one's checks no longer change once read at its head.
-    if pullRequest.state.isSettled, reading.checks != nil,
-      reading.headCommit == pullRequest.headCommit
+    // A merged or closed one's checks no longer change once read at its head
+    // with none still running, as one merged past the checks may leave them.
+    if pullRequest.state.isSettled, reading.headCommit == pullRequest.headCommit,
+      reading.failure == nil, let checks = reading.checks,
+      !checks.contains(where: \.status.isUnderWay)
     {
       return
     }
@@ -223,7 +225,7 @@ extension AppModel {
   private func panelHasSomethingUnderWay(_ worktree: Worktree) -> Bool {
     switch shownFilesPanelMode {
     case .pullRequest:
-      remoteState.checks[worktree.id]?.checks?.contains(where: \.status.isUnderWay) ?? false
+      mayHaveChecksUnderWay(in: worktree)
 
     case .ciRuns:
       ciHistory(of: worktree)?.runs.first?.isUnderWay == true
@@ -231,5 +233,14 @@ extension AppModel {
     case .files, .changes:
       false
     }
+  }
+
+  /// Read straight after a push, gh lists no required check until GitHub makes
+  /// the runs, while their required rule already holds the merge blocked.
+  private func mayHaveChecksUnderWay(in worktree: Worktree) -> Bool {
+    guard let checks = remoteState.checks[worktree.id]?.checks else { return false }
+    if checks.contains(where: \.status.isUnderWay) { return true }
+    guard let pullRequest = services(of: worktree).shownPullRequest else { return false }
+    return mergeReadiness(of: pullRequest, in: worktree).blockers == [.blockedByRules]
   }
 }

@@ -10,7 +10,7 @@ public struct PendingMerge: Equatable, Sendable {
     /// The host accepted it then; the form says so until the list shows it, or a
     /// list read begun after answers.
     case accepted(at: ContinuousClock.Instant)
-    /// Done on one accepted: the page shows, but the banner offers nothing
+    /// Done on one accepted: the page shows, but its merge path offers nothing
     /// until the list says where it stands.
     case dismissed(acceptedAt: ContinuousClock.Instant)
   }
@@ -31,7 +31,7 @@ public struct PendingMerge: Equatable, Sendable {
   let pullRequestURL: URL
   /// The head whose checks the page showed; the merge is held to it.
   let headCommit: String
-  /// Follows the banner while editing, then stays what was sent.
+  /// Follows the merge path's offer while editing, then stays what was sent.
   var waitsForChecks: Bool
   /// `nil` until the host answers.
   var options: PullRequestMergeOptions?

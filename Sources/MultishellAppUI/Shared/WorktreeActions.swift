@@ -43,10 +43,7 @@ struct WorktreeActions: View {
     }
     if worktree.isRemovable {
       Divider()
-      Button(t("action.remove-worktree"), role: .destructive) {
-        model.requestWorktreeRemoval(of: worktree)
-      }
-      .disabled(!model.mayRemove(worktree))
+      RemoveWorktreeButton(model: model, worktree: worktree)
     }
   }
 }

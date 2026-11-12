@@ -66,7 +66,7 @@ extension AppModel {
 
   /// What decides whether the shown pull request can merge, from its
   /// checks once read.
-  public func mergeReadiness(of pullRequest: PullRequest, in worktree: Worktree) -> MergeReadiness {
+  func mergeReadiness(of pullRequest: PullRequest, in worktree: Worktree) -> MergeReadiness {
     // An earlier head's checks say nothing of this one's.
     let checks = remoteState.checks[worktree.id].flatMap { reading in
       reading.pullRequestNumber == pullRequest.number
@@ -74,6 +74,18 @@ extension AppModel {
         ? reading.checks : nil
     }
     return MergeReadiness(pullRequest, checks: checks)
+  }
+
+  /// The page's steps toward merging the shown pull request, and what it offers
+  /// at their end.
+  public func mergePath(of pullRequest: PullRequest, in worktree: Worktree) -> MergePath {
+    MergePath(
+      pullRequest,
+      readiness: mergeReadiness(of: pullRequest, in: worktree),
+      isMergeTaken: isMergeTaken(in: worktree),
+      isOutgrown: services(of: worktree).outgrownPullRequest?.url == pullRequest.url,
+      checksReadProblem: panelReadProblem(of: worktree),
+    )
   }
 
   /// Why the page's own read, the checks or the run history, gave no answer.

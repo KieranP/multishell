@@ -63,6 +63,18 @@ command-line tool.
   the front; every minute where a shown run is under way. A return to the front
   reads again past thirty seconds, so switching apps asks nothing. A run on hold
   is not under way here: it waits on a person, perhaps for days.
+- **The pull request page reads its checks every minute too while nothing it
+  read accounts for GitHub's blocked.** Straight after a push GitHub made the
+  runs 44 s later, and `gh` lists no required check before then, so the page
+  named a rule as the blocker for two minutes. A required review accounts for
+  the block, so a pull request waiting on one keeps the two minutes. Cost: one
+  held by a rule Multishell cannot read, signed commits say, is asked each
+  minute while its page shows.
+- **A merged or closed pull request's checks are read again while any still runs
+  or the last read failed**, as one merged past its checks leaves them running
+  and a failed read's note would stand for good; otherwise once at its head.
+  Cost: a status its service left pending for good is asked each minute while
+  that pull request's page shows.
 - **A read asked for while one runs follows it**, the running one having begun
   before what moved, and the remotes are read once a round for both services. So
   does a return to the front during a poll, at its shorter interval. A Fetch

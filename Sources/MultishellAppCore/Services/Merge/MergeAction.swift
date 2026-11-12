@@ -1,4 +1,4 @@
-/// What the pull request page's banner offers toward merging.
+/// What the pull request page's merge path offers toward merging.
 public enum MergeAction: Equatable, Sendable {
   case cancelAutoMerge
   case merge

@@ -21,7 +21,7 @@ struct PullRequestSummary: View {
   var body: some View {
     let metrics = model.metrics
     VStack(alignment: .leading, spacing: 6) {
-      HStack(alignment: .firstTextBaseline, spacing: UIMetrics.servicePageCardGlyphSpacing) {
+      HStack(alignment: .firstTextBaseline, spacing: UIMetrics.servicePageGlyphSpacing) {
         PullRequestGlyph(
           mark: PullRequestMark(pullRequest),
           theme: theme,

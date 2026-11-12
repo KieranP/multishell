@@ -31,6 +31,10 @@ public struct PullRequestMark: Equatable, Sendable {
   public let tone: Tone
   public let corner: Corner?
 
+  init(shape: Shape, tone: Tone) {
+    (self.shape, self.tone, corner) = (shape, tone, nil)
+  }
+
   public init(_ pullRequest: PullRequest) {
     switch pullRequest.state {
     case .closed:

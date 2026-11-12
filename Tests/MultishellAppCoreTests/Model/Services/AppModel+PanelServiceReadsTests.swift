@@ -60,7 +60,7 @@ struct AppModelPanelServiceReadsTests {
     #expect(harness.model.trackedFiles[feat.id] == nil, "a services' page lists no files")
     let pullRequest = try #require(harness.model.services(of: feat).pullRequest)
     #expect(
-      harness.model.mergeReadiness(of: pullRequest, in: feat).blockers == [.failingChecks(1)]
+      harness.model.mergeReadiness(of: pullRequest, in: feat).blockers == [.failingChecks]
     )
   }
 
@@ -338,6 +338,76 @@ struct AppModelPanelServiceReadsTests {
     #expect(!provider.calls.contains { $0.hasPrefix("history") })
   }
 
+  @Test func aMergedPullRequestsChecksStillRunningAreReadAgain() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await showingFeat(harness)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, state: .merged, headBranch: "feat", headCommit: tip)])
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: tip,
+      checks: [.sample(status: .running)],
+    )
+    harness.store.setFilesPanelMode(.pullRequest)
+
+    await harness.model.readPanelServices(of: feat.id)
+
+    #expect(host.calls.contains("checks #9"))
+  }
+
+  @Test func aMergedPullRequestsChecksWhoseLastReadFailedAreReadAgain() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await showingFeat(harness)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, state: .merged, headBranch: "feat", headCommit: tip)])
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: tip,
+      checks: [.sample()],
+      failure: .failed("HTTP 502"),
+    )
+    harness.store.setFilesPanelMode(.pullRequest)
+
+    await harness.model.readPanelServices(of: feat.id)
+
+    #expect(host.calls.contains("checks #9"))
+    #expect(harness.model.remoteState.checks[feat.id]?.failure == nil)
+  }
+
+  @Test func onlyAnOptionalCheckOnAPullRequestTheHostBlocksIsReadAgainAtTheUnderWayPace()
+    async throws
+  {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await showingFeat(harness)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, blocker: .blocked, headBranch: "feat", headCommit: tip)])
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: tip,
+      checks: [.sample(name: "lint", isRequired: false)],
+    )
+    harness.store.setFilesPanelMode(.pullRequest)
+    let read = PanelRead(worktree: feat.id, page: .pullRequest)
+    _ = harness.model.remoteState.panelReadLog.begin(read, at: .now - .seconds(90))
+    harness.model.remoteState.panelReadLog.finish(read)
+
+    await harness.model.readPanelServicesIfDue(of: feat)
+
+    #expect(host.calls.contains("checks #9"))
+  }
+
   @Test func aMergedPullRequestsChecksAreNotReadAgain() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -437,6 +507,62 @@ struct AppModelPanelServiceReadsTests {
     harness.model.setFilesPanelMode(.pullRequest)
 
     #expect(harness.model.panelReadingIsStale(feat))
+  }
+
+  @Test func noChecksYetOnAPullRequestTheHostBlocksAreReadAgainAtTheUnderWayPace() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await showingFeat(harness)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, blocker: .blocked, headBranch: "feat", headCommit: tip)])
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: tip,
+      checks: [],
+    )
+    harness.store.setFilesPanelMode(.pullRequest)
+    let read = PanelRead(worktree: feat.id, page: .pullRequest)
+    _ = harness.model.remoteState.panelReadLog.begin(read, at: .now - .seconds(90))
+    harness.model.remoteState.panelReadLog.finish(read)
+
+    await harness.model.readPanelServicesIfDue(of: feat)
+
+    #expect(host.calls.contains("checks #9"))
+  }
+
+  @Test func noChecksOnAPullRequestWaitingOnAReviewKeepTheIdlePace() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await showingFeat(harness)
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([
+        .sample(
+          number: 9,
+          review: .required,
+          blocker: .blocked,
+          headBranch: "feat",
+          headCommit: tip,
+        )
+      ])
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: tip,
+      checks: [],
+    )
+    harness.store.setFilesPanelMode(.pullRequest)
+    let read = PanelRead(worktree: feat.id, page: .pullRequest)
+    _ = harness.model.remoteState.panelReadLog.begin(read, at: .now - .seconds(90))
+    harness.model.remoteState.panelReadLog.finish(read)
+
+    await harness.model.readPanelServicesIfDue(of: feat)
+
+    #expect(!host.calls.contains("checks #9"))
   }
 
   @Test func thePollReadsThePagesChecksOnlyWhileThePageShows() async throws {
