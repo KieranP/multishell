@@ -152,6 +152,34 @@ public final class AppModel<Surface> {
   /// One coalesced read per file tab; see `scheduleFileTabRead`.
   @ObservationIgnored var pendingFileTabReads: [FileTab.ID: Task<Void, Never>] = [:]
 
+  /// Each worktree's review comments, kept in a file per worktree rather than
+  /// the workspace; see files/review-comments.md.
+  var reviewComments: [Worktree.ID: [ReviewComment]] = [:]
+  @ObservationIgnored let reviewsDirectory: URL
+  /// Each worktree's file written to this run, its writes landing in order.
+  @ObservationIgnored var reviewFiles: [Worktree.ID: ReviewFile] = [:]
+  /// The agent pane Review's picker was set to in each worktree. Runtime state.
+  var reviewRecipientPicks: [Worktree.ID: TerminalSession.ID] = [:]
+  /// What each worktree's last Send said, until a comment is added there.
+  var reviewSendReceipts: [Worktree.ID: ReviewSendReceipt] = [:]
+  /// Each worktree's panes by when they last took focus, newest first, which
+  /// picks the agent a review goes to.
+  var focusedSessionHistory: [Worktree.ID: [TerminalSession.ID]] = [:]
+  /// The comment last clicked in each worktree's Review, its card outlined.
+  var selectedReviewComments: [Worktree.ID: ReviewComment.ID] = [:]
+  /// Each file tab's open composer, at most one, closed with its tab.
+  var reviewComposers: [FileTab.ID: ReviewComposer] = [:]
+  /// What each composer holds as it is typed, which nothing redraws for.
+  @ObservationIgnored var reviewDrafts: [FileTab.ID: String] = [:]
+  /// A card each file tab's view scrolls into view, taken as `changeStepRequests` are.
+  var reviewCardRevealRequests: [FileTab.ID: ReviewCardPlacement.CardID] = [:]
+  /// Composers opened since their card last took the keyboard.
+  @ObservationIgnored var reviewComposerKeyboardRequests: Set<FileTab.ID> = []
+  /// Worktrees whose review file was read, at launch or when first listed after.
+  @ObservationIgnored var worktreesWithReviewFilesRead: Set<Worktree.ID> = []
+  /// Where Review's handoffs are written.
+  @ObservationIgnored let dropsDirectory: URL
+
   /// What a tab drag is doing. Here, not in the group tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.
   public var tabDrag = TabDragState()
@@ -367,6 +395,7 @@ public final class AppModel<Surface> {
   /// Set while saves are failing, so the alert is raised once rather than
   /// again after every change until the disk is writable.
   @ObservationIgnored var hasReportedSaveFailure = false
+  @ObservationIgnored var hasReportedReviewSaveFailure = false
 
   public var workspace: Workspace { store.workspace }
 
@@ -378,6 +407,8 @@ public final class AppModel<Surface> {
     coordinator: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
     themesDirectory: URL,
+    reviewsDirectory: URL,
+    dropsDirectory: URL,
     platform: any Platform = NullPlatform(),
     messageSource: any MessageSource = NullMessageSource(),
     notifier: any SessionNotifier = NullNotifier(),
@@ -390,6 +421,8 @@ public final class AppModel<Surface> {
     self.coordinator = coordinator
     self.watcher = watcher
     self.themesDirectory = themesDirectory
+    self.reviewsDirectory = reviewsDirectory
+    self.dropsDirectory = dropsDirectory
     self.messageSource = messageSource
     self.notifier = notifier
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
@@ -403,6 +436,7 @@ public final class AppModel<Surface> {
     // Nothing is selected at launch, so no shell starts until the user picks
     // a worktree. Saved tabs stay saved and open with that first click.
     store.selectWorktree(nil)
+    readReviewFilesOfNewWorktrees()
     wireCallbacks()
     observeForAutosave()
   }

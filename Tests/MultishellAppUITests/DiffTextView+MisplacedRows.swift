@@ -18,7 +18,7 @@ extension DiffTextView {
         to: fragment.rangeInElement.location,
       )
       let row = displayText.row(atOffset: offset)
-      let expected = CGFloat(row) * geometry.rowHeight
+      let expected = geometry.top(ofRow: row) - DiffRowGeometry.verticalInset
       if abs(fragment.layoutFragmentFrame.minY - expected) > 0.5 {
         misplaced.append(
           "row \(row) at y \(fragment.layoutFragmentFrame.minY) expected \(expected)"

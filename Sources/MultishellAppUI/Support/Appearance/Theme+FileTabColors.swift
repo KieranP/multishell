@@ -20,6 +20,8 @@ extension Theme {
   var paddingRowTint: NSColor { fileRGB(.paddingBackground).nsColor }
   var findMatchTint: NSColor { fileRGB(.findMatch).nsColor }
   var fileSelection: NSColor { fileRGB(.selectionBackground).nsColor }
+  /// The gutter's +, in the waiting blue Review's To send chips wear.
+  var commentMark: NSColor { interfaceRGB(.waiting, in: .states).nsColor }
   /// The file's own text, softened: no theme key, as every theme's text reads
   /// against both its tints.
   var steppedChangeBorder: NSColor { fileText.withAlphaComponent(0.55) }

@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 extension PresentedError {
-  /// An agent's settings file, or the app's own state file, that would not read.
+  /// An agent's settings file, or the app's own state or review file, that would not read.
   static func settingsOrStateFileAlert(_ error: any Error) -> Alert? {
     switch error {
     case let entries as UnexpectedHookEntriesShape:
@@ -36,6 +36,15 @@ extension PresentedError {
         ),
       )
 
+    case let review as UnreadableReviewFile:
+      return (t("error.unreadable-review-title"), reviewFileMessage(review))
+
+    case let reviews as UnreadableReviewFiles:
+      return (
+        t("error.unreadable-review-title"),
+        reviews.files.map(reviewFileMessage).joined(separator: "\n\n"),
+      )
+
     case let state as UnmovableStateFile:
       return (
         t("error.unreadable-state-title"),
@@ -45,5 +54,14 @@ extension PresentedError {
     default:
       return nil
     }
+  }
+
+  /// Where it went, or that it stayed, and what the read said.
+  private static func reviewFileMessage(_ review: UnreadableReviewFile) -> String {
+    let underlying = String(describing: review.underlying)
+    guard let backup = review.backup else {
+      return t("error.unmoved-review-message", review.fileURL.path, underlying)
+    }
+    return t("error.unreadable-review-message", backup.lastPathComponent, underlying)
   }
 }

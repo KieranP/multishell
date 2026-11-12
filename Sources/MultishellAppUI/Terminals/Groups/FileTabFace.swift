@@ -3,8 +3,8 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-/// A file tab in the strip: a document glyph with its change's dot, the title
-/// struck through once the file has gone, and no rename.
+/// A file tab in the strip: a document glyph with its change's dot, the title struck
+/// through once the file has gone, a bubble counting comments to send, no rename.
 struct FileTabFace: View {
   let model: AppModel
   let group: TabGroup
@@ -33,6 +33,14 @@ struct FileTabFace: View {
         .foregroundStyle(textColor)
         .lineLimit(1)
         .truncationMode(.head)
+      let pendingComments = model.pendingReviewCommentCount(of: tab)
+      if pendingComments > 0 {
+        ReviewCountBadge(
+          count: pendingComments,
+          theme: theme,
+          metrics: model.metrics,
+        )
+      }
       Spacer(minLength: 0)
       TabCloseButton(
         metrics: model.metrics,

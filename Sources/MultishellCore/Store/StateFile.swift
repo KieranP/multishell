@@ -13,11 +13,7 @@ struct StateFile: Sendable {
   }
 
   private var backupURL: URL {
-    let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(
-      of: ":",
-      with: "-",
-    )
-    return fileURL.deletingPathExtension().appendingPathExtension("\(stamp).broken.json")
+    BrokenFileBackup.url(for: fileURL)
   }
 
   init(fileURL: URL = Paths.stateFile) {

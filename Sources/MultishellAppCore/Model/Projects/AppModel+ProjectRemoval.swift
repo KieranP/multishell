@@ -54,7 +54,9 @@ extension AppModel {
     if pendingProjectRemoval?.project.id == project.id { pendingProjectRemoval = nil }
     // Only the view changing hands the keyboard on; see Docs/design/architecture.md.
     let wasInView = worktreeInView?.projectID == project.id
-    forgetWorktrees(store.removeProject(project.id))
+    let removed = store.removeProject(project.id)
+    releaseReviewFiles(of: removed)
+    forgetWorktrees(removed)
     reconcileSessions(takingFocus: wasInView)
     Task { await rearmWatcher() }
   }

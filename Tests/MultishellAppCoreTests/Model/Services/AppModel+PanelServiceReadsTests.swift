@@ -633,4 +633,24 @@ struct AppModelPanelServiceReadsTests {
     #expect(harness.model.filesPanelState(of: main.id).mode == .files)
     #expect(harness.model.filesPanelState(of: main.id).expandedFolders.contains("src"))
   }
+
+  @Test func theReviewPageReadsNoServices() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.review)
+
+    await harness.model.readPanelServicesIfDue(of: main)
+
+    let read = PanelRead(worktree: main.id, page: .review)
+    #expect(
+      harness.model.remoteState.panelReadLog.isDue(
+        read,
+        at: .now,
+        interval: ServiceReadInterval.poll,
+      )
+    )
+  }
 }

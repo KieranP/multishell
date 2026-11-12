@@ -16,7 +16,7 @@ extension ControlRefusal {
 
     case .fileTabNotRead(let id): "tab \(id) is still being read; ask again once it is"
 
-    case .fileTabShowsImage(let id): "tab \(id) shows an image, which has no lines to step or find"
+    case .fileTabShowsImage(let id): "tab \(id) shows an image, which has no lines"
 
     case .fileTabShowsNotice(let id):
       "tab \(id) shows a notice, its file too large, binary, missing or unreadable"
@@ -61,6 +61,18 @@ extension ControlRefusal {
 
     case .noProject(let id): "no project \(id); `multishell projects list` names them"
 
+    case .noRemovedLines(let path):
+      "those lines of \(path) hold no removed line; leave out --removed to comment "
+        + "on the file on disk"
+
+    case .noReviewLines(let path):
+      "no file tab of the worktree holds those lines of \(path); "
+        + "`multishell tabs open-file` opens one"
+
+    case .noReviewRecipient(let id):
+      "worktree \(id) has no pane with an agent to send to, "
+        + "or not the one named; `multishell tabs list` names its panes"
+
     case .noSettingsPage(let page, let pages):
       "no \(page.rawValue) page in the settings asked for, whose pages are "
         + pages.map(\.rawValue).joined(separator: ", ")
@@ -84,6 +96,7 @@ extension ControlRefusal {
     case .noTab(let id): "no tab \(id); `multishell tabs list` names them"
     case .nothingInView: "no worktree's tabs are on screen"
     case .nothingPresented: "no alert, dialog, sheet or field is up"
+    case .nothingToSend(let id): "worktree \(id) has no review comment waiting to be sent"
     case .noWindow: "the main window is closed"
 
     case .noWorktree(let id): "no worktree \(id); `multishell worktrees list` names them"

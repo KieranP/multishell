@@ -42,6 +42,8 @@ struct GitHarness {
       coordinator: TestGit.coordinator(runner: git),
       watcher: watcher,
       themesDirectory: root.appendingPathComponent("themes", isDirectory: true),
+      reviewsDirectory: root.appendingPathComponent("reviews", isDirectory: true),
+      dropsDirectory: root.appendingPathComponent("drops", isDirectory: true),
       platform: platform,
       notifier: notifier,
     )
@@ -92,6 +94,8 @@ struct GitHarness {
       coordinator: fake.coordinator,
       watcher: watcher,
       themesDirectory: model.themesDirectory,
+      reviewsDirectory: model.reviewsDirectory,
+      dropsDirectory: model.dropsDirectory,
     )
     model.statusReadLog.pace = .unpaced
     model.presentedError = nil

@@ -16,6 +16,8 @@ struct FilesPanelRow: View {
   let row: FileTreeRow
   /// The row's file is the tab in front.
   let isSelected: Bool
+  /// Its file's comments waiting to be sent, none for a folder.
+  let pendingComments: Int
   let theme: Theme
 
   private var nameColor: Color {
@@ -55,6 +57,13 @@ struct FilesPanelRow: View {
               .fill(theme.color(for: .modified).opacity(0.8))
               .frame(width: 5, height: 5)
           }
+          if pendingComments > 0 {
+            ReviewCountBadge(
+              count: pendingComments,
+              theme: theme,
+              metrics: metrics,
+            )
+          }
           Spacer(minLength: 0)
         }
         .contentShape(.rect)
@@ -76,7 +85,7 @@ struct FilesPanelRow: View {
     .rowSelection(theme.filesPanel, isSelected: isSelected)
     .help(row.path)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(AccessibilityText.fileRow(row))
+    .accessibilityLabel(AccessibilityText.fileRow(row, pendingReviewComments: pendingComments))
     .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(.default, activate)
     .contextMenu {

@@ -106,8 +106,13 @@ What the panel lists and why each went the way it did. Newest at the bottom.
 - **A file taken out of the index but left on disk counts both its entries** in
   the list, as the badge does, while its tab draws it as the new file it is: the
   row says `+2 −2` where the tab says `+2`.
-- **PR and CI are the panel's third and fourth pages**, kept in the same saved
+- **PR and CI are the panel's fourth and fifth pages**, kept in the same saved
   choice as Files and Changes; services/reads.md has what they read and when.
+- **Review is the page between Changes and PR**, listing the worktree's review
+  comments by file with Send at its foot (files/review-comments.md). Its glyph
+  carries a dot while a comment waits, not a count, as the rule above has it,
+  and it is kept in the same saved choice as the other pages. A file's row in
+  Files and Changes counts its comments waiting to be sent, as its tab does.
 
 ## Reviewed and left as is
 

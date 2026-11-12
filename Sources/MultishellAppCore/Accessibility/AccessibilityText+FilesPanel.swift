@@ -4,7 +4,7 @@ import MultishellGitKit
 /// What a screen reader says of a Files panel row, which a hand-drawn list
 /// cannot say itself: what it is, whether it is open, what changed.
 extension AccessibilityText {
-  public static func fileRow(_ row: FileTreeRow) -> String {
+  public static func fileRow(_ row: FileTreeRow, pendingReviewComments: Int) -> String {
     var parts = [row.isFolder ? t("spoken.folder", row.name) : t("spoken.file", row.name)]
     if let folder = row.parentFolder { parts.append(t("spoken.in-folder", folder)) }
     if row.isFolder {
@@ -16,6 +16,7 @@ extension AccessibilityText {
       if counts.showsInsertions { parts.append(t("spoken.lines-added", counts.insertions)) }
       if counts.showsDeletions { parts.append(t("spoken.lines-removed", counts.deletions)) }
     }
+    if pendingReviewComments > 0 { parts.append(Self.pendingReviewComments(pendingReviewComments)) }
     return parts.joined(separator: ", ")
   }
 }

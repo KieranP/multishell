@@ -6,6 +6,13 @@ import SwiftUI
 struct PlainTextView: NSViewRepresentable {
   @Binding var text: String
   let fontSize: Double
+  /// ⌘↩, where the field has something to submit.
+  var commit: (() -> Void)?
+  /// Escape, where the field can be dismissed.
+  var cancel: (() -> Void)?
+  var takesKeyboardOnAppear = false
+  var onTookKeyboard: (() -> Void)?
+  var colors: PlainTextColors?
 
   /// Its undo steps are the window's, and an Undo after the page left would edit
   /// text nobody sees and save it.
@@ -23,10 +30,20 @@ struct PlainTextView: NSViewRepresentable {
   }
 
   func makeNSView(context: Context) -> NSScrollView {
-    let scrollView = NSTextView.scrollableTextView()
+    let scrollView = NSScrollView()
     scrollView.drawsBackground = false
+    scrollView.hasVerticalScroller = true
     scrollView.autohidesScrollers = true
-    guard let textView = scrollView.documentView as? NSTextView else { return scrollView }
+    let textView = KeyCommandTextView(usingTextLayoutManager: true)
+    textView.autoresizingMask = [.width]
+    textView.isVerticallyResizable = true
+    textView.isHorizontallyResizable = false
+    textView.maxSize = NSSize(
+      width: CGFloat.greatestFiniteMagnitude,
+      height: .greatestFiniteMagnitude,
+    )
+    textView.textContainer?.widthTracksTextView = true
+    scrollView.documentView = textView
     textView.string = text
     textView.isRichText = false
     textView.allowsUndo = true
@@ -39,12 +56,27 @@ struct PlainTextView: NSViewRepresentable {
     textView.isContinuousSpellCheckingEnabled = false
     textView.smartInsertDeleteEnabled = false
     textView.textStorage?.delegate = context.coordinator
+    if takesKeyboardOnAppear {
+      // A turn later, once the view is in its window.
+      Task { @MainActor [weak textView, onTookKeyboard] in
+        guard let textView, textView.window?.makeFirstResponder(textView) == true else { return }
+        onTookKeyboard?()
+      }
+    }
     return scrollView
   }
 
   func updateNSView(_ scrollView: NSScrollView, context: Context) {
     context.coordinator.text = $text
-    guard let textView = scrollView.documentView as? NSTextView else { return }
+    guard let textView = scrollView.documentView as? KeyCommandTextView else { return }
+    textView.commit = commit
+    textView.cancel = cancel
+    if let colors {
+      // The area's text and selection, the caret in its text, as a themed field's are.
+      textView.textColor = colors.text
+      textView.insertionPointColor = colors.text
+      textView.selectedTextAttributes = [.backgroundColor: colors.selection]
+    }
     // `.disabled` stops clicks only; a view already holding the keyboard kept typing.
     textView.isEditable = context.environment.isEnabled
     let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)

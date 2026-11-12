@@ -1,5 +1,6 @@
 import AppKit
 import MultishellCore
+import SwiftUI
 import Testing
 
 @testable import MultishellAppCore
@@ -445,5 +446,25 @@ struct SplitDiffDocumentViewTests {
     split.layoutSubtreeIfNeeded()
 
     #expect(after.displayText.row(of: reported.last ?? anchor) == 350)
+  }
+
+  @Test func aCardPassBeforeASizeLeavesARestoreOnHEADsLineAndItsAnchorAlone() throws {
+    let rows = Self.replacedBlock(lastText: "b 199")
+    let split = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    var reported: [FileTabScroll] = []
+    split.onScrolledTo = { reported.append($0) }
+    split.restore(rows.displayText.scroll(atRow: 250, x: 0))
+    split.show(try #require(rows.split), theme: Theme.builtins[0])
+
+    split.committed.showReviewCards([]) { _ in AnyView(EmptyView()) }
+    split.onDisk.showReviewCards([]) { _ in AnyView(EmptyView()) }
+    split.frame = NSRect(x: 0, y: 0, width: 800, height: 300)
+    let window = OffscreenWindow.holding(split, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    split.layoutSubtreeIfNeeded()
+
+    let topRow = Int(split.committed.topRow.rounded())
+    #expect(split.committed.textView.displayText.lines[topRow].oldNumber == 251)
+    #expect(reported.isEmpty, "the model keeps the anchor it handed over")
   }
 }

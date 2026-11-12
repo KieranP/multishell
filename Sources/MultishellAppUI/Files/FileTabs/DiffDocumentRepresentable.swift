@@ -12,6 +12,7 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
     var theme: Theme?
     let paintedFindMatches: PaintedFindMatches
     var highlighting: Task<Void, Never>?
+    var reviewCards: ShownReviewCards?
 
     init(paintedFindMatches: PaintedFindMatches) {
       self.paintedFindMatches = paintedFindMatches
@@ -49,6 +50,8 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
       let anchor = rows.flatMap { view?.textView.displayText.anchor(ofChangeAt: $0) }
       model?.noteSteppedChangeAnchor(anchor, of: tabID)
     }
+    view.onCommentOnLines = { [weak model] lines in model?.openReviewComposer(on: lines, in: tabID)
+    }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
     if let anchor = model.steppedChangeAnchor(of: tabID) { view.restoreSteppedChangeAnchor(anchor) }
     return view
@@ -82,7 +85,19 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
       model.noteFileFindShown(shown, of: tabID)
     }
     for direction in model.takeChangeStepRequests(tabID) { view.step(toChange: direction) }
+    showReviewCards(on: view, coordinator: coordinator)
     view.textView.takeKeyboard(ifAskedBy: model, for: tabID)
+  }
+
+  private func showReviewCards(on view: DiffDocumentView, coordinator: Coordinator) {
+    guard let tab = model.workspace.fileTab(tabID) else { return }
+    view.showReviewCards(
+      ShownReviewCards(of: tab, in: text.lines, model: model, theme: theme),
+      replacing: &coordinator.reviewCards,
+      model: model,
+      tabID: tabID,
+    )
+    if let card = model.takeReviewCardReveal(tabID) { view.revealReviewCard(card) }
   }
 
   func makeCoordinator() -> Coordinator {

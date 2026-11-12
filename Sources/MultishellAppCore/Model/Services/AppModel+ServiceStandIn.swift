@@ -50,7 +50,7 @@ extension AppModel {
   /// afresh each turn, as the page or its worktree may change while it waits.
   private func readServicesPageOnceAnyUnderWayEnds() async {
     while !Task.isCancelled, isFilesPanelOnScreen, let worktree = filesPanelWorktree,
-      !shownFilesPanelMode.listsFiles
+      shownFilesPanelMode.isServicePage
     {
       let read = PanelRead(worktree: worktree.id, page: shownFilesPanelMode)
       await readEnded(

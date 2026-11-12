@@ -23,6 +23,9 @@ final class SplitDiffDocumentView: NSView {
   /// model to keep.
   var onSteppedChangeAnchorChanged: ((ChangeAnchor?) -> Void)?
   private var firstResponderWatch: NSKeyValueObservation?
+  /// Each column's card gaps, opened in both at each row's taller.
+  private var columnGaps: [ObjectIdentifier: [Int: CGFloat]] = [:]
+  private var isGatheringReviewCardGaps = false
 
   /// The right where neither side has the keyboard, as find counts there.
   private var keyboardSide: DiffDocumentView {
@@ -35,6 +38,8 @@ final class SplitDiffDocumentView: NSView {
     super.init(frame: .zero)
     clipsToBounds = true
     committed.numbering = .committed
+    committed.commentSide = .committed
+    onDisk.commentSide = .onDisk
     committed.textView.copiesAsDiff = false
     onDisk.textView.copiesAsDiff = false
     divider.wantsLayer = true
@@ -48,6 +53,12 @@ final class SplitDiffDocumentView: NSView {
     onDisk.onScrolledTo = { [weak self] onDiskScroll in
       guard let self else { return }
       onScrolledTo?(split?.scroll(atRow: onDisk.topRow, x: onDiskScroll.x) ?? onDiskScroll)
+    }
+    for side in [committed, onDisk] {
+      side.onReviewCardGaps = { [weak self, weak side] gaps in
+        guard let self, let side else { return }
+        openReviewCardGaps(gaps, of: side)
+      }
     }
     for (side, other) in [(committed, onDisk), (onDisk, committed)] {
       side.onSteppedRowsChanged = { [weak self, weak other] rows in
@@ -101,6 +112,50 @@ final class SplitDiffDocumentView: NSView {
     }
   }
 
+  /// The column holding the comment's card scrolls, the lock bringing the other;
+  /// neither column's saved scroll may then undo it.
+  func revealReviewCard(_ card: ReviewCardPlacement.CardID) {
+    let holding = [committed, onDisk].first { $0.reviewCards.rows(of: card) != nil }
+    guard let column = holding else { return }
+    committed.cancelPendingRestore()
+    onDisk.cancelPendingRestore()
+    column.revealReviewCard(card)
+  }
+
+  /// A column without a card at a row shows an empty gap as tall as the
+  /// other's, so the same offset stays the same row on both sides.
+  private func openReviewCardGaps(_ gaps: [Int: CGFloat], of side: DiffDocumentView) {
+    columnGaps[ObjectIdentifier(side)] = gaps
+    guard !isGatheringReviewCardGaps else { return }
+    openMergedReviewCardGaps()
+  }
+
+  /// Both columns' cards placed before their merged gaps open, once: each
+  /// opening lays the whole text out again.
+  func placeReviewCards(_ place: () -> Void) {
+    isGatheringReviewCardGaps = true
+    place()
+    isGatheringReviewCardGaps = false
+    openMergedReviewCardGaps()
+  }
+
+  private func openMergedReviewCardGaps() {
+    let merged = columnGaps.values.reduce(into: [Int: CGFloat]()) { merged, column in
+      merged.merge(column, uniquingKeysWith: max)
+    }
+    let rowGaps = RowGaps(merged)
+    // Unchanged gaps move nothing, and a scroll would end a column's wait for the lock.
+    guard
+      committed.textView.geometry.rowGaps != rowGaps || onDisk.textView.geometry.rowGaps != rowGaps
+    else { return }
+    // Both columns take the gaps before either scrolls, or the lock would copy one
+    // column's corrected offset to the other while it still had the old gaps.
+    let anchor = onDisk.scrollAnchor
+    committed.applyRowGaps(rowGaps)
+    onDisk.applyRowGaps(rowGaps)
+    onDisk.scroll(toAnchor: anchor)
+  }
+
   private func countKeyboardSide() {
     onStepsCounted?(keyboardSide.changeSteps)
   }
@@ -121,12 +176,24 @@ final class SplitDiffDocumentView: NSView {
     countKeyboardSide()
   }
 
+  /// Both columns laid out and their cards measured before the merged gaps open
+  /// once, then each column's saved scroll or reveal on them.
   override func layout() {
     super.layout()
     let half = (bounds.width - 1) / 2
     committed.frame = NSRect(x: 0, y: 0, width: half, height: bounds.height)
     divider.frame = NSRect(x: half, y: 0, width: 1, height: bounds.height)
     onDisk.frame = NSRect(x: half + 1, y: 0, width: bounds.width - half - 1, height: bounds.height)
+    let columns = [committed, onDisk]
+    for column in columns { column.defersPendingScrolls = true }
+    placeReviewCards {
+      for column in columns { column.layoutSubtreeIfNeeded() }
+    }
+    // A restore or a reveal worked out before the gaps open would miss them.
+    for column in columns {
+      column.defersPendingScrolls = false
+      column.applyPendingScrolls()
+    }
   }
 
   /// Rows by the same offset; sideways only when this side moved sideways, as

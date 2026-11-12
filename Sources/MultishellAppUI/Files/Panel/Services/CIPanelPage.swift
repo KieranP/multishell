@@ -55,7 +55,7 @@ struct CIPanelPage: View {
       }
       .ticking($now, every: Self.ageTickInterval)
     } else if let text = page.emptyText {
-      ServicePageEmptyState(
+      PanelPageEmptyState(
         text: text,
         theme: theme,
         metrics: metrics,

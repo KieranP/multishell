@@ -11,12 +11,15 @@ struct FileListRows: View {
   let theme: Theme
 
   var body: some View {
+    // One pass over the comments for every row; a folder's path names no comment.
+    let pendingComments = model.pendingReviewCommentCounts(in: worktreeID)
     ForEach(rows) { row in
       FilesPanelRow(
         model: model,
         worktreeID: worktreeID,
         row: row,
         isSelected: model.isShownFile(row, in: worktreeID),
+        pendingComments: pendingComments[row.path] ?? 0,
         theme: theme,
       )
     }

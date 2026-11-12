@@ -9,6 +9,7 @@ extension FilesPanelMode: CommandNamed {
     case .files: "files"
     case .changes: "git"
     case .pullRequest: "pull-request"
+    case .review: "review"
     }
   }
 }

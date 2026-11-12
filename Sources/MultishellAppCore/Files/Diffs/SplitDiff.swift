@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// The committed side beside the file on disk, row for row: each run of removed lines beside
 /// the added run that replaced it, the shorter padded.
 public struct SplitDiff: Equatable, Sendable {

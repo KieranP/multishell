@@ -2,10 +2,10 @@ import MultishellCore
 
 extension PullRequestPage {
   /// `nil` where there is a pull request to show.
-  public var emptyText: ServicePageEmptyText? {
+  public var emptyText: PanelPageEmptyText? {
     switch self {
     case .noPullRequest(let branch, let isPushed):
-      ServicePageEmptyText(
+      PanelPageEmptyText(
         title: t("panel.no-pull-request", branch),
         detail: isPushed
           ? t("panel.no-pull-request-pushed", branch)
@@ -13,18 +13,18 @@ extension PullRequestPage {
       )
 
     case .notApplicable:
-      ServicePageEmptyText(title: t("panel.pull-request-not-applicable"), detail: nil)
+      PanelPageEmptyText(title: t("panel.pull-request-not-applicable"), detail: nil)
 
-    case .notHosted: ServicePageEmptyText(title: t("panel.not-hosted"), detail: nil)
+    case .notHosted: PanelPageEmptyText(title: t("panel.not-hosted"), detail: nil)
 
-    case .notRead(let problem): ServicePageEmptyText(title: t("panel.not-read"), detail: problem)
+    case .notRead(let problem): PanelPageEmptyText(title: t("panel.not-read"), detail: problem)
 
     case .pullRequest: nil
 
-    case .trunk: ServicePageEmptyText(title: t("panel.pull-request-trunk"), detail: nil)
+    case .trunk: PanelPageEmptyText(title: t("panel.pull-request-trunk"), detail: nil)
 
     case .turnedOff:
-      ServicePageEmptyText(
+      PanelPageEmptyText(
         title: t("panel.pull-requests-off"),
         detail: t("panel.turned-off-detail"),
       )

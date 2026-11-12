@@ -99,7 +99,8 @@ enum Helper {
       .contains(where: helpFlags.contains)
   }
 
-  /// `nil` for a command that does not drive the app.
+  // `nil` for a command that does not drive the app; one branch a command group.
+  // swiftlint:disable:next cyclomatic_complexity
   private static func runControl(
     _ arguments: [String],
     environment: [String: String],
@@ -119,6 +120,7 @@ enum Helper {
     case .worktrees: return try runWorktrees(rest, environment: environment)
     case .tabs: return try runTabs(rest, environment: environment)
     case .files: return try runFiles(rest, environment: environment)
+    case .review: return try runReview(rest, environment: environment)
     case .panes: return try runPanes(rest, environment: environment)
     case .userInterface: return try runUI(rest, environment: environment)
     case .board: return try runBoard(rest, environment: environment)

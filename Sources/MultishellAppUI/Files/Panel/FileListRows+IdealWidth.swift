@@ -13,7 +13,10 @@ extension FileListRows {
       FileListRows(
         model: model,
         worktreeID: worktreeID,
-        rows: model.fileTreeRows(of: worktreeID).likeliestWidest(measuredRows),
+        rows: model.fileTreeRows(of: worktreeID).likeliestWidest(
+          measuredRows,
+          pendingComments: model.pendingReviewCommentCounts(in: worktreeID),
+        ),
         theme: model.currentTheme,
       )
     }

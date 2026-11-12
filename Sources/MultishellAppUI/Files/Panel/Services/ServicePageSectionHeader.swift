@@ -22,7 +22,7 @@ struct ServicePageSectionHeader: View {
         )
         Text(title.uppercased())
           .font(metrics.font(size: metrics.small, weight: .semibold))
-          .tracking(0.4)
+          .tracking(UIMetrics.filesPanelHeadingTracking)
         Spacer(minLength: 0)
       }
       .foregroundStyle(theme.filesPanel.textTertiary)

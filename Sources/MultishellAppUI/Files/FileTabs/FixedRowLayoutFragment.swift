@@ -4,10 +4,10 @@ import MultishellAppCore
 /// A row placed where its number says, not where TextKit 2 estimates; an
 /// undocumented override point the drift tests guard. See files/file-tabs.md.
 final class FixedRowLayoutFragment: NSTextLayoutFragment {
-  /// Asked each time the frame is, not kept: replacing only a file's changed
-  /// rows keeps the fragments below them, whose row numbers it moved.
+  /// Asked each time the frame is, not kept: a partial re-read and a review card's
+  /// gap both move the rows below them while their fragments stay.
   private weak var layoutDelegate: FixedRowLayoutDelegate?
-  private let geometry: DiffRowGeometry
+  private let rowHeight: CGFloat
 
   override var layoutFragmentFrame: CGRect {
     let frame = super.layoutFragmentFrame
@@ -16,12 +16,17 @@ final class FixedRowLayoutFragment: NSTextLayoutFragment {
         manager.offset(from: manager.documentRange.location, to: rangeInElement.location)
       } ?? 0
     let layoutDelegate = layoutDelegate
-    let row = MainActor.assumeIsolated { layoutDelegate?.displayText.row(atOffset: offset) } ?? 0
+    let top =
+      MainActor.assumeIsolated {
+        layoutDelegate.map { delegate in
+          delegate.geometry.top(ofRow: delegate.displayText.row(atOffset: offset))
+        }
+      } ?? DiffRowGeometry.verticalInset
     return CGRect(
       x: frame.minX,
-      y: geometry.top(ofRow: row) - DiffRowGeometry.verticalInset,
+      y: top - DiffRowGeometry.verticalInset,
       width: frame.width,
-      height: geometry.rowHeight,
+      height: rowHeight,
     )
   }
 
@@ -29,10 +34,10 @@ final class FixedRowLayoutFragment: NSTextLayoutFragment {
     textElement: NSTextElement,
     range: NSTextRange?,
     layoutDelegate: FixedRowLayoutDelegate,
-    geometry: DiffRowGeometry,
+    rowHeight: CGFloat,
   ) {
     self.layoutDelegate = layoutDelegate
-    self.geometry = geometry
+    self.rowHeight = rowHeight
     super.init(textElement: textElement, range: range)
   }
 

@@ -29,7 +29,7 @@ extension DiffTextView {
       x: visibleRect.minX + inset,
       y: geometry.top(ofRow: rows.lowerBound) + inset / 2,
       width: max(0, visibleRect.width - inset * 2),
-      height: CGFloat(rows.count) * geometry.rowHeight - inset,
+      height: geometry.height(ofRows: rows) - inset,
     )
   }
 }

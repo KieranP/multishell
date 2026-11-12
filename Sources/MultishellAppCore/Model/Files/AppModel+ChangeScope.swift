@@ -4,6 +4,10 @@ import MultishellGitKit
 /// Modified or Branch: one choice for the panel's Changes list and every file
 /// tab, which count a change against the same thing; see Docs/design/files/modified-and-branch.md.
 extension AppModel {
+  static func fileTabScope(readingSince base: DefaultBranch?) -> ChangeScope {
+    base == nil ? .modified : .branch
+  }
+
   /// The panel's switch and every file tab's, kept for the next launch.
   public func setChangeScope(_ scope: ChangeScope) {
     guard workspace.changeScope != scope else { return }
@@ -38,5 +42,10 @@ extension AppModel {
   /// project's base branch, under Branch.
   func fileTabBase(in id: Worktree.ID) -> DefaultBranch? {
     workspace.changeScope == .branch ? defaultBranch(ofWorktree: id) : nil
+  }
+
+  /// What a file tab's committed side is read under: Modified where Branch has no base.
+  func fileTabScope(in id: Worktree.ID) -> ChangeScope {
+    Self.fileTabScope(readingSince: fileTabBase(in: id))
   }
 }

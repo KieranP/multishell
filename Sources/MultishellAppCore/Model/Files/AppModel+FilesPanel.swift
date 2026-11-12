@@ -131,7 +131,7 @@ extension AppModel {
         state.collapsedChangesFolders.insert(path)
       }
 
-    case .ciRuns, .pullRequest:
+    case .ciRuns, .pullRequest, .review:
       return
     }
     filesPanelStates[id] = state

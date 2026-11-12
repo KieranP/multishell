@@ -13,6 +13,8 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     var theme: Theme?
     let paintedFindMatches: PaintedFindMatches
     var highlighting: Task<Void, Never>?
+    var committedReviewCards: ShownReviewCards?
+    var onDiskReviewCards: ShownReviewCards?
 
     init(paintedFindMatches: PaintedFindMatches) {
       self.paintedFindMatches = paintedFindMatches
@@ -46,6 +48,11 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     view.onStepsCounted = { [weak model] steps in model?.noteChangeSteps(steps, of: tabID) }
     view.onSteppedChangeAnchorChanged = { [weak model] anchor in
       model?.noteSteppedChangeAnchor(anchor, of: tabID)
+    }
+    for side in [view.committed, view.onDisk] {
+      side.onCommentOnLines = { [weak model] lines in
+        model?.openReviewComposer(on: lines, in: tabID)
+      }
     }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
     if let anchor = model.steppedChangeAnchor(of: tabID) { view.restoreSteppedChangeAnchor(anchor) }
@@ -88,7 +95,32 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
       model.noteFileFindShown(shown, of: tabID)
     }
     for direction in model.takeChangeStepRequests(tabID) { view.step(toChange: direction) }
+    showReviewCards(on: view, coordinator: coordinator)
     view.onDisk.textView.takeKeyboard(ifAskedBy: model, for: tabID)
+  }
+
+  /// Each column its own side's cards, the split opening both columns' gaps alike.
+  private func showReviewCards(on view: SplitDiffDocumentView, coordinator: Coordinator) {
+    guard let tab = model.workspace.fileTab(tabID) else { return }
+    let columns:
+      [(
+        DiffDocumentView, DiffSide, DiffDisplayText,
+        ReferenceWritableKeyPath<Coordinator, ShownReviewCards?>
+      )] = [
+        (view.committed, .committed, split.committed, \.committedReviewCards),
+        (view.onDisk, .onDisk, split.onDisk, \.onDiskReviewCards),
+      ]
+    view.placeReviewCards {
+      for (column, side, text, shownPath) in columns {
+        column.showReviewCards(
+          ShownReviewCards(of: tab, in: text.lines, model: model, theme: theme, side: side),
+          replacing: &coordinator[keyPath: shownPath],
+          model: model,
+          tabID: tabID,
+        )
+      }
+    }
+    if let card = model.takeReviewCardReveal(tabID) { view.revealReviewCard(card) }
   }
 
   func makeCoordinator() -> Coordinator {

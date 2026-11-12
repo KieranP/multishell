@@ -2,23 +2,44 @@ import AppKit
 import MultishellAppCore
 import MultishellCore
 
-/// Line numbers and change bars, redrawn as the clip scrolls: `NSRulerView`
-/// went stale across programmatic scrolls on macOS 26.
+/// Line numbers, change bars and the + to comment, redrawn as the clip scrolls:
+/// `NSRulerView` went stale across programmatic scrolls on macOS 26.
 @MainActor
 final class DiffGutterView: NSView {
-  private static let numberLeading: CGFloat = 8
   private static let signWidth: CGFloat = 12
   private static let barWidth: CGFloat = 3
   private static let trailing: CGFloat = 6
 
-  var displayText = DiffDisplayText.empty
+  /// New text ends a drag and the +, their rows being the old text's.
+  var displayText = DiffDisplayText.empty {
+    didSet {
+      draggedRows = nil
+      hoveredRow = nil
+    }
+  }
   /// Whose line numbers the rows carry: the committed side's on a split's left.
   var numbering = DiffSide.onDisk
-  private let geometry: DiffRowGeometry
-  /// The clip's top, in the document's coordinates.
-  var scrolledTo: CGFloat = 0 { didSet { if scrolledTo != oldValue { needsDisplay = true } } }
+  /// A split column's side; `nil` in Unified, where a removed row's is the committed side.
+  var commentSide: DiffSide?
+  var onCommentOnRows: ((_ start: Int, _ end: Int) -> Void)?
+  var hoveredRow: Int? { didSet { if hoveredRow != oldValue { needsDisplay = true } } }
+  /// The row a drag started on and the one under the pointer.
+  var draggedRows: (start: Int, end: Int)? { didSet { needsDisplay = true } }
+  /// The text's, its review card gaps included.
+  var geometry: DiffRowGeometry { didSet { needsDisplay = true } }
+  /// The clip's top in the document. A scroll clears the +, the pointer reporting no move.
+  var scrolledTo: CGFloat = 0 {
+    didSet {
+      guard scrolledTo != oldValue else { return }
+      hoveredRow = nil
+      needsDisplay = true
+    }
+  }
   private var colors: (number: NSColor, added: NSColor, removed: NSColor, background: NSColor) =
     (.secondaryLabelColor, .systemGreen, .systemRed, .clear)
+  /// The + on its mark, and a drag's rows, in the theme's file colours.
+  private(set) var commentColors: (mark: NSColor, plus: NSColor, dragged: NSColor) =
+    (.clear, .clear, .clear)
 
   override var isFlipped: Bool { true }
 
@@ -27,8 +48,11 @@ final class DiffGutterView: NSView {
   var preferredWidth: CGFloat {
     let largest = displayText.lines.compactMap { $0.number(on: numbering) }.max() ?? 1
     let digits = CGFloat(String(largest).count)
-    return Self.numberLeading + digits * digitWidth + Self.signWidth + Self.barWidth + Self.trailing
+    return plusColumnWidth + digits * digitWidth + Self.signWidth + Self.barWidth + Self.trailing
   }
+
+  /// Left of the numbers, so a click on a number never opens a composer.
+  var plusColumnWidth: CGFloat { geometry.rowHeight }
 
   private var digitWidth: CGFloat {
     ("0" as NSString).size(withAttributes: [.font: geometry.font]).width
@@ -46,6 +70,7 @@ final class DiffGutterView: NSView {
     colors = (
       theme.lineNumberText, theme.addedLineMark, theme.removedLineMark, theme.fileBackground,
     )
+    commentColors = (theme.commentMark, theme.fileBackground, theme.fileSelection)
     needsDisplay = true
   }
 
@@ -60,6 +85,7 @@ final class DiffGutterView: NSView {
     for row in geometry.rows(in: visible, count: displayText.lines.count) {
       let line = displayText.lines[row]
       let top = geometry.top(ofRow: row) - scrolledTo
+      drawCommentMarks(onRow: row, top: top)
       let textTop =
         top + (geometry.rowHeight - geometry.font.ascender + geometry.font.descender) / 2
       if let number = line.number(on: numbering) {

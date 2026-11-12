@@ -47,6 +47,11 @@ public enum Paths {
     stateDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
   }
 
+  /// A file per worktree holding its review comments.
+  public static var reviewsDirectory: URL {
+    stateDirectory.appendingPathComponent("reviews\(variant)", isDirectory: true)
+  }
+
   /// What every hook line and every file of ours names, and how one is told
   /// from a hook of the user's own.
   static let helperName = "multishell"

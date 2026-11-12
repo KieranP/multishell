@@ -13,7 +13,7 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case debugToolsOff
   /// Not a file the worktree holds that opens as text or an image, which a click beeps at.
   case fileNotOpenable(path: String)
-  /// Shut, or showing a pull request's or CI's page, which lists no files.
+  /// Shut, or showing Review, a pull request's or CI's page, which lists no files.
   case filesPanelListsNoFiles
   /// A file tab's rows are still being read, so a step or find has nothing to act on.
   case fileTabNotRead(id: UUID)
@@ -49,6 +49,12 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case noProject(id: String)
   /// Project settings asked for with no project named, shown or selected.
   case noProjectChosen
+  /// `--removed` on lines that hold no removed line, which are the file on disk's.
+  case noRemovedLines(path: String)
+  /// No file tab of the worktree holds those lines on that side.
+  case noReviewLines(path: String)
+  /// The worktree has no live pane with an agent, or not the one named.
+  case noReviewRecipient(id: String)
   /// The worktree's row draws no glyph for the page, having nothing on it.
   case noServicePage(ServicePage, id: String)
   case noSetting(key: String)
@@ -65,6 +71,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case nothingInView
   /// No alert, dialog, sheet or field is up to dismiss.
   case nothingPresented
+  /// Review holds no comment waiting to be sent.
+  case nothingToSend(id: String)
   /// The main window is closed, so there is nothing to size or draw.
   case noWindow
   case noWorktree(id: String)

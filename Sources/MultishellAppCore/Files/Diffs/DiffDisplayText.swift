@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// A file tab's rows as one text, a row a line: what the view lays out, copies
 /// from and searches. A 1 MiB file can be one line, so a line is capped.
 public struct DiffDisplayText: Equatable, Sendable {

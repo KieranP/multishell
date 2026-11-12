@@ -12,8 +12,8 @@ extension Helper {
     list` print, such as p-3f9a2c1d and w-8b1e04aa; TAB_ID and PANE_ID the
     ones `tabs list` prints. Of the commands that drive the app, only
     `projects add`, `debug screenshot` and `debug services stand-in` take a
-    path from where they run; `tabs open-file` and `files` take one inside
-    the worktree. Whatever a command prints is JSON; `panes read` and
+    path from where they run; `tabs open-file`, `files` and `review add` take
+    one inside the worktree. Whatever a command prints is JSON; `panes read` and
     `debug log` take --plain for text.
 
       open                       Start the app, or bring it forward
@@ -32,6 +32,7 @@ extension Helper {
       panes split|select|close|type|paste|key|show|read|wait|find|clear-status
       files list|filter|expand|collapse
                                  The Files panel's list
+      review list|add|send|clear Review's comments
       board list                 The Agents board's columns and cards
       sidebar list               The sidebar's rows as drawn
       ui show|hide|filter|dismiss|menu|switcher
@@ -90,6 +91,7 @@ extension Helper {
     case .files: filesUsage
     case .panes: paneUsage
     case .projects: projectUsage
+    case .review: reviewUsage
     case .sidebar: sidebarUsage
     case .tabs: tabUsage
     case .userInterface: uiUsage

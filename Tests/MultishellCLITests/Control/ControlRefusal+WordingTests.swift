@@ -75,7 +75,7 @@ struct ControlRefusalWordingTests {
     let id = UUID()
     #expect(
       ControlRefusal.fileTabShowsImage(id: id).wording
-        == "tab \(id) shows an image, which has no lines to step or find"
+        == "tab \(id) shows an image, which has no lines"
     )
   }
 

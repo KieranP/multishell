@@ -91,6 +91,16 @@ extension AppModel {
     case .stepToChange(let tab, let direction): await replyToStepToChange(direction, in: tab)
     case .findInFileTab(let id, let action): await replyToFindInFileTab(action, in: id)
     case .listFiles: replyToListFiles()
+    case .listReviewComments(let worktree): await replyToListReviewComments(in: worktree)
+
+    case .addReviewComment(let order): await replyToAddReviewComment(order)
+
+    case .sendReview(let worktree, let sessionID):
+      await replyToSendReview(in: worktree, to: sessionID)
+
+    case .clearReviewComments(let worktree, let sentOnly):
+      await replyToClearReviewComments(in: worktree, sentOnly: sentOnly)
+
     case .filterFiles(let text): replyToFilterFiles(text)
 
     case .setFilesFolderExpanded(let path, let expanded):

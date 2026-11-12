@@ -108,12 +108,18 @@ struct MergeForm: View {
         ProgressView().controlSize(.small)
       }
       Button(pending.dismissLabel) { model.dismissMergeForm(of: worktree) }
+        .buttonStyle(ThemedButtonStyle(fill: theme.filesPanel.fill, text: theme.filesPanel.text))
         .disabled(pending.isSending)
       if let confirmLabel = pending.confirmLabel {
         Button(confirmLabel) {
           Task { await model.confirmMerge(of: worktree) }
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(
+          ThemedButtonStyle(
+            fill: theme.color(for: .attention, on: theme.filesPanel),
+            text: theme.filesPanel.background,
+          )
+        )
         .disabled(!pending.canConfirm)
       }
     }

@@ -50,7 +50,7 @@ extension Paths {
     }
     // A name cut or respelled keeps a hash of the whole, so two that start
     // alike still get files of their own.
-    let start = name.prefix(9).map { $0.isPortableNameCharacter ? $0 : "-" }
-    return ".debug-" + String(start) + "-" + String(format: "%04x", name.stableHash & 0xFFFF)
+    let start = name.portableName(maxLength: 9)
+    return ".debug-" + start + "-" + String(format: "%04x", name.stableHash & 0xFFFF)
   }
 }

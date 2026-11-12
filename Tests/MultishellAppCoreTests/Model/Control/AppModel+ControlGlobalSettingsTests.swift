@@ -262,6 +262,18 @@ struct AppModelControlGlobalSettingsTests {
     )
   }
 
+  @Test func theFilesPanelsReviewPageIsNamedReviewOnTheCommandLine() async {
+    let harness = Harness()
+
+    #expect(
+      await harness.messageSource.ask(.writeGlobalSetting(key: "filesPanelMode", value: "review"))
+        == .done
+    )
+    #expect(harness.model.workspace.filesPanelMode == .review)
+    let read = await harness.messageSource.ask(.readGlobalSettings(key: "filesPanelMode"))
+    #expect(read?.output == #""review""#)
+  }
+
   @Test func theRenameAgentModelAndEffortAreSetAsThePickersSetThem() async {
     let harness = Harness()
     let write = { (key: String, value: String) in

@@ -43,6 +43,8 @@ struct AppModelSidebarRowsTests {
       coordinator: nil,
       watcher: FakeWatcher(),
       themesDirectory: harness.themes,
+      reviewsDirectory: harness.reviews,
+      dropsDirectory: harness.drops,
     )
     model.select(harness.main, openingFirstTab: .never)
 

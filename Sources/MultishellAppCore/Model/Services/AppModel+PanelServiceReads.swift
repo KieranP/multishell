@@ -62,7 +62,7 @@ extension AppModel {
   /// A turn of the page or a selection reads only what is due, and only while
   /// frontmost, as the poll does: arrowing through rows would ask each.
   func readPanelServicesIfDue(of worktree: Worktree) async {
-    guard !shownFilesPanelMode.listsFiles, platform.isActive else { return }
+    guard shownFilesPanelMode.isServicePage, platform.isActive else { return }
     let interval =
       panelHasSomethingUnderWay(worktree)
       ? ServiceReadInterval.underWay : ServiceReadInterval.poll
@@ -86,7 +86,7 @@ extension AppModel {
     switch page {
     case .pullRequest: await readChecks(of: worktree)
     case .ciRuns: await readCIHistory(of: worktree)
-    case .files, .changes: break
+    case .files, .changes, .review: break
     }
     guard remoteState.integrationChanges[worktree.projectID] == changesBefore else {
       remoteState.panelReadLog.markDue(read)
@@ -217,7 +217,7 @@ extension AppModel {
       guard let history = ciHistory(of: worktree) else { return expectsCIHistory(worktree) }
       return services.ciRun.map { run in run.id != history.askedForRun } ?? false
 
-    case .files, .changes:
+    case .files, .changes, .review:
       return false
     }
   }
@@ -230,7 +230,7 @@ extension AppModel {
     case .ciRuns:
       ciHistory(of: worktree)?.runs.first?.isUnderWay == true
 
-    case .files, .changes:
+    case .files, .changes, .review:
       false
     }
   }

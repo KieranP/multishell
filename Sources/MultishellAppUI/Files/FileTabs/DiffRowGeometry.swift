@@ -1,7 +1,7 @@
 import AppKit
 
-/// Every row one height at `row × height` below the inset, as the forced
-/// fragments hold TextKit 2; the text, tints and gutter all place rows here.
+/// Every row one height at `row × height` below the inset, as the forced fragments hold
+/// TextKit 2, plus the review card gaps above it. Text, tints and gutter place rows here.
 struct DiffRowGeometry {
   /// Above the first row and below the last, as the prototype pads them.
   static let verticalInset: CGFloat = 6
@@ -16,6 +16,7 @@ struct DiffRowGeometry {
   /// No printable ASCII character is wider: a proportional file font's `W`
   /// is several of its spaces.
   let widestASCIIAdvance: CGFloat
+  var rowGaps = RowGaps.empty
 
   /// `fontFamily` `nil`, or one this Mac lacks, is the system monospace.
   init(fontFamily: String?, fontSize: CGFloat) {
@@ -30,13 +31,33 @@ struct DiffRowGeometry {
   }
 
   func top(ofRow row: Int) -> CGFloat {
-    Self.verticalInset + CGFloat(row) * rowHeight
+    Self.verticalInset + CGFloat(row) * rowHeight + rowGaps.heightAbove(row: row)
+  }
+
+  /// From the first row's top to the last's bottom, any gap between them included.
+  func height(ofRows rows: Range<Int>) -> CGFloat {
+    guard let last = rows.last else { return 0 }
+    return top(ofRow: last) + rowHeight - top(ofRow: rows.lowerBound)
+  }
+
+  /// Where the gap under `row` starts, just below the row.
+  func gapTop(afterRow row: Int) -> CGFloat {
+    top(ofRow: row) + rowHeight
   }
 
   /// The clip's offset that puts `row` at the top, a fraction where one is
   /// cut; row 0 and above keep the inset in view.
   func scrollOffset(puttingAtTop row: Double) -> CGFloat {
-    row <= 0 ? 0 : Self.verticalInset + row * rowHeight
+    guard row > 0 else { return 0 }
+    return Self.verticalInset + row * rowHeight + rowGaps.heightAbove(row: Int(row))
+  }
+
+  /// The clip's offset putting `row` `rowsAbove` rows' height under the top, by
+  /// points: a card's gap among those rows would push it below a short clip.
+  func scrollOffset(putting row: Int, rowsBelowTop rowsAbove: Int) -> CGFloat {
+    let offset = top(ofRow: row) - CGFloat(rowsAbove) * rowHeight
+    // Near the top the inset stays in view, unless a gap above pushed the row down.
+    return row > rowsAbove ? offset : max(0, offset - Self.verticalInset)
   }
 
   /// Fewer than the context rows in a clip too short for them, or the change
@@ -47,7 +68,7 @@ struct DiffRowGeometry {
 
   /// The row at the top of a clip at `offset`, a fraction where one is cut.
   func topRow(atScrollOffset offset: CGFloat) -> Double {
-    max(0, (offset - Self.verticalInset) / rowHeight)
+    max(0, rowGaps.row(atContentY: offset - Self.verticalInset, rowHeight: rowHeight))
   }
 
   /// The rows a rect in the document reaches, clamped to `count`: a rect
@@ -60,12 +81,13 @@ struct DiffRowGeometry {
   }
 
   private func row(atY y: CGFloat, rounded rule: FloatingPointRoundingRule, count: Int) -> Int {
-    let row = ((y - Self.verticalInset) / rowHeight).rounded(rule)
+    guard !y.isNaN else { return 0 }
+    let row = rowGaps.row(atContentY: y - Self.verticalInset, rowHeight: rowHeight).rounded(rule)
     guard !row.isNaN else { return 0 }
-    return Int(min(max(row, 0), CGFloat(count)))
+    return Int(min(max(row, 0), Double(count)))
   }
 
   func documentHeight(rows count: Int) -> CGFloat {
-    Self.verticalInset * 2 + CGFloat(count) * rowHeight
+    Self.verticalInset * 2 + CGFloat(count) * rowHeight + rowGaps.total
   }
 }

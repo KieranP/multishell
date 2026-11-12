@@ -8,7 +8,7 @@ extension String {
   }
 
   /// Trimmed of spaces, tabs and newlines, or `nil` where nothing is left.
-  var trimmedOfAllWhitespaceOrNil: String? {
+  public var trimmedOfAllWhitespaceOrNil: String? {
     let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
     return trimmed.isEmpty ? nil : trimmed
   }

@@ -4,10 +4,14 @@ import Foundation
 /// project or worktree named by its `ControlID`. Cases are only ever added.
 public enum ControlRequest: Codable, Equatable, Sendable {
   case addProject(path: String)
+  /// A comment on lines of a file shown in one of the worktree's tabs, as its composer adds one.
+  case addReviewComment(ReviewCommentOrder)
   /// Auto Rename, started; the row says when it is done.
   case autoRenameWorktree(id: String)
   /// Clear Status on one pane, a tab's panes or a worktree's.
   case clearPaneState(id: UUID)
+  /// Review's Clear sent, or every comment where `sentOnly` is false.
+  case clearReviewComments(worktree: String?, sentOnly: Bool)
   case clearTabState(id: UUID)
   case clearWorktreeState(id: String)
   case closePane(id: UUID, force: Bool)
@@ -43,6 +47,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   /// Every item of the menu bar, by its titles from the bar down.
   case listMenuItems
   case listProjects
+  case listReviewComments(worktree: String?)
   /// The sidebar's rows as drawn: filtered, ordered, collapsed.
   case listSidebar
   /// `nil` lists every worktree's.
@@ -89,6 +94,8 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case selectPane(id: UUID)
   case selectTab(id: UUID)
   case selectWorktree(id: String)
+  /// Review's Send: to the agent pane named, else the one its picker shows.
+  case sendReview(worktree: String?, to: UUID?)
   case setDebugInfo(shown: Bool)
   case setDebugTools(enabled: Bool)
   /// A folder of the Files panel's list opened or shut, as its chevron does.

@@ -28,7 +28,10 @@ extension AppModel {
     reconciler.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
     // A click into a pane is looking at it: seen is the pane with the
     // keyboard, and a click is how the keyboard moves without a reconcile.
-    reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
+    reconciler.onFocus = { [weak self] id in
+      self?.markInViewSeen()
+      self?.noteSessionFocused(id)
+    }
     reconciler.onLiveSessionsChanged = { [weak self] in self?.noteLiveSessionsChanged() }
     reconciler.onExit = { [weak self] heldTheKeyboard in
       self?.noteSessionExited(heldTheKeyboard: heldTheKeyboard)
