@@ -17,19 +17,4 @@ struct AccessibilityTextServicesTests {
   @Test func anEarlierRunSaysItsStatusThenWhetherItIsOpen() {
     #expect(AccessibilityText.ciStatus(.failed, isExpanded: false) == "failed, collapsed")
   }
-
-  @Test func aCheckSaysItsStatusWhereAReviewOrConflictsNameItAlready() {
-    let check = PullRequestCheck.sample(workflow: "ci", status: .failed)
-    let failingCheck = MergeReadiness.Requirement(
-      kind: .check(check),
-      status: .failed,
-      isRequired: true,
-    )
-    let review = MergeReadiness.Requirement(kind: .review, status: .failed, isRequired: true)
-    let conflicts = MergeReadiness.Requirement(kind: .conflicts, status: .failed, isRequired: true)
-
-    #expect(AccessibilityText.requirementStatus(failingCheck) == "failed")
-    #expect(AccessibilityText.requirementStatus(review) == nil)
-    #expect(AccessibilityText.requirementStatus(conflicts) == nil)
-  }
 }

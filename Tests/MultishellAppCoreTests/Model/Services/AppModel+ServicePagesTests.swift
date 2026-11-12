@@ -31,7 +31,7 @@ struct AppModelServicePagesTests {
     )
   }
 
-  @Test func checksNotYetReadKeepThePullRequestFromReadingReady() async throws {
+  @Test func checksNotYetReadHoldTheMergeBack() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (host, _) = harness.connectServices()
@@ -45,8 +45,37 @@ struct AppModelServicePagesTests {
 
     let readiness = harness.model.mergeReadiness(of: pullRequest, in: feat)
 
-    #expect(readiness.verdict == .notReady)
     #expect(readiness.blockers == [.checksNotRead])
+  }
+
+  @Test func aFailedChecksReadWithNoneReadIsTheChecksStepsOwn() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(.success([.sample(number: 9, headBranch: "feat")]))
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.select(feat)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.pullRequest)
+    let pullRequest = try #require(harness.model.services(of: feat).pullRequest)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: pullRequest.headCommit,
+      checks: nil,
+      failure: .failed("HTTP 502"),
+    )
+
+    let path = harness.model.mergePath(of: pullRequest, in: feat)
+
+    let step = try #require(path.steps.first { $0.kind == .checksNotRead })
+    #expect(path.hint(of: step, base: "main", host: "GitHub")?.hasSuffix("HTTP 502") == true)
+    #expect(path.staleChecksNote == nil)
+    #expect(path.end == .waits(.checksRead))
+    #expect(path.endHint(host: "GitHub") == "Once Multishell can read the checks")
   }
 
   @Test func thePagesRedrawWhenABranchIsPushed() async throws {
@@ -152,6 +181,7 @@ struct AppModelServicePagesTests {
 
     #expect(harness.model.pullRequestPage(of: feat) == .pullRequest(merged))
     #expect(harness.model.pullRequestMenuItem(for: feat) == .create(isPublishing: false))
+    #expect(harness.model.mergePath(of: merged, in: feat).end == .merged(isOutgrown: true))
   }
 
   @Test func aWorktreeWithNoBranchHasNoRunsToFind() async throws {

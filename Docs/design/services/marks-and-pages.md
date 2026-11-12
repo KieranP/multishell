@@ -51,7 +51,8 @@ panel's pages.
   and reports do not sit in memory. The row's popover, which read a row's
   details too, went on 2026-10-29. Rows passed quickly read nothing; the one the
   selection rests on reads once it settles. A merged or closed pull request's
-  checks are read once at its head.
+  checks are read once at its head, or again while one still runs or the last
+  read failed; see [reads.md](reads.md).
 - **A turn of the page or a change of row reads only what is due**, and only
   while frontmost, as the poll does: arrowing through ten rows asked `gh` twenty
   times. A page whose host or provider is turned off or gone keeps nothing it
@@ -66,16 +67,16 @@ panel's pages.
 - **Whether a pull request can merge is the panel's verdict**, from its draft
   state, conflicts, failing and pending required checks, its review and being
   behind its base. GitHub answers `mergeable: UNKNOWN` until it has worked
-  conflicts out, which the panel says as checking rather than as none; a merged
-  or closed one lists no conflicts row. Checks count only for the head they were
-  read at, so a push leaves the verdict waiting on the new head's. The host's
-  own "blocked" is said only where none of those accounts for it, such as a rule
-  for signed commits.
+  conflicts out, which the panel says as checking rather than as none. The page
+  draws it as the merge path's steps; see [merge-path.md](merge-path.md). Checks
+  count only for the head they were read at, so a push leaves the verdict
+  waiting on the new head's. The host's own "blocked" is said only where none of
+  those accounts for it, such as a rule for signed commits.
 - **A pull request waiting on a person is on hold, not running**: a required
-  review, and a banner held back only by that or its draft state, draw the
-  pause, as a CI run on hold does, since either may wait days. The ring turns
-  only while a machine works: a check running, conflicts not worked out, checks
-  not read. The user chose this on 2026-10-28.
+  review's step and a draft's draw the pause, as a CI run on hold does, since
+  either may wait days. The ring turns only while a machine works: a check
+  running, conflicts not worked out, checks not read. The user chose this on
+  2026-10-28.
 - **A check opens its own link, http or https only**; a CI job opens through
   `circleci job open`, which knows the server. The CI card's link opens the
   branch by its upstream name, the page showing a run the row may not have.
@@ -94,16 +95,16 @@ panel's pages.
 
 ## Reviewed and left as is
 
-- **Two switches word blockers**, `MergeReadiness.Blocker` for the panel and
+- **Two switches word blockers**, `MergePath`'s steps for the panel and
   `PullRequestBlocker` for the row. Their shared cases already name the same
   catalogue keys; one type would tie the panel's verdict to the host's answer.
 - **A failed `gh pr checks --required` fails the checks read.** Keeping the list
   with nothing required would call every required check optional and could call
   a blocked pull request ready; the next read asks again.
-- **The glyph's green and the page's Ready can briefly disagree.** The glyph
-  takes GitHub's own `mergeStateStatus`, as the user chose; the banner weighs
-  the checks, reviews and blockers it lists. GitHub answers `UNKNOWN` for a
-  while after a push, and the glyph waits for its answer.
+- **The glyph's green and the page's Merge can briefly disagree.** The glyph
+  takes GitHub's own `mergeStateStatus`, as the user chose; the merge path
+  weighs the checks, reviews and blockers it lists. GitHub answers `UNKNOWN` for
+  a while after a push, and the glyph waits for its answer.
 - **A pull request GitHub calls `CLEAN` with a review still required is green**
   and says both: GitHub lets that viewer merge past the review.
 - **A panel tab's tooltip stays up after a click until the pointer leaves.**

@@ -3,8 +3,8 @@ import MultishellCore
 import MultishellServices
 import SwiftUI
 
-/// The pull request in a card, whether it can merge and the checks that decide
-/// it, or the merge form in their place; see Docs/design/services/.
+/// The pull request in a card, then the steps toward its merge ending on the
+/// merge, or the merge form in their place; see Docs/design/services/.
 struct PullRequestPanelPage: View {
   let model: AppModel
   let worktree: Worktree
@@ -34,48 +34,16 @@ struct PullRequestPanelPage: View {
                 theme: theme,
               )
             }
-            let readiness = model.mergeReadiness(of: pullRequest, in: worktree)
-            let action = model.mergeAction(for: readiness, in: worktree)
-            MergeReadinessBanner(
-              readiness: readiness,
-              action: action,
-              base: pullRequest.baseBranch,
-              theme: theme,
-              metrics: model.metrics,
-              isBusy: model.isMergeActionBusy(action, of: worktree),
-            ) { action in
-              Task { await model.perform(action, for: worktree) }
-            }
+            let path = model.mergePath(of: pullRequest, in: worktree)
             let services = model.services(of: worktree)
-            if let outgrown = services.outgrownText {
-              ServicePageNote(text: outgrown, theme: theme, metrics: model.metrics)
+            let notes = [
+              services.outgrownText, services.pullRequestReadProblemText, path.staleChecksNote,
+            ]
+            ForEach(Array(notes.compactMap(\.self).enumerated()), id: \.offset) { _, note in
+              ServicePageNote(text: note, theme: theme, metrics: model.metrics)
             }
-            if let problem = services.pullRequestReadProblemText {
-              ServicePageNote(text: problem, theme: theme, metrics: model.metrics)
-            }
-            CreatePullRequestButton(model: model, worktree: worktree)
-              .controlSize(.small)
-              .padding(.horizontal, UIMetrics.servicePageSideInset)
-              .padding(.bottom, 6)
-            ServicePageSectionHeader(
-              title: t("panel.checks", readiness.requirements.count),
-              isExpanded: $showsChecks,
-              theme: theme,
-              metrics: model.metrics,
-            )
-            if showsChecks {
-              ForEach(Array(readiness.requirements.enumerated()), id: \.offset) { _, requirement in
-                MergeRequirementRow(
-                  model: model,
-                  requirement: requirement,
-                  base: pullRequest.baseBranch,
-                  theme: theme,
-                )
-              }
-              if let problem = model.panelReadProblem(of: worktree) {
-                ServicePageNote(text: problem, theme: theme, metrics: model.metrics)
-              }
-            }
+            mergePath(path, base: pullRequest.baseBranch)
+              .padding(.top, 10)
           }
           .padding(.bottom, 8)
         }
@@ -89,6 +57,31 @@ struct PullRequestPanelPage: View {
       ) {
         CreatePullRequestButton(model: model, worktree: worktree)
       }
+    }
+  }
+
+  private func mergePath(_ path: MergePath, base: String) -> some View {
+    let host = model.pullRequestHostName(of: worktree) ?? ""
+    return VStack(alignment: .leading, spacing: 0) {
+      ForEach(Array(path.steps.enumerated()), id: \.offset) { _, step in
+        MergePathStepRow(
+          model: model,
+          path: path,
+          step: step,
+          base: base,
+          host: host,
+          theme: theme,
+          showsChecks: $showsChecks,
+        )
+      }
+      MergePathEndRow(
+        model: model,
+        worktree: worktree,
+        path: path,
+        base: base,
+        host: host,
+        theme: theme,
+      )
     }
   }
 }

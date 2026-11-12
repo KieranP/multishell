@@ -12,15 +12,11 @@ extension AppModel {
     return pending
   }
 
-  /// The banner's button: none while a merge the host accepted awaits the
-  /// list, which still shows the pull request as it was before it.
-  public func mergeAction(for readiness: MergeReadiness, in worktree: Worktree) -> MergeAction? {
-    if let pending = remoteState.pendingMerges[worktree.id], pending.wasAccepted,
-      pending.pullRequestURL == services(of: worktree).shownPullRequest?.url
-    {
-      return nil
-    }
-    return readiness.mergeAction
+  /// A merge the host accepted for the shown pull request, not yet in the list.
+  func isMergeTaken(in worktree: Worktree) -> Bool {
+    guard let pending = remoteState.pendingMerges[worktree.id] else { return false }
+    return pending.wasAccepted
+      && pending.pullRequestURL == services(of: worktree).shownPullRequest?.url
   }
 
   /// Cancel Auto-Merge is off while one is in flight; see `AutoMergeCancellation`.
@@ -29,12 +25,12 @@ extension AppModel {
     return cancellation.pullRequestURL == services(of: worktree).shownPullRequest?.url
   }
 
-  /// Whether the banner's button is off: only a cancel already in flight.
-  public func isMergeActionBusy(_ action: MergeAction?, of worktree: Worktree) -> Bool {
+  /// Whether the merge path's button is off: only a cancel already in flight.
+  public func isMergeActionBusy(_ action: MergeAction, of worktree: Worktree) -> Bool {
     action == .cancelAutoMerge && isCancellingAutoMerge(of: worktree)
   }
 
-  /// The readiness banner's button.
+  /// The merge path's button.
   public func perform(_ action: MergeAction, for worktree: Worktree) async {
     switch action {
     case .merge, .mergeWhenReady: await beginMerge(of: worktree)
@@ -167,7 +163,7 @@ extension AppModel {
   /// asked what it allows and what it would write.
   func beginMerge(of worktree: Worktree) async {
     guard let (_, host, pullRequest) = shownPullRequest(of: worktree),
-      let action = mergeAction(for: mergeReadiness(of: pullRequest, in: worktree), in: worktree),
+      case .offers(let action) = mergePath(of: pullRequest, in: worktree).end,
       action != .cancelAutoMerge, pendingMerge(of: worktree) == nil
     else { return }
     let opened = PendingMerge(of: pullRequest, waitsForChecks: action == .mergeWhenReady)

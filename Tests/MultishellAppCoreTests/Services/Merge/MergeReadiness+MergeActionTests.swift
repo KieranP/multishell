@@ -33,7 +33,7 @@ struct MergeReadinessMergeActionTests {
       .sample(hasConflictAnswer: false),
       checks: [.sample(status: .passed)],
     )
-    #expect(readiness.title(base: "main") == "Not ready to merge")
+    #expect(!readiness.blockers.isEmpty)
     #expect(readiness.mergeAction == .mergeWhenReady)
   }
 
@@ -55,13 +55,13 @@ struct MergeReadinessMergeActionTests {
     )
   }
 
-  @Test func aCardSayingNotReadyNeverOffersMergeWhateverGitHubSays() {
+  @Test func aPullRequestHeldBackNeverOffersMergeWhateverGitHubSays() {
     let pastReview = MergeReadiness(
       .sample(review: .required, isReadyToMerge: true),
       checks: [.sample(status: .passed)],
     )
     let checksUnread = MergeReadiness(.sample(isReadyToMerge: true), checks: nil)
-    #expect(pastReview.title(base: "main") == "Not ready to merge")
+    #expect(!pastReview.blockers.isEmpty)
     #expect(pastReview.mergeAction == nil)
     #expect(checksUnread.mergeAction == nil)
   }

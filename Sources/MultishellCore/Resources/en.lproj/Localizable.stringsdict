@@ -64,6 +64,78 @@
       <key>other</key><string>%d matches</string>
     </dict>
   </dict>
+  <key>count.merge-path-failing</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d failing</string>
+      <key>other</key><string>%d failing</string>
+    </dict>
+  </dict>
+  <key>count.merge-path-not-run</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d not run</string>
+      <key>other</key><string>%d not run</string>
+    </dict>
+  </dict>
+  <key>count.merge-path-optional-failed</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d optional failed</string>
+      <key>other</key><string>%d optional failed</string>
+    </dict>
+  </dict>
+  <key>count.merge-path-required-passed</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d required passed</string>
+      <key>other</key><string>%d required passed</string>
+    </dict>
+  </dict>
+  <key>count.merge-path-running</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d running</string>
+      <key>other</key><string>%d running</string>
+    </dict>
+  </dict>
+  <key>count.merge-path-steps-left</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d step above to clear first</string>
+      <key>other</key><string>%d steps above to clear first</string>
+    </dict>
+  </dict>
   <key>count.processes</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -74,30 +146,6 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d process</string>
       <key>other</key><string>%d processes</string>
-    </dict>
-  </dict>
-  <key>count.required-checks-failed</key>
-  <dict>
-    <key>NSStringLocalizedFormatKey</key>
-    <string>%#@count@</string>
-    <key>count</key>
-    <dict>
-      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
-      <key>NSStringFormatValueTypeKey</key><string>d</string>
-      <key>one</key><string>%d required check failed</string>
-      <key>other</key><string>%d required checks failed</string>
-    </dict>
-  </dict>
-  <key>count.required-checks-running</key>
-  <dict>
-    <key>NSStringLocalizedFormatKey</key>
-    <string>%#@count@</string>
-    <key>count</key>
-    <dict>
-      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
-      <key>NSStringFormatValueTypeKey</key><string>d</string>
-      <key>one</key><string>%d required check running</string>
-      <key>other</key><string>%d required checks running</string>
     </dict>
   </dict>
   <key>count.runs</key>

@@ -25,13 +25,13 @@ from its page through `gh`.
   next scan finds what was pushed. The push remote is read from those two keys,
   not `%(push:remotename)`, which falls back to the remote the branch follows: a
   branch cut from `upstream/main` would push to `upstream`, not to `origin`.
-- **Merge is offered on the readiness banner only where the card reads ready**,
-  Merge When Ready where only machines hold it back, required checks running or
-  GitHub working out conflicts, and Cancel Auto-Merge where auto-merge is on.
-  GitHub's own CLEAN no longer offers Merge on a card saying Not ready, as it
-  did for an admin past a required review or before the checks were read: the
-  user called that a bug on 2026-10-29. A newer checks read outranks the list's
-  CLEAN either way.
+- **Merge is offered at the merge path's end only where nothing holds it back**,
+  Merge When Ready where only machines do, required checks running or GitHub
+  working out conflicts, and Cancel Auto-Merge where auto-merge is on; see
+  [merge-path.md](merge-path.md). GitHub's own CLEAN no longer offers Merge on a
+  pull request the page holds back, as it did for an admin past a required
+  review or before the checks were read: the user called that a bug on
+  2026-10-29. A newer checks read outranks the list's CLEAN either way.
 - **Merge turns the page into a form**, chosen on 2026-10-29 over a dialog: the
   method, then the commit's subject and message, then the merge. The form is the
   question asked every time; Cancel turns back to the page. Cancel Auto-Merge
@@ -47,18 +47,18 @@ from its page through `gh`.
   prints GitHub's messages, and `gh api` still keeps the login. It is asked of
   the host, owner and name the pull request's page names: `gh api` fills
   `{owner}` and `{repo}` its own way, apart from `gh pr`, which honours
-  `gh repo set-default`. The banner is decided before that read, so the form
-  says when either refuses and offers no confirm: GitHub ships with auto-merge
-  off. Only a read or triage role refuses; a role not answered is left for
-  GitHub to judge.
+  `gh repo set-default`. The offer is decided before that read, so the form says
+  when either refuses and offers no confirm: GitHub ships with auto-merge off.
+  Only a read or triage role refuses; a role not answered is left for GitHub to
+  judge.
 - **The merge is `gh pr merge` held to the head the page showed**,
-  `--match-head-commit` with the listed head whose checks decided the banner,
-  not the one the form's read found, and a read begun by an earlier opening
-  never fills a later one.
+  `--match-head-commit` with the listed head whose checks decided the offer, not
+  the one the form's read found, and a read begun by an earlier opening never
+  fills a later one.
 - **A form is weighed where the list or the checks change, never as it is
   drawn**: a push, a pull request no longer open, auto-merge turned on or a
-  blocker for good drops it, and whether it waits for checks follows the banner.
-  The banner's own rule decides it, so the two never disagree: an UNKNOWN alone
+  blocker for good drops it, and whether it waits for checks follows the offer.
+  The offer's own rule decides it, so the two never disagree: an UNKNOWN alone
   keeps it waiting, as Merge When Ready, and checks not yet read for its head
   leave it as it was. Only a merge being sent is left alone. Weighing it on each
   read brought a dropped form back when its conditions held again.
@@ -73,10 +73,10 @@ from its page through `gh`.
   then says the host took it, not that it merged, as a merge queue only queues
   it, until the first list answer from a read begun after: by then the list says
   where it stands, whoever turned auto-merge on or off since. Done hides it
-  sooner, the banner offering nothing until the read the merge asked for
-  answers: the list it would read still shows the pull request as before the
-  merge. A refusal keeps what was written and says `gh`'s words. The merged
-  badge and removal dialog take over from there.
+  sooner, the page offering nothing until the read the merge asked for answers:
+  the list it would read still shows the pull request as before the merge. A
+  refusal keeps what was written and says `gh`'s words. The merged badge and
+  removal dialog take over from there.
 - **A list that failed to read is said on the pull request page too**, as on the
   row's tooltip: the page offers Merge from it, and the popover that said it
   went.
@@ -85,7 +85,7 @@ from its page through `gh`.
   not on the number in whichever repository `gh repo set-default` names.
 - **A merge the host accepted and a cancel in flight each name their pull
   request's page**, so a checkout onto another branch, showing another pull
-  request or none, neither ends them nor lends them to it: the banner's hold and
+  request or none, neither ends them nor lends them to it: the offer's hold and
   the cancel's disabled button stay with their own until a list read begun after
   says where it stands.
 - **The form goes with its host**: a host turned off drops it, as it drops the

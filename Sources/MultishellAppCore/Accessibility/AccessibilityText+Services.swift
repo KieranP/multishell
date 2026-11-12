@@ -18,10 +18,4 @@ extension AccessibilityText {
   public static func ciStatus(_ status: CIRunStatus, isExpanded: Bool) -> String {
     [ciStatus(status), disclosure(isExpanded: isExpanded)].joined(separator: ", ")
   }
-
-  /// A check's status; a review or conflict row's name already says its own.
-  public static func requirementStatus(_ requirement: MergeReadiness.Requirement) -> String? {
-    guard case .check = requirement.kind else { return nil }
-    return ciStatus(requirement.status)
-  }
 }
