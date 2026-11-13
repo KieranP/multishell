@@ -22,10 +22,10 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-dark.png">
-    <img src="Screenshots/screenshot-light.png" width="900" alt="Multishell with projects and worktrees in the sidebar, Claude Code split above a shell on the left, a second Claude Code on the right, pull request and CI marks on the worktree rows, and the Git panel listing the branch's changes">
-  </picture>
+  <a href="Screenshots/screenshot-light.png"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-dark.png">
+    <img src="Screenshots/small/screenshot-light.png" width="900" alt="Multishell with projects and worktrees in the sidebar, Claude Code split above a shell on the left, a second Claude Code on the right, pull request and CI marks on the worktree rows, and the Git panel listing the branch's changes">
+  </picture></a>
 </p>
 
 Five agents in five worktrees usually means five terminal windows and no idea
@@ -63,10 +63,10 @@ under it. A dot says working, waiting on you, done or failed. Rows add the lines
 changed, the branch's pull request and its latest CI run.
 </td>
 <td width="55%" align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-sidebar-dark.png">
-  <img src="Screenshots/screenshot-sidebar-light.png" width="320" alt="The sidebar: three projects, their worktrees with state dots, line counts, pull request and CI marks, and the agent tabs of the selected worktree">
-</picture>
+<a href="Screenshots/screenshot-sidebar-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-sidebar-dark.png">
+  <img src="Screenshots/small/screenshot-sidebar-light.png" width="240" alt="The sidebar: three projects, their worktrees with state dots, line counts, pull request and CI marks, and the agent tabs of the selected worktree">
+</picture></a>
 </td>
 </tr>
 <tr>
@@ -76,11 +76,11 @@ Tabs, splits and side-by-side groups per worktree, drawn by libghostty. Every
 terminal keeps running while you look at another worktree, and a tab dragged to
 another worktree moves without restarting.
 </td>
-<td width="55%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-panes-dark.png">
-  <img src="Screenshots/screenshot-panes-light.png" width="100%" alt="A tab group with Claude Code split above a shell">
-</picture>
+<td width="55%" align="center">
+<a href="Screenshots/screenshot-panes-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-panes-dark.png">
+  <img src="Screenshots/small/screenshot-panes-light.png" width="320" alt="A tab group with Claude Code split above a shell">
+</picture></a>
 </td>
 </tr>
 <tr>
@@ -91,10 +91,10 @@ its base, so an agent's commits stay listed. Every file shows the lines it
 gained and lost.
 </td>
 <td width="55%" align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-git-dark.png">
-  <img src="Screenshots/screenshot-git-light.png" width="300" alt="The Git panel under Branch, listing changed files with their line counts">
-</picture>
+<a href="Screenshots/screenshot-git-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-git-dark.png">
+  <img src="Screenshots/small/screenshot-git-light.png" width="300" alt="The Git panel under Branch, listing changed files with their line counts">
+</picture></a>
 </td>
 </tr>
 <tr>
@@ -105,28 +105,44 @@ by side. Arrows step from one change to the next. An image opens too, its
 committed copy beside the new one.
 </td>
 <td width="55%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-diff-dark.png">
-  <img src="Screenshots/screenshot-diff-light.png" width="100%" alt="A file tab showing rate-limit.js side by side, the committed lines on the left and the new ones on the right, highlighted as JavaScript">
-</picture>
+<a href="Screenshots/screenshot-diff-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-diff-dark.png">
+  <img src="Screenshots/small/screenshot-diff-light.png" width="100%" alt="A file tab showing rate-limit.js side by side, the committed lines on the left and the new ones on the right, highlighted as JavaScript">
+</picture></a>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Send review comments to an agent</h3>
+Comment on any lines of a diff from its gutter. Review in the Files panel gathers
+every comment, and Send writes them to one file and mentions it in the prompt of
+the agent you pick, leaving Return to you. A comment follows its lines through
+later edits.
+</td>
+<td width="55%">
+<a href="Screenshots/screenshot-review-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-review-dark.png">
+  <img src="Screenshots/small/screenshot-review-light.png" width="100%" alt="A side-by-side diff of rate-limit.js with two comment cards under the lines they are on, and the Review panel listing both comments to send to Claude Code">
+</picture></a>
 </td>
 </tr>
 <tr>
 <td width="45%" valign="middle">
 <h3>Merge once the checks pass</h3>
-A row's pull request or CI mark opens its page in the side panel: the review,
-each check, and the failing job's log. Merge from there with GitHub's own commit
-message, or turn on auto-merge while required checks still run.
+A row's pull request or CI mark opens its page in the side panel: each step left
+before the merge and what clears it, every check, and the failing job's log.
+Merge from there with GitHub's own commit message, or turn on auto-merge while
+required checks still run.
 </td>
 <td width="55%" align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-pr-dark.png">
-  <img src="Screenshots/screenshot-pr-light.png" width="48%" alt="A pull request page reading Ready to merge, with a Merge button and five passing checks">
-</picture>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-ci-dark.png">
-  <img src="Screenshots/screenshot-ci-light.png" width="48%" alt="A CircleCI page for a failed run, with the failing test job's log excerpt">
-</picture>
+<a href="Screenshots/screenshot-pr-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-pr-dark.png">
+  <img src="Screenshots/small/screenshot-pr-light.png" width="48%" alt="A pull request page as steps toward its merge: no conflicts, four of four required checks passed, review approved, and a Merge button">
+</picture></a>
+<a href="Screenshots/screenshot-ci-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-ci-dark.png">
+  <img src="Screenshots/small/screenshot-ci-light.png" width="48%" alt="A CircleCI page for a failed run, with the failing test job's log excerpt">
+</picture></a>
 </td>
 </tr>
 <tr>
@@ -137,20 +153,27 @@ still working. Type to reach any worktree, tab or file, or start with
 <code>&gt;</code> to run a menu command.
 </td>
 <td width="55%" align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-switcher-dark.png">
-  <img src="Screenshots/screenshot-switcher-light.png" width="100%" alt="The quick switcher on its Agents scope: two agents waiting for input, two working, four done">
-</picture>
+<a href="Screenshots/screenshot-switcher-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-switcher-dark.png">
+  <img src="Screenshots/small/screenshot-switcher-light.png" width="100%" alt="The quick switcher on its Agents scope: two agents waiting for input, two working, one done, then those with nothing running">
+</picture></a>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Every agent on one board</h3>
+⇧⌘A lays every agent out by state: waiting on you, working, done or idle. Each
+card names its project and worktree, the lines it changed and how long it has
+been in that state.
+</td>
+<td width="55%">
+<a href="Screenshots/screenshot-board-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-board-dark.png">
+  <img src="Screenshots/small/screenshot-board-light.png" width="100%" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
+</picture></a>
 </td>
 </tr>
 </table>
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="Screenshots/screenshot-board-dark.png">
-    <img src="Screenshots/screenshot-board-light.png" width="900" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
-  </picture>
-</p>
 
 ### Agents
 
@@ -203,6 +226,7 @@ still working. Type to reach any worktree, tab or file, or start with
 - **Syntax highlighting follows embedded code**, such as a Svelte file's scripts
   and styles or a Markdown fence in the language it names.
 - **Arrows in a file tab** step from one change to the next.
+- **Review comments** on a diff's lines go to an agent all at once.
 - **Your shell rc files are never edited.**
 
 ### Keyboard
@@ -224,8 +248,8 @@ still working. Type to reach any worktree, tab or file, or start with
 ### Scripting
 
 The `multishell` command drives the app: projects, worktrees, tabs, panes,
-settings and screenshots. Multishell's own terminals have it on their `PATH`,
-and Settings > Agents > Agent hooks > Install CLI links it into
+review comments, settings and screenshots. Multishell's own terminals have it on
+their `PATH`, and Settings > Agents > Agent hooks > Install CLI links it into
 `/usr/local/bin`.
 
 ```sh
@@ -241,6 +265,7 @@ rate, CPU, memory and git timings.
 
 You need:
 
+- an Apple silicon Mac; Intel Macs are not supported
 - macOS 26 Tahoe or later
 - Xcode 26 or later (Swift 6.2), not only the command line tools
 - the Zig version Ghostty pins, `zig@0.17` today
@@ -286,8 +311,10 @@ The full build notes are in
 
 ### Agent hooks
 
-zsh, bash and fish report their state with no setup. Agents report through their
-own hooks, so their dots stay still until you add them:
+zsh, bash and fish report their state with no setup, and Claude Code and Codex
+report theirs to the terminal themselves. Hooks add the subagents and background
+shells those two have out. Every other agent reports only through its hooks, so
+its dots stay still until you add them:
 
 1. Open Settings > Agents > Agent hooks.
 2. Click Add beside each agent. Multishell adds its entries to the agent's
@@ -300,7 +327,7 @@ shell and agent goes.
 
 ## Status
 
-- macOS 26 and later, built and run on Apple silicon. Intel is untested.
+- macOS 26 and later on Apple silicon. Intel Macs are not supported.
 - English only.
 
 Every line of code was written by an AI (Claude), directed by a human who set

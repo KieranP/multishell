@@ -2,14 +2,16 @@
 
 Shell integration is injected into this app's terminals, and agent hooks are
 written into the agent's own config on your click. An unsupported shell is still
-a working terminal, and an agent without hooks still launches and resumes; it
-just never updates the state indicator dot.
+a working terminal, and an agent without hooks still launches and resumes. Its
+state dot stays still unless it reports its own state, as Claude Code and Codex
+do.
 
 ## Platform
 
 | Item            | Value                           |
 | --------------- | ------------------------------- |
 | macOS           | 26 Tahoe and newer              |
+| Architecture    | Apple silicon; no Intel         |
 | Other platforms | None                            |
 | Build           | Xcode 26 or newer               |
 | libghostty      | Ghostty's Zig, Metal toolchain  |
@@ -20,9 +22,9 @@ just never updates the state indicator dot.
 `make build` builds for the machine it runs on, `arch=$(uname -m)` in
 `Scripts/build-lib.sh`, and libghostty for it alone,
 `-Dxcframework-target=native` in `Scripts/build-ghostty.sh`, so the binary is
-single-architecture rather than universal. Only Apple silicon has been built and
-run here; Intel is unbuilt and untested. Only Xcode 27 has been built with, the
-floor of 26 resting on `xcodebuild` behaving there as it does in 27; see
+single-architecture rather than universal. Intel Macs are not supported, and the
+app has never been built on one. Only Xcode 27 has been built with, the floor of
+26 resting on `xcodebuild` behaving there as it does in 27; see
 [#23](https://github.com/KieranP/multishell/issues/23).
 
 A git older than 2.36 has no `-z` for `git worktree list`, so the app reads the
