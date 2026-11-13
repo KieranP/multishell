@@ -37,8 +37,13 @@ extension AppModel {
     return FilePathText.pastedText(
       for: urls,
       relativeTo: session.map { mentionDirectory(for: $0, agentID: agentID) },
-      mentionPrefix: agentID.flatMap { AgentCatalogue.agent($0)?.fileMentionPrefix },
+      mentionPrefix: fileMentionPrefix(ofAgent: agentID),
     )
+  }
+
+  /// `nil` for a shell, or an agent from a custom command, which has no catalogue entry.
+  func fileMentionPrefix(ofAgent agentID: String?) -> String? {
+    agentID.flatMap { AgentCatalogue.agent($0)?.fileMentionPrefix }
   }
 
   /// Where the agent at the prompt said it runs, else where the pane started.

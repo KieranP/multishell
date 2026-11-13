@@ -9,7 +9,7 @@ extension AppModel {
     switch workspace.filesPanelMode {
     case .ciRuns: showsCIPanelPage ? .ciRuns : .files
     case .pullRequest: showsPullRequestPanelPage ? .pullRequest : .files
-    case .files, .changes: workspace.filesPanelMode
+    case .files, .changes, .review: workspace.filesPanelMode
     }
   }
 
@@ -104,7 +104,7 @@ extension AppModel {
       else { return nil }
       return failure.reason(integration: integration)
 
-    case .files, .changes:
+    case .files, .changes, .review:
       return nil
     }
   }

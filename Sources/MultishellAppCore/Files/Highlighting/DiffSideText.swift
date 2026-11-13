@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// One side of a file tab's rows as the highlighter parses it, its lines joined, with
 /// where each line sits in that text and the row showing it.
 public struct DiffSideText: Sendable {

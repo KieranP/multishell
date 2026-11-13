@@ -2,9 +2,10 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A services' page with nothing to show: why, and what would change that.
-struct ServicePageEmptyState<Glyph: Shape, Action: View>: View {
-  let text: ServicePageEmptyText
+/// A panel page with nothing to show, Review or a services' page: why, and what
+/// would change that.
+struct PanelPageEmptyState<Glyph: Shape, Action: View>: View {
+  let text: PanelPageEmptyText
   let theme: Theme
   let metrics: UIMetrics
   /// Drawn large and thin in the page's faintest grey.
@@ -12,17 +13,16 @@ struct ServicePageEmptyState<Glyph: Shape, Action: View>: View {
   @ViewBuilder let action: () -> Action
 
   var body: some View {
-    let glyphSide = metrics.bodySize * 2
     VStack(spacing: 10) {
       glyph
         .stroke(
           style: StrokeStyle(
-            lineWidth: glyphSide * 1.1 / GlyphGrid.side,
+            lineWidth: metrics.emptyPageGlyphLineWidth,
             lineCap: .round,
             lineJoin: .round,
           )
         )
-        .frame(width: glyphSide, height: glyphSide)
+        .frame(width: metrics.emptyPageGlyphSide, height: metrics.emptyPageGlyphSide)
         .foregroundStyle(theme.filesPanel.textTertiary)
         .accessibilityHidden(true)
       Text(text.title)

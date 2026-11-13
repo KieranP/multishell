@@ -21,6 +21,8 @@ final class Harness {
   let feature: Worktree
   let root: URL
   var themes: URL { root.appendingPathComponent("themes", isDirectory: true) }
+  var reviews: URL { Self.reviews(in: root) }
+  var drops: URL { Self.drops(in: root) }
   private let stateFile: URL
 
   /// `socketSource` stands in for `messageSource`, for a test of the real socket.
@@ -51,6 +53,8 @@ final class Harness {
       coordinator: nil,
       watcher: watcher,
       themesDirectory: root.appendingPathComponent("themes", isDirectory: true),
+      reviewsDirectory: Self.reviews(in: root),
+      dropsDirectory: Self.drops(in: root),
       platform: platform,
       messageSource: socketSource ?? messageSource,
       notifier: notifier,
@@ -65,6 +69,15 @@ final class Harness {
         source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
       )
     }
+  }
+
+  private static func reviews(in root: URL) -> URL {
+    root.appendingPathComponent("reviews", isDirectory: true)
+  }
+
+  /// With a space, as the real one has under Application Support.
+  private static func drops(in root: URL) -> URL {
+    root.appendingPathComponent("Application Support/drops", isDirectory: true)
   }
 
   /// A test's own stand-in for a tool on a PATH nothing else has, so detection
@@ -101,6 +114,8 @@ final class Harness {
       coordinator: nil,
       watcher: FakeWatcher(),
       themesDirectory: themes,
+      reviewsDirectory: reviews,
+      dropsDirectory: drops,
     )
     return (model, engine, store, loadError)
   }

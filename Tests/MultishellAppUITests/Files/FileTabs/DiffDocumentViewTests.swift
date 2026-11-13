@@ -32,4 +32,27 @@ struct DiffDocumentViewTests {
       #expect(textView.misplacedRows == [], "at row \(target)")
     }
   }
+
+  @Test func everyRowSitsWhereItsNumberSaysWithReviewCardGapsOpen() throws {
+    let (view, window) = DiffDocumentFixture.shown(rows: Self.rowCount)
+    defer { withExtendedLifetime(window) {} }
+    let textView = view.textView
+    view.setRowGaps(RowGaps([10: 80, 4_999: 120, 10_456: 64]))
+    let geometry = textView.geometry
+
+    #expect(textView.frame.height == geometry.documentHeight(rows: Self.rowCount))
+    for target in [Self.rowCount - 1, 0, 5_000, 10_457, 1_234, 9_999, 3, 7_777, 4_321] {
+      let range = textView.displayText.range(ofRow: target)
+      textView.scrollRangeToVisible(NSRange(range))
+      textView.layoutSubtreeIfNeeded()
+      let rowRect = NSRect(
+        x: 0,
+        y: geometry.top(ofRow: target),
+        width: 1,
+        height: geometry.rowHeight,
+      )
+      #expect(textView.visibleRect.intersects(rowRect), "row \(target) scrolled to but not shown")
+      #expect(textView.misplacedRows == [], "at row \(target)")
+    }
+  }
 }

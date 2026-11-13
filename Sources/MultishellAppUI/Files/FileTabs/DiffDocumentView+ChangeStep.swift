@@ -29,7 +29,10 @@ extension DiffDocumentView {
       let rows = text.change(containing: row)
     else { return }
     setSteppedChange(rows, selectingItsStart: true)
-    let top = Double(row - geometry.rowsAboveAChange(inClipOf: clipHeight))
-    scroll(to: NSPoint(x: scrollOrigin.x, y: geometry.scrollOffset(puttingAtTop: top)))
+    let y = geometry.scrollOffset(
+      putting: row,
+      rowsBelowTop: geometry.rowsAboveAChange(inClipOf: clipHeight),
+    )
+    scroll(to: NSPoint(x: scrollOrigin.x, y: y))
   }
 }

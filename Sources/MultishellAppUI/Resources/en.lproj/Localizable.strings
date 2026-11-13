@@ -155,6 +155,7 @@
 "files-panel.filter" = "Filter files";
 "files-panel.modified" = "Modified";
 "files-panel.pull-request" = "PR";
+"files-panel.review" = "Review";
 "files-panel.title" = "Files";
 "files-panel.toggle" = "Files Panel";
 "files-panel.toggle-help" = "Show or hide the Files panel";
@@ -313,6 +314,18 @@
 "quick-switcher.section.waiting" = "Waiting on you";
 "quick-switcher.section.worktrees" = "Worktrees";
 "quit.title" = "Quit Multishell?";
+"review.card" = "%1$@, %2$@";
+"review.clear-sent" = "Clear sent";
+"review.comment-on-lines" = "Comment on Lines…";
+"review.comments-waiting" = "Comments waiting to be sent";
+"review.composer-placeholder" = "What should the agent change here?";
+"review.edit" = "Edit";
+"review.quote-heading" = "When you wrote it, the lines read:";
+"review.recipient-item" = "%1$@ · %2$@ · %3$@";
+"review.recipient-menu" = "Agent to send the review to";
+"review.send" = "Send";
+"review.send-to" = "Send to";
+"review.title" = "Review";
 "rotor.changes" = "Changes";
 "settings.agent-hooks" = "Agent hooks";
 "settings.agent-settings" = "Agent settings";

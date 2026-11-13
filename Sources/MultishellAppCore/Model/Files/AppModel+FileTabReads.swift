@@ -127,12 +127,13 @@ extension AppModel {
     }
     fileTabReadLog.begin(id)
     let started = ContinuousClock.now
+    let base = fileTabBase(in: tab.worktreeID)
     let reading = await FileTabReader.read(
       path: tab.path,
       in: worktree.path,
       git: coordinator.git,
       diffAlgorithm: workspace.diffAlgorithm,
-      since: fileTabBase(in: tab.worktreeID),
+      since: base,
       previous: fileTabReadings[id],
       imageRule: imageRule,
     )
@@ -143,7 +144,21 @@ extension AppModel {
       if isFileTabShown(id) { scheduleFileTabRead(id) } else { fileTabReadLog.owe(id) }
       return
     }
-    setIfChanged(\.fileTabReadings[id], reading)
+    // An unchanged reading has nothing new to anchor to, and a 1 MiB file is a long search.
+    let isNewReading = setIfChanged(\.fileTabReadings[id], reading)
+    if isNewReading, case .text(let rows) = reading.content, !reading.isFileGone {
+      reanchorReviewComments(
+        onFile: tab.path,
+        in: tab.worktreeID,
+        to: rows.lines,
+        readUnder: Self.fileTabScope(readingSince: base),
+      )
+      reanchorReviewComposer(
+        in: id,
+        to: rows.lines,
+        readUnder: Self.fileTabScope(readingSince: base),
+      )
+    }
     // A find opened before an image read has no bar to draw, nor any lines; a
     // field that had the keyboard hands it back, as closing the bar does.
     let fieldHadKeyboard = findFieldTargetID == id
@@ -209,5 +224,9 @@ extension AppModel {
     if let request = fileTabFocusRequest, !open.contains(request) { fileTabFocusRequest = nil }
     setIfChanged(\.changeStepRequests, changeStepRequests.filter { open.contains($0.key) })
     setIfChanged(\.fileTabChangeSteps, fileTabChangeSteps.filter { open.contains($0.key) })
+    reviewCardRevealRequests = reviewCardRevealRequests.filter { open.contains($0.key) }
+    setIfChanged(\.reviewComposers, reviewComposers.filter { open.contains($0.key) })
+    reviewDrafts = reviewDrafts.filter { open.contains($0.key) }
+    reviewComposerKeyboardRequests.formIntersection(open)
   }
 }

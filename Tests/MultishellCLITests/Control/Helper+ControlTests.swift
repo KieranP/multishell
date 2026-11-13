@@ -213,6 +213,52 @@ struct HelperControlTests {
         ["files", "collapse", "Sources"],
         .setFilesFolderExpanded(path: "Sources", expanded: false),
       ),
+      (["review", "list"], .listReviewComments(worktree: nil)),
+      (
+        ["review", "add", "Sources/App.swift", "806-810", "Use a guard."],
+        .addReviewComment(
+          ReviewCommentOrder(
+            worktreeID: nil,
+            path: "Sources/App.swift",
+            side: .onDisk,
+            lines: 806...810,
+            text: "Use a guard.",
+          )
+        ),
+      ),
+      (
+        ["review", "add", "a.swift", "12", "Keep it.", "--removed", "--worktree", "w-89abcdef"],
+        .addReviewComment(
+          ReviewCommentOrder(
+            worktreeID: "w-89abcdef",
+            path: "a.swift",
+            side: .committed,
+            lines: 12...12,
+            text: "Keep it.",
+          )
+        ),
+      ),
+      (
+        ["review", "add", "a.swift", "12", "--removed", "--", "- drop this guard"],
+        .addReviewComment(
+          ReviewCommentOrder(
+            worktreeID: nil,
+            path: "a.swift",
+            side: .committed,
+            lines: 12...12,
+            text: "- drop this guard",
+          )
+        ),
+      ),
+      (
+        ["review", "send", "--to", "00000000-0000-0000-0000-000000000001"],
+        .sendReview(worktree: nil, to: UUID(uuidString: "00000000-0000-0000-0000-000000000001")),
+      ),
+      (["review", "clear", "--sent"], .clearReviewComments(worktree: nil, sentOnly: true)),
+      (
+        ["review", "clear", "--worktree", "w-89abcdef"],
+        .clearReviewComments(worktree: "w-89abcdef", sentOnly: false),
+      ),
       (["ui", "show", "pull-request"], .showServicePage(.pullRequest, worktree: nil)),
       (["ui", "show", "ci", "w-89abcdef"], .showServicePage(.ciRuns, worktree: "w-89abcdef")),
       (
@@ -325,6 +371,11 @@ struct HelperControlTests {
     defer { app.stop() }
     let lines = [
       ["tabs", "close", "not-an-id"],
+      ["review", "add", "a.swift", "9-3", "Backwards."],
+      ["review", "add", "a.swift", "0", "No line nought."],
+      ["review", "add", "a.swift", "1"],
+      ["review", "send", "--to", "not-an-id"],
+      ["review", "list", "--worktree", "main"],
       ["tabs", "open", "--"],
       ["tabs", "open", "--agent", "claude", "--", "make"],
       ["tabs", "move", UUID().uuidString],

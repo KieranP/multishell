@@ -74,8 +74,13 @@ Under `~/Library/Application Support/Multishell`.
   installed, so two builds do not take it from each other.
 - **The integration directory is generated at launch** from the scripts bundled
   in MultishellCore, so an edit there lasts until the next launch.
-- **The drops directory holds files a drag promised rather than handed over and
-  images pasted from the clipboard**, swept at launch once a week old.
+- **The drops directory holds files a drag promised rather than handed over,
+  images pasted from the clipboard and the review files Send writes**, swept at
+  launch once a week old.
+- **The reviews directory holds a file per worktree of its review comments**,
+  named by a digest of the worktree's path and recording the path inside,
+  removed with the worktree, a debug build keeping its own as it does drops. Not
+  in `state.json` (design/files/review-comments.md).
 - **The merged Ghostty config passes through the temporary directory**, a file
   per load, gone once libghostty has read it
   (design/terminals/engine-and-config.md).

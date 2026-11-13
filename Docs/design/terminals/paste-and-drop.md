@@ -103,6 +103,11 @@ What can be dropped or pasted on a shell. Newest at the bottom.
   typed a path that does not exist there, as a dropped file is.
 - **Cost: an image offered only as TIFF is made a PNG on the main thread**,
   inside libghostty's read, measured at 144 ms for a 5K one.
+- **A review is handed over as a file in the drops directory and a mention of
+  it**, bracketed, a trailing space and no newline, as a drop is: an agent with
+  mentions gets its prefix and the absolute path, the directory being outside
+  every worktree, and one without gets a sentence around the quoted path, a bare
+  path saying nothing (files/review-comments.md).
 
 ## Reviewed and left as is
 

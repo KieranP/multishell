@@ -131,6 +131,16 @@ struct WorkspaceTests {
     )
   }
 
+  @Test func theReviewPageIsSavedAsReviewAndAPageThisBuildCannotNameFallsBackToFiles() throws {
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "filesPanelMode": "review" }"#).filesPanelMode == .review
+    )
+    #expect(
+      try decodeJSON(Workspace.self, #"{ "filesPanelMode": "whateverIsNext" }"#).filesPanelMode
+        == .files
+    )
+  }
+
   @Test func aWorkspaceSavedBeforeTheBoardsFilterWasKeptShowsOnlyAgents() throws {
     #expect(try !decodeJSON(Workspace.self, #"{ "projects": [] }"#).showsAllTerminals)
     #expect(try decodeJSON(Workspace.self, #"{ "showsAllTerminals": true }"#).showsAllTerminals)

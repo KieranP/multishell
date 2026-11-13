@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellServices
 import SwiftUI
 
-/// The panel's Files, Changes, PR and CI, and the glyph that shuts it, in the
+/// The panel's Files, Changes, Review, PR and CI, and the glyph that shuts it, in the
 /// title bar's band; see Docs/design/files/panel.md.
 struct FilesPanelHeader: View {
   let model: AppModel
@@ -22,6 +22,15 @@ struct FilesPanelHeader: View {
           theme: theme,
         ) {
           HeaderShapeGlyph(shape: ChangedDocumentShape())
+        }
+        FilesPanelModeTab(
+          model: model,
+          mode: .review,
+          name: t("files-panel.review"),
+          theme: theme,
+          waiting: model.showsReviewDot ? t("review.comments-waiting") : nil,
+        ) {
+          HeaderShapeGlyph(shape: SpeechBubbleShape())
         }
         if model.showsPullRequestPanelPage {
           FilesPanelModeTab(

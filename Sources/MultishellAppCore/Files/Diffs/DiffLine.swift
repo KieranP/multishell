@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// One row of a file tab: a line of the file on disk, or one the committed side had that
 /// the file no longer does.
 public struct DiffLine: Hashable, Sendable {

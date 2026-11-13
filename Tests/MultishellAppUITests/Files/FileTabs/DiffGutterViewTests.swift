@@ -1,4 +1,5 @@
 import AppKit
+import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
@@ -21,5 +22,37 @@ struct DiffGutterViewTests {
       Self.gutter(shifted, numbering: .committed).preferredWidth
         == Self.gutter(aligned, numbering: .committed).preferredWidth
     )
+  }
+
+  @Test func aScrollTakesThePlusOffTheRowItWasOn() {
+    let gutter = DiffGutterView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    gutter.hoveredRow = 3
+
+    gutter.scrolledTo = 100
+
+    #expect(gutter.hoveredRow == nil)
+  }
+
+  @Test func thePlusHasAColumnOfItsOwnLeftOfTheWidestNumber() {
+    let line = DiffLine(kind: .context, oldNumber: 1042, newNumber: 1042, text: "x")
+    let gutter = Self.gutter(line, numbering: .onDisk)
+    let digitWidth = ("0" as NSString).size(withAttributes: [.font: gutter.geometry.font]).width
+    let numberAndSignsWidth: CGFloat = 4 * digitWidth + 12 + 3 + 6
+
+    #expect(gutter.preferredWidth >= gutter.geometry.rowHeight + numberAndSignsWidth)
+  }
+
+  @Test func newTextEndsADragAndThePlusOnTheOldRows() {
+    let gutter = DiffGutterView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    gutter.hoveredRow = 4
+    gutter.draggedRows = (3, 5)
+
+    gutter.displayText = DiffDisplayText(
+      [DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: "x")],
+      marksStaging: true,
+    )
+
+    #expect(gutter.draggedRows == nil)
+    #expect(gutter.hoveredRow == nil)
   }
 }

@@ -32,6 +32,8 @@ final class ModelHarness {
       coordinator: nil,
       watcher: NullWatcher(),
       themesDirectory: directory.appendingPathComponent("themes", isDirectory: true),
+      reviewsDirectory: directory.appendingPathComponent("reviews", isDirectory: true),
+      dropsDirectory: directory.appendingPathComponent("drops", isDirectory: true),
     )
   }
 

@@ -6,7 +6,8 @@ import MultishellAppCore
 @MainActor
 final class FixedRowLayoutDelegate: NSObject, @MainActor NSTextLayoutManagerDelegate {
   var displayText = DiffDisplayText.empty
-  let geometry: DiffRowGeometry
+  /// Its gaps move as review cards come and go; the font never does.
+  var geometry: DiffRowGeometry
 
   init(geometry: DiffRowGeometry) {
     self.geometry = geometry
@@ -22,7 +23,7 @@ final class FixedRowLayoutDelegate: NSObject, @MainActor NSTextLayoutManagerDele
       textElement: textElement,
       range: textElement.elementRange,
       layoutDelegate: self,
-      geometry: geometry,
+      rowHeight: geometry.rowHeight,
     )
   }
 }

@@ -10,6 +10,7 @@ extension AppModel {
     guard !isYieldingToRunningInstance else { return }
     store.setFileTabScrolls(fileTabScrolls)
     recordSaveOutcome(Result { try store.save() })
+    writeReviewCommentsNow()
   }
 
   /// Saves shortly after any workspace change, whoever made it. The loop only
@@ -48,16 +49,20 @@ extension AppModel {
     }
   }
 
-  private func recordSaveOutcome(_ outcome: Result<Void, any Error>) {
+  /// `reported` is the written file's own flag.
+  func recordSaveOutcome(
+    _ outcome: Result<Void, any Error>,
+    reported: ReferenceWritableKeyPath<AppModel, Bool> = \.hasReportedSaveFailure,
+  ) {
     switch outcome {
     case .success:
-      hasReportedSaveFailure = false
+      self[keyPath: reported] = false
 
     case .failure(let error):
       // Every change schedules a save, so a full disk or a bad permission
       // would otherwise put the same alert up after each keystroke.
-      guard !hasReportedSaveFailure else { return }
-      hasReportedSaveFailure = true
+      guard !self[keyPath: reported] else { return }
+      self[keyPath: reported] = true
       present(error)
     }
   }

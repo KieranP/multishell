@@ -181,6 +181,10 @@ The command line's requests on the reports' socket. Newest at the bottom.
   ready, as `tabs select` would not bring it back.
 - **`files` acts on the panel on screen and names no worktree.** Its list is
   read only while it shows, so another worktree's would be of nothing read.
+- **`review` takes `--worktree`, the one in view where none is named**: its
+  comments are kept on disk whatever the panel shows. `review add` still needs
+  the file's tab shown, its quote coming from the tab's rows
+  (files/review-comments.md).
 - **`ui switcher` opens the quick switcher without Cmd+P's key-window check**: a
   request comes from no window. The check stays on the keys. Cost: over a window
   that is not key, its field has no keyboard until a click.
@@ -189,15 +193,15 @@ The command line's requests on the reports' socket. Newest at the bottom.
   take no `ui hide`: the panel's own toggle shuts it.
 - **A request drawn in the main window asks that it is open, not on screen**:
   the switcher and a panel page draw behind another window or in a minimized
-  one, shown once it is back. `tabs step`, `tabs find` and `files` also refuse a
-  covered or minimized window, which reads no file tab or panel list
-  (files/file-tabs.md, files/panel.md), though `tabs find --close` shuts a bar
-  anyway; `window size` and `full-screen` refuse a minimized one. A tab drawn as
-  a notice, its file too large, binary, missing or unreadable, or as an image,
-  takes no step or find, having no arrows or bar, and is refused as not read
-  while a read of it runs, which may bring rows; an image's refusal says image
-  rather than notice. A file with no changes draws no arrows either. A request's
-  own words are checked before the window, so a bad one is named.
+  one, shown once it is back. `tabs step`, `tabs find`, `files` and `review add`
+  also refuse a covered or minimized window, which reads no file tab or panel
+  list (files/file-tabs.md, files/panel.md), though `tabs find --close` shuts a
+  bar anyway; `window size` and `full-screen` refuse a minimized one. A tab
+  drawn as a notice, its file too large, binary, missing or unreadable, or as an
+  image, takes no step or find, having no arrows or bar, and is refused as not
+  read while a read of it runs, which may bring rows; an image's refusal says
+  image rather than notice. A file with no changes draws no arrows either. A
+  request's own words are checked before the window, so a bad one is named.
 - **`worktrees hide` refuses the project's own checkout, and
   `projects expand-hidden` a project hiding none**: the menu has no Hide item
   for the one, and the sidebar no Hidden row for the other.

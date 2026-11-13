@@ -10,6 +10,7 @@ enum ControlCommand: String, CaseIterable {
   case panes
   case projects
   case quit
+  case review
   case sidebar
   case tabs
   case userInterface = "ui"

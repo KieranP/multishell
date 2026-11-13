@@ -29,13 +29,15 @@ struct ArrayWidestFileTreeRowsTests {
   @Test func theLongestNameIsPickedFromRowsFarPastTheFirst() {
     let rows = (0..<5_000).map { row("file\($0).txt") } + [row("a-much-longer-file-name.swift")]
 
-    #expect(rows.likeliestWidest(1).map(\.name) == ["a-much-longer-file-name.swift"])
+    #expect(
+      rows.likeliestWidest(1, pendingComments: [:]).map(\.name) == ["a-much-longer-file-name.swift"]
+    )
   }
 
   @Test func depthCountsTowardARowsWidth() {
     let rows = [row("abcdefgh.swift"), row("abcdef.swift", depth: 4)]
 
-    #expect(rows.likeliestWidest(1).map(\.name) == ["abcdef.swift"])
+    #expect(rows.likeliestWidest(1, pendingComments: [:]).map(\.name) == ["abcdef.swift"])
   }
 
   @Test func aParentFolderAndLineCountsCountTowardARowsWidth() {
@@ -46,11 +48,23 @@ struct ArrayWidestFileTreeRowsTests {
       lineCounts: FileLineCounts(insertions: 1200, deletions: 45),
     )
 
-    #expect(Set([plain, filtered].likeliestWidest(1).map(\.name)) == ["a.swift"])
-    #expect(Set([plain, counted].likeliestWidest(1).map(\.name)) == ["abcdefghijkl.swift"])
+    #expect(
+      Set([plain, filtered].likeliestWidest(1, pendingComments: [:]).map(\.name)) == ["a.swift"]
+    )
+    #expect(
+      Set([plain, counted].likeliestWidest(1, pendingComments: [:]).map(\.name)) == [
+        "abcdefghijkl.swift"
+      ]
+    )
   }
 
   @Test func fewerRowsThanAskedForAreAllKept() {
-    #expect([row("a.txt"), row("b.txt")].likeliestWidest(64).count == 2)
+    #expect([row("a.txt"), row("b.txt")].likeliestWidest(64, pendingComments: [:]).count == 2)
+  }
+
+  @Test func aRowsCommentBadgeCountsTowardItsWidth() {
+    let rows = [row("abc.swift"), row("ab.swift")]
+
+    #expect(rows.likeliestWidest(1, pendingComments: ["ab.swift": 2]).map(\.name) == ["ab.swift"])
   }
 }

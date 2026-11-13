@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// Two parses for a file tab's rows, the file on disk and the committed text, each
 /// side's spans mapped onto the rows that show it.
 public enum DiffSideSpans {

@@ -16,6 +16,11 @@ public final class SaveOrder: Sendable {
   private let landed = Atomic(0)
   private let writing = Mutex(())
 
+  /// A ticket was issued that no write has landed, a failed one included.
+  var hasUnlandedTicket: Bool {
+    issued.load(ordering: .relaxed) > landed.load(ordering: .acquiring)
+  }
+
   public init() {}
 
   public func issue() -> Ticket {

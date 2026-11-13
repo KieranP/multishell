@@ -42,7 +42,7 @@ extension Workspace {
   }
 
   /// The worktree's tab showing `path`, of which there is at most one.
-  func fileTab(showing path: String, in worktree: Worktree.ID) -> FileTab? {
+  public func fileTab(showing path: String, in worktree: Worktree.ID) -> FileTab? {
     fileTabs.first { $0.worktreeID == worktree && $0.path == path }
   }
 

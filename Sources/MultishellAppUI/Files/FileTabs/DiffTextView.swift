@@ -21,6 +21,10 @@ final class DiffTextView: NSTextView {
   /// a split side copies plain text.
   var copiesAsDiff = true
   var onFocus: (() -> Void)?
+  /// Comment on Lines, from the menu, on the rows the selection touches.
+  var onCommentOnRows: ((ClosedRange<Int>) -> Void)?
+  /// A split column's side, so Comment on Lines is offered only where a comment can go.
+  var commentSide: DiffSide?
   /// The selected text as it changes, `nil` for none, for Cmd+F to find.
   var onSelectionChange: ((String?) -> Void)?
   private var lineTints: (added: NSColor, removed: NSColor) = (.clear, .clear)
@@ -79,6 +83,19 @@ final class DiffTextView: NSTextView {
   }
 
   required init?(coder: NSCoder) { nil }
+
+  /// Opens or closes review cards' gaps. Every row below a gap moves, so the
+  /// whole layout is let go; only the rows around the view are laid out again.
+  func setRowGaps(_ gaps: RowGaps) {
+    guard geometry.rowGaps != gaps else { return }
+    rowLayout.geometry.rowGaps = gaps
+    if let layoutManager = textLayoutManager {
+      layoutManager.invalidateLayout(for: layoutManager.documentRange)
+    }
+    setFrameSize(frame.size)
+    layOutRowsAroundView()
+    needsDisplay = true
+  }
 
   /// Sized to the widest line before the text lands: an unbounded container,
   /// or a view narrower than its container, laid out the whole file at once.

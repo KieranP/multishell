@@ -13,7 +13,7 @@ extension Paths {
   static func carryOverStateFileFromBeforeTheHash(named name: String?, in directory: URL) {
     guard let name, !name.isEmpty else { return }
     let current = debugVariant(named: name)
-    let cut = ".debug-" + String(name.prefix(14).map { $0.isPortableNameCharacter ? $0 : "-" })
+    let cut = ".debug-" + name.portableName(maxLength: 14)
     guard cut != current else { return }
     let before = directory.appendingPathComponent("state\(cut).json", isDirectory: false)
     let now = directory.appendingPathComponent("state\(current).json", isDirectory: false)

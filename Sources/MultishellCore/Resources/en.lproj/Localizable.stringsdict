@@ -16,6 +16,30 @@
       <key>other</key><string>%d background shells</string>
     </dict>
   </dict>
+  <key>count.comments</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d comment</string>
+      <key>other</key><string>%d comments</string>
+    </dict>
+  </dict>
+  <key>count.comments-to-send</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d comment to send</string>
+      <key>other</key><string>%d comments to send</string>
+    </dict>
+  </dict>
   <key>count.failed-workers</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -194,6 +218,18 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d terminal</string>
       <key>other</key><string>%d terminals</string>
+    </dict>
+  </dict>
+  <key>count.to-send</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d to send</string>
+      <key>other</key><string>%d to send</string>
     </dict>
   </dict>
   <key>count.unpushed-commits</key>

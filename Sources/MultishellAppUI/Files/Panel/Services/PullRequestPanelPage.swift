@@ -49,7 +49,7 @@ struct PullRequestPanelPage: View {
         }
       }
     } else if let text = page.emptyText {
-      ServicePageEmptyState(
+      PanelPageEmptyState(
         text: text,
         theme: theme,
         metrics: model.metrics,

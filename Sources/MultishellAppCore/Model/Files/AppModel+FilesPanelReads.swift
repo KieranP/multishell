@@ -11,7 +11,7 @@ extension AppModel {
     remoteState.lastReadFilesPanelMode = shownFilesPanelMode
     forgetUnreadFileListings()
     guard shownFilesPanelMode.listsFiles else {
-      schedulePanelServicesRead(of: id)
+      if shownFilesPanelMode.isServicePage { schedulePanelServicesRead(of: id) }
       return
     }
     scheduleTrackedFilesRead(of: id)

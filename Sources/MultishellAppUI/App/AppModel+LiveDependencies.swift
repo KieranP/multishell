@@ -14,6 +14,8 @@ extension AppModel {
       coordinator: try? WorktreeCoordinator(),
       watcher: FSEventsDirectoryWatcher(),
       themesDirectory: Paths.themesDirectory,
+      reviewsDirectory: Paths.reviewsDirectory,
+      dropsDirectory: Paths.dropsDirectory,
       platform: platform,
       messageSource: SocketMessageSource(),
       notifier: UserNotificationNotifier(),

@@ -69,6 +69,7 @@ extension AppModel {
           keeping: worktreeOperations.removalsOutlivingTheirRecord,
         )
       )
+      readReviewFilesOfNewWorktrees()
       let checkedOutElsewhere = workspace.worktrees(of: project.id).filter { worktree in
         branchesBefore[worktree.id].map { $0 != worktree.branch } ?? false
       }
