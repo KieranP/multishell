@@ -113,29 +113,51 @@ _multishell_owns_debug_or_saves_theirs() {
   return 1
 }
 
+# `exec bash` puts a new bash in the pane that reads none of ours, so the plain
+# forms start it as a tab's is; a redirection or another flag runs as typed.
+_multishell_reexec_if_replacing_itself() {
+  local -a words
+  read -r -a words <<< "$1"
+  case "${words[1]-}" in bash | */bash) ;; *) return 0 ;; esac
+  local word
+  for word in "${words[@]:2}"; do
+    case "$word" in -i | -l | -il | -li | --login) ;; *) return 0 ;; esac
+  done
+  # The words are as typed, unexpanded; a failed exec in this trap ends the shell.
+  local target="${words[1]}"
+  case "$target" in */*) ;; *) target="$(type -P "$target")" ;; esac
+  [ -x "$target" ] || return 0
+  builtin exec "$target" --init-file "$_multishell_init_file" -i
+}
+
 _multishell_debug() {
   # Before theirs is called, so their trap never sees our own prompt
   # functions: without us it would not have.
   case "$BASH_COMMAND" in _multishell_*) return 0 ;; esac
   # Theirs sees no arguments of ours, and `:` puts the user's `$_` back for it.
+  # Its status is ours to return: under extdebug a non-zero one skips the command.
+  local _multishell_their_status=0
   if [ -n "$_multishell_prior_debug" ]; then
     local last_argument="${1-}"
     set --
     : "$last_argument"
     eval "$_multishell_prior_debug"
+    _multishell_their_status=$?
   fi
   # bash has no cd hook, so the next command finds the change; only once a
   # prompt has reported, which it does only in a Ghostty pane.
   case "${_multishell_last_reported_directory-$PWD}" in "$PWD") ;; *) _multishell_report_directory ;; esac
 
-  [ "$_multishell_armed" = 1 ] || return 0
+  [ "$_multishell_armed" = 1 ] || return $_multishell_their_status
   # A completion or a `bind -x` widget, fzf's Ctrl-R, runs before the line does.
-  [ -n "${COMP_LINE-}" ] && return 0
-  [ -n "${READLINE_POINT-}" ] && return 0
+  [ -n "${COMP_LINE-}" ] && return $_multishell_their_status
+  [ -n "${READLINE_POINT-}" ] && return $_multishell_their_status
   # bash-preexec adds its prompt entry after our arm, at the first prompt.
-  case "$BASH_COMMAND" in __bp_*) return 0 ;; esac
+  case "$BASH_COMMAND" in __bp_*) return $_multishell_their_status ;; esac
+  case "$BASH_COMMAND" in "exec "*) _multishell_reexec_if_replacing_itself "$BASH_COMMAND" ;; esac
   _multishell_armed=0
   _multishell_command_started "$BASH_COMMAND"
+  return $_multishell_their_status
 }
 
 _multishell_precmd() {
@@ -162,4 +184,31 @@ _multishell_precmd() {
   return $exit_code
 }
 
-_multishell_arm() { _multishell_armed=1; }
+# The left of `&&`, where errexit does not reach: the status the precmd hands
+# back for the user's entries ended a `set -e` shell at every prompt after a failure.
+_multishell_precmd_entry='_multishell_precmd && :'
+
+# A .bashrc sourced again puts its prepended entry before ours, which then reads
+# that entry's 0; ours goes back in front, as zsh's precmd hook does.
+# bash-preexec's entry stays first, where it reads PIPESTATUS before anything runs.
+_multishell_keep_precmd_first() {
+  case "${PROMPT_COMMAND[0]-}" in
+    "$_multishell_precmd_entry" | "$_multishell_precmd_entry"$'\n'* | __bp_precmd_invoke_cmd*)
+      return 0 ;;
+  esac
+  export -n PROMPT_COMMAND
+  # Before 5.1 bash runs element 0 alone, so ours goes into it, not beside it.
+  if [ "${#PROMPT_COMMAND[@]}" -gt 1 ] &&
+    (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
+    PROMPT_COMMAND=("$_multishell_precmd_entry" "${PROMPT_COMMAND[@]//$_multishell_precmd_entry/:}")
+  else
+    # Copied first: bash 3.2 substitutes within an array element as if it were empty.
+    local first="${PROMPT_COMMAND[0]}"
+    PROMPT_COMMAND[0]="$_multishell_precmd_entry"$'\n'"${first//$_multishell_precmd_entry/:}"
+  fi
+}
+
+_multishell_arm() {
+  _multishell_keep_precmd_first
+  _multishell_armed=1
+}

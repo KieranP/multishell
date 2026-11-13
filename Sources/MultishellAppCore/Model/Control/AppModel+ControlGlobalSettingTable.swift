@@ -25,7 +25,7 @@ extension AppModel {
           self.setTerminalFont(name: name, size: self.workspace.appearance.terminalFontSize)
         },
       ),
-      .number(
+      .pointSize(
         "fontSize",
         { self.workspace.appearance.terminalFontSize },
         in: Appearance.terminalFontSizes,
@@ -37,7 +37,7 @@ extension AppModel {
         accepts: platform.hasFontFamily,
         setUIFontName,
       ),
-      .number(
+      .pointSize(
         "uiFontSize",
         { self.workspace.appearance.uiFontSize },
         in: Appearance.uiFontSizes,
@@ -49,7 +49,7 @@ extension AppModel {
         accepts: platform.hasFontFamily,
         { name in self.setFileFont(name: name, size: self.workspace.appearance.fileFontSize) },
       ),
-      .number(
+      .pointSize(
         "fileFontSize",
         { self.workspace.appearance.fileFontSize },
         in: Appearance.fileFontSizes,

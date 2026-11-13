@@ -264,6 +264,16 @@ struct GitHubHostTests {
     #expect(error?.message.contains("Head branch was modified") == true)
   }
 
+  @Test func theHeadIsReadByNumberAsTheChecksAre() async throws {
+    let tool = try FakeTool(named: "gh", #"echo '{"headRefOid":"abc123"}'"#)
+    defer { tool.tearDown() }
+
+    let head = try await host(for: tool).headCommit(of: pullRequest, in: tool.directory)
+
+    #expect(head == "abc123")
+    #expect(tool.calls.map(\.arguments) == ["pr view 44 --json headRefOid"])
+  }
+
   @Test func checksAreReadPendingOrFailingAndNoRequiredOnesReadsAsNone() async throws {
     let tool = try FakeTool(
       named: "gh",

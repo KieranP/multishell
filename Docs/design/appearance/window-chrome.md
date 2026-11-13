@@ -63,8 +63,9 @@ pointer. Newest at the bottom.
 - **The message block below stays one to three lines and optional**, so cards
   are not all one height. It is the occupant's words and the one thing on the
   card worth the room. Cost: a long command is cut off.
-- **The settings window asks about removing a project itself**, or the dialog
-  would be behind it.
+- **The settings window asks about removing a project itself, and shows an error
+  raised while it is key**, or the dialog would be behind it. One left when it
+  closes goes to the workspace window, or nothing would show it.
 - **The terminal font is picked, not typed**, some programming fonts not being
   marked fixed-pitch.
 - **The UI font's family is a setting of its own beside its size**, so the

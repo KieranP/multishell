@@ -20,14 +20,22 @@ extension AppModel {
     isExpanded ? nil : state(ofProject: id, sessions: sessions)
   }
 
-  /// The pane rows under this worktree's sidebar row, in tab order: only the
-  /// one in view has them, so one set takes room at a time.
+  /// The pane rows under this worktree's sidebar row, group by group in strip
+  /// order: only the one in view has them, so one set takes room at a time.
   func sidebarPanes(of worktree: Worktree) -> [SidebarPane] {
     guard isInView(worktree) else { return [] }
     let focused = workspace.activeTab(in: worktree.id)?.focusedSessionID
     // Once per call, not per pane: a session lookup is a scan of them all.
     let sessions = workspace.sessions(in: worktree.id).keyedByID()
-    return workspace.tabs(in: worktree.id).flatMap { tab in
+    // `tabs` keeps each group's places, so a tab opened in the first group after a
+    // second was made sits after the second's there.
+    let stripOrder = workspace.groups(in: worktree.id)
+      .flatMap { workspace.workspaceTabs(inGroup: $0.id) }
+      .compactMap { tab -> TerminalTab? in
+        guard case .terminal(let terminal) = tab else { return nil }
+        return terminal
+      }
+    return stripOrder.flatMap { tab in
       tab.sessionIDs.enumerated().compactMap { offset, id in
         sessions[id].map { session in
           let agentID = agentIDAtThePrompt(of: session)

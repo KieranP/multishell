@@ -46,7 +46,7 @@ public final class ProcessStopper: Sendable {
       return (pid: pid, leadsGroup: leadsGroup)
     }
     guard let (pid, leadsGroup) = signalled else { return false }
-    DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
+    ProcessTimerQueue.shared.asyncAfter(deadline: .now() + killGrace) {
       guard leadsGroup else {
         _ = child.withLivePID { kill($0, SIGKILL) }
         return

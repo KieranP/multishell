@@ -6,8 +6,10 @@ extension Helper {
     usage: multishell tabs open WORKTREE_ID [--agent ID] [--prompt TEXT]
                                 [-- COMMAND [ARGUMENT...]]
         Open a tab: a shell, an agent, or COMMAND through the login shell, a
-        shell taking over when it quits. In a worktree out of view it opens
-        without switching to it. Prints the tab's and its pane's ids as JSON.
+        shell taking over when it quits. --prompt without --agent starts the
+        project's agent, refused where none is chosen. In a worktree out of
+        view it opens without switching to it. Prints the tab's and its
+        pane's ids as JSON.
     usage: multishell tabs show TAB_ID
         Print the tab as JSON: its worktree, title, state, and its pane tree,
         each split with its axis and the share each side takes, each pane on

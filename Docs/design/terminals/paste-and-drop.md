@@ -11,6 +11,9 @@ What can be dropped or pasted on a shell. Newest at the bottom.
   carried the next name out of its quotes. The pane's shell is not known at the
   drop anyway, a fish typed at a zsh prompt being fish. Cost: nu, whose single
   quotes have no escape at all, still breaks on a name holding one.
+- **A name a mention cannot spell is pasted as its quoted path**: Claude Code's
+  mention ends at any Unicode space and escapes only an ASCII one, so a
+  screenshot's narrow no-break space before `AM`, or a backslash, cut it short.
 - **A drop asks which agent a pane holds as its mark does**
   (agents/board-and-pane-rows.md). Cost: a tab opened as an agent keeps its id,
   so a drop after the agent quits still gets mentions.

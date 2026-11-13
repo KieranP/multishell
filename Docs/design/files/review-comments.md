@@ -94,6 +94,9 @@ panel's Review page (issue #6). Newest at the bottom.
   the keyboard nor VoiceOver. No shortcut (owner's choice, 2026-11-12).
 - **The composer's draft is the model's**, unobserved, so hiding the tab or
   switching layout keeps what was typed without redrawing the tab on every key.
+- **Closing a file tab whose composer holds text asks first**, as a close over a
+  working agent does: the draft goes with the tab. `tabs close` on the command
+  line does not ask, a script having named the tab.
 - **The composer quotes its lines when it opens.** A read landing while the user
   types would otherwise quote whatever moved onto those line numbers. An Edit
   whose comment was sent or removed meanwhile saves as a new comment, so the

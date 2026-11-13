@@ -125,8 +125,14 @@ extension AppModel {
     // A failed read after a push must not leave the old head's checks standing.
     if reading.headCommit != pullRequest.headCommit { reading.checks = nil }
     reading.headCommit = pullRequest.headCommit
+    var headMovedPastTheList = false
     do {
-      reading.checks = try await host.checks(of: pullRequest, in: worktree.path)
+      let checks = try await host.checks(of: pullRequest, in: worktree.path)
+      // `gh pr checks` reads whatever the pull request heads now, which a push since
+      // the list read moved: those checks are the new head's, not the listed one's.
+      let head = try await host.headCommit(of: pullRequest, in: worktree.path)
+      headMovedPastTheList = head != pullRequest.headCommit
+      reading.checks = headMovedPastTheList ? nil : checks
       reading.failure = nil
     } catch {
       reading.failure = ServiceReadFailure(error)
@@ -138,6 +144,7 @@ extension AppModel {
     else { return }
     setIfChanged(\.remoteState.checks[worktree.id], reading)
     reconcileMerges(of: [worktree.id])
+    if headMovedPastTheList { Task { await refreshServices(ofProject: project.id) } }
   }
 
   private func readCIHistory(of worktree: Worktree) async {

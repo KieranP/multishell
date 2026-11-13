@@ -195,6 +195,34 @@ struct WorktreeCoordinatorStoppedAddTests {
     #expect(listed.map(\.branch) == ["main", "renamed"])
   }
 
+  /// git matches a remove's path to a record ignoring case, macOS's default, so
+  /// the undo of `away` forgot `Away`'s record, its directory being elsewhere.
+  @Test func aStoppedCreateLeavesARecordWhosePathDiffersOnlyInCase() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let away = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "Away",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+    )
+    let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
+    try FileManager.default.moveItem(at: away, to: aside)
+    let stopper = ProcessStopper()
+    stopper.stop()
+
+    await #expect(throws: (any Error).self) {
+      try await fixture.coordinator.create(
+        branch: "away",
+        in: fixture.project,
+        settings: fixture.worktreeSettings,
+        stopper: stopper,
+      )
+    }
+
+    let listed = try await fixture.git.list(fixture.project)
+    #expect(listed.map(\.branch).contains("Away"))
+  }
+
   @Test func aCreateStoppedBeforeGitRanLeavesABranchThatWasAlreadyThere() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

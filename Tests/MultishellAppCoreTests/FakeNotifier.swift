@@ -9,11 +9,15 @@ final class FakeNotifier: SessionNotifier {
   var authorizationRequests = 0
   /// Keys whose banner was taken back, in the order they were.
   var withdrawn: [SessionStates.Key] = []
+  var withdrewEverything = false
   func notify(title: String, body: String, about key: SessionStates.Key) {
     posted.append((title, body, key))
   }
   func withdraw(about key: SessionStates.Key) {
     withdrawn.append(key)
+  }
+  func withdrawEverything() {
+    withdrewEverything = true
   }
   func authorization() async -> NotificationAuthorization { answer }
   func requestAuthorization() async -> NotificationAuthorization {

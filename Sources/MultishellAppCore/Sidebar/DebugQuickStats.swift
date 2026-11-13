@@ -6,7 +6,9 @@ public struct DebugQuickStats: Sendable, Equatable {
   /// The app and every child process, as Activity Monitor adds them up.
   let totalCPUPercent: Double?
   let totalMemory: UInt64?
-  public let frameRateTrend: [Double]
+  /// `nil` for a frameless second, a display asleep rather than a drop to zero,
+  /// kept as a gap so each point lines up with the same second's CPU.
+  public let frameRateTrend: [Double?]
   public let cpuTrend: [Double]
   /// Between the minute's lowest and highest rather than from zero: a few
   /// hundred megabytes on two gigabytes is otherwise a flat line.
@@ -19,11 +21,11 @@ public struct DebugQuickStats: Sendable, Equatable {
     smoothness = latest?.smoothness ?? .smooth
     totalCPUPercent = latest?.totalCPUPercent
     totalMemory = latest?.totalMemory
-    // A frameless second is a display asleep, not a drop to zero.
-    frameRateTrend = Self.fractionsOfScale(
-      recent.compactMap { $0.frameRate?.framesPerSecond },
-      scaledAs: .frameRate,
+    let framesPerSecond = recent.map(\.frameRate?.framesPerSecond)
+    let frameRateScale = DebugMetric.frameRate.scale(
+      forPeak: framesPerSecond.compactMap(\.self).max() ?? 0
     )
+    frameRateTrend = framesPerSecond.map { rate in rate.map { min($0 / frameRateScale, 1) } }
     cpuTrend = Self.fractionsOfScale(recent.map(\.totalCPUPercent), scaledAs: .cpu)
     memoryTrend = Self.fractionsBetweenExtremes(recent.map { Double($0.totalMemory) })
   }

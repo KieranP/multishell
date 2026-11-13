@@ -29,12 +29,13 @@ struct DebugQuickStatsTests {
     #expect(stats.memoryTrend.last == 1, "the minute's own lowest to highest")
   }
 
-  @Test func aSecondWithNoFrameIsLeftOutOfTheFrameRateTrendRatherThanDrawnAsZero() {
+  @Test func aSecondWithNoFrameIsAGapInTheFrameRateTrendLinedUpWithTheOthers() {
     let samples = (0..<3).map { sequence in
       DebugSample.sample(sequence: sequence, framesPerSecond: sequence == 1 ? nil : 120)
     }
     let stats = DebugQuickStats(history: .of(samples))
-    #expect(stats.frameRateTrend.count == 2)
+    #expect(stats.frameRateTrend.count == stats.cpuTrend.count)
+    #expect(stats.frameRateTrend[1] == nil)
     #expect(!stats.frameRateTrend.contains(0))
   }
 

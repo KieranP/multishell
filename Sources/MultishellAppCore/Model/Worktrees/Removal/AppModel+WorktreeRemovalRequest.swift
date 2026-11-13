@@ -8,7 +8,8 @@ extension AppModel {
   @discardableResult
   public func requestWorktreeRemoval(of worktree: Worktree) -> Task<Void, Never>? {
     guard mayRemove(worktree) else { return nil }
-    if case .remove(let deletesBranch) = removalDecision(for: worktree) {
+    // A detached worktree's commits are read first, as they may be on no branch.
+    if !worktree.isDetached, case .remove(let deletesBranch) = removalDecision(for: worktree) {
       return Task { await removeWorktree(worktree, deletesBranch: deletesBranch) }
     }
     removalRequests.latestID = worktree.id
@@ -17,17 +18,25 @@ extension AppModel {
     // built once, warns of the changed files that status counts.
     return Task {
       let isStatusUnread = await !readsFreshStatusInTime(of: worktree.id)
+      let commitsOnNoBranch =
+        worktree.isDetached ? await coordinator?.git.commitsOnNoBranch(in: worktree) : 0
       removalRequests.awaitingStatus.remove(worktree.id)
       let isLatest = removalRequests.latestID == worktree.id
       if isLatest { removalRequests.latestID = nil }
-      // A late read must not swap the dialog up, or a newer click's, for its own.
-      guard isLatest, pendingWorktreeRemoval == nil, let current = workspace.worktree(worktree.id),
-        mayRemove(current)
-      else { return }
-      switch removalDecision(for: current, isStatusUnread: isStatusUnread) {
-      case .ask(let pending): pendingWorktreeRemoval = pending
+      guard let current = workspace.worktree(worktree.id), mayRemove(current) else { return }
+      let decision = removalDecision(
+        for: current,
+        isStatusUnread: isStatusUnread,
+        commitsOnNoBranch: commitsOnNoBranch,
+      )
+      switch decision {
+      case .ask(let pending):
+        // A late read must not swap the dialog up, or a newer click's, for its own.
+        guard isLatest, pendingWorktreeRemoval == nil else { return }
+        pendingWorktreeRemoval = pending
 
       case .remove(let deletesBranch):
+        // Asks nothing, so a newer click's dialog does not stand in for it.
         await removeWorktree(current, deletesBranch: deletesBranch)
       }
     }
@@ -59,6 +68,7 @@ extension AppModel {
   private func removalDecision(
     for worktree: Worktree,
     isStatusUnread: Bool = false,
+    commitsOnNoBranch: Int? = 0,
   ) -> PendingWorktreeRemoval.Decision {
     PendingWorktreeRemoval.decide(
       worktree,
@@ -68,6 +78,8 @@ extension AppModel {
       mergeState: mergeState(of: worktree),
       trashes: workspace.trashesRemovedWorktrees,
       isStatusUnread: isStatusUnread,
+      defaultBranch: workspace.project(worktree.projectID).map(defaultBranchName(of:)),
+      commitsOnNoBranch: commitsOnNoBranch,
     )
   }
 

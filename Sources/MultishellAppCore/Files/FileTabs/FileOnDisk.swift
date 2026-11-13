@@ -22,4 +22,13 @@ enum FileOnDisk: Sendable {
     guard let data = try? Data(contentsOf: url) else { return .gone }
     return data.count <= sizeLimit ? .bytes(data) : .tooLarge(bytes: data.count)
   }
+
+  /// Whether the disk spells `path`'s folders and name as given; one that ignores
+  /// case opens `foo.txt` for `Foo.txt`. Blocking, and unknown reads as spelled so.
+  static func isSpelledAsGiven(_ url: URL, path: String) -> Bool {
+    guard let canonical = (try? url.resourceValues(forKeys: [.canonicalPathKey]))?.canonicalPath
+    else { return true }
+    let wanted = path.split(separator: "/")
+    return Array(canonical.split(separator: "/").suffix(wanted.count)) == wanted
+  }
 }

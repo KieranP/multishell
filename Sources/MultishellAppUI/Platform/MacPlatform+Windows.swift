@@ -38,6 +38,11 @@ extension MacPlatform {
 
   var isWorkspaceWindowMinimized: Bool { workspaceWindow?.isMiniaturized ?? false }
 
+  var isSettingsWindowKey: Bool {
+    guard let key = NSApp?.keyWindow else { return false }
+    return matches(key.sheetParent ?? key, .settings)
+  }
+
   var workspaceWindowWidth: Double? { openWorkspaceWindow.map { Double($0.frame.width) } }
 
   /// Through the scene's own opener, which `registeringWindowOpeners` hands over.

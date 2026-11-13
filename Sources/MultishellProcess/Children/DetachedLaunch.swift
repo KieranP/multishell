@@ -62,9 +62,11 @@ enum DetachedLaunch {
     )
   }
 
+  /// A shell's `$?` for a signal: the bare number read as git's own 1 or 2 answers.
   private static func exitCode(of status: TerminationStatus) -> Int32 {
     switch status {
-    case .exited(let code), .signaled(let code): code
+    case .exited(let code): code
+    case .signaled(let signal): 128 + signal
     }
   }
 }

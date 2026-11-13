@@ -60,9 +60,10 @@ command-line tool.
   write nothing local, ask for no credentials and time out at 30 s.
 - **Every two minutes for each project with a row in view, while frontmost**, a
   launch in the background, as a login item, asking nothing until it comes to
-  the front; every minute where a shown run is under way. A return to the front
-  reads again past thirty seconds, so switching apps asks nothing. A run on hold
-  is not under way here: it waits on a person, perhaps for days.
+  the front; every minute where a shown run is under way, a hidden or filtered
+  row's run hastening nothing. A return to the front reads again past thirty
+  seconds, so switching apps asks nothing. A run on hold is not under way here:
+  it waits on a person, perhaps for days.
 - **The pull request page reads its checks every minute too while nothing it
   read accounts for GitHub's blocked.** Straight after a push GitHub made the
   runs 44 s later, and `gh` lists no required check before then, so the page
@@ -70,6 +71,15 @@ command-line tool.
   the block, so a pull request waiting on one keeps the two minutes. Cost: one
   held by a rule Multishell cannot read, signed commits say, is asked each
   minute while its page shows.
+- **A branch's kept lookup goes once the remote has deleted the branch**: it is
+  never asked again, so its last run, running when the branch merged, spun on
+  the row and hastened the poll for good.
+- **The checks are kept only where the pull request still heads the listed
+  commit**, read with `gh pr view --json headRefOid` once they answer.
+  `gh pr checks` reads the head as it is now, so after a push the list had not
+  seen, the new head's empty checks stood as the old head's passing ones and the
+  page offered Merge. A moved head reads the list again. Cost: one more `gh`
+  call per checks read.
 - **A merged or closed pull request's checks are read again while any still runs
   or the last read failed**, as one merged past its checks leaves them running
   and a failed read's note would stand for good; otherwise once at its head.

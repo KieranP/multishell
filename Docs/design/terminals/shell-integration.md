@@ -35,6 +35,33 @@ Newest at the bottom.
 - **Our `PROMPT_COMMAND` is never exported**: a profile's `export` handed it to
   every child bash, which has none of its functions and complained at each
   prompt.
+- **Our first `PROMPT_COMMAND` entry is `_multishell_precmd && :`**: it hands
+  the command's status back for the user's entries, and as a plain entry that
+  status ended a `set -e` shell at the prompt after any failure, a Ctrl-C
+  included. errexit does not reach the left of `&&`.
+- **A bash prompt hook reading `PIPESTATUS` sees our entry's**, which runs first
+  for `$?`. Owner's choice, 2026-11-14: replaying a pipeline's statuses would
+  cost a subshell per stage at each prompt after one.
+- **It goes back in front at each prompt**, as zsh's precmd hook does: a
+  `.bashrc` sourced again puts its prepended entry first, which ours then read
+  the status of. Not in front of bash-preexec's, which reads `PIPESTATUS` there,
+  and before 5.1 into element 0, the only one bash runs.
+- **The user's DEBUG trap's status is ours to return**: under `extdebug` a
+  non-zero one skips the command, and returning our own ran it.
+- **A shell that replaces itself keeps the integration.** The new shell read
+  only the user's files, so the pane's last report was `running` for good. For
+  an interactive `exec zsh` or omz's `reload`, preexec points `ZDOTDIR` back at
+  ours for that line, and precmd hands it back where the shell was not replaced;
+  `-f`, `-c` or a script read no `.zshrc` to hand it back. bash cannot be handed
+  `--init-file` through the environment, so the DEBUG trap execs a plain
+  `exec bash` as a tab's bash is started, only where the target is there, a
+  failed exec in a trap ending the shell. Cost: one with a redirection or
+  another flag runs as typed, without.
+- **A tab's bash logs out as a login shell does**: `logout` exits and
+  `~/.bash_logout` runs on `exit`, `logout` or end of input, which bash does
+  only for a login shell. Not on a hangup, which every pane close sends: a HUP
+  trap notes it and passes the signal on. Cost: an EXIT trap the user sets keeps
+  the logout file from running, theirs replacing ours.
 - **The bash init file is read in place of the rc file**, so the generated one
   reproduces a login shell's chain and reads the rc file only where that found
   nothing, as a login shell does.

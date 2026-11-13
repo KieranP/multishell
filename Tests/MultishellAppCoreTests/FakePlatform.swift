@@ -9,6 +9,7 @@ final class FakePlatform: Platform {
   var isActive = true
   var onDidBecomeActive: (@MainActor () -> Void)?
   var isWorkspaceWindowKey = true
+  var isSettingsWindowKey = false
   /// Never while minimized, as AppKit's occlusion reports a window in the Dock.
   var isWorkspaceWindowVisible: Bool {
     get { isWorkspaceWindowUncovered && !isWorkspaceWindowMinimized }

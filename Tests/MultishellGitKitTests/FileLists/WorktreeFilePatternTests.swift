@@ -22,6 +22,12 @@ final class WorktreeFilePatternTests {
     #expect(WorktreeFilePattern.matches("", pattern: "*"))
   }
 
+  @Test func aStarStillMatchesWhereTheNameHoldsAStarOfItsOwn() {
+    #expect(WorktreeFilePattern.matches("*x", pattern: "*"))
+    #expect(WorktreeFilePattern.matches("a*b", pattern: "a*"))
+    #expect(WorktreeFilePattern.matches("a*b*c", pattern: "a*c"))
+  }
+
   @Test func aNameStoredDecomposedMatchesAPatternTypedPrecomposed() {
     #expect(
       WorktreeFilePattern.matches("Re\u{0301}sume\u{0301}.pdf", pattern: "R\u{e9}sum\u{e9}*")

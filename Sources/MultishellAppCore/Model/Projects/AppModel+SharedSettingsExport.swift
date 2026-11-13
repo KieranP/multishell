@@ -5,6 +5,7 @@ extension AppModel {
   /// Export from the General tab. A refused hook or path list the file held
   /// is kept, and stays refused.
   public func exportSharedSettings(for project: Project) async {
+    guard await rereadSharedSettingsBeforeExport(of: project) else { return }
     let export: SharedSettingsExport
     do {
       guard let prepared = try prepareSharedSettingsExport(for: project) else { return }
@@ -17,6 +18,27 @@ extension AppModel {
     // volume each would hold the window.
     let outcome = await runOnDispatch { export.write() }
     finishSharedSettingsExport(export, outcome)
+  }
+
+  /// The file as it is now, not as last read: a pull or an edit since would be
+  /// written over. False where it will not parse, which says why.
+  private func rereadSharedSettingsBeforeExport(of project: Project) async -> Bool {
+    let serial = sharedSettingsReads.begin()
+    let reading = await runOnDispatch { SharedSettingsReading.read(from: project) }
+    guard workspace.project(project.id) != nil else { return false }
+    if sharedSettingsReads.lands(serial, for: project.id) {
+      applySharedSettingsReading(reading, for: project)
+    }
+    if case .failure(let error) = reading.loaded {
+      present(
+        UnreadableSharedSettingsFile(
+          file: SharedProjectSettings.file(in: project.path),
+          underlying: error,
+        )
+      )
+      return false
+    }
+    return true
   }
 
   /// `nil` for a project gone from the workspace between the click and here,

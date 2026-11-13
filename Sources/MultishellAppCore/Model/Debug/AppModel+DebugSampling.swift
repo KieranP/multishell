@@ -29,6 +29,7 @@ extension AppModel {
     debugProcessAttribution = .empty
     debugTerminalMemoryBySession = [:]
     pausedDebugSnapshot = nil
+    pausedDebugMemoryTable = nil
   }
 
   /// One second's frames, git runs and reports, and the process table read
@@ -45,7 +46,11 @@ extension AppModel {
     let appPID = ProcessInfo.processInfo.processIdentifier
     let scanProcesses = debugSampler.scanProcesses
     let generation = debugSampler.generation
-    let scan = await runOnDispatch { scanProcesses(appPID, terminalPaths) }
+    // Timed where the CPU was read: after the await, a stall begun mid-scan
+    // stretched one second's share over its length and squeezed the next's.
+    let (scan, scannedAt) = await runOnDispatch {
+      (scanProcesses(appPID, terminalPaths), ContinuousClock.now)
+    }
     guard generation == debugSampler.generation else { return }
 
     let now = ContinuousClock.now
@@ -55,7 +60,7 @@ extension AppModel {
     let gitActivity = coordinator?.git.runLog.drain() ?? .empty
     let cpu = debugSampler.cpuUsageMeter.takeReading(
       of: (scan.app.map { [$0] } ?? []) + children,
-      at: now,
+      at: scannedAt,
       exited: gitActivity.finishedRuns.compactMap(\.exitUsage).map { ($0.pid, $0.cpuTime) },
     )
     let cpuPercentByPID = cpu.byPID

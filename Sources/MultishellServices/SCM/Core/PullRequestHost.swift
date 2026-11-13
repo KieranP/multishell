@@ -18,6 +18,10 @@ public protocol PullRequestHost: Sendable {
   /// The checks on the pull request's head, each once, and which are required.
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck]
 
+  /// The commit the pull request heads now, which a list read may be behind.
+  /// Throws `ServiceReadFailure`.
+  func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String
+
   /// Opens the pull request in the browser.
   func open(_ pullRequest: PullRequest, in directory: URL) async throws
 

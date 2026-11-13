@@ -15,9 +15,13 @@ extension WorktreeCoordinator {
     // Asked first: a stop can land before git has made anything, and the
     // name may be a branch of the user's that the add was refusing.
     let branchIsNew = createsBranch ? await git.lacksBranch(branch, in: project) : false
-    // An unforced remove still forgets a registered worktree whose directory is
-    // away. Asked even where the path exists: git fills an empty directory.
-    let worktreeIsNew = await !git.isListed(path, in: project)
+    // An unforced remove forgets a record whose directory is away, matched ignoring case
+    // where the disk does; asked where the path exists too, git filling an empty one.
+    let ignoresCase = await runOnDispatch {
+      (try? project.path.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]))?
+        .volumeSupportsCaseSensitiveNames != true
+    }
+    let worktreeIsNew = await !git.isListed(path, in: project, ignoringCase: ignoresCase)
     return StoppedAddUndo(
       path: path,
       worktreeIsNew: worktreeIsNew,

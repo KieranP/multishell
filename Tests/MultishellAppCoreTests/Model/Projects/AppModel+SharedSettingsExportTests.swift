@@ -207,4 +207,32 @@ struct AppModelSharedSettingsExportTests {
       harness.model.trustsSharedSettings(of: harness.project)
     )
   }
+
+  @Test func exportLeavesAFileThatWillNotParseAsItIsAndSaysWhy() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let teammates = #"{ "branchPrefix": "team/", "postCreateHook": "make setup" "#
+    let file = try harness.writeSharedSettings(teammates)
+    await harness.model.refreshWorktrees(of: harness.project)
+    harness.model.setSettings(ProjectSettings(iconTint: 3), for: harness.project)
+
+    await harness.model.exportSharedSettings(for: harness.project)
+
+    #expect(try String(contentsOf: file, encoding: .utf8) == teammates)
+    #expect(harness.model.presentedError != nil)
+  }
+
+  @Test func exportKeepsAKeyWrittenSinceTheLastRead() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let file = try harness.writeSharedSettings(#"{ "postCreateHook": "make setup" }"#)
+    harness.model.setSettings(ProjectSettings(iconTint: 3), for: harness.project)
+
+    await harness.model.exportSharedSettings(for: harness.project)
+
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
+    #expect(json["postCreateHook"] as? String == "make setup" && json["iconTint"] as? Int == 3)
+  }
 }

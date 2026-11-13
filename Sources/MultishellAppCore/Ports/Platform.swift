@@ -13,6 +13,9 @@ public protocol Platform: AnyObject, Sendable {
   /// Whether a keyboard command should act on the workspace: in any other
   /// window Cmd+W closes that window, not a pane nobody can see.
   var isWorkspaceWindowKey: Bool { get }
+  /// The Settings window or a sheet on it, where a dialog raised there is shown;
+  /// a sheet on the workspace window, key itself, is not.
+  var isSettingsWindowKey: Bool { get }
   /// Whether any of the workspace window is on screen, frontmost or not: file
   /// tabs and the Files panel stay current while it is; see files/panel.md.
   var isWorkspaceWindowVisible: Bool { get }

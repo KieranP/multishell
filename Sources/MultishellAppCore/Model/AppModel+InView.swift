@@ -23,6 +23,13 @@ extension AppModel {
     worktreeInView.flatMap { workspace.activeWorkspaceTab(in: $0.id) }
   }
 
+  /// `workspaceTabInView` where its tabs are drawn: a create's or removal's pane
+  /// takes their place, and closing there ended a shell nobody could see.
+  var workspaceTabDrawn: WorkspaceTab? {
+    guard let worktree = worktreeIDInView, worktreeOperations[worktree] == nil else { return nil }
+    return workspaceTabInView
+  }
+
   /// In view with the app in front, which is when a banner about it is not
   /// needed. Gated on the board as `isPaneInView` is.
   func isWorktreeOnScreen(_ id: Worktree.ID) -> Bool {

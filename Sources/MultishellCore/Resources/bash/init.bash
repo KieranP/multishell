@@ -11,6 +11,15 @@ unset _multishell_profile
 if [ "$_multishell_profiled" = 0 ] && [ -f "$HOME/.bashrc" ]; then . "$HOME/.bashrc"; fi
 unset _multishell_profiled
 
+# Outside a login shell bash refuses `logout` and skips ~/.bash_logout, which a
+# tab's would run; an EXIT trap of the user's own is left to stand.
+declare -F logout >/dev/null || logout() { exit "$@"; }
+if [ -f "$HOME/.bash_logout" ] && [ -z "$(trap -p EXIT)" ]; then
+  trap '[ -n "${_multishell_hung_up-}" ] || . "$HOME/.bash_logout"' EXIT
+  # A hangup, a pane closing, is no logout: noted, then the signal goes on as it would.
+  [ -n "$(trap -p HUP)" ] || trap '_multishell_hung_up=1; trap - HUP; kill -HUP $$' HUP
+fi
+
 # include leading-path.sh
 
 if [ "${TERM_PROGRAM-}" = ghostty ]; then
@@ -24,6 +33,7 @@ if [ "${TERM_PROGRAM-}" = ghostty ]; then
 fi
 
 if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
+  _multishell_init_file="${BASH_SOURCE[0]}"
   _multishell_bin="__MULTISHELL_HELPER__"
   _multishell_agents="__MULTISHELL_AGENTS__"
   _multishell_ran=0
@@ -64,12 +74,12 @@ _multishell_owns_debug_or_saves_theirs || trap '\''_multishell_debug "$_"'\'' DE
       if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]] &&
         (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
         PROMPT_COMMAND=(
-          _multishell_precmd "${PROMPT_COMMAND[@]}" "$_multishell_claim_debug"
+          "$_multishell_precmd_entry" "${PROMPT_COMMAND[@]}" "$_multishell_claim_debug"
           _multishell_prompt_marks _multishell_arm)
       else
         # Newlines, not `;`: a user value ending in a separator composed to
         # `;;`, which bash refuses, so none of the three ran.
-        PROMPT_COMMAND="_multishell_precmd
+        PROMPT_COMMAND="$_multishell_precmd_entry
 ${PROMPT_COMMAND-}
 $_multishell_claim_debug
 _multishell_prompt_marks

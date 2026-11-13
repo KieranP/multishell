@@ -35,6 +35,9 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// The status read had not answered when the dialog was built, so the
   /// changed files it would count are unknown.
   let isStatusUnread: Bool
+  /// A detached worktree's commits that no branch, remote or tag holds, which
+  /// go with its record; `nil` where git could not count them.
+  var commitsOnNoBranch: Int? = 0
 
   public var id: String { worktree.id }
 
@@ -61,11 +64,16 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     mergeState: WorktreeMergeState,
     trashes: Bool,
     isStatusUnread: Bool,
+    defaultBranch: String? = nil,
+    commitsOnNoBranch: Int? = 0,
   ) -> Decision {
-    let hasBranch = worktree.branch != nil
+    // The coordinator keeps the branch a bare clone's HEAD names, the default one.
+    let hasBranch = worktree.branch.map { $0 != defaultBranch } ?? false
     let deletes = hasBranch && alwaysDeletesBranch
     let asksAboutBranch = hasBranch && !alwaysDeletesBranch
-    guard confirms || asksAboutBranch else { return .remove(deletesBranch: deletes) }
+    guard confirms || asksAboutBranch || commitsOnNoBranch != 0 else {
+      return .remove(deletesBranch: deletes)
+    }
     return .ask(
       Self(
         worktree: worktree,
@@ -74,6 +82,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
         mergeState: mergeState,
         trashes: trashes,
         isStatusUnread: isStatusUnread,
+        commitsOnNoBranch: commitsOnNoBranch,
       )
     )
   }

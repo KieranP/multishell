@@ -7,6 +7,45 @@ import Testing
 /// What the generated files have to survive: the user's own startup files,
 /// which they source before adding anything of their own.
 extension ShellIntegrationScriptsTests {
+  /// A tab's bash stands for a login shell but is not one, so it refused
+  /// `logout` and ran no `~/.bash_logout`.
+  @Test(arguments: InstalledBashes.all)
+  func aTabsBashLogsOutAsALoginShellWould(bash: String) async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\n")
+    try files.writeHomeFile(".bash_logout", "echo LOGGED-OUT-$((1+1))\n")
+
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: files.environment(termProgram: nil),
+      input: "logout\n",
+    )
+
+    #expect(!output.contains("not login shell"), "\(output)")
+    #expect(output.contains("LOGGED-OUT-2"), "\(output)")
+  }
+
+  /// A login shell runs `~/.bash_logout` on `exit`, `logout` or end of input,
+  /// never on a hangup, which every pane close and quit sends.
+  @Test(arguments: InstalledBashes.all)
+  func aTabsBashHungUpRunsNoLogoutFile(bash: String) async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\n")
+    try files.writeHomeFile(".bash_logout", "echo LOGGED-OUT-$((1+1))\n")
+
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: files.environment(termProgram: nil),
+      input: "kill -HUP $$\n",
+    )
+
+    #expect(!output.contains("LOGGED-OUT-2"), "\(output)")
+  }
+
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
   func aRealBashKeepsWhatTheUsersOwnStartupFilesSetUp() async throws {
     let bash = "/bin/bash"

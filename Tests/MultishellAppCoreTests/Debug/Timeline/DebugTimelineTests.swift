@@ -32,6 +32,18 @@ struct DebugTimelineTests {
     #expect(slot.gitRunsStartedPerSecond == 7, "seconds 5 to 9")
   }
 
+  @Test func aFreezeCountsTheSecondsItHeldTheFrame() {
+    let samples = [DebugSample.sample(sequence: 0, longestFrame: .seconds(10))]
+
+    #expect(DebugTimeline(history: .of(samples), range: .oneMinute).stalledSecondCount == 10)
+  }
+
+  @Test func aFreezeLongerThanTheRangeCountsTheRangeAlone() {
+    let samples = [DebugSample.sample(sequence: 0, longestFrame: .seconds(90))]
+
+    #expect(DebugTimeline(history: .of(samples), range: .oneMinute).stalledSecondCount == 60)
+  }
+
   @Test func aStallIsCountedPerSecondOverTheRangeAlone() {
     let samples = (0..<120).map { sequence in
       DebugSample.sample(

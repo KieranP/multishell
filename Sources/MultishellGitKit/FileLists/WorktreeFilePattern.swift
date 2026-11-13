@@ -39,15 +39,16 @@ enum WorktreeFilePattern {
     var lastStar = -1
     var resumeAt = 0
     while nameIndex < name.count {
-      if patternIndex < pattern.count,
+      // The star first: a name's own `*` taken as its literal left no star to backtrack to.
+      if patternIndex < pattern.count, pattern[patternIndex] == "*" {
+        lastStar = patternIndex
+        patternIndex += 1
+        resumeAt = nameIndex
+      } else if patternIndex < pattern.count,
         pattern[patternIndex] == "?" || pattern[patternIndex] == name[nameIndex]
       {
         nameIndex += 1
         patternIndex += 1
-      } else if patternIndex < pattern.count, pattern[patternIndex] == "*" {
-        lastStar = patternIndex
-        patternIndex += 1
-        resumeAt = nameIndex
       } else if lastStar >= 0 {
         // Backtrack: the last `*` takes one more character.
         patternIndex = lastStar + 1

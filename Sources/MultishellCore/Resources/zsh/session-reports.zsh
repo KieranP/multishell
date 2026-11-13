@@ -24,6 +24,22 @@ _multishell_report_state() {
   _multishell_send "{\"v\":1,\"state\":\"$state\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$_multishell_cwd\",\"shell\":true$fields}" "$@"
 }
 
+# `exec zsh` and omz's reload put a new zsh in the pane that reads only the
+# user's files, so ZDOTDIR is ours again for that one line.
+_multishell_replaces_itself() {
+  [[ $1 == omz && $2 == reload ]] && return 0
+  [[ $1 == exec ]] || return 1
+  shift
+  while [[ ${1-} == (-*|*=*) ]]; do shift; done
+  [[ ${1:t} == zsh ]] || return 1
+  shift
+  # Only an interactive zsh reads our .zshrc, which hands ZDOTDIR back.
+  local word
+  for word in "$@"; do
+    [[ $word == (-i|-l|-il|-li|--login|--interactive) ]] || return 1
+  done
+}
+
 # Both reports run inline: a fast command's finished must not overtake
 # its started, and a fast close must not skip either.
 _multishell_preexec() {
@@ -39,6 +55,10 @@ _multishell_preexec() {
   while (( i <= $#parts )) && [[ ${parts[i]} == (*=*|command|env|exec) ]]; do
     (( i++ ))
   done
+  if [[ -n ${_multishell_self_zdotdir-} ]] && _multishell_replaces_itself "${parts[@]}"; then
+    _multishell_lends_zdotdir=1
+    export ZDOTDIR=$_multishell_self_zdotdir
+  fi
   local command_word=${parts[i]:t} fields=",\"pid\":$$"
   if [[ -n "$command_word" && " $_multishell_agents " == *" $command_word "* ]]; then
     fields+=",\"command\":\"$command_word\""
@@ -53,6 +73,15 @@ _multishell_precmd() {
   local exit_code=$?
   # zsh's options, not the user's: under err_exit a failed send ended the shell.
   emulate -L zsh
+  # The line that was to replace the shell did not: ZDOTDIR goes back to the user.
+  if (( ${_multishell_lends_zdotdir:-0} )); then
+    _multishell_lends_zdotdir=0
+    if [[ -n ${MULTISHELL_USER_ZDOTDIR-} ]]; then
+      export ZDOTDIR=$MULTISHELL_USER_ZDOTDIR
+    else
+      unset ZDOTDIR
+    fi
+  fi
   # Status 0: a hook returning 1 ends the shell under the user's err_exit.
   (( _multishell_ran )) || return 0
   _multishell_ran=0

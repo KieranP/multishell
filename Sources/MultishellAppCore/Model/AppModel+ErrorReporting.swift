@@ -1,12 +1,22 @@
 extension AppModel {
   /// An error with a stronger form to retry, asked as a destructive alert.
-  public var presentedRetryableError: PresentedError? {
-    presentedError.flatMap { $0.isRetryable ? $0 : nil }
+  public func presentedRetryableError(in window: DialogWindow) -> PresentedError? {
+    presentedError(in: window).flatMap { $0.isRetryable ? $0 : nil }
   }
 
   /// An error with nothing to retry, which takes the plain dismiss.
-  public var presentedPlainError: PresentedError? {
-    presentedError.flatMap { $0.isRetryable ? nil : $0 }
+  public func presentedPlainError(in window: DialogWindow) -> PresentedError? {
+    presentedError(in: window).flatMap { $0.isRetryable ? nil : $0 }
+  }
+
+  /// One left for a closed Settings window would be shown nowhere.
+  public func noteSettingsWindowClosed() {
+    returnSettingsToAllProjects()
+    presentedErrorWindow = .workspace
+  }
+
+  private func presentedError(in window: DialogWindow) -> PresentedError? {
+    presentedErrorWindow == window ? presentedError : nil
   }
 
   func present(_ error: any Error) {

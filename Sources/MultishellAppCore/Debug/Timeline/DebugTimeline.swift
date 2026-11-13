@@ -1,3 +1,5 @@
+import MultishellProcess
+
 /// What the panel's strips draw for one range: a slot per point, oldest first,
 /// `nil` where no sample has landed yet, so a fresh history fills from the right.
 public struct DebugTimeline: Sendable, Equatable {
@@ -12,7 +14,16 @@ public struct DebugTimeline: Sendable, Equatable {
 
   init(history: DebugHistory, range: DebugRange) {
     self.range = range
-    stalledSecondCount = history.samples(in: range).filter { $0.smoothness == .stalled }.count
+    // By the frame's length, not a sample each: a freeze holds the sampler too, so ten
+    // seconds frozen land in one sample, or in the next one-second sample after it.
+    let stalledSeconds = history.samples(in: range).reduce(0) { count, sample in
+      guard sample.smoothness == .stalled, let frame = sample.frameRate?.longestFrame else {
+        return count
+      }
+      return count + max(1, Int(frame.inSeconds.rounded(.up)))
+    }
+    // A freeze begun before the range counts only the range's own seconds.
+    stalledSecondCount = min(stalledSeconds, range.sampleCount)
     guard let newest = history.latest else {
       slots = Array(repeating: nil, count: range.slotCount)
       return

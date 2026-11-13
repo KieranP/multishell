@@ -118,21 +118,28 @@ extension AppModel {
     reviewComposerKeyboardRequests.remove(tabID)
   }
 
-  /// Only a composer on screen holding text that a switch would lose: an Edit
-  /// left as it was loses nothing, and one hidden by the scope would block every +.
+  /// Text a close or switch would lose: an Edit left as it was loses nothing.
+  func reviewComposerHoldsUnsavedText(in tabID: FileTab.ID) -> Bool {
+    guard reviewComposers[tabID] != nil, let tab = workspace.fileTab(tabID),
+      let draft = reviewDraft(in: tabID).trimmedOfAllWhitespaceOrNil
+    else { return false }
+    let editing = reviewComposers[tabID]?.editing
+    return draft != reviewComments(in: tab.worktreeID).first { $0.id == editing }?.text
+  }
+
+  /// Only a composer on screen: one hidden by the scope would block every +.
   private func composerHoldsUnsavedShownText(in tabID: FileTab.ID) -> Bool {
     guard let composer = reviewComposers[tabID], let tab = workspace.fileTab(tabID),
       composer.appliesUnder(fileTabScope(in: tab.worktreeID)),
-      tabHasLines(on: composer.side, in: tabID),
-      let draft = reviewDraft(in: tabID).trimmedOfAllWhitespaceOrNil
+      tabHasLines(on: composer.side, in: tabID)
     else { return false }
-    let editedText = reviewComments(in: tab.worktreeID).first { $0.id == composer.editing }?.text
-    return draft != editedText
+    return reviewComposerHoldsUnsavedText(in: tabID)
   }
 
-  /// Placement's rule: a side with no line left, its file emptied, places no card.
+  /// Placement's rule: a side with no numbered line left, its file emptied or
+  /// deleted and kept as last read, places no card.
   private func tabHasLines(on side: DiffSide, in tabID: FileTab.ID) -> Bool {
     guard case .text(let rows) = fileTabReadings[tabID]?.content else { return false }
-    return rows.lines.contains { side.shows($0.kind) }
+    return rows.lines.contains { side.shows($0.kind) && $0.number(on: side) != nil }
   }
 }

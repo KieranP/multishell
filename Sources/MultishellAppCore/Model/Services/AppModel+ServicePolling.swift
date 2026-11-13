@@ -45,7 +45,7 @@ extension AppModel {
   }
 
   private func hasRunUnderWay(inProject id: Project.ID) -> Bool {
-    workspace.worktrees(of: id).contains { worktree in
+    worktreesWithRowsInView(ofProject: id).contains { worktree in
       remoteState.worktrees[worktree.id]?.ciRun?.isUnderWay == true
     }
   }

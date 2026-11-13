@@ -47,6 +47,9 @@ algorithm. Newest at the bottom, above "Reviewed and left as is".
   pool, which is as wide as the cores: a probe of 64 blocking detached tasks
   peaked at 12 on 12 cores, and an unrelated task waited 5.15 s for a thread.
   Cost: a dead mount holds a GCD thread per read rather than queueing them.
+- **So a child process's timers and completion run on a queue of their own.**
+  With GCD's 64 constrained threads held by such reads, the global queue ran no
+  timer: every git run hung, its own timeout included.
 - **Past 50,000 new files the paths are not kept as strings**, though every one
   is still counted.
 - **Every count comes from one list of changed files**, for every worktree read,

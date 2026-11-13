@@ -1,11 +1,25 @@
 import Dispatch
+import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
 
 @Suite @MainActor
 struct AppModelDebugToolsTests {
+  /// Lets the held scan go and blocks the calling thread, the main actor here,
+  /// past its end, as a stall begun mid-scan would.
+  private static func stallTheMainActor(
+    releasing mayScan: DispatchSemaphore,
+    until scanned: DispatchSemaphore,
+    seconds: Double,
+  ) {
+    mayScan.signal()
+    scanned.wait()
+    Thread.sleep(forTimeInterval: seconds)
+  }
+
   private func harnessWithDebugTools() -> Harness {
     let harness = Harness()
     harness.model.enableDebugTools()
@@ -95,6 +109,19 @@ struct AppModelDebugToolsTests {
     #expect(harness.model.debugTimeline(for: .oneMinute).slots.compactMap { $0 }.count == 2)
   }
 
+  @Test func aPausedMemoryTableHoldsStillAsATabCloses() async {
+    let harness = harnessWithDebugTools()
+    harness.model.select(harness.main)
+    harness.model.newTab()
+    await harness.model.takeDebugSample()
+    harness.model.setDebugPaused(true)
+    let held = harness.model.debugMemoryTable
+
+    harness.model.closeActiveTab()
+
+    #expect(harness.model.debugMemoryTable == held)
+  }
+
   @Test(arguments: [false, true])
   func aSampleStillScanningWhenTheToolsAreTurnedOffIsDropped(turnedBackOn: Bool) async {
     let harness = harnessWithDebugTools()
@@ -112,6 +139,40 @@ struct AppModelDebugToolsTests {
     await sampling.value
 
     #expect(harness.model.debugHistory.samples.isEmpty)
+  }
+
+  /// The share is the scan's CPU over the scan's own interval: timed after the
+  /// main actor came back, a stall begun mid-scan read as a quarter, then fourfold.
+  @Test func theAppsCPUIsMeasuredBetweenItsScansNotWhenTheMainActorTookThem() async throws {
+    let harness = harnessWithDebugTools()
+    let start = ContinuousClock.now
+    let busySinceStart: @Sendable () -> DebugProcessScan = {
+      DebugProcessScan(
+        app: .sample(pid: 1, cpuTime: start.duration(to: .now)),
+        trees: [],
+        terminalDevices: [:],
+      )
+    }
+    harness.model.debugSampler.scanProcesses = { _, _ in busySinceStart() }
+    await harness.model.takeDebugSample()
+    try await Task.sleep(for: .milliseconds(300))
+    let scanStarted = AtomicFlag()
+    let mayScan = DispatchSemaphore(value: 0)
+    let scanned = DispatchSemaphore(value: 0)
+    harness.model.debugSampler.scanProcesses = { _, _ in
+      scanStarted.raise()
+      mayScan.wait()
+      defer { scanned.signal() }
+      return busySinceStart()
+    }
+    let sampling = Task { await harness.model.takeDebugSample() }
+    try await waitUntil { scanStarted.raised }
+
+    Self.stallTheMainActor(releasing: mayScan, until: scanned, seconds: 0.6)
+    await sampling.value
+
+    let percent = harness.model.debugHistory.latest?.appCPUPercent ?? 0
+    #expect((80...120).contains(percent), "a process busy throughout reads \(percent)%")
   }
 
   @Test func reportsWhileTheToolsAreOffAreNotCounted() async {

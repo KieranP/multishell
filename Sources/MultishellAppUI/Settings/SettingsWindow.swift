@@ -24,9 +24,10 @@ struct SettingsWindow: View {
     .toolbar(removing: .title)
     .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     .background(WindowAccessor { $0?.hideTitleBar() })
-    .settingsWindow(platform: platform, onClose: { model.returnSettingsToAllProjects() })
-    // This window is its own scene, so a removal asked for here has to be
-    // confirmed here; the workspace window's dialog would be behind it.
+    .settingsWindow(platform: platform, onClose: { model.noteSettingsWindowClosed() })
+    // This window is its own scene, so a removal or an error raised here is
+    // shown here; the workspace window's dialog would be behind it.
     .projectRemovalAlert(model: model, source: .settings)
+    .presentedErrorAlert(model: model, window: .settings)
   }
 }

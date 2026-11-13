@@ -38,7 +38,16 @@ extension ProcessRunnerTests {
     }
   }
 
+  /// Foundation drops a cleared readability handler later, on its own queue; holding the
+  /// buffer strongly, it kept 35 to 40 runs in a thousand alive past the return.
   @Test func aRunLetsGoOfItsPipesWhenItReturnsNotASecondLater() async throws {
+    var kept = 0
+    for _ in 0..<1000 where try await isKeptAfterDraining() { kept += 1 }
+
+    #expect(kept == 0)
+  }
+
+  private func isKeptAfterDraining() async throws -> Bool {
     let group = DispatchGroup()
     let (outPipe, errPipe) = (try PipeDescriptors.make(), try PipeDescriptors.make())
     defer {
@@ -56,8 +65,7 @@ extension ProcessRunnerTests {
     out = nil
     err = nil
 
-    #expect(releasedOut == nil)
-    #expect(releasedErr == nil)
+    return releasedOut != nil || releasedErr != nil
   }
 
   /// Each run opens four descriptors, and the status poll runs one per worktree every five
@@ -77,5 +85,29 @@ extension ProcessRunnerTests {
     let after = try await lowestDescriptorCount(over: .seconds(4))
 
     #expect(after - before < 100, "before \(before), after \(after); a leak would be 400")
+  }
+}
+
+extension ProcessRunnerTests {
+  /// Reads blocked on a dead mount hold GCD's constrained threads, and the
+  /// global queue then ran no timer: a run's timeout never fired.
+  @Test func aTimeoutStillFiresWhileBlockedReadsHoldEveryConstrainedThread() async throws {
+    var limit: Int32 = 0
+    var size = MemoryLayout<Int32>.size
+    try #require(sysctlbyname("kern.wq_max_constrained_threads", &limit, &size, nil, 0) == 0)
+    let gate = DispatchSemaphore(value: 0)
+    for _ in 0..<limit {
+      DispatchQueue.global(qos: .utility).async { _ = gate.wait(timeout: .now() + 30) }
+    }
+    defer { for _ in 0..<limit { gate.signal() } }
+
+    let output = try await runner.capture(
+      bourneShell,
+      ["-c", "sleep 5"],
+      in: workingDirectory,
+      timeout: .milliseconds(500),
+    )
+
+    #expect(output.stopReason == .timedOut(after: .milliseconds(500)))
   }
 }

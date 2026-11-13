@@ -24,6 +24,20 @@ struct AppModelTabClosingTests {
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
   }
 
+  @Test func closingDoesNothingToTabsARemovalPaneHides() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tabs = harness.model.workspace.tabs(in: harness.main.id).count
+    harness.model.worktreeOperations.begin(.removingWorktree, on: harness.main.id)
+
+    #expect(!harness.model.hasTabToClose)
+    harness.model.closeActivePane()
+    harness.model.closeActiveTab()
+
+    #expect(harness.model.workspace.tabs(in: harness.main.id).count == tabs)
+    #expect(harness.engine.closed.isEmpty)
+  }
+
   @Test func splitThenCloseCollapsesBackToOnePane() {
     let harness = Harness()
     harness.model.select(harness.main)

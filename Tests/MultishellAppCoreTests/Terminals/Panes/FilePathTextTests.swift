@@ -1,4 +1,5 @@
 import Foundation
+import MultishellProcess
 import TestScratch
 import Testing
 
@@ -72,6 +73,18 @@ struct FilePathTextTests {
       mentionPrefix: "@",
     )
     #expect(text == "@My\\ Notes.md")
+  }
+
+  /// Claude Code's mention ends at any Unicode space and escapes only an ASCII
+  /// one, so a screenshot's narrow no-break space or a backslash cut it short.
+  @Test(arguments: ["Shot 9.41.07\u{202F}AM.png", "a\u{00A0}b.md", #"a\b.md"#])
+  func aNameAMentionCannotSpellIsPastedAsItsQuotedPath(name: String) {
+    let text = FilePathText.pastedText(
+      for: [URL(fileURLWithPath: "/repos/demo/" + name)],
+      relativeTo: directory,
+      mentionPrefix: "@",
+    )
+    #expect(text == AnyShellQuoting.quote("/repos/demo/" + name))
   }
 
   @Test func aMentionEscapesASpaceFollowedByACombiningMark() {

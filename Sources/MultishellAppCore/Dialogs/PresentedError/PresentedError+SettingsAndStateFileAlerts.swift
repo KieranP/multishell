@@ -2,7 +2,8 @@ import Foundation
 import MultishellCore
 
 extension PresentedError {
-  /// An agent's settings file, or the app's own state or review file, that would not read.
+  /// An agent's or a repository's settings file, or the app's state or review file,
+  /// that would not read.
   static func settingsOrStateFileAlert(_ error: any Error) -> Alert? {
     switch error {
     case let entries as UnexpectedHookEntriesShape:
@@ -21,6 +22,16 @@ extension PresentedError {
       return (
         t("error.unparsable-settings-title"),
         t("error.unparsable-settings-message", unparsable.file.path),
+      )
+
+    case let shared as UnreadableSharedSettingsFile:
+      return (
+        t("error.unreadable-shared-settings-title"),
+        t(
+          "error.unreadable-shared-settings-message",
+          shared.file.path,
+          String(describing: shared.underlying),
+        ),
       )
 
     case let shape as UnexpectedSettingsShape:
@@ -43,6 +54,12 @@ extension PresentedError {
       return (
         t("error.unreadable-review-title"),
         reviews.files.map(reviewFileMessage).joined(separator: "\n\n"),
+      )
+
+    case let link as DanglingStateFileLink:
+      return (
+        t("error.unreadable-state-title"),
+        t("error.dangling-state-link-message", link.fileURL.path, link.target.path),
       )
 
     case let state as UnmovableStateFile:

@@ -11,7 +11,7 @@ struct FileListRows: View {
   let theme: Theme
 
   var body: some View {
-    // One pass over the comments for every row; a folder's path names no comment.
+    // One pass over the comments for every row.
     let pendingComments = model.pendingReviewCommentCounts(in: worktreeID)
     ForEach(rows) { row in
       FilesPanelRow(
@@ -19,7 +19,7 @@ struct FileListRows: View {
         worktreeID: worktreeID,
         row: row,
         isSelected: model.isShownFile(row, in: worktreeID),
-        pendingComments: pendingComments[row.path] ?? 0,
+        pendingComments: row.pendingComments(in: pendingComments),
         theme: theme,
       )
     }

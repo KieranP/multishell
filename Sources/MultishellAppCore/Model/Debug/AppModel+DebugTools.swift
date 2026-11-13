@@ -47,5 +47,6 @@ extension AppModel {
   /// Holds the panel still for reading; the sidebar and the sampling go on.
   public func setDebugPaused(_ paused: Bool) {
     pausedDebugSnapshot = paused ? liveDebugSnapshot : nil
+    pausedDebugMemoryTable = paused ? liveDebugMemoryTable : nil
   }
 }

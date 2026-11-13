@@ -207,6 +207,38 @@ struct AppModelWorktreeRemovalTests {
     #expect(!after.contains("ahead"))
   }
 
+  @Test func forceDeletionKeepsABranchThatMovedWhileItsAlertWasUp() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let ahead = try await harness.createWorktree(onBranch: "ahead")
+    try await TestRepository.commit(
+      "ahead",
+      files: ["w.txt": "work\n"],
+      in: ahead.path,
+      using: harness.git,
+    )
+    await harness.model.removeWorktree(ahead, deletesBranch: true)
+    let refused = try #require(harness.model.presentedError)
+    let elsewhere = try await harness.createWorktree(onBranch: "elsewhere")
+    _ = try await harness.git.run(["reset", "-q", "--hard", "ahead"], in: elsewhere.path)
+    try await TestRepository.commit(
+      "later",
+      files: ["later.txt": "more\n"],
+      in: elsewhere.path,
+      using: harness.git,
+    )
+    _ = try await harness.git.run(
+      ["branch", "-f", "ahead", "elsewhere"],
+      in: harness.project.path,
+    )
+
+    await refused.retry?.action()
+
+    #expect(try await harness.branches().contains("ahead"))
+    let askedAgain = try #require(harness.model.presentedError)
+    #expect(askedAgain.id != refused.id && askedAgain.retry?.label == "Force Deletion")
+  }
+
   @Test func aFailingPostDeleteHookKeepsTheBranchAndSaysSo() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

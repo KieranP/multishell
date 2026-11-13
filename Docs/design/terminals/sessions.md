@@ -116,6 +116,9 @@ What a shell is launched as, and what its state means. Newest at the bottom.
   own rule.
 - **So returning to the app is a look**, alongside selecting, activating and
   closing the board; a shell exiting while the user is elsewhere is not.
+- **Launch takes back every banner the last run left**: they describe agents its
+  quit ended, and the keys a withdrawal goes by were that run's alone. Only once
+  the socket is this copy's, or a copy handing over took the running one's.
 - **Taking back removes the pending request too**: delivery lands a moment after
   the call returns, and a look landing in that gap left the banner arriving with
   nothing to retract it.

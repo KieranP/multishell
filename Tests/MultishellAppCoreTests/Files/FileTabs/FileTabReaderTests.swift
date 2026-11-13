@@ -9,6 +9,13 @@ import Testing
 
 @Suite(.serialized)
 struct FileTabReaderTests {
+  private static var diskIgnoresCase: Bool {
+    let values = try? FileManager.default.temporaryDirectory.resourceValues(
+      forKeys: [.volumeSupportsCaseSensitiveNamesKey]
+    )
+    return values?.volumeSupportsCaseSensitiveNames == false
+  }
+
   private static func text(_ reading: FileTabReading) -> FileTabRows? {
     if case .text(let text) = reading.content { text } else { nil }
   }
@@ -32,6 +39,55 @@ struct FileTabReaderTests {
     #expect(text.lines.map(\.kind) == [.removed, .added, .context, .context, .added])
     #expect(text.lines.map(\.isStaged) == [true, true, false, false, false])
     #expect(text.lineCounts == FileLineCounts(insertions: 2, deletions: 1))
+  }
+
+  /// The default disk ignores case, so the old name of `git mv Foo.txt foo.txt`
+  /// opened the new one's bytes and drew every line added.
+  @Test(
+    .enabled(if: diskIgnoresCase),
+    arguments: [("Foo.txt", "foo.txt"), ("Src/a.txt", "src/a.txt")],
+  )
+  func theOldNameOfACaseOnlyRenameIsGone(old: String, new: String) async throws {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    try await TestRepository.commit(
+      "seed",
+      files: [old: "one\ntwo\n"],
+      in: repository.path,
+      using: repository.runner,
+    )
+    let from = old.split(separator: "/").first.map(String.init) ?? old
+    let to = new.split(separator: "/").first.map(String.init) ?? new
+    _ = try await repository.runner.run(["mv", from, "moving"], in: repository.path)
+    _ = try await repository.runner.run(["mv", "moving", to], in: repository.path)
+
+    let reading = await repository.read(old)
+
+    #expect(reading.isFileGone)
+    #expect(Self.text(reading)?.lines.allSatisfy { $0.kind == .removed } == true)
+  }
+
+  /// Finder renames by case without git noticing, which still tracks the old
+  /// spelling: the file is there, unchanged.
+  @Test(.enabled(if: diskIgnoresCase))
+  func aFileRenamedByCaseOutsideGitStillShows() async throws {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    try await TestRepository.commit(
+      "seed",
+      files: ["Foo.txt": "one\n"],
+      in: repository.path,
+      using: repository.runner,
+    )
+    try FileManager.default.moveItem(
+      at: repository.path.appending(path: "Foo.txt"),
+      to: repository.path.appending(path: "foo.txt"),
+    )
+
+    let reading = await repository.read("Foo.txt")
+
+    #expect(!reading.isFileGone)
+    #expect(Self.text(reading)?.lines.map(\.text) == ["one"])
   }
 
   @Test func sinceTheBaseAFileShowsWhatItsBranchCommittedWithNoStagingMarked() async throws {

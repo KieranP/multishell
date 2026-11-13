@@ -140,14 +140,14 @@ struct WorktreeCoordinatorCreationTests {
   @Test func aRefusedCreateLeavesNoContainerDirectory() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    _ = try await fixture.runner.run(["branch", "taken"], in: fixture.project.path)
     let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
 
     await #expect(throws: ProcessFailure.self) {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: "taken",
+        branch: "fresh",
         in: fixture.project,
         settings: settings,
+        basedOn: "no-such-start",
       )
     }
 
@@ -183,22 +183,51 @@ struct WorktreeCoordinatorCreationTests {
     #expect(try second(index) > second(path.appendingPathComponent("README.md").path))
   }
 
-  @Test func aBranchThatAlreadyExistsIsAGitErrorNotACrash() async throws {
+  @Test(arguments: ["taken", "taken/below", "parent"])
+  func aNewBranchNameAnExistingBranchHoldsIsRefusedBeforeTheHookRuns(
+    name: String
+  ) async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     _ = try await fixture.runner.run(["branch", "taken"], in: fixture.project.path)
+    _ = try await fixture.runner.run(["branch", "parent/child"], in: fixture.project.path)
+    var project = fixture.project
+    project.settings = ProjectSettings(
+      preCreateHook: "touch \"$MULTISHELL_PROJECT_PATH/hook-ran\""
+    )
 
-    await #expect(throws: ProcessFailure.self) {
+    await #expect(throws: BranchNameTaken.self) {
       try await fixture.coordinator.createThenRunPostCreateHook(
-        branch: "taken",
-        in: fixture.project,
+        branch: name,
+        in: project,
         settings: fixture.worktreeSettings,
       )
     }
-    #expect(
-      try await fixture.git.list(fixture.project).count == 1,
-      "nothing was created",
+
+    let marker = project.path.appendingPathComponent("hook-ran")
+    #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
+    #expect(try await fixture.git.list(project).count == 1, "nothing was created")
+  }
+
+  /// git runs the repository's `post-checkout` after the checkout and exits with
+  /// its status, leaving the worktree made; husky's install step fails there.
+  @Test func aFailingPostCheckoutHookStillMakesTheWorktree() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let hooks = fixture.project.path.appendingPathComponent(".git/hooks")
+    try FileManager.default.createDirectory(at: hooks, withIntermediateDirectories: true)
+    let hook = hooks.appendingPathComponent("post-checkout")
+    try "#!/bin/sh\nexit 1\n".write(to: hook, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hook.path)
+
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "made",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
     )
+
+    #expect(try await fixture.git.list(fixture.project).contains { $0.branch == "made" })
+    #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("README.md").path))
   }
 
   @Test func anOccupiedTargetDirectoryIsRefusedAndTheHookDoesNotRun() async throws {
@@ -238,6 +267,7 @@ struct WorktreeCoordinatorCreationTests {
         branch: "busy",
         in: fixture.project,
         settings: fixture.worktreeSettings,
+        createsBranch: false,
       )
     }
     #expect(await !fixture.git.lacksBranch("busy", in: fixture.project))

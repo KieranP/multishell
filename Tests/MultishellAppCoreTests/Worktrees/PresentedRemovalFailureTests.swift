@@ -140,6 +140,7 @@ struct PresentedRemovalFailureTests {
   @Test func aBranchThatWouldNotGoOffersTheForcedDelete() throws {
     let error = BranchDeletionFailure(
       branch: "feat",
+      tip: "abc123",
       underlying: ProcessFailure(
         executable: "git",
         arguments: ["branch", "-d", "feat"],
@@ -151,7 +152,7 @@ struct PresentedRemovalFailureTests {
       PresentedRemovalFailure(error, deletingBranch: "feat")
     )
     #expect(title == "Worktree removed, but branch feat was not deleted")
-    #expect(retry == .deleteBranchAnyway("feat"))
+    #expect(retry == .deleteBranchAnyway("feat", atTip: "abc123"))
     #expect(retry?.label == "Force Deletion")
     #expect(removed)
   }

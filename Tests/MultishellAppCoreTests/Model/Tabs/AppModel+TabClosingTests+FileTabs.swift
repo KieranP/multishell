@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 import Testing
 
@@ -13,7 +14,30 @@ extension AppModelTabClosingTests {
 
     #expect(harness.model.workspace.fileTab(file.id) == nil)
     #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1, "the shell stays")
-    #expect(harness.model.pendingClose == nil, "a file tab never asks")
+    #expect(
+      harness.model.pendingClose == nil,
+      "one with no review comment being written asks nothing",
+    )
+  }
+
+  @Test func closingAFileTabWhoseReviewCommentIsBeingWrittenAsksFirst() throws {
+    let harness = Harness()
+    let file = harness.openFileTab()
+    let rows = FileTabRows.replacedBlock(before: 2, removed: 1, added: 2, after: 1)
+    harness.model.fileTabReadings[file.id] = FileTabReading(
+      content: .text(rows),
+      isFileGone: false,
+    )
+    let selection = try #require(ReviewLineSelection(from: 0, to: 0, in: rows.lines))
+    harness.model.openReviewComposer(on: selection, in: file.id)
+    harness.model.noteReviewDraft("Typed.", in: file.id)
+
+    harness.model.closeTab(file.id)
+
+    #expect(harness.model.workspace.fileTab(file.id) != nil, "the draft would go with it")
+    let pending = try #require(harness.model.pendingClose)
+    harness.model.answerClose(pending, confirmed: true)
+    #expect(harness.model.workspace.fileTab(file.id) == nil)
   }
 
   @Test func aMiddleClickClosesAFileTabInTheBackground() {

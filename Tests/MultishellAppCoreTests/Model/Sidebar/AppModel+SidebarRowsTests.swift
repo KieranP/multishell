@@ -20,6 +20,27 @@ struct AppModelSidebarRowsTests {
     #expect(panes.map(\.position?.number) == [1, 2])
   }
 
+  @Test func thePanesFollowTheStripsGroupByGroupOnceATabOpensInTheFirst() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.newTab()
+    harness.model.moveActiveTabToNewGroup()
+    let groups = harness.model.workspace.groups(in: harness.main.id)
+    try #require(groups.count == 2)
+    harness.model.focusGroup(groups[0].id)
+    harness.model.newTab()
+
+    let panes = harness.model.sidebarPanes(of: harness.main)
+
+    let stripOrder: [TerminalSession.ID] = harness.model.workspace.groups(in: harness.main.id)
+      .flatMap { group in harness.model.workspace.workspaceTabs(inGroup: group.id) }
+      .flatMap { (tab: WorkspaceTab) -> [TerminalSession.ID] in
+        guard case .terminal(let terminal) = tab else { return [] }
+        return terminal.sessionIDs
+      }
+    #expect(panes.map(\.id) == stripOrder)
+  }
+
   @Test func aTabListingASessionThatIsGoneGivesItsWorktreeOnlyThePanesItHas() throws {
     let harness = Harness()
     harness.model.select(harness.main)

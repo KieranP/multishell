@@ -10,6 +10,7 @@ final class FakePullRequestHost: PullRequestHost {
   private struct State {
     var answer: Result<[PullRequest], ServiceReadFailure> = .success([])
     var checks: [PullRequestCheck] = []
+    var headCommit: String?
     var calls: [String] = []
     var branchAnswers: [String: Result<[PullRequest], ServiceReadFailure>] = [:]
     var askedBranches: [String] = []
@@ -43,6 +44,11 @@ final class FakePullRequestHost: PullRequestHost {
   /// Every list read waits, as a hung `gh` would, until `releaseHeldReads`.
   func holdList() {
     state.withLock { $0.holdsList = true }
+  }
+
+  /// The head a pull request has moved to since the list was read.
+  func answerHeadCommit(_ commit: String) {
+    state.withLock { $0.headCommit = commit }
   }
 
   func holdChecks() {
@@ -111,6 +117,10 @@ final class FakePullRequestHost: PullRequestHost {
       for await _ in heldReads.stream {}
     }
     return state.withLock { $0.checks }
+  }
+
+  func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String {
+    state.withLock { $0.headCommit } ?? pullRequest.headCommit
   }
 
   func open(_ pullRequest: PullRequest, in directory: URL) async throws {

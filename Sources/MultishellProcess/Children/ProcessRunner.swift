@@ -29,15 +29,14 @@ public struct ProcessRunner: Sendable {
     _ standardError: PipeBuffer,
     group: DispatchGroup,
   ) async {
-    // Weak, or each run's read ends stay open until the timer fires. An
-    // unfinished buffer keeps itself alive through its readability handler.
-    DispatchQueue.global().asyncAfter(deadline: .now() + Self.eofGraceAfterExit) {
+    // Weak, or each run's read ends stay open until the timer fires.
+    ProcessTimerQueue.shared.asyncAfter(deadline: .now() + Self.eofGraceAfterExit) {
       [weak standardOutput, weak standardError] in
       standardOutput?.finish()
       standardError?.finish()
     }
     await withCheckedContinuation { continuation in
-      group.notify(queue: .global()) { continuation.resume() }
+      group.notify(queue: ProcessTimerQueue.shared) { continuation.resume() }
     }
   }
 
@@ -46,7 +45,7 @@ public struct ProcessRunner: Sendable {
     for child: RunningChild,
     stopper: ProcessStopper,
   ) {
-    DispatchQueue.global().asyncAfter(deadline: .now() + timeout.inSeconds) {
+    ProcessTimerQueue.shared.asyncAfter(deadline: .now() + timeout.inSeconds) {
       if child.isRunning { stopper.stop(.timedOut(after: timeout)) }
     }
   }

@@ -35,20 +35,25 @@ extension FileTree {
   ) -> [Node] {
     var names: [Substring] = []
     var pathsBelow: [Substring: [[Substring]]] = [:]
+    var endingHere: Set<Substring> = []
     for parts in paths where parts.count > depth {
       let name = parts[depth]
       if pathsBelow[name] == nil {
         names.append(name)
         pathsBelow[name] = []
       }
-      if parts.count > depth + 1 { pathsBelow[name, default: []].append(parts) }
+      if parts.count > depth + 1 {
+        pathsBelow[name, default: []].append(parts)
+      } else {
+        endingHere.insert(name)
+      }
     }
     return sorted(
-      names.map { part in
+      names.flatMap { part -> [Node] in
         let name = String(part)
         let path = parentPath.isEmpty ? name : parentPath + "/" + name
         let below = pathsBelow[part] ?? []
-        return Node(
+        let node = Node(
           name: name,
           path: path,
           children: below.isEmpty
@@ -57,6 +62,19 @@ extension FileTree {
           isRepository: marks.repositories.contains(path),
           isIgnored: marks.ignored.contains(path),
         )
+        // A file replaced by a folder of its name, or the reverse: both are listed.
+        guard !below.isEmpty, endingHere.contains(part), !marks.folders.contains(path) else {
+          return [node]
+        }
+        let file = Node(
+          name: name,
+          path: path,
+          children: [],
+          isFolder: false,
+          isRepository: false,
+          isIgnored: marks.ignored.contains(path),
+        )
+        return [node, file]
       }
     )
   }

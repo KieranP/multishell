@@ -68,8 +68,21 @@ the bottom.
   not the repo, but it still asks about the branch unless a second global
   setting always deletes it, the branch being the one part the sidebar cannot
   undo.
+- **Force Deletion uses `-D` only while the branch is where git refused it**:
+  one that gained a commit while the alert stood is judged by `-d` again, and
+  the alert comes back saying what it holds now.
+- **A create asks for its project again after each wait before git runs**: a
+  project removed while it checked for a running removal stopped no create, none
+  having begun, and git made the branch for nothing.
 - **The branch goes last, after the post-delete hook**, so a hook that pushes it
   still finds it.
+- **The branch the repository's `HEAD` names is never deleted**, and the dialog
+  offers no deletion of the default branch. A bare clone's `HEAD` is a branch no
+  checkout holds, and `branch -d` measures merged against `HEAD`, so removing
+  the trunk's worktree deleted `main` with its unpushed commits.
+- **A detached worktree's commits on no branch are read before removing it**,
+  and the dialog asks about them even with confirmation off. Its record holds
+  the only `HEAD` and reflog, so `worktree remove` leaves them dangling.
 - **The main worktree and a bare repository are refused by the coordinator**,
   not only by the condition that hides the menu item: the call is public and the
   trash step would take `.git` with it.
@@ -100,7 +113,9 @@ the bottom.
   selected and ran the file lists and the post-create hook of a create the user
   had cancelled. The same goes for a stop that lands as git is exiting.
 - **A row whose create still runs cannot be removed**: git lists it before its
-  checkout ends, and a removal then trashed the directory git was writing.
+  checkout ends, and a removal then trashed the directory git was writing. git's
+  own `initializing` mark counts too, so an add run in a terminal is held the
+  same way.
 - **Removing a project stops its creates**, a command line's too: left running,
   the add landed a worktree nothing in the app lists.
 - **Only where git listed nothing at that path before the add.** An unforced
@@ -108,6 +123,13 @@ the bottom.
   landing on git's refusal of such a path took the user's record with it. An
   existing path is asked about too, git filling an empty directory. Cost: an
   empty directory the user made there goes with the worktree.
+- **That question ignores case**, as git matches a path it is given under
+  `core.ignorecase`, macOS's default: undoing `away` forgot the record of an
+  `Away` whose directory was away.
+- **A worktree git lists after its add failed is made**: git exits with a
+  failing `post-checkout` hook's status once the checkout is done, and the app
+  read husky's failed install as a refused create, skipping the file lists, the
+  post-create hook and the first tab.
 - **Listed paths are compared by their real path through the part that exists.**
   Foundation leaves a missing path's `/var` unresolved where git lists
   `/private/var`, so a registered path read as unlisted.
@@ -165,6 +187,9 @@ the bottom.
   between the sheet and the add judged it, so a bad name ran the pre-create hook
   and git refused after. The sheet judges the name with the project's prefix
   added, as git sees it: `kp.` and `lock` make `kp.lock`, which git refuses.
+- **So is a new branch's name an existing branch holds**, the same name or one
+  git keeps as a folder of it or it of (`feat` beside `feat/x`); git refused it
+  only after the pre-create hook had run.
 - **The rules are git's own, in Swift, less the ones about slashes** that apply
   only to a full refname, the sheet asking on every keystroke.
   `GitBranchNameTests` holds it against real git over a table of names.

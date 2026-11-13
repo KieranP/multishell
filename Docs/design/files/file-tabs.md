@@ -30,7 +30,10 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   until the user closes it, as Zed does; a hidden tab whose file is gone keeps
   its rows for this.
 - **A rename is a file gone and a file added**, renames being off everywhere, so
-  the old path's tab becomes a deleted file's.
+  the old path's tab becomes a deleted file's. A case-only rename too, though
+  the disk ignores case and opens the new spelling for the old: where git calls
+  the path deleted and the disk spells it otherwise, it is gone. A rename git
+  never saw, Finder's, still tracks the old spelling, and shows the file.
 - **The tab shows the file on disk against `HEAD` under Modified, whatever the
   indicator says**, staged changes drawn hollow in the gutter and unstaged
   filled, as Zed does. Neither Zed nor VS Code has a staged-only view. Cost:

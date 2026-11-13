@@ -41,15 +41,15 @@ public final class WorkspaceStore {
       return (WorkspaceStore(workspace: workspace, file: file), nil)
     } catch {
       let store = WorkspaceStore(workspace: Workspace(), file: file)
-      store.refusesToSave = file.existsOnDisk
+      store.refusesToSave = file.existsOnDisk || file.danglingLinkTarget != nil
       return (store, error)
     }
   }
 
-  /// A file the user moved away is no longer in the way, so saving resumes;
-  /// one stat, and only while refusing. A readable one still waits for relaunch.
+  /// A file the user moved away is no longer in the way, so saving resumes, as
+  /// it does for a link removed; a target come back still waits for relaunch.
   private func stillRefusesToSave() -> Bool {
-    if refusesToSave, !file.existsOnDisk { refusesToSave = false }
+    if refusesToSave, !file.existsOnDisk, file.danglingLinkTarget == nil { refusesToSave = false }
     return refusesToSave
   }
 

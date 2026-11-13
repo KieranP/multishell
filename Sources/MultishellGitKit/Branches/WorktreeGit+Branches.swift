@@ -45,6 +45,14 @@ extension WorktreeGit {
       .trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
+  /// The local branch leaving no room for a new `branch`: the same name, or one git
+  /// keeps as a folder of it or it of. `nil` where none does, or git cannot say.
+  func branchBlocking(_ branch: String, in project: Project) async -> String? {
+    await branchNames(project)?.local.first { existing in
+      existing == branch || existing.hasPrefix(branch + "/") || branch.hasPrefix(existing + "/")
+    }
+  }
+
   /// Only `--verify --quiet`'s exit 1 says missing: a git that failed any other
   /// way says nothing, and the caller would `branch -D` on the answer.
   func lacksBranch(_ branch: String, in project: Project) async -> Bool {

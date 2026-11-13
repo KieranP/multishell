@@ -12,6 +12,15 @@ struct StateFile: Sendable {
     FileManager.default.fileExists(atPath: fileURL.path)
   }
 
+  /// Where a link at the path points, while nothing is there: the user's state,
+  /// away for now. `nil` for a plain file, a link that resolves, or no file.
+  var danglingLinkTarget: URL? {
+    guard (try? FileManager.default.destinationOfSymbolicLink(atPath: fileURL.path)) != nil,
+      !existsOnDisk
+    else { return nil }
+    return fileURL.linkTarget
+  }
+
   private var backupURL: URL {
     BrokenFileBackup.url(for: fileURL)
   }
@@ -27,6 +36,9 @@ struct StateFile: Sendable {
   /// A file that will not read or decode is moved aside, never overwritten.
   /// The read is inside the `do` for that; see Docs/design/state-and-store.md.
   func load() throws -> Workspace {
+    if let target = danglingLinkTarget {
+      throw DanglingStateFileLink(fileURL: fileURL, target: target)
+    }
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return Workspace() }
     do {
       return try JSONDecoder().decode(Workspace.self, from: try Data(contentsOf: fileURL))

@@ -64,6 +64,21 @@ struct AppModelPanelServiceReadsTests {
     )
   }
 
+  @Test func checksReadAfterAPushTheListHasNotSeenAreNotTakenAsTheListedHeads() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await showingFeat(harness)
+    host.answerChecks([])
+    host.answerHeadCommit("pushed-since-the-list")
+
+    harness.model.setFilesPanelMode(.pullRequest)
+    try await waitUntil { harness.model.remoteState.checks[feat.id] != nil }
+
+    #expect(harness.model.remoteState.checks[feat.id]?.checks == nil)
+    let pullRequest = try #require(harness.model.services(of: feat).pullRequest)
+    #expect(harness.model.mergeReadiness(of: pullRequest, in: feat).blockers == [.checksNotRead])
+  }
+
   @Test func turningToTheCIPageReadsTheBranchsHistoryAndTheFailedRunsReport() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

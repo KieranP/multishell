@@ -78,6 +78,33 @@ struct AppModelServicePagesTests {
     #expect(path.endHint(host: "GitHub") == "Once Multishell can read the checks")
   }
 
+  @Test func aFailedChecksReadOfAnEarlierHeadIsNotTheChecksStepsProblem() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(.success([.sample(number: 9, headBranch: "feat")]))
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    harness.model.select(feat)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.pullRequest)
+    let pullRequest = try #require(harness.model.services(of: feat).pullRequest)
+    harness.model.remoteState.checks[feat.id] = PullRequestChecks(
+      pullRequestNumber: 9,
+      headCommit: "an-earlier-head",
+      checks: nil,
+      failure: .failed("HTTP 502"),
+    )
+
+    let path = harness.model.mergePath(of: pullRequest, in: feat)
+
+    let step = try #require(path.steps.first { $0.kind == .checksNotRead })
+    #expect(path.hint(of: step, base: "main", host: "GitHub")?.contains("HTTP 502") != true)
+  }
+
   @Test func thePagesRedrawWhenABranchIsPushed() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

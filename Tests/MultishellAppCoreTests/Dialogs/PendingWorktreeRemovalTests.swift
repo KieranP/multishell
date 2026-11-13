@@ -89,6 +89,34 @@ struct PendingWorktreeRemovalTests {
     #expect(pending.choices.count == 2, "deleting a branch is not undone from the sidebar")
   }
 
+  @Test func aWorktreeOnTheDefaultBranchNeverHasItsBranchDeleted() throws {
+    #expect(
+      PendingWorktreeRemoval.decide(
+        branched,
+        confirms: false,
+        alwaysDeletesBranch: true,
+        customName: nil,
+        mergeState: .unknown,
+        trashes: true,
+        isStatusUnread: false,
+        defaultBranch: "feat",
+      )
+        == .remove(deletesBranch: false)
+    )
+    let decision = PendingWorktreeRemoval.decide(
+      branched,
+      confirms: true,
+      alwaysDeletesBranch: false,
+      customName: nil,
+      mergeState: .unknown,
+      trashes: true,
+      isStatusUnread: false,
+      defaultBranch: "feat",
+    )
+    guard case .ask(let pending) = decision else { throw RemovalTestFailure(decision: decision) }
+    #expect(pending.choices.map(\.label) == ["Remove Worktree"])
+  }
+
   @Test func aDetachedWorktreeNeverHasItsBranchDeleted() throws {
     let pending = try asked(detached, confirms: true, alwaysDeletesBranch: true)
     #expect(pending.branchHandling == .decided(deletesBranch: false) && pending.choices.count == 1)

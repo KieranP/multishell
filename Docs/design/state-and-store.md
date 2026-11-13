@@ -32,6 +32,10 @@
   is: the atomic write put a plain file where a dotfiles repo's link was, and
   the repo's copy went stale. A repository's `.multishell.json` is not: a
   committed link would let Export write over whatever file it names.
+- **A link whose target is away is said so and saved through by nothing**: the
+  app started empty unasked, and its first save wrote that over where the link
+  points, a volume not yet mounted included. Removing the link lets saves
+  resume.
 - **Duplicates are dropped after the prune, not before.** First entry wins, so a
   tab id written twice, once naming a worktree that has gone, kept the dead copy
   and lost the live one to the dangling prune.

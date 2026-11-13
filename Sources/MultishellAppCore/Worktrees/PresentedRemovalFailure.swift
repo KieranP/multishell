@@ -16,7 +16,7 @@ enum PresentedRemovalFailure: Equatable, Sendable {
   enum ForcedRetry: Equatable, Sendable {
     /// `git branch -D` on a branch `-d` refused. The alert's title already
     /// names the branch, so the button says only what it does.
-    case deleteBranchAnyway(String)
+    case deleteBranchAnyway(String, atTip: String?)
 
     var label: String {
       switch self {
@@ -60,7 +60,7 @@ enum PresentedRemovalFailure: Equatable, Sendable {
       self = .presenting(
         failure,
         wasWorktreeRemoved: true,
-        retry: .deleteBranchAnyway(failure.branch),
+        retry: .deleteBranchAnyway(failure.branch, atTip: failure.tip),
       )
 
     default:

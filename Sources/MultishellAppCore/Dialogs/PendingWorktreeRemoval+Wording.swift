@@ -12,10 +12,15 @@ extension PendingWorktreeRemoval {
 
   var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
 
-  /// What the confirmation warns about beyond the removal: uncommitted files,
-  /// or that they went unread, and the shells still running there.
+  /// What the confirmation warns about beyond the removal: commits on no branch,
+  /// uncommitted files or that they went unread, and the shells still running there.
   func warning(changedFiles: Int, liveTerminals: Int) -> String? {
     var notes: [String] = []
+    switch commitsOnNoBranch {
+    case 0: break
+    case nil: notes.append(t("removal.commits-on-no-branch-unread"))
+    case let count?: notes.append(t("removal.commits-on-no-branch", count))
+    }
     if isStatusUnread {
       notes.append(trashes ? t("removal.changes-unread") : t("removal.changes-unread-deleted"))
     } else if changedFiles > 0 {

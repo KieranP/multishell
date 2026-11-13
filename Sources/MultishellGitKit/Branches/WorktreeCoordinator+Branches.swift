@@ -17,7 +17,22 @@ extension WorktreeCoordinator {
     do {
       try await git.deleteBranch(branch, in: project, force: force)
     } catch {
-      throw BranchDeletionFailure(branch: branch, underlying: error)
+      let tip = await git.tip(ofBranch: branch, in: project)
+      throw BranchDeletionFailure(branch: branch, tip: tip, underlying: error)
     }
+  }
+
+  /// `-D` only while the branch is at `tip`, what the refusal showed; moved since,
+  /// it holds commits nobody was asked about, so `-d` judges it again.
+  public func forceDeleteBranch(
+    _ branch: String,
+    atTip tip: String?,
+    in project: Project,
+  )
+    async throws
+  {
+    var isWhereItWas = false
+    if let tip { isWhereItWas = await git.tip(ofBranch: branch, in: project) == tip }
+    try await deleteBranch(branch, in: project, force: isWhereItWas)
   }
 }

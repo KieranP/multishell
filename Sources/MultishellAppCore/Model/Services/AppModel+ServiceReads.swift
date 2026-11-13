@@ -231,6 +231,14 @@ extension AppModel {
     return ids.subtracting(missingProjects)
   }
 
+  /// A project's worktrees whose rows are drawn, the selected one among them.
+  func worktreesWithRowsInView(ofProject id: Project.ID) -> [Worktree] {
+    let shown = sidebarRowIDs()
+    return workspace.worktrees(of: id).filter { worktree in
+      shown.contains(worktree.id) || worktree.id == workspace.selectedWorktreeID
+    }
+  }
+
   func hasServiceToAsk(_ project: Project) -> Bool {
     pullRequestHost(for: project) != nil || ciProvider(for: project) != nil
   }

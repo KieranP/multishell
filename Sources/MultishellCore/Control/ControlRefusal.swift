@@ -51,10 +51,12 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case noProjectChosen
   /// `--removed` on lines that hold no removed line, which are the file on disk's.
   case noRemovedLines(path: String)
-  /// No file tab of the worktree holds those lines on that side.
+  /// The file's tab holds no such lines on that side.
   case noReviewLines(path: String)
   /// The worktree has no live pane with an agent, or not the one named.
   case noReviewRecipient(id: String)
+  /// No file tab of the worktree shows the file.
+  case noReviewTab(path: String)
   /// The worktree's row draws no glyph for the page, having nothing on it.
   case noServicePage(ServicePage, id: String)
   case noSetting(key: String)

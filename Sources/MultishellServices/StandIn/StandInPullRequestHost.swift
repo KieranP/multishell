@@ -25,6 +25,11 @@ struct StandInPullRequestHost: PullRequestHost {
     standIn.checks[ServiceStandIn.key(of: pullRequest)] ?? []
   }
 
+  /// A stand-in's pull requests move only as its list says.
+  func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String {
+    pullRequest.headCommit
+  }
+
   func open(_ pullRequest: PullRequest, in directory: URL) async throws {}
 
   func openNewPullRequest(

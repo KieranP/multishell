@@ -146,7 +146,7 @@ struct ProcessStopperTests {
     let elapsed = ContinuousClock.now - started
     #expect(output.stopReason == .timedOut(after: .milliseconds(200)))
     #expect(elapsed >= .seconds(ProcessStopper.killGrace), "the grace was skipped: \(elapsed)")
-    #expect(output.status == SIGKILL, "the kill never came: exit status \(output.status)")
+    #expect(output.status == 128 + SIGKILL, "the kill never came: exit status \(output.status)")
   }
 
   @Test func aChildThatFinishesInTimeHasNoStop() async throws {

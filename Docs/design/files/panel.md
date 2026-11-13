@@ -22,6 +22,9 @@ What the panel lists and why each went the way it did. Newest at the bottom.
   again, 198 ms on Linux's 96,000 files against 27 ms, and prints untracked
   paths first, so a cap would let `node_modules` push tracked files out. Capped
   at 200,000 tracked paths, the footer saying so past it.
+- **A file replaced by a folder of its name lists both rows**, the deleted file
+  beside the new folder, until the change is committed. One node took both, the
+  file's row and its diff went, and its change marked the folder.
 - **New files are counted whole and drawn up to 50,000.** A cap on what is
   counted would make the panel disagree with the badge; drawing is the cost. The
   footer names the rest.

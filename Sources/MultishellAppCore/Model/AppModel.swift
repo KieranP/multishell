@@ -29,8 +29,15 @@ public final class AppModel<Surface> {
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
 
   var presentedError: PresentedError? {
-    didSet { noteAlertRaised(over: oldValue) }
+    didSet {
+      noteAlertRaised(over: oldValue)
+      if let presentedError, presentedError.id != oldValue?.id {
+        presentedErrorWindow = platform.isSettingsWindowKey ? .settings : .workspace
+      }
+    }
   }
+  /// The window that was key as the error was raised, where a click in it caused it.
+  var presentedErrorWindow = DialogWindow.workspace
   @ObservationIgnored var alertsByRequest: [UUID: RequestAlerts] = [:]
   /// Only these file an alert: a task a request left running carries its id on.
   @ObservationIgnored var requestsBeingAnswered: Set<UUID> = []
@@ -213,6 +220,8 @@ public final class AppModel<Surface> {
   var debugTerminalMemoryBySession: [TerminalSession.ID: UInt64] = [:]
   /// What the panel shows while paused, the sampling going on under it.
   var pausedDebugSnapshot: DebugSnapshot?
+  /// The table as it stood at the pause: built from live tabs, it moved as one closed.
+  var pausedDebugMemoryTable: DebugMemoryTable?
   @ObservationIgnored var debugSampler = DebugSampler()
   /// The newest git runs one by one, for `multishell debug git`; no view reads it.
   @ObservationIgnored var debugGitRuns = DebugGitRunLog()

@@ -10,6 +10,18 @@ extension ProcessRunnerTests {
     }
   }
 
+  /// Read as the signal's own number, SIGINT's 2 was git's "no such branch" and
+  /// SIGHUP's 1 a "not an ancestor"; a shell's 128 plus the signal is neither.
+  @Test func aChildKilledByASignalReadsAsTheShellsStatusForIt() async throws {
+    let output = try await runner.capture(
+      bourneShell,
+      ["-c", "kill -INT $$"],
+      in: workingDirectory,
+    )
+
+    #expect(output.status == 128 + SIGINT)
+  }
+
   @Test func aMissingWorkingDirectoryThrows() async {
     await #expect(throws: (any Error).self) {
       try await runner.run(bourneShell, ["-c", "true"], in: URL(fileURLWithPath: "/no/such/dir"))

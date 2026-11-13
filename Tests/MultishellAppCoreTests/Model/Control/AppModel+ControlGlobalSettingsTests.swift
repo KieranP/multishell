@@ -152,11 +152,14 @@ struct AppModelControlGlobalSettingsTests {
     #expect(harness.model.workspace.appearance.terminalFontName == "Menlo")
   }
 
-  @Test func aFontSizeOutsideItsSlidersRangeIsRefusedRatherThanClamped() async {
+  @Test func aFontSizeTheSliderCannotHoldIsRefusedRatherThanClamped() async {
     let harness = Harness()
     let before = harness.model.workspace.appearance
 
-    for (key, value) in [("fontSize", "40"), ("fontSize", "8"), ("uiFontSize", "19")] {
+    for (key, value) in [
+      ("fontSize", "40"), ("fontSize", "8"), ("uiFontSize", "19"), ("fontSize", "12.5"),
+      ("uiFontSize", "12.5"), ("fileFontSize", "12.5"),
+    ] {
       #expect(
         await harness.messageSource.ask(.writeGlobalSetting(key: key, value: value))
           == .refused(.invalidValue(key: key, value: value))
@@ -164,6 +167,7 @@ struct AppModelControlGlobalSettingsTests {
     }
     #expect(harness.model.workspace.appearance.terminalFontSize == before.terminalFontSize)
     #expect(harness.model.workspace.appearance.uiFontSize == before.uiFontSize)
+    #expect(harness.model.workspace.appearance.fileFontSize == before.fileFontSize)
     #expect(
       await harness.messageSource.ask(.writeGlobalSetting(key: "fontSize", value: "24")) == .done
     )

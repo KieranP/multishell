@@ -7,6 +7,8 @@ public protocol SessionNotifier: AnyObject {
   /// Takes back the banner about a key, where one is still on screen and
   /// what it said has stopped being true.
   func withdraw(about key: SessionStates.Key)
+  /// Takes back every banner, the last run's among them, whose keys that run kept.
+  func withdrawEverything()
   /// What the notification centre has been told, without asking for
   /// anything: the settings page reads this to show a refusal.
   func authorization() async -> NotificationAuthorization

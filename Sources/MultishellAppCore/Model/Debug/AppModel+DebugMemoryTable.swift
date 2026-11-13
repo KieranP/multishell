@@ -3,7 +3,7 @@ import MultishellCore
 extension AppModel {
   /// Each tab with a live shell, from what its panes were last seen running
   /// and what their terminals held.
-  public var debugMemoryTable: DebugMemoryTable { debugMemoryTable(of: shownDebugSnapshot) }
+  public var debugMemoryTable: DebugMemoryTable { pausedDebugMemoryTable ?? liveDebugMemoryTable }
 
   /// The command line's table, read on while the panel is paused.
   var liveDebugMemoryTable: DebugMemoryTable { debugMemoryTable(of: liveDebugSnapshot) }

@@ -23,6 +23,8 @@ extension AppModel {
   /// workspace already read from disk. Terminals are not restored.
   public func start() async {
     guard startMessageSource() else { return }
+    // Only once the socket is ours: a copy handing over would take the running one's.
+    notifier.withdrawEverything()
     // On the main actor, before `start` first yields, so no tab can open ahead.
     presentingFailure { try writeAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.

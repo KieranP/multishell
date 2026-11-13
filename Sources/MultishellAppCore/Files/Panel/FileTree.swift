@@ -154,8 +154,9 @@ struct FileTree: Sendable {
           isFolder: true,
           isExpanded: isExpanded,
           holdsChange: changes.foldersHoldingChanges.contains(shown.path),
-          changeKind: changeKinds[shown.path],
-          lineCounts: lineCounts[shown.path],
+          // git names a plain folder in no change; one at its path is a file's.
+          changeKind: shown.isRepository ? changeKinds[shown.path] : nil,
+          lineCounts: shown.isRepository ? lineCounts[shown.path] : nil,
           isRepository: shown.isRepository,
           isIgnored: shown.isIgnored,
           isOpenable: true,

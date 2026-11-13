@@ -15,12 +15,14 @@ final class PipeBuffer: Sendable {
     handle = reading
     self.group = group
     group.enter()
-    handle.readabilityHandler = { [self] handle in
+    // Weak, as Foundation drops a cleared handler later on its own queue. The
+    // run holds the buffer until it has read it.
+    handle.readabilityHandler = { [weak self] handle in
       let chunk = handle.availableData
       if chunk.isEmpty {
-        finish()
+        self?.finish()
       } else {
-        append(chunk)
+        self?.append(chunk)
       }
     }
   }

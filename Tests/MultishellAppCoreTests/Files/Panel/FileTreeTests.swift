@@ -192,6 +192,48 @@ struct FileTreeTests {
     #expect(tree.rows(state: changes).allSatisfy { $0.isRepository })
   }
 
+  @Test func aFileReplacedByAFolderOfItsNameKeepsARowBesideTheFolder() {
+    let deleted = StatusChange(
+      path: "docs",
+      kind: .deleted,
+      lines: .counted(insertions: 0, deletions: 2),
+    )
+    let added = StatusChange(path: "docs/x.md", kind: .added, lines: .notCounted)
+    let tree = FileTree(
+      FileTreeSources(
+        tracked: .sample(paths: ["docs"]),
+        status: Self.status([deleted, added], untracked: ["docs/x.md"]),
+      )
+    )
+    var files = FilesPanelState()
+    files.expandedFolders = ["docs"]
+    var changes = files
+    changes.mode = .changes
+
+    for state in [files, changes] {
+      let rows = tree.rows(state: state).filter { $0.path == "docs" }
+      #expect(rows.map(\.isFolder).sorted { !$0 && $1 } == [false, true], "\(state.mode)")
+      #expect(Set(rows.map(\.id)).count == 2)
+      #expect(rows.first { !$0.isFolder }?.changeKind == .deleted)
+      #expect(rows.first(where: \.isFolder)?.changeKind == nil)
+    }
+  }
+
+  @Test func aSubmoduleInsideAnOpenedSubmoduleIsAFolderThatOpens() {
+    var sources = FileTreeSources(tracked: .sample(paths: ["sub"], submodulePaths: ["sub"]))
+    sources.submodules["sub"] = SubmoduleReading(
+      tracked: .sample(paths: ["inner", "a.txt"], submodulePaths: ["inner"]),
+      status: nil,
+    )
+    var state = FilesPanelState()
+    state.expandedFolders = ["sub"]
+
+    let inner = FileTree(sources).rows(state: state).first { $0.path == "sub/inner" }
+
+    #expect(inner?.isFolder == true)
+    #expect(inner?.isRepository == true)
+  }
+
   @Test func aNestedRepositoryGitListsWithItsSlashKeepsItsChangeKind() {
     let nestedAdded = StatusChange(path: "nested/", kind: .added, lines: .notCounted)
     let tree = FileTree(

@@ -26,6 +26,17 @@ struct ControlRefusalWordingTests {
     )
   }
 
+  @Test func aReviewCommentRefusedSaysWhetherTheTabOrTheLinesAreMissing() {
+    #expect(
+      ControlRefusal.noReviewTab(path: "a.swift").wording
+        == "no file tab of the worktree shows a.swift; `multishell tabs open-file` opens one"
+    )
+    #expect(
+      ControlRefusal.noReviewLines(path: "a.swift").wording
+        == "the tab of a.swift holds no such lines on that side"
+    )
+  }
+
   @Test func aProjectWithNoHiddenWorktreeSaysHowToHideOne() {
     #expect(
       ControlRefusal.noHiddenWorktrees(id: "p-0123abcd").wording

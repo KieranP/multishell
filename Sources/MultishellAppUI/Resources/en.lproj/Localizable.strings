@@ -131,7 +131,6 @@
 "debug.quick-memory" = "Memory";
 "debug.range" = "Range";
 "debug.title" = "Debug Info";
-"dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "dialog.decide-later" = "Decide Later";
 "dialog.remove-project" = "Remove Project";
 "empty.no-terminals" = "No terminals in %@";

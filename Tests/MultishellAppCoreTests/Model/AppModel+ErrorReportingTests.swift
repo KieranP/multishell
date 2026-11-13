@@ -10,21 +10,46 @@ struct AppModelErrorReportingTests {
     return error
   }
 
+  @Test func anErrorRaisedWhileSettingsIsKeyIsShownThereUntilItCloses() {
+    let harness = Harness()
+    harness.platform.isWorkspaceWindowKey = false
+    harness.platform.isSettingsWindowKey = true
+
+    harness.model.presentedError = PresentedError(title: "Not exported", message: "")
+
+    #expect(harness.model.presentedPlainError(in: .settings) != nil)
+    #expect(harness.model.presentedPlainError(in: .workspace) == nil)
+    harness.model.noteSettingsWindowClosed()
+    #expect(harness.model.presentedPlainError(in: .workspace) != nil)
+  }
+
+  @Test func anErrorRaisedUnderASheetOnTheWorkspaceWindowIsShownThere() {
+    let harness = Harness()
+    harness.platform.isWorkspaceWindowKey = false
+
+    harness.model.presentedError = PresentedError(title: "Worktree not created", message: "")
+
+    #expect(harness.model.presentedPlainError(in: .workspace) != nil)
+  }
+
   @Test func aRetryableErrorGoesToTheDestructiveAlertAndAPlainOneToTheDismiss() {
     let harness = Harness()
     harness.model.presentedError = nil
     #expect(
-      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError == nil
+      harness.model.presentedRetryableError(in: .workspace) == nil
+        && harness.model.presentedPlainError(in: .workspace) == nil
     )
 
     harness.model.presentedError = retryable(counting: {})
     #expect(
-      harness.model.presentedRetryableError != nil && harness.model.presentedPlainError == nil
+      harness.model.presentedRetryableError(in: .workspace) != nil
+        && harness.model.presentedPlainError(in: .workspace) == nil
     )
 
     harness.model.presentedError = PresentedError(title: "Failed", message: "")
     #expect(
-      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError != nil
+      harness.model.presentedRetryableError(in: .workspace) == nil
+        && harness.model.presentedPlainError(in: .workspace) != nil
     )
   }
 

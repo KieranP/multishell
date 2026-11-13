@@ -79,6 +79,26 @@ struct ControlSetting {
     )
   }
 
+  /// A size its slider steps through in whole points, which shows none between.
+  static func pointSize(
+    _ key: String,
+    _ read: @escaping () -> Double,
+    in range: ClosedRange<Double>,
+    _ write: @escaping (Double) -> Void,
+  ) -> Self {
+    Self(
+      key: key,
+      read: read,
+      write: { text in
+        guard let value = Double(text), range.contains(value), value == value.rounded() else {
+          return false
+        }
+        write(value)
+        return true
+      },
+    )
+  }
+
   static func choice<Value: RawRepresentable<String>>(
     _ key: String,
     _ read: @escaping () -> Value,

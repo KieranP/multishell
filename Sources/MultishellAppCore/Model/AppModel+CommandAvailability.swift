@@ -32,7 +32,7 @@ extension AppModel {
   public var canOpenWorktreeInEditor: Bool { canOpenTab }
 
   /// Close Pane and Close Tab, in the workspace window; Cmd+W closes any other.
-  public var hasTabToClose: Bool { workspaceTabInView != nil }
+  public var hasTabToClose: Bool { workspaceTabDrawn != nil }
 
   /// The Files panel: on, it can always be turned off; off, it needs a worktree
   /// in view to list.

@@ -36,7 +36,9 @@ public struct FileTreeRow: Identifiable, Hashable, Sendable {
   /// UTF-8, which git cannot be asked about again: greyed, and not opened.
   let isOpenable: Bool
 
-  public var id: String { path }
+  /// A folder's apart from a file at its path, which a file replaced by a
+  /// folder of its name leaves until the change is committed.
+  public var id: String { isFolder ? path + "/" : path }
 
   public var emphasis: Emphasis {
     if isIgnored || !isOpenable { return .faint }

@@ -51,11 +51,14 @@ extension AppModel {
       }
       // A branch hidden this round keeps its answer, or its return would ask
       // again; one the recent runs list has a newer answer than any lookup.
-      let followed = Set(
-        workspace.worktrees(of: project.id).compactMap { remoteState.upstreams[$0.id]?.branch }
-      )
+      let upstreams = workspace.worktrees(of: project.id).compactMap { worktree in
+        remoteState.upstreams[worktree.id]
+      }
+      let followed = Set(upstreams.map(\.branch))
+      // One the remote has since deleted is never asked again, so its run would stand for good.
+      let stillPushed = Set(upstreams.filter { $0.tip != nil }.map(\.branch))
       reading.lookups = reading.lookups
-        .filter { followed.contains($0.key) && !listed.contains($0.key) }
+        .filter { stillPushed.contains($0.key) && !listed.contains($0.key) }
         .merging(lookups) { _, fresh in fresh }
       // A hidden branch's kept answer stands for it too, or its return would
       // show no run until the next read.
@@ -111,10 +114,8 @@ extension AppModel {
   /// Each shown worktree's branch on the remote and where it points there. A
   /// branch nobody pushed, or the remote has since deleted, has no run to find.
   private func shownUpstreamBranches(ofProject id: Project.ID) -> [String: String?] {
-    let shown = sidebarRowIDs()
     var branches: [String: String?] = [:]
-    for worktree in workspace.worktrees(of: id)
-    where shown.contains(worktree.id) || worktree.id == workspace.selectedWorktreeID {
+    for worktree in worktreesWithRowsInView(ofProject: id) {
       if let upstream = remoteState.upstreams[worktree.id], upstream.tip != nil {
         branches[upstream.branch] = upstream.tip
       }

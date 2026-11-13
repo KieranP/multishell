@@ -24,7 +24,7 @@ extension AppModel {
     // A link's tab is keyed by its target, as a click on the link opens it.
     let path = WorktreeLinkTarget.path(of: order.path, in: worktree.path) ?? order.path
     guard let tab = workspace.fileTab(showing: path, in: worktree.id) else {
-      return .refused(.noReviewLines(path: order.path))
+      return .refused(.noReviewTab(path: order.path))
     }
     let refusalToQuote = {
       self.refusalToReadInWorkspaceWindow
@@ -42,7 +42,8 @@ extension AppModel {
       return .refused(.noWorktree(id: ControlID.worktree(worktree.id)))
     }
     let quote = reviewQuote(of: order.lines, on: order.side, in: tab.id)
-    guard quote.count == order.lines.count else {
+    // Lines start at 1, and a socket line can name any range: `count` traps past `Int.max`.
+    guard order.lines.lowerBound >= 1, quote.count == order.lines.count else {
       return .refused(.noReviewLines(path: order.path))
     }
     guard order.side == .onDisk || holdsRemovedLines(order.lines, in: tab.id) else {

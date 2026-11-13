@@ -68,12 +68,15 @@ struct FileTreeListing: Sendable {
       files.formUnion(inside.map { folder + "/" + $0 })
     }
     var notCheckedOut = tracked.notCheckedOutPaths
+    // An opened submodule's own submodules open in turn, as the worktree's do.
+    var submodulePaths = tracked.submodulePaths
     for (folder, submodule) in sources.submodules {
       notCheckedOut.formUnion(submodule.tracked.notCheckedOutPaths.map { folder + "/" + $0 })
+      submodulePaths.formUnion(submodule.tracked.submodulePaths.map { folder + "/" + $0 })
     }
     notCheckedOutFiles = notCheckedOut
     readFolders = Set(sources.submodules.keys).union(sources.ignoredFolderEntries.keys)
-    repositories = tracked.submodulePaths.union(
+    repositories = submodulePaths.union(
       files.filter { $0.hasSuffix("/") }.map { String($0.dropLast()) }
     )
     let ignored = Self.ignoredFilesAndFolders(sources)

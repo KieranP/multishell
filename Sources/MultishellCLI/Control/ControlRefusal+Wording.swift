@@ -65,9 +65,10 @@ extension ControlRefusal {
       "those lines of \(path) hold no removed line; leave out --removed to comment "
         + "on the file on disk"
 
-    case .noReviewLines(let path):
-      "no file tab of the worktree holds those lines of \(path); "
-        + "`multishell tabs open-file` opens one"
+    case .noReviewLines(let path): "the tab of \(path) holds no such lines on that side"
+
+    case .noReviewTab(let path):
+      "no file tab of the worktree shows \(path); `multishell tabs open-file` opens one"
 
     case .noReviewRecipient(let id):
       "worktree \(id) has no pane with an agent to send to, "

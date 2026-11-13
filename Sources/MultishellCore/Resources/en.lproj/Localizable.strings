@@ -34,6 +34,8 @@
 "auto-rename.unreadable-branch" = "git could not read the branch: %@";
 "board.empty-hint" = "A pane appears here once an agent reports from it. Agent hooks are installed under Settings › Agents.";
 "board.summary" = "%1$@ · %2$@";
+"branch-name.clashes" = "git will not make %1$@ beside the branch %2$@: it keeps one as a folder of the other.";
+"branch-name.exists" = "A branch named %@ already exists. Choose it as an existing branch, or pick another name.";
 "branch-name.invalid" = "git will not take %@ as a branch name.";
 "card.done" = "Done · %@";
 "card.failed" = "Failed · %@";
@@ -50,6 +52,7 @@
 "ci.when-on-tip" = "%1$@ · %2$@";
 "close.pane-button" = "Close Pane";
 "close.pane-title" = "Close this pane?";
+"close.review-draft-message" = "The review comment being written in it is lost with it.";
 "close.tab-button" = "Close Tab";
 "close.tab-title" = "Close this tab?";
 "command.application" = "Application";
@@ -86,6 +89,7 @@
 "debug.subtitle-count-and-self" = "%1$@ · %2$@ · %3$@ self";
 "debug.terminal-row" = "Terminal";
 "debug.total-row" = "Total, app and child processes";
+"dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "diff-algorithm.histogram" = "Histogram";
 "diff-algorithm.minimal" = "Minimal";
 "diff-algorithm.myers" = "Myers (git's default)";
@@ -107,6 +111,7 @@
 "error.branch-not-deleted" = "Worktree removed, but branch %@ was not deleted";
 "error.branch-not-pushed" = "%@ was not pushed";
 "error.command-failed-title" = "%1$@ %2$@ failed";
+"error.dangling-state-link-message" = "%1$@ is a link to %2$@, which is not there, so Multishell started empty and saves nothing through the link. Bring the file back and relaunch to get your state, or remove the link to start afresh.";
 "error.editor-not-installed-message" = "Install %@, or choose another editor in Settings > General, then use Refresh.";
 "error.exit-status" = "Exit status %d.";
 "error.exited-with-status" = "Exited with status %d";
@@ -178,6 +183,8 @@
 "error.unpushed-commits-unknown" = "git did not say whether the branch has commits the remote lacks, so nothing was pushed or opened. Try again once it answers.";
 "error.unreadable-review-message" = "It was moved to %1$@ in the reviews folder, and its comments are not shown.\n\n%2$@";
 "error.unreadable-review-title" = "Review comments could not be read";
+"error.unreadable-shared-settings-message" = "%1$@ is not JSON Multishell can read, so Export left it as it is: rewriting it would lose what it holds. Fix the file, or remove it, and export again.\n\n%2$@";
+"error.unreadable-shared-settings-title" = "Settings not exported";
 "error.unreadable-state-message" = "It was moved to %1$@ and Multishell started empty.\n\n%2$@";
 "error.unreadable-state-title" = "Saved state could not be read";
 "error.worktree-missing-message" = "%@ does not exist. If it was deleted by hand, remove the worktree to let git prune it.";
@@ -399,6 +406,7 @@
 "removal.branch-was-kept" = "The branch %@ was kept.";
 "removal.changes-unread" = "Its changes could not be read in time; any it has are kept in the Trash with the directory.";
 "removal.changes-unread-deleted" = "Its changes could not be read in time; any it has are deleted with the directory.";
+"removal.commits-on-no-branch-unread" = "It is on no branch, and git could not count the commits no branch has; any it holds are lost with it.";
 "removal.force-deletion" = "Force Deletion";
 "review.add" = "Add comment";
 "review.chip-lines-changed" = "Lines changed";

@@ -23,6 +23,13 @@ extension PresentedError {
     case let invalid as InvalidBranchName:
       return (t("error.invalid-branch-title"), t("branch-name.invalid", invalid.branch))
 
+    case let taken as BranchNameTaken:
+      let message =
+        taken.existing == taken.branch
+        ? t("branch-name.exists", taken.branch)
+        : t("branch-name.clashes", taken.branch, taken.existing)
+      return (t("error.invalid-branch-title"), message)
+
     case let notRemovable as WorktreeNotRemovable:
       return (
         t("error.not-a-worktree-title"), t("worktree.not-removable", notRemovable.path.path),

@@ -106,6 +106,17 @@ public struct GitHubHost: PullRequestHost {
     )
   }
 
+  /// By number, as `checks` asks, so both name the same repository.
+  public func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String {
+    let json = try await runner.read(
+      ["pr", "view", String(pullRequest.number), "--json"]
+        + [GitHubHeadRecord.fields.joined(separator: ",")],
+      in: directory,
+      failure: GitHubErrorText.failure(from:),
+    )
+    return try ToolAnswer.decode(GitHubHeadRecord.self, from: json).headRefOid
+  }
+
   public func open(_ pullRequest: PullRequest, in directory: URL) async throws {
     _ = try await runner.run(["pr", "view", String(pullRequest.number), "--web"], in: directory)
   }

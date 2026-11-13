@@ -422,6 +422,30 @@ struct AppModelCIRunReadsTests {
     #expect(!provider.calls.contains("branch feat"))
   }
 
+  @Test func aRunKeptForABranchTheRemoteHasSinceDeletedStopsStanding() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (_, provider) = harness.connectServices()
+    try harness.writeCIConfiguration()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    _ = try await harness.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+    let tip = try #require(harness.model.remoteState.upstreams[feat.id]?.tip)
+    provider.answer(
+      recent: [],
+      byBranch: ["feat": .sample(id: "r", branch: "feat", commit: tip, status: .running)],
+    )
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    try #require(harness.model.services(of: feat).ciRun?.isUnderWay == true)
+    _ = try await harness.git.run(["push", "-q", "origin", "--delete", "feat"], in: feat.path)
+    await harness.model.refreshBranchScan(of: harness.project)
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(harness.model.services(of: feat).ciRun?.isUnderWay != true)
+  }
+
   @Test func aBranchsKeptLookupIsNotRedatedByARoundThatDidNotAskIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

@@ -68,6 +68,12 @@ final class UserNotificationNotifier: NSObject, SessionNotifier, UNUserNotificat
     center?.removeDeliveredNotifications(withIdentifiers: [identifier])
   }
 
+  func withdrawEverything() {
+    pendingAdds.removeAll()
+    center?.removeAllPendingNotificationRequests()
+    center?.removeAllDeliveredNotifications()
+  }
+
   func authorization() async -> NotificationAuthorization {
     guard let center else { return .unavailable }
     knownAuthorization = Self.authorization(

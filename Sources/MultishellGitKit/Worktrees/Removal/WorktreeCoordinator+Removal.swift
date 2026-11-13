@@ -43,7 +43,11 @@ extension WorktreeCoordinator {
         onStep: onStep,
       )
     }
-    if deletesBranch, let branch = worktree.branch {
+    // A bare clone's HEAD names a branch no checkout holds, and `branch -d` measures
+    // merged against HEAD, so it would take that branch and its unpushed commits.
+    if deletesBranch, let branch = worktree.branch,
+      (try? await git.currentBranch(project)) != branch
+    {
       onStep?(.deletingBranch)
       // Read once the checkout is gone, so no commit can land after it.
       var force = forcesBranchDeletion

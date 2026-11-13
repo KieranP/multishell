@@ -74,6 +74,10 @@
 - **Export writes the settings in force back over the file**, but keeps the
   file's own words where the user wrote none, or exporting would silently drop a
   teammate's committed hook.
+- **Export reads the file again first**, and leaves one that will not parse as
+  it is, saying why. Built from the last read, it wrote over a pull or an edit
+  since, and over a file with a merge conflict in it, with the user's own fields
+  alone.
 - **Export carries the trust answer to the new digest**, records a yes where
   every word the yes covers is the user's own, and none where no answer was
   given. Comparing the two alone made trusting a file and then exporting it

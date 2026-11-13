@@ -51,7 +51,7 @@ struct SidebarQuickStats: View {
     title: String,
     value: String,
     valueColor: Color,
-    trend: [Double],
+    trend: [Double?],
     trendColor: Color,
   ) -> some View {
     VStack(alignment: .leading, spacing: 1) {

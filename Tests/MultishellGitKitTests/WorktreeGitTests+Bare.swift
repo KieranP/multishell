@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
@@ -51,6 +52,22 @@ extension WorktreeGitTests {
       deletesBranch: true,
     )
     #expect(try await fixture.git.list(fixture.project).count == 2)
+    #expect(try await fixture.branches() == ["main"])
+  }
+
+  @Test func removingTheTrunksWorktreeKeepsTheBranchTheBareRepositoryNames() async throws {
+    let (fixture, checkout) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
+    try await TestRepository.commit(
+      "unpushed",
+      files: ["local.txt": "work"],
+      in: checkout,
+      using: fixture.runner,
+    )
+    let trunk = try await fixture.worktree(onBranch: "main")
+
+    try? await fixture.coordinator.removeUnlinking(trunk, in: fixture.project, deletesBranch: true)
+
     #expect(try await fixture.branches() == ["main"])
   }
 

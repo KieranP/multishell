@@ -52,9 +52,7 @@ extension WorktreeCoordinator {
       createsBranch: createsBranch,
       settings: settings,
     )
-    // Before the hook, for an existing branch too: git rejects the name at
-    // the end of it, and the hook's work is done by then.
-    guard GitBranchName.isValid(branch) else { throw InvalidBranchName(branch) }
+    try await refuseNameGitWouldReject(branch, createsBranch: createsBranch, in: project)
     // The one place the path is derived, so what the sheet showed and what
     // the model holds back from `git status` cannot part from what is made.
     let path = plannedPath(
@@ -105,6 +103,10 @@ extension WorktreeCoordinator {
     } catch {
       if stopper?.isStopRequested == true {
         await undoStoppedAdd(undo, in: project)
+      } else if undo.worktreeIsNew, await git.listsWorktree(at: path, in: project) == true {
+        // git exits with a failing `post-checkout` hook's status once the worktree is made.
+        await git.settleIndex(of: path, stopper: stopper)
+        return path
       } else if let newBranch = undo.newBranch {
         // git makes the branch before it checks the path, and keeps it on refusing.
         await git.deleteBranchIfUnlisted(newBranch, in: project)
@@ -112,6 +114,19 @@ extension WorktreeCoordinator {
       throw error
     }
     return path
+  }
+
+  /// Before the hook, for an existing branch too: git rejects the name at the
+  /// end of it, and the hook's work is done by then.
+  private func refuseNameGitWouldReject(
+    _ branch: String,
+    createsBranch: Bool,
+    in project: Project,
+  ) async throws {
+    guard GitBranchName.isValid(branch) else { throw InvalidBranchName(branch) }
+    if createsBranch, let existing = await git.branchBlocking(branch, in: project) {
+      throw BranchNameTaken(branch: branch, existing: existing)
+    }
   }
 
   /// The other half of a create. Returns at once when the hook is blank.

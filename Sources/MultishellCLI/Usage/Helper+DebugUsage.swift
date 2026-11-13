@@ -26,6 +26,7 @@ extension Helper {
     usage: multishell debug mark NAME
         Put NAME into the next sample's marks, to line an action up with
         the readings around it, and into Instruments' Points of Interest.
+        With the debug tools off it goes to Instruments alone, its sample null.
     usage: multishell debug report PANE_ID STATE [--agent ID] [--message TEXT]
         Report STATE for the pane as an agent's hook would, and print the
         pane as it then is: the dot, banner and board follow.
@@ -52,8 +53,8 @@ extension Helper {
     usage: multishell debug services clear
         Hand back to gh and circleci, and read the projects in view again.
 
-    Debug info, samples, memory, git and the marks need the debug tools on,
-    which sample once a second.
+    Debug info, samples, memory and git need the debug tools on, which
+    sample once a second.
 
     """
 }

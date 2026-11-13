@@ -136,3 +136,22 @@ extension WorkspaceStoreTests {
     #expect(FileManager.default.fileExists(atPath: file.path), "nothing was moved aside")
   }
 }
+
+extension WorkspaceStoreTests {
+  /// A dotfiles link whose target is away, on a volume not mounted or a branch
+  /// without it, started empty unasked and saved that over where it points.
+  @Test func aLinkedStateFileWhoseTargetIsAwayIsSaidSoAndNotSavedThrough() throws {
+    let directory = try Scratch.directory("dangling-state")
+    defer { Scratch.remove(directory) }
+    let target = directory.appendingPathComponent("away/state.json")
+    let link = directory.appendingPathComponent("state.json")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+    let (store, error) = WorkspaceStore.restored(from: StateFile(fileURL: link))
+    store.addProject(at: URL(fileURLWithPath: "/repos/other"))
+    try store.save()
+
+    #expect(error is DanglingStateFileLink)
+    #expect(!FileManager.default.fileExists(atPath: target.path))
+  }
+}

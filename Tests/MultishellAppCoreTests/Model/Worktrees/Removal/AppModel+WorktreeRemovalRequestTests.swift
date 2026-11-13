@@ -1,5 +1,6 @@
 import Foundation
 import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -15,6 +16,20 @@ struct AppModelWorktreeRemovalRequestTests {
     #expect(harness.model.worktreeOperations.isEmpty)
     #expect(!harness.main.isRemovable)
     #expect(harness.feature.isRemovable)
+  }
+
+  @Test func aWorktreeGitIsStillCheckingOutIsNotRemoved() async {
+    let harness = Harness()
+    var checkingOut = harness.feature
+    checkingOut.isInitializing = true
+    harness.store.replaceWorktrees(
+      [harness.main, checkingOut],
+      forProject: harness.main.projectID,
+    )
+
+    #expect(!harness.model.mayRemove(checkingOut))
+    await harness.model.requestWorktreeRemoval(of: checkingOut)?.value
+    #expect(harness.model.pendingWorktreeRemoval == nil)
   }
 
   @Test func removalAsksUnlessTheGlobalSettingsSettleBothTheWorktreeAndTheBranch() async {
@@ -51,6 +66,65 @@ struct AppModelWorktreeRemovalRequestTests {
     #expect(
       harness.model.pendingWorktreeRemoval?.message(warning: nil).hasPrefix("Deletes ") == true
     )
+  }
+
+  @Test func aDetachedWorktreeHoldingCommitsOnNoBranchIsAskedAboutWithConfirmationOff()
+    async throws
+  {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let worktree = try await harness.createWorktree(onBranch: "pinned")
+    _ = try await harness.git.run(["checkout", "--detach"], in: worktree.path)
+    try await TestRepository.commit(
+      "adrift",
+      files: ["adrift.txt": "work"],
+      in: worktree.path,
+      using: harness.git,
+    )
+    await harness.model.refreshWorktrees(of: harness.project)
+    let detached = try #require(harness.model.workspace.worktree(worktree.id))
+    harness.model.setConfirmsWorktreeRemoval(false)
+
+    await harness.model.requestWorktreeRemoval(of: detached)?.value
+
+    let pending = try #require(harness.model.pendingWorktreeRemoval)
+    #expect(harness.model.worktreeRemovalWarning(for: pending)?.contains("1 commit") == true)
+  }
+
+  @Test func aDetachedWorktreeWhoseCommitsGitCannotCountIsAskedAbout() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let worktree = try await harness.createWorktree(onBranch: "pinned")
+    _ = try await harness.git.run(["checkout", "--detach"], in: worktree.path)
+    await harness.model.refreshWorktrees(of: harness.project)
+    let detached = try #require(harness.model.workspace.worktree(worktree.id))
+    try harness.wrapGit(in: #"case "$*" in *rev-list*--branches*) exit 128 ;; esac"#)
+    harness.model.setConfirmsWorktreeRemoval(false)
+
+    await harness.model.requestWorktreeRemoval(of: detached)?.value
+
+    let pending = try #require(harness.model.pendingWorktreeRemoval)
+    #expect(harness.model.worktreeRemovalWarning(for: pending)?.contains("could not count") == true)
+  }
+
+  @Test func aDetachedRemovalNeedingNoDialogStillRunsWhenAnotherIsAskedMeanwhile() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let pinned = try await harness.createWorktree(onBranch: "pinned")
+    _ = try await harness.git.run(["checkout", "--detach"], in: pinned.path)
+    let asked = try await harness.createWorktree(onBranch: "asked")
+    await harness.model.refreshWorktrees(of: harness.project)
+    let detached = try #require(harness.model.workspace.worktree(pinned.id))
+    harness.model.setConfirmsWorktreeRemoval(false)
+
+    let first = harness.model.requestWorktreeRemoval(of: detached)
+    let second = harness.model.requestWorktreeRemoval(of: asked)
+    await first?.value
+    await second?.value
+    try await harness.awaitOperationEnd(on: detached.id)
+
+    #expect(harness.model.workspace.worktree(detached.id) == nil)
+    #expect(harness.model.pendingWorktreeRemoval?.id == asked.id)
   }
 
   @Test func answeringTheDialogWithAButtonRemovesAsThatButtonSays() async throws {

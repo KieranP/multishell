@@ -50,6 +50,6 @@ struct RootView: View {
     .branchPublishDialog(model: model)
     .pendingCloseAlert(model: model)
     .newWorktreeSheet(model: model)
-    .presentedErrorAlert(model: model)
+    .presentedErrorAlert(model: model, window: .workspace)
   }
 }

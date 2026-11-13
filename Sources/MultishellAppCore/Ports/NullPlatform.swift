@@ -7,6 +7,7 @@ public final class NullPlatform: Platform {
   public var onDidBecomeActive: (@MainActor () -> Void)?
   public var isActive: Bool { true }
   public var isWorkspaceWindowKey: Bool { true }
+  public var isSettingsWindowKey: Bool { false }
   public var isWorkspaceWindowVisible: Bool { true }
   public var isWorkspaceWindowMinimized: Bool { false }
   public var onWorkspaceWindowDidBecomeVisible: (@MainActor () -> Void)?

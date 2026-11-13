@@ -50,11 +50,40 @@ struct AppModelControlReviewTests {
     #expect(harness.model.reviewComments(in: harness.main.id).first?.quote == ["new 0", "new 1"])
   }
 
+  @Test func aFileNoTabShowsIsRefusedAsHavingNoTab() async throws {
+    let (harness, _) = try Self.harnessWithFileRead()
+
+    let reply = await harness.messageSource.ask(
+      .addReviewComment(
+        ReviewCommentOrder(
+          worktreeID: nil,
+          path: "elsewhere.swift",
+          side: .onDisk,
+          lines: 1...1,
+          text: "Why?",
+        )
+      )
+    )
+
+    #expect(reply == .refused(.noReviewTab(path: "elsewhere.swift")))
+  }
+
   @Test func linesTheTabHasNotReadAreRefused() async throws {
     let (harness, _) = try Self.harnessWithFileRead()
 
     let reply = await harness.messageSource.ask(
       .addReviewComment(Self.order(4...9, side: .onDisk, text: "Far."))
+    )
+
+    #expect(reply == .refused(.noReviewLines(path: "a.swift")))
+  }
+
+  @Test(arguments: [-1...Int.max, 0...Int.max, Int.min...0])
+  func linesTooWideToCountAreRefusedRatherThanTrapping(_ lines: ClosedRange<Int>) async throws {
+    let (harness, _) = try Self.harnessWithFileRead()
+
+    let reply = await harness.messageSource.ask(
+      .addReviewComment(Self.order(lines, side: .onDisk, text: "Far."))
     )
 
     #expect(reply == .refused(.noReviewLines(path: "a.swift")))

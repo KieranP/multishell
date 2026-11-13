@@ -20,6 +20,19 @@ struct AppModelServicePollingTests {
     #expect(provider.calls.count > callsBefore)
   }
 
+  @Test func aRunUnderWayOnARowTheFilterHidesLeavesThePollAtItsOwnPace() async throws {
+    let (harness, provider) = try await harnessReadNinetySecondsAgo(showing: .running)
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    harness.model.sidebarFilterText = "main"
+    let callsBefore = provider.calls.count
+
+    await harness.model.pollServices(interval: .seconds(3600))
+
+    #expect(provider.calls.count == callsBefore)
+  }
+
   @Test func aShownRunOfUnknownStatusLeavesThePollAtItsOwnPace() async throws {
     let (harness, provider) = try await harnessReadNinetySecondsAgo(showing: .unknown)
     defer { harness.tearDown() }

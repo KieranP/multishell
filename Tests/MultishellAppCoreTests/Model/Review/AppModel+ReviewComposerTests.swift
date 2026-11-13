@@ -415,4 +415,28 @@ struct AppModelReviewComposerTests {
 
     #expect(harness.model.reviewComposers[tab.id]?.side == .committed)
   }
+
+  @Test func aComposerOnRemovedLinesOfADeletedFileGivesWayToANewOne() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (tab, main) = try await Self.tabShowing("two\n", in: harness)
+    let rows = Self.rows(of: tab, in: harness)
+    let removedRow = try #require(rows.firstIndex { $0.kind == .removed })
+    harness.model.openReviewComposer(
+      on: try #require(ReviewLineSelection(from: removedRow, to: removedRow, in: rows)),
+      in: tab.id,
+    )
+    harness.model.noteReviewDraft("Typed.", in: tab.id)
+    try FileManager.default.removeItem(at: main.path.appending(path: "README.md"))
+    harness.model.noteFileTabChanged(tab.id)
+    try await waitUntil { harness.model.fileTabReadings[tab.id]?.isFileGone == true }
+    let keptRows = Self.rows(of: tab, in: harness)
+
+    harness.model.openReviewComposer(
+      on: try #require(ReviewLineSelection(from: 0, to: 0, in: keptRows)),
+      in: tab.id,
+    )
+
+    #expect(harness.model.reviewComposers[tab.id]?.side == .onDisk)
+  }
 }

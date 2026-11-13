@@ -60,7 +60,7 @@ extension AppModel {
     let settings = effectiveWorktreeSettings(for: project)
     let shellPath = workspace.effectiveShellPath(for: effective)
     let planned = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
-    if await refuseIfStillBeingRemoved(planned) { return nil }
+    guard await mayStillCreate(at: planned, in: project) else { return nil }
     // The row can arrive mid-checkout: git writes its record before the
     // first file, and that directory is watched. See worktrees/creating-and-removing.md.
     let claimed = planned.flatMap(claimPath(_:))
@@ -118,6 +118,13 @@ extension AppModel {
     // A setup still running holds the tab back, and `openHeldBackTab` takes it.
     if !isBusy(created.id) { newWorktreeFirstTabs[created.id] = nil }
     return created
+  }
+
+  /// The project asked again after the wait: removing it meanwhile stopped no
+  /// create, none having begun.
+  private func mayStillCreate(at planned: URL?, in project: Project) async -> Bool {
+    guard await !refuseIfStillBeingRemoved(planned) else { return false }
+    return workspace.project(project.id) != nil
   }
 
   /// Says so and returns `true` where a removal runs on at `planned`: made now,

@@ -5,6 +5,7 @@ public final class NullNotifier: SessionNotifier {
   public init() {}
   public func notify(title: String, body: String, about key: SessionStates.Key) {}
   public func withdraw(about key: SessionStates.Key) {}
+  public func withdrawEverything() {}
   public func authorization() async -> NotificationAuthorization { .unavailable }
   public func requestAuthorization() async -> NotificationAuthorization { .unavailable }
 }

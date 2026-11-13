@@ -97,6 +97,23 @@ struct AppModelLifecycleTests {
     #expect(events.received.contains("finished"))
   }
 
+  @Test func launchTakesBackTheBannersTheLastRunLeft() async {
+    let harness = Harness()
+
+    await harness.model.start()
+
+    #expect(harness.notifier.withdrewEverything)
+  }
+
+  @Test func aCopyHandingOverLeavesTheRunningOnesBannersAlone() async {
+    let harness = Harness()
+    harness.messageSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+
+    await harness.model.start()
+
+    #expect(!harness.notifier.withdrewEverything)
+  }
+
   @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async throws {
     let file = Scratch.statePath("second-copy")
     defer { Scratch.remove(file.deletingLastPathComponent()) }

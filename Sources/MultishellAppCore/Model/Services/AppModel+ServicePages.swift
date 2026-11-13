@@ -67,13 +67,19 @@ extension AppModel {
   /// What decides whether the shown pull request can merge, from its
   /// checks once read.
   func mergeReadiness(of pullRequest: PullRequest, in worktree: Worktree) -> MergeReadiness {
-    // An earlier head's checks say nothing of this one's.
-    let checks = remoteState.checks[worktree.id].flatMap { reading in
+    MergeReadiness(pullRequest, checks: checksReading(of: pullRequest, in: worktree)?.checks)
+  }
+
+  /// An earlier head's checks, or their failed read, say nothing of this one's.
+  private func checksReading(
+    of pullRequest: PullRequest,
+    in worktree: Worktree,
+  ) -> PullRequestChecks? {
+    remoteState.checks[worktree.id].flatMap { reading in
       reading.pullRequestNumber == pullRequest.number
         && reading.headCommit == pullRequest.headCommit
-        ? reading.checks : nil
+        ? reading : nil
     }
-    return MergeReadiness(pullRequest, checks: checks)
   }
 
   /// The page's steps toward merging the shown pull request, and what it offers
@@ -84,8 +90,16 @@ extension AppModel {
       readiness: mergeReadiness(of: pullRequest, in: worktree),
       isMergeTaken: isMergeTaken(in: worktree),
       isOutgrown: services(of: worktree).outgrownPullRequest?.url == pullRequest.url,
-      checksReadProblem: panelReadProblem(of: worktree),
+      checksReadProblem: checksReadProblem(of: pullRequest, in: worktree),
     )
+  }
+
+  private func checksReadProblem(of pullRequest: PullRequest, in worktree: Worktree) -> String? {
+    guard let failure = checksReading(of: pullRequest, in: worktree)?.failure,
+      let project = workspace.project(worktree.projectID),
+      let (integration, _) = pullRequestHost(for: project)
+    else { return nil }
+    return failure.reason(integration: integration)
   }
 
   /// Why the page's own read, the checks or the run history, gave no answer.
@@ -99,10 +113,9 @@ extension AppModel {
       return failure.reason(integration: integration)
 
     case .pullRequest:
-      guard let failure = remoteState.checks[worktree.id]?.failure,
-        let (integration, _) = pullRequestHost(for: project)
-      else { return nil }
-      return failure.reason(integration: integration)
+      return services(of: worktree).shownPullRequest.flatMap { pullRequest in
+        checksReadProblem(of: pullRequest, in: worktree)
+      }
 
     case .files, .changes, .review:
       return nil

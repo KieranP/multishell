@@ -21,10 +21,14 @@ extension AppModel {
     }
   }
 
-  /// A file tab runs nothing, so it never asks.
+  /// A file tab runs nothing, so it asks only where a review comment is being
+  /// written in it, which would go with it.
   private func closeFileTab(_ id: FileTab.ID) {
-    store.closeTab(id)
-    reconcileSessions(takingFocus: true)
+    if reviewComposerHoldsUnsavedText(in: id) {
+      pendingClose = .fileTab(id)
+      return
+    }
+    closeWithoutAsking(.fileTab(id))
   }
 
   /// A close the engine was asked for, as by a keybind in the user's Ghostty
@@ -46,6 +50,7 @@ extension AppModel {
   /// reconcile, so every path that takes one away is covered.
   func prunePendingClose() {
     switch pendingClose {
+    case .fileTab(let id) where workspace.fileTab(id) == nil: pendingClose = nil
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
     case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil
     default: break
@@ -59,7 +64,7 @@ extension AppModel {
       platform.closeKeyWindow()
       return
     }
-    switch workspaceTabInView {
+    switch workspaceTabDrawn {
     case .terminal(let tab): requestClose(closing(tab), in: tab)
     case .file(let tab): closeFileTab(tab.id)
     case nil: break
@@ -78,6 +83,7 @@ extension AppModel {
 
   func closeWithoutAsking(_ close: PendingClose, takingFocus: Bool = true) {
     switch close {
+    case .fileTab(let id): store.closeTab(id)
     case .pane(let id): store.closeSession(id)
     case .tab(let id): store.closeTab(id)
     }

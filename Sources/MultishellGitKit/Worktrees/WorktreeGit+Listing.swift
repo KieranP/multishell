@@ -51,13 +51,22 @@ extension WorktreeGit {
 
   /// An answer that proves nothing, unreadable or empty, counts as listed:
   /// the caller deletes the branch next. See Docs/design/worktrees/creating-and-removing.md.
-  func isListed(_ path: URL, in project: Project) async -> Bool {
+  func isListed(_ path: URL, in project: Project, ignoringCase: Bool = false) async -> Bool {
+    await listsWorktree(at: path, in: project, ignoringCase: ignoringCase) ?? true
+  }
+
+  /// `nil` where git's answer proves nothing, unreadable or empty. `ignoringCase` as
+  /// git matches a path it is given under `core.ignorecase`, macOS's default.
+  func listsWorktree(at path: URL, in project: Project, ignoringCase: Bool = false) async -> Bool? {
     guard let listed = try? await parsedList(in: project.path, projectID: project.id),
       !listed.isEmpty
-    else { return true }
+    else { return nil }
     return await runOnDispatch {
-      let wanted = Self.pathAsGitLists(path)
-      return listed.contains { Self.pathAsGitLists($0.path) == wanted }
+      let spelling = { (url: URL) in
+        ignoringCase ? Self.pathAsGitLists(url).lowercased() : Self.pathAsGitLists(url)
+      }
+      let wanted = spelling(path)
+      return listed.contains { spelling($0.path) == wanted }
     }
   }
 }

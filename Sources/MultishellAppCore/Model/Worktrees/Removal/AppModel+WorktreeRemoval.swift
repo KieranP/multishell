@@ -98,16 +98,25 @@ extension AppModel {
       return false
 
     case .alert(let title, let message, let retry, let wasWorktreeRemoved):
-      var presented = PresentedError(title: title, message: message)
-      if let retry, case .deleteBranchAnyway(let branch) = retry {
-        presented.retry = .init(label: retry.label) { [weak self] in
-          await self?.forceDeleteBranch(branch, of: project)
-        }
-      }
-      presentedError = presented
+      presentRemovalAlert(title: title, message: message, retry: retry, in: project)
       if !wasWorktreeRemoved { worktreeOperations.clear(worktree.id) }
       return wasWorktreeRemoved
     }
+  }
+
+  private func presentRemovalAlert(
+    title: String,
+    message: String,
+    retry: PresentedRemovalFailure.ForcedRetry?,
+    in project: Project,
+  ) {
+    var presented = PresentedError(title: title, message: message)
+    if let retry, case .deleteBranchAnyway(let branch, let tip) = retry {
+      presented.retry = .init(label: retry.label) { [weak self] in
+        await self?.forceDeleteBranch(branch, atTip: tip, of: project)
+      }
+    }
+    presentedError = presented
   }
 
   /// The Trash where it takes the directory, deletion where it will not: the
@@ -120,13 +129,23 @@ extension AppModel {
     try await url.removeFromDisk()
   }
 
-  /// The branch alone, after a removal that left it behind.
-  private func forceDeleteBranch(_ branch: String, of project: Project) async {
+  /// The branch alone, after a removal that left it behind. One that moved
+  /// since is refused again, the alert saying what it holds now.
+  private func forceDeleteBranch(_ branch: String, atTip tip: String?, of project: Project) async {
     guard let coordinator else { return }
     do {
-      try await coordinator.deleteBranch(branch, in: project, force: true)
+      try await coordinator.forceDeleteBranch(branch, atTip: tip, in: project)
     } catch {
-      present(error)
+      guard
+        case .alert(let title, let message, let retry, _) = PresentedRemovalFailure(
+          error,
+          deletingBranch: branch,
+        )
+      else {
+        present(error)
+        return
+      }
+      presentRemovalAlert(title: title, message: message, retry: retry, in: project)
     }
   }
 }

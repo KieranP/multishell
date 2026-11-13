@@ -24,7 +24,19 @@ public enum FilePathText {
     guard let prefix = mentionPrefix else {
       return typable.map { AnyShellQuoting.quote($0.standardizedFileURL.path) }
     }
-    return typable.map { prefix + escaping(path(of: $0, relativeTo: directory)) }
+    return typable.map { url in
+      let path = path(of: url, relativeTo: directory)
+      guard isMentionable(path) else { return AnyShellQuoting.quote(url.standardizedFileURL.path) }
+      return prefix + escaping(path)
+    }
+  }
+
+  /// Claude Code's mention ends at any Unicode space and escapes only an ASCII
+  /// one, so a screenshot's narrow no-break space or a backslash cut it short.
+  private static func isMentionable(_ path: String) -> Bool {
+    !path.unicodeScalars.contains { scalar in
+      scalar == "\\" || (scalar != " " && scalar.properties.isWhitespace)
+    }
   }
 
   /// A path carrying a control character is left out rather than mangled: a
@@ -38,7 +50,7 @@ public enum FilePathText {
   private static func escaping(_ path: String) -> String {
     var escaped = ""
     for scalar in path.unicodeScalars {
-      if scalar == "\\" || scalar == " " { escaped.unicodeScalars.append("\\") }
+      if scalar == " " { escaped.unicodeScalars.append("\\") }
       escaped.unicodeScalars.append(scalar)
     }
     return escaped
