@@ -30,7 +30,7 @@ struct DiffTextViewCommentOnLinesTests {
     view.frame = NSRect(x: 0, y: 0, width: 500, height: 200)
     let window = OffscreenWindow.holding(view, deferred: false)
     defer { withExtendedLifetime(window) {} }
-    view.commentSide = .committed
+    view.column.commentSide = .committed
     view.onCommentOnLines = { _ in }
     view.show(
       DiffDisplayText([.padding, .padding], marksStaging: true),

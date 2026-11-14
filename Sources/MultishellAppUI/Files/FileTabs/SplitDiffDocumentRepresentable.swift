@@ -104,7 +104,7 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     guard let tab = model.workspace.fileTab(tabID) else { return }
     let columns:
       [(
-        DiffDocumentView, DiffSide, DiffDisplayText,
+        DiffColumn, DiffSide, DiffDisplayText,
         ReferenceWritableKeyPath<Coordinator, ShownReviewCards?>
       )] = [
         (view.committed, .committed, split.committed, \.committedReviewCards),

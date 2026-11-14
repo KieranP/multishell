@@ -3,7 +3,7 @@ import MultishellAppCore
 
 /// The box around the change the last step landed on: set, mirrored onto a
 /// split's other side, and carried by line across re-reads and rebuilds.
-extension DiffDocumentView {
+extension DiffColumn {
   private var caretRow: Int {
     textView.displayText.row(atOffset: textView.selectedRange().location)
   }

@@ -135,9 +135,16 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   sign of an addition.
 - **A file tab's memory is labelled in Debug Info**, estimated from the text it
   keeps, rather than left in the app's row.
-- **Split is offset-locked**, the same offset being the same row on both sides
-  under the forced geometry; a lock by row left the scrollers thousands of
-  points apart.
+- **Unified and Split are one scroller over a canvas**, `DiffCanvasView`, its
+  document holding each column's gutter and text and the views in the gaps, so
+  all of it scrolls natively and nothing is kept in step. Split's two columns
+  had two scrollers locked by offset: the lock pulled one back where the other
+  clamped, a wheel over the left had to be forwarded, and every view laid over
+  both was moved on each scroll. The same offset is still the same row on both
+  sides under the forced geometry. Both columns scroll sideways together under
+  one horizontal scroller (owner's pick), each text in its own clip right of
+  its gutter. `NSTextView` scrolls nothing on a canvas, not being the
+  scroller's document, so the column brings a range into view itself.
 - **Unified or Split is one choice for every tab, kept with the settings**, so
   the next file opens as the last was read. A file only added to or only removed
   from stays Unified and offers no switch: one side would be blank.

@@ -37,6 +37,8 @@ struct AllChangesTabView: View {
     documentView(of: document)
       .id(model.fileFont)
       .overlay(alignment: .top) { stickyHeader(of: document) }
+      // The next file's header pushes the sticky copy up past the rows' top.
+      .clipped()
       .overlay(alignment: .topTrailing) {
         if model.findBarTargetIDs.contains(tab.id) {
           FindBar(model: model, targetID: tab.id, theme: theme)
@@ -90,6 +92,7 @@ struct AllChangesTabView: View {
       )
       .padding(.leading, UIMetrics.allChangesBoxMargin)
       .padding(.trailing, UIMetrics.allChangesScrollerMargin)
+      .offset(y: -top.pushedUp)
     }
   }
 }

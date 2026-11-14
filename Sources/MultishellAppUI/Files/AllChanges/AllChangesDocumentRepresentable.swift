@@ -43,7 +43,7 @@ struct AllChangesDocumentRepresentable: NSViewRepresentable {
     func reveal(_ path: String, on view: DiffDocumentView) {
       view.cancelPendingRestore()
       guard view.clipHeight > 0, let document, let index = document.section(at: path),
-        let header = gapLayer.documentFrame(of: document.headerItem(ofSection: index))
+        let header = gapLayer.frame(of: document.headerItem(ofSection: index))
       else {
         pendingReveal = path
         return
@@ -62,12 +62,12 @@ struct AllChangesDocumentRepresentable: NSViewRepresentable {
       guard let document, let index = document.section(atRow: Int(row.rounded(.down))) else {
         return nil
       }
-      let barTop = gapLayer.documentFrame(of: document.headerItem(ofSection: index)).map { header in
-        header.minY + UIMetrics.allChangesFileGap
-      }
       return AllChangesTopFile(
         path: document.sections[index].path,
-        isHeaderScrolledPast: barTop.map { view.scrollOrigin.y > $0 } ?? false,
+        headerBarTop: gapLayer.headerBarTop(ofSection: index, in: document),
+        nextHeaderBarTop: gapLayer.headerBarTop(ofSection: index + 1, in: document),
+        scrolledTo: Double(view.scrollOrigin.y),
+        barHeight: UIMetrics.allChangesHeaderBarHeight,
       )
     }
   }
@@ -130,12 +130,12 @@ struct AllChangesDocumentRepresentable: NSViewRepresentable {
     }
     view.onGapViewsLaidOut = { [weak coordinator, weak view] geometry, _ in
       guard let coordinator, let view else { return }
+      let top = view.scrollOrigin.y
       coordinator.gapLayer.layOut(
         in: geometry,
-        y: view.scrollOrigin.y,
         x: 0,
-        width: view.spanningGapViews.bounds.width - view.scrollerMargin,
-        shown: 0...view.bounds.height,
+        width: view.spanningGapViews.bounds.width,
+        shown: top...(top + view.clipHeight),
         end: geometry.documentHeight(rows: view.textView.displayText.lines.count)
           - DiffRowGeometry.verticalInset,
       )

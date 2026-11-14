@@ -62,15 +62,16 @@ project committing only when asked.
 
 ## Now, in the owner's order
 
-Each is committed when done. Committed so far: the tab and its fixes,
-`f35a323b`, in PR #43.
+Each is committed when done. Committed so far: the tab and its fixes, `17dedf08`, in PR #43; the
+blank rows, `b3e3fcf0`; the wide scrollbar, `c98b4529`.
 
 | Work                                    | Status      | Notes                                                                                                                                                                                                                                  |
 | --------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Blank rows after collapsing files    | Committed `b3e3fcf0` | Files collapsed above the first expanded one stack their headers in the gap over row 0, which no row's height counted, so TextKit placed the first rows too high and left them blank. TextKit's container now starts under that gap. Test: `theFirstRowsAreLaidOutUnderATallGapAboveTheFirstRow`. |
-| 2. Unified and Split on one canvas      | Queued      | For file tabs and the All changes tab. Split's columns scroll sideways together under one horizontal scroller. See below.                                                                                                              |
+| 2. Unified and Split on one canvas      | Done        | One scroller over a canvas, `DiffCanvasView`, for file tabs and the All changes tab: each column's gutter and text, the divider, headers, folds, notices, boxes and Split's whole files all scroll natively. The lock, the wheel forwarding, the left's hidden scroller and the per-scroll overlay layout are gone. Columns scroll sideways together; not yet checked on screen by the owner. |
 | 3. The tab stays blank for seconds      | After the rework | It reads every file, one git run each, four at a time, and joins all rows before showing any. Speed it up; where it cannot be fast, show a loading indicator.                                                                          |
 | Wide scrollbar after Split to Unified   | Fixed       | The overlay scroller grows to 17 pt under the pointer, which the Unified/Split switch leaves above it, and covered the box's edge from a 12 pt margin. The right margin is now as wide as the scroller. Tests: `noHeaderOrFoldReachesTheVerticalScrollerAtItsWidest`, `noSplitHeaderOrFoldReachesTheVerticalScrollerAtItsWidest`. |
+| Sticky header hides the next file's header | Fixed  | The next file's header pushes the sticky copy up and out, clipped at the rows' top. Tests: `AllChangesTopFileTests`. |
 
 ## Queued rework
 

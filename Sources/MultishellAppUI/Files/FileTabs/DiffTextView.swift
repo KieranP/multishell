@@ -24,6 +24,9 @@ final class DiffTextView: NSTextView {
   /// document heads each file's part.
   var copiesSelections: (([Range<Int>]) -> String)?
   var onFocus: (() -> Void)?
+  /// Where set, brings a rect into view in place of the enclosing clip: a
+  /// column's text scrolls sideways inside its own clip on a wider canvas.
+  var scrollsRectToVisible: ((NSRect) -> Bool)?
   /// Comment on Lines, from the menu, on the rows the selection touches.
   var onCommentOnRows: ((ClosedRange<Int>) -> Void)?
   /// A split column's side, so Comment on Lines is offered only where a comment can go.
@@ -46,7 +49,8 @@ final class DiffTextView: NSTextView {
     }
   }
   private(set) var steppedChangeBorder = NSColor.clear
-  private var documentWidth: CGFloat = 0
+  /// The widest line and the padding after it.
+  private(set) var documentWidth: CGFloat = 0
   /// The highlight runs the text carries at its current offsets, so the next
   /// apply changes only what differs; `nil` while unknown, mid-apply.
   var appliedRuns: [HighlightSpan]? = []
@@ -143,6 +147,16 @@ final class DiffTextView: NSTextView {
     }
     selectedRanges = carried.isEmpty ? [NSValue(range: NSRange(location: 0, length: 0))] : carried
     needsDisplay = true
+  }
+
+  /// On a canvas, `NSTextView` scrolls nothing, not being the scroller's
+  /// document: the range's rows and glyphs are brought into its column's clip.
+  override func scrollRangeToVisible(_ range: NSRange) {
+    guard let scrollsRectToVisible else {
+      super.scrollRangeToVisible(range)
+      return
+    }
+    _ = scrollsRectToVisible(rect(of: range.integerRange))
   }
 
   /// `NSTextView` resets its width to the clip's during layout; held here to

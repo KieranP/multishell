@@ -36,38 +36,28 @@ struct AllChangesSplitDocumentRepresentable: NSViewRepresentable {
       self.paintedFindMatches = paintedFindMatches
     }
 
-    /// Where a header's bar starts in the document, from its frame over the
-    /// columns, which sits the columns' scroll above it.
-    private func headerBarTop(ofSection index: Int, in view: SplitDiffDocumentView) -> CGFloat? {
-      guard let document,
-        let frame = gapLayer.documentFrame(of: document.headerItem(ofSection: index))
-      else { return nil }
-      return frame.minY + UIMetrics.allChangesFileGap
-    }
-
     /// From the first file's box to the last's end, where the columns' divider
     /// shows; none with no files.
     func boxesSpan(ending end: CGFloat) -> ClosedRange<CGFloat> {
-      guard let document, !document.sections.isEmpty,
-        let header = gapLayer.parentFrame(of: document.headerItem(ofSection: 0))
-      else { return 0...0 }
-      let top = header.minY + UIMetrics.allChangesFileGap
-      return top...max(top, end)
+      guard let document, let top = gapLayer.headerBarTop(ofSection: 0, in: document) else {
+        return 0...0
+      }
+      return CGFloat(top)...max(CGFloat(top), end)
     }
 
     /// Its header at the top, once the view has a size and the header a place.
     func reveal(_ path: String, on view: SplitDiffDocumentView) {
       view.committed.cancelPendingRestore()
       view.onDisk.cancelPendingRestore()
-      guard view.onDisk.clipHeight > 0, let index = document?.section(at: path),
-        let top = headerBarTop(ofSection: index, in: view)
+      guard view.onDisk.clipHeight > 0, let document, let index = document.section(at: path),
+        let top = gapLayer.headerBarTop(ofSection: index, in: document)
       else {
         pendingReveal = path
         return
       }
       pendingReveal = nil
       revealPin = AllChangesRevealPin(path: path)
-      view.onDisk.scroll(to: NSPoint(x: 0, y: top))
+      view.onDisk.scroll(to: NSPoint(x: 0, y: CGFloat(top)))
       revealPin?.origin = view.onDisk.scrollOrigin
     }
 
@@ -76,21 +66,19 @@ struct AllChangesSplitDocumentRepresentable: NSViewRepresentable {
       revealPin = nil
       guard let document else { return nil }
       // A file shown whole has no rows, so the row at the top would be the next file's.
+      let top = view.scrollOrigin.y
       let wholeAtTop = document.gapItems.first { item in
         item.kind == .wholeFile
-          && (gapLayer.parentFrame(of: item).map { $0.minY <= 0 && $0.maxY > 0 } ?? false)
+          && (gapLayer.frame(of: item).map { $0.minY <= top && $0.maxY > top } ?? false)
       }
-      if let wholeAtTop {
-        return AllChangesTopFile(
-          path: document.sections[wholeAtTop.section].path,
-          isHeaderScrolledPast: true,
-        )
-      }
-      guard let index = document.section(atRow: Int(row.rounded(.down))) else { return nil }
-      let barTop = headerBarTop(ofSection: index, in: view)
+      guard let index = wholeAtTop?.section ?? document.section(atRow: Int(row.rounded(.down)))
+      else { return nil }
       return AllChangesTopFile(
         path: document.sections[index].path,
-        isHeaderScrolledPast: barTop.map { view.onDisk.scrollOrigin.y > $0 } ?? false,
+        headerBarTop: gapLayer.headerBarTop(ofSection: index, in: document),
+        nextHeaderBarTop: gapLayer.headerBarTop(ofSection: index + 1, in: document),
+        scrolledTo: Double(top),
+        barHeight: UIMetrics.allChangesHeaderBarHeight,
       )
     }
   }
@@ -109,14 +97,11 @@ struct AllChangesSplitDocumentRepresentable: NSViewRepresentable {
     coordinator.wholeFiles.cancelHighlighting()
   }
 
-  /// Both columns act as one: the left's wheel turns the right, which the lock
-  /// follows, so the left never scrolls, bounces or clamps on its own.
+  /// The margins around the file boxes, and each column's focus and comments.
   private func setUpColumns(of view: SplitDiffDocumentView, coordinator: Coordinator) {
     let tabID = tab.id
     view.leadingInset = CGFloat(UIMetrics.allChangesBoxMargin)
     view.scrollerMargin = CGFloat(UIMetrics.allChangesScrollerMargin)
-    view.committed.showsVerticalScroller = false
-    view.committed.forwardsScrollWheel = view.onDisk.textView.enclosingScrollView
     for column in [view.committed, view.onDisk] {
       column.textView.onFocus = { [weak model] in model?.noteFileTabFocused(tabID) }
       column.onCommentOnRows = { [weak model, weak coordinator] start, end, side in
@@ -151,28 +136,30 @@ struct AllChangesSplitDocumentRepresentable: NSViewRepresentable {
     view.onSteppedChangeAnchorChanged = { [weak model] anchor in
       model?.noteSteppedChangeAnchor(anchor, of: tabID)
     }
-    view.onSpanningGapViewsLaidOut = { [weak coordinator, weak view] geometry, y, cardGaps in
+    view.onSpanningGapViewsLaidOut = { [weak coordinator, weak view] geometry, cardGaps in
       guard let coordinator, let view else { return }
       coordinator.gapLayer.noteCardGaps(cardGaps)
       let end =
         geometry.documentHeight(rows: view.onDisk.textView.displayText.lines.count)
         - DiffRowGeometry.verticalInset
+      let top = view.scrollOrigin.y
+      let shown = top...(top + view.clipHeight)
       coordinator.gapLayer.layOut(
         in: geometry,
-        y: y,
-        x: view.leadingInset,
-        width: view.bounds.width - view.leadingInset - view.scrollerMargin,
-        shown: 0...view.bounds.height,
+        x: 0,
+        width: view.spanningGapViews.bounds.width,
+        shown: shown,
         end: end,
       )
-      view.dividerSpan = coordinator.boxesSpan(ending: end - y)
+      view.dividerSpan = coordinator.boxesSpan(ending: end)
       if let document = coordinator.document, let host = coordinator.wholeFileHost {
         coordinator.wholeFiles.layOut(
           document,
-          frames: coordinator.gapLayer.parentFrame(of:),
+          frames: coordinator.gapLayer.frame(of:),
+          shown: shown,
           in: view.spanningGapViews,
-          scrollsWith: view.onDisk.textView.enclosingScrollView,
-          gutterWidth: view.committed.gutter.frame.width,
+          scrollsWith: view.scrollView,
+          gutterWidth: view.committed.gutterWidth,
           host: host,
         )
       }

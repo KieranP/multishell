@@ -80,7 +80,7 @@ panel's Review page (issue #6). Newest at the bottom.
   file stays as fast; with none the geometry gives what it gave before, which
   the drift tests hold, with a second run with gaps open.
 - **A split opens each gap in both columns at the taller column's height**, so
-  the offset lock still means the same row. The card sits in the column holding
+  one offset is still the same row on both sides. The card sits in the column holding
   its lines. Cost: a comment inside a change sits between that change's removed
   and added rows.
 - **Cards are hosted views over the text, not text.** Copy, find and the Changes
@@ -199,9 +199,6 @@ panel's Review page (issue #6). Newest at the bottom.
   which end it was dragged from.
 - **A comment's text goes to the agent as typed**, its own Markdown: a heading
   or a `---` in it is the user's. Escaping it changed code the text quoted.
-- **A split's first card pass can end the following column's wait for the lock**
-  before the other column restores. Traced twice; its report maps back to the
-  scroll handed over.
 - **A worktree git stops listing and lists again at once can lose its
   comments**: the forget's delete, still in flight, lands after the new read. A
   list read takes a second or more, the delete milliseconds.

@@ -25,12 +25,13 @@ struct DiffGutterViewTests {
   }
 
   @Test func aScrollTakesThePlusOffTheRowItWasOn() {
-    let gutter = DiffGutterView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
-    gutter.hoveredRow = 3
+    let (view, window) = DiffDocumentFixture.shown(rows: 200)
+    defer { withExtendedLifetime(window) {} }
+    view.gutter.hoveredRow = 3
 
-    gutter.scrolledTo = 100
+    view.scroll(to: NSPoint(x: 0, y: 100))
 
-    #expect(gutter.hoveredRow == nil)
+    #expect(view.gutter.hoveredRow == nil)
   }
 
   @Test func thePlusHasAColumnOfItsOwnLeftOfTheWidestNumber() {

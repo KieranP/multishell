@@ -3,7 +3,7 @@ import MultishellAppCore
 
 /// The gaps opened under rows, for review cards and the All changes tab's
 /// headers and folds, and the scroll held across them.
-extension DiffDocumentView {
+extension DiffColumn {
   /// A card opening elsewhere moves nothing in view, even a card cut by the top.
   func setRowGapsHoldingAnchor(_ gaps: RowGaps) {
     guard textView.geometry.rowGaps != gaps else { return }
@@ -17,6 +17,7 @@ extension DiffDocumentView {
     guard textView.geometry.rowGaps != gaps else { return }
     textView.setRowGaps(gaps)
     gutter.geometry = textView.geometry
+    canvasView?.placeColumns()
     layOutGapViews()
   }
 

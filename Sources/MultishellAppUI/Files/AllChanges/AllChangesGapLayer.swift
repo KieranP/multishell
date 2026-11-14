@@ -4,9 +4,9 @@ import SwiftUI
 
 /// The All changes tab's headers, folds and notices, each in the gap under the
 /// row before it, below any review cards there, and a box around each file,
-/// laid across the gutter and text or both split columns. Only those near the
-/// clip are hosted, each host being a surface of its own; see
-/// Docs/design/files/all-changes-tab.md.
+/// laid across the gutter and text or both split columns, on the canvas by the
+/// document's offsets. Only those near the clip are hosted, each host being a
+/// surface of its own; see Docs/design/files/all-changes-tab.md.
 @MainActor
 final class AllChangesGapLayer {
   private static let boxCornerRadius: CGFloat = 6
@@ -21,10 +21,8 @@ final class AllChangesGapLayer {
   private var generation = 0
   /// Hosts let go of as their items left the clip, given to the next to enter.
   private var spareHosts: [NSHostingController<AnyView>] = []
-  /// Every item's place in the parent at the last layout, hosted or not.
+  /// Every item's place in the document at the last layout, hosted or not.
   private var frames: [AllChangesGapItem: NSRect] = [:]
-  /// The scroll that layout was at, so a frame's place in the document is known.
-  private var laidOutAtY: CGFloat = 0
   /// The cards' gap under each row, which the items stack below.
   private var cardGaps: [Int: CGFloat] = [:]
   /// Each file's box near the clip by its section, and boxes let go of; a
@@ -60,19 +58,16 @@ final class AllChangesGapLayer {
     cardGaps = gaps
   }
 
-  /// Across the parent, stacked down each gap in order; `y` is how far the
-  /// parent's top sits below the document's, the scroll, `shown` the parent's
-  /// span on screen, past which nothing is hosted, and `end` where the last
-  /// file's rows end in the document.
+  /// Across the parent, stacked down each gap in order; `shown` is the
+  /// document's span on screen, past which nothing is hosted, and `end` where
+  /// the last file's rows end.
   func layOut(
     in geometry: DiffRowGeometry,
-    y: CGFloat,
     x: CGFloat,
     width: CGFloat,
     shown: ClosedRange<CGFloat>,
     end: CGFloat,
   ) {
-    laidOutAtY = y
     var nextTop: [Int: CGFloat] = [:]
     var near: [AllChangesGapItem] = []
     // Each host is a layer-backed surface of its own, so only a header's height
@@ -83,7 +78,7 @@ final class AllChangesGapLayer {
       let height = heights[item] ?? 0
       let row = item.afterRow
       let top = nextTop[row] ?? geometry.gapTop(afterRow: row) + (cardGaps[row] ?? 0)
-      let frame = NSRect(x: x, y: top - y, width: width, height: height)
+      let frame = NSRect(x: x, y: top, width: width, height: height)
       frames[item] = frame
       nextTop[row] = top + height
       // A file shown whole has a view of its own, which `AllChangesWholeFileLayer` hosts.
@@ -102,7 +97,7 @@ final class AllChangesGapLayer {
       }
       if let frame = frames[item], host.view.frame != frame { host.view.frame = frame }
     }
-    layOutBoxes(x: x, width: width, hosted: hosted, end: end - y)
+    layOutBoxes(x: x, width: width, hosted: hosted, end: end)
   }
 
   /// From under each header's gap to the next header, or the last file's end.
@@ -153,14 +148,18 @@ final class AllChangesGapLayer {
     return box
   }
 
-  /// Where an item sits in the parent at the last layout; `nil` before.
-  func parentFrame(of item: AllChangesGapItem) -> NSRect? {
+  /// Where an item sits in the document once laid out, hosted or not; `nil` before.
+  func frame(of item: AllChangesGapItem) -> NSRect? {
     frames[item]
   }
 
-  /// Where an item sits in the document once laid out, hosted or not; `nil` before.
-  func documentFrame(of item: AllChangesGapItem) -> NSRect? {
-    frames[item]?.offsetBy(dx: 0, dy: laidOutAtY)
+  /// Where a file's header bar starts in the document, under its file gap,
+  /// once laid out; `nil` past the last file.
+  func headerBarTop(ofSection index: Int, in document: AllChangesDocument) -> Double? {
+    guard document.sections.indices.contains(index),
+      let header = frames[document.headerItem(ofSection: index)]
+    else { return nil }
+    return Double(header.minY) + UIMetrics.allChangesFileGap
   }
 
   private func retire(_ item: AllChangesGapItem) {

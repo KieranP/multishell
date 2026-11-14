@@ -3,7 +3,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-extension DiffDocumentView {
+extension DiffColumn {
   func showReviewCards(
     _ placements: [ReviewCardPlacement],
     content: (ReviewCardPlacement) -> AnyView,
@@ -49,7 +49,7 @@ extension DiffDocumentView {
     guard clipHeight > 0 else {
       pendingCardReveal = card
       cancelPendingRestore()
-      needsLayout = true
+      canvasView?.needsLayout = true
       return
     }
     let geometry = textView.geometry

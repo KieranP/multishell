@@ -48,7 +48,7 @@ extension AllChangesSplitDocumentRepresentable {
   /// Each column its own side's cards, the split opening both columns' gaps alike.
   func showReviewCards(on view: SplitDiffDocumentView, coordinator: Coordinator) {
     let columns:
-      [(DiffDocumentView, DiffSide, ReferenceWritableKeyPath<Coordinator, ShownReviewCards?>)] = [
+      [(DiffColumn, DiffSide, ReferenceWritableKeyPath<Coordinator, ShownReviewCards?>)] = [
         (view.committed, .committed, \.committedReviewCards),
         (view.onDisk, .onDisk, \.onDiskReviewCards),
       ]

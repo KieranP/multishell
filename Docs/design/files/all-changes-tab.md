@@ -67,7 +67,7 @@ bottom.
   text with a map from each row to its file and that file's own row; headers,
   folds and notices are hosted views in row gaps, as review cards are, so find,
   copy, the Changes rotor and the drift tests still see rows only. A stack of
-  file views would nest scrollers and lose Split's offset lock. The first file's
+  file views would nest a scroller per file. The first file's
   header is a gap under row -1, which the gaps' sums take as they are.
 - **Each row's fragment reports its row and the gap under it as its height.**
   TextKit finds a scroll's top by summing fragment heights; with a header every
@@ -95,8 +95,9 @@ bottom.
   for the run only, by tab and path; the owner did not need it kept across
   launches.
 - **The header of the file at the top is held over the text** once its own has
-  scrolled past: an overlay worked out from the clip's offset, not a view inside
-  the scroller.
+  scrolled past: the one overlay, worked out from the clip's offset. The next
+  file's header pushes it up and out as it arrives, rather than sliding under
+  it (owner's report).
 - **Highlighting parses each file over its own rows**, a folded slice parsing
   wrong, and maps the spans onto the rows shown. Spans are kept by path, so a
   fold opening or a file collapsing parses nothing again.
@@ -143,16 +144,15 @@ bottom.
 - **In Split a file all added or all removed shows full width** (owner's pick):
   no rows in either column, but a Unified view of the file in a gap across both,
   as tall as its rows and its cards, its gutter as wide as the left column's
-  and its first row under its header, as in Unified. It is hosted only while near the clip, as
-  tall as the part on screen and scrolled within to follow the columns, so a
-  long new file lays out what shows. Find, the arrows and the Changes rotor do
-  not reach its rows, which are in neither column's text.
+  and its first row under its header, as in Unified. It sits on the canvas as
+  tall as the file, hosted only while near the clip, and lays out only what
+  shows. Find, the arrows and the Changes rotor do not reach its rows, which
+  are in neither column's text.
 - **In Split the columns' divider runs only over the files**, from the first
   file's box to the last's end.
-- **In Split the headers, folds and notices sit in a layer over both columns**,
-  their gaps opened in each, laid out as the lock scrolls them, and stop short
-  of the right column's scroller. A wheel over one turns the right column, which
-  the lock follows.
+- **The headers, folds, notices and boxes sit on the canvas** by the document's
+  offsets, across the gutter and text or both columns, so they scroll with the
+  rows; only which are hosted changes as it scrolls.
 - **Debug Info counts the tab with the file tabs**: each file's rows and the
   document joined from them, not the layout.
 - **`tabs step` and `tabs find` reach the tab** as they reach a file tab, the
