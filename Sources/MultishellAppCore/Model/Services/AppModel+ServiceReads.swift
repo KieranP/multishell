@@ -158,32 +158,6 @@ extension AppModel {
     reconcileMerges(of: ids)
   }
 
-  /// A run's workflows and report are kept while the CI page shows it: its
-  /// history, or the row's run it falls back on. Other worktrees keep their lists.
-  func pruneRunDetails() {
-    let panelHistory = filesPanelWorktree.flatMap { remoteState.ciHistories[$0.id] }
-    let panelRun = filesPanelWorktree.flatMap { remoteState.worktrees[$0.id]?.ciRun?.id }
-    let shownRuns = Set(panelHistory?.runs.map(\.id) ?? []).union([panelRun].compactMap(\.self))
-    setIfChanged(
-      \.remoteState.ciWorkflows,
-      remoteState.ciWorkflows.filter { shownRuns.contains($0.key) },
-    )
-    setIfChanged(
-      \.remoteState.failureReports,
-      remoteState.failureReports.filter { shownRuns.contains($0.key) },
-    )
-    setIfChanged(
-      \.remoteState.workflowReadFailures,
-      remoteState.workflowReadFailures.filter { shownRuns.contains($0.key) },
-    )
-    setIfChanged(
-      \.remoteState.reportReadFailures,
-      remoteState.reportReadFailures.filter { shownRuns.contains($0.key) },
-    )
-    remoteState.workflowsReadAt = remoteState.workflowsReadAt.filter { shownRuns.contains($0.key) }
-    remoteState.reportsReadAt = remoteState.reportsReadAt.filter { shownRuns.contains($0.key) }
-  }
-
   /// What was matched to a worktree's branch: gone with the worktree, or with
   /// a checkout onto another branch until the next scan matches that one.
   func forgetBranchServices(of ids: Set<Worktree.ID>) {

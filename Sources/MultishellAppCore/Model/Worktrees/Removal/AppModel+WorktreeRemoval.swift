@@ -134,7 +134,7 @@ extension AppModel {
   private func forceDeleteBranch(_ branch: String, atTip tip: String?, of project: Project) async {
     guard let coordinator else { return }
     do {
-      try await coordinator.forceDeleteBranch(branch, atTip: tip, in: project)
+      try await coordinator.deleteBranch(branch, in: project, forcingAtTip: tip)
     } catch {
       guard
         case .alert(let title, let message, let retry, _) = PresentedRemovalFailure(

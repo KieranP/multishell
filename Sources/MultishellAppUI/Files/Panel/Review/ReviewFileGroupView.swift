@@ -16,7 +16,7 @@ struct ReviewFileGroupView: View {
         Task { await model.openFileAsTab(group.path, in: worktreeID) }
       } label: {
         HStack(spacing: UIMetrics.reviewFileGlyphSpacing) {
-          Image(systemName: "doc")
+          Image(systemName: FileIcon.file)
             .font(metrics.font(size: metrics.small))
             .foregroundStyle(theme.filesPanel.textTertiary)
             .frame(width: metrics.glyph)

@@ -24,4 +24,13 @@ extension AppModel {
       in: lines,
     )
   }
+
+  /// The view's, as it updates: the card to scroll to, once the tab has rows to
+  /// place it by. Taken then even where it is not drawn, so it never fires later.
+  public func takeReviewCardReveal(_ id: FileTab.ID) -> ReviewCardPlacement.CardID? {
+    // A removal of nothing still redraws every file tab, each update asking here.
+    guard reviewCardRevealRequests[id] != nil, case .text = fileTabReadings[id]?.content
+    else { return nil }
+    return reviewCardRevealRequests.removeValue(forKey: id)
+  }
 }

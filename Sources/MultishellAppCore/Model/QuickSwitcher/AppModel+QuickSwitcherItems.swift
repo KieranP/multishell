@@ -120,8 +120,9 @@ extension AppModel {
     at offset: Int,
     place: String,
     states: SessionStates,
+    titles: [TerminalSession.ID: String],
   ) -> QuickSwitcherItem {
-    let paneTitle = shownTitle(ofPane: session, in: tab, of: worktree)
+    let paneTitle = shownTitle(ofPane: session, in: tab, of: worktree, titles: titles)
     return QuickSwitcherItem(
       target: .pane(session.id),
       kind: agentID.map { .agent(id: $0) } ?? .shell,
@@ -147,6 +148,7 @@ extension AppModel {
     let sessions = workspace.sessions.keyedByID()
     let tabsByWorktree = workspace.workspaceTabsByWorktree()
     let agents = promptAgents
+    let titles = sessionTitles
     return order.flatMap { project, worktree in
       let place = quickSwitcherPlace(of: worktree, in: project)
       return (tabsByWorktree[worktree.id] ?? []).flatMap { tab -> [QuickSwitcherItem] in
@@ -164,6 +166,7 @@ extension AppModel {
               at: offset,
               place: place,
               states: agents.states,
+              titles: titles,
             )
           }
 
@@ -186,7 +189,8 @@ extension AppModel {
   /// Every worktree as the sidebar lists it, projects in order and each one's
   /// worktrees by its sort, its hidden ones after the rest.
   private func quickSwitcherSidebarOrder(sessions: SessionIDsByWorktree) -> [SidebarPlace] {
-    workspace.projects.flatMap { project in
+    let workspace = workspace
+    return workspace.projects.flatMap { project in
       let ordered = orderedWorktrees(
         workspace.worktrees(of: project.id),
         in: project,

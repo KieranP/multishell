@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 extension SessionStates.Key {
   private static let sessionPrefix = "session:"
@@ -15,12 +16,11 @@ extension SessionStates.Key {
 
   /// The key a banner was posted about, read back off its identifier.
   public init?(notificationIdentifier identifier: String) {
-    if identifier.hasPrefix(Self.sessionPrefix) {
-      guard let id = UUID(uuidString: String(identifier.dropFirst(Self.sessionPrefix.count)))
-      else { return nil }
+    if let uuid = identifier.removingPrefix(Self.sessionPrefix) {
+      guard let id = UUID(uuidString: uuid) else { return nil }
       self = .session(id)
-    } else if identifier.hasPrefix(Self.worktreePrefix) {
-      self = .worktree(String(identifier.dropFirst(Self.worktreePrefix.count)))
+    } else if let path = identifier.removingPrefix(Self.worktreePrefix) {
+      self = .worktree(path)
     } else {
       return nil
     }

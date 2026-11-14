@@ -6,13 +6,13 @@ extension Array where Element == FileTreeRow {
   /// A comment badge's bubble and the space before it.
   private static var commentBadgeMarks: Int { 2 }
 
-  private static func estimatedCharacters(of row: FileTreeRow, pendingComments: Int?) -> Int {
+  private static func estimatedCharacters(of row: FileTreeRow, pendingComments: Int) -> Int {
     let counts = row.lineCounts.map { counts in
       String(counts.insertions).count + String(counts.deletions).count + lineCountMarks
     }
-    let badge = pendingComments.map { String($0).count + commentBadgeMarks }
+    let badge = pendingComments > 0 ? String(pendingComments).count + commentBadgeMarks : 0
     return row.depth * charactersPerLevel + row.name.count + (row.parentFolder?.count ?? 0)
-      + (counts ?? 0) + (badge ?? 0)
+      + (counts ?? 0) + badge
   }
 
   /// The rows likeliest to be widest, judged by their characters and comment badges:
@@ -21,7 +21,10 @@ extension Array where Element == FileTreeRow {
     map { row in
       (
         row: row,
-        characters: Self.estimatedCharacters(of: row, pendingComments: pendingComments[row.path]),
+        characters: Self.estimatedCharacters(
+          of: row,
+          pendingComments: row.pendingComments(in: pendingComments),
+        ),
       )
     }
     .sorted { $0.characters > $1.characters }

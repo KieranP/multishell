@@ -169,7 +169,7 @@ struct AppModelReviewCommentsTests {
       wrote.raise()
     }
 
-    harness.model.forgetReviewCommentsAndFiles(of: [harness.feature.id])
+    harness.model.forgetReviewState(of: [harness.feature.id])
 
     #expect(!wrote.raised)
   }

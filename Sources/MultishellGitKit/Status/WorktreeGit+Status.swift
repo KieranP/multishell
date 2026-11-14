@@ -95,6 +95,9 @@ extension WorktreeGit {
     diffAlgorithm: DiffAlgorithm,
     isUnborn: Bool,
   ) async -> [StatusChange] {
+    let counted = indicator == .stagedOnly ? entries.filter(\.isStaged) : entries
+    // A diff's lines are looked up only by these, and stat every tracked file.
+    guard !counted.isEmpty else { return [] }
     let options = Self.numstatOptions(diffAlgorithm)
     let cachedOnly = ["--no-optional-locks", "diff"] + options + ["--cached"]
     var linesByPath: [String: StatusChange.Lines] = [:]
@@ -105,7 +108,6 @@ extension WorktreeGit {
     } else if let cached = await runner.output(cachedOnly, in: path) {
       linesByPath = NumstatParser.parse(cached)
     }
-    let counted = indicator == .stagedOnly ? entries.filter(\.isStaged) : entries
     return counted.map { entry in
       StatusChange(
         path: entry.path,

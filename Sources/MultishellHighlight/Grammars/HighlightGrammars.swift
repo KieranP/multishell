@@ -37,12 +37,21 @@ enum HighlightGrammars {
     let bundle: String
     let name: String
 
+    private init(package: String, target: String?, name: String) {
+      bundle = "\(package)_\(target ?? package)"
+      self.name = name
+    }
+
     static func highlights(
       in package: String,
       target: String? = nil,
       name: String = "highlights.scm",
     ) -> Self {
-      Self(bundle: "\(package)_\(target ?? package)", name: name)
+      Self(package: package, target: target, name: name)
+    }
+
+    static func locals(in package: String) -> Self {
+      Self(package: package, target: nil, name: "locals.scm")
     }
   }
 
@@ -74,10 +83,7 @@ enum HighlightGrammars {
     in: "TreeSitterJavaScript",
     name: "highlights-jsx.scm",
   )
-  private static let javaScriptLocals = QueryFile.highlights(
-    in: "TreeSitterJavaScript",
-    name: "locals.scm",
-  )
+  private static let javaScriptLocals = QueryFile.locals(in: "TreeSitterJavaScript")
 
   /// A table rather than a switch, 26 cases being past the lint's complexity;
   /// `everyGrammarCompilesWithItsQuery` checks every language has an entry.
@@ -104,7 +110,7 @@ enum HighlightGrammars {
     .ruby: GrammarSource(
       { tree_sitter_ruby() },
       [.highlights(in: "TreeSitterRuby")],
-      locals: [.highlights(in: "TreeSitterRuby", name: "locals.scm")],
+      locals: [.locals(in: "TreeSitterRuby")],
     ),
     .rust: GrammarSource({ tree_sitter_rust() }, [.highlights(in: "TreeSitterRust")]),
     .scss: GrammarSource({ tree_sitter_scss() }, [css, .highlights(in: "TreeSitterSCSS")]),

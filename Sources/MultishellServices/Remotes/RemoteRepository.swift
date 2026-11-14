@@ -32,6 +32,12 @@ public struct RemoteRepository: Hashable, Sendable {
     } else {
       return nil
     }
+    self.init(ownerAndName: path)
+  }
+
+  /// `owner/name`, or `group/sub/name`, a trailing `.git` dropped; `nil` for
+  /// fewer than two components.
+  init?(ownerAndName path: Substring) {
     var components = path.split(separator: "/").map(String.init)
     guard components.count >= 2, var name = components.popLast() else { return nil }
     if name.hasSuffix(".git") { name.removeLast(4) }

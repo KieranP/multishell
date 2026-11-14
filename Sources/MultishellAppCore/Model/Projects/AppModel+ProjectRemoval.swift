@@ -3,16 +3,16 @@ import MultishellCore
 extension AppModel {
   /// Entry point from the UI. Always asks: removal closes every live
   /// terminal in the project's worktrees, with no undo.
-  public func requestProjectRemoval(_ project: Project, from source: DialogWindow) {
-    pendingProjectRemoval = PendingProjectRemoval(project: project, source: source)
+  public func requestProjectRemoval(_ project: Project, from window: DialogWindow) {
+    pendingProjectRemoval = PendingProjectRemoval(project: project, window: window)
   }
 
-  /// Each window attaches the dialog with its own source, so only the
+  /// Each window attaches the dialog for itself, so only the
   /// window that asked presents it.
   public func pendingProjectRemoval(
-    for source: DialogWindow
+    for window: DialogWindow
   ) -> PendingProjectRemoval? {
-    pendingProjectRemoval.flatMap { $0.source == source ? $0 : nil }
+    pendingProjectRemoval.flatMap { $0.window == window ? $0 : nil }
   }
 
   public func answerProjectRemoval(_ pending: PendingProjectRemoval, confirmed: Bool) {

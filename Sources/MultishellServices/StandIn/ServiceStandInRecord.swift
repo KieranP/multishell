@@ -57,7 +57,7 @@ struct ServiceStandInRecord: Decodable {
         !text.contains(":") && steps.allSatisfy { !$0.isEmpty && $0 != "." && $0 != ".." }
       guard
         let repository = RemoteRepository(remoteURL: text)
-          ?? (isOwnerAndName ? RemoteRepository(remoteURL: "https://host/\(text)") : nil)
+          ?? (isOwnerAndName ? RemoteRepository(ownerAndName: text[...]) : nil)
       else {
         throw DecodingError.dataCorrupted(
           .init(codingPath: decoder.codingPath, debugDescription: "\(text) names no owner/name")

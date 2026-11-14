@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 extension AppModelTabClosingTests {
   @Test(arguments: [false, true])

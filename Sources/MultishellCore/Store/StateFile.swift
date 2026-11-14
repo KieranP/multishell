@@ -39,7 +39,7 @@ struct StateFile: Sendable {
     if let target = danglingLinkTarget {
       throw DanglingStateFileLink(fileURL: fileURL, target: target)
     }
-    guard FileManager.default.fileExists(atPath: fileURL.path) else { return Workspace() }
+    guard existsOnDisk else { return Workspace() }
     do {
       return try JSONDecoder().decode(Workspace.self, from: try Data(contentsOf: fileURL))
     } catch {

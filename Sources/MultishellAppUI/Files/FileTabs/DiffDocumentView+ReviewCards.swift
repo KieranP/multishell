@@ -37,7 +37,7 @@ extension DiffDocumentView {
     if let onReviewCardGaps {
       onReviewCardGaps(gaps)
     } else {
-      setRowGaps(RowGaps(gaps))
+      setRowGapsHoldingAnchor(RowGaps(gaps))
     }
   }
 

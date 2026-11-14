@@ -68,27 +68,6 @@ struct MergePathTests {
     #expect(!path.steps.contains { $0.kind == .checks })
   }
 
-  @Test func aFailedReadOfChecksAlreadyReadIsANoteNotAStep() {
-    let path = MergePath.sample(
-      .sample(),
-      checks: [.sample()],
-      checksReadProblem: "gh pr checks: HTTP 502",
-    )
-    #expect(
-      path.staleChecksNote
-        == "The checks shown may be out of date. Last read: gh pr checks: HTTP 502"
-    )
-    #expect(!path.steps.contains { $0.kind == .checksNotRead })
-    #expect(
-      MergePath.sample(.sample(), checks: nil, checksReadProblem: "x").staleChecksNote == nil
-    )
-  }
-
-  @Test func aFailedReadAfterOneThatListedNoChecksDoesNotSpeakOfChecksShown() {
-    let path = MergePath.sample(.sample(), checks: [], checksReadProblem: "HTTP 502")
-    #expect(path.staleChecksNote == "Checks not read again: HTTP 502")
-  }
-
   @Test func aSettledPullRequestListsNoConflictsAndOnlyAnApproval() {
     let closed = MergePath.sample(.sample(state: .closed, review: .required), checks: [])
     let merged = MergePath.sample(.sample(state: .merged, review: .approved), checks: [])

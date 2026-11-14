@@ -9,13 +9,14 @@ struct ArrayWidestFileTreeRowsTests {
     depth: Int = 0,
     parentFolder: String? = nil,
     lineCounts: FileLineCounts? = nil,
+    isFolder: Bool = false,
   ) -> FileTreeRow {
     FileTreeRow(
       path: name,
       name: name,
       parentFolder: parentFolder,
       depth: depth,
-      isFolder: false,
+      isFolder: isFolder,
       isExpanded: false,
       holdsChange: false,
       changeKind: nil,
@@ -66,5 +67,11 @@ struct ArrayWidestFileTreeRowsTests {
     let rows = [row("abc.swift"), row("ab.swift")]
 
     #expect(rows.likeliestWidest(1, pendingComments: ["ab.swift": 2]).map(\.name) == ["ab.swift"])
+  }
+
+  @Test func aFolderAtACommentedFilesPathTakesNoBadgeWidth() {
+    let rows = [row("abc.swift"), row("ab.swift", isFolder: true)]
+
+    #expect(rows.likeliestWidest(1, pendingComments: ["ab.swift": 2]).map(\.name) == ["abc.swift"])
   }
 }

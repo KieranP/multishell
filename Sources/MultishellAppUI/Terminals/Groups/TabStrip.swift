@@ -15,9 +15,6 @@ struct TabStrip: View {
   let theme: Theme
   @Binding var drag: TabDragState
 
-  /// Once for the strip, not per tab.
-  private var isShuffling: Bool { drag.isShuffling(within: tabs.map(\.id)) }
-
   var body: some View {
     labelledAsGroup(strip)
   }
@@ -102,6 +99,8 @@ struct TabStrip: View {
 
   @ViewBuilder
   private func tabViews(_ layout: TabStripLayout) -> some View {
+    // Once for the strip, not per tab.
+    let isShuffling = drag.isShuffling(within: tabs.map(\.id))
     ForEach(tabs) { tab in
       DraggableTab(
         model: model,

@@ -151,8 +151,8 @@ final class SplitDiffDocumentView: NSView {
     // Both columns take the gaps before either scrolls, or the lock would copy one
     // column's corrected offset to the other while it still had the old gaps.
     let anchor = onDisk.scrollAnchor
-    committed.applyRowGaps(rowGaps)
-    onDisk.applyRowGaps(rowGaps)
+    committed.setRowGaps(rowGaps)
+    onDisk.setRowGaps(rowGaps)
     onDisk.scroll(toAnchor: anchor)
   }
 

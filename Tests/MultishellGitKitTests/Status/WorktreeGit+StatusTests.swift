@@ -126,6 +126,43 @@ struct WorktreeGitStatusTests {
     #expect(!calls.contains { $0.contains("rev-parse") }, "\(calls)")
   }
 
+  @Test(arguments: [GitStatusIndicator.stagedAndUnstaged, .stagedOnly])
+  func aTreeWithOnlyNewFilesRunsNoTrackedDiff(indicator: GitStatusIndicator) async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try fixture.write("new\n", to: "new.txt")
+    let fake = try FakeGit.make("exec git \"$@\"", loggingCalls: true)
+    defer { fake.tearDown() }
+    let worktree = Worktree(path: fixture.project.path, projectID: fixture.project.id, head: "")
+
+    let status = try await WorktreeGit(runner: fake.runner).status(
+      of: worktree,
+      counting: indicator,
+    )
+
+    #expect(status.untracked == 1)
+    let calls = FakeGit.calls(in: fake.directory)
+    #expect(!calls.contains { $0.contains("diff-index") || $0.contains("--cached") }, "\(calls)")
+  }
+
+  @Test func underStagedOnlyATreeWithNothingStagedRunsNoTrackedDiff() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try fixture.write("changed\n", to: "README.md")
+    let fake = try FakeGit.make("exec git \"$@\"", loggingCalls: true)
+    defer { fake.tearDown() }
+    let worktree = Worktree(path: fixture.project.path, projectID: fixture.project.id, head: "")
+
+    let status = try await WorktreeGit(runner: fake.runner).status(
+      of: worktree,
+      counting: .stagedOnly,
+    )
+
+    #expect(status.isDirty)
+    let calls = FakeGit.calls(in: fake.directory)
+    #expect(!calls.contains { $0.contains("diff") }, "\(calls)")
+  }
+
   @Test func theChosenDiffAlgorithmDecidesTheCountsForBothIndicators() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

@@ -8,6 +8,7 @@ extension AppModel {
 
   /// Every live pane, flattened into a card.
   var agentBoardCards: [AgentBoardCard] {
+    let workspace = workspace
     let projectNames = workspace.projects.keyedByID().mapValues(\.name)
     let worktreesByID = workspace.worktrees.keyedByID()
     var tabsBySession: [TerminalSession.ID: (tab: TerminalTab, position: PanePosition?)] =
@@ -22,6 +23,7 @@ extension AppModel {
     let agents = promptAgents
     let states = sessionStates
     let statuses = statuses
+    let titles = sessionTitles
     return workspace.sessions.compactMap { session in
       guard live.contains(session.id), let (tab, position) = tabsBySession[session.id],
         let worktree = worktreesByID[session.worktreeID]
@@ -32,7 +34,7 @@ extension AppModel {
         tabID: tab.id,
         worktreeID: worktree.id,
         occupant: occupant(agentID: agents.agentID(of: session), in: worktree),
-        title: shownTitle(ofPane: session, in: tab, of: worktree),
+        title: shownTitle(ofPane: session, in: tab, of: worktree, titles: titles),
         projectName: projectNames[worktree.projectID] ?? "",
         worktreeName: workspace.displayName(of: worktree),
         state: states[key],

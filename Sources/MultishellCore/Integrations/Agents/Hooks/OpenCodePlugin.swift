@@ -21,9 +21,8 @@ enum OpenCodePlugin {
   /// `$HOME` is the shell's, not JavaScript's, so the plugin asks the
   /// runtime for the home directory and keeps the rest of the path.
   private static func helperExpression(_ helper: String) -> String {
-    let prefix = "$HOME"
-    guard helper.hasPrefix(prefix) else { return quoted(helper) }
-    return "homedir() + " + quoted(String(helper.dropFirst(prefix.count)))
+    guard let rest = helper.removingPrefix("$HOME") else { return quoted(helper) }
+    return "homedir() + " + quoted(rest)
   }
 
   private static func quoted(_ value: String) -> String {

@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Parses `git status --porcelain=v1 -z --branch`: `## <branch>...`, then
 /// `XY <path>`, the path unquoted and able to hold a newline.
@@ -62,8 +63,8 @@ enum WorktreeStatusParser {
         status.upstream = String(name[dots.upperBound...])
         name = String(name[..<dots.lowerBound])
       }
-      if let prefix = unbornPrefixes.first(where: { name.utf8.starts(with: $0.utf8) }) {
-        name = String(Substring(name.utf8.dropFirst(prefix.utf8.count)))
+      if let branch = unbornPrefixes.lazy.compactMap(name.removingPrefix).first {
+        name = branch
         status.isUnborn = true
       }
       status.branch = name.isEmpty ? nil : name

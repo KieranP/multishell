@@ -60,6 +60,13 @@ extension AppModel {
     setIfChanged(\.settingsSearchText, "")
   }
 
+  /// An error left for the closed window would show nowhere, so the
+  /// workspace window takes it.
+  public func noteSettingsWindowClosed() {
+    returnSettingsToAllProjects()
+    presentedErrorWindow = .workspace
+  }
+
   public func setSettingsSearchText(_ text: String) {
     setIfChanged(\.settingsSearchText, text)
   }

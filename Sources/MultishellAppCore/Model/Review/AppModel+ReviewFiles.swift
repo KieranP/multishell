@@ -26,7 +26,7 @@ extension AppModel {
         continue
       }
       // Known even with nothing readable in it, so the worktree's removal deletes it.
-      guard !loaded.isEmpty || file.exists else { continue }
+      guard !loaded.isEmpty || file.existsOnDisk else { continue }
       reviewFiles[worktree.id] = file
       let kept = loaded.filter { comment in
         !comment.outlivesItsSentFile(at: now, retention: DropCopies.retention)

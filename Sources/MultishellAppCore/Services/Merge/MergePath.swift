@@ -1,4 +1,3 @@
-import MultishellCore
 import MultishellServices
 
 /// The pull request page's steps toward a merge, in the order it draws them,
@@ -46,15 +45,6 @@ public struct MergePath: Equatable, Sendable {
   public let end: End
   /// Why the checks' last read failed.
   let checksReadProblem: String?
-
-  /// A failed read after one that answered is said under the card; one with
-  /// none answered is the checks step's own.
-  public var staleChecksNote: String? {
-    guard let checks, let checksReadProblem else { return nil }
-    return checks.isEmpty
-      ? t("merge-path.not-read-again", checksReadProblem)
-      : t("merge-path.stale-checks", checksReadProblem)
-  }
 
   init(
     _ pullRequest: PullRequest,

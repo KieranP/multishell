@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Parses one file's `git diff -p --unified=<every line>`, decoding each line
 /// in the file's own encoding: git copies the file's bytes into the patch.
@@ -62,8 +63,8 @@ enum UnifiedPatchParser {
   /// `@@ -1,3 +1,4 @@`, or `-0,0` for a side that is empty, where the first
   /// line is still numbered one.
   private static func hunkStart(_ header: String) -> (old: Int, new: Int)? {
-    guard header.hasPrefix("@@ -") else { return nil }
-    let fields = header.dropFirst(4).split(separator: " ")
+    guard let rest = header.removingPrefix("@@ -") else { return nil }
+    let fields = rest.split(separator: " ")
     guard fields.count >= 2, fields[1].hasPrefix("+"),
       let old = Int(fields[0].split(separator: ",")[0]),
       let new = Int(fields[1].dropFirst().split(separator: ",")[0])

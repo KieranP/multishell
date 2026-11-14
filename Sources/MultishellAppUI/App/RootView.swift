@@ -45,7 +45,7 @@ struct RootView: View {
     .ignoresSafeArea()
     .preferredColorScheme(theme.colorScheme)
     .worktreeRemovalAlert(model: model)
-    .projectRemovalAlert(model: model, source: .workspace)
+    .projectRemovalAlert(model: model, window: .workspace)
     .sharedSettingsTrustDialog(model: model)
     .branchPublishDialog(model: model)
     .pendingCloseAlert(model: model)

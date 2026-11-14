@@ -123,7 +123,7 @@ struct AppModelProjectRemovalTests {
 
     let pending = try #require(harness.model.pendingProjectRemoval)
     #expect(pending.project.id == harness.project.id)
-    #expect(pending.source == .settings)
+    #expect(pending.window == .settings)
     #expect(harness.model.workspace.projects.count == 1, "nothing removed until confirmed")
     #expect(
       harness.model.projectRemovalMessage(for: harness.project).contains(

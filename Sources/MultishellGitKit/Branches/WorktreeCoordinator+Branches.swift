@@ -13,7 +13,7 @@ extension WorktreeCoordinator {
     return BranchScan(list, defaultBranchOverride: override)
   }
 
-  public func deleteBranch(_ branch: String, in project: Project, force: Bool) async throws {
+  func deleteBranch(_ branch: String, in project: Project, force: Bool) async throws {
     do {
       try await git.deleteBranch(branch, in: project, force: force)
     } catch {
@@ -24,10 +24,10 @@ extension WorktreeCoordinator {
 
   /// `-D` only while the branch is at `tip`, what the refusal showed; moved since,
   /// it holds commits nobody was asked about, so `-d` judges it again.
-  public func forceDeleteBranch(
+  public func deleteBranch(
     _ branch: String,
-    atTip tip: String?,
     in project: Project,
+    forcingAtTip tip: String?,
   )
     async throws
   {

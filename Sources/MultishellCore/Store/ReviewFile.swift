@@ -25,7 +25,7 @@ public struct ReviewFile: Sendable {
   private let order = SaveOrder()
 
   /// Present, though it may hold nothing this build can read.
-  public var exists: Bool {
+  public var existsOnDisk: Bool {
     FileManager.default.fileExists(atPath: fileURL.path)
   }
 
@@ -44,7 +44,7 @@ public struct ReviewFile: Sendable {
   /// A file that will not read or decode is moved aside, as the state file is,
   /// so the next save cannot write over what the user wrote.
   public func load() throws(UnreadableReviewFile) -> [ReviewComment] {
-    guard exists else { return [] }
+    guard existsOnDisk else { return [] }
     do {
       let contents = try JSONDecoder().decode(Contents.self, from: try Data(contentsOf: fileURL))
       return contents.worktree == worktreeID ? contents.comments : []
@@ -63,7 +63,7 @@ public struct ReviewFile: Sendable {
   public func save(_ comments: [ReviewComment], as ticket: SaveOrder.Ticket) throws {
     guard !comments.isEmpty else {
       try order.land(ticket) {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        guard existsOnDisk else { return }
         try FileManager.default.removeItem(at: fileURL)
       }
       return

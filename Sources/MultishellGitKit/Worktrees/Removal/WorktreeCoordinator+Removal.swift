@@ -49,12 +49,12 @@ extension WorktreeCoordinator {
       (try? await git.currentBranch(project)) != branch
     {
       onStep?(.deletingBranch)
-      // Read once the checkout is gone, so no commit can land after it.
-      var force = forcesBranchDeletion
-      if !force, let forcedTip {
-        force = await git.tip(ofBranch: branch, in: project) == forcedTip
+      if forcesBranchDeletion {
+        try await deleteBranch(branch, in: project, force: true)
+      } else {
+        // The tip is read once the checkout is gone, so no commit can land after it.
+        try await deleteBranch(branch, in: project, forcingAtTip: forcedTip)
       }
-      try await deleteBranch(branch, in: project, force: force)
     }
   }
 

@@ -41,9 +41,7 @@ extension AppModel {
     let submodule = read.filter { path, _ in tab.path.isPath(under: path) }
       .max { $0.key.count < $1.key.count }
     guard let (folder, reading) = submodule else { return worktreeChangeKind(of: tab) }
-    let inside = String(
-      Substring(tab.path.unicodeScalars.dropFirst(folder.unicodeScalars.count + 1))
-    )
+    let inside = tab.path.removingPrefix(folder + "/") ?? tab.path
     return reading.status?.kind(of: inside)
   }
 

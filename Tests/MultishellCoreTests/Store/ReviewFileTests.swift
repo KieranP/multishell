@@ -106,7 +106,7 @@ struct ReviewFileTests {
 
     #expect(throws: UnreadableReviewFile.self) { try file.load() }
 
-    #expect(!file.exists)
+    #expect(!file.existsOnDisk)
   }
 
   @Test func aSecondBrokenFileIsSetAsideBesideTheFirst() throws {

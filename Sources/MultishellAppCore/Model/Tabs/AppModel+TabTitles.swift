@@ -27,15 +27,26 @@ extension AppModel {
     return shown(reported, worktreePath: workspace.worktree(tab.worktreeID)?.path.path)
   }
 
-  /// `title(ofPane:in:)` as the sidebar, the board, the switcher and a banner
-  /// draw it, each already holding the tab's worktree.
+  /// `title(ofPane:in:)` as the sidebar and a banner draw it, each already
+  /// holding the tab's worktree.
   func shownTitle(
     ofPane session: TerminalSession,
     in tab: TerminalTab,
     of worktree: Worktree,
   ) -> String {
-    guard tab.customTitle == nil, let reported = sessionTitles[session.id] else {
-      return title(ofPane: session, in: tab)
+    shownTitle(ofPane: session, in: tab, of: worktree, titles: sessionTitles)
+  }
+
+  /// The board's and the switcher's, with `titles` the `sessionTitles` they read
+  /// once: each observed read costs a key path on the generic model.
+  func shownTitle(
+    ofPane session: TerminalSession,
+    in tab: TerminalTab,
+    of worktree: Worktree,
+    titles: [TerminalSession.ID: String],
+  ) -> String {
+    guard tab.customTitle == nil, let reported = titles[session.id] else {
+      return tab.customTitle ?? session.displayTitle
     }
     return shown(reported, worktreePath: worktree.path.path)
   }

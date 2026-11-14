@@ -52,9 +52,9 @@ extension AppModel {
   /// All to Commands; one carried into All by Tab stays text.
   public func setQuickSwitcherText(_ text: String) {
     guard var state = quickSwitcher, state.text != text else { return }
-    if state.scope == .all, state.text.isEmpty, text.hasPrefix(">") {
+    if state.scope == .all, state.text.isEmpty, let rest = text.removingPrefix(">") {
       state.scope = .commands
-      state.text = String(text.dropFirst())
+      state.text = rest
     } else {
       state.text = text
     }

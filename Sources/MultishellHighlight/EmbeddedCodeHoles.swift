@@ -18,7 +18,7 @@ struct EmbeddedCodeHoles {
   /// the mark; one on the hole's own range keeps it only from a later pattern.
   func pieces(of span: HighlightSpan, fromPattern pattern: Int) -> [HighlightSpan] {
     var inside: [Range<Int>] = []
-    var index = firstHole(startingAtOrAfter: span.range.lowerBound)
+    var index = holes.partitioningIndex { $0.range.lowerBound >= span.range.lowerBound }
     while index < holes.count, holes[index].range.lowerBound < span.range.upperBound {
       let hole = holes[index]
       index += 1
@@ -33,15 +33,5 @@ struct EmbeddedCodeHoles {
     }
     guard !inside.isEmpty else { return [span] }
     return span.range.subtracting(inside).map { HighlightSpan(range: $0, role: span.role) }
-  }
-
-  private func firstHole(startingAtOrAfter offset: Int) -> Int {
-    var low = 0
-    var high = holes.count
-    while low < high {
-      let middle = (low + high) / 2
-      if holes[middle].range.lowerBound < offset { low = middle + 1 } else { high = middle }
-    }
-    return low
   }
 }

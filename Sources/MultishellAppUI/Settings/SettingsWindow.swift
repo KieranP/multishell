@@ -27,7 +27,7 @@ struct SettingsWindow: View {
     .settingsWindow(platform: platform, onClose: { model.noteSettingsWindowClosed() })
     // This window is its own scene, so a removal or an error raised here is
     // shown here; the workspace window's dialog would be behind it.
-    .projectRemovalAlert(model: model, source: .settings)
+    .projectRemovalAlert(model: model, window: .settings)
     .presentedErrorAlert(model: model, window: .settings)
   }
 }

@@ -1,7 +1,7 @@
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 extension AppModelTabDragTests {
   @Test func aDraggedFileTabLightsNoWorktreeRowAndADropThereRefuses() {

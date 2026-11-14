@@ -18,7 +18,7 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   public let fileMentionPrefix: String?
   /// The mark drawn wherever this agent is at a prompt, in the theme's
   /// `ui.agent_marks` colour for its id.
-  public let mark: AgentMark
+  let mark: AgentMark
   /// Auto Rename's run: one prompt, then exit.
   public let oneShot: AgentOneShot
   /// The `app` its OSC 7501 reports name it by, where it sends them.

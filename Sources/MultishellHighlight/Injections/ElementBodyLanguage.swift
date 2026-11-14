@@ -1,5 +1,6 @@
 import Foundation
 import MultishellAppCore
+import MultishellCore
 
 /// The language of a `<script>` or `<style>` body, read from the element's
 /// attributes, keyed by name. `nil` where no grammar here fits.
@@ -101,7 +102,7 @@ enum ElementBodyLanguage {
   /// svelte-preprocess 4 reads `text/scss` or `application/scss` as `lang="scss"`, in the
   /// case written; a name it does not know is read as HTML reads it, `text/babel` too.
   private static func preprocessor(namedBy type: String) -> String? {
-    ["text/", "application/"].first(where: type.hasPrefix).map { String(type.dropFirst($0.count)) }
+    ["text/", "application/"].lazy.compactMap(type.removingPrefix).first
   }
 
   /// A type rid of its parameters and spaces, in any case: Svelte's reading of

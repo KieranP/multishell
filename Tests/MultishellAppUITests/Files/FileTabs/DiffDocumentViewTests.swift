@@ -37,7 +37,7 @@ struct DiffDocumentViewTests {
     let (view, window) = DiffDocumentFixture.shown(rows: Self.rowCount)
     defer { withExtendedLifetime(window) {} }
     let textView = view.textView
-    view.setRowGaps(RowGaps([10: 80, 4_999: 120, 10_456: 64]))
+    view.setRowGapsHoldingAnchor(RowGaps([10: 80, 4_999: 120, 10_456: 64]))
     let geometry = textView.geometry
 
     #expect(textView.frame.height == geometry.documentHeight(rows: Self.rowCount))

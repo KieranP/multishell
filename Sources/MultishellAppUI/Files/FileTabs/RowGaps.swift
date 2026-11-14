@@ -1,4 +1,5 @@
 import AppKit
+import MultishellAppCore
 
 /// Gaps opened under rows for review cards, by the row they follow, summed
 /// once so a row's top is a binary search rather than a walk of a 1 MiB file.
@@ -35,13 +36,9 @@ struct RowGaps: Equatable {
   /// Where `y`, measured from the first row's top, falls: a fractional row,
   /// or the row after a gap for a point inside it.
   func row(atContentY y: CGFloat, rowHeight: CGFloat) -> Double {
-    var low = 0
-    var high = rows.count
     // The gaps wholly above `y`: a gap's top is its row's end plus every gap before it.
-    while low < high {
-      let middle = (low + high) / 2
-      let gapTop = CGFloat(rows[middle] + 1) * rowHeight + heightsAbove[middle]
-      if gapTop <= y { low = middle + 1 } else { high = middle }
+    let low = rows.indices.partitioningIndex { index in
+      CGFloat(rows[index] + 1) * rowHeight + heightsAbove[index] > y
     }
     guard low > 0 else { return Double(y / rowHeight) }
     let index = low - 1
@@ -52,12 +49,6 @@ struct RowGaps: Equatable {
 
   /// How many gaps sit under rows before `row`.
   private func gapsBefore(row: Int) -> Int {
-    var low = 0
-    var high = rows.count
-    while low < high {
-      let middle = (low + high) / 2
-      if rows[middle] < row { low = middle + 1 } else { high = middle }
-    }
-    return low
+    rows.partitioningIndex { $0 >= row }
   }
 }

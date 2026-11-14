@@ -1,8 +1,18 @@
 import MultishellCore
 import MultishellServices
 
-/// What the pull request page says of each step and of where the path ends.
+/// What the pull request page says of each step, of where the path ends and
+/// under the card.
 extension MergePath {
+  /// A failed read after one that answered is said under the card; one with
+  /// none answered is the checks step's own.
+  public var staleChecksNote: String? {
+    guard let checks, let checksReadProblem else { return nil }
+    return checks.isEmpty
+      ? t("merge-path.not-read-again", checksReadProblem)
+      : t("merge-path.stale-checks", checksReadProblem)
+  }
+
   private var checksNotReadTitle: String {
     checksReadProblem == nil ? t("merge-path.reading") : t("merge-path.not-read")
   }

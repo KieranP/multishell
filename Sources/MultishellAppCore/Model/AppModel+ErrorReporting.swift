@@ -9,12 +9,6 @@ extension AppModel {
     presentedError(in: window).flatMap { $0.isRetryable ? nil : $0 }
   }
 
-  /// One left for a closed Settings window would be shown nowhere.
-  public func noteSettingsWindowClosed() {
-    returnSettingsToAllProjects()
-    presentedErrorWindow = .workspace
-  }
-
   private func presentedError(in window: DialogWindow) -> PresentedError? {
     presentedErrorWindow == window ? presentedError : nil
   }

@@ -139,4 +139,25 @@ struct MergePathWordingTests {
     #expect(merged.endTitle(base: "main") == "Merged into main")
     #expect(merged.endHint(host: "GitHub") == nil)
   }
+
+  @Test func aFailedReadOfChecksAlreadyReadIsANoteNotAStep() {
+    let path = MergePath.sample(
+      .sample(),
+      checks: [.sample()],
+      checksReadProblem: "gh pr checks: HTTP 502",
+    )
+    #expect(
+      path.staleChecksNote
+        == "The checks shown may be out of date. Last read: gh pr checks: HTTP 502"
+    )
+    #expect(!path.steps.contains { $0.kind == .checksNotRead })
+    #expect(
+      MergePath.sample(.sample(), checks: nil, checksReadProblem: "x").staleChecksNote == nil
+    )
+  }
+
+  @Test func aFailedReadAfterOneThatListedNoChecksDoesNotSpeakOfChecksShown() {
+    let path = MergePath.sample(.sample(), checks: [], checksReadProblem: "HTTP 502")
+    #expect(path.staleChecksNote == "Checks not read again: HTTP 502")
+  }
 }

@@ -1,10 +1,10 @@
 import MultishellCore
 
 /// A project removal waiting on its dialog: it closes every live terminal in
-/// the project and has no undo. `source` says which window presents.
+/// the project and has no undo. `window` says which window presents.
 public struct PendingProjectRemoval: Identifiable, Equatable, Sendable {
   public let project: Project
-  let source: DialogWindow
+  let window: DialogWindow
 
   public var id: String { project.id }
 

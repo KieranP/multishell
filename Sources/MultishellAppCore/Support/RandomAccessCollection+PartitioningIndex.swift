@@ -1,7 +1,7 @@
 extension RandomAccessCollection {
   /// Where `belongsAfter` turns from false to true, found by halving;
   /// `endIndex` where it never does. Its answers must run false, then true.
-  func partitioningIndex(where belongsAfter: (Element) -> Bool) -> Index {
+  public func partitioningIndex(where belongsAfter: (Element) -> Bool) -> Index {
     var low = startIndex
     var remaining = count
     while remaining > 0 {

@@ -65,9 +65,9 @@ extension AppModel {
     }
   }
 
-  /// A removed worktree's comments go with it, file and all. Its file stays
-  /// known, so a quit before the removal lands removes it again.
-  func forgetReviewCommentsAndFiles(of gone: Set<Worktree.ID>) {
+  /// A removed worktree's review goes with it: comments, file, picks and receipts.
+  /// Its file stays known, so a quit before the removal lands removes it again.
+  func forgetReviewState(of gone: Set<Worktree.ID>) {
     for id in gone where reviewFiles[id] != nil {
       setReviewComments([], of: id)
     }

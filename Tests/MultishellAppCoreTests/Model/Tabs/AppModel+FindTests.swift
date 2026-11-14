@@ -1,10 +1,10 @@
 import Foundation
-import MultishellCore
 import Observation
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 /// Every pane's find is its own and the search the engine's, so what is tested
 /// is which panes have a bar and what each pane's engine was told.

@@ -17,9 +17,9 @@ struct PendingProjectRemovalTests {
 
   @Test func theRequestCarriesItsProjectAndItsWindow() {
     let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
-    let pending = PendingProjectRemoval(project: project, source: .settings)
+    let pending = PendingProjectRemoval(project: project, window: .settings)
     #expect(pending.id == project.id)
     #expect(pending.title == "Remove project demo?")
-    #expect(pending.source == .settings)
+    #expect(pending.window == .settings)
   }
 }

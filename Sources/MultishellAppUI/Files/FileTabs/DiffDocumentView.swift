@@ -213,15 +213,15 @@ final class DiffDocumentView: NSView {
   }
 
   /// A card opening elsewhere moves nothing in view, even a card cut by the top.
-  func setRowGaps(_ gaps: RowGaps) {
+  func setRowGapsHoldingAnchor(_ gaps: RowGaps) {
     guard textView.geometry.rowGaps != gaps else { return }
     let anchor = scrollAnchor
-    applyRowGaps(gaps)
+    setRowGaps(gaps)
     scroll(toAnchor: anchor)
   }
 
   /// The gaps alone, the scroll left where it is.
-  func applyRowGaps(_ gaps: RowGaps) {
+  func setRowGaps(_ gaps: RowGaps) {
     guard textView.geometry.rowGaps != gaps else { return }
     textView.setRowGaps(gaps)
     gutter.geometry = textView.geometry

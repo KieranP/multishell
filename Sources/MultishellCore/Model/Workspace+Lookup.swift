@@ -78,7 +78,7 @@ extension Workspace {
   }
 
   /// Every tab of a worktree, whichever group it is in.
-  public func tabs(in worktree: Worktree.ID) -> [TerminalTab] {
+  func tabs(in worktree: Worktree.ID) -> [TerminalTab] {
     tabs.filter { $0.worktreeID == worktree }
   }
 

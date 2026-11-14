@@ -81,8 +81,8 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
       return found
     }
     if let found = byFileName[name] { return found }
-    guard let firstLine, firstLine.hasPrefix("#!") else { return nil }
-    let words = firstLine.dropFirst(2).split(separator: " ")
+    guard let command = firstLine?.removingPrefix("#!") else { return nil }
+    let words = command.split(separator: " ")
     // `#!/usr/bin/env python3` names the interpreter after `env`.
     let program = words.first.map { $0.split(separator: "/").last.map(String.init) ?? "" }
     let interpreter = program == "env" ? words.dropFirst().first.map(String.init) : program

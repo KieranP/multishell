@@ -58,7 +58,7 @@ public struct GitHubHost: PullRequestHost {
     in directory: URL,
   ) async throws -> RemoteRepository {
     let json = try await runner.read(
-      ["repo", "view", remoteURL, "--json", GitHubRepositoryRecord.fields],
+      ["repo", "view", remoteURL, "--json", GitHubRepositoryRecord.fields.joined(separator: ",")],
       in: directory,
       failure: GitHubErrorText.failure(from:),
     )
