@@ -11,7 +11,9 @@ struct FilesPanelFilterFieldTests {
     let harness = ModelHarness()
     let worktree = harness.addPrimaryWorktree()
     let theme = try MagentaTheme.with([.filesPanel: [.textTertiary]])
-    let field = FilesPanelFilterField(model: harness.model, worktreeID: worktree.id, theme: theme)
+    let field = FilesPanelFilterField(model: harness.model, worktreeID: worktree.id, theme: theme) {
+      EmptyView()
+    }
 
     let bitmap = try #require(
       OffscreenWindow.pixels(ofHosted: field, size: CGSize(width: 240, height: 48))
@@ -24,7 +26,9 @@ struct FilesPanelFilterFieldTests {
     let harness = ModelHarness()
     let worktree = harness.addPrimaryWorktree()
     let theme = try FocusedFieldEditor.theme(.filesPanel, caretKey: .text)
-    let field = FilesPanelFilterField(model: harness.model, worktreeID: worktree.id, theme: theme)
+    let field = FilesPanelFilterField(model: harness.model, worktreeID: worktree.id, theme: theme) {
+      EmptyView()
+    }
 
     let (editor, window) = try FocusedFieldEditor.editor(of: field)
     defer { withExtendedLifetime(window) {} }

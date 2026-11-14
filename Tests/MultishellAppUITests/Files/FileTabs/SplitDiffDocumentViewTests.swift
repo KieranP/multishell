@@ -467,4 +467,69 @@ struct SplitDiffDocumentViewTests {
     #expect(split.committed.textView.displayText.lines[topRow].oldNumber == 251)
     #expect(reported.isEmpty, "the model keeps the anchor it handed over")
   }
+
+  @Test func bothSidesStayOnTheSameOffsetWhenGapsAboveTheEndShrink() throws {
+    let split = SplitDiff(
+      committed: DiffDisplayText(
+        (1...200).map { line in
+          DiffLine(kind: .context, oldNumber: line, newNumber: line, text: String(line))
+        },
+        marksStaging: true,
+      ),
+      onDisk: DiffDisplayText(
+        (1...200).map { line in
+          DiffLine(kind: .context, oldNumber: line, newNumber: line, text: String(line))
+        },
+        marksStaging: true,
+      ),
+    )
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 600, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.extraRowGaps = [50: 2_000, 150: 40]
+    view.layoutSubtreeIfNeeded()
+    view.onDisk.scroll(to: NSPoint(x: 0, y: 1e6))
+
+    view.extraRowGaps = [50: 40, 150: 40]
+    view.layoutSubtreeIfNeeded()
+
+    #expect(view.committed.scrollOrigin.y == view.onDisk.scrollOrigin.y)
+  }
+
+  @Test func aSideThatStopsShortOfTheOthersScrollPullsItBackToTheSameRows() throws {
+    let lines = (1...200).map { line in
+      DiffLine(kind: .context, oldNumber: line, newNumber: line, text: String(line))
+    }
+    let split = SplitDiff(
+      committed: DiffDisplayText(lines, marksStaging: true),
+      onDisk: DiffDisplayText(lines, marksStaging: true),
+    )
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 600, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.layoutSubtreeIfNeeded()
+    view.committed.frame.size.height -= 40
+    view.committed.layoutSubtreeIfNeeded()
+
+    view.committed.scroll(to: NSPoint(x: 0, y: 1e6))
+
+    #expect(view.committed.scrollOrigin.y == view.onDisk.scrollOrigin.y)
+  }
+
+  @Test func theDividerRunsOnlyOverItsSpanFromTheViewsTop() {
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
+    view.layoutSubtreeIfNeeded()
+
+    view.dividerSpan = 40...120
+    view.layoutSubtreeIfNeeded()
+
+    let spanned = view.convert(view.divider.frame, to: view.spanningGapViews)
+    #expect(spanned.minY == 40)
+    #expect(spanned.maxY == 120)
+  }
 }

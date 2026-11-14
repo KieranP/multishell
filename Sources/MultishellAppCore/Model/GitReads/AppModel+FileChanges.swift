@@ -15,6 +15,7 @@ extension AppModel {
     var targets = fileChangeTargets(changed)
     if targets.hasThemeChanges { await reloadThemes() }
     noteFileTabChanges(targets)
+    noteAllChangesTabChanges(targets)
     noteFilesPanelChanges(targets)
     await refreshProjectsIfChanged(withGitDirectoryChanges: targets.projectsWithGitDirectoryChanges)
     guard platform.isActive else { return }

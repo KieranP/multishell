@@ -57,18 +57,15 @@ struct FilesPanelRow: View {
               .fill(theme.color(for: .modified).opacity(0.8))
               .frame(width: 5, height: 5)
           }
-          if pendingComments > 0 {
-            ReviewCountBadge(
-              count: pendingComments,
-              theme: theme,
-              metrics: metrics,
-            )
-          }
           Spacer(minLength: 0)
         }
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
+      // Beside the counts, as the mockups of issue #42 set them.
+      if pendingComments > 0 {
+        ReviewCountBadge(count: pendingComments, theme: theme, metrics: metrics)
+      }
       if let counts = row.lineCounts, !counts.isEmpty {
         FileLineCountsText(
           counts: counts,
@@ -113,7 +110,7 @@ struct FilesPanelRow: View {
     if row.isFolder {
       model.toggleFolder(row, in: worktreeID)
     } else {
-      Task { await model.openFileAsTab(row.path, in: worktreeID) }
+      Task { await model.activateFileRow(row.path, in: worktreeID) }
     }
   }
 }

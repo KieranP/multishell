@@ -105,7 +105,13 @@ struct FileTabBar: View {
         }
       } else {
         if offersChangeScope { ChangeScopeSwitch(model: model, palette: theme.fileTab) }
-        if offersLayout { FileTabLayoutSwitch(model: model, tab: tab, palette: theme.fileTab) }
+        if offersLayout {
+          FileTabLayoutSwitch(
+            model: model,
+            selection: FileTabLayoutSwitch.selection(in: model, for: tab),
+            palette: theme.fileTab,
+          )
+        }
       }
       actionsMenu
     }

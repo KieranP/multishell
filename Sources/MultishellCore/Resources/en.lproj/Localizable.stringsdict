@@ -4,6 +4,30 @@
      one plural form adds its own keys here; English needs only one and other. -->
 <plist version="1.0">
 <dict>
+  <key>all-changes.file-count</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d file</string>
+      <key>other</key><string>%d files</string>
+    </dict>
+  </dict>
+  <key>all-changes.show-unchanged</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>Show %d unchanged line</string>
+      <key>other</key><string>Show %d unchanged lines</string>
+    </dict>
+  </dict>
   <key>count.background-shells</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>

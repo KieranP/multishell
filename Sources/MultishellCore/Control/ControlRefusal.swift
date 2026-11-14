@@ -119,6 +119,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case tabNotShown(id: UUID)
   /// A file tab, which keeps its file's name and has no panes.
   case tabShowsAFile(id: UUID)
+  /// An All changes tab, which has no panes and no one file.
+  case tabShowsAllChanges(id: UUID)
   /// A terminal tab, which has no file's bar to step or find in.
   case tabShowsNoFile(id: UUID)
   /// A panel width a drag could not reach, in points.

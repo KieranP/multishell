@@ -29,7 +29,7 @@ struct ControlRefusalWordingTests {
   @Test func aReviewCommentRefusedSaysWhetherTheTabOrTheLinesAreMissing() {
     #expect(
       ControlRefusal.noReviewTab(path: "a.swift").wording
-        == "no file tab of the worktree shows a.swift; `multishell tabs open-file` opens one"
+        == "no file tab or All changes tab of the worktree shows a.swift; `multishell tabs open-file` opens one"
     )
     #expect(
       ControlRefusal.noReviewLines(path: "a.swift").wording

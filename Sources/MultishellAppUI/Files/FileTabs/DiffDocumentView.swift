@@ -7,17 +7,23 @@ import MultishellCore
 @MainActor
 final class DiffDocumentView: NSView {
   let textView: DiffTextView
-  private let gutter: DiffGutterView
-  private let scrollView = NSScrollView()
+  let gutter: DiffGutterView
+  private let scrollView = WheelForwardingScrollView()
   private var observers: [any NSObjectProtocol] = []
   /// The clip's new origin each time it scrolls, which a split's other side follows.
   var onScroll: ((NSPoint) -> Void)?
   /// The same by the file's line at the top, for the model to keep while a
   /// hidden tab drops the view.
   var onScrolledTo: ((FileTabScroll) -> Void)?
+  /// The same by the top row, a fraction where one is cut, and the sideways
+  /// offset: the All changes tab holds its scroll by its document's file.
+  var onTopRowMoved: ((Double, Double) -> Void)?
   /// Taken once the view has a size and text; until then no scroll is
   /// reported, or the restore would be overwritten with the top.
-  private var pendingRestore: FileTabScroll?
+  private var pendingRestore: DiffScrollRestore?
+  /// What the shown text's boxed change is carried by: the text itself, or the
+  /// All changes tab's document, which knows each row's file.
+  private var shownAnchoring: (any ChangeAnchoring)?
   /// A card Review asked to show before the view had a size; it wins over a restore.
   var pendingCardReveal: ReviewCardPlacement.CardID?
   /// Set by a split around its columns' layout, whose card gaps open after it.
@@ -37,11 +43,32 @@ final class DiffDocumentView: NSView {
   /// The box a dropped view of this tab had, taken once the text is shown.
   var pendingSteppedChangeAnchor: ChangeAnchor?
   let reviewCards = ReviewCardLayer()
+  /// Views across the gutter and the text in the gaps, laid out as the clip
+  /// scrolls: the All changes tab's headers, folds and notices.
+  let spanningGapViews = SpanningGapViewsLayer()
+  /// Room before the gutter, the All changes tab's margin beside each file's
+  /// box; a file tab's runs edge to edge.
+  var leadingInset: CGFloat = 0 {
+    didSet { if leadingInset != oldValue { needsLayout = true } }
+  }
+
+  /// Where set, a wheel over this view turns that scroller instead: a file the
+  /// All changes tab shows whole is scrolled by the split around it.
+  var forwardsScrollWheel: NSView? {
+    get { scrollView.forwardsWheelTo }
+    set { scrollView.forwardsWheelTo = newValue }
+  }
+  /// Where the cards are laid out again, so views hosted in the same gaps are too:
+  /// the All changes tab's headers, folds and notices.
+  var onGapViewsLaidOut: ((DiffRowGeometry, CGFloat) -> Void)?
   /// The gap each card's row needs, as the cards or the clip's width change: a
   /// split opens both columns' alike so the lock holds, Unified its own.
   var onReviewCardGaps: (([Int: CGFloat]) -> Void)?
   /// Lines the gutter or Comment on Lines picked, for the model's composer.
   var onCommentOnLines: ((ReviewLineSelection) -> Void)?
+  /// Where set, takes the rows picked in place of `onCommentOnLines`, from the
+  /// row a drag started on: the All changes tab reads them as one file's lines.
+  var onCommentOnRows: ((_ start: Int, _ end: Int, _ side: DiffSide?) -> Void)?
 
   /// A split column's side; `nil` in Unified, where each row's kind picks it.
   var commentSide: DiffSide? {
@@ -52,6 +79,11 @@ final class DiffDocumentView: NSView {
     }
   }
 
+  /// A whole file in the All changes split lines its numbers up with the columns'.
+  var minimumGutterWidth: CGFloat = 0 {
+    didSet { if minimumGutterWidth != oldValue { needsLayout = true } }
+  }
+
   /// Whose line numbers the gutter shows.
   var numbering: DiffSide {
     get { gutter.numbering }
@@ -59,6 +91,20 @@ final class DiffDocumentView: NSView {
   }
 
   var scrollOrigin: NSPoint { scrollView.contentView.bounds.origin }
+  /// Room right of the clip for the vertical scroller, the All changes tab
+  /// putting it in the margin beside the file boxes.
+  var scrollerMargin: CGFloat {
+    get { scrollView.trailingContentInset }
+    set { scrollView.trailingContentInset = newValue }
+  }
+
+  /// A split's left column in the All changes tab has none: the right's
+  /// scroller moves both, the left's having scrolled it alone.
+  var showsVerticalScroller: Bool {
+    get { scrollView.hasVerticalScroller }
+    set { scrollView.hasVerticalScroller = newValue }
+  }
+
   var clipHeight: CGFloat { scrollView.contentView.bounds.height }
   var clipWidth: CGFloat { scrollView.contentView.bounds.width }
   /// The row at the top, a fraction where one is cut.
@@ -88,8 +134,12 @@ final class DiffDocumentView: NSView {
     scrollView.drawsBackground = false
     scrollView.documentView = textView
     scrollView.contentView.postsBoundsChangedNotifications = true
-    addSubview(gutter)
     addSubview(scrollView)
+    // Over the clip and under the scrollers, so a header across the gutter
+    // never covers the scroller.
+    scrollView.addSubview(gutter, positioned: .above, relativeTo: scrollView.contentView)
+    scrollView.addSubview(spanningGapViews, positioned: .above, relativeTo: gutter)
+    spanningGapViews.scrollsWith = scrollView
     gutter.onCommentOnRows = { [weak self] start, end in self?.commentOnRows(from: start, to: end) }
     textView.onCommentOnRows = { [weak self] rows in
       self?.commentOnRows(from: rows.lowerBound, to: rows.upperBound)
@@ -113,7 +163,12 @@ final class DiffDocumentView: NSView {
 
   /// Where a dropped view of this tab was left.
   func restore(_ scroll: FileTabScroll) {
-    pendingRestore = scroll
+    pendingRestore = .line(scroll)
+    needsLayout = true
+  }
+
+  func restore(toRow row: Double, x: Double) {
+    pendingRestore = .row(row, x: x)
     needsLayout = true
   }
 
@@ -128,15 +183,24 @@ final class DiffDocumentView: NSView {
     isAwaitingTheLock = true
   }
 
-  func show(_ text: DiffDisplayText, theme: Theme) {
+  /// `anchoring` carries the boxed change where the text alone cannot, the
+  /// All changes tab's rows being several files'.
+  func show(
+    _ text: DiffDisplayText,
+    theme: Theme,
+    anchoredBy anchoring: (any ChangeAnchoring)? = nil,
+  ) {
     let offset = scrollView.contentView.bounds.origin
     let anchorBefore = textView.displayText.scroll(atRow: topRow, x: offset.x)
     let isRestoring = pendingRestore != nil
     gutter.displayText = text
     gutter.apply(theme)
-    let steppedChangeAnchor = takeSteppedChangeAnchorToCarry(boxedIn: textView.displayText)
+    let steppedChangeAnchor = takeSteppedChangeAnchorToCarry(
+      boxedIn: shownAnchoring ?? textView.displayText
+    )
     textView.show(text, theme: theme)
-    carrySteppedChange(steppedChangeAnchor, into: text)
+    shownAnchoring = anchoring
+    carrySteppedChange(steppedChangeAnchor, into: anchoring ?? text)
     needsLayout = true
     layoutSubtreeIfNeeded()
     // A re-read keeps the scroll where it was, within what is left, unless a
@@ -159,19 +223,21 @@ final class DiffDocumentView: NSView {
 
   override func layout() {
     super.layout()
-    let gutterWidth = gutter.preferredWidth
-    gutter.frame = NSRect(x: 0, y: 0, width: gutterWidth, height: bounds.height)
+    let gutterWidth = max(gutter.preferredWidth, minimumGutterWidth)
     scrollView.frame = NSRect(
-      x: gutterWidth,
+      x: leadingInset,
       y: 0,
-      width: max(0, bounds.width - gutterWidth),
+      width: max(0, bounds.width - leadingInset),
       height: bounds.height,
     )
+    scrollView.leadingContentInset = gutterWidth
+    gutter.frame = NSRect(x: 0, y: 0, width: gutterWidth, height: bounds.height)
+    spanningGapViews.frame = scrollView.bounds
     textView.setFrameSize(textView.frame.size)
     if let gaps = reviewCards.remeasure(atClipWidth: scrollView.contentView.bounds.width) {
       openReviewCardGaps(gaps)
     }
-    reviewCards.layOut(in: textView.geometry, scrolledTo: scrollOrigin.x)
+    layOutGapViews()
     if !defersPendingScrolls { applyPendingScrolls() }
     followScroll()
   }
@@ -179,14 +245,19 @@ final class DiffDocumentView: NSView {
   /// The saved scroll and a card Review asked for, once the view has a size. A
   /// split runs them itself, after both columns' card gaps are open.
   func applyPendingScrolls() {
-    if let scroll = pendingRestore, scrollView.contentView.bounds.height > 0,
+    if let restore = pendingRestore, scrollView.contentView.bounds.height > 0,
       !textView.displayText.lines.isEmpty
     {
       pendingRestore = nil
-      let y = textView.geometry.scrollOffset(puttingAtTop: textView.displayText.row(of: scroll))
+      let (row, x) =
+        switch restore {
+        case .line(let scroll): (textView.displayText.row(of: scroll), scroll.x)
+        case .row(let row, let x): (row, x)
+        }
+      let y = textView.geometry.scrollOffset(puttingAtTop: row)
       let clip = scrollView.contentView
       let target = clip.constrainBoundsRect(
-        NSRect(origin: NSPoint(x: scroll.x, y: y), size: clip.bounds.size)
+        NSRect(origin: NSPoint(x: x, y: y), size: clip.bounds.size)
       ).origin
       restoredOrigin = target
       self.scroll(to: target)
@@ -212,33 +283,17 @@ final class DiffDocumentView: NSView {
     scrollView.reflectScrolledClipView(clip)
   }
 
-  /// A card opening elsewhere moves nothing in view, even a card cut by the top.
-  func setRowGapsHoldingAnchor(_ gaps: RowGaps) {
-    guard textView.geometry.rowGaps != gaps else { return }
-    let anchor = scrollAnchor
-    setRowGaps(gaps)
-    scroll(toAnchor: anchor)
-  }
-
-  /// The gaps alone, the scroll left where it is.
-  func setRowGaps(_ gaps: RowGaps) {
-    guard textView.geometry.rowGaps != gaps else { return }
-    textView.setRowGaps(gaps)
-    gutter.geometry = textView.geometry
+  /// The cards and whatever else sits in the gaps, at the clip's sideways offset.
+  func layOutGapViews() {
     reviewCards.layOut(in: textView.geometry, scrolledTo: scrollOrigin.x)
-  }
-
-  /// Within the row and what is left of the gap under it, so a card closing under
-  /// the top leaves the rows after it in view.
-  func scroll(toAnchor anchor: ScrollAnchor) {
-    let geometry = textView.geometry
-    let gapBelow = geometry.top(ofRow: anchor.row + 1) - geometry.gapTop(afterRow: anchor.row)
-    let offset = min(anchor.offsetBelowRow, geometry.rowHeight + gapBelow)
-    let y = geometry.top(ofRow: anchor.row) + offset
-    scroll(to: NSPoint(x: scrollOrigin.x, y: y))
+    onGapViewsLaidOut?(textView.geometry, scrollOrigin.x)
   }
 
   private func commentOnRows(from start: Int, to end: Int) {
+    if let onCommentOnRows {
+      onCommentOnRows(start, end, commentSide)
+      return
+    }
     guard
       let selection = ReviewLineSelection(
         from: start,
@@ -257,7 +312,10 @@ final class DiffDocumentView: NSView {
     if origin.x != lastScrollX {
       lastScrollX = origin.x
       textView.redraw(steppedChange: textView.steppedChange)
-      reviewCards.layOut(in: textView.geometry, scrolledTo: origin.x)
+      layOutGapViews()
+    } else {
+      // Gap views are hosted near the clip alone, so they follow every scroll.
+      onGapViewsLaidOut?(textView.geometry, origin.x)
     }
     onStepOriginMoved?()
     guard pendingRestore == nil, !isAwaitingTheLock else { return }
@@ -265,6 +323,7 @@ final class DiffDocumentView: NSView {
     guard restoredOrigin != origin else { return }
     restoredOrigin = nil
     onScrolledTo?(textView.displayText.scroll(atRow: topRow, x: origin.x))
+    onTopRowMoved?(topRow, origin.x)
   }
 
   isolated deinit {

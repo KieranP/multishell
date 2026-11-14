@@ -15,6 +15,7 @@ extension AppModel {
     noteFileTabsChanged(releasingDots: true, where: offersChangeScopeSwitch(for:))
     forgetBranchChangesUnlessListed()
     schedulePanelBranchChangesRead()
+    noteAllChangesTabsChanged { defaultBranch(ofWorktree: $0.worktreeID) != nil }
   }
 
   /// Branch counts from the base, which a fetch moves and a launch resolves late.
@@ -30,6 +31,7 @@ extension AppModel {
     noteFileTabsChanged(releasingDots: isNewBase) { tab in
       workspace.worktree(tab.worktreeID)?.projectID == id
     }
+    noteAllChangesTabsChanged { workspace.worktree($0.worktreeID)?.projectID == id }
   }
 
   /// Only where the project has a base branch, a tab there counting from `HEAD`

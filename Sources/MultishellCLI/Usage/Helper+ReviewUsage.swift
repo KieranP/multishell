@@ -9,8 +9,9 @@ extension Helper {
         file tab adds one, and print the list. LINES is one number or
         FIRST-LAST, numbered by the file on disk, or with --removed by the
         committed side for lines the file no longer has. The file must be
-        shown in a tab (`tabs open-file`) in the main window, not covered or
-        minimized; its lines are read again first, as they now are. TEXT
+        shown in a tab (`tabs open-file`), or where none is, in the shown All
+        changes tab (`tabs open-all-changes`), in the main window, not covered
+        or minimized; its lines are read again first, as they now are. TEXT
         that starts with a dash goes after --.
     usage: multishell review send [--to PANE_ID] [--worktree WORKTREE_ID]
         Write the comments waiting to be sent to a file and paste a mention

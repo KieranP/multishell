@@ -38,6 +38,7 @@ extension AppModel {
     statusReadLog.invalidate()
     // An image has no diff for the algorithm to change.
     noteFileTabsChanged(releasingDots: false) { !holdsImage($0.id) }
+    noteAllChangesTabsChanged { _ in true }
     Task { await refreshStatuses() }
   }
 
@@ -109,7 +110,10 @@ extension AppModel {
   /// What every status read's landing sets off, from the poll or one worktree's.
   func noteStatusesLanded(_ fresh: [Worktree.ID: WorktreeStatus]) async {
     // Even one that moved no count: an edit can change the diff since the base alone.
-    for id in fresh.keys { scheduleBranchChangesRead(of: id) }
+    for id in fresh.keys {
+      scheduleBranchChangesRead(of: id)
+      noteAllChangesListLanded(in: id)
+    }
     await refreshWorktreesWhoseBranchMoved(fresh)
   }
 

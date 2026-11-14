@@ -60,6 +60,9 @@
 "agents.row-label" = "%@:";
 "agents.section-preferred" = "Preferred agent";
 "agents.show" = "Show %@";
+"all-changes.collapse" = "Collapse File";
+"all-changes.expand" = "Expand File";
+"all-changes.open-file" = "Open File";
 "ansi.black" = "Black";
 "ansi.blue" = "Blue";
 "ansi.bright-black" = "Bright black";
@@ -153,6 +156,7 @@
 "files-panel.files" = "Files";
 "files-panel.filter" = "Filter files";
 "files-panel.modified" = "Modified";
+"files-panel.open-all-changes" = "Show All Changes in One Tab";
 "files-panel.pull-request" = "PR";
 "files-panel.review" = "Review";
 "files-panel.title" = "Files";

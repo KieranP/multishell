@@ -11,24 +11,24 @@ extension AppModel {
     closeInTabInView { .tab($0.id) }
   }
 
-  /// A middle click on a tab of either kind, closing it active or not. No
+  /// A middle click on a tab of any kind, closing it active or not. No
   /// key-window dance: the click landed here, so this window is the one acted in.
   public func closeTab(_ id: WorkspaceTab.ID) {
     switch workspace.workspaceTab(id) {
     case .terminal(let tab): requestClose(.tab(id), in: tab)
-    case .file: closeFileTab(id)
+    case .file, .allChanges: closeReviewCardTab(id)
     case nil: break
     }
   }
 
-  /// A file tab runs nothing, so it asks only where a review comment is being
-  /// written in it, which would go with it.
-  private func closeFileTab(_ id: FileTab.ID) {
+  /// A file or All changes tab runs nothing, so it asks only where a review
+  /// comment is being written in it, which would go with it.
+  private func closeReviewCardTab(_ id: WorkspaceTab.ID) {
     if reviewComposerHoldsUnsavedText(in: id) {
-      pendingClose = .fileTab(id)
+      pendingClose = .reviewDraftTab(id)
       return
     }
-    closeWithoutAsking(.fileTab(id))
+    closeWithoutAsking(.reviewDraftTab(id))
   }
 
   /// A close the engine was asked for, as by a keybind in the user's Ghostty
@@ -50,15 +50,15 @@ extension AppModel {
   /// reconcile, so every path that takes one away is covered.
   func prunePendingClose() {
     switch pendingClose {
-    case .fileTab(let id) where workspace.fileTab(id) == nil: pendingClose = nil
+    case .reviewDraftTab(let id) where workspace.workspaceTab(id) == nil: pendingClose = nil
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
     case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil
     default: break
     }
   }
 
-  /// Both keystrokes, which close a file tab whole. One issued in a settings
-  /// window closes that window instead, and nothing happens with no tab.
+  /// Both keystrokes, which close a file or All changes tab whole. One issued in
+  /// a settings window closes that window instead, and nothing happens with no tab.
   private func closeInTabInView(_ closing: (TerminalTab) -> PendingClose) {
     guard platform.isWorkspaceWindowKey else {
       platform.closeKeyWindow()
@@ -66,7 +66,8 @@ extension AppModel {
     }
     switch workspaceTabDrawn {
     case .terminal(let tab): requestClose(closing(tab), in: tab)
-    case .file(let tab): closeFileTab(tab.id)
+    case .file(let tab): closeReviewCardTab(tab.id)
+    case .allChanges(let tab): closeReviewCardTab(tab.id)
     case nil: break
     }
   }
@@ -83,7 +84,7 @@ extension AppModel {
 
   func closeWithoutAsking(_ close: PendingClose, takingFocus: Bool = true) {
     switch close {
-    case .fileTab(let id): store.closeTab(id)
+    case .reviewDraftTab(let id): store.closeTab(id)
     case .pane(let id): store.closeSession(id)
     case .tab(let id): store.closeTab(id)
     }

@@ -20,6 +20,9 @@ final class DiffTextView: NSTextView {
   /// Unified copies a selection touching a change as `git diff` prints it;
   /// a split side copies plain text.
   var copiesAsDiff = true
+  /// Where set, what a copy takes in place of either: the All changes tab's
+  /// document heads each file's part.
+  var copiesSelections: (([Range<Int>]) -> String)?
   var onFocus: (() -> Void)?
   /// Comment on Lines, from the menu, on the rows the selection touches.
   var onCommentOnRows: ((ClosedRange<Int>) -> Void)?
@@ -140,7 +143,8 @@ final class DiffTextView: NSTextView {
   /// `NSTextView` resets its width to the clip's during layout; held here to
   /// the widest line and the rows' height.
   override func setFrameSize(_ newSize: NSSize) {
-    let clip = enclosingScrollView?.contentSize ?? .zero
+    // The clip's own size: the scroller's content size takes in the gutter it holds.
+    let clip = enclosingScrollView?.contentView.bounds.size ?? .zero
     super.setFrameSize(
       NSSize(
         width: max(newSize.width, documentWidth, clip.width),
@@ -211,6 +215,7 @@ final class DiffTextView: NSTextView {
 
   private func selectionCopy() -> String {
     let selections = selectedRanges.map(\.rangeValue.integerRange)
+    if let copiesSelections { return copiesSelections(selections) }
     guard copiesAsDiff else { return displayText.plainCopy(selections: selections) }
     return displayText.diffCopy(selections: selections)
   }

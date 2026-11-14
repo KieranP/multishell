@@ -23,11 +23,19 @@ extension AppModel {
     return rows.split != nil && rows.lineCounts.showsInsertions && rows.lineCounts.showsDeletions
   }
 
+  /// The All changes tab's, the one choice every file tab follows: a file only
+  /// added or removed shows on its one side, padded opposite.
+  public func layout(of _: AllChangesTab) -> FileTabLayout {
+    workspace.fileTabLayout
+  }
+
   /// The bar's Unified / Split switch, kept for every tab. The find runs
   /// again over the text now shown, its selection carried by line.
   public func setFileTabLayout(_ layout: FileTabLayout) {
     guard workspace.fileTabLayout != layout else { return }
-    let searchedBefore = workspace.fileTabs.map { ($0.id, searchedText(of: $0.id)) }
+    let searchedBefore = (workspace.fileTabs.map(\.id) + workspace.allChangesTabs.map(\.id)).map {
+      id in (id, searchedText(of: id))
+    }
     store.setFileTabLayout(layout)
     for (id, text) in searchedBefore { rerunFileFind(in: id, laidOutBefore: text) }
   }

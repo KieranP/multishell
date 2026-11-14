@@ -29,7 +29,7 @@ extension AppModelTabClosingTests {
       isFileGone: false,
     )
     let selection = try #require(ReviewLineSelection(from: 0, to: 0, in: rows.lines))
-    harness.model.openReviewComposer(on: selection, in: file.id)
+    harness.model.openReviewComposer(on: selection, ofFile: file.path, in: file.id)
     harness.model.noteReviewDraft("Typed.", in: file.id)
 
     harness.model.closeTab(file.id)

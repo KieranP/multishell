@@ -4,7 +4,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// A renamed field keeps the key it was written under, as each `= "…"` case
   /// below does.
   private enum CodingKeys: String, CodingKey {
-    case projects, worktrees, sessions, tabs, fileTabs, tabGroups
+    case projects, worktrees, sessions, tabs, fileTabs, allChangesTabs, tabGroups
     case selectedWorktreeID, focusedGroupByWorktree
     case customWorktreeNames = "worktreeNames"
     case hiddenWorktreeIDs = "hiddenWorktrees"
@@ -39,6 +39,8 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Saved under a key an older build ignores, so it drops them and keeps the
   /// rest; see Docs/design/files/file-tabs.md.
   public internal(set) var fileTabs: [FileTab] = []
+  /// Under a key of its own for the same reason, an older build dropping them.
+  public internal(set) var allChangesTabs: [AllChangesTab] = []
   /// The groups of tabs each worktree is divided into, in display order
   /// left to right; see `TabGroup`. A worktree with tabs has at least one.
   var tabGroups: [TabGroup] = []
@@ -154,6 +156,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     sessions = container.decodeLossy(TerminalSession.self, forKey: .sessions)
     tabs = container.decodeLossy(TerminalTab.self, forKey: .tabs)
     fileTabs = container.decodeLossy(FileTab.self, forKey: .fileTabs)
+    allChangesTabs = container.decodeLossy(AllChangesTab.self, forKey: .allChangesTabs)
     tabGroups = container.decodeLossy(TabGroup.self, forKey: .tabGroups)
     selectedWorktreeID = try container.decodeIfPresent(
       Worktree.ID.self,

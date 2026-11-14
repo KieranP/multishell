@@ -2,6 +2,7 @@ import MultishellCore
 
 /// Where a quick switcher row goes when chosen.
 public enum QuickSwitcherTarget: Hashable, Sendable {
+  case allChangesTab(AllChangesTab.ID)
   /// A menu bar item, by its titles from the bar down.
   case command(path: [String])
   /// A file of the selected worktree, opened as a file tab.

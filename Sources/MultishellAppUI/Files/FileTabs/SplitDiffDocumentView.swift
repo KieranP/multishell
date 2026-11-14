@@ -8,12 +8,40 @@ import MultishellCore
 final class SplitDiffDocumentView: NSView {
   let committed: DiffDocumentView
   let onDisk: DiffDocumentView
-  private let divider = NSView()
+  let divider = NSView()
   private var isFollowing = false
   /// Each side's last origin, so only a sideways scroll is passed on sideways.
   private var lastOrigins: [ObjectIdentifier: NSPoint] = [:]
 
   private var split: SplitDiff?
+  /// What carries the box: the split, or the All changes tab's document.
+  private var anchoring: (any ChangeAnchoring)?
+  /// Views across both columns in the gaps, over the text; see `extraRowGaps`.
+  let spanningGapViews = SpanningGapViewsLayer()
+  /// Gaps beyond the cards', opened in both columns: the All changes tab's
+  /// headers, folds and notices, which `spanningGapViews` holds.
+  var extraRowGaps: [Int: CGFloat] = [:] {
+    didSet { if extraRowGaps != oldValue { openMergedReviewCardGaps() } }
+  }
+  /// Where the divider shows, top-down from the view's top: the All changes
+  /// tab's files, not above the first header or under the last box.
+  var dividerSpan: ClosedRange<CGFloat>? {
+    // Placed alone: it moves on every scroll, and a layout re-places the cards.
+    didSet { if dividerSpan != oldValue { placeDivider() } }
+  }
+  /// Room either side of the columns, the All changes tab's margin around each
+  /// file's box; a file tab's runs edge to edge.
+  var horizontalInset: CGFloat = 0 {
+    didSet {
+      guard horizontalInset != oldValue else { return }
+      // The right column's scroller sits in the margin, clear of the views over the text.
+      onDisk.scrollerMargin = horizontalInset
+      needsLayout = true
+    }
+  }
+  /// Where the spanning views are laid out again: the geometry, how far the
+  /// columns have scrolled down, and the cards' gap under each row.
+  var onSpanningGapViewsLaidOut: ((DiffRowGeometry, CGFloat, [Int: CGFloat]) -> Void)?
   /// By the right side's scroll, which the left follows by the lock, anchored
   /// by the split as a whole: the committed line where the left shows a removal.
   var onScrolledTo: ((FileTabScroll) -> Void)?
@@ -43,7 +71,8 @@ final class SplitDiffDocumentView: NSView {
     committed.textView.copiesAsDiff = false
     onDisk.textView.copiesAsDiff = false
     divider.wantsLayer = true
-    for view in [committed, divider, onDisk] { addSubview(view) }
+    for view in [committed, divider, onDisk, spanningGapViews] { addSubview(view) }
+    spanningGapViews.scrollsWith = onDisk.textView.enclosingScrollView
     committed.onScroll = { [weak self] origin in
       self?.follow(origin, of: self?.committed, with: self?.onDisk)
     }
@@ -63,7 +92,9 @@ final class SplitDiffDocumentView: NSView {
     for (side, other) in [(committed, onDisk), (onDisk, committed)] {
       side.onSteppedRowsChanged = { [weak self, weak other] rows in
         other?.mirrorSteppedChange(rows)
-        self?.onSteppedChangeAnchorChanged?(rows.flatMap { self?.split?.anchor(ofChangeAt: $0) })
+        self?.onSteppedChangeAnchorChanged?(
+          rows.flatMap { self?.anchoring?.anchor(ofChangeAt: $0) }
+        )
       }
       // The other side moves only by the lock; a keyboard crossing over is
       // counted by the first responder's watch.
@@ -75,6 +106,13 @@ final class SplitDiffDocumentView: NSView {
   }
 
   required init?(coder: NSCoder) { nil }
+
+  /// The All changes tab's, by its document's row: the right side, the lock
+  /// bringing the left.
+  func restore(toRow row: Double, x: Double) {
+    onDisk.restore(toRow: row, x: x)
+    committed.awaitTheLock()
+  }
 
   /// On the side that has the line, the lock bringing the other along.
   func restore(_ scroll: FileTabScroll) {
@@ -140,10 +178,11 @@ final class SplitDiffDocumentView: NSView {
   }
 
   private func openMergedReviewCardGaps() {
-    let merged = columnGaps.values.reduce(into: [Int: CGFloat]()) { merged, column in
+    let cardGaps = columnGaps.values.reduce(into: [Int: CGFloat]()) { merged, column in
       merged.merge(column, uniquingKeysWith: max)
     }
-    let rowGaps = RowGaps(merged)
+    let rowGaps = RowGaps(cardGaps.merging(extraRowGaps, uniquingKeysWith: +))
+    defer { layOutSpanningGapViews() }
     // Unchanged gaps move nothing, and a scroll would end a column's wait for the lock.
     guard
       committed.textView.geometry.rowGaps != rowGaps || onDisk.textView.geometry.rowGaps != rowGaps
@@ -162,28 +201,49 @@ final class SplitDiffDocumentView: NSView {
 
   /// The box is carried by the split as a whole, once both sides are shown, on
   /// the side holding the keyboard, whose mirror then has its new rows to box.
-  func show(_ split: SplitDiff, theme: Theme) {
-    let steppedChangeAnchor = onDisk.takeSteppedChangeAnchorToCarry(boxedIn: self.split)
+  /// `anchoring` carries the box where the split alone cannot, the All changes
+  /// tab's rows being several files'.
+  func show(_ split: SplitDiff, theme: Theme, anchoredBy anchoring: (any ChangeAnchoring)? = nil) {
+    let steppedChangeAnchor = onDisk.takeSteppedChangeAnchorToCarry(boxedIn: self.anchoring)
     // Unboxed first, so neither side carries the box by its own half of the change.
     committed.mirrorSteppedChange(nil)
     onDisk.mirrorSteppedChange(nil)
     self.split = split
+    self.anchoring = anchoring ?? split
     divider.layer?.backgroundColor = theme.splitDividerColor.cgColor
     committed.show(split.committed, theme: theme)
     onDisk.show(split.onDisk, theme: theme)
-    keyboardSide.carrySteppedChange(steppedChangeAnchor, into: split)
+    keyboardSide.carrySteppedChange(steppedChangeAnchor, into: anchoring ?? split)
     // Each side counted as it was shown, before the box was carried.
     countKeyboardSide()
+  }
+
+  private func placeDivider() {
+    let top = max(0, dividerSpan?.lowerBound ?? 0)
+    let bottom = min(bounds.height, dividerSpan?.upperBound ?? bounds.height)
+    divider.frame = NSRect(
+      x: committed.frame.maxX,
+      y: bounds.height - bottom,
+      width: 1,
+      height: max(0, bottom - top),
+    )
   }
 
   /// Both columns laid out and their cards measured before the merged gaps open
   /// once, then each column's saved scroll or reveal on them.
   override func layout() {
     super.layout()
-    let half = (bounds.width - 1) / 2
-    committed.frame = NSRect(x: 0, y: 0, width: half, height: bounds.height)
-    divider.frame = NSRect(x: half, y: 0, width: 1, height: bounds.height)
-    onDisk.frame = NSRect(x: half + 1, y: 0, width: bounds.width - half - 1, height: bounds.height)
+    let inner = max(0, bounds.width - horizontalInset * 2)
+    let half = ((inner - 1) / 2).rounded(.down)
+    committed.frame = NSRect(x: horizontalInset, y: 0, width: half, height: bounds.height)
+    placeDivider()
+    onDisk.frame = NSRect(
+      x: horizontalInset + half + 1,
+      y: 0,
+      width: inner - half - 1 + horizontalInset,
+      height: bounds.height,
+    )
+    spanningGapViews.frame = bounds
     let columns = [committed, onDisk]
     for column in columns { column.defersPendingScrolls = true }
     placeReviewCards {
@@ -194,6 +254,16 @@ final class SplitDiffDocumentView: NSView {
       column.defersPendingScrolls = false
       column.applyPendingScrolls()
     }
+    layOutSpanningGapViews()
+  }
+
+  /// Under the columns' gaps and the cards in them, at the right side's scroll,
+  /// which the lock keeps the left's.
+  private func layOutSpanningGapViews() {
+    let cardGaps = columnGaps.values.reduce(into: [Int: CGFloat]()) { merged, column in
+      merged.merge(column, uniquingKeysWith: max)
+    }
+    onSpanningGapViewsLaidOut?(onDisk.textView.geometry, onDisk.scrollOrigin.y, cardGaps)
   }
 
   /// Rows by the same offset; sideways only when this side moved sideways, as
@@ -207,6 +277,13 @@ final class SplitDiffDocumentView: NSView {
     let movedSideways = previous.map { $0.x != origin.x } ?? true
     other.scroll(to: NSPoint(x: movedSideways ? origin.x : other.scrollOrigin.x, y: origin.y))
     lastOrigins[ObjectIdentifier(other)] = other.scrollOrigin
+    // A side whose clamp stopped short, a sideways scroller shortening its clip,
+    // takes the leader back to where it stopped, so both show the same rows.
+    if other.scrollOrigin.y != origin.y {
+      side.scroll(to: NSPoint(x: origin.x, y: other.scrollOrigin.y))
+      lastOrigins[ObjectIdentifier(side)] = side.scrollOrigin
+    }
     isFollowing = false
+    layOutSpanningGapViews()
   }
 }

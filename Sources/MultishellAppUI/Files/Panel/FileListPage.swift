@@ -18,7 +18,11 @@ struct FileListPage: View {
         .padding(.horizontal, UIMetrics.filesPanelListSideInset)
         .padding(.top, 8)
     }
-    FilesPanelFilterField(model: model, worktreeID: worktree.id, theme: theme)
+    FilesPanelFilterField(model: model, worktreeID: worktree.id, theme: theme) {
+      if model.filesPanelShowsChangeScopeSwitch {
+        OpenAllChangesButton(model: model, worktreeID: worktree.id, theme: theme)
+      }
+    }
     ScrollView {
       LazyVStack(spacing: UIMetrics.sidebarRowSpacing) {
         FileListRows(model: model, worktreeID: worktree.id, rows: rows, theme: theme)

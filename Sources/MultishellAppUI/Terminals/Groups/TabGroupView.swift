@@ -39,6 +39,9 @@ struct TabGroupView: View {
       case .file(let tab):
         withDropBands(FileTabView(model: model, tab: tab, theme: theme).id(tab.id))
 
+      case .allChanges(let tab):
+        withDropBands(AllChangesTabView(model: model, tab: tab, theme: theme).id(tab.id))
+
       case nil: Spacer()
       }
     }
@@ -57,7 +60,7 @@ struct TabGroupView: View {
     .id(tab.id)
   }
 
-  /// The bands down the edges while a tab is dragged, over either kind.
+  /// The bands down the edges while a tab is dragged, over any kind.
   private func withDropBands(_ content: some View) -> some View {
     content.overlay {
       if drag.isDragging {

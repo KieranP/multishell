@@ -34,7 +34,7 @@ extension AppModel {
     case .agent: 40
     case .worktree: 30
     case .project: 20
-    case .shell, .fileTab: 10
+    case .shell, .fileTab, .allChangesTab: 10
     case .file, .command: 0
     }
   }

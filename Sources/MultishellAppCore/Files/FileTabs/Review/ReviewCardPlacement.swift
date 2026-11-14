@@ -78,6 +78,11 @@ public struct ReviewCardPlacement: Identifiable, Equatable, Sendable {
     }
   }
 
+  /// The same card on other rows: the All changes tab's, placed by a file's rows.
+  func moved(to rows: ClosedRange<Int>) -> Self {
+    Self(card: card, rows: rows)
+  }
+
   /// The card a reveal asks for, or the composer editing that comment in its place.
   public func stands(for card: CardID) -> Bool {
     if id == card { return true }

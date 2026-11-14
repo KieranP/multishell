@@ -3,7 +3,8 @@
 What a file tab shows and why each went the way it did. Newest at the bottom.
 
 - **One tab per file, its changes drawn inside it.** The user reads a file and
-  its change as one thing, so there is no diff tab and no Show Diff button.
+  its change as one thing, so there is no diff tab and no Show Diff button, bar
+  the All changes tab, a whole worktree's review (files/all-changes-tab.md).
   Opening a file already open turns to its tab; there is no preview tab.
 - **Read-only.** Editing is the editor's job, a click away in each menu.
 - **A file opens in a tab by the clicked-link rule**: a regular file typed as
@@ -205,6 +206,10 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
 - **The caret a file opens with counts as no selection**, so a step down from
   there lands on a change on the first row: a new or deleted file is one change
   from row 0, and counting from that caret left both arrows grey.
+- **A row's fragment counts the gap under it in its height**, so TextKit's sum
+  of heights, which it finds a scroll's top by, agrees with the geometry; the
+  All changes tab's dense gaps left it laying out rows far from the clip
+  (files/all-changes-tab.md).
 
 ## Reviewed and left as is
 

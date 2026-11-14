@@ -2,17 +2,21 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// A line's + in the gutter, a drag down it, or Comment on Lines.
-  /// Not over a composer holding text, which would lose what was typed.
-  public func openReviewComposer(on selection: ReviewLineSelection, in tabID: FileTab.ID) {
-    guard let tab = workspace.fileTab(tabID), !composerHoldsUnsavedShownText(in: tabID) else {
-      return
-    }
+  /// A line's + in the gutter, a drag down it, or Comment on Lines, on `path`'s
+  /// lines. Not over a composer holding text, which would lose what was typed.
+  public func openReviewComposer(
+    on selection: ReviewLineSelection,
+    ofFile path: String,
+    in tabID: ReviewTabID,
+  ) {
+    guard let worktreeID = reviewWorktree(of: tabID), !composerHoldsUnsavedShownText(in: tabID)
+    else { return }
     let composer = ReviewComposer(
+      path: path,
       side: selection.side,
       lines: selection.lines,
-      quote: reviewQuote(of: selection.lines, on: selection.side, in: tabID),
-      scope: fileTabScope(in: tab.worktreeID),
+      quote: reviewQuote(of: selection.lines, on: selection.side, ofFile: path, in: tabID),
+      scope: fileTabScope(in: worktreeID),
       editing: nil,
     )
     reviewComposers[tabID] = composer
@@ -25,12 +29,13 @@ extension AppModel {
   }
 
   /// A pending comment's Edit: its card becomes the composer, holding its text.
-  public func startEditingReviewComment(_ id: ReviewComment.ID, in tabID: FileTab.ID) {
-    guard let tab = workspace.fileTab(tabID), !composerHoldsUnsavedShownText(in: tabID),
-      let comment = reviewComments(in: tab.worktreeID).first(where: { $0.id == id }),
+  public func startEditingReviewComment(_ id: ReviewComment.ID, in tabID: ReviewTabID) {
+    guard let worktreeID = reviewWorktree(of: tabID), !composerHoldsUnsavedShownText(in: tabID),
+      let comment = reviewComments(in: worktreeID).first(where: { $0.id == id }),
       comment.isPending
     else { return }
     let composer = ReviewComposer(
+      path: comment.path,
       side: comment.side,
       lines: comment.lines,
       quote: comment.quote,
@@ -44,16 +49,16 @@ extension AppModel {
     noteFileTabFocused(tabID)
   }
 
-  public func reviewDraft(in tabID: FileTab.ID) -> String {
+  public func reviewDraft(in tabID: ReviewTabID) -> String {
     reviewDrafts[tabID] ?? ""
   }
 
-  public func noteReviewDraft(_ text: String, in tabID: FileTab.ID) {
+  public func noteReviewDraft(_ text: String, in tabID: ReviewTabID) {
     reviewDrafts[tabID] = text
   }
 
   /// The keyboard goes back to the tab, the card's field leaving with the card.
-  public func cancelReviewComposer(in tabID: FileTab.ID) {
+  public func cancelReviewComposer(in tabID: ReviewTabID) {
     setIfChanged(\.reviewComposers[tabID], nil)
     reviewDrafts[tabID] = nil
     reviewComposerKeyboardRequests.remove(tabID)
@@ -63,21 +68,21 @@ extension AppModel {
   /// Add comment, or Save while editing. Refused with no text or no lines
   /// read, the composer staying open.
   @discardableResult
-  public func commitReviewComposer(in tabID: FileTab.ID) -> Bool {
-    guard let composer = reviewComposers[tabID], let tab = workspace.fileTab(tabID),
+  public func commitReviewComposer(in tabID: ReviewTabID) -> Bool {
+    guard let composer = reviewComposers[tabID], let worktreeID = reviewWorktree(of: tabID),
       let text = reviewDraft(in: tabID).trimmedOfAllWhitespaceOrNil
     else { return false }
-    let isEditingAPendingComment = reviewComments(in: tab.worktreeID).contains { comment in
+    let isEditingAPendingComment = reviewComments(in: worktreeID).contains { comment in
       comment.id == composer.editing && comment.isPending
     }
     if let editing = composer.editing, isEditingAPendingComment {
-      editReviewComment(editing, in: tab.worktreeID, text: text)
+      editReviewComment(editing, in: worktreeID, text: text)
     } else {
       // A quote is what keeps the comment on its lines. An edit whose comment was
       // sent or removed meanwhile is kept as a new one, not lost.
       guard !composer.quote.isEmpty else { return false }
       var comment = ReviewComment(
-        path: tab.path,
+        path: composer.path,
         side: composer.side,
         scope: composer.scope,
         lines: composer.lines,
@@ -85,24 +90,28 @@ extension AppModel {
         text: text,
       )
       // Lines rewritten while it was typed no longer read as its quote.
-      if reviewQuote(of: composer.lines, on: composer.side, in: tabID) != composer.quote {
-        comment.noteLinesChanged()
-      }
-      guard addReviewComment(comment, in: tab.worktreeID) else { return false }
+      let quote = reviewQuote(
+        of: composer.lines,
+        on: composer.side,
+        ofFile: composer.path,
+        in: tabID,
+      )
+      if quote != composer.quote { comment.noteLinesChanged() }
+      guard addReviewComment(comment, in: worktreeID) else { return false }
     }
     cancelReviewComposer(in: tabID)
     return true
   }
 
-  /// The lines' text as the tab last read it, empty where it holds no rows.
+  /// The lines' text as the tab last read the file, empty where it holds no rows of it.
   func reviewQuote(
     of lines: ClosedRange<Int>,
     on side: DiffSide,
-    in tabID: FileTab.ID,
+    ofFile path: String,
+    in tabID: ReviewTabID,
   ) -> [String] {
-    guard case .text(let rows) = fileTabReadings[tabID]?.content else { return [] }
     // Walked rather than taken from the side's whole text, which copies every line.
-    return rows.lines.compactMap { line in
+    (reviewRows(ofFile: path, in: tabID) ?? []).compactMap { line in
       guard side.shows(line.kind), let number = line.number(on: side), lines.contains(number)
       else { return nil }
       return line.text
@@ -110,36 +119,36 @@ extension AppModel {
   }
 
   /// Once per opening, so a card rebuilt by a layout switch leaves the keyboard be.
-  public func reviewComposerAsksForKeyboard(in tabID: FileTab.ID) -> Bool {
+  public func reviewComposerAsksForKeyboard(in tabID: ReviewTabID) -> Bool {
     reviewComposerKeyboardRequests.contains(tabID)
   }
 
-  public func noteReviewComposerTookKeyboard(in tabID: FileTab.ID) {
+  public func noteReviewComposerTookKeyboard(in tabID: ReviewTabID) {
     reviewComposerKeyboardRequests.remove(tabID)
   }
 
   /// Text a close or switch would lose: an Edit left as it was loses nothing.
-  func reviewComposerHoldsUnsavedText(in tabID: FileTab.ID) -> Bool {
-    guard reviewComposers[tabID] != nil, let tab = workspace.fileTab(tabID),
+  func reviewComposerHoldsUnsavedText(in tabID: ReviewTabID) -> Bool {
+    guard let composer = reviewComposers[tabID], let worktreeID = reviewWorktree(of: tabID),
       let draft = reviewDraft(in: tabID).trimmedOfAllWhitespaceOrNil
     else { return false }
-    let editing = reviewComposers[tabID]?.editing
-    return draft != reviewComments(in: tab.worktreeID).first { $0.id == editing }?.text
+    return draft != reviewComments(in: worktreeID).first { $0.id == composer.editing }?.text
   }
 
   /// Only a composer on screen: one hidden by the scope would block every +.
-  private func composerHoldsUnsavedShownText(in tabID: FileTab.ID) -> Bool {
-    guard let composer = reviewComposers[tabID], let tab = workspace.fileTab(tabID),
-      composer.appliesUnder(fileTabScope(in: tab.worktreeID)),
-      tabHasLines(on: composer.side, in: tabID)
+  private func composerHoldsUnsavedShownText(in tabID: ReviewTabID) -> Bool {
+    guard let composer = reviewComposers[tabID], let worktreeID = reviewWorktree(of: tabID),
+      composer.appliesUnder(fileTabScope(in: worktreeID)),
+      tabHasLines(on: composer.side, ofFile: composer.path, in: tabID)
     else { return false }
     return reviewComposerHoldsUnsavedText(in: tabID)
   }
 
   /// Placement's rule: a side with no numbered line left, its file emptied or
   /// deleted and kept as last read, places no card.
-  private func tabHasLines(on side: DiffSide, in tabID: FileTab.ID) -> Bool {
-    guard case .text(let rows) = fileTabReadings[tabID]?.content else { return false }
-    return rows.lines.contains { side.shows($0.kind) && $0.number(on: side) != nil }
+  private func tabHasLines(on side: DiffSide, ofFile path: String, in tabID: ReviewTabID) -> Bool {
+    (reviewRows(ofFile: path, in: tabID) ?? []).contains { line in
+      side.shows(line.kind) && line.number(on: side) != nil
+    }
   }
 }

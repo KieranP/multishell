@@ -24,6 +24,7 @@ struct DiffDocumentViewReviewCardsTests {
 
   private static func composerPlacement(after row: Int) -> ReviewCardPlacement {
     let composer = ReviewComposer(
+      path: "a.txt",
       side: .onDisk,
       lines: (row + 1)...(row + 1),
       quote: ["line \(row)"],

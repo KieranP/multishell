@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 
 extension Helper {
-  /// The `tabs` subcommands that act inside one tab: a file's, its bar's arrows
-  /// and find, and a terminal tab's dividers and dots. `nil` for another word.
+  /// The `tabs` subcommands that act inside one tab: its bar's arrows and find,
+  /// and a terminal tab's dividers and dots. `nil` for another word.
   static func runTabContents(
     _ subcommand: String?,
     _ words: [String],
@@ -12,14 +12,6 @@ extension Helper {
   ) throws -> Int32? {
     let topic = ControlCommand.tabs.rawValue
     switch (subcommand, words.count) {
-    case ("open-file", 2):
-      try noOptions(optionWords, topic: topic)
-      let request = ControlRequest.openFileTab(
-        worktree: try worktreeID(words[0], topic: topic),
-        path: words[1],
-      )
-      return try ask(request, environment: environment)
-
     case ("step", 1):
       let options = try CommandOptions(
         optionWords,

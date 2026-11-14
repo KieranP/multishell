@@ -36,7 +36,7 @@ extension AppModel {
     return quickSwitcherWorktrees(in: places, sessionIDsByWorktree)
   }
 
-  /// Every pane and file tab, the saved ones of worktrees not yet opened
+  /// Every pane and file or All changes tab, the saved ones of worktrees not yet opened
   /// included, worktree by worktree in sidebar order, each in its strips' order.
   func quickSwitcherPanesAndFileTabs() -> [QuickSwitcherItem] {
     quickSwitcherTabRows(
@@ -139,7 +139,7 @@ extension AppModel {
     QuickSwitcherItem.path([project.name, worktree.name])
   }
 
-  /// Every pane, or only the agents' without file tabs, worktree by worktree in
+  /// Every pane and tab, or only the agents' panes, worktree by worktree in
   /// `order` and each in its strips' order.
   private func quickSwitcherTabRows(
     in order: [SidebarPlace],
@@ -172,6 +172,9 @@ extension AppModel {
 
         case .file(let tab):
           agentsOnly ? [] : [quickSwitcherFileTab(tab, at: place)]
+
+        case .allChanges(let tab):
+          agentsOnly ? [] : [quickSwitcherAllChangesTab(tab, at: place)]
         }
       }
     }
@@ -182,6 +185,18 @@ extension AppModel {
       target: .fileTab(tab.id),
       kind: .fileTab,
       title: QuickSwitcherItem.path([place, tab.fileName]),
+      location: "",
+    )
+  }
+
+  private func quickSwitcherAllChangesTab(
+    _ tab: AllChangesTab,
+    at place: String,
+  ) -> QuickSwitcherItem {
+    QuickSwitcherItem(
+      target: .allChangesTab(tab.id),
+      kind: .allChangesTab,
+      title: QuickSwitcherItem.path([place, title(of: tab)]),
       location: "",
     )
   }

@@ -13,16 +13,30 @@ extension AppModel {
 
   /// A terminal tab, which has panes and a title of its own to set.
   func reachTerminalTab(_ id: WorkspaceTab.ID) throws(ControlRefusal) -> TerminalTab {
-    guard let tab = workspace.tab(id) else {
-      throw workspace.fileTab(id) == nil ? .noTab(id: id) : .tabShowsAFile(id: id)
+    switch workspace.workspaceTab(id) {
+    case .terminal(let tab): return tab
+    case .file: throw .tabShowsAFile(id: id)
+    case .allChanges: throw .tabShowsAllChanges(id: id)
+    case nil: throw .noTab(id: id)
     }
-    return tab
   }
 
-  /// A file tab, which has a bar to step and find in.
+  /// A file or All changes tab, which has a bar to step and find in.
   func refusalToReachFileTab(_ id: WorkspaceTab.ID) -> ControlRefusal? {
-    guard workspace.fileTab(id) == nil else { return nil }
-    return workspace.tab(id) == nil ? .noTab(id: id) : .tabShowsNoFile(id: id)
+    switch workspace.workspaceTab(id) {
+    case .allChanges, .file: nil
+    case .terminal: .tabShowsNoFile(id: id)
+    case nil: .noTab(id: id)
+    }
+  }
+
+  /// Panes a split acts on: a terminal tab's, refused before anything turns to it.
+  func refusalToSplit(_ id: WorkspaceTab.ID) -> ControlRefusal? {
+    switch workspace.workspaceTab(id) {
+    case .terminal, nil: nil
+    case .file: .tabShowsAFile(id: id)
+    case .allChanges: .tabShowsAllChanges(id: id)
+    }
   }
 
   /// Turns the store to a tab or pane and hands it the keyboard, selecting its

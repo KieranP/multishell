@@ -146,4 +146,19 @@ struct AppModelDebugMemoryTableTests {
 
     #expect(harness.model.debugMemoryTable.fileTabs.contentMemory == 500)
   }
+
+  @Test func theAllChangesTabCountsItsFilesRowsAndTheDocumentJoinedFromThem() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.openAllChangesTab(in: harness.main.id))
+    let rows = FileTabRows.replacedBlock(before: 0, removed: 0, added: 2, after: 0)
+    harness.model.allChangesReadings[tab.id] = .sample(rows: [("a.txt", rows)])
+    let document = try #require(harness.model.allChangesDocument(of: tab.id))
+
+    let table = harness.model.debugMemoryTable.fileTabs
+
+    let units = rows.displayText.string.utf16.count + document.text.string.utf16.count
+    #expect(table.contentMemory == UInt64(units) * 4)
+    #expect(table.tabCount == 1)
+  }
 }

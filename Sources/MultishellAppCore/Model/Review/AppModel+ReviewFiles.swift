@@ -66,7 +66,11 @@ extension AppModel {
   /// Written off the main actor at once, a comment being rarer than a
   /// keystroke; the file's ticket keeps the writes in order.
   func setReviewComments(_ comments: [ReviewComment], of worktreeID: Worktree.ID) {
+    let allChanges = workspace.allChangesTab(in: worktreeID)
+    let laidOutBefore = allChanges.flatMap { allChangesDocuments[$0.id]?.document.text }
     setIfChanged(\.reviewComments[worktreeID], comments.isEmpty ? nil : comments)
+    // A comment holds lines open in the All changes tab, moving what its find searched.
+    if let allChanges { rerunFileFind(in: allChanges.id, laidOutBefore: laidOutBefore) }
     guard !isYieldingToRunningInstance else { return }
     let file = reviewFile(of: worktreeID)
     let ticket = file.issueTicket()

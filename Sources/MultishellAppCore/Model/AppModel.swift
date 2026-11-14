@@ -158,6 +158,29 @@ public final class AppModel<Surface> {
   @ObservationIgnored var fileTabReadLog = FileTabReadLog()
   /// One coalesced read per file tab; see `scheduleFileTabRead`.
   @ObservationIgnored var pendingFileTabReads: [FileTab.ID: Task<Void, Never>] = [:]
+  /// Each All changes tab's last read, never saved, let go while hidden.
+  public internal(set) var allChangesReadings: [AllChangesTab.ID: AllChangesReading] = [:]
+  /// Paced as a file tab's reads are, by the tab: one read covers every file.
+  @ObservationIgnored var allChangesReadLog = FileTabReadLog()
+  @ObservationIgnored var allChangesStaleFiles = AllChangesStaleFiles()
+  /// Written on every scroll, as a file tab's is, and saved at quit.
+  @ObservationIgnored var allChangesScrolls: [AllChangesTab.ID: AllChangesScroll] = [:]
+  /// Files collapsed to their header in each tab, kept for the run only; see
+  /// Docs/design/files/all-changes-tab.md.
+  var allChangesCollapsedFiles: [AllChangesTab.ID: Set<String>] = [:]
+  /// Folds opened in each tab, by file, the lines held by the file on disk's numbering.
+  var allChangesOpenedFolds: [AllChangesTab.ID: [String: [AllChangesLineSpan]]] = [:]
+  /// The file at the top of each tab's view, which its sticky header names and
+  /// the Changes list lights.
+  var allChangesTopFiles: [AllChangesTab.ID: AllChangesTopFile] = [:]
+  /// A file a Changes row asked each tab's view to scroll to, taken as
+  /// `changeStepRequests` are.
+  var allChangesFileReveals: [AllChangesTab.ID: String] = [:]
+  /// Each tab's document as last built, so a render reuses it.
+  @ObservationIgnored var allChangesDocuments: [AllChangesTab.ID: AllChangesDocumentCacheEntry] =
+    [:]
+
+  @ObservationIgnored var pendingAllChangesReads: [AllChangesTab.ID: Task<Void, Never>] = [:]
 
   /// Each worktree's review comments, kept in a file per worktree rather than
   /// the workspace; see files/review-comments.md.
@@ -174,14 +197,14 @@ public final class AppModel<Surface> {
   var focusedSessionHistory: [Worktree.ID: [TerminalSession.ID]] = [:]
   /// The comment last clicked in each worktree's Review, its card outlined.
   var selectedReviewComments: [Worktree.ID: ReviewComment.ID] = [:]
-  /// Each file tab's open composer, at most one, closed with its tab.
-  var reviewComposers: [FileTab.ID: ReviewComposer] = [:]
+  /// Each file or All changes tab's open composer, at most one, closed with its tab.
+  var reviewComposers: [ReviewTabID: ReviewComposer] = [:]
   /// What each composer holds as it is typed, which nothing redraws for.
-  @ObservationIgnored var reviewDrafts: [FileTab.ID: String] = [:]
-  /// A card each file tab's view scrolls into view, taken as `changeStepRequests` are.
-  var reviewCardRevealRequests: [FileTab.ID: ReviewCardPlacement.CardID] = [:]
+  @ObservationIgnored var reviewDrafts: [ReviewTabID: String] = [:]
+  /// A card each tab's view scrolls into view, taken as `changeStepRequests` are.
+  var reviewCardRevealRequests: [ReviewTabID: ReviewCardPlacement.CardID] = [:]
   /// Composers opened since their card last took the keyboard.
-  @ObservationIgnored var reviewComposerKeyboardRequests: Set<FileTab.ID> = []
+  @ObservationIgnored var reviewComposerKeyboardRequests: Set<ReviewTabID> = []
   /// Worktrees whose review file was read, at launch or when first listed after.
   @ObservationIgnored var worktreesWithReviewFilesRead: Set<Worktree.ID> = []
   /// Where Review's handoffs are written.

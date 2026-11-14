@@ -10,6 +10,8 @@ extension AppModel {
 
   /// UTF-16 kept for each line, twice over for the rows' joined text, and an
   /// image's bytes: the model's copy, not the layout or picture a shown tab adds.
+  /// The All changes tabs count with the file tabs, each file's rows and the
+  /// document joined from them.
   private var debugFileTabMemory: DebugFileTabMemory {
     let bytes = fileTabReadings.values.reduce(UInt64(0)) { total, reading in
       switch reading.content {
@@ -23,7 +25,25 @@ extension AppModel {
         return total
       }
     }
-    return DebugFileTabMemory(tabCount: workspace.fileTabs.count, contentMemory: bytes)
+    return DebugFileTabMemory(
+      tabCount: workspace.fileTabs.count + workspace.allChangesTabs.count,
+      contentMemory: bytes + debugAllChangesMemory,
+    )
+  }
+
+  private var debugAllChangesMemory: UInt64 {
+    let rows = allChangesReadings.values.reduce(UInt64(0)) { total, reading in
+      reading.files.reduce(total) { total, file in
+        total + UInt64(file.rows?.displayText.string.utf16.count ?? 0) * 4
+      }
+    }
+    let documents = allChangesDocuments.values.reduce(UInt64(0)) { total, entry in
+      let document = entry.document
+      let units =
+        document.text.string.utf16.count + (document.committedText?.string.utf16.count ?? 0)
+      return total + UInt64(units) * 4
+    }
+    return rows + documents
   }
 
   private func debugMemoryTable(of snapshot: DebugSnapshot) -> DebugMemoryTable {

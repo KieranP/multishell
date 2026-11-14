@@ -28,8 +28,8 @@ extension Helper {
                                  The sidebar's projects
       worktrees list|add|show|rename|remove|select|auto-rename|hide|unhide|
                 clear-status|resize-groups
-      tabs list|open|open-file|show|select|close|move|rename|resize|
-           clear-status|step|find
+      tabs list|open|open-all-changes|open-file|show|select|close|move|
+           rename|resize|clear-status|step|find
       panes split|select|close|type|paste|key|show|read|wait|find|clear-status
       files list|filter|expand|collapse
                                  The Files panel's list

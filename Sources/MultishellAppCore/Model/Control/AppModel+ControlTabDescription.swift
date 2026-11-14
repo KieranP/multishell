@@ -7,6 +7,23 @@ extension AppModel {
     guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
     let isShown = workspace.group(tab.groupID)?.shownTabID == id
     switch tab {
+    case .allChanges(let allChanges):
+      return .json(
+        TabDescription(
+          id: allChanges.id,
+          kind: .allChanges,
+          worktree: ControlID.worktree(allChanges.worktreeID),
+          title: title(of: allChanges),
+          isShown: isShown,
+          path: nil,
+          isDeleted: nil,
+          focusedPane: nil,
+          state: nil,
+          layout: nil,
+          find: fileFindBar(of: allChanges.id),
+        )
+      )
+
     case .file(let file):
       return .json(
         TabDescription(
@@ -43,11 +60,12 @@ extension AppModel {
     }
   }
 
-  /// A notice draws no bar, though the find stays for rows read again; an image
-  /// ends any find when read.
+  /// A file or All changes tab's: a notice draws no bar, though the find stays
+  /// for rows read again; an image ends any find when read.
   private func fileFindBar(of id: FileTab.ID) -> FindBarDescription? {
     guard findBarTargetIDs.contains(id), !drawsNoRows(id) else { return nil }
-    let count = holdsContent(id) ? findMatchCount(of: id) : nil
+    let holdsRows = holdsContent(id) || allChangesReadings[id] != nil
+    let count = holdsRows ? findMatchCount(of: id) : nil
     return FindBarDescription(
       text: findText(of: id),
       total: count?.total,
