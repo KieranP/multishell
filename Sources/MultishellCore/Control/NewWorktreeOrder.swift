@@ -2,8 +2,7 @@
 /// make it.
 public struct NewWorktreeOrder: Codable, Equatable, Sendable {
   public let branch: String
-  /// The project's `ControlID`.
-  public let projectID: String
+  public let project: ProjectReference
   /// `false` checks out a branch that already exists.
   public let createsBranch: Bool
   /// What a new branch starts from; `nil` is HEAD.
@@ -14,14 +13,14 @@ public struct NewWorktreeOrder: Codable, Equatable, Sendable {
 
   public init(
     branch: String,
-    projectID: String,
+    project: ProjectReference,
     createsBranch: Bool,
     startPoint: String?,
     agentID: String?,
     task: String?,
   ) {
     self.branch = branch
-    self.projectID = projectID
+    self.project = project
     self.createsBranch = createsBranch
     self.startPoint = startPoint
     self.agentID = agentID

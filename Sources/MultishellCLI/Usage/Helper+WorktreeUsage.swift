@@ -3,10 +3,11 @@ extension Helper {
     usage: multishell worktrees list [PROJECT_ID]
         Print every worktree, or one project's, as JSON: its id, its
         project's, its name and path.
-    usage: multishell worktrees add PROJECT_ID BRANCH [--from REF] [--existing]
+    usage: multishell worktrees add [PROJECT_ID] BRANCH [--from REF] [--existing]
                                   [--agent ID] [--prompt TEXT]
         Create a worktree on a new branch, as the New Worktree sheet does,
-        and print its id once it exists, however long the hooks take.
+        and print its id once it exists, however long the hooks take. With
+        no PROJECT_ID, in the project holding the folder this runs in.
         --from REF   start the branch at REF rather than the default branch
         --existing   check out BRANCH, which already exists, instead
         --agent ID   start that agent in the first tab, by catalogue id

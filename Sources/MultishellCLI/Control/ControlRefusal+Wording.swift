@@ -61,6 +61,9 @@ extension ControlRefusal {
 
     case .noProject(let id): "no project \(id); `multishell projects list` names them"
 
+    case .noProjectHolding(let path):
+      "no project holds \(path); name a PROJECT_ID, or add it with `multishell projects add`"
+
     case .noRemovedLines(let path):
       "those lines of \(path) hold no removed line; leave out --removed to comment "
         + "on the file on disk"

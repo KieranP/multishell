@@ -12,9 +12,10 @@ extension Helper {
     list` print, such as p-3f9a2c1d and w-8b1e04aa; TAB_ID and PANE_ID the
     ones `tabs list` prints. Of the commands that drive the app, only
     `projects add`, `debug screenshot` and `debug services stand-in` take a
-    path from where they run; `tabs open-file`, `files` and `review add` take
-    one inside the worktree. Whatever a command prints is JSON; `panes read` and
-    `debug log` take --plain for text.
+    path from where they run, and `worktrees add` its project where none is
+    named; `tabs open-file`, `files` and `review add` take one inside the
+    worktree. Whatever a command prints is JSON; `panes read` and `debug log`
+    take --plain for text.
 
       open                       Start the app, or bring it forward
       quit [--force]             Quit the app without its confirmation

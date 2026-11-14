@@ -18,12 +18,15 @@ extension Helper {
         environment: environment,
       )
 
-    case ("add", 2):
-      let order = try worktreeOrder(
-        branch: words[1],
-        project: try projectID(words[0], topic: topic),
-        optionWords,
-      )
+    case ("add", 1) where ControlID.isProject(words[0]):
+      throw UsageError("worktrees add needs a BRANCH after the PROJECT_ID", topic: topic)
+
+    case ("add", 1...2):
+      let project: ProjectReference =
+        words.count == 2
+        ? .id(try projectID(words[0], topic: topic))
+        : .holding(directory: absolutePath(nil))
+      let order = try worktreeOrder(branch: words[words.count - 1], project: project, optionWords)
       return try ask(.newWorktree(order), environment: environment, timeout: nil)
 
     case ("remove", 1):
@@ -98,7 +101,7 @@ extension Helper {
 
   private static func worktreeOrder(
     branch: String,
-    project: String,
+    project: ProjectReference,
     _ optionWords: ArraySlice<String>,
   ) throws -> NewWorktreeOrder {
     let topic = ControlCommand.worktrees.rawValue
@@ -114,7 +117,7 @@ extension Helper {
     }
     return NewWorktreeOrder(
       branch: branch,
-      projectID: project,
+      project: project,
       createsBranch: createsBranch,
       startPoint: options["from"],
       agentID: options["agent"],

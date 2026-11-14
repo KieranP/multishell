@@ -25,6 +25,17 @@ extension AppModel {
       ?? worktree(atPath: path).flatMap { workspace.project($0.projectID) }
   }
 
+  func project(referencedBy reference: ProjectReference) -> Result<Project, ControlRefusal> {
+    switch reference {
+    case .id(let id):
+      project(withControlID: id).map { .success($0) } ?? .failure(.noProject(id: id))
+
+    case .holding(let directory):
+      project(atPath: directory).map { .success($0) }
+        ?? .failure(.noProjectHolding(path: directory))
+    }
+  }
+
   /// Add Project's, a subfolder or a linked worktree adding its repository.
   func replyToAddProject(at path: String) async -> ControlReply {
     await addProject(at: URL(fileURLWithPath: path, isDirectory: true))

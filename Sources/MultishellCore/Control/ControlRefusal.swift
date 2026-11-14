@@ -49,6 +49,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case noProject(id: String)
   /// Project settings asked for with no project named, shown or selected.
   case noProjectChosen
+  /// The directory a request came from is in no project or worktree.
+  case noProjectHolding(path: String)
   /// `--removed` on lines that hold no removed line, which are the file on disk's.
   case noRemovedLines(path: String)
   /// The file's tab holds no such lines on that side.

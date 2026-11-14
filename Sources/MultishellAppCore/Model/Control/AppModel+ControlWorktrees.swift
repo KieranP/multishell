@@ -41,8 +41,10 @@ extension AppModel {
   /// As the sheet makes one. An agent or a task names the first tab;
   /// neither leaves it to the create settings.
   func replyToNewWorktree(_ order: NewWorktreeOrder) async -> ControlReply {
-    guard let project = project(withControlID: order.projectID) else {
-      return .refused(.noProject(id: order.projectID))
+    let project: Project
+    switch self.project(referencedBy: order.project) {
+    case .failure(let refusal): return .refused(refusal)
+    case .success(let named): project = named
     }
     let branch = order.branch.trimmingCharacters(in: .whitespaces)
     // Judged with the prefix added, as the sheet judges it and git will see it.

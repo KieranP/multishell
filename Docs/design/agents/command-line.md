@@ -219,6 +219,12 @@ The command line's requests on the reports' socket. Newest at the bottom.
 - **Fetch and Refresh answer once done; Auto Rename once started.** A script
   waits on the first two's reads; a rename runs an agent for seconds, and
   `sidebar list` says while it runs and how it ended.
+- **`worktrees add` with no PROJECT_ID makes it in the project holding the
+  folder it runs in**, found as `projects add` finds one, through a subfolder or
+  a linked worktree, and refused where none holds it rather than adding one.
+  Narrowed 2026-11-14 from ids only, so a shell function can make a worktree for
+  a ticket from inside the repository. No typed path names a project; the id
+  stays the only name.
 
 ## Reviewed and left as is
 

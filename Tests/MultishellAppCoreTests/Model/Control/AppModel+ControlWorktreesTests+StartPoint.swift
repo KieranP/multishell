@@ -37,7 +37,7 @@ extension AppModelControlWorktreesTests {
     try await onOtherWork(harness)
     let order = NewWorktreeOrder(
       branch: "fix",
-      projectID: ControlID.project(harness.project.id),
+      project: .id(ControlID.project(harness.project.id)),
       createsBranch: true,
       startPoint: "upgrade-deps",
       agentID: nil,
@@ -56,7 +56,7 @@ extension AppModelControlWorktreesTests {
     _ = try await harness.git.run(["checkout", "-q", "main"], in: harness.project.path)
     let order = NewWorktreeOrder(
       branch: "upgrade-deps",
-      projectID: ControlID.project(harness.project.id),
+      project: .id(ControlID.project(harness.project.id)),
       createsBranch: false,
       startPoint: nil,
       agentID: nil,

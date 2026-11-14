@@ -10,13 +10,13 @@ struct AppModelControlWorktreesTests {
   func order(
     _ branch: String,
     in harness: GitHarness,
-    projectID: String? = nil,
+    project: ProjectReference? = nil,
     agentID: String? = nil,
     task: String? = nil,
   ) -> NewWorktreeOrder {
     NewWorktreeOrder(
       branch: branch,
-      projectID: projectID ?? ControlID.project(harness.project.id),
+      project: project ?? .id(ControlID.project(harness.project.id)),
       createsBranch: true,
       startPoint: nil,
       agentID: agentID,

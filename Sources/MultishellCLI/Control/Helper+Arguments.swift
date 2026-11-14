@@ -17,7 +17,7 @@ extension Helper {
   }
 
   /// Relative to where this runs, as a shell user means it: the folder to add
-  /// as a project, or the file a screenshot is written to.
+  /// as a project or find one by, or the file a screenshot is written to.
   static func absolutePath(_ path: String?) -> String {
     let here = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
     return URL(fileURLWithPath: path ?? ".", isDirectory: true, relativeTo: here)

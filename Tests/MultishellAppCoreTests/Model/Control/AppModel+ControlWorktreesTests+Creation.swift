@@ -81,11 +81,52 @@ extension AppModelControlWorktreesTests {
   @Test func anIDNoProjectHasIsRefusedByThatID() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let elsewhere = order("feat/z", in: harness, projectID: "p-00000000")
+    let elsewhere = order("feat/z", in: harness, project: .id("p-00000000"))
 
     #expect(
       await harness.model.answer(.newWorktree(elsewhere)) == .refused(.noProject(id: "p-00000000"))
     )
+  }
+
+  @Test func aWorktreeAskedForFromAFolderInsideTheCheckoutGoesInItsProject() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let folder = harness.project.path.appendingPathComponent("Sources", isDirectory: true)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+    let reply = await harness.model.answer(
+      .newWorktree(order("feat/here", in: harness, project: .holding(directory: folder.path)))
+    )
+
+    let created = try #require(harness.worktree(onBranch: "feat/here"), "\(reply)")
+    #expect(created.projectID == harness.project.id)
+  }
+
+  @Test func aWorktreeAskedForFromAnotherWorktreeGoesInItsProject() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    _ = await harness.model.answer(.newWorktree(order("feat/first", in: harness)))
+    let first = try #require(harness.worktree(onBranch: "feat/first"))
+
+    let reply = await harness.model.answer(
+      .newWorktree(order("feat/second", in: harness, project: .holding(directory: first.id)))
+    )
+
+    let second = try #require(harness.worktree(onBranch: "feat/second"), "\(reply)")
+    #expect(second.projectID == harness.project.id)
+  }
+
+  @Test func aWorktreeAskedForFromAFolderInNoProjectIsRefusedNamingIt() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let outside = harness.root.path
+
+    let reply = await harness.model.answer(
+      .newWorktree(order("feat/none", in: harness, project: .holding(directory: outside)))
+    )
+
+    #expect(reply == .refused(.noProjectHolding(path: outside)))
+    #expect(harness.worktree(onBranch: "feat/none") == nil)
   }
 
   @Test func aWorktreeForAnAgentTheCatalogueLacksIsRefusedAndNotCreated() async throws {
