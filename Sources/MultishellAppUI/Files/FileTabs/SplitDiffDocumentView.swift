@@ -29,13 +29,18 @@ final class SplitDiffDocumentView: NSView {
     // Placed alone: it moves on every scroll, and a layout re-places the cards.
     didSet { if dividerSpan != oldValue { placeDivider() } }
   }
-  /// Room either side of the columns, the All changes tab's margin around each
-  /// file's box; a file tab's runs edge to edge.
-  var horizontalInset: CGFloat = 0 {
-    didSet {
-      guard horizontalInset != oldValue else { return }
-      // The right column's scroller sits in the margin, clear of the views over the text.
-      onDisk.scrollerMargin = horizontalInset
+  /// Room before the columns, the All changes tab's margin beside each file's
+  /// box; a file tab's runs edge to edge.
+  var leadingInset: CGFloat = 0 {
+    didSet { if leadingInset != oldValue { needsLayout = true } }
+  }
+  /// Room after the columns, where the right column's scroller sits clear of
+  /// the views over the text.
+  var scrollerMargin: CGFloat {
+    get { onDisk.scrollerMargin }
+    set {
+      guard newValue != onDisk.scrollerMargin else { return }
+      onDisk.scrollerMargin = newValue
       needsLayout = true
     }
   }
@@ -233,14 +238,14 @@ final class SplitDiffDocumentView: NSView {
   /// once, then each column's saved scroll or reveal on them.
   override func layout() {
     super.layout()
-    let inner = max(0, bounds.width - horizontalInset * 2)
+    let inner = max(0, bounds.width - leadingInset - scrollerMargin)
     let half = ((inner - 1) / 2).rounded(.down)
-    committed.frame = NSRect(x: horizontalInset, y: 0, width: half, height: bounds.height)
+    committed.frame = NSRect(x: leadingInset, y: 0, width: half, height: bounds.height)
     placeDivider()
     onDisk.frame = NSRect(
-      x: horizontalInset + half + 1,
+      x: leadingInset + half + 1,
       y: 0,
-      width: inner - half - 1 + horizontalInset,
+      width: inner - half - 1 + scrollerMargin,
       height: bounds.height,
     )
     spanningGapViews.frame = bounds

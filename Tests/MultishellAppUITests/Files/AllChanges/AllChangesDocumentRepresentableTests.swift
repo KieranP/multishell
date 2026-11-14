@@ -132,7 +132,7 @@ struct AllChangesDocumentRepresentableTests {
       #expect(abs(top - (DiffRowGeometry.verticalInset + header)) < 0.001)
     }
     let hosted = view.spanningGapViews.subviews.filter { !$0.isHidden }.map(\.frame.width)
-    let boxWidth = view.bounds.width - view.horizontalInset * 2
+    let boxWidth = view.bounds.width - view.leadingInset - view.scrollerMargin
     #expect(hosted.count == 2 && hosted.allSatisfy { $0 == boxWidth })
   }
 
@@ -169,5 +169,65 @@ struct AllChangesDocumentRepresentableTests {
       #expect(view.committed.scrollOrigin.y == view.onDisk.scrollOrigin.y, "scrolled to \(y)")
     }
     #expect(view.onDisk.scrollOrigin.y > 0)
+  }
+
+  @Test func noHeaderOrFoldReachesTheVerticalScrollerAtItsWidest() throws {
+    let harness = ModelHarness()
+    let tab = AllChangesTab(worktreeID: "/repos/demo", groupID: UUID())
+    let document = AllChangesDocument(
+      Self.reading(paths: ["a.txt", "b.txt", "c.txt"], rows: 60),
+      collapsed: [],
+      heldOpen: [:],
+    )
+
+    let (hosted, window) = Self.hosted(document, in: harness, tab: tab)
+    defer { withExtendedLifetime(window) {} }
+
+    let view = try #require(hosted)
+    let scrollView = try #require(view.textView.enclosingScrollView)
+    let widest = NSScroller.scrollerWidth(for: .regular, scrollerStyle: scrollView.scrollerStyle)
+    let scrollerLeft = scrollView.bounds.maxX - widest
+    let boxes = view.spanningGapViews.subviews.filter { !$0.isHidden }
+    #expect(!boxes.isEmpty)
+    for box in boxes {
+      #expect(box.convert(box.bounds, to: scrollView).maxX <= scrollerLeft)
+    }
+  }
+
+  @Test func noSplitHeaderOrFoldReachesTheVerticalScrollerAtItsWidest() throws {
+    let harness = ModelHarness()
+    let tab = AllChangesTab(worktreeID: "/repos/demo", groupID: UUID())
+    let document = AllChangesDocument(
+      Self.reading(paths: ["a.txt", "b.txt", "c.txt"], rows: 60),
+      collapsed: [],
+      heldOpen: [:],
+      layout: .split,
+    )
+    let split = try #require(document.split)
+    let host = NSHostingView(
+      rootView: AllChangesSplitDocumentRepresentable(
+        model: harness.model,
+        tab: tab,
+        document: document,
+        split: split,
+        theme: Theme.builtins[0],
+        font: FileFont(family: nil, size: 12),
+        find: FindMatchesShown(text: "", matches: [], selected: nil, selectionMoves: 0),
+      )
+    )
+    host.frame = NSRect(x: 0, y: 0, width: 600, height: 200)
+    let window = OffscreenWindow.holding(host, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    host.layoutSubtreeIfNeeded()
+
+    let view = try #require(host.descendants(of: SplitDiffDocumentView.self).first)
+    let scrollView = try #require(view.onDisk.textView.enclosingScrollView)
+    let widest = NSScroller.scrollerWidth(for: .regular, scrollerStyle: scrollView.scrollerStyle)
+    let scrollerLeft = scrollView.convert(scrollView.bounds, to: view).maxX - widest
+    let boxes = view.spanningGapViews.subviews.filter { !$0.isHidden }
+    #expect(!boxes.isEmpty)
+    for box in boxes {
+      #expect(box.convert(box.bounds, to: view).maxX <= scrollerLeft)
+    }
   }
 }

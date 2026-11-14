@@ -113,7 +113,8 @@ struct AllChangesSplitDocumentRepresentable: NSViewRepresentable {
   /// follows, so the left never scrolls, bounces or clamps on its own.
   private func setUpColumns(of view: SplitDiffDocumentView, coordinator: Coordinator) {
     let tabID = tab.id
-    view.horizontalInset = CGFloat(UIMetrics.allChangesBoxMargin)
+    view.leadingInset = CGFloat(UIMetrics.allChangesBoxMargin)
+    view.scrollerMargin = CGFloat(UIMetrics.allChangesScrollerMargin)
     view.committed.showsVerticalScroller = false
     view.committed.forwardsScrollWheel = view.onDisk.textView.enclosingScrollView
     for column in [view.committed, view.onDisk] {
@@ -159,8 +160,8 @@ struct AllChangesSplitDocumentRepresentable: NSViewRepresentable {
       coordinator.gapLayer.layOut(
         in: geometry,
         y: y,
-        x: view.horizontalInset,
-        width: view.bounds.width - view.horizontalInset * 2,
+        x: view.leadingInset,
+        width: view.bounds.width - view.leadingInset - view.scrollerMargin,
         shown: 0...view.bounds.height,
         end: end,
       )

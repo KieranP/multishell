@@ -83,7 +83,8 @@ bottom.
   border-only layer from under its header to the next, which has no backing
   store and so may be as tall as the file. The vertical scroller sits in the
   right margin, outside the boxes: a hosted header lies over a scroller under
-  it, whatever their order (owner's report).
+  it, whatever their order (owner's report). That margin is as wide as the
+  scroller grows under the pointer, 17 pt, or it covers the box's edge.
 - **Three lines of context around each change, as `git diff` keeps.** An
   unchanged run shorter than four lines shows whole, its fold row saving little.
 - **A fold's click shows every line it held.** The mockup opened a few at the

@@ -88,7 +88,8 @@ struct AllChangesTabView: View {
         showsFileGap: false,
         theme: theme,
       )
-      .padding(.horizontal, UIMetrics.allChangesBoxMargin)
+      .padding(.leading, UIMetrics.allChangesBoxMargin)
+      .padding(.trailing, UIMetrics.allChangesScrollerMargin)
     }
   }
 }

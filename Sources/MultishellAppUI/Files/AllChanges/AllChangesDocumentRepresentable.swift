@@ -92,7 +92,7 @@ struct AllChangesDocumentRepresentable: NSViewRepresentable {
     )
     view.leadingInset = CGFloat(UIMetrics.allChangesBoxMargin)
     // The scroller sits in the margin: over the boxes, the hosted headers covered it.
-    view.scrollerMargin = CGFloat(UIMetrics.allChangesBoxMargin)
+    view.scrollerMargin = CGFloat(UIMetrics.allChangesScrollerMargin)
     view.textView.onFocus = { [weak model] in model?.noteFileTabFocused(tabID) }
     view.textView.onSelectionChange = { [weak model] text in
       model?.noteFileTabSelection(text, of: tabID)

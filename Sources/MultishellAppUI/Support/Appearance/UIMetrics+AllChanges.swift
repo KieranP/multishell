@@ -1,3 +1,4 @@
+import AppKit
 import MultishellAppCore
 
 /// The All changes tab's rows between rows: file headers, folds and notices.
@@ -9,6 +10,15 @@ extension UIMetrics {
   static let allChangesHeaderSpacing: Double = 8
   /// Between each file's box and the tab's edges, as the mockups set it apart.
   static let allChangesBoxMargin: Double = 12
+  /// Right of the boxes, where the vertical scroller sits: as wide as it grows
+  /// under the pointer, or it covers the box's edge.
+  static var allChangesScrollerMargin: Double {
+    let scroller = NSScroller.scrollerWidth(
+      for: .regular,
+      scrollerStyle: NSScroller.preferredScrollerStyle,
+    )
+    return max(allChangesBoxMargin, Double(scroller))
+  }
   /// A fold's glyph, in a column as wide as the gutter's numbers start.
   static let allChangesFoldGlyphColumn: Double = 40
 
