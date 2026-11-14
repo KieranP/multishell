@@ -35,6 +35,19 @@ extension AppModel {
 
   private func listing(of tab: WorkspaceTab, isShown: Bool) -> TabListing.Tab {
     switch tab {
+    case .allChanges(let allChanges):
+      return TabListing.Tab(
+        id: allChanges.id,
+        kind: .allChanges,
+        title: title(of: allChanges),
+        isShown: isShown,
+        path: nil,
+        isDeleted: nil,
+        focusedPane: nil,
+        state: nil,
+        panes: nil,
+      )
+
     case .file(let file):
       return TabListing.Tab(
         id: file.id,

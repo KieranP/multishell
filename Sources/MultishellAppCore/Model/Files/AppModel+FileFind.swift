@@ -1,8 +1,17 @@
 import MultishellCore
 
-/// The find bar over a file tab, searched in its rows rather than by the
-/// engine; see Docs/design/files/file-tabs.md. `AppModel+Find` routes a file tab here.
+/// The find bar over a file or All changes tab, searched in its rows rather
+/// than by the engine; see Docs/design/files/file-tabs.md. `AppModel+Find`
+/// routes such a tab here.
 extension AppModel {
+  /// A file or All changes tab: its rows are searched here, a pane's by the engine.
+  func searchesRowsInModel(_ id: FindTargetID) -> Bool {
+    switch workspace.workspaceTab(id) {
+    case .allChanges, .file: true
+    case .terminal, nil: false
+    }
+  }
+
   /// While its bar is up; the view highlights each.
   public func fileFindMatches(of id: FileTab.ID) -> [Range<Int>] {
     findBarTargetIDs.contains(id) ? fileFindResults[id]?.matches ?? [] : []
@@ -41,7 +50,7 @@ extension AppModel {
   ) {
     // A hidden tab's rows are let go; its result waits for the read on show,
     // a new search starting over then.
-    if fileTabReadings[id]?.content.isReleased == true, !text.isEmpty {
+    if isAwaitingRowsToFind(id), !text.isEmpty {
       if !keepingSelection {
         setIfChanged(
           \.fileFindResults[id],
@@ -66,11 +75,26 @@ extension AppModel {
     setIfChanged(\.fileFindResults[id], result)
   }
 
-  /// What find searches in a tab: a split's right side, the file on disk.
-  func searchedText(of id: FileTab.ID) -> DiffDisplayText? {
-    guard let tab = workspace.fileTab(id), case .text(let rows) = fileTabReadings[id]?.content
-    else { return nil }
-    return shownSplit(of: tab)?.onDisk ?? rows.displayText
+  /// What find searches in a tab: a split's right side, the file on disk; the
+  /// All changes tab's shown rows.
+  func searchedText(of id: FindTargetID) -> DiffDisplayText? {
+    switch workspace.workspaceTab(id) {
+    case .file(let tab):
+      guard case .text(let rows) = fileTabReadings[id]?.content else { return nil }
+      return shownSplit(of: tab)?.onDisk ?? rows.displayText
+
+    case .allChanges: return allChangesDocument(of: id)?.text
+    case .terminal, nil: return nil
+    }
+  }
+
+  /// A hidden tab's rows are let go, so its find waits for the read on show.
+  private func isAwaitingRowsToFind(_ id: FindTargetID) -> Bool {
+    switch workspace.workspaceTab(id) {
+    case .file: fileTabReadings[id]?.content.isReleased == true
+    case .allChanges: allChangesReadings[id] == nil
+    case .terminal, nil: false
+    }
   }
 
   func stepFileFind(_ direction: CycleDirection, in id: FileTab.ID) {

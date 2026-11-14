@@ -3,7 +3,7 @@ import MultishellAppCore
 
 /// The box around the change the last step landed on: set, mirrored onto a
 /// split's other side, and carried by line across re-reads and rebuilds.
-extension DiffDocumentView {
+extension DiffColumn {
   private var caretRow: Int {
     textView.displayText.row(atOffset: textView.selectedRange().location)
   }
@@ -43,7 +43,7 @@ extension DiffDocumentView {
 
   /// A caret already in the change keeps its selection; a change gone since is
   /// let go of, or a later one in its place would come back boxed.
-  func carrySteppedChange(_ anchor: ChangeAnchor?, into newContent: some ChangeAnchoring) {
+  func carrySteppedChange(_ anchor: ChangeAnchor?, into newContent: any ChangeAnchoring) {
     guard let anchor else { return }
     guard let rows = newContent.change(at: anchor) else {
       setSteppedChange(nil)

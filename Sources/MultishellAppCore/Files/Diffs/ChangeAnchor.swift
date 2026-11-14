@@ -10,4 +10,7 @@ public struct ChangeAnchor: Equatable, Sendable {
   /// Its first line with a letter or digit on the side that boxed it, `nil`
   /// where it has none: `}` or a blank line repeats across a file.
   let lineText: String?
+  /// The file it is in, in the All changes tab, whose files share one text;
+  /// `nil` in a file tab.
+  var path: String?
 }

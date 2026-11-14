@@ -87,6 +87,7 @@ extension AppModel {
     case .debugGitRuns(let last): replyToDebugGitRuns(last: last)
     case .screenshot(let pane): replyToScreenshot(pane: pane)
     case .settingsScreenshot: replyToSettingsScreenshot()
+    case .openAllChangesTab(let worktree): replyToOpenAllChangesTab(in: worktree)
     case .openFileTab(let worktree, let path): await replyToOpenFileTab(path, in: worktree)
     case .stepToChange(let tab, let direction): await replyToStepToChange(direction, in: tab)
     case .findInFileTab(let id, let action): await replyToFindInFileTab(action, in: id)

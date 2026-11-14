@@ -65,7 +65,8 @@ panel's Review page (issue #6). Newest at the bottom.
   missing, so a missing quote says nothing of the agent.
 - **Only a shown tab re-anchors.** A hidden tab holds no rows (file-tabs.md), so
   a comment on a file not shown keeps its lines until the file is shown. Cost:
-  Review can list a stale line number for a file nobody has open.
+  Review can list a stale line number for a file nobody has open. The All
+  changes tab re-anchors each of its files whose rows a read moved.
 - **A comment on removed lines shows only under the scope it was written in**,
   `HEAD` and the merge base holding different text. Review lists it either way,
   marked "(Branch)" or "(Modified)". Cost: switching scope hides those cards. A
@@ -79,7 +80,7 @@ panel's Review page (issue #6). Newest at the bottom.
   file stays as fast; with none the geometry gives what it gave before, which
   the drift tests hold, with a second run with gaps open.
 - **A split opens each gap in both columns at the taller column's height**, so
-  the offset lock still means the same row. The card sits in the column holding
+  one offset is still the same row on both sides. The card sits in the column holding
   its lines. Cost: a comment inside a change sits between that change's removed
   and added rows.
 - **Cards are hosted views over the text, not text.** Copy, find and the Changes
@@ -119,9 +120,14 @@ panel's Review page (issue #6). Newest at the bottom.
   Review's Send takes both, so Return is one key away.
 - **`review add` on the command line needs the file's tab shown**, the quote
   coming from its rows as a comment written in the tab does. A hidden tab holds
-  none, so it is refused rather than quoting nothing.
+  none, so it is refused rather than quoting nothing. Where no file tab shows
+  the path, the shown All changes tab quotes it.
 - **The handoff is its own type, `AgentHandoff`**, writing entries and wording
   the mention, so #34 can send a pull request's failing checks the same way.
+- **Cards show in the All changes tab too** (files/all-changes-tab.md), placed
+  per file against that file's rows. The composer carries its file's path, the
+  All changes tab holding several, and the tables a composer and its draft live
+  in are keyed by the tab hosting cards, a file or All changes tab.
 
 ## Reviewed and left as is
 
@@ -193,9 +199,6 @@ panel's Review page (issue #6). Newest at the bottom.
   which end it was dragged from.
 - **A comment's text goes to the agent as typed**, its own Markdown: a heading
   or a `---` in it is the user's. Escaping it changed code the text quoted.
-- **A split's first card pass can end the following column's wait for the lock**
-  before the other column restores. Traced twice; its report maps back to the
-  scroll handed over.
 - **A worktree git stops listing and lists again at once can lose its
   comments**: the forget's delete, still in flight, lands after the new read. A
   list read takes a second or more, the delete milliseconds.

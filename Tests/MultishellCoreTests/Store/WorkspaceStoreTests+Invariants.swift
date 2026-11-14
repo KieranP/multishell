@@ -32,7 +32,9 @@ extension WorkspaceStoreTests {
 
     for step in 0..<400 {
       let workspace = store.workspace
-      let tabIDs = workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
+      let tabIDs =
+        workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
+        + workspace.allChangesTabs.map(\.id)
       let anyTabID = tabIDs.randomElement(using: &rng)
       switch Int.random(in: 0..<22, using: &rng) {
       case 0, 1:
@@ -135,7 +137,12 @@ extension WorkspaceStoreTests {
           )
         }
 
-      case 16, 17:
+      case 16:
+        if let worktree = worktrees.randomElement(using: &rng) {
+          store.openAllChangesTab(in: worktree.id)
+        }
+
+      case 17:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openFileTab(
             path: ["README.md", "src/a.swift", "lib/a.swift", "../out", ""].randomElement(

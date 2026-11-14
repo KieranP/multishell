@@ -8,7 +8,7 @@ extension AppModel {
   /// A burst of saves becomes one read: 0.15 s of FSEvents latency, then this.
   private static var fileTabSettleDelay: Duration { .milliseconds(75) }
 
-  private var imageRule: ImageRule {
+  var imageRule: ImageRule {
     let platform = self.platform
     return ImageRule(
       opensAsImage: { platform.opensAsImage(named: $0) },
@@ -155,6 +155,7 @@ extension AppModel {
       )
       reanchorReviewComposer(
         in: id,
+        onFile: tab.path,
         to: rows.lines,
         readUnder: Self.fileTabScope(readingSince: base),
       )
@@ -208,9 +209,10 @@ extension AppModel {
   }
 
   /// A closed tab's rows or image, reads, selection, scroll and requests go
-  /// with it. Run from the reconcile.
+  /// with it, the All changes tab's sharing every table but the reads. Run from
+  /// the reconcile.
   func pruneFileTabs() {
-    let open = Set(workspace.fileTabs.map(\.id))
+    let open = Set(workspace.fileTabs.map(\.id) + workspace.allChangesTabs.map(\.id))
     setIfChanged(\.fileTabReadings, fileTabReadings.filter { open.contains($0.key) })
     for (id, task) in pendingFileTabReads where !open.contains(id) {
       task.cancel()

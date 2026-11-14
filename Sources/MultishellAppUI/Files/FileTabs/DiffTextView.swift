@@ -20,7 +20,13 @@ final class DiffTextView: NSTextView {
   /// Unified copies a selection touching a change as `git diff` prints it;
   /// a split side copies plain text.
   var copiesAsDiff = true
+  /// Where set, what a copy takes in place of either: the All changes tab's
+  /// document heads each file's part.
+  var copiesSelections: (([Range<Int>]) -> String)?
   var onFocus: (() -> Void)?
+  /// Where set, brings a rect into view in place of the enclosing clip: a
+  /// column's text scrolls sideways inside its own clip on a wider canvas.
+  var scrollsRectToVisible: ((NSRect) -> Bool)?
   /// Comment on Lines, from the menu, on the rows the selection touches.
   var onCommentOnRows: ((ClosedRange<Int>) -> Void)?
   /// A split column's side, so Comment on Lines is offered only where a comment can go.
@@ -43,7 +49,8 @@ final class DiffTextView: NSTextView {
     }
   }
   private(set) var steppedChangeBorder = NSColor.clear
-  private var documentWidth: CGFloat = 0
+  /// The widest line and the padding after it.
+  private(set) var documentWidth: CGFloat = 0
   /// The highlight runs the text carries at its current offsets, so the next
   /// apply changes only what differs; `nil` while unknown, mid-apply.
   var appliedRuns: [HighlightSpan]? = []
@@ -55,6 +62,10 @@ final class DiffTextView: NSTextView {
   private(set) var isReplacingText = false
 
   var geometry: DiffRowGeometry { rowLayout.geometry }
+
+  override var textContainerOrigin: NSPoint {
+    NSPoint(x: super.textContainerOrigin.x, y: geometry.textContainerTop)
+  }
 
   init(geometry: DiffRowGeometry) {
     rowLayout = FixedRowLayoutDelegate(geometry: geometry)
@@ -89,6 +100,7 @@ final class DiffTextView: NSTextView {
   func setRowGaps(_ gaps: RowGaps) {
     guard geometry.rowGaps != gaps else { return }
     rowLayout.geometry.rowGaps = gaps
+    invalidateTextContainerOrigin()
     if let layoutManager = textLayoutManager {
       layoutManager.invalidateLayout(for: layoutManager.documentRange)
     }
@@ -137,10 +149,21 @@ final class DiffTextView: NSTextView {
     needsDisplay = true
   }
 
+  /// On a canvas, `NSTextView` scrolls nothing, not being the scroller's
+  /// document: the range's rows and glyphs are brought into its column's clip.
+  override func scrollRangeToVisible(_ range: NSRange) {
+    guard let scrollsRectToVisible else {
+      super.scrollRangeToVisible(range)
+      return
+    }
+    _ = scrollsRectToVisible(rect(of: range.integerRange))
+  }
+
   /// `NSTextView` resets its width to the clip's during layout; held here to
   /// the widest line and the rows' height.
   override func setFrameSize(_ newSize: NSSize) {
-    let clip = enclosingScrollView?.contentSize ?? .zero
+    // The clip's own size: the scroller's content size takes in the gutter it holds.
+    let clip = enclosingScrollView?.contentView.bounds.size ?? .zero
     super.setFrameSize(
       NSSize(
         width: max(newSize.width, documentWidth, clip.width),
@@ -211,6 +234,7 @@ final class DiffTextView: NSTextView {
 
   private func selectionCopy() -> String {
     let selections = selectedRanges.map(\.rangeValue.integerRange)
+    if let copiesSelections { return copiesSelections(selections) }
     guard copiesAsDiff else { return displayText.plainCopy(selections: selections) }
     return displayText.diffCopy(selections: selections)
   }

@@ -51,7 +51,7 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     }
     for side in [view.committed, view.onDisk] {
       side.onCommentOnLines = { [weak model] lines in
-        model?.openReviewComposer(on: lines, in: tabID)
+        model?.openReviewComposer(on: lines, ofFile: path, in: tabID)
       }
     }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
@@ -104,7 +104,7 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     guard let tab = model.workspace.fileTab(tabID) else { return }
     let columns:
       [(
-        DiffDocumentView, DiffSide, DiffDisplayText,
+        DiffColumn, DiffSide, DiffDisplayText,
         ReferenceWritableKeyPath<Coordinator, ShownReviewCards?>
       )] = [
         (view.committed, .committed, split.committed, \.committedReviewCards),

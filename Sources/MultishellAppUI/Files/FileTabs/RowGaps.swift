@@ -28,6 +28,12 @@ struct RowGaps: Equatable {
     heightsAbove = above
   }
 
+  /// The gap opened under `row`, 0 where none is.
+  func height(under row: Int) -> CGFloat {
+    let index = gapsBefore(row: row)
+    return rows.indices.contains(index) && rows[index] == row ? heights[index] : 0
+  }
+
   /// Every gap under a row above `row`.
   func heightAbove(row: Int) -> CGFloat {
     heightsAbove[gapsBefore(row: row)]

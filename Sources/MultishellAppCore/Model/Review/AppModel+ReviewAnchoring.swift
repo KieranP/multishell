@@ -16,13 +16,15 @@ extension AppModel {
     setReviewComments(moved, of: worktreeID)
   }
 
-  /// The open composer follows its lines too, or its card would sit under other code.
+  /// The open composer follows its lines too, or its card would sit under other
+  /// code; only `path`'s, an All changes tab reading each file in turn.
   func reanchorReviewComposer(
-    in tabID: FileTab.ID,
+    in tabID: ReviewTabID,
+    onFile path: String,
     to rows: [DiffLine],
     readUnder scope: ChangeScope,
   ) {
-    guard let composer = reviewComposers[tabID] else { return }
+    guard let composer = reviewComposers[tabID], composer.path == path else { return }
     setIfChanged(
       \.reviewComposers[tabID],
       ReviewAnchoring.reanchor(composer, to: rows, readUnder: scope),

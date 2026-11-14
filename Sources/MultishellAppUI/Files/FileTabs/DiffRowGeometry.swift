@@ -5,6 +5,7 @@ import AppKit
 struct DiffRowGeometry {
   /// Above the first row and below the last, as the prototype pads them.
   static let verticalInset: CGFloat = 6
+
   /// Natural rows are 15 to 18 pt by script; a fixed one a little taller
   /// than the font's own keeps Devanagari's marks inside it.
   private static let lineSpacingFactor: CGFloat = 1.45
@@ -17,6 +18,10 @@ struct DiffRowGeometry {
   /// is several of its spaces.
   let widestASCIIAdvance: CGFloat
   var rowGaps = RowGaps.empty
+
+  /// Where TextKit's container starts: under the gap above the first row, which
+  /// no row's height counts, so TextKit's sum of heights finds the rows under it.
+  var textContainerTop: CGFloat { Self.verticalInset + rowGaps.height(under: -1) }
 
   /// `fontFamily` `nil`, or one this Mac lacks, is the system monospace.
   init(fontFamily: String?, fontSize: CGFloat) {

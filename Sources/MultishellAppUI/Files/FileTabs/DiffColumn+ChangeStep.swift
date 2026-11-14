@@ -3,7 +3,7 @@ import MultishellAppCore
 import MultishellCore
 
 /// The bar's arrows on this side: the step, and which ways another could go.
-extension DiffDocumentView {
+extension DiffColumn {
   var changeSteps: ChangeSteps {
     textView.displayText.changeSteps(stepOriginRow: stepOriginRow, shownRows: shownRows)
   }

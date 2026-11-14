@@ -19,6 +19,7 @@ extension AppModel {
     switch workspaceTabInView {
     // An image has no lines to find in, and none come back as a notice's may.
     case .file(let tab): return holdsImage(tab.id) ? nil : tab.id
+    case .allChanges(let tab): return tab.id
 
     case .terminal(let tab):
       if let field = findFieldTargetID, findBarTargetIDs.contains(field),
@@ -62,7 +63,7 @@ extension AppModel {
   private func takeSelection(in id: FindTargetID) -> String? {
     guard findFieldTargetID != id else { return nil }
     let selection =
-      workspace.fileTab(id) != nil ? fileTabSelections[id] : host.selectionText(of: id)
+      searchesRowsInModel(id) ? fileTabSelections[id] : host.selectionText(of: id)
     guard let text = selection?.withoutTrailingWhitespace else {
       takenFindSelections[id] = nil
       return nil
@@ -119,7 +120,7 @@ extension AppModel {
 
   /// `nil` until the engine has counted; a file's is counted at once.
   public func findMatchCount(of id: FindTargetID) -> FindMatchCount? {
-    if workspace.fileTab(id) != nil { return fileFindResults[id]?.matchCount }
+    if searchesRowsInModel(id) { return fileFindResults[id]?.matchCount }
     return searchCounts[id]?.matchCount
   }
 
@@ -145,7 +146,7 @@ extension AppModel {
   /// `searched` is the text the engine holds, `nil` for none: one equal but for
   /// ASCII case it skips, so its count and selected match stand.
   private func search(_ text: String, in id: FindTargetID, replacing searched: String? = nil) {
-    if workspace.fileTab(id) != nil {
+    if searchesRowsInModel(id) {
       runFileFind(for: text, in: id)
       return
     }
@@ -188,7 +189,7 @@ extension AppModel {
   /// asked: the engine selected nothing on the find text. See terminals/find.md.
   private func step(_ direction: CycleDirection, in id: FindTargetID) {
     guard findBarTargetIDs.contains(id), !findText(of: id).isEmpty else { return }
-    if workspace.fileTab(id) != nil {
+    if searchesRowsInModel(id) {
       stepFileFind(direction, in: id)
       return
     }
@@ -205,7 +206,7 @@ extension AppModel {
   /// focused one, as clicking into a field moved the store's focus nowhere.
   public func closeFind(in id: FindTargetID) {
     guard endFind(in: id) else { return }
-    if workspace.fileTab(id) != nil { fileTabFocusRequest = id } else { host.focus(id) }
+    if searchesRowsInModel(id) { fileTabFocusRequest = id } else { host.focus(id) }
   }
 
   /// The bar down with the keyboard left where it was, as the command line
@@ -217,7 +218,7 @@ extension AppModel {
     setIfChanged(\.searchCounts[id], nil)
     // The torn-down field may never say it lost the keyboard.
     if findFieldTargetID == id { findFieldTargetID = nil }
-    if workspace.fileTab(id) != nil {
+    if searchesRowsInModel(id) {
       setIfChanged(\.fileFindResults[id], nil)
       // The count starts over, so what a dropped view drew no longer compares.
       fileFindsShown[id] = nil
@@ -230,7 +231,10 @@ extension AppModel {
   /// Bars and find texts whose pane or file tab has gone. From the reconcile, as
   /// `prunePendingClose` is, and from a shell exiting, which closes its session.
   func pruneFind() {
-    let existingTargetIDs = Set(workspace.sessions.map(\.id) + workspace.fileTabs.map(\.id))
+    let existingTargetIDs = Set(
+      workspace.sessions.map(\.id) + workspace.fileTabs.map(\.id)
+        + workspace.allChangesTabs.map(\.id)
+    )
     setIfChanged(\.fileFindResults, fileFindResults.filter { existingTargetIDs.contains($0.key) })
     setIfChanged(\.findBarTargetIDs, findBarTargetIDs.filter(existingTargetIDs.contains))
     setIfChanged(\.findTexts, findTexts.filter { existingTargetIDs.contains($0.key) })

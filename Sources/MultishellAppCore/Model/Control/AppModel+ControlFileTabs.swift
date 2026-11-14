@@ -16,6 +16,15 @@ extension AppModel {
     return .json(["tab": tab.id])
   }
 
+  /// Made or turned to, as the Changes page's button does; out of view it opens
+  /// without switching to its worktree.
+  func replyToOpenAllChangesTab(in id: String) -> ControlReply {
+    guard let worktree = worktree(withControlID: id),
+      let tab = openAllChangesTab(in: worktree.id)
+    else { return .refused(.noWorktree(id: id)) }
+    return .json(["tab": tab.id])
+  }
+
   /// The bar's arrow. Queued for the tab's view, which the arrow needs on screen.
   func replyToStepToChange(_ direction: CycleDirection, in id: FileTab.ID) async -> ControlReply {
     let refusal = await refusalToActOnRowsOnceRead(of: id) {
@@ -24,6 +33,9 @@ extension AppModel {
     if let refusal { return .refused(refusal) }
     // The bar draws arrows only over rows with line changes.
     if case .text(let rows) = fileTabReadings[id]?.content, !rows.hasLineChanges {
+      return .refused(.noChangeThatWay(id: id))
+    }
+    if allChangesDocument(of: id)?.hasChanges == false {
       return .refused(.noChangeThatWay(id: id))
     }
     // What the view said holds only until it takes a step queued since.
@@ -64,6 +76,9 @@ extension AppModel {
     _ refusalNow: () -> ControlRefusal?,
   ) async -> ControlRefusal? {
     if let refusal = refusalNow() { return refusal }
+    if workspace.allChangesTab(id) != nil {
+      return await refusalToActOnAllChangesOnceRead(of: id, refusalNow)
+    }
     let holdsNothing = !holdsContent(id)
     // A notice or an image may yet turn to rows, so its scheduled read is waited on too.
     let awaitsRead = holdsNothing || (drawsNoRows(id) && pendingFileTabReads[id] != nil)
@@ -83,11 +98,29 @@ extension AppModel {
     return holdsImage(id) ? .fileTabShowsImage(id: id) : .fileTabShowsNotice(id: id)
   }
 
+  /// The All changes tab's read waited on as a file tab's is; its document is
+  /// rows whatever its files hold, so no notice refuses it.
+  private func refusalToActOnAllChangesOnceRead(
+    of id: AllChangesTab.ID,
+    _ refusalNow: () -> ControlRefusal?,
+  ) async -> ControlRefusal? {
+    if allChangesReadings[id] == nil, !allChangesReadLog.isReading(id) {
+      if coordinator == nil { return .gitNotFound }
+      if let scheduled = pendingAllChangesReads[id] {
+        await scheduled.value
+      } else {
+        await readAllChangesTab(id)
+      }
+      if let refusal = refusalNow() { return refusal }
+    }
+    return allChangesReadings[id] == nil ? .fileTabNotRead(id: id) : nil
+  }
+
   /// A hidden tab lets its rows go, and the arrows and find read the view's,
   /// which a worktree's operation draws in place of its groups.
   private func refusalToShowReachedFileTab(_ id: WorkspaceTab.ID) -> ControlRefusal? {
     if let refusal = refusalToReadInWorkspaceWindow { return refusal }
-    guard isFileTabShown(id) else { return .tabNotShown(id: id) }
+    guard isFileTabShown(id) || isAllChangesTabShown(id) else { return .tabNotShown(id: id) }
     if case .operation(let worktree, _) = detailContent {
       return .worktreeNotReady(id: ControlID.worktree(worktree.id))
     }

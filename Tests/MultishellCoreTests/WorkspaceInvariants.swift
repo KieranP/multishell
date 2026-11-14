@@ -86,8 +86,19 @@ enum WorkspaceInvariants {
     _ context: String,
     worktreeIDs: Set<Worktree.ID>,
   ) {
-    let ids = workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
-    #expect(Set(ids).count == ids.count, "\(context): a tab id held twice, by either kind")
+    let ids =
+      workspace.tabs.map(\.id) + workspace.fileTabs.map(\.id)
+      + workspace.allChangesTabs.map(\.id)
+    #expect(Set(ids).count == ids.count, "\(context): a tab id held twice, by any kind")
+    let allChangesWorktrees = workspace.allChangesTabs.map(\.worktreeID)
+    #expect(
+      Set(allChangesWorktrees).count == allChangesWorktrees.count,
+      "\(context): a worktree with two All changes tabs",
+    )
+    #expect(
+      Set(allChangesWorktrees).isSubset(of: worktreeIDs),
+      "\(context): orphan All changes tab",
+    )
     let places = workspace.fileTabs.map { [$0.worktreeID, $0.path] }
     #expect(Set(places).count == places.count, "\(context): a file open in two tabs")
     for tab in workspace.fileTabs {
@@ -106,6 +117,7 @@ enum WorkspaceInvariants {
       let tabsHere =
         workspace.tabs.filter { $0.groupID == group.id }.map(\.id)
         + workspace.fileTabs.filter { $0.groupID == group.id }.map(\.id)
+        + workspace.allChangesTabs.filter { $0.groupID == group.id }.map(\.id)
       #expect(!tabsHere.isEmpty, "\(context): a tab group with no tabs")
       #expect(
         group.tabOrder.count == tabsHere.count && Set(group.tabOrder) == Set(tabsHere),
@@ -132,6 +144,12 @@ enum WorkspaceInvariants {
       #expect(
         workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
         "\(context): a file tab in another worktree's group, or in none",
+      )
+    }
+    for tab in workspace.allChangesTabs {
+      #expect(
+        workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
+        "\(context): an All changes tab in another worktree's group, or in none",
       )
     }
     for (worktreeID, groupID) in workspace.focusedGroupByWorktree {

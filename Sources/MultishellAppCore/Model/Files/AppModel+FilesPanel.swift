@@ -152,13 +152,19 @@ extension AppModel {
     )
   }
 
-  /// The row of the file whose tab is in front of the focused group.
+  /// The row of the file whose tab is in front of the focused group, or at the
+  /// top of the All changes tab there.
   public func isShownFile(_ row: FileTreeRow, in id: Worktree.ID) -> Bool {
     row.isShown(whenFileInFrontIs: shownFilePath(in: id))
   }
 
-  /// The file whose tab is in front of the focused group, which its row lights.
+  /// The file whose tab is in front of the focused group, or the file at the top
+  /// of the All changes tab in front, which its row lights.
   func shownFilePath(in id: Worktree.ID) -> String? {
-    workspace.activeWorkspaceTab(in: id)?.fileTab?.path
+    switch workspace.activeWorkspaceTab(in: id) {
+    case .file(let tab): tab.path
+    case .allChanges(let tab): allChangesTopFiles[tab.id]?.path
+    case .terminal, nil: nil
+    }
   }
 }

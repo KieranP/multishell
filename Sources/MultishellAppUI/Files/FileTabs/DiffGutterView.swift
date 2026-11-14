@@ -27,14 +27,6 @@ final class DiffGutterView: NSView {
   var draggedRows: (start: Int, end: Int)? { didSet { needsDisplay = true } }
   /// The text's, its review card gaps included.
   var geometry: DiffRowGeometry { didSet { needsDisplay = true } }
-  /// The clip's top in the document. A scroll clears the +, the pointer reporting no move.
-  var scrolledTo: CGFloat = 0 {
-    didSet {
-      guard scrolledTo != oldValue else { return }
-      hoveredRow = nil
-      needsDisplay = true
-    }
-  }
   private var colors: (number: NSColor, added: NSColor, removed: NSColor, background: NSColor) =
     (.secondaryLabelColor, .systemGreen, .systemRed, .clear)
   /// The + on its mark, and a drag's rows, in the theme's file colours.
@@ -75,16 +67,16 @@ final class DiffGutterView: NSView {
   }
 
   override func draw(_ dirtyRect: NSRect) {
+    let visible = dirtyRect.intersection(bounds)
     colors.background.setFill()
-    dirtyRect.intersection(bounds).fill()
-    let visible = NSRect(x: 0, y: scrolledTo, width: bounds.width, height: bounds.height)
+    visible.fill()
     let numberAttributes: [NSAttributedString.Key: Any] = [
       .font: geometry.font, .foregroundColor: colors.number,
     ]
     let numberRight = bounds.width - Self.signWidth - Self.barWidth - Self.trailing
     for row in geometry.rows(in: visible, count: displayText.lines.count) {
       let line = displayText.lines[row]
-      let top = geometry.top(ofRow: row) - scrolledTo
+      let top = geometry.top(ofRow: row)
       drawCommentMarks(onRow: row, top: top)
       let textTop =
         top + (geometry.rowHeight - geometry.font.ascender + geometry.font.descender) / 2

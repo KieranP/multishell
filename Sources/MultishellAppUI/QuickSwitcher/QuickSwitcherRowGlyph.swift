@@ -30,6 +30,9 @@ struct QuickSwitcherRowGlyph: View {
     case .file, .fileTab:
       symbol("doc.text")
 
+    case .allChangesTab:
+      symbol(AllChangesGlyph.symbolName)
+
     case .project(let settings, let isMissing):
       ProjectIconView(
         settings: settings,

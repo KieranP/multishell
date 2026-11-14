@@ -122,35 +122,6 @@ struct SplitDiffDocumentViewTests {
     #expect(view.committed.textView.visibleRect.minY == view.onDisk.textView.visibleRect.minY)
   }
 
-  @Test func withLegacyScrollBarsBothSidesStillEndOnTheSameRow() throws {
-    var lines = [
-      DiffLine(
-        kind: .removed,
-        oldNumber: 1,
-        newNumber: nil,
-        text: String(repeating: "w", count: 400),
-      ),
-      DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "short"),
-    ]
-    for row in 2...200 {
-      lines.append(DiffLine(kind: .context, oldNumber: row, newNumber: row, text: "row \(row)"))
-    }
-    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
-    view.frame = NSRect(x: 0, y: 0, width: 600, height: 300)
-    let window = OffscreenWindow.holding(view, deferred: false)
-    defer { withExtendedLifetime(window) {} }
-    for side in [view.committed, view.onDisk] {
-      for case let scroll as NSScrollView in side.subviews { scroll.scrollerStyle = .legacy }
-    }
-    view.show(SplitDiff(lines, marksStaging: true), theme: Theme.builtins[0])
-    view.layoutSubtreeIfNeeded()
-
-    view.onDisk.scroll(to: NSPoint(x: 0, y: 1_000_000))
-    view.layoutSubtreeIfNeeded()
-
-    #expect(view.committed.textView.visibleRect.minY == view.onDisk.textView.visibleRect.minY)
-  }
-
   @Test func aStepToAChangeMovesBothSidesToIt() throws {
     let split = try #require(Self.replacedBlock(lastText: "end").split)
     let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
@@ -466,5 +437,47 @@ struct SplitDiffDocumentViewTests {
     let topRow = Int(split.committed.topRow.rounded())
     #expect(split.committed.textView.displayText.lines[topRow].oldNumber == 251)
     #expect(reported.isEmpty, "the model keeps the anchor it handed over")
+  }
+
+  @Test func bothSidesStayOnTheSameOffsetWhenGapsAboveTheEndShrink() throws {
+    let split = SplitDiff(
+      committed: DiffDisplayText(
+        (1...200).map { line in
+          DiffLine(kind: .context, oldNumber: line, newNumber: line, text: String(line))
+        },
+        marksStaging: true,
+      ),
+      onDisk: DiffDisplayText(
+        (1...200).map { line in
+          DiffLine(kind: .context, oldNumber: line, newNumber: line, text: String(line))
+        },
+        marksStaging: true,
+      ),
+    )
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 600, height: 300)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(split, theme: Theme.builtins[0])
+    view.extraRowGaps = [50: 2_000, 150: 40]
+    view.layoutSubtreeIfNeeded()
+    view.onDisk.scroll(to: NSPoint(x: 0, y: 1e6))
+
+    view.extraRowGaps = [50: 40, 150: 40]
+    view.layoutSubtreeIfNeeded()
+
+    #expect(view.committed.scrollOrigin.y == view.onDisk.scrollOrigin.y)
+  }
+
+  @Test func theDividerRunsOnlyOverItsSpanInTheDocument() {
+    let view = SplitDiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
+    view.layoutSubtreeIfNeeded()
+
+    view.dividerSpan = 40...120
+    view.layoutSubtreeIfNeeded()
+
+    #expect(view.divider.frame.minY == 40)
+    #expect(view.divider.frame.maxY == 120)
   }
 }

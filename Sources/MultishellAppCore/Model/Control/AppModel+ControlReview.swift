@@ -7,7 +7,8 @@ extension AppModel {
     await replyingInReviewedWorktree(id) { worktree in reviewListing(of: worktree) }
   }
 
-  /// Quoted from the file's open tab, as a comment written there is.
+  /// Quoted from the file's open tab, or the All changes tab, as a comment
+  /// written there is.
   func replyToAddReviewComment(_ order: ReviewCommentOrder) async -> ControlReply {
     await replyingInReviewedWorktree(order.worktreeID) { worktree in
       await replyToAdd(order, in: worktree)
@@ -15,6 +16,7 @@ extension AppModel {
   }
 
   /// Unchanged lines are the file on disk's, as a comment written in the tab is.
+  /// A file tab showing the path is asked first, else the All changes tab.
   private func replyToAdd(_ order: ReviewCommentOrder, in worktree: Worktree) async -> ControlReply
   {
     // The request's own words first, as command-line.md has every request named.
@@ -23,34 +25,24 @@ extension AppModel {
     }
     // A link's tab is keyed by its target, as a click on the link opens it.
     let path = WorktreeLinkTarget.path(of: order.path, in: worktree.path) ?? order.path
-    guard let tab = workspace.fileTab(showing: path, in: worktree.id) else {
-      return .refused(.noReviewTab(path: order.path))
-    }
-    let refusalToQuote = {
-      self.refusalToReadInWorkspaceWindow
-        ?? (self.isFileTabShown(tab.id) ? nil : .tabNotShown(id: tab.id))
-    }
-    if let refusal = refusalToQuote() { return .refused(refusal) }
-    // Read now, so an edit made a moment ago, noticed or not, is what is quoted; the
-    // checks below then judge that reading, a notice or image refused as `tabs step` is.
-    if fileTabReadLog.isReading(tab.id) { return .refused(.fileTabNotRead(id: tab.id)) }
-    await readFileTab(tab.id)
-    if let unread = await refusalToActOnRowsOnceRead(of: tab.id, refusalToQuote) {
-      return .refused(unread)
+    let host: ReviewTabID
+    switch await readReviewHost(showing: path, asked: order.path, in: worktree) {
+    case .success(let id): host = id
+    case .failure(let refusal): return .refused(refusal)
     }
     guard workspace.worktree(worktree.id) != nil else {
       return .refused(.noWorktree(id: ControlID.worktree(worktree.id)))
     }
-    let quote = reviewQuote(of: order.lines, on: order.side, in: tab.id)
+    let quote = reviewQuote(of: order.lines, on: order.side, ofFile: path, in: host)
     // Lines start at 1, and a socket line can name any range: `count` traps past `Int.max`.
     guard order.lines.lowerBound >= 1, quote.count == order.lines.count else {
       return .refused(.noReviewLines(path: order.path))
     }
-    guard order.side == .onDisk || holdsRemovedLines(order.lines, in: tab.id) else {
+    guard order.side == .onDisk || holdsRemovedLines(order.lines, ofFile: path, in: host) else {
       return .refused(.noRemovedLines(path: order.path))
     }
     let comment = ReviewComment(
-      path: tab.path,
+      path: path,
       side: order.side,
       scope: fileTabScope(in: worktree.id),
       lines: order.lines,
@@ -61,6 +53,41 @@ extension AppModel {
       return .refused(.invalidValue(key: "text", value: order.text))
     }
     return reviewListing(of: worktree)
+  }
+
+  /// The shown tab whose rows the quote comes from, read now, so an edit made a
+  /// moment ago, noticed or not, is what is quoted; `asked` is the path as named.
+  private func readReviewHost(
+    showing path: String,
+    asked: String,
+    in worktree: Worktree,
+  ) async -> Result<ReviewTabID, ControlRefusal> {
+    if let tab = workspace.fileTab(showing: path, in: worktree.id) {
+      let refusalToQuote = {
+        self.refusalToReadInWorkspaceWindow
+          ?? (self.isFileTabShown(tab.id) ? nil : .tabNotShown(id: tab.id))
+      }
+      if let refusal = refusalToQuote() { return .failure(refusal) }
+      if fileTabReadLog.isReading(tab.id) { return .failure(.fileTabNotRead(id: tab.id)) }
+      await readFileTab(tab.id)
+      // A notice or image is refused as `tabs step` refuses it.
+      if let unread = await refusalToActOnRowsOnceRead(of: tab.id, refusalToQuote) {
+        return .failure(unread)
+      }
+      return .success(tab.id)
+    }
+    guard let tab = workspace.allChangesTab(in: worktree.id) else {
+      return .failure(.noReviewTab(path: asked))
+    }
+    if let refusal = refusalToReadInWorkspaceWindow { return .failure(refusal) }
+    guard isAllChangesTabShown(tab.id) else { return .failure(.tabNotShown(id: tab.id)) }
+    if allChangesReadLog.isReading(tab.id) { return .failure(.fileTabNotRead(id: tab.id)) }
+    allChangesStaleFiles.mark(.paths([path]), in: tab.id)
+    await readAllChangesTab(tab.id)
+    guard reviewRows(ofFile: path, in: tab.id) != nil else {
+      return .failure(.noReviewTab(path: asked))
+    }
+    return .success(tab.id)
   }
 
   func replyToSendReview(in id: String?, to sessionID: UUID?) async -> ControlReply {
@@ -109,9 +136,12 @@ extension AppModel {
     return await reply(worktree)
   }
 
-  private func holdsRemovedLines(_ lines: ClosedRange<Int>, in tabID: FileTab.ID) -> Bool {
-    guard case .text(let rows) = fileTabReadings[tabID]?.content else { return false }
-    return rows.lines.contains { line in
+  private func holdsRemovedLines(
+    _ lines: ClosedRange<Int>,
+    ofFile path: String,
+    in tabID: ReviewTabID,
+  ) -> Bool {
+    (reviewRows(ofFile: path, in: tabID) ?? []).contains { line in
       line.kind == .removed && line.number(on: .committed).map(lines.contains) == true
     }
   }

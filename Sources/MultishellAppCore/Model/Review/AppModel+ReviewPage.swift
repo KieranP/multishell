@@ -38,13 +38,25 @@ extension AppModel {
     return .ready(picked: picked, recipients: recipients, canSend: hasPending)
   }
 
-  /// A click on a comment's row: its file's tab, opened where it is not, with
-  /// the card scrolled into view and outlined.
+  /// A click on a comment's row: the All changes tab where a group shows it,
+  /// else its file's tab, opened where it is not, with the card scrolled into
+  /// view and outlined.
   public func selectReviewComment(_ id: ReviewComment.ID, in worktreeID: Worktree.ID) async {
     guard let comment = reviewComments(in: worktreeID).first(where: { $0.id == id }) else {
       return
     }
     setIfChanged(\.selectedReviewComments[worktreeID], id)
+    if let allChanges = workspace.allChangesTab(in: worktreeID),
+      workspace.group(allChanges.groupID)?.shownTabID == allChanges.id
+    {
+      activateTab(allChanges.id)
+      // A collapsed file places no card to scroll to.
+      if allChangesCollapsedFiles[allChanges.id]?.contains(comment.path) == true {
+        allChangesCollapsedFiles[allChanges.id]?.remove(comment.path)
+      }
+      reviewCardRevealRequests[allChanges.id] = .comment(id)
+      return
+    }
     let tab: FileTab?
     if let open = workspace.fileTab(showing: comment.path, in: worktreeID) {
       activateTab(open.id)

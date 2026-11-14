@@ -1,7 +1,8 @@
 import MultishellCore
 
-/// Each file tab's reads: what the last one cost, which run now, which had a
-/// change land meanwhile, and which hidden tabs are owed one when shown.
+/// Each file tab's reads, or each All changes tab's in a log of their own: what
+/// the last one cost, which run now, which had a change land meanwhile, and
+/// which hidden tabs are owed one when shown.
 struct FileTabReadLog {
   /// A re-read waits ten times what the last cost, so an agent rewriting a
   /// file in bursts takes at most a tenth of a core.
@@ -30,11 +31,12 @@ struct FileTabReadLog {
     signatures[id] = .some(signature)
   }
 
-  /// `nil` for a tab never read, which is due now.
-  func nextDue(_ id: FileTab.ID) -> ContinuousClock.Instant? {
+  /// `nil` for a tab never read, which is due now. `costScale` multiplies the
+  /// cost noted, the All changes tab noting a file's and reading `costScale` files.
+  func nextDue(_ id: FileTab.ID, costScale: Int = 1) -> ContinuousClock.Instant? {
     guard let finished = lastFinished[id] else { return nil }
     return finished + ((lastCost[id] ?? .zero) + (lastHighlightCost[id] ?? .zero))
-      * Self.costMultiple
+      * Self.costMultiple * max(1, costScale)
   }
 
   mutating func begin(_ id: FileTab.ID) {

@@ -8,6 +8,14 @@ extension AppModel {
     workspace.filesPanelMode == .changes && workspace.changeScope == .branch
   }
 
+  /// The panel's worktree while it lists Branch, or a worktree whose All
+  /// changes tab is shown under Branch, which takes its list from this read.
+  func readsBranchChanges(of id: Worktree.ID) -> Bool {
+    guard workspace.changeScope == .branch else { return false }
+    let isPanelListing = showsFilesPanel && filesPanelWorktree?.id == id && listsBranchChanges
+    return isPanelListing || shownAllChangesTab(in: id) != nil
+  }
+
   /// What the panel counts the worktree's changes against, as its footer says.
   func changeComparison(of id: Worktree.ID) -> ChangeComparison {
     guard listsBranchChanges, let worktree = workspace.worktree(id) else { return .head }
@@ -21,12 +29,12 @@ extension AppModel {
     return .branch(changes)
   }
 
-  /// Leaving Branch lets go of what it read, so coming back draws none as current.
+  /// Leaving Branch lets go of what it read, so coming back draws none as current;
+  /// a shown All changes tab's worktree keeps its own.
   func forgetBranchChangesUnlessListed() {
-    guard !listsBranchChanges else { return }
-    branchChangesReads.cancel { _ in true }
-    setIfChanged(\.branchChanges, [:])
-    setIfChanged(\.failedBranchReads, [:])
+    branchChangesReads.cancel { !readsBranchChanges(of: $0) }
+    setIfChanged(\.branchChanges, branchChanges.filter { readsBranchChanges(of: $0.key) })
+    setIfChanged(\.failedBranchReads, failedBranchReads.filter { readsBranchChanges(of: $0.key) })
   }
 
   /// The panel's worktree's, where it lists Branch.
@@ -36,7 +44,7 @@ extension AppModel {
 
   /// Paced, as every status landing asks for one.
   func scheduleBranchChangesRead(of id: Worktree.ID) {
-    guard showsFilesPanel, filesPanelWorktree?.id == id, listsBranchChanges, let coordinator,
+    guard readsBranchChanges(of: id), let coordinator,
       let worktree = workspace.worktree(id), mayReadStatus(of: worktree),
       let base = defaultBranch(ofWorktree: id),
       // Its new files come from the status read, whose landing asks again.
@@ -64,6 +72,7 @@ extension AppModel {
         else { return }
         if let changes { model.setIfChanged(\.branchChanges[id], changes) }
         model.setIfChanged(\.failedBranchReads[id], changes == nil ? base.shortName : nil)
+        model.noteAllChangesListLanded(in: id)
       },
       rerun: { $0.scheduleBranchChangesRead(of: id) },
     )

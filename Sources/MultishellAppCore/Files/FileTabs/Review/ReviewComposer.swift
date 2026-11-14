@@ -1,10 +1,13 @@
 import Foundation
 import MultishellCore
 
-/// A comment being written or edited in a file tab, under the lines it is on.
-/// Each opening is a new one, so its card's field starts from its own draft.
+/// A comment being written or edited in a file or All changes tab, under the
+/// lines it is on. Each opening is a new one, so its card's field starts from
+/// its own draft.
 public struct ReviewComposer: Identifiable, Equatable, Sendable {
   public let id = UUID()
+  /// The file its lines are in, which the All changes tab holds several of.
+  let path: String
   let side: DiffSide
   /// Moved as a read moves the comments, so the card stays under the lines it quotes.
   var lines: ClosedRange<Int>

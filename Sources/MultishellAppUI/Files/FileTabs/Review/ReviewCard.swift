@@ -6,7 +6,7 @@ import SwiftUI
 struct ReviewCard: View {
   let placement: ReviewCardPlacement
   let model: AppModel
-  let tabID: FileTab.ID
+  let tabID: ReviewTabID
   let theme: Theme
 
   var body: some View {

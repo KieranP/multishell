@@ -7,7 +7,12 @@ extension DiffDisplayText {
     guard touched.joined().contains(where: { lines[$0].isChange }) else {
       return selections.map(uncutText(in:)).joined(separator: "\n")
     }
-    return touched.joined().filter { lines[$0].kind != .padding }.map { index in
+    return diffLines(ofRows: touched.joined())
+  }
+
+  /// Each row with its `git diff` marker and a newline, padding left out.
+  func diffLines(ofRows rows: some Sequence<Int>) -> String {
+    rows.filter { lines[$0].kind != .padding }.map { index in
       let marker =
         switch lines[index].kind {
         case .added: "+"

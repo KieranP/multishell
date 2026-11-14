@@ -53,5 +53,8 @@ extension AppModel {
     pruneFileTabs()
     releaseHiddenFileTabs()
     readShownFileTabs()
+    pruneAllChangesTabs()
+    releaseHiddenAllChangesTabs()
+    readShownAllChangesTabs()
   }
 }

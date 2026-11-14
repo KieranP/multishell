@@ -16,17 +16,24 @@ final class FixedRowLayoutFragment: NSTextLayoutFragment {
         manager.offset(from: manager.documentRange.location, to: rangeInElement.location)
       } ?? 0
     let layoutDelegate = layoutDelegate
-    let top =
+    let (top, gapUnder) =
       MainActor.assumeIsolated {
         layoutDelegate.map { delegate in
-          delegate.geometry.top(ofRow: delegate.displayText.row(atOffset: offset))
+          let geometry = delegate.geometry
+          let row = delegate.displayText.row(atOffset: offset)
+          return (
+            geometry.top(ofRow: row) - geometry.textContainerTop,
+            geometry.rowGaps.height(under: row),
+          )
         }
-      } ?? DiffRowGeometry.verticalInset
+      } ?? (0, 0)
+    // The gap under it counted in its height, or TextKit, finding a scroll's top by
+    // summing heights, laid out rows far below a clip among many gaps.
     return CGRect(
       x: frame.minX,
-      y: top - DiffRowGeometry.verticalInset,
+      y: top,
       width: frame.width,
-      height: rowHeight,
+      height: rowHeight + gapUnder,
     )
   }
 

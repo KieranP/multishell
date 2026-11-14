@@ -29,6 +29,13 @@ extension AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
+  /// The All changes tab: its title and whether it is shown.
+  public static func allChangesTab(title: String, isShown: Bool) -> String {
+    isShown
+      ? [t("spoken.tab", title), t("spoken.selected")].joined(separator: ", ")
+      : t("spoken.tab", title)
+  }
+
   /// One group of tabs, said before its tabs are. Empty for a worktree with
   /// one group, "group 1 of 1" before every tab being noise.
   public static func tabGroup(position: Int, of count: Int, isFocused: Bool) -> String {

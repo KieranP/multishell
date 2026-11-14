@@ -21,6 +21,15 @@
 "agents.path-asking" = "Asking your login shell for its PATH…";
 "agents.path-fallback" = "Your login shell did not answer (%@), so agents are looked up on the app's own PATH. Refresh to try again.";
 "agents.path-from-login-shell" = "Agents are looked up on the PATH of %@ as an interactive login shell, the same one your terminals get. Refresh after installing one.";
+"all-changes.empty-file" = "An empty file.";
+"all-changes.fold-lines" = "lines %1$d–%2$d";
+"all-changes.image" = "An image. Open the file to see it beside its last commit.";
+"all-changes.letter-added" = "A";
+"all-changes.letter-deleted" = "D";
+"all-changes.letter-modified" = "M";
+"all-changes.no-uncommitted" = "No uncommitted changes";
+"all-changes.past-row-cap" = "Past the lines this tab holds. Open the file to read it.";
+"all-changes.reading" = "Reading…";
 "auto-rename.agent-exited" = "%1$@ stopped with exit status %2$d and said nothing.";
 "auto-rename.agent-said" = "%1$@ said: %2$@";
 "auto-rename.banner-subject" = "Auto Rename failed";
@@ -573,6 +582,7 @@
 "step.removal-failed-detail" = "Dismiss to go back to the terminals.";
 "step.removing-worktree" = "Moving the worktree to the Trash…";
 "step.worktree-not-removed" = "The worktree could not be removed";
+"tab.all-changes" = "All changes";
 "tab.editor" = "Editor";
 "tab.new" = "New Tab";
 "tab.new-custom-agent" = "New Custom Command Tab";

@@ -24,6 +24,7 @@ struct DiffDocumentViewReviewCardsTests {
 
   private static func composerPlacement(after row: Int) -> ReviewCardPlacement {
     let composer = ReviewComposer(
+      path: "a.txt",
       side: .onDisk,
       lines: (row + 1)...(row + 1),
       quote: ["line \(row)"],
@@ -327,7 +328,7 @@ struct DiffDocumentViewReviewCardsTests {
     let long = ReviewCardPlacement(card: Self.composerPlacement(after: 150).card, rows: 10...150)
     view.showReviewCards([long], content: Self.card)
     view.layoutSubtreeIfNeeded()
-    let span = try #require(view.reviewCards.span(of: long.id))
+    let span = try #require(view.column.reviewCards.span(of: long.id))
     try #require(span.upperBound - span.lowerBound + 20 < view.clipHeight)
     view.scroll(to: NSPoint(x: 0, y: span.lowerBound - 20))
     let before = view.scrollOrigin.y

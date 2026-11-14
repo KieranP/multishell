@@ -11,6 +11,15 @@ public struct FileTabRows: Equatable, Sendable {
 
   var lines: [DiffLine] { displayText.lines }
   public var hasLineChanges: Bool { !lineCounts.isEmpty }
+  /// Every row added, or every row removed: a file new or deleted whole, which
+  /// Split would show on one side with the other blank.
+  public var isOneSided: Bool {
+    guard let first = lines.first?.kind, first == .added || first == .removed else {
+      return false
+    }
+    return lines.allSatisfy { $0.kind == first }
+  }
+
   /// False where every row is the committed side's, removed: a deleted file's.
   var holdsTextOnDisk: Bool { lines.contains { $0.kind != .removed } }
 

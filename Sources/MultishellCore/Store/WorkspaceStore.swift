@@ -211,6 +211,7 @@ extension WorkspaceStore {
     workspace.portBlocks[id] = nil
     workspace.tabs.removeAll { $0.worktreeID == id }
     workspace.fileTabs.removeAll { $0.worktreeID == id }
+    workspace.allChangesTabs.removeAll { $0.worktreeID == id }
     workspace.tabGroups.removeAll { $0.worktreeID == id }
     workspace.sessions.removeAll { $0.worktreeID == id }
     workspace.focusedGroupByWorktree[id] = nil
@@ -262,12 +263,39 @@ extension WorkspaceStore {
     return tab
   }
 
-  /// A tab of either kind, its group settling on a neighbour.
+  /// Opens the worktree's All changes tab last in its focused group, or turns
+  /// to the one it has: there is at most one a worktree.
+  @discardableResult
+  public func openAllChangesTab(in worktreeID: Worktree.ID) -> AllChangesTab? {
+    if let open = workspace.allChangesTab(in: worktreeID) {
+      activateTab(open.id)
+      return open
+    }
+    guard let groupID = findOrMakeGroup(nil, in: worktreeID) else { return nil }
+    let tab = AllChangesTab(worktreeID: worktreeID, groupID: groupID)
+    workspace.allChangesTabs.append(tab)
+    place(tab.id, inGroup: groupID)
+    setShownTab(tab.id, ofGroup: groupID)
+    workspace.focusedGroupByWorktree[worktreeID] = groupID
+    return tab
+  }
+
+  /// A tab of any kind, its group settling on a neighbour.
   public func closeTab(_ id: WorkspaceTab.ID) {
-    if let index = workspace.tabIndex(id) {
-      removeTab(at: index)
-    } else if let index = workspace.fileTabIndex(id) {
-      removeFileTab(at: index)
+    switch workspace.workspaceTab(id) {
+    case .terminal: workspace.tabIndex(id).map(removeTab(at:))
+
+    case .file(let tab):
+      let vacated = slot(of: id)
+      workspace.fileTabs.removeAll { $0.id == id }
+      vacate(id, ofGroup: tab.groupID, slot: vacated)
+
+    case .allChanges(let tab):
+      let vacated = slot(of: id)
+      workspace.allChangesTabs.removeAll { $0.id == id }
+      vacate(id, ofGroup: tab.groupID, slot: vacated)
+
+    case nil: break
     }
   }
 
@@ -348,17 +376,28 @@ extension WorkspaceStore {
     activateTab(id)
   }
 
-  /// A file tab keeps its worktree, the only moves offered it staying inside.
+  /// A file or All changes tab keeps its worktree, the only moves offered it
+  /// staying inside.
   private func retag(
     _ id: WorkspaceTab.ID,
     intoGroup groupID: TabGroup.ID,
     of worktreeID: Worktree.ID,
   ) {
-    if let index = workspace.tabIndex(id) {
+    switch workspace.workspaceTab(id) {
+    case .terminal:
+      guard let index = workspace.tabIndex(id) else { return }
       workspace.tabs[index].worktreeID = worktreeID
       workspace.tabs[index].groupID = groupID
-    } else if let index = workspace.fileTabIndex(id) {
+
+    case .file:
+      guard let index = workspace.fileTabIndex(id) else { return }
       workspace.fileTabs[index].groupID = groupID
+
+    case .allChanges:
+      guard let index = workspace.allChangesTabIndex(id) else { return }
+      workspace.allChangesTabs[index].groupID = groupID
+
+    case nil: return
     }
   }
 
@@ -385,8 +424,7 @@ extension WorkspaceStore {
     let closing = Set(tab.sessionIDs)
     workspace.sessions.removeAll { closing.contains($0.id) }
     workspace.tabs.remove(at: index)
-    removeFromOrder(tab.id, ofGroup: tab.groupID)
-    settle(group: tab.groupID, vacating: vacated)
+    vacate(tab.id, ofGroup: tab.groupID, slot: vacated)
   }
 
   /// Each open tab's scroll as the views last left it.
@@ -398,12 +436,20 @@ extension WorkspaceStore {
     }
   }
 
-  private func removeFileTab(at index: Int) {
-    let tab = workspace.fileTabs[index]
-    let vacated = slot(of: tab.id)
-    workspace.fileTabs.remove(at: index)
-    removeFromOrder(tab.id, ofGroup: tab.groupID)
-    settle(group: tab.groupID, vacating: vacated)
+  /// Each open All changes tab's scroll as its view last left it.
+  public func setAllChangesScrolls(_ scrolls: [AllChangesTab.ID: AllChangesScroll]) {
+    for index in workspace.allChangesTabs.indices {
+      let tab = workspace.allChangesTabs[index]
+      guard let scroll = scrolls[tab.id], tab.scroll != scroll else { continue }
+      workspace.allChangesTabs[index].scroll = scroll
+    }
+  }
+
+  /// A tab just taken out of its array leaves its group's order, the group
+  /// settling on a neighbour from the `slot` read before it went.
+  private func vacate(_ id: WorkspaceTab.ID, ofGroup groupID: TabGroup.ID, slot: Int?) {
+    removeFromOrder(id, ofGroup: groupID)
+    settle(group: groupID, vacating: slot)
   }
 }
 

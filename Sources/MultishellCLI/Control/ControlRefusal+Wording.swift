@@ -71,7 +71,7 @@ extension ControlRefusal {
     case .noReviewLines(let path): "the tab of \(path) holds no such lines on that side"
 
     case .noReviewTab(let path):
-      "no file tab of the worktree shows \(path); `multishell tabs open-file` opens one"
+      "no file tab or All changes tab of the worktree shows \(path); `multishell tabs open-file` opens one"
 
     case .noReviewRecipient(let id):
       "worktree \(id) has no pane with an agent to send to, "
@@ -134,6 +134,9 @@ extension ControlRefusal {
     case .tabNotMoved(let id): "tab \(id) was not moved"
 
     case .tabShowsAFile(let id): "tab \(id) shows a file; only a terminal tab takes that"
+
+    case .tabShowsAllChanges(let id):
+      "tab \(id) shows all changes, with no panes and no one file's bar"
 
     case .tabNotShown(let id):
       "tab \(id) is not on screen; `multishell tabs select \(id)` shows it"
