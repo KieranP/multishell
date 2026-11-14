@@ -60,18 +60,35 @@ doc's "Reviewed and left as is".
 The work is staged, not committed: the commit before review was refused, the
 project committing only when asked.
 
+## Now, in the owner's order
+
+Each is committed when done. Committed so far: the tab and its fixes,
+`f35a323b`, in PR #43.
+
+| Work                                    | Status      | Notes                                                                                                                                                                                                                                  |
+| --------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Blank rows after collapsing files    | Fixed, to commit | Files collapsed above the first expanded one stack their headers in the gap over row 0, which no row's height counted, so TextKit placed the first rows too high and left them blank. TextKit's container now starts under that gap. Test: `theFirstRowsAreLaidOutUnderATallGapAboveTheFirstRow`. |
+| 2. The tab stays blank for seconds      | Queued      | It reads every file, one git run each, four at a time, and joins all rows before showing any. Speed it up; where it cannot be fast, show a loading indicator.                                                                          |
+| 3. Unified and Split on one canvas      | Queued      | For file tabs and the All changes tab. Split's columns scroll sideways together under one horizontal scroller. See below.                                                                                                              |
+| Wide scrollbar after Split to Unified   | To check    | After switching from Split, Unified's scroller shows wide. Not yet reproduced.                                                                                                                                                         |
+
 ## Queued rework
 
-The owner asked for working and bug-free first; these come after.
-
-- **Split as one scroll view.** Today Split is two scroll views locked by
-  offset, with the headers, folds, boxes and whole files in a layer over both.
-  The left column has no scroller and forwards its wheel; the lock pulls a side
-  back where the other clamps. One scroll view whose document holds both
-  gutters and columns, the headers, folds, notices and cards as subviews drops
-  the lock, the wheel forwarding, the overlay layout and the separate view for
-  each added or removed file. Find, the arrows and the rotor would then reach
-  added and removed files' rows too.
+- **Unified and Split on one canvas** (owner: for file tabs too, Split's
+  columns sideways together, Unified folded in). Today Split is two scroll
+  views locked by offset, with the headers, folds, boxes and whole files in a
+  layer over both; the left column has no scroller and forwards its wheel, and
+  the lock pulls a side back where the other clamps. Unified has one scroll
+  view, but its gutter, headers, folds, notices and boxes sit over the clip and
+  are moved on every scroll, so they can trail the text by a frame. The plan:
+  one scroller whose document is a canvas holding each column's gutter and
+  text, the divider, the headers, folds, notices, boxes and cards as subviews,
+  so everything scrolls natively and nothing is re-laid per scroll. Unified is
+  one column, Split two. Each column keeps `DiffDocumentView`'s code for cards,
+  steps, restores and reveals, scrolled by the canvas's scroller instead of
+  its own. That drops the lock, the wheel forwarding, the left's hidden
+  scroller and the overlays. Later, putting an added or removed file's rows in
+  Split's columns would let find, the arrows and the rotor reach them.
 - **Hold only the rows near the screen.** Layout and hosted views are already
   only what is on screen. Every file's rows are still read and held: 13 MB for
   82,895 lines across 1,802 files, plus the per-file reads. Reading each file

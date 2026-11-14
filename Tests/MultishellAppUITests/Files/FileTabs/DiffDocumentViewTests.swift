@@ -139,4 +139,20 @@ struct DiffDocumentViewTests {
 
     #expect(view.gutter.frame.width == minimum)
   }
+
+  @Test func theFirstRowsAreLaidOutUnderATallGapAboveTheFirstRow() throws {
+    let (view, window) = DiffDocumentFixture.shown(rows: 1_000)
+    defer { withExtendedLifetime(window) {} }
+    let textView = view.textView
+    var gaps: [Int: CGFloat] = [-1: 6 * 66]
+    for row in stride(from: 40, to: 1_000, by: 40) { gaps[row] = 66 }
+    view.setRowGapsHoldingAnchor(RowGaps(gaps))
+
+    view.scroll(to: NSPoint(x: 0, y: 6 * 66 - 100))
+    view.layoutSubtreeIfNeeded()
+    textView.layoutSubtreeIfNeeded()
+
+    #expect(textView.visibleRowsOutsideTheViewport == nil)
+    #expect(textView.misplacedRows == [])
+  }
 }

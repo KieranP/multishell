@@ -75,6 +75,10 @@ bottom.
   laid out rows far below the clip, leaving the rows on screen blank. Card gaps
   are sparse enough that the file tab never showed it
   (`theRowsOnScreenAreInTextKitsViewportWithAGapEverySixRows`).
+- **The gap above the first row starts TextKit's container**, not a row's
+  height. Files collapsed above the first expanded one stack their headers
+  there, which no fragment counted, and TextKit left the first rows blank
+  (owner's report; `theFirstRowsAreLaidOutUnderATallGapAboveTheFirstRow`).
 - **Each file is a box with a margin either side, as the mockups drew it**: a
   border-only layer from under its header to the next, which has no backing
   store and so may be as tall as the file. The vertical scroller sits in the

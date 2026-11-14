@@ -59,6 +59,10 @@ final class DiffTextView: NSTextView {
 
   var geometry: DiffRowGeometry { rowLayout.geometry }
 
+  override var textContainerOrigin: NSPoint {
+    NSPoint(x: super.textContainerOrigin.x, y: geometry.textContainerTop)
+  }
+
   init(geometry: DiffRowGeometry) {
     rowLayout = FixedRowLayoutDelegate(geometry: geometry)
     let layoutManager = NSTextLayoutManager()
@@ -92,6 +96,7 @@ final class DiffTextView: NSTextView {
   func setRowGaps(_ gaps: RowGaps) {
     guard geometry.rowGaps != gaps else { return }
     rowLayout.geometry.rowGaps = gaps
+    invalidateTextContainerOrigin()
     if let layoutManager = textLayoutManager {
       layoutManager.invalidateLayout(for: layoutManager.documentRange)
     }
