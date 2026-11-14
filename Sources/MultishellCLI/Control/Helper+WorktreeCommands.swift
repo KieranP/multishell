@@ -108,7 +108,7 @@ extension Helper {
     let options = try CommandOptions(
       optionWords,
       valued: ["from", "agent", "prompt"],
-      flags: ["existing"],
+      flags: ["existing", "background"],
       topic: topic,
     )
     let createsBranch = !options.has("existing")
@@ -122,6 +122,7 @@ extension Helper {
       startPoint: options["from"],
       agentID: options["agent"],
       task: options["prompt"],
+      selectsWorktree: !options.has("background"),
     )
   }
 

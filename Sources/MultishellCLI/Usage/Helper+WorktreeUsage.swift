@@ -4,7 +4,7 @@ extension Helper {
         Print every worktree, or one project's, as JSON: its id, its
         project's, its name and path.
     usage: multishell worktrees add [PROJECT_ID] BRANCH [--from REF] [--existing]
-                                  [--agent ID] [--prompt TEXT]
+                                  [--agent ID] [--prompt TEXT] [--background]
         Create a worktree on a new branch, as the New Worktree sheet does,
         and print its id once it exists, however long the hooks take. With
         no PROJECT_ID, in the project holding the folder this runs in.
@@ -14,6 +14,9 @@ extension Helper {
         --prompt     give the agent TEXT as its task; without --agent, the
                      project's own agent
         With neither, the first tab follows the project's create settings.
+        --background leaves the view where it is: the worktree is not
+                     selected and its first tab starts out of view, so
+                     several adds can run at once.
     usage: multishell worktrees remove WORKTREE_ID [--delete-branch]
                                        [--force-delete-branch] [--force]
         Remove it as its row's Remove does, without the dialog, to the Trash

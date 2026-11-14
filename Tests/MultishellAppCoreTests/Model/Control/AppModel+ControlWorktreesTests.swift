@@ -13,6 +13,7 @@ struct AppModelControlWorktreesTests {
     project: ProjectReference? = nil,
     agentID: String? = nil,
     task: String? = nil,
+    selectsWorktree: Bool = true,
   ) -> NewWorktreeOrder {
     NewWorktreeOrder(
       branch: branch,
@@ -21,6 +22,7 @@ struct AppModelControlWorktreesTests {
       startPoint: nil,
       agentID: agentID,
       task: task,
+      selectsWorktree: selectsWorktree,
     )
   }
 

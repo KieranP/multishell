@@ -66,4 +66,26 @@ struct HelperWorktreeCommandsTests {
     #expect(output.status == 2, "\(output.standardError)")
     #expect(app.requests.received.isEmpty)
   }
+
+  @Test func aWorktreeCommandWithBackgroundAsksNotToSelectIt() async throws {
+    let app = try ControlListener(reply: .done)
+    defer { app.stop() }
+
+    let output = try await HelperBinary.run(
+      ["worktrees", "add", "p-0123abcd", "feat/x", "--background"],
+      environment: app.environment,
+    )
+
+    #expect(output.succeeded, "\(output.standardError)")
+    let expected = NewWorktreeOrder(
+      branch: "feat/x",
+      project: .id("p-0123abcd"),
+      createsBranch: true,
+      startPoint: nil,
+      agentID: nil,
+      task: nil,
+      selectsWorktree: false,
+    )
+    #expect(app.requests.received == [.newWorktree(expected)])
+  }
 }

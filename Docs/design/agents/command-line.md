@@ -225,6 +225,10 @@ The command line's requests on the reports' socket. Newest at the bottom.
   Narrowed 2026-11-14 from ids only, so a shell function can make a worktree for
   a ticket from inside the repository. No typed path names a project; the id
   stays the only name.
+- **`worktrees add --background` makes the worktree without selecting it**, its
+  first tab starting out of view as a held-back one does after its hook, and the
+  keyboard staying put. Added 2026-11-14 so a script can make several at once
+  without each pulling the view to itself.
 
 ## Reviewed and left as is
 

@@ -38,8 +38,8 @@ extension AppModel {
     worktreeCreationStep = step
   }
 
-  /// Returns once the worktree exists and is selected, or `nil` once the create failed;
-  /// the hook runs on in the pane. `firstTab` nil leaves the tab to the create settings.
+  /// Returns once the worktree exists, or `nil` once the create failed; the hook
+  /// runs on in the pane. `firstTab` nil leaves the tab to the create settings.
   @discardableResult
   public func createWorktree(
     branch: String,
@@ -48,6 +48,7 @@ extension AppModel {
     in project: Project,
     firstTab: NewWorktreeFirstTab? = nil,
     takesOverTheSheet: Bool = true,
+    selectsWorktree: Bool = true,
   ) async -> Worktree? {
     // The workspace, not the value handed in: a sheet held open across a
     // removal would add a worktree nothing in the app lists.
@@ -113,11 +114,21 @@ extension AppModel {
       shellPath: shellPath,
       lists: fileLists(of: project, inEffect: effective),
     )
-    select(created, openingFirstTab: .onCreate)
+    openCreated(created, selecting: selectsWorktree)
     if workspace.port(of: created.id) == nil { alertNoPortBlock(for: created) }
     // A setup still running holds the tab back, and `openHeldBackTab` takes it.
     if !isBusy(created.id) { newWorktreeFirstTabs[created.id] = nil }
     return created
+  }
+
+  /// Unselected, the view stays put and the first tab starts out of it, as one
+  /// a setup held back does once that ends.
+  private func openCreated(_ created: Worktree, selecting: Bool) {
+    if selecting {
+      select(created, openingFirstTab: .onCreate)
+    } else if !isBusy(created.id) {
+      openHeldBackTab(of: created)
+    }
   }
 
   /// The project asked again after the wait: removing it meanwhile stopped no

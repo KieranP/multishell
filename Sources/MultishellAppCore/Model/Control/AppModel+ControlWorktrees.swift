@@ -75,6 +75,7 @@ extension AppModel {
         in: project,
         firstTab: firstTab,
         takesOverTheSheet: false,
+        selectsWorktree: order.selectsWorktree,
       )
     else { return .refused(.worktreeNotCreated) }
     return .json(["id": ControlID.worktree(created.id), "branch": created.name])

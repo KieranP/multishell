@@ -10,6 +10,8 @@ public struct NewWorktreeOrder: Codable, Equatable, Sendable {
   /// The first tab's agent; `nil` with a task is the project's own agent.
   public let agentID: String?
   public let task: String?
+  /// `false` leaves the user's view where it is, the first tab starting out of view.
+  public let selectsWorktree: Bool
 
   public init(
     branch: String,
@@ -18,6 +20,7 @@ public struct NewWorktreeOrder: Codable, Equatable, Sendable {
     startPoint: String?,
     agentID: String?,
     task: String?,
+    selectsWorktree: Bool = true,
   ) {
     self.branch = branch
     self.project = project
@@ -25,5 +28,6 @@ public struct NewWorktreeOrder: Codable, Equatable, Sendable {
     self.startPoint = startPoint
     self.agentID = agentID
     self.task = task
+    self.selectsWorktree = selectsWorktree
   }
 }
