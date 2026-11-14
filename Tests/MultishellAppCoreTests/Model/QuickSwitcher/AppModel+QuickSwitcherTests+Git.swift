@@ -8,6 +8,10 @@ import Testing
 @testable import MultishellGitKit
 
 extension AppModelQuickSwitcherTests {
+  private static func listsFile(_ name: String, in harness: GitHarness) -> Bool {
+    harness.model.quickSwitcherResults.sections.flatMap(\.items).map(\.title).contains(name)
+  }
+
   @Test func filesAreReadOnlyOnceAScopeOrTextListsThem() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -94,5 +98,53 @@ extension AppModelQuickSwitcherTests {
 
     try await waitUntil { harness.model.workspace.project(main.projectID)?.isExpanded == true }
     #expect(harness.model.workspace.project(main.projectID)?.isExpanded == true)
+  }
+
+  @Test func anIgnoredFileIsFoundOnlyWhileIgnoredFilesShow() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try harness.writeIgnored("secret.log", matching: "secret.log", in: main)
+    harness.model.select(main)
+    harness.model.toggleQuickSwitcher(.files)
+
+    harness.model.setQuickSwitcherText("secret")
+
+    try await waitUntil { Self.listsFile("secret.log", in: harness) }
+    #expect(Self.listsFile("secret.log", in: harness))
+    harness.model.setShowsIgnoredFiles(false)
+    #expect(!Self.listsFile("secret.log", in: harness))
+  }
+
+  @Test func aRequestForFilesWaitsForTheIgnoredOnesToo() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try harness.writeIgnored("secret.log", matching: "secret.log", in: main)
+    try harness.wrapGit(in: #"case "$*" in *--ignored*) sleep 0.5 ;; esac"#)
+    harness.model.select(main)
+    harness.model.toggleQuickSwitcher(.files)
+    harness.model.setQuickSwitcherText("secret")
+
+    await harness.model.waitForQuickSwitcherFiles()
+
+    #expect(Self.listsFile("secret.log", in: harness))
+  }
+
+  @Test func showingIgnoredFilesWithTheSwitcherUpFindsThem() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try harness.writeIgnored("secret.log", matching: "secret.log", in: main)
+    harness.model.setShowsIgnoredFiles(false)
+    harness.model.select(main)
+    harness.model.toggleQuickSwitcher(.files)
+    harness.model.setQuickSwitcherText("secret")
+    await harness.model.waitForQuickSwitcherFiles()
+
+    harness.model.setShowsIgnoredFiles(true)
+
+    try await waitUntil { Self.listsFile("secret.log", in: harness) }
+    #expect(Self.listsFile("secret.log", in: harness))
   }
 }

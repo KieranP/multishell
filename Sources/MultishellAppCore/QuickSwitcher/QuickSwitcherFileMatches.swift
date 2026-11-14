@@ -15,20 +15,18 @@ enum QuickSwitcherFileMatches {
   ) -> [String] {
     guard !query.isEmpty, limit > 0 else { return [] }
     let listing = tree.listing
-    // An opened submodule's files are listed under its folder, its own repository's;
-    // one never opened has none to leave out.
-    let submoduleFolders = listing.readFolders.intersection(listing.repositories)
     var best = QuickSwitcherBestPaths(limit: limit)
     for (path, folded) in zip(listing.filePaths, listing.foldedFilePaths)
     where query.foldedWords.allSatisfy(folded.prefoldedContains) {
       let score = score(of: folded, for: query)
-      // The exclusions after the cheap test, only for a path that would be kept.
-      guard best.wouldKeep(path, score: score), !listing.ignoredFiles.contains(path),
-        !listing.repositories.contains(path),
-        !submoduleFolders.contains(where: path.isPath(under:)),
+      // After the cheap test, for a path that would be kept: an opened submodule's files
+      // are its own repository's, and an ignored folder's are read only once opened.
+      guard best.wouldKeep(path, score: score), !listing.repositories.contains(path),
+        !listing.readFolders.contains(where: path.isPath(under:)),
         tree.isOpenable(path)
       else { continue }
-      best.offer(path, score: score)
+      // One point under, so a tracked file wins the tie over its ignored build output.
+      best.offer(path, score: listing.ignoredFiles.contains(path) ? score - 1 : score)
     }
     return best.paths
   }

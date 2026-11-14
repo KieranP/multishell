@@ -27,7 +27,7 @@ extension AppModel {
     else { return }
     // Once an opening: a read that failed would fail again on every key.
     quickSwitcher?.filesAskedFor = id
-    scheduleTrackedFilesRead(of: id)
+    scheduleTrackedFilesRead(of: id, withIgnoredEntries: showsIgnoredFiles)
   }
 
   /// The last search's rows again where the text has not moved, kept with the

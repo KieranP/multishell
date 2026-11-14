@@ -47,6 +47,18 @@ extension AppModelPersistenceTests {
     #expect(!after.showsFilesPanel)
   }
 
+  @Test func ignoredFilesHiddenBeforeARelaunchStayHidden() {
+    let file = Scratch.statePath("hidden-files")
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
+    let before = Harness(stateFile: file)
+
+    before.model.setShowsIgnoredFiles(false)
+
+    let (after, _, _, error) = before.relaunched()
+    #expect(error == nil)
+    #expect(!after.showsIgnoredFiles)
+  }
+
   @Test func modifiedOrBranchIsOneChoiceKeptAcrossARelaunch() {
     let file = Scratch.statePath("change-scope")
     defer { Scratch.remove(file.deletingLastPathComponent()) }

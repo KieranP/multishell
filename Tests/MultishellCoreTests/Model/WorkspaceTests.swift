@@ -146,6 +146,11 @@ struct WorkspaceTests {
     #expect(try decodeJSON(Workspace.self, #"{ "showsAllTerminals": true }"#).showsAllTerminals)
   }
 
+  @Test func aWorkspaceSavedBeforeIgnoredFilesCouldBeHiddenShowsThem() throws {
+    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).showsIgnoredFiles)
+    #expect(try !decodeJSON(Workspace.self, #"{ "showsIgnoredFiles": false }"#).showsIgnoredFiles)
+  }
+
   @Test func aWorkspaceWithoutAChangeScopeComparesWithHeadAndAnUnknownOneFallsBack() throws {
     #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).changeScope == .modified)
     #expect(try decodeJSON(Workspace.self, #"{ "changeScope": "branch" }"#).changeScope == .branch)

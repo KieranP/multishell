@@ -20,6 +20,11 @@ extension MacPlatform {
     t("menu.quick-switcher-commands"),
   ]
 
+  /// A switch's title names a state, which reads wrong in a row with no unticked box.
+  private static let switcherTitles = [
+    t("menu.show-hidden-files"): t("quick-switcher.toggle-hidden-files")
+  ]
+
   var commandMenuItems: [PlatformMenuItem] {
     let menusMacOSFills = [NSApp.servicesMenu, NSApp.windowsMenu, NSApp.helpMenu]
     let isAvailable = isCommandAvailable ?? { _ in true }
@@ -43,6 +48,7 @@ extension MacPlatform {
       under: [],
       leavingOut: { isLeftOut($0, appMenu: appMenu, leavingOutMenus: leavingOutMenus) },
       isAvailable: { isAvailable($0.title) },
+      switcherTitle: { switcherTitles[$0.title] },
     )
   }
 

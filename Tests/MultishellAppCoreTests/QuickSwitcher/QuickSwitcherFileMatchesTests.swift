@@ -53,14 +53,20 @@ struct QuickSwitcherFileMatchesTests {
     #expect(Self.paths("theme", in: tree) == ["Theme.swift", "a/b/c/Theme.swift"])
   }
 
-  @Test func ignoredAndNotCheckedOutFilesAreLeftOut() {
+  @Test func anIgnoredFileTheTreeListsIsFoundAndNotCheckedOutFilesAreLeftOut() {
     let tree = Self.tree(
       ["src/config.ts", "src/config-sparse.ts"],
       notCheckedOut: ["src/config-sparse.ts"],
       ignored: ["config.local.ts"],
     )
 
-    #expect(Self.paths("config", in: tree) == ["src/config.ts"])
+    #expect(Self.paths("config", in: tree) == ["src/config.ts", "config.local.ts"])
+  }
+
+  @Test func anIgnoredFileRanksBelowATrackedOneThatMatchesAsWell() {
+    let tree = Self.tree(["src/main.cpp"], ignored: ["src/main.o"])
+
+    #expect(Self.paths("main", in: tree) == ["src/main.cpp", "src/main.o"])
   }
 
   @Test func aGitignoredFolderOpenedInTheFilesPanelStillHasItsFilesLeftOut() {

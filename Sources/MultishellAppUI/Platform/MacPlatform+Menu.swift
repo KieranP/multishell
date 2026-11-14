@@ -13,7 +13,10 @@ extension MacPlatform {
     isInAppMenu: Bool = false,
     leavingOut isLeftOut: (NSMenuItem) -> Bool = { _ in false },
     isAvailable: (NSMenuItem) -> Bool = { _ in true },
+    switcherTitle: (NSMenuItem) -> String? = { _ in nil },
   ) -> [PlatformMenuItem] {
+    // SwiftUI sets a Toggle's tick only as its menu opens; unasked, it is stale.
+    menu.delegate?.menuNeedsUpdate?(menu)
     menu.update()
     let appMenuItem = path.isEmpty ? menu.items.first : nil
     return menu.items.filter { !$0.isSeparatorItem && !$0.isHidden && !isLeftOut($0) }.flatMap {
@@ -28,6 +31,7 @@ extension MacPlatform {
             isChecked: item.state == .on,
             shortcut: MenuShortcutText.of(item),
             isInAppMenu: isInAppMenu,
+            switcherTitle: switcherTitle(item),
           )
         ]
       }
@@ -37,6 +41,7 @@ extension MacPlatform {
         isInAppMenu: isInAppMenu,
         leavingOut: isLeftOut,
         isAvailable: isAvailable,
+        switcherTitle: switcherTitle,
       )
     }
   }

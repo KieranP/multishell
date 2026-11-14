@@ -702,6 +702,24 @@ struct AppModelQuickSwitcherSectionsTests {
     #expect(items.first?.shortcut == "⌘D")
   }
 
+  @Test func aCommandWithASwitcherTitleIsListedUnderItAndRunsItsMenuItem() throws {
+    let harness = Harness()
+    harness.platform.menuItems = [
+      PlatformMenuItem(
+        path: ["View", "Show Hidden Files"],
+        isEnabled: true,
+        isChecked: false,
+        switcherTitle: "Toggle Hidden Files",
+      )
+    ]
+
+    harness.model.toggleQuickSwitcher(.commands)
+
+    let items = try #require(harness.model.quickSwitcherResults.sections.first?.items)
+    #expect(items.map(\.title) == ["Toggle Hidden Files"])
+    #expect(items.map(\.target) == [.command(path: ["View", "Show Hidden Files"])])
+  }
+
   @Test func aWorktreeGoneFromGitLeavesRecent() {
     let harness = Harness()
     harness.model.select(harness.feature)

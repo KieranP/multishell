@@ -27,8 +27,8 @@ extension SettingsPage {
     case .general:
       [
         t("general.section-editor"), t("general.editor"), t("label.command"),
-        t("general.section-storage"),
-        t("general.state-file"),
+        t("general.section-files-panel"), t("general.show-hidden-files"),
+        t("general.section-storage"), t("general.state-file"),
       ]
 
     case .notifications:

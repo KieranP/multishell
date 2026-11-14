@@ -130,6 +130,10 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(AppShortcutCatalogue.quickSwitcherCommands)
       // No key yet; one is an `AppShortcut` in the catalogue (adding/interface.md).
       Toggle(t("menu.files-panel"), isOn: model.showsFilesPanelBinding)
+      Toggle(
+        t("menu.show-hidden-files"),
+        isOn: model.settingBinding(\.showsIgnoredFiles, write: model.setShowsIgnoredFiles),
+      )
       Divider()
       Toggle(t("menu.enable-debug-tools"), isOn: model.debugToolsEnabledBinding)
     }

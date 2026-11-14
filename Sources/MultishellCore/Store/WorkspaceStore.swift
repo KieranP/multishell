@@ -798,6 +798,10 @@ extension WorkspaceStore {
     workspace.showsFilesPanel = shows
   }
 
+  public func setShowsIgnoredFiles(_ shows: Bool) {
+    workspace.showsIgnoredFiles = shows
+  }
+
   public func setShowsAllTerminals(_ shows: Bool) {
     workspace.showsAllTerminals = shows
   }

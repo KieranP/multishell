@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > General: the editor Open in Editor uses, and where the state
-/// file is.
+/// Settings > General: the editor Open in Editor uses, what the Files panel
+/// lists, and where the state file is.
 struct AppGeneralPage: View {
   let model: AppModel
 
@@ -29,6 +29,14 @@ struct AppGeneralPage: View {
             text: model.settingBinding(\.customEditorCommand, write: model.setCustomEditorCommand),
           )
         }
+      }
+
+      SettingsGroup(t("general.section-files-panel")) {
+        InfoToggle(
+          t("general.show-hidden-files"),
+          info: t("general.show-hidden-files-info"),
+          isOn: model.settingBinding(\.showsIgnoredFiles, write: model.setShowsIgnoredFiles),
+        )
       }
 
       SettingsGroup(t("general.section-storage")) {

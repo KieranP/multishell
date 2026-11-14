@@ -97,6 +97,16 @@ struct MacPlatformCommandMenuItemsTests {
     #expect(items.map(\.path) == [["Multishell", "Settings…"], ["View", "Files Panel"]])
   }
 
+  @Test func showHiddenFilesIsNamedAsAToggleInTheSwitcher() {
+    let bar = NSMenu()
+    bar.addItem(Self.menu("Multishell", [("Settings…", "showSettings:")]))
+    bar.addItem(Self.menu("View", [(t("menu.show-hidden-files"), "swiftUIAction:")]))
+
+    let items = MacPlatform.commandItems(in: bar, leavingOutMenus: [])
+
+    #expect(items.map(\.switcherTitle) == [nil, t("quick-switcher.toggle-hidden-files")])
+  }
+
   @Test func theThemePickerIsASettingAndACommandThatCannotActIsGreyedOut() {
     let bar = NSMenu()
     bar.addItem(Self.menu("Multishell", [("Settings…", "showSettings:")]))

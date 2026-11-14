@@ -15,10 +15,15 @@ extension AppModel {
       return
     }
     scheduleTrackedFilesRead(of: id)
-    scheduleIgnoredEntriesRead(of: id)
     scheduleStatusRefresh(of: id)
     scheduleBranchChangesRead(of: id)
     for path in expandedSubmodules(of: id).keys { scheduleSubmoduleRead(path, in: id) }
+    scheduleIgnoredReads(of: id)
+  }
+
+  /// What git ignores in the worktree, and each ignored folder open in its panel.
+  func scheduleIgnoredReads(of id: Worktree.ID) {
+    scheduleIgnoredEntriesRead(of: id)
     let expanded = filesPanelState(of: id).expandedFolders
     for path in (ignoredFolderEntries[id] ?? [:]).keys where expanded.contains(path) {
       scheduleIgnoredFolderRead(path, in: id)
@@ -63,14 +68,18 @@ extension AppModel {
 
   /// Read on git changes, never because a count moved; one at a time per worktree,
   /// one asked for meanwhile running after it, the index maybe past what it read.
-  func scheduleTrackedFilesRead(of id: Worktree.ID) {
+  /// With `withIgnoredEntries`, what git ignores lands with it, so one listing is built.
+  func scheduleTrackedFilesRead(of id: Worktree.ID, withIgnoredEntries readsIgnored: Bool = false) {
     guard pendingTrackedFilesReads[id] == nil else {
       trackedFilesReadsAskedAgain.insert(id)
       return
     }
     guard let coordinator, let worktree = workspace.worktree(id) else { return }
+    let git = coordinator.git
     pendingTrackedFilesReads[id] = Task { @MainActor [weak self] in
-      let tracked = await coordinator.git.trackedFiles(in: worktree.path)
+      async let ignored = readsIgnored ? await git.ignoredEntries(in: worktree.path) : nil
+      let tracked = await git.trackedFiles(in: worktree.path)
+      let ignoredEntries = await ignored
       guard let self, !Task.isCancelled else { return }
       pendingTrackedFilesReads[id] = nil
       if trackedFilesReadsAskedAgain.remove(id) != nil { scheduleTrackedFilesRead(of: id) }
@@ -79,13 +88,14 @@ extension AppModel {
         fileTreeBuildLandings += 1
         return
       }
+      if let ignoredEntries { landIgnoredEntries(ignoredEntries, in: id) }
       setIfChanged(\.trackedFiles[id], tracked)
     }
   }
 
   /// Paced, as an install or a build writes what git ignores constantly.
   func scheduleIgnoredEntriesRead(of id: Worktree.ID) {
-    guard let coordinator, let worktree = workspace.worktree(id) else { return }
+    guard showsIgnoredFiles, let coordinator, let worktree = workspace.worktree(id) else { return }
     let git = coordinator.git
     schedulePacedRead(
       id,
@@ -94,11 +104,15 @@ extension AppModel {
       reading: { await git.ignoredEntries(in: worktree.path) },
       landing: { model, entries in
         guard let entries else { return }
-        model.setIfChanged(\.ignoredEntries[id], entries)
-        model.forgetFoldersNoLongerIgnored(in: id)
+        model.landIgnoredEntries(entries, in: id)
       },
       rerun: { $0.scheduleIgnoredEntriesRead(of: id) },
     )
+  }
+
+  private func landIgnoredEntries(_ entries: [String], in id: Worktree.ID) {
+    setIfChanged(\.ignoredEntries[id], entries)
+    forgetFoldersNoLongerIgnored(in: id)
   }
 
   /// A folder git stopped ignoring is listed by git again, its files no longer greyed.
@@ -122,7 +136,7 @@ extension AppModel {
   /// git lists nothing below a folder it ignores, so the disk is read, one
   /// level at a time, as each opens.
   func scheduleIgnoredFolderRead(_ path: String, in id: Worktree.ID) {
-    guard let worktree = workspace.worktree(id) else { return }
+    guard showsIgnoredFiles, let worktree = workspace.worktree(id) else { return }
     let folder = worktree.path.appending(path: path)
     schedulePacedRead(
       PanelFolderRead(kind: .ignoredFolder, path: path, worktreeID: id),

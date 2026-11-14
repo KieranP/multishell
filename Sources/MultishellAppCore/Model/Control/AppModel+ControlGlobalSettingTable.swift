@@ -175,6 +175,7 @@ extension AppModel {
         setFilesPanelMode,
       ),
       .choice("changeScope", { self.workspace.changeScope }, setChangeScope),
+      .flag("showsIgnoredFiles", { self.workspace.showsIgnoredFiles }, setShowsIgnoredFiles),
     ]
   }
 

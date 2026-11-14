@@ -29,9 +29,13 @@ choice opens. Newest at the bottom, above "Reviewed and left as is".
   pane's title; scattered letters there matched nearly everything.
 - **A file matches by every word inside its path**, the Files panel's byte
   search, not the letters in order. A repository of 200,000 paths is searched on
-  every key, and the ordered match is too slow for that. Ignored files, files a
-  sparse checkout left out, submodules and an opened submodule's files are not
-  listed, and its name is bold where a word was found in it.
+  every key, and the ordered match is too slow for that. Files a sparse checkout
+  left out, submodules, an opened submodule's files and an opened ignored
+  folder's are not listed, and its name is bold where a word was found in it. An
+  ignored file git names is listed while Show Hidden Files is on
+  (files/panel.md), read beside the tracked files and landing with them so the
+  listing is built once, and one point under a tracked file's score, so
+  `main.cpp` beats the `main.o` beside it.
 - **Only the best hundred paths are kept as the listing is walked**, for Files
   and All alike, All showing five, so Tab between them reuses the search, never
   all the matches sorted, since one letter names nearly every path. The last
@@ -46,11 +50,14 @@ choice opens. Newest at the bottom, above "Reviewed and left as is".
   read.
 - **Commands are the menu bar's enabled items, walked once as it opens.** A walk
   validates every item of every menu, and the list never drifts from the menus.
-  Choosing one is the user's own click, not the command line's, so Paste saves
-  an image and words files as a Cmd+V does. It runs on a timer, which fires only
-  once the run loop has waited and SwiftUI has taken the field down; until then
-  the field has the keyboard, and Copy would copy it. A queued block ran before
-  that redraw.
+  Each menu's delegate is asked to update first: SwiftUI sets a Toggle's tick
+  only as its menu opens, so the View menu's switches read stale without it.
+  View > Show Hidden Files is listed as "Toggle Hidden Files": a title naming a
+  state reads wrong in a row with no unticked box. Choosing one is the user's
+  own click, not the command line's, so Paste saves an image and words files as
+  a Cmd+V does. It runs on a timer, which fires only once the run loop has
+  waited and SwiftUI has taken the field down; until then the field has the
+  keyboard, and Copy would copy it. A queued block ran before that redraw.
 - **Commands are the app's own, and only those that can act now.** What macOS
   puts in the menu bar is left out: the Services, Window and Help menus it
   fills, matched by title too since SwiftUI's rebuilt bar can hold a copy of the

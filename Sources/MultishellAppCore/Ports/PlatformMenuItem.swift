@@ -14,6 +14,9 @@ public struct PlatformMenuItem: Encodable, Equatable, Sendable {
   let shortcut: String?
   /// In the menu named for the app, which the switcher calls the application's.
   let isInAppMenu: Bool
+  /// The switcher's name for it where the menu's reads wrong in a row; `nil` keeps
+  /// the menu's.
+  let switcherTitle: String?
 
   public init(
     path: [String],
@@ -21,11 +24,13 @@ public struct PlatformMenuItem: Encodable, Equatable, Sendable {
     isChecked: Bool,
     shortcut: String? = nil,
     isInAppMenu: Bool = false,
+    switcherTitle: String? = nil,
   ) {
     self.path = path
     self.isEnabled = isEnabled
     self.isChecked = isChecked
     self.shortcut = shortcut
     self.isInAppMenu = isInAppMenu
+    self.switcherTitle = switcherTitle
   }
 }

@@ -16,8 +16,8 @@ extension AppModel {
       tracked: trackedFiles[id] ?? .empty,
       status: statuses[id],
       submodules: submoduleReadings[id] ?? [:],
-      ignoredEntries: ignoredEntries[id] ?? [],
-      ignoredFolderEntries: ignoredFolderEntries[id] ?? [:],
+      ignoredEntries: showsIgnoredFiles ? ignoredEntries[id] ?? [] : [],
+      ignoredFolderEntries: showsIgnoredFiles ? ignoredFolderEntries[id] ?? [:] : [:],
       branchChanges: changeComparison(of: id).branchChanges,
     )
     // Read before the cache answers, so a render it answers still redraws on a landing.

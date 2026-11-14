@@ -22,6 +22,18 @@ struct AppModelControlGlobalSettingsTests {
     #expect(reply.outputFields["preferredAgentID"] is NSNull)
   }
 
+  @Test func ignoredFilesAreAFlagTheCommandLineSets() async throws {
+    let harness = Harness()
+
+    #expect(
+      await harness.messageSource.ask(
+        .writeGlobalSetting(key: "showsIgnoredFiles", value: "false")
+      )
+        == .done
+    )
+    #expect(!harness.model.showsIgnoredFiles)
+  }
+
   @Test func theCustomCommandTakesNoFlagsSetting() async throws {
     let harness = Harness()
 

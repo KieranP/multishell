@@ -78,7 +78,7 @@ extension AppModel {
       QuickSwitcherItem(
         target: .command(path: item.path),
         kind: .command,
-        title: item.path.last ?? "",
+        title: item.switcherTitle ?? item.path.last ?? "",
         location: item.isInAppMenu
           ? QuickSwitcherItem.path([t("command.application")] + item.path.dropFirst().dropLast())
           : QuickSwitcherItem.path(item.path.dropLast()),

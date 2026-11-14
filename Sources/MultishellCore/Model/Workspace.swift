@@ -20,7 +20,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
     case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode, changeScope
-    case showsFilesPanel, showsAllTerminals
+    case showsFilesPanel, showsIgnoredFiles, showsAllTerminals
     case portBlockStart, portBlockSize, portBlocks
   }
 
@@ -126,6 +126,9 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var changeScope = ChangeScope.default
   /// The Files panel is open, one switch for the window kept for the next launch.
   public internal(set) var showsFilesPanel = false
+  /// The Files panel and the quick switcher list what git ignores. On by
+  /// default, as the panel listed it before it could be hidden.
+  public internal(set) var showsIgnoredFiles = true
   /// The Agents board shows every terminal, not only agents' panes.
   public internal(set) var showsAllTerminals = false
   /// The first port of the first block. Changing it or the size moves every
@@ -268,6 +271,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     )
     changeScope = container.decodeTolerantly(ChangeScope.self, forKey: .changeScope, or: .default)
     showsFilesPanel = try container.decode(Bool.self, forKey: .showsFilesPanel, or: false)
+    showsIgnoredFiles = try container.decode(Bool.self, forKey: .showsIgnoredFiles, or: true)
     showsAllTerminals = try container.decode(Bool.self, forKey: .showsAllTerminals, or: false)
     // Tolerated, each block alone: one is given again on load, so a bad value costs itself.
     portBlockStart = container.decodeTolerantly(

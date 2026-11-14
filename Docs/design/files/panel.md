@@ -116,6 +116,13 @@ What the panel lists and why each went the way it did. Newest at the bottom.
   carries a dot while a comment waits, not a count, as the rule above has it,
   and it is kept in the same saved choice as the other pages. A file's row in
   Files and Changes counts its comments waiting to be sent, as its tab does.
+- **Show Hidden Files is one global switch, on by default**, in Settings >
+  General and the View menu, which puts it in the quick switcher's commands.
+  Hidden means what git ignores: the panel neither reads nor lists it, and the
+  quick switcher finds none of it; a read under way stops. On is the default
+  because the panel listed ignored files before the switch existed. Turning it
+  on reads them again, with each ignored folder still open; what was read stays
+  in memory while hidden, so that read finds the folders.
 
 ## Reviewed and left as is
 

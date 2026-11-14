@@ -168,7 +168,10 @@
 "general.editor-command-prompt" = "code-insiders {path}";
 "general.editor-info" = "What Open in Editor (⇧⌘O) and a ⌘-clicked text file's link use. Found by bundle identifier, or by a command on the login shell's PATH; a terminal editor opens as a new tab.";
 "general.section-editor" = "Open in Editor";
+"general.section-files-panel" = "Files Panel";
 "general.section-storage" = "Storage";
+"general.show-hidden-files" = "Show hidden files";
+"general.show-hidden-files-info" = "On, the Files panel lists what git ignores, greyed, and the quick switcher finds those files. Off, git's ignored files are neither read nor listed.";
 "general.state-file" = "State file:";
 "general.state-file-info" = "Projects, worktrees, tabs and these settings. Running shells are not saved.";
 "hooks.copied-paths" = "Copy into new worktrees";
@@ -222,6 +225,7 @@
 "menu.quick-switcher-commands" = "Quick Switcher Commands…";
 "menu.redo" = "Redo";
 "menu.select-all" = "Select All";
+"menu.show-hidden-files" = "Show Hidden Files";
 "menu.split-down" = "Split Down";
 "menu.split-right" = "Split Right";
 "menu.terminal" = "Terminal";
@@ -312,6 +316,7 @@
 "quick-switcher.section.tabs" = "Tabs";
 "quick-switcher.section.waiting" = "Waiting on you";
 "quick-switcher.section.worktrees" = "Worktrees";
+"quick-switcher.toggle-hidden-files" = "Toggle Hidden Files";
 "quit.title" = "Quit Multishell?";
 "review.card" = "%1$@, %2$@";
 "review.clear-sent" = "Clear sent";
