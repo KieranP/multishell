@@ -28,6 +28,9 @@ struct SideColumnWidthsTests {
   @Test func aWindowTooNarrowKeepsEachSidesMinimum() {
     let narrow = widths(300, 600, 600)
 
-    #expect(narrow == SideColumnWidths(sidebar: SidebarWidth.minimum, filesPanel: 200))
+    #expect(
+      narrow
+        == SideColumnWidths(sidebar: SidebarWidth.minimum, filesPanel: FilesPanelWidth.minimum)
+    )
   }
 }

@@ -14,6 +14,9 @@ extension UIMetrics {
   static let sidebarGlyphGap: Double = 7
   /// The + on a project's row, and the sort menu above it sharing its column.
   static let sidebarRowButtonWidth: Double = 24
+  /// The least of a worktree's or pane's name a crowded row keeps, its badges
+  /// and times giving way first.
+  static let sidebarNameKeptSample = "abc…"
   /// The Projects header and the sort menu inside it, and the quick
   /// switcher's section titles.
   static let sectionHeaderHeight: Double = 22

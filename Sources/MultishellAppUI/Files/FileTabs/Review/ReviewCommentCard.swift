@@ -20,12 +20,19 @@ struct ReviewCommentCard: View {
         Text(comment.lineLabel)
           .font(.system(size: metrics.caption, design: .monospaced))
           .foregroundStyle(theme.fileTab.textSecondary)
-        ReviewChipLabel(chip: chip, palette: theme.fileTab, theme: theme, metrics: metrics)
+          .fixedSize()
+        // A narrow tab drops the state's capsule before the lines wrap.
+        ViewThatFits(in: .horizontal) {
+          ReviewChipLabel(chip: chip, palette: theme.fileTab, theme: theme, metrics: metrics)
+            .fixedSize()
+          Color.clear.frame(width: 0, height: 0)
+        }
+        .layoutPriority(1)
         Spacer(minLength: 8)
         if comment.isPending {
-          Button(t("review.edit"), action: edit)
+          Button(t("review.edit"), action: edit).fixedSize()
         }
-        Button(chip.removeTitle, action: remove)
+        Button(chip.removeTitle, action: remove).fixedSize()
       }
       .buttonStyle(.plain)
       .font(metrics.font(size: metrics.caption))

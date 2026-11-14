@@ -44,34 +44,31 @@ struct WorktreeRow: View, @MainActor Equatable {
     metrics.worktreeRowHeight(hasCustomName: customName != nil, isRenaming: isRenaming)
   }
 
+  private var branchFont: Font { .system(size: metrics.monospaced, design: .monospaced) }
+
   var body: some View {
     HStack(spacing: UIMetrics.sidebarGlyphGap) {
       StateDot(state: state.shownState, theme: theme, palette: theme.projectsPanel)
         .frame(width: metrics.sidebarGlyphColumn)
         .help(t("sidebar.kind-and-state", kind, state.shownState.displayName))
 
-      if isRenaming {
-        nameField
-      } else {
-        names
+      Group {
+        if isRenaming {
+          nameField
+        } else {
+          names
+        }
       }
+      .reservingWidth(of: UIMetrics.sidebarNameKeptSample, in: branchFont)
+      .padding(.trailing, 4)
 
-      Spacer(minLength: 4)
-
-      WorktreeRowBadges(
-        operation: operation,
-        autoRename: autoRename,
-        isLocked: worktree.isLocked,
-        standing: standing,
-        status: status,
-        terminalCount: terminalCount,
-        theme: theme,
-        metrics: metrics,
-        showModifiedFiles: showModifiedFiles,
-        clearAutoRenameFailure: clearAutoRenameFailure,
-        showPullRequest: showPullRequest,
-        showCIRuns: showCIRuns,
-      )
+      ViewThatFits(in: .horizontal) {
+        badges(.all)
+        badges(.withoutCount)
+        badges(.withoutServices)
+        badges(.alertsOnly)
+      }
+      .layoutPriority(1)
     }
     .padding(.leading, metrics.worktreeRowIndent)
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
@@ -129,7 +126,7 @@ struct WorktreeRow: View, @MainActor Equatable {
     } else {
       BranchNameText(
         name: worktree.name,
-        font: .system(size: metrics.monospaced, design: .monospaced),
+        font: branchFont,
         color: theme.rowNameColor(isSelected: isSelected),
         prefixColor: theme.projectsPanel.textTertiary,
       )
@@ -172,5 +169,25 @@ struct WorktreeRow: View, @MainActor Equatable {
       && a.isSelected == b.isSelected && a.isDropTarget == b.isDropTarget
       && a.status == b.status && a.standing == b.standing && a.theme == b.theme
       && a.metrics == b.metrics
+  }
+
+  private func badges(_ shown: WorktreeRowBadges.Shown) -> some View {
+    HStack(spacing: UIMetrics.sidebarGlyphGap) {
+      WorktreeRowBadges(
+        shown: shown,
+        operation: operation,
+        autoRename: autoRename,
+        isLocked: worktree.isLocked,
+        standing: standing,
+        status: status,
+        terminalCount: terminalCount,
+        theme: theme,
+        metrics: metrics,
+        showModifiedFiles: showModifiedFiles,
+        clearAutoRenameFailure: clearAutoRenameFailure,
+        showPullRequest: showPullRequest,
+        showCIRuns: showCIRuns,
+      )
+    }
   }
 }

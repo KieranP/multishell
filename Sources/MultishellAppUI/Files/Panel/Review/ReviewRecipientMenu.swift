@@ -34,7 +34,7 @@ struct ReviewRecipientMenu: View {
       // AppKit's own indicator is drawn in the system's colour, so the label draws one.
       HStack(spacing: 4) {
         Label {
-          Text(picked.agentName)
+          Text(picked.agentName).lineLimit(1)
         } icon: {
           mark(of: picked)
         }
@@ -46,7 +46,7 @@ struct ReviewRecipientMenu: View {
     .menuStyle(.button)
     .menuIndicator(.hidden)
     .buttonStyle(ThemedButtonStyle(fill: theme.filesPanel.fill, text: theme.filesPanel.text))
-    .fixedSize()
+    .fixedSize(horizontal: false, vertical: true)
     .accessibilityLabel(t("review.recipient-menu"))
   }
 

@@ -116,6 +116,11 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
   name made `feat/dashboard` `feat…oard`, keeping the prefix half the branches
   share and cutting what told them apart. The leaf keeps both its ends, so
   `fix-login-v2` and `-v3` still differ. The tooltip names it whole.
+- **A crowded row keeps three characters of its name and drops badges whole**:
+  the terminal count, then the PR and CI glyphs, then the git counts, a running
+  or failed glyph always staying; a pane row drops its workers, then its time.
+  At the 18 pt UI size and the narrowest sidebar the badges kept their widths
+  and the branch drew nothing.
 
 ## Reviewed and left as is
 

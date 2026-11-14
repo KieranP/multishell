@@ -13,6 +13,10 @@ struct PaneRow: View, @MainActor Equatable {
   let metrics: UIMetrics
   let select: () -> Void
 
+  private var titleFont: Font {
+    metrics.font(size: metrics.caption, weight: pane.isFocused ? .semibold : .regular)
+  }
+
   var body: some View {
     HStack(spacing: UIMetrics.sidebarGlyphGap) {
       AgentMarkView(
@@ -26,24 +30,20 @@ struct PaneRow: View, @MainActor Equatable {
         PanePositionBadge(number: position.number, metrics: metrics, palette: theme.projectsPanel)
       }
       Text(pane.title)
-        .font(metrics.font(size: metrics.caption, weight: pane.isFocused ? .semibold : .regular))
+        .font(titleFont)
         .foregroundStyle(
           pane.isFocused ? theme.projectsPanel.text : theme.projectsPanel.textSecondary
         )
         .lineLimit(1)
         .truncationMode(.tail)
-      Spacer(minLength: 4)
-      if !pane.workers.isEmpty {
-        WorkerChip(
-          workers: pane.workers,
-          theme: theme,
-          palette: theme.projectsPanel,
-          metrics: metrics,
-        )
+        .reservingWidth(of: UIMetrics.sidebarNameKeptSample, in: titleFont)
+        .padding(.trailing, 4)
+      ViewThatFits(in: .horizontal) {
+        trailing(showsWorkers: true, showsElapsed: true)
+        trailing(showsWorkers: false, showsElapsed: true)
+        trailing(showsWorkers: false, showsElapsed: false)
       }
-      if let state = pane.railState {
-        rail(state)
-      }
+      .layoutPriority(1)
     }
     .padding(.leading, metrics.paneRowIndent)
     .padding(.trailing, UIMetrics.sidebarRowSideInset)
@@ -62,7 +62,25 @@ struct PaneRow: View, @MainActor Equatable {
       && a.metrics == b.metrics
   }
 
-  private func rail(_ state: SessionState) -> some View {
+  /// The worker chip and the state's dot and time; a crowded row gives up the
+  /// chip, then the time, before its title.
+  private func trailing(showsWorkers: Bool, showsElapsed: Bool) -> some View {
+    HStack(spacing: UIMetrics.sidebarGlyphGap) {
+      if showsWorkers, !pane.workers.isEmpty {
+        WorkerChip(
+          workers: pane.workers,
+          theme: theme,
+          palette: theme.projectsPanel,
+          metrics: metrics,
+        )
+      }
+      if let state = pane.railState {
+        rail(state, showsElapsed: showsElapsed)
+      }
+    }
+  }
+
+  private func rail(_ state: SessionState, showsElapsed: Bool) -> some View {
     HStack(spacing: 4) {
       StateDot(
         state: state,
@@ -70,7 +88,7 @@ struct PaneRow: View, @MainActor Equatable {
         palette: theme.projectsPanel,
         diameter: UIMetrics.inlineStateDotDiameter,
       )
-      if let elapsed = pane.elapsed(at: now) {
+      if showsElapsed, let elapsed = pane.elapsed(at: now) {
         ElapsedLabel(
           text: elapsed,
           color: theme.color(for: state, on: theme.projectsPanel),

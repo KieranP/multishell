@@ -3,7 +3,9 @@ import MultishellCore
 /// How wide the Files panel may be dragged in a detail area of a given width,
 /// from its left edge.
 public enum FilesPanelWidth {
-  static let minimum = 200.0
+  /// The header's five page glyphs and its toggle take 212 pt; narrower, it
+  /// spills over the panel's edge and hides the handle.
+  static let minimum = 220.0
   /// Where a machine that has never moved the edge starts, and where a
   /// double-click on a services' page puts it back.
   public static let initial = 280.0

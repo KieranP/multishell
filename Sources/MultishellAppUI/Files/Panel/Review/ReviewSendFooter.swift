@@ -25,19 +25,10 @@ struct ReviewSendFooter: View {
         }
 
       case .ready(let picked, let recipients, let canSend):
-        HStack(spacing: 8) {
-          Text(t("review.send-to"))
-            .foregroundStyle(theme.filesPanel.textSecondary)
-          ReviewRecipientMenu(recipients: recipients, picked: picked, now: now, theme: theme) {
-            sessionID in
-            model.pickReviewRecipient(sessionID, in: worktree.id)
-          }
-          Spacer(minLength: 0)
-          Button(t("review.send")) {
-            model.sendReview(of: worktree.id, to: picked.id, takingFocus: true)
-          }
-          .buttonStyle(sendButtonStyle)
-          .disabled(!canSend)
+        // A narrow panel drops "Send to" rather than wrap it a letter a line.
+        ViewThatFits(in: .horizontal) {
+          readyRow(picked: picked, recipients: recipients, canSend: canSend, labelled: true)
+          readyRow(picked: picked, recipients: recipients, canSend: canSend, labelled: false)
         }
 
       case .noRecipient(let text):
@@ -47,6 +38,7 @@ struct ReviewSendFooter: View {
           Spacer(minLength: 0)
           Button(t("review.send")) {}
             .buttonStyle(sendButtonStyle)
+            .fixedSize()
             .disabled(true)
         }
       }
@@ -64,5 +56,31 @@ struct ReviewSendFooter: View {
       fill: theme.color(for: .attention, on: theme.filesPanel),
       text: theme.filesPanel.background,
     )
+  }
+
+  private func readyRow(
+    picked: ReviewRecipient,
+    recipients: [ReviewRecipient],
+    canSend: Bool,
+    labelled: Bool,
+  ) -> some View {
+    HStack(spacing: 8) {
+      if labelled {
+        Text(t("review.send-to"))
+          .foregroundStyle(theme.filesPanel.textSecondary)
+          .fixedSize()
+      }
+      ReviewRecipientMenu(recipients: recipients, picked: picked, now: now, theme: theme) {
+        sessionID in
+        model.pickReviewRecipient(sessionID, in: worktree.id)
+      }
+      Spacer(minLength: 0)
+      Button(t("review.send")) {
+        model.sendReview(of: worktree.id, to: picked.id, takingFocus: true)
+      }
+      .buttonStyle(sendButtonStyle)
+      .fixedSize()
+      .disabled(!canSend)
+    }
   }
 }
