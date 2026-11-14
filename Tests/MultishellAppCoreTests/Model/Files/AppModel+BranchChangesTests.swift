@@ -32,6 +32,22 @@ struct AppModelBranchChangesTests {
     #expect(names() == [])
   }
 
+  @Test func openingThePanelOntoChangesUnderBranchKeepsTheBranchReadItHolds() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setFilesPanelMode(.files)
+    harness.model.setChangeScope(.branch)
+    harness.model.branchChanges[harness.main.id] = BranchChanges(
+      baseName: "main",
+      mergeBase: "abc",
+      changes: [],
+    )
+
+    harness.model.showFilesPanel(.changes, of: harness.main)
+
+    #expect(harness.model.branchChanges[harness.main.id] != nil)
+  }
+
   @Test func branchListsAnUncommittedEditAsSoonAsItsStatusIsRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

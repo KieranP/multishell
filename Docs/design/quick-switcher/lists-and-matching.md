@@ -185,9 +185,9 @@ Raised by reviews and settled; a review need not raise these again.
   it at once, and a second walk point would be a second place the list is read.
 - **Each arrow press building the rows again.** It is the same build as a
   render, above, well under a millisecond.
-- **Files Panel listed under a cover while the panel is on.** Choosing it turns
-  the panel off, as View > Files Panel does there; leaving it out hid a command
-  that acts.
+- **The View menu's panes listed under a cover while the panel is on.** Choosing
+  one turns the panel off, as the menu item does there; leaving them out hid a
+  command that acts.
 - **`ui switcher` waiting on file-tree builds with no bound.** Unproven: a
   listing starts its change set and both end; a build that never settles under
   steady status changes was not reproduced.

@@ -15,5 +15,6 @@ extension AppModel {
   func uncoverDetailAndReadItsTabs() {
     uncoverDetail()
     readShownFileTabs()
+    readShownAllChangesTabs()
   }
 }

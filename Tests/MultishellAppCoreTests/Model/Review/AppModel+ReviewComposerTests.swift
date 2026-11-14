@@ -42,7 +42,7 @@ struct AppModelReviewComposerTests {
       ReviewLineSelection(from: 1, to: 2, in: Self.rows(of: tab, in: harness), side: .onDisk)
     )
 
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     harness.model.noteReviewDraft("  Merge these.  ", in: tab.id)
     let added = harness.model.commitReviewComposer(in: tab.id)
 
@@ -63,7 +63,7 @@ struct AppModelReviewComposerTests {
       ReviewLineSelection(from: 1, to: 1, in: Self.rows(of: tab, in: harness))
     )
 
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     harness.model.noteReviewDraft(" \n", in: tab.id)
 
     #expect(!harness.model.commitReviewComposer(in: tab.id))
@@ -77,7 +77,7 @@ struct AppModelReviewComposerTests {
     let (tab, main) = try await Self.tabShowing("hello\ntwo\n", in: harness)
     let rows = Self.rows(of: tab, in: harness)
     let selection = try #require(ReviewLineSelection(from: 1, to: 1, in: rows))
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     harness.model.noteReviewDraft("First.", in: tab.id)
     harness.model.commitReviewComposer(in: tab.id)
     let comment = try #require(harness.model.reviewComments(in: main.id).first)
@@ -133,7 +133,7 @@ struct AppModelReviewComposerTests {
     let selection = try #require(
       ReviewLineSelection(from: 1, to: 1, in: Self.rows(of: tab, in: harness))
     )
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     try "hello\nadded\ntwo\n".write(
       to: main.path.appending(path: "README.md"),
       atomically: true,
@@ -156,7 +156,7 @@ struct AppModelReviewComposerTests {
     let selection = try #require(
       ReviewLineSelection(from: 1, to: 1, in: Self.rows(of: tab, in: harness))
     )
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     harness.model.noteReviewDraft("First.", in: tab.id)
     harness.model.commitReviewComposer(in: tab.id)
     let comment = try #require(harness.model.reviewComments(in: main.id).first)
@@ -179,7 +179,7 @@ struct AppModelReviewComposerTests {
     let selection = try #require(
       ReviewLineSelection(from: 1, to: 1, in: Self.rows(of: tab, in: harness))
     )
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     harness.model.noteReviewDraft("First.", in: tab.id)
     harness.model.commitReviewComposer(in: tab.id)
     let comment = try #require(harness.model.reviewComments(in: main.id).first)
@@ -200,10 +200,10 @@ struct AppModelReviewComposerTests {
     let (tab, _) = try await Self.tabShowing("hello\ntwo\n", in: harness)
     let rows = Self.rows(of: tab, in: harness)
     let selection = try #require(ReviewLineSelection(from: 1, to: 1, in: rows))
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     let first = harness.model.reviewCardPlacements(of: tab, in: rows).map(\.id)
 
-    harness.model.openReviewComposer(on: selection, in: tab.id)
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
     let second = harness.model.reviewCardPlacements(of: tab, in: rows).map(\.id)
 
     #expect(first.count == 1)
@@ -217,6 +217,7 @@ struct AppModelReviewComposerTests {
     let rows = Self.rows(of: tab, in: harness)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 0, to: 0, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     harness.model.noteReviewDraft("First.", in: tab.id)
@@ -224,6 +225,7 @@ struct AppModelReviewComposerTests {
     let comment = try #require(harness.model.reviewComments(in: main.id).first)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     harness.model.noteReviewDraft("Typed.", in: tab.id)
@@ -231,6 +233,7 @@ struct AppModelReviewComposerTests {
 
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 0, to: 0, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     harness.model.startEditingReviewComment(comment.id, in: tab.id)
@@ -246,6 +249,7 @@ struct AppModelReviewComposerTests {
     let rows = Self.rows(of: tab, in: harness)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     _ = harness.model.takeFileTabFocusRequest(tab.id)
@@ -262,6 +266,7 @@ struct AppModelReviewComposerTests {
     let rows = Self.rows(of: tab, in: harness)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     let opened = try #require(harness.model.reviewComposers[tab.id])
@@ -285,6 +290,7 @@ struct AppModelReviewComposerTests {
     let (tab, _) = try await Self.tabShowing("two\n", in: harness)
     let rows = Self.rows(of: tab, in: harness)
     harness.model.reviewComposers[tab.id] = ReviewComposer(
+      path: tab.path,
       side: .committed,
       lines: 1...1,
       quote: ["hello"],
@@ -301,6 +307,7 @@ struct AppModelReviewComposerTests {
     let (tab, _) = try await Self.tabShowing("hello\ntwo\n", in: harness)
     let rows = Self.rows(of: tab, in: harness)
     harness.model.reviewComposers[tab.id] = ReviewComposer(
+      path: tab.path,
       side: .committed,
       lines: 1...1,
       quote: ["old"],
@@ -311,6 +318,7 @@ struct AppModelReviewComposerTests {
 
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
 
@@ -324,6 +332,7 @@ struct AppModelReviewComposerTests {
     let rows = Self.rows(of: tab, in: harness)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     #expect(harness.model.reviewComposerAsksForKeyboard(in: tab.id))
@@ -341,6 +350,7 @@ struct AppModelReviewComposerTests {
     for (row, text) in [(0, "First."), (1, "Second.")] {
       harness.model.openReviewComposer(
         on: try #require(ReviewLineSelection(from: row, to: row, in: rows)),
+        ofFile: tab.path,
         in: tab.id,
       )
       harness.model.noteReviewDraft(text, in: tab.id)
@@ -361,6 +371,7 @@ struct AppModelReviewComposerTests {
     let rows = Self.rows(of: tab, in: harness)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     try "hello\nTWO\n".write(
@@ -386,6 +397,7 @@ struct AppModelReviewComposerTests {
 
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
 
@@ -400,6 +412,7 @@ struct AppModelReviewComposerTests {
     let rows = Self.rows(of: tab, in: harness)
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 1, to: 1, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     harness.model.noteReviewDraft("Typed.", in: tab.id)
@@ -410,6 +423,7 @@ struct AppModelReviewComposerTests {
 
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 0, to: 0, in: removedRows)),
+      ofFile: tab.path,
       in: tab.id,
     )
 
@@ -424,6 +438,7 @@ struct AppModelReviewComposerTests {
     let removedRow = try #require(rows.firstIndex { $0.kind == .removed })
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: removedRow, to: removedRow, in: rows)),
+      ofFile: tab.path,
       in: tab.id,
     )
     harness.model.noteReviewDraft("Typed.", in: tab.id)
@@ -434,6 +449,7 @@ struct AppModelReviewComposerTests {
 
     harness.model.openReviewComposer(
       on: try #require(ReviewLineSelection(from: 0, to: 0, in: keptRows)),
+      ofFile: tab.path,
       in: tab.id,
     )
 

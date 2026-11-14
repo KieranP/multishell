@@ -151,6 +151,7 @@ struct HelperControlTests {
       (["debug", "samples", "--last", "5"], .debugSamples(last: 5)),
       (["debug", "samples"], .debugSamples(last: 1)),
       (["debug", "memory"], .debugMemory),
+      (["tabs", "open-all-changes", "w-89abcdef"], .openAllChangesTab(worktree: "w-89abcdef")),
       (
         ["tabs", "open-file", "w-89abcdef", "Sources/App.swift"],
         .openFileTab(worktree: "w-89abcdef", path: "Sources/App.swift"),
@@ -397,6 +398,8 @@ struct HelperControlTests {
       ["open", "a"],
       ["info", "extra"],
       ["tabs", "open-file", "w-89abcdef"],
+      ["tabs", "open-all-changes"],
+      ["tabs", "open-all-changes", "w-89abcdef", "extra"],
       ["tabs", "step", UUID().uuidString],
       ["tabs", "step", UUID().uuidString, "--next", "--previous"],
       ["tabs", "find", UUID().uuidString],

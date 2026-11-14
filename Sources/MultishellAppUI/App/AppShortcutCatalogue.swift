@@ -36,9 +36,12 @@ enum AppShortcutCatalogue {
   static let find = AppShortcut("f")
   static let findNext = AppShortcut("g")
   static let findPrevious = AppShortcut("g", .shift)
-  /// Ghostty's own end-search key, which would otherwise end a search under
-  /// a bar of ours that stayed up.
-  static let closeFind = AppShortcut("f", .shift)
+  static let closeFind = AppShortcut("f", .option)
+  /// The Files panel on each page. Cmd+Shift+F is Ghostty's own end-search key,
+  /// which would otherwise end a search under a bar of ours that stayed up.
+  static let filesPane = AppShortcut("f", .shift)
+  static let changesPane = AppShortcut("c", .shift)
+  static let reviewPane = AppShortcut("r", .shift)
 
   /// Copy, paste, cut and select-all. The menu carries them and the surface
   /// keeps them, a pane's Cmd+C being Ghostty's own clipboard action.
@@ -54,7 +57,7 @@ enum AppShortcutCatalogue {
     addProject, openInEditor, splitRight, splitDown,
     moveTabToNewGroup, nextGroup, previousGroup,
     toggleAgentBoard, quickSwitcher, quickSwitcherCommands, undo, redo, nextTab, previousTab,
-    find, findNext, findPrevious, closeFind,
+    find, findNext, findPrevious, closeFind, filesPane, changesPane, reviewPane,
     cut, copy, paste, selectAll,
   ]
 }

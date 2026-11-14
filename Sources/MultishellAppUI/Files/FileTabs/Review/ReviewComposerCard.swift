@@ -6,6 +6,8 @@ import SwiftUI
 /// is the model's, so a tab hidden and shown again keeps it.
 struct ReviewComposerCard: View {
   private static var fieldHeight: Double { 64 }
+  /// As tall as the mockup drew Cancel and Add comment.
+  private static var buttonHeight: Double { 24 }
 
   let composer: ReviewComposer
   let theme: Theme
@@ -49,12 +51,19 @@ struct ReviewComposerCard: View {
       HStack(spacing: 8) {
         Spacer(minLength: 0)
         Button(t("action.cancel"), action: cancel)
-          .buttonStyle(ThemedButtonStyle(fill: theme.fileTab.fill, text: theme.fileTab.text))
+          .buttonStyle(
+            ThemedButtonStyle(
+              fill: theme.fileTab.fill,
+              text: theme.fileTab.text,
+              minHeight: Self.buttonHeight,
+            )
+          )
         Button(composer.commitTitle, action: commitDraft)
           .buttonStyle(
             ThemedButtonStyle(
               fill: theme.color(for: .attention, on: theme.fileTab),
               text: theme.fileTab.background,
+              minHeight: Self.buttonHeight,
             )
           )
           .disabled(!canCommit)

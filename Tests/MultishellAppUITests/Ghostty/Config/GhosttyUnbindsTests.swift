@@ -16,6 +16,7 @@ struct GhosttyUnbindsTests {
         "super+alt+g", "super+alt+left", "super+alt+right",
         "super+shift+a",
         "super+p", "super+shift+p",
+        "super+shift+c", "super+shift+r", "super+alt+f",
         "super+alt+d",
         "ctrl+tab", "ctrl+shift+tab",
         "super+f", "super+g", "super+shift+g", "super+shift+f",

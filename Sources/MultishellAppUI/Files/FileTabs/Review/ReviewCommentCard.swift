@@ -30,11 +30,10 @@ struct ReviewCommentCard: View {
         .layoutPriority(1)
         Spacer(minLength: 8)
         if comment.isPending {
-          Button(t("review.edit"), action: edit).fixedSize()
+          ReviewCardActionButton(title: t("review.edit"), theme: theme, action: edit)
         }
-        Button(chip.removeTitle, action: remove).fixedSize()
+        ReviewCardActionButton(title: chip.removeTitle, theme: theme, action: remove)
       }
-      .buttonStyle(.plain)
       .font(metrics.font(size: metrics.caption))
       .foregroundStyle(theme.fileTab.textSecondary)
       Text(comment.text)

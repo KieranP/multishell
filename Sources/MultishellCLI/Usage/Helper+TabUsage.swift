@@ -37,22 +37,27 @@ extension Helper {
         Prints the tab as `tabs show` does.
     usage: multishell tabs clear-status TAB_ID
         Clear the dots of a terminal tab's panes, as its Clear Status does.
+    usage: multishell tabs open-all-changes WORKTREE_ID
+        Open the worktree's All changes tab, every change in one diff, as the
+        Changes page's button does, and print the tab's id as JSON. One open
+        already is brought to the front. In a worktree out of view it opens
+        without switching to it.
     usage: multishell tabs open-file WORKTREE_ID PATH
         Open the worktree's file at PATH, relative to the worktree, as a tab,
         as a click on its Files panel row does, and print the tab's id as
         JSON. A file open already is brought to the front. In a worktree out
         of view it opens without switching to it.
     usage: multishell tabs step TAB_ID --next | --previous
-        Move a file tab's view to the next or previous change, as the arrows
-        on its bar do. The tab must be on screen, its main window neither
-        covered nor minimized; refused where its arrow is greyed out, or the
-        tab shows an image or a notice in place of the file's lines, which
-        has no arrows.
+        Move a file or All changes tab's view to the next or previous change,
+        as the arrows on its bar do. The tab must be on screen, its main
+        window neither covered nor minimized; refused where its arrow is
+        greyed out, or a file tab shows an image or a notice in place of the
+        file's lines, which has no arrows.
     usage: multishell tabs find TAB_ID TEXT
     usage: multishell tabs find TAB_ID --next | --previous | --close
-        As `panes find`, over a file tab on screen, and print the tab as `tabs
-        show` does, its find bar with the matches in all and which is
-        selected, from 0. Refused as `tabs step` is; --close works anywhere,
+        As `panes find`, over a file or All changes tab on screen, and print
+        the tab as `tabs show` does, its find bar with the matches in all and
+        which is selected, from 0. Refused as `tabs step` is; --close works anywhere,
         dropping a find kept over a hidden tab or a notice.
 
     """

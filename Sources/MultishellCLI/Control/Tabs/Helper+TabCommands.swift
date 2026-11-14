@@ -57,16 +57,17 @@ extension Helper {
 
     default:
       guard
-        let status = try runTabContents(
+        let status = try runTabOpenings(
           arguments.first,
           words,
           optionWords,
           environment: environment,
         )
+          ?? runTabContents(arguments.first, words, optionWords, environment: environment)
       else {
         throw UsageError(
-          "tabs needs: list, open, open-file, show, select, close, move, rename, resize, "
-            + "clear-status, step or find",
+          "tabs needs: list, open, open-all-changes, open-file, show, select, close, move, "
+            + "rename, resize, clear-status, step or find",
           topic: topic,
         )
       }

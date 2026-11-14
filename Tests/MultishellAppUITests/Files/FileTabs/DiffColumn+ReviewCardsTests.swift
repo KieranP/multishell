@@ -24,6 +24,7 @@ struct DiffDocumentViewReviewCardsTests {
 
   private static func composerPlacement(after row: Int) -> ReviewCardPlacement {
     let composer = ReviewComposer(
+      path: "a.txt",
       side: .onDisk,
       lines: (row + 1)...(row + 1),
       quote: ["line \(row)"],
@@ -42,7 +43,7 @@ struct DiffDocumentViewReviewCardsTests {
     defer { withExtendedLifetime(window) {} }
     let rowBelowBefore = view.textView.geometry.top(ofRow: 6)
 
-    view.showReviewCards([Self.placement(after: 5)], content: Self.card)
+    view.column.showReviewCards([Self.placement(after: 5)], content: Self.card)
     view.layoutSubtreeIfNeeded()
 
     let geometry = view.textView.geometry
@@ -60,9 +61,9 @@ struct DiffDocumentViewReviewCardsTests {
     let (view, window) = DiffDocumentFixture.shown(contextLines: (0..<40).map { "line \($0)" })
     defer { withExtendedLifetime(window) {} }
     let before = view.textView.geometry.top(ofRow: 6)
-    view.showReviewCards([Self.placement(after: 5)], content: Self.card)
+    view.column.showReviewCards([Self.placement(after: 5)], content: Self.card)
 
-    view.showReviewCards([], content: Self.card)
+    view.column.showReviewCards([], content: Self.card)
 
     #expect(view.textView.geometry.top(ofRow: 6) == before)
     #expect(!view.textView.subviews.contains { $0.frame.height == Self.cardHeight })
@@ -92,12 +93,12 @@ struct DiffDocumentViewReviewCardsTests {
     let (view, window) = DiffDocumentFixture.shown(contextLines: (0..<120).map { "line \($0)" })
     defer { withExtendedLifetime(window) {} }
     let above = Self.placement(after: 5)
-    view.showReviewCards([above], content: Self.card)
+    view.column.showReviewCards([above], content: Self.card)
     view.layoutSubtreeIfNeeded()
     view.scroll(to: NSPoint(x: 0, y: view.textView.geometry.gapTop(afterRow: 5) + 20))
     let before = view.scrollOrigin.y
 
-    view.showReviewCards([above, Self.placement(after: 90)], content: Self.card)
+    view.column.showReviewCards([above, Self.placement(after: 90)], content: Self.card)
     view.layoutSubtreeIfNeeded()
 
     #expect(view.scrollOrigin.y == before)
@@ -132,7 +133,7 @@ struct DiffDocumentViewReviewCardsTests {
     )
     let placement = Self.placement(after: 150)
     guard case .comment(let comment, _) = placement.card else { throw CancellationError() }
-    view.showReviewCards([placement], content: Self.card)
+    view.column.showReviewCards([placement], content: Self.card)
 
     view.revealReviewCard(.comment(comment.id))
     view.frame = NSRect(x: 0, y: 0, width: 500, height: 300)
@@ -140,21 +141,21 @@ struct DiffDocumentViewReviewCardsTests {
     defer { withExtendedLifetime(window) {} }
     view.layoutSubtreeIfNeeded()
 
-    #expect(view.topRow > 140)
-    #expect(view.topRow < 150)
+    #expect(view.column.topRow > 140)
+    #expect(view.column.topRow < 150)
   }
 
   @Test func aCardClosingUnderACutTopKeepsTheRowsBelowItInView() {
     let (view, window) = DiffDocumentFixture.shown(contextLines: (0..<120).map { "line \($0)" })
     defer { withExtendedLifetime(window) {} }
-    view.showReviewCards([Self.placement(after: 40)], content: Self.card)
+    view.column.showReviewCards([Self.placement(after: 40)], content: Self.card)
     view.layoutSubtreeIfNeeded()
     view.scroll(to: NSPoint(x: 0, y: view.textView.geometry.gapTop(afterRow: 40) + 50))
 
-    view.showReviewCards([], content: Self.card)
+    view.column.showReviewCards([], content: Self.card)
     view.layoutSubtreeIfNeeded()
 
-    #expect(view.topRow == 41)
+    #expect(view.column.topRow == 41)
   }
 
   @Test func aSplitRevealBeforeASizeWinsOverTheOtherColumnsSavedScroll() throws {
@@ -183,7 +184,7 @@ struct DiffDocumentViewReviewCardsTests {
     defer { withExtendedLifetime(window) {} }
     let tall = Self.placement(after: 160)
     guard case .comment(let comment, _) = tall.card else { throw CancellationError() }
-    view.showReviewCards(
+    view.column.showReviewCards(
       [ReviewCardPlacement(card: tall.card, rows: 100...160)],
       content: Self.card,
     )
@@ -261,7 +262,7 @@ struct DiffDocumentViewReviewCardsTests {
     view.show(text, theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
     let changeRow = try #require(text.lines.firstIndex { $0.kind == .added })
-    view.showReviewCards([Self.placement(after: changeRow - 2)]) { _ in
+    view.column.showReviewCards([Self.placement(after: changeRow - 2)]) { _ in
       AnyView(Color.clear.frame(height: 300))
     }
     view.layoutSubtreeIfNeeded()
@@ -285,7 +286,7 @@ struct DiffDocumentViewReviewCardsTests {
     view.layoutSubtreeIfNeeded()
     let stacked = (0..<3).map { _ in Self.placement(after: 50) }
     guard case .comment(let first, _) = stacked[0].card else { throw CancellationError() }
-    view.showReviewCards(stacked) { _ in AnyView(Color.clear.frame(height: 120)) }
+    view.column.showReviewCards(stacked) { _ in AnyView(Color.clear.frame(height: 120)) }
     view.layoutSubtreeIfNeeded()
 
     view.revealReviewCard(.comment(first.id))
@@ -298,7 +299,7 @@ struct DiffDocumentViewReviewCardsTests {
     defer { withExtendedLifetime(window) {} }
     view.scroll(to: NSPoint(x: 0, y: view.textView.geometry.scrollOffset(puttingAtTop: 20)))
     let composer = Self.composerPlacement(after: 24)
-    view.showReviewCards([composer], content: Self.card)
+    view.column.showReviewCards([composer], content: Self.card)
     view.layoutSubtreeIfNeeded()
     let before = view.scrollOrigin.y
 
@@ -312,7 +313,7 @@ struct DiffDocumentViewReviewCardsTests {
     defer { withExtendedLifetime(window) {} }
     let lastInView = Int(view.textView.geometry.topRow(atScrollOffset: view.clipHeight)) - 1
     let composer = Self.composerPlacement(after: lastInView)
-    view.showReviewCards([composer], content: Self.card)
+    view.column.showReviewCards([composer], content: Self.card)
     view.layoutSubtreeIfNeeded()
 
     view.revealReviewCard(composer.id)
@@ -325,9 +326,9 @@ struct DiffDocumentViewReviewCardsTests {
     let (view, window) = DiffDocumentFixture.shown(contextLines: (0..<300).map { "line \($0)" })
     defer { withExtendedLifetime(window) {} }
     let long = ReviewCardPlacement(card: Self.composerPlacement(after: 150).card, rows: 10...150)
-    view.showReviewCards([long], content: Self.card)
+    view.column.showReviewCards([long], content: Self.card)
     view.layoutSubtreeIfNeeded()
-    let span = try #require(view.reviewCards.span(of: long.id))
+    let span = try #require(view.column.reviewCards.span(of: long.id))
     try #require(span.upperBound - span.lowerBound + 20 < view.clipHeight)
     view.scroll(to: NSPoint(x: 0, y: span.lowerBound - 20))
     let before = view.scrollOrigin.y
@@ -342,7 +343,7 @@ struct DiffDocumentViewReviewCardsTests {
     defer { withExtendedLifetime(window) {} }
     let tall = Self.placement(after: 100)
     guard case .comment(let comment, _) = tall.card else { throw CancellationError() }
-    view.showReviewCards([tall]) { _ in AnyView(Color.clear.frame(height: 500)) }
+    view.column.showReviewCards([tall]) { _ in AnyView(Color.clear.frame(height: 500)) }
     view.layoutSubtreeIfNeeded()
 
     view.revealReviewCard(.comment(comment.id))

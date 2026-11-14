@@ -5,4 +5,7 @@ struct CommittedSide {
   let size: Int?
   /// Not against an older commit than `HEAD`, whose changes the index holds too.
   let marksStaging: Bool
+  /// What a read of many files asked git once, where this file's repository
+  /// is the worktree's own.
+  var bases: WorktreeDiffBases?
 }

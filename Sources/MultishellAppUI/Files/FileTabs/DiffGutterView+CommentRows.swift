@@ -67,7 +67,7 @@ extension DiffGutterView {
 
   /// The row under the pointer, `nil` in a card's gap or past the last row.
   private func row(at event: NSEvent) -> Int? {
-    let y = convert(event.locationInWindow, from: nil).y + scrolledTo
+    let y = convert(event.locationInWindow, from: nil).y
     let row = Int(geometry.topRow(atScrollOffset: y))
     let top = geometry.top(ofRow: row)
     guard displayText.lines.indices.contains(row), y >= top, y < top + geometry.rowHeight

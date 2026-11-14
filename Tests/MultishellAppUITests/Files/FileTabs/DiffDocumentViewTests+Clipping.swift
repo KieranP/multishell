@@ -29,4 +29,26 @@ extension DiffDocumentViewTests {
     let above = try #require(bitmap.colorAt(x: Int(200 * scale), y: Int(40 * scale)))
     #expect(above.redComponent > 0.8 && above.greenComponent < 0.4, "painted over at \(above)")
   }
+
+  @Test func commandDownKeepsTheCaretAtTheEndOfAWideLastLineInView() {
+    let view = DiffDocumentView(geometry: DiffRowGeometry(fontFamily: nil, fontSize: 12))
+    view.frame = NSRect(x: 0, y: 0, width: 400, height: 150)
+    let window = OffscreenWindow.holding(view, deferred: false)
+    defer { withExtendedLifetime(window) {} }
+    view.show(
+      DiffDocumentFixture.contextLines(
+        (0..<40).map { "line \($0)" } + [String(repeating: "w", count: 300)]
+      ),
+      theme: Theme.builtins[0],
+    )
+    view.layoutSubtreeIfNeeded()
+
+    view.textView.moveToEndOfDocument(nil)
+    view.layoutSubtreeIfNeeded()
+
+    let caret = view.textView.selectedRange().location
+    let caretX = view.textView.rect(of: caret..<caret).minX
+    let shown = view.scrollOrigin.x...(view.scrollOrigin.x + view.column.clipWidth)
+    #expect(shown.contains(caretX), "caret at \(caretX), shown \(shown)")
+  }
 }

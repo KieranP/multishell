@@ -17,7 +17,7 @@ struct ReviewPanelPage: View {
       if page.isEmpty {
         PanelPageEmptyState(
           text: model.reviewEmptyText(of: worktree),
-          theme: theme,
+          palette: theme.filesPanel,
           metrics: metrics,
           glyph: SpeechBubbleShape(),
         ) {

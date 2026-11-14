@@ -37,7 +37,7 @@ struct FileTabBarTests {
     )
     let reading = FileTabReading(content: .text(rows), isFileGone: false)
     harness.model.fileTabReadings[tab.id] = reading
-    try #require(harness.model.offersChangeScopeSwitch(for: tab))
+    try #require(harness.model.offersChangeScopeSwitch(in: tab.worktreeID))
     try #require(harness.model.offersLayoutSwitch(for: tab))
     return FileTabBar(model: harness.model, tab: tab, reading: reading, theme: theme)
   }

@@ -97,6 +97,6 @@ extension DiffDocumentViewTests {
     view.show(reRead, theme: Theme.builtins[0])
     view.layoutSubtreeIfNeeded()
 
-    #expect(reported.last == reRead.scroll(atRow: view.topRow, x: 0))
+    #expect(reported.last == reRead.scroll(atRow: view.column.topRow, x: 0))
   }
 }

@@ -103,6 +103,9 @@ algorithm. Newest at the bottom, above "Reviewed and left as is".
   over git's own Myers. It is about the person reading the badge, not the
   repository, so no project overrides it, and a change re-reads every badge as
   the indicator's does.
+- **A count of five digits or more is grouped**, `+16,621`, where `+16621` was
+  hard to read (owner's pick, 2026-11-17); four digits stay plain. The badge,
+  Changes rows and the All changes tab share it (`LineCountText`).
 
 ## Reviewed and left as is
 

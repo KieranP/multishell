@@ -20,7 +20,15 @@ final class DiffTextView: NSTextView {
   /// Unified copies a selection touching a change as `git diff` prints it;
   /// a split side copies plain text.
   var copiesAsDiff = true
+  /// Off in the All changes list, whose one rotor walks every file's.
+  var offersChangesRotor = true
   var onFocus: (() -> Void)?
+  /// Where set, brings a rect into view in place of the enclosing clip: a
+  /// column's text scrolls sideways inside its own clip on a wider canvas.
+  var bringRectIntoView: ((NSRect) -> Bool)?
+  /// Where set, takes the scrolls a file's own clip cannot make, a page and the
+  /// document's ends: a file in the All changes list scrolls the list.
+  weak var forwardsScrollsTo: NSResponder?
   /// Comment on Lines, from the menu, on the rows the selection touches.
   var onCommentOnRows: ((ClosedRange<Int>) -> Void)?
   /// A split column's side, so Comment on Lines is offered only where a comment can go.
@@ -43,7 +51,8 @@ final class DiffTextView: NSTextView {
     }
   }
   private(set) var steppedChangeBorder = NSColor.clear
-  private var documentWidth: CGFloat = 0
+  /// The widest line and the padding after it.
+  private(set) var documentWidth: CGFloat = 0
   /// The highlight runs the text carries at its current offsets, so the next
   /// apply changes only what differs; `nil` while unknown, mid-apply.
   var appliedRuns: [HighlightSpan]? = []
@@ -55,6 +64,10 @@ final class DiffTextView: NSTextView {
   private(set) var isReplacingText = false
 
   var geometry: DiffRowGeometry { rowLayout.geometry }
+
+  override var textContainerOrigin: NSPoint {
+    NSPoint(x: super.textContainerOrigin.x, y: geometry.textContainerTop)
+  }
 
   init(geometry: DiffRowGeometry) {
     rowLayout = FixedRowLayoutDelegate(geometry: geometry)
@@ -79,7 +92,7 @@ final class DiffTextView: NSTextView {
     isVerticallyResizable = true
     autoresizingMask = []
     maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
-    textContainerInset = NSSize(width: 0, height: DiffRowGeometry.verticalInset)
+    textContainerInset = NSSize(width: 0, height: geometry.verticalInset)
   }
 
   required init?(coder: NSCoder) { nil }
@@ -89,6 +102,7 @@ final class DiffTextView: NSTextView {
   func setRowGaps(_ gaps: RowGaps) {
     guard geometry.rowGaps != gaps else { return }
     rowLayout.geometry.rowGaps = gaps
+    invalidateTextContainerOrigin()
     if let layoutManager = textLayoutManager {
       layoutManager.invalidateLayout(for: layoutManager.documentRange)
     }
@@ -137,10 +151,38 @@ final class DiffTextView: NSTextView {
     needsDisplay = true
   }
 
+  /// Cmd+Up: the document's top, the All changes tab's first header with it,
+  /// not only its first row.
+  override func moveToBeginningOfDocument(_ sender: Any?) {
+    super.moveToBeginningOfDocument(sender)
+    if !listTook(#selector(moveToBeginningOfDocument(_:)), from: sender) {
+      _ = bringRectIntoView?(NSRect(x: 0, y: 0, width: 1, height: 1))
+    }
+  }
+
+  /// Cmd+Down: the document's end, its last file's box and notices with it.
+  override func moveToEndOfDocument(_ sender: Any?) {
+    super.moveToEndOfDocument(sender)
+    if !listTook(#selector(moveToEndOfDocument(_:)), from: sender) {
+      _ = bringRectIntoView?(NSRect(x: 0, y: bounds.maxY - 1, width: 1, height: 1))
+    }
+  }
+
+  /// On a canvas, `NSTextView` scrolls nothing, not being the scroller's
+  /// document: the range's rows and glyphs are brought into its column's clip.
+  override func scrollRangeToVisible(_ range: NSRange) {
+    guard let bringRectIntoView else {
+      super.scrollRangeToVisible(range)
+      return
+    }
+    _ = bringRectIntoView(rect(of: range.integerRange))
+  }
+
   /// `NSTextView` resets its width to the clip's during layout; held here to
   /// the widest line and the rows' height.
   override func setFrameSize(_ newSize: NSSize) {
-    let clip = enclosingScrollView?.contentSize ?? .zero
+    // Its column's clip, not the scroller's, which spans the gutter and Split's other side.
+    let clip = superview?.bounds.size ?? .zero
     super.setFrameSize(
       NSSize(
         width: max(newSize.width, documentWidth, clip.width),

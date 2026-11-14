@@ -53,8 +53,10 @@ What the panel lists and why each went the way it did. Newest at the bottom.
   then opening with the first worktree having read as a bug; a launch now
   selects nothing, so the panel shows with the worktree picked, and a panel
   closed at every launch read as forgotten. The model holds the switch, so a
-  click on a row's badge can open it. No keyboard shortcut yet; a View menu
-  item.
+  click on a row's badge can open it. View has an item per page, Files Pane,
+  Changes Pane and Review Pane (Cmd+Shift+F, C and R), each opening the panel on
+  its page or shutting it where it shows that page; Close Find moved to
+  Cmd+Option+F to free Cmd+Shift+F.
 - **Double-clicking either edge fits its column to its rows**, laid out off
   screen at their ideal widths, since a lazy list holds only those on screen:
   every sidebar row, and the panel's 64 longest by characters, every row of a

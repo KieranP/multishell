@@ -57,7 +57,7 @@ struct CIPanelPage: View {
     } else if let text = page.emptyText {
       PanelPageEmptyState(
         text: text,
-        theme: theme,
+        palette: theme.filesPanel,
         metrics: metrics,
         glyph: CIRunShape(status: .passed),
       ) {

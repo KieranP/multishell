@@ -13,12 +13,16 @@ extension AppModel {
     Binding(get: { self.areDebugToolsEnabled }, set: { self.setDebugToolsEnabled($0) })
   }
 
-  var showsFilesPanelBinding: Binding<Bool> {
-    Binding(get: { self.showsFilesPanel }, set: { self.setShowsFilesPanel($0) })
-  }
-
   var debugPausedBinding: Binding<Bool> {
     Binding(get: { self.isDebugPaused }, set: { self.setDebugPaused($0) })
+  }
+
+  /// A View menu pane's tick: the panel open on that page.
+  func filesPanelBinding(on mode: FilesPanelMode) -> Binding<Bool> {
+    Binding(
+      get: { self.isFilesPanelShowing(mode) },
+      set: { _ in self.toggleFilesPanel(on: mode) },
+    )
   }
 
   func findTextBinding(of targetID: FindTargetID) -> Binding<String> {

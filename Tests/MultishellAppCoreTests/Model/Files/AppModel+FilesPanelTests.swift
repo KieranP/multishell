@@ -26,6 +26,51 @@ struct AppModelFilesPanelTests {
     #expect(harness.model.filesPanelState(of: main.id).filterText == "")
   }
 
+  @Test func aViewMenuPaneOpensTheShutPanelOnItsPage() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setShowsFilesPanel(false)
+
+    harness.model.toggleFilesPanel(on: .changes)
+
+    #expect(harness.model.isFilesPanelShowing(.changes))
+  }
+
+  @Test func aViewMenuPaneTurnsTheOpenPanelToItsPage() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.files)
+
+    harness.model.toggleFilesPanel(on: .review)
+
+    #expect(harness.model.isFilesPanelShowing(.review))
+  }
+
+  @Test func aViewMenuPaneShutsThePanelShowingItsPage() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.files)
+
+    harness.model.toggleFilesPanel(on: .files)
+
+    #expect(!harness.model.showsFilesPanel)
+    #expect(harness.model.workspace.filesPanelMode == .files)
+  }
+
+  @Test func aViewMenuPaneOverTheAgentsBoardShutsThePanel() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setShowsFilesPanel(true)
+    harness.model.setFilesPanelMode(.files)
+    harness.model.toggleAgentBoard()
+
+    harness.model.toggleFilesPanel(on: .review)
+
+    #expect(!harness.model.showsFilesPanel)
+  }
+
   @Test func onlyAListOfFilesFitsThePanelToItsRows() throws {
     let harness = Harness()
     harness.model.remoteState.connections = ServiceConnections(

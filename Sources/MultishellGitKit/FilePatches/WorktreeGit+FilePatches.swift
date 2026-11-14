@@ -1,6 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
 
 /// One file's changes against `HEAD` or the Branch list's merge base, for its
 /// tab; see Docs/design/files/file-tabs.md.
@@ -11,7 +10,7 @@ extension WorktreeGit {
 
   /// The fixed prefixes and `suppressBlankEmpty` keep a user's config out of the
   /// parser, and the algorithm is the badge's, so the tab counts alike.
-  private static func patchArguments(_ algorithm: DiffAlgorithm) -> [String] {
+  static func patchArguments(_ algorithm: DiffAlgorithm) -> [String] {
     [
       "-c", "diff.suppressBlankEmpty=false",
       "--no-optional-locks", "--literal-pathspecs", "diff-index", "-p", "--no-ext-diff",
@@ -20,13 +19,14 @@ extension WorktreeGit {
     ]
   }
 
-  /// `diff-index` writes nothing to the index; against `commit` where given, else `HEAD`, else the
-  /// empty tree before the first commit; see worktrees/watching-and-status-reads.md.
+  /// Against `commit`, else `knownBase` or `HEAD` or the empty tree; `diff-index`
+  /// writes nothing to the index, see worktrees/watching-and-status-reads.md.
   public func patches(
     of path: String,
     in directory: URL,
     diffAlgorithm: DiffAlgorithm,
     since commit: String? = nil,
+    knownBase: String? = nil,
   ) async -> FilePatches? {
     let arguments = Self.patchArguments(diffAlgorithm)
     if let commit {
@@ -34,19 +34,22 @@ extension WorktreeGit {
       else { return nil }
       return FilePatches(onDisk: onDisk, staged: nil)
     }
-    guard let base = await diffBase(in: directory),
-      let onDisk = await runner.outputBytes(arguments + [base, "--", path], in: directory),
-      let staged = await runner.outputBytes(
-        arguments + ["--cached", base, "--", path],
-        in: directory,
-      )
-    else { return nil }
+    let base: String?
+    if let knownBase { base = knownBase } else { base = await diffBase(in: directory) }
+    guard let base else { return nil }
+    // Two runs at once: neither reads what the other writes.
+    async let onDiskRun = runner.outputBytes(arguments + [base, "--", path], in: directory)
+    async let stagedRun = runner.outputBytes(
+      arguments + ["--cached", base, "--", path],
+      in: directory,
+    )
+    guard let onDisk = await onDiskRun, let staged = await stagedRun else { return nil }
     return FilePatches(onDisk: onDisk, staged: staged)
   }
 
   /// `HEAD`, or the empty tree's id where `HEAD` is unborn; `nil` where git
   /// could answer neither.
-  private func diffBase(in directory: URL) async -> String? {
+  public func diffBase(in directory: URL) async -> String? {
     if await hasCommits(in: directory) {
       return "HEAD"
     }

@@ -23,7 +23,7 @@ struct FileTabBar: View {
   }
 
   var body: some View {
-    let offersChangeScope = model.offersChangeScopeSwitch(for: tab)
+    let offersChangeScope = model.offersChangeScopeSwitch(in: tab.worktreeID)
     let offersLayout = model.offersLayoutSwitch(for: tab)
     // The switches on the bar where they fit beside the name, else in one
     // menu; whatever still overflows is cut, not drawn over the next group.
@@ -105,7 +105,13 @@ struct FileTabBar: View {
         }
       } else {
         if offersChangeScope { ChangeScopeSwitch(model: model, palette: theme.fileTab) }
-        if offersLayout { FileTabLayoutSwitch(model: model, tab: tab, palette: theme.fileTab) }
+        if offersLayout {
+          FileTabLayoutSwitch(
+            model: model,
+            selection: FileTabLayoutSwitch.selection(in: model, for: tab),
+            palette: theme.fileTab,
+          )
+        }
       }
       actionsMenu
     }

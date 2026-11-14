@@ -8,6 +8,7 @@ struct ThemedButtonLabel<Label: View>: View {
   let label: Label
   let fill: Color
   let text: Color
+  let minHeight: Double?
   let cornerRadius: Double
   let disabledOpacity: Double
 
@@ -18,6 +19,7 @@ struct ThemedButtonLabel<Label: View>: View {
       .foregroundStyle(text)
       .padding(.horizontal, Self.horizontalPadding)
       .padding(.vertical, Self.verticalPadding)
+      .frame(minHeight: minHeight.map { CGFloat($0) })
       .background(fill, in: RoundedRectangle(cornerRadius: cornerRadius))
       .contentShape(.rect)
       .opacity(isEnabled ? 1 : disabledOpacity)

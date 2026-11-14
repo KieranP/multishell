@@ -23,8 +23,7 @@ extension ControlRefusal {
 
     case .filesPanelListsNoFiles:
       "the Files panel is shut, or open on a page with no files: "
-        + "`multishell config global set filesPanelMode files` turns to its list, and where "
-        + "it is shut `multishell ui menu \"View > Files Panel\"` opens it"
+        + "`multishell ui menu \"View > Files Pane\"` opens it on its list"
 
     case .gitNotFound: "git is not on the login shell's PATH, so nothing is read from it"
     case .invalidBranchName(let name): "git would refuse the branch name \(name)"
@@ -134,6 +133,9 @@ extension ControlRefusal {
     case .tabNotMoved(let id): "tab \(id) was not moved"
 
     case .tabShowsAFile(let id): "tab \(id) shows a file; only a terminal tab takes that"
+
+    case .tabShowsAllChanges(let id):
+      "tab \(id) shows all changes, with no panes and no one file's bar"
 
     case .tabNotShown(let id):
       "tab \(id) is not on screen; `multishell tabs select \(id)` shows it"

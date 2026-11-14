@@ -9,6 +9,9 @@ struct GlyphHoverModifier: ViewModifier {
   let resting: Color
   /// What it turns to under the pointer; `nil` is the area's text.
   let lit: Color?
+  /// The square under it when lit; `nil` is the area's fill, which a button
+  /// already on that fill needs another shade of.
+  let litFill: Color?
   /// How far the lit square sits inside the button's frame.
   let inset: Double
 
@@ -22,7 +25,7 @@ struct GlyphHoverModifier: ViewModifier {
       .background {
         if isLit {
           RoundedRectangle(cornerRadius: UIMetrics.glyphButtonCornerRadius)
-            .fill(palette.fill)
+            .fill(litFill ?? palette.fill)
             .padding(inset)
         }
       }

@@ -19,6 +19,7 @@ enum FileTabReader {
     since base: DefaultBranch?,
     previous: FileTabReading?,
     imageRule: ImageRule,
+    bases: WorktreeDiffBases? = nil,
   ) async -> FileTabReading {
     let url = worktree.appending(path: pathInWorktree)
     let (onDisk, repository, isImage, image, isSpelledAsGiven) = await runOnDispatch {
@@ -57,6 +58,7 @@ enum FileTabReader {
       since: base,
       isGone: isGone,
       git: git,
+      bases: bases,
     )
     if readsAsImage,
       let content = await FileTabImageReader.content(
@@ -185,11 +187,13 @@ enum FileTabReader {
     // Naming `HEAD` skips the staged diff, which rows marking no staging never read.
     let commit = side.marksStaging ? nil : side.commit ?? "HEAD"
     guard
-      let patches = await git.patches(
+      let patches = await patches(
         of: path,
         in: repository,
-        diffAlgorithm: diffAlgorithm,
         since: commit,
+        against: side,
+        git: git,
+        diffAlgorithm,
       )
     else { return nil }
     // The patch holds the committed bytes, so it is guessed as the file would be.
@@ -228,12 +232,24 @@ enum FileTabReader {
       return (.binary(bytes: data.count), false)
     }
     let marksStaging = side.marksStaging
+    // In no commit and not in the index, its diffs are empty: no runs asked.
+    if side.size == nil, side.bases?.isUntracked(path) == true {
+      return await unchangedContent(
+        text,
+        path: path,
+        in: repository,
+        against: side,
+        git: git,
+      )
+    }
     guard
-      let patches = await git.patches(
+      let patches = await patches(
         of: path,
         in: repository,
-        diffAlgorithm: diffAlgorithm,
         since: side.commit,
+        against: side,
+        git: git,
+        diffAlgorithm,
       )
     else { return nil }
     switch UnifiedPatchParser.parse(patches.onDisk, encoding: encoding) {
@@ -254,8 +270,9 @@ enum FileTabReader {
       if isWhollyRemoved, !isSpelledAsGiven { return (.text(stagedRows), true) }
       if isWhollyRemoved {
         // A failed check is no answer, not a file git ignores.
-        guard let ignored = await git.ignoredPaths([path], in: repository) else { return nil }
-        guard ignored.contains(path) else {
+        guard let ignored = await isIgnored(path, in: repository, against: side, git: git)
+        else { return nil }
+        guard ignored else {
           let added = FileTabRows(
             lines: PlainDiffLines.of(text, kind: .added),
             marksStaging: marksStaging,
@@ -274,17 +291,7 @@ enum FileTabReader {
       return (.text(rows), false)
 
     case .unchanged:
-      // A new file is every line added; one git ignores is shown as it is.
-      var isNew = side.size == nil
-      if isNew {
-        guard let ignored = await git.ignoredPaths([path], in: repository) else { return nil }
-        isNew = !ignored.contains(path)
-      }
-      let rows = FileTabRows(
-        lines: PlainDiffLines.of(text, kind: isNew ? .added : .context),
-        marksStaging: marksStaging,
-      )
-      return (.text(rows), false)
+      return await unchangedContent(text, path: path, in: repository, against: side, git: git)
     }
   }
 }

@@ -33,4 +33,11 @@ extension AppModel {
     guard changeStepRequests[id] != nil else { return [] }
     return changeStepRequests.removeValue(forKey: id) ?? []
   }
+
+  /// A hidden tab's view goes, and the next one says afresh where its arrows
+  /// lead; a step queued for a view that never drew would jump the next one.
+  func forgetChangeSteps(of id: FileTab.ID) {
+    if fileTabChangeSteps[id] != nil { fileTabChangeSteps[id] = nil }
+    if changeStepRequests[id] != nil { changeStepRequests[id] = nil }
+  }
 }

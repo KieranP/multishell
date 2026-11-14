@@ -229,6 +229,9 @@ The command line's requests on the reports' socket. Newest at the bottom.
   first tab starting out of view as a held-back one does after its hook, and the
   keyboard staying put. Added 2026-11-14 so a script can make several at once
   without each pulling the view to itself.
+- **`tabs open-all-changes` opens or turns to a worktree's All changes tab**,
+  and `tabs list` reports it as kind `all-changes`; `tabs step` and `tabs find`
+  reach it as a file tab (files/all-changes-tab.md).
 
 ## Reviewed and left as is
 

@@ -18,6 +18,7 @@ struct ReviewComposerCardTests {
   private static func shown(_ calls: Calls) -> (NSTextView, NSWindow)? {
     let card = ReviewComposerCard(
       composer: ReviewComposer(
+        path: "a.txt",
         side: .onDisk,
         lines: 3...3,
         quote: ["x"],

@@ -51,7 +51,7 @@ struct PullRequestPanelPage: View {
     } else if let text = page.emptyText {
       PanelPageEmptyState(
         text: text,
-        theme: theme,
+        palette: theme.filesPanel,
         metrics: model.metrics,
         glyph: PullRequestShape(shape: .open),
       ) {

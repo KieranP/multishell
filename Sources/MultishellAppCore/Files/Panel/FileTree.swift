@@ -39,11 +39,7 @@ struct FileTree: Sendable {
       let path = change.path.hasSuffix("/") ? String(change.path.dropLast()) : change.path
       kinds[path] = kinds[path]?.combined(with: change.kind) ?? change.kind
       guard let changeCounts = FileLineCounts(change.lines) else { return }
-      let total = counts[path]
-      counts[path] = FileLineCounts(
-        insertions: (total?.insertions ?? 0) + changeCounts.insertions,
-        deletions: (total?.deletions ?? 0) + changeCounts.deletions,
-      )
+      counts[path] = counts[path].map { $0 + changeCounts } ?? changeCounts
     }
     sources.markedChanges.forEach(add)
     // A submodule's paths sit under its folder, so none is one of the worktree's.

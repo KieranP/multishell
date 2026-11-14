@@ -62,6 +62,8 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case moveTabToWorktree(id: UUID, worktree: String)
   case newTab(NewTabOrder)
   case newWorktree(NewWorktreeOrder)
+  /// The worktree's All changes tab, as the Changes page's button opens it.
+  case openAllChangesTab(worktree: String)
   /// A file of the worktree as a tab, as a click on its Files panel row.
   case openFileTab(worktree: String, path: String)
   /// Text put in as a paste, bracketed where the program asked.

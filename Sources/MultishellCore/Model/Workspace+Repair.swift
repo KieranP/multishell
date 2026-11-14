@@ -24,6 +24,7 @@ extension Workspace {
     repairPanes()
     pruneAndReassignSessions()
     repairFileTabs(worktreeIDs: worktreeIDs)
+    repairAllChangesTabs(worktreeIDs: worktreeIDs)
 
     // A name outliving its worktree returns if one is made at that path
     // again; a blank one draws an empty line over the branch.
@@ -109,6 +110,16 @@ extension Workspace {
     fileTabs.removeAll { !seen.insert([$0.worktreeID, $0.path]).inserted }
   }
 
+  /// Drops an All changes tab whose worktree went or whose id another tab
+  /// holds; one a worktree, the first kept.
+  private mutating func repairAllChangesTabs(worktreeIDs: Set<Worktree.ID>) {
+    let takenIDs = Set(tabs.map(\.id) + fileTabs.map(\.id))
+    allChangesTabs.removeAll { tab in
+      !worktreeIDs.contains(tab.worktreeID) || takenIDs.contains(tab.id)
+    }
+    allChangesTabs = allChangesTabs.uniqued(by: \.id).uniqued(by: \.worktreeID)
+  }
+
   /// Puts the groups right once the passes above have settled the tabs. A
   /// missing group loses the group, not the tab: one is a layout.
   private mutating func repairGroups() {
@@ -116,7 +127,9 @@ extension Workspace {
 
     // An empty group draws a strip with no tabs over a pane with no
     // terminal, and nothing else here would take it away.
-    let occupied = Set(tabs.map(\.groupID) + fileTabs.map(\.groupID))
+    let occupied = Set(
+      tabs.map(\.groupID) + fileTabs.map(\.groupID) + allChangesTabs.map(\.groupID)
+    )
     tabGroups.removeAll { !occupied.contains($0.id) }
 
     // Widths summing past a number lay every group out at zero; equal shares stand in.
@@ -135,6 +148,7 @@ extension Workspace {
       let live =
         tabs.filter { $0.groupID == groupID }.map(\.id)
         + fileTabs.filter { $0.groupID == groupID }.map(\.id)
+        + allChangesTabs.filter { $0.groupID == groupID }.map(\.id)
       let kept = tabGroups[index].tabOrder.filter(Set(live).contains).uniqued(by: \.self)
       tabGroups[index].tabOrder = kept + live.filter { !kept.contains($0) }
       if let shown = tabGroups[index].shownTabID, live.contains(shown) { continue }
@@ -178,6 +192,13 @@ extension Workspace {
     for index in fileTabs.indices where known[fileTabs[index].groupID] != fileTabs[index].worktreeID
     {
       fileTabs[index].groupID = home(forTab: fileTabs[index].id, in: fileTabs[index].worktreeID)
+    }
+    for index in allChangesTabs.indices
+    where known[allChangesTabs[index].groupID] != allChangesTabs[index].worktreeID {
+      allChangesTabs[index].groupID = home(
+        forTab: allChangesTabs[index].id,
+        in: allChangesTabs[index].worktreeID,
+      )
     }
   }
 }

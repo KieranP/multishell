@@ -126,6 +126,34 @@ struct AppModelFileFindTests {
     #expect(harness.model.selectedFileFindMatch(of: tab.id) == 1)
   }
 
+  @Test func theAllChangesTabKeepsItsFindSelectionThroughALayoutSwitchWhileHidden() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    try "x\nfind\nfind\nfind\n".write(
+      to: main.path.appending(path: "README.md"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    harness.model.select(main)
+    let tab = try #require(harness.model.openAllChangesTab(in: main.id))
+    harness.model.noteAllChangesFilesNear(["README.md"], in: tab.id)
+    await harness.model.refreshStatuses()
+    try await waitUntil { harness.model.allChangesDocument(of: tab.id)?.text.lines.count ?? 0 > 3 }
+    harness.model.showFind()
+    harness.model.setFindText("find", of: tab.id)
+    harness.model.findNext(in: tab.id)
+    try #require(harness.model.selectedFileFindMatch(of: tab.id) == 1)
+    harness.model.newShellTab()
+
+    harness.model.setFileTabLayout(.split)
+    harness.model.activateTab(tab.id)
+    harness.model.noteAllChangesFilesNear(["README.md"], in: tab.id)
+    try await waitUntil { harness.model.allChangesDocument(of: tab.id)?.text.lines.count ?? 0 > 3 }
+
+    #expect(harness.model.selectedFileFindMatch(of: tab.id) == 1)
+  }
+
   @Test func aSwitchToSplitKeepsTheMatchOnItsLineWhereLinesRepeat() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

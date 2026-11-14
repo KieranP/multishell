@@ -30,9 +30,9 @@ struct GitStatusBadge: View {
   private func counts(_ fit: GitStatusBadgeFit) -> some View {
     HStack(spacing: 4) {
       if status.isDirty {
-        Text(t("status.insertions", status.insertions))
+        Text(t("status.insertions", LineCountText.shown(status.insertions)))
           .foregroundStyle(theme.insertionsColor)
-        Text(t("status.deletions", status.deletions))
+        Text(t("status.deletions", LineCountText.shown(status.deletions)))
           .foregroundStyle(theme.deletionsColor)
       }
       if fit.showsFiles(of: status) {
