@@ -24,6 +24,15 @@ enum DebugValueText {
     t("debug.per-second", rate(value))
   }
 
+  /// A rate or a mean in bytes, rounded to whole bytes.
+  static func bytes(_ value: Double) -> String {
+    memory(UInt64(max(value, 0).rounded()))
+  }
+
+  static func bytesPerSecond(_ value: Double) -> String {
+    t("debug.per-second", bytes(value))
+  }
+
   /// Tenths only where a rate over several seconds comes to a fraction.
   private static func rate(_ value: Double) -> String {
     value == value.rounded() ? wholeNumber(value) : String(format: "%.1f", value)

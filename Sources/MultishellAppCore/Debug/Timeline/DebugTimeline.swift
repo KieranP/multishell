@@ -1,6 +1,6 @@
 import MultishellProcess
 
-/// What the panel's strips draw for one range: a slot per point, oldest first,
+/// What the panel's charts draw for one range: a slot per point, oldest first,
 /// `nil` where no sample has landed yet, so a fresh history fills from the right.
 public struct DebugTimeline: Sendable, Equatable {
   public let range: DebugRange
@@ -41,8 +41,8 @@ public struct DebugTimeline: Sendable, Equatable {
     }
   }
 
-  /// What a strip's label reads: the slot under the pointer, or the latest
-  /// where the pointer is off the strip or over a second with no sample.
+  /// What a tile's label reads: the slot under the pointer, or the latest
+  /// where the pointer is off the charts or over a second with no sample.
   public func shownSlot(hovering index: Int?) -> DebugTimelineSlot? {
     slot(at: index) ?? latestSlot
   }
@@ -53,37 +53,34 @@ public struct DebugTimeline: Sendable, Equatable {
     return slots[index]
   }
 
-  /// The slot under a point `fraction` of the way across the strip.
+  /// The slot under a point `fraction` of the way across a chart.
   func slotIndex(atFraction fraction: Double) -> Int {
     let index = Int((fraction * Double(slots.count)).rounded(.down))
     return min(max(index, 0), slots.count - 1)
   }
 
-  /// The slot under a pointer `x` points across a row whose strip starts
-  /// after `labelWidth`, `nil` over the labels or past the strip's end.
-  public func slotIndex(atX x: Double, labelWidth: Double, chartWidth: Double) -> Int? {
-    let intoChart = x - labelWidth
-    guard chartWidth > 0, intoChart >= 0, intoChart <= chartWidth else { return nil }
-    return slotIndex(atFraction: intoChart / chartWidth)
+  /// The slot under a pointer `x` points across a chart, `nil` past either end.
+  public func slotIndex(atX x: Double, chartWidth: Double) -> Int? {
+    guard chartWidth > 0, x >= 0, x <= chartWidth else { return nil }
+    return slotIndex(atFraction: x / chartWidth)
   }
 
-  /// Where the middle of slot `index` sits across a strip `chartWidth` wide:
-  /// `slotIndex(atX:labelWidth:chartWidth:)` turned round.
+  /// Where the middle of slot `index` sits across a chart `chartWidth` wide:
+  /// `slotIndex(atX:chartWidth:)` turned round.
   public func slotMidpointX(_ index: Int, chartWidth: Double) -> Double {
     (Double(index) + 0.5) * chartWidth / Double(max(slots.count, 1))
   }
 
+  /// Each slot's bands stacked, the scale set by the tallest stack.
   public func points(of metric: DebugMetric) -> [DebugStripPoint?] {
-    let values = slots.map { $0.flatMap(metric.values(of:)) }
-    let scale = metric.scale(forPeak: values.compactMap { $0?.total }.max() ?? 0)
-    return values.map { value in
-      value.map { point in
-        DebugStripPoint(
-          app: min(point.app / scale, 1),
-          appWithTerminals: min(point.appWithTerminals / scale, 1),
-          total: min(point.total / scale, 1),
-        )
+    let stacks = slots.map { slot in
+      slot.flatMap(metric.values(of:)).map { values in
+        values.reduce(into: [Double]()) { tops, value in tops.append((tops.last ?? 0) + value) }
       }
+    }
+    let scale = metric.scale(forPeak: stacks.compactMap { $0?.last }.max() ?? 0)
+    return stacks.map { stack in
+      stack.map { tops in DebugStripPoint(tops: tops.map { min($0 / scale, 1) }) }
     }
   }
 }

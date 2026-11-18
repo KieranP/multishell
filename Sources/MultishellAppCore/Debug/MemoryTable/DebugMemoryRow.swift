@@ -1,12 +1,11 @@
 import MultishellCore
 
-/// One row of the Memory by tab table as the panel draws it: the app, a tab,
-/// the file tabs, what no tab runs, or the total.
+/// One row of the Memory Breakdown table as the panel draws it: the app, a tab,
+/// what no tab runs, or the total.
 public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public enum Source: Sendable, Hashable {
     case app
     case tab(TerminalTab.ID)
-    case fileTabs
     case unattributed
     case total
   }
@@ -15,8 +14,8 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public let title: String
   /// The worktree for a tab, what the row counts for the others.
   public let subtitle: String
-  /// `nil` for a tab the engine could not place, as are its memories, for the
-  /// file tabs, which run no process, and for the total, which has no share.
+  /// `nil` for a tab the engine could not place, as are its memories, and
+  /// for the total, which has no share.
   let processCount: Int?
   let selfMemory: UInt64?
   let totalMemory: UInt64?
@@ -24,6 +23,8 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public let barFraction: Double
   /// A tab's terminals, listed first when it opens; `nil` for other rows.
   public let terminalRow: DebugTerminalRow?
+  /// What the app's own footprint is made of; empty for other rows.
+  public let appPartRows: [DebugAppPartRow]
   public let processRows: [DebugProcessRow]
 
   public var id: Source { source }
@@ -36,7 +37,9 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   }
 
   public func disclosure(isExpanded: Bool) -> DebugRowDisclosure {
-    guard terminalRow != nil || !processRows.isEmpty else { return .notExpandable }
+    guard terminalRow != nil || !appPartRows.isEmpty || !processRows.isEmpty else {
+      return .notExpandable
+    }
     return isExpanded ? .expanded : .collapsed
   }
 }

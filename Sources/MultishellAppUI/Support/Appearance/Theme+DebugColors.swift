@@ -5,19 +5,27 @@ import SwiftUI
 /// Debug Info's colours, from the theme's `debug_info` section; the base
 /// themes' blue and yellow stay apart for every colour blindness.
 extension Theme {
-  /// The app's part of a split strip, and the whole of any other.
   var debugAppSeriesColor: Color { color(.seriesApp, in: .debugInfo) }
-  /// The terminals' memory, inside the app's process.
   var debugTerminalsSeriesColor: Color { color(.seriesTerminals, in: .debugInfo) }
-  /// What the app started, stacked above the app's part and its terminals.
   var debugChildrenSeriesColor: Color { color(.seriesChildren, in: .debugInfo) }
   var debugStallColor: Color { color(.stall, in: .debugInfo) }
 
-  func smoothnessColor(_ level: Smoothness, on palette: AreaPalette) -> Color {
-    switch level {
-    case .smooth: palette.text
-    case .hitched: color(.hitch, in: .debugInfo)
-    case .stalled: debugStallColor
+  func toneColor(_ tone: DebugValueTone) -> Color {
+    switch tone {
+    case .normal: debugInfo.text
+    case .caution: color(.hitch, in: .debugInfo)
+    case .alarm: debugStallColor
+    }
+  }
+
+  /// A split tile's band: blue for the app's own or a tile's main figure, the paler
+  /// blue for the terminals' or a part of it, yellow for children or writes, else grey.
+  func debugColor(of series: DebugSeries) -> Color {
+    switch series {
+    case .app, .mainThread, .diskRead, .otherInterruptWakeups: debugAppSeriesColor
+    case .appTerminals, .terminalThreads, .packageIdleWakeups: debugTerminalsSeriesColor
+    case .childProcesses, .diskWritten: debugChildrenSeriesColor
+    case .otherThreads: debugInfo.textTertiary
     }
   }
 }

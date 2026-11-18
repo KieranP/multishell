@@ -3,7 +3,7 @@ import MultishellProcess
 
 /// One git process the app ran: what it was asked, where, and for how long.
 public struct GitRun: Sendable, Equatable {
-  /// The subcommand and its flags; see `GitCommandName`.
+  /// The program, its subcommand and flags; see `GitCommandName`.
   public let command: String
   public let directory: URL
   public let duration: Duration

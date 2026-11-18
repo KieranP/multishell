@@ -1,8 +1,10 @@
 import MultishellCore
+import MultishellProcess
 
 /// What Debug Info draws from at one moment, held still while paused.
 struct DebugSnapshot: Sendable, Equatable {
   let history: DebugHistory
   let attribution: PaneProcessAttribution
   let terminalMemoryBySession: [TerminalSession.ID: UInt64]
+  let appMemoryParts: ProcessMemoryParts?
 }

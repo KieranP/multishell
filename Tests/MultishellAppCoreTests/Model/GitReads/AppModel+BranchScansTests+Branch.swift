@@ -28,7 +28,9 @@ extension AppModelBranchScansTests {
     try await waitUntil { !harness.model.branchChangesReads.isRunning(feature.id) }
     try #require(!harness.model.branchChangesReads.isRunning(feature.id))
 
-    let mergeBases = git.runLog.drain().finishedRuns.filter { $0.command.hasPrefix("merge-base") }
+    let mergeBases = git.runLog.drain().finishedRuns.filter { run in
+      run.command.hasPrefix("git merge-base")
+    }
     #expect(mergeBases.count == 1, "the read asked for here, and none from the scan")
   }
 

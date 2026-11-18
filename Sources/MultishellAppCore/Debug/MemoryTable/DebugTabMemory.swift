@@ -1,7 +1,7 @@
 import MultishellCore
 import MultishellProcess
 
-/// A tab's row in the Memory by tab table: its panes' terminals and every
+/// A tab's row in the Memory Breakdown table: its panes' terminals and every
 /// process they run, heaviest first, or none where the engine cannot place them.
 struct DebugTabMemory: Sendable, Equatable, Identifiable {
   let id: TerminalTab.ID

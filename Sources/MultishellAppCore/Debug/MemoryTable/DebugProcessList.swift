@@ -1,6 +1,6 @@
 import MultishellProcess
 
-/// Processes shown under one row of the Memory by tab table, their trees laid
+/// Processes shown under one row of the Memory Breakdown table, their trees laid
 /// out once rather than at every read.
 struct DebugProcessList: Sendable, Equatable {
   let processes: [ProcessUsage]

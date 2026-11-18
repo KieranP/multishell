@@ -1,6 +1,6 @@
 import MultishellProcess
 
-/// One process in an expanded row of the Memory by tab table, at its depth
+/// One process in an expanded row of the Memory Breakdown table, at its depth
 /// in the tree of who started whom.
 public struct DebugProcessRow: Sendable, Equatable, Identifiable, DebugSelfAndTotalMemory {
   public let process: ProcessUsage

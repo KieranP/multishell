@@ -5,7 +5,9 @@ public struct WorkspaceSave: Sendable {
   let file: StateFile
   let ticket: SaveOrder.Ticket
 
-  public func write() throws {
+  /// The bytes written, `nil` where a later save landed first.
+  @discardableResult
+  public func write() throws -> Int? {
     try file.save(workspace, as: ticket)
   }
 }

@@ -28,7 +28,9 @@ struct AppModelBranchStartPointsTests {
 
     await harness.model.refreshBranchScan(of: harness.project)
 
-    let asked = harness.git.runLog.drain().finishedRuns.filter { $0.command.hasPrefix("reflog") }
+    let asked = harness.git.runLog.drain().finishedRuns.filter { run in
+      run.command.hasPrefix("git reflog")
+    }
     #expect(asked.isEmpty, "side has no worktree, so no row to show")
   }
 

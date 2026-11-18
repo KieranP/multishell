@@ -1,7 +1,7 @@
-/// One point of a strip as fractions of its height: the app's own part, its terminals
-/// above it, then the whole. A metric with fewer series repeats an edge.
+/// One point of a tile's chart as fractions of its height: where each series'
+/// band tops out, bottom to top, the last the whole.
 public struct DebugStripPoint: Sendable, Equatable {
-  let app: Double
-  let appWithTerminals: Double
-  public let total: Double
+  let tops: [Double]
+
+  public var total: Double { tops.last ?? 0 }
 }

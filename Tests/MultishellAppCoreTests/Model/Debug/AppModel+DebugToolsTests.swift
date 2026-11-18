@@ -56,7 +56,7 @@ struct AppModelDebugToolsTests {
 
   @Test func aSampleAskedForWhileTheToolsAreOffRecordsNothing() async {
     let harness = Harness()
-    harness.model.debugSampler.scanProcesses = { _, _ in .sample(appMemory: 400, trees: []) }
+    harness.model.debugSampler.scanProcesses = { _, _, _ in .sample(appMemory: 400, trees: []) }
 
     await harness.model.takeDebugSample()
 
@@ -126,7 +126,7 @@ struct AppModelDebugToolsTests {
   func aSampleStillScanningWhenTheToolsAreTurnedOffIsDropped(turnedBackOn: Bool) async {
     let harness = harnessWithDebugTools()
     let scanHeld = DispatchSemaphore(value: 0)
-    harness.model.debugSampler.scanProcesses = { _, _ in
+    harness.model.debugSampler.scanProcesses = { _, _, _ in
       scanHeld.wait()
       return .sample(appMemory: 400, trees: [])
     }
@@ -149,17 +149,22 @@ struct AppModelDebugToolsTests {
     let busySinceStart: @Sendable () -> DebugProcessScan = {
       DebugProcessScan(
         app: .sample(pid: 1, cpuTime: start.duration(to: .now)),
+        appParts: nil,
+        appActivity: nil,
+        threads: [],
+        openDescriptorCount: nil,
+        memoryPressure: nil,
         trees: [],
         terminalDevices: [:],
       )
     }
-    harness.model.debugSampler.scanProcesses = { _, _ in busySinceStart() }
+    harness.model.debugSampler.scanProcesses = { _, _, _ in busySinceStart() }
     await harness.model.takeDebugSample()
     try await Task.sleep(for: .milliseconds(300))
     let scanStarted = AtomicFlag()
     let mayScan = DispatchSemaphore(value: 0)
     let scanned = DispatchSemaphore(value: 0)
-    harness.model.debugSampler.scanProcesses = { _, _ in
+    harness.model.debugSampler.scanProcesses = { _, _, _ in
       scanStarted.raise()
       mayScan.wait()
       defer { scanned.signal() }

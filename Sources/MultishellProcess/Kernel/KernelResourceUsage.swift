@@ -36,7 +36,7 @@ struct KernelResourceUsage: Sendable, Equatable {
     )
   }
 
-  private static func read<Info>(_ pid: Int32, flavor: Int32, into info: inout Info) -> Bool {
+  static func read<Info>(_ pid: Int32, flavor: Int32, into info: inout Info) -> Bool {
     withUnsafeMutablePointer(to: &info) { infoPointer in
       infoPointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { usagePointer in
         proc_pid_rusage(pid, flavor, usagePointer)

@@ -1,7 +1,7 @@
 import MultishellAppCore
 import SwiftUI
 
-/// The pointer's line down a strip, over its chart rather than in it, so a
+/// The pointer's line down a chart, laid over it rather than drawn in it, so a
 /// hover redraws this line and not the chart under it.
 struct DebugStripPointer: View {
   let slotIndex: Int?

@@ -44,26 +44,28 @@ shortcuts, dialogs, icons and row orders.
 - **An item on a card's context menu.** A line in the card menu: above the
   section if it acts on the pane, inside the worktree actions if it acts on the
   worktree, which puts it on the sidebar row and detail header too.
-- **A strip on Debug Info.** A case in `DebugMetric` in draw order, with its
-  values from a slot and its scale's floor, and its title and value text in
-  `DebugMetric+Wording`. A reading no sample takes yet also needs a field on
-  `DebugSample`, filled in `takeDebugSample`, and on `DebugTimelineSlot`, saying
-  how a slot of several seconds combines it (design/debug-tools.md). The test
-  builder `DebugSample.sample` takes it with a default, and the widest slot in
-  `DebugStripLabelTests` its widest figure, so the label is held to its column.
-  A series in a split strip also needs an edge in `DebugStripPoint` and in
-  `DebugStripBoundary`, a band in `DebugStripChart`, a key in `debug_info`'s
-  `colorKeys` and every built-in theme, read in `Theme+DebugColors` and an entry
-  in `DebugSeriesLegend`, and its name in the detail line widens the label.
+- **A tile on Debug Info.** A case in `DebugMetric` in importance order, with
+  its values from a slot, one per band, and its scale's floor, and its title,
+  value, tone and detail text in `DebugMetric+Wording`. A reading no sample
+  takes yet also needs a field on `DebugSample`, filled in `takeDebugSample`,
+  and on `DebugTimelineSlot`, saying how a slot of several seconds combines it
+  (design/debug-tools.md). The test builder `DebugSample.sample` takes it with a
+  default, and the widest slot in `DebugTileLabelTests` its widest figure, so
+  the value fits the label column. A band in a split tile needs a `DebugSeries`
+  case, its colour in `Theme+DebugColors` and its name in `DebugSeries+Wording`;
+  a colour past the four there needs a key in `debug_info`'s `colorKeys` and
+  every built-in theme.
 - **A new reading also goes in `DebugSampleRecord`** for `debug samples`, and in
   `DebugSummaryRecord` for `--summary`. Nothing forces either: left out, the
   command line never sees it.
 - **A column in a debug table.** A title in the table's header and a cell in its
   row at the same `UIMetrics` width, the figure in the stacked row's caption,
-  and, for Memory by tab, a part in its accessibility text and a field in
-  `DebugMemoryRecord` for `debug memory`. Raise the table's width in ems in
-  `DebugTableLayout` by hand. Nothing measures the columns, so one left short
-  crowds them before the rows stack.
+  and, for Memory Breakdown, a part in its accessibility text and a field in
+  `DebugMemoryRecord` for `debug memory`. Its title is a `DebugColumnHeaders`
+  button with a case in the table's column enum, or it never sorts; the case
+  brings its sort key and caption wording with it, as the compiler asks for
+  both. Raise the table's width in ems in `DebugTableLayout` by hand. Nothing
+  measures the columns, so one left short crowds them before the rows stack.
 - **A keyboard shortcut.** An entry in the shortcuts table, listed in `all`,
   which both the menu item and the engine's unbind derive from.
 - **A key the engine names rather than takes the character of** needs a case in

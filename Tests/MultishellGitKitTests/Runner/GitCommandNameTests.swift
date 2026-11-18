@@ -4,45 +4,45 @@ import Testing
 
 @Suite
 struct GitCommandNameTests {
-  @Test func aRunIsNamedBySubcommandAndFlagsWithoutValuesOrOperands() {
+  @Test func aRunIsNamedByGitItsSubcommandAndFlagsWithoutValuesOrOperands() {
     #expect(
       GitCommandName.of(["rev-list", "--left-right", "--count", "main...feature"])
-        == "rev-list --left-right --count"
+        == "git rev-list --left-right --count"
     )
     #expect(
       GitCommandName.of(["for-each-ref", "--format=%(refname)", "refs/heads"])
-        == "for-each-ref --format"
+        == "git for-each-ref --format"
     )
   }
 
   @Test func flagsAfterTheSeparatorAndRepeatsAreNotNamedAgain() {
     #expect(
       GitCommandName.of(["log", "-z", "--format=%H", "--format=%s", "--", "-file"])
-        == "log -z --format"
+        == "git log -z --format"
     )
-    #expect(GitCommandName.of([]) == "")
+    #expect(GitCommandName.of([]) == "git")
   }
 
   @Test func globalOptionsBeforeTheSubcommandAreLeftOutOfTheName() {
     #expect(
       GitCommandName.of(["--no-optional-locks", "status", "--porcelain=v1", "--branch"])
-        == "status --porcelain --branch"
+        == "git status --porcelain --branch"
     )
     #expect(
       GitCommandName.of(["-C", "/repo", "-c", "core.quotePath=false", "diff", "--numstat"])
-        == "diff --numstat"
+        == "git diff --numstat"
     )
   }
 
   @Test func aSubcommandWithActionsIsNamedWithItsAction() {
     #expect(
       GitCommandName.of(["worktree", "remove", "--force", "--force", "/repo/feature"])
-        == "worktree remove --force"
+        == "git worktree remove --force"
     )
-    #expect(GitCommandName.of(["worktree", "prune"]) == "worktree prune")
+    #expect(GitCommandName.of(["worktree", "prune"]) == "git worktree prune")
     #expect(
       GitCommandName.of(["worktree", "list", "--porcelain", "-z"])
-        == "worktree list --porcelain -z"
+        == "git worktree list --porcelain -z"
     )
   }
 }

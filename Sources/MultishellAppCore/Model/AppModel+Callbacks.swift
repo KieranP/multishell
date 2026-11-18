@@ -48,6 +48,7 @@ extension AppModel {
     messageSource.onRequest = { [weak self] request in await self?.answer(request) }
     notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in
+      if self?.areDebugToolsEnabled == true { self?.debugSampler.fileEventCount += changed.count }
       Task { await self?.noteFileChanges(changed) }
     }
   }

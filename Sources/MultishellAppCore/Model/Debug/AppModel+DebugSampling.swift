@@ -8,6 +8,7 @@ extension AppModel {
   /// and the first second's CPU reads 0, having nothing to measure from.
   func startDebugSampling() {
     debugSampler.start(at: .now)
+    debugSampler.mainThreadID = ThreadUsage.currentThreadID()
     platform.startDisplayFrameCallbacks { [weak self] instant in
       self?.debugSampler.frameRateMeter.noteFrame(at: instant)
     }
@@ -28,6 +29,7 @@ extension AppModel {
     debugGitRuns = DebugGitRunLog()
     debugProcessAttribution = .empty
     debugTerminalMemoryBySession = [:]
+    debugAppMemoryParts = nil
     pausedDebugSnapshot = nil
     pausedDebugMemoryTable = nil
   }
@@ -45,11 +47,12 @@ extension AppModel {
     let terminalPaths = hints.compactMapValues(\.terminalPath)
     let appPID = ProcessInfo.processInfo.processIdentifier
     let scanProcesses = debugSampler.scanProcesses
+    let mainThreadID = debugSampler.mainThreadID
     let generation = debugSampler.generation
     // Timed where the CPU was read: after the await, a stall begun mid-scan
     // stretched one second's share over its length and squeezed the next's.
     let (scan, scannedAt) = await runOnDispatch {
-      (scanProcesses(appPID, terminalPaths), ContinuousClock.now)
+      (scanProcesses(appPID, terminalPaths, mainThreadID), ContinuousClock.now)
     }
     guard generation == debugSampler.generation else { return }
 
@@ -66,27 +69,27 @@ extension AppModel {
     let cpuPercentByPID = cpu.byPID
     let sequence = debugHistory.nextSequence
     debugGitRuns.append(gitActivity.finishedRuns, inSample: sequence)
-    debugHistory.append(
-      DebugSample(
-        sequence: sequence,
-        takenAt: Date(),
-        elapsed: elapsed,
-        frameRate: debugSampler.frameRateMeter.takeReading(at: now),
-        gitRunsStartedCount: gitActivity.startedCount,
-        gitRunningCount: gitActivity.runningCount,
-        gitCommands: GitCommandTally.byCommand(gitActivity.finishedRuns),
-        appCPUPercent: scan.app.flatMap { cpuPercentByPID[$0.pid] } ?? 0,
-        childrenCPUPercent: children.reduce(cpu.exitedPercent) { total, child in
-          total + (cpuPercentByPID[child.pid] ?? 0)
-        },
-        appMemory: scan.app?.footprint ?? 0,
-        terminalMemory: terminalMemoryBySession.values.reduce(0, +),
-        childrenMemory: children.totalMemory,
-        stateReportCount: debugSampler.stateReportCount,
-        marks: debugSampler.pendingMarks,
-      )
+    var sample = DebugSample(
+      sequence: sequence,
+      takenAt: Date(),
+      elapsed: elapsed,
+      frameRate: debugSampler.frameRateMeter.takeReading(at: now),
+      cliExecutionsStartedCount: gitActivity.startedCount,
+      cliExecutionsRunningCount: gitActivity.runningCount,
+      cliExecutions: CLIExecutionTally.byCommand(gitActivity.finishedRuns),
+      appCPUPercent: scan.app.flatMap { cpuPercentByPID[$0.pid] } ?? 0,
+      childrenCPUPercent: children.reduce(cpu.exitedPercent) { total, child in
+        total + (cpuPercentByPID[child.pid] ?? 0)
+      },
+      appMemory: scan.app?.footprint ?? 0,
+      terminalMemory: terminalMemoryBySession.values.reduce(0, +),
+      childrenMemory: children.totalMemory,
+      stateReports: debugSampler.stateReports,
+      marks: debugSampler.pendingMarks,
     )
-    debugSampler.stateReportCount = 0
+    noteOwnReadings(of: scan, at: scannedAt, in: &sample)
+    debugHistory.append(sample)
+    debugSampler.stateReports = .empty
     debugSampler.pendingMarks = []
     debugProcessAttribution = PaneProcessAttribution(
       trees: scan.trees,
@@ -94,5 +97,25 @@ extension AppModel {
       foregroundPIDs: hints.compactMapValues(\.foregroundPID),
     )
     debugTerminalMemoryBySession = terminalMemoryBySession
+    debugAppMemoryParts = scan.appParts
+  }
+
+  /// What the app read of itself, and the saves and file events counted
+  /// since the last sample, whose counts start again.
+  private func noteOwnReadings(
+    of scan: DebugProcessScan,
+    at scannedAt: ContinuousClock.Instant,
+    in sample: inout DebugSample,
+  ) {
+    sample.threadCPU = debugSampler.threadCPUMeter.takeReading(of: scan.threads, at: scannedAt)
+    sample.activity = debugSampler.activityMeter.takeReading(of: scan.appActivity)
+    sample.peakMemory = scan.appActivity?.peakFootprint ?? 0
+    sample.threadCount = scan.threads.count
+    sample.openDescriptorCount = scan.openDescriptorCount
+    sample.memoryPressure = scan.memoryPressure
+    sample.stateSaves = debugSampler.stateSaves
+    sample.fileEventCount = debugSampler.fileEventCount
+    debugSampler.stateSaves = .empty
+    debugSampler.fileEventCount = 0
   }
 }

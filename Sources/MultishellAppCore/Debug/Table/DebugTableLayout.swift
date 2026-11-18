@@ -6,7 +6,9 @@ public enum DebugTableLayout: Sendable, Equatable {
 
   /// What each table's columns need, in multiples of the body font size.
   public static let memoryTableColumnsWidthInEms = 46.0
-  public static let gitTableColumnsWidthInEms = 60.0
+  public static let cliActivityTableColumnsWidthInEms = 60.0
+  public static let threadTableColumnsWidthInEms = 36.0
+  public static let appActivityTableColumnsWidthInEms = 46.0
 
   public static func of(width: Double, columnsWidthInEms ems: Double, fontSize: Double) -> Self {
     width >= ems * fontSize ? .columns : .stacked

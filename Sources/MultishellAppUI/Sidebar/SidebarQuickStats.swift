@@ -13,25 +13,22 @@ struct SidebarQuickStats: View {
     let stats = model.debugQuickStats
     HStack(spacing: 6) {
       cell(
-        title: t("debug.quick-fps"),
-        value: stats.framesPerSecondText,
-        valueColor: theme.smoothnessColor(stats.smoothness, on: theme.projectsPanel),
-        trend: stats.frameRateTrend,
-        trendColor: theme.debugAppSeriesColor,
-      )
-      cell(
         title: t("debug.quick-cpu"),
         value: stats.totalCPUText,
-        valueColor: theme.projectsPanel.text,
         trend: stats.cpuTrend,
         trendColor: theme.debugAppSeriesColor,
       )
       cell(
         title: t("debug.quick-memory"),
         value: stats.totalMemoryText,
-        valueColor: theme.projectsPanel.text,
         trend: stats.memoryTrend,
         trendColor: theme.debugChildrenSeriesColor,
+      )
+      cell(
+        title: t("debug.quick-disk"),
+        value: stats.diskText,
+        trend: stats.diskTrend,
+        trendColor: theme.debugTerminalsSeriesColor,
       )
     }
     .padding(.horizontal, 6)
@@ -50,8 +47,7 @@ struct SidebarQuickStats: View {
   private func cell(
     title: String,
     value: String,
-    valueColor: Color,
-    trend: [Double?],
+    trend: [Double],
     trendColor: Color,
   ) -> some View {
     VStack(alignment: .leading, spacing: 1) {
@@ -61,7 +57,7 @@ struct SidebarQuickStats: View {
       Text(value)
         .font(metrics.font(size: metrics.badge, weight: .semibold))
         .monospacedDigit()
-        .foregroundStyle(valueColor)
+        .foregroundStyle(theme.projectsPanel.text)
         .lineLimit(1)
       QuickStatsSparkline(values: trend)
         .stroke(trendColor, lineWidth: 1.2)

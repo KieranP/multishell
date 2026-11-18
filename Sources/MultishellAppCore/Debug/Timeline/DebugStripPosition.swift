@@ -1,4 +1,4 @@
-/// A point placed across a strip `height` points tall, its fractions measured up from the bottom.
+/// A point placed across a chart `height` points tall, its fractions measured up from the bottom.
 public struct DebugStripPosition {
   public let x: Double
   let point: DebugStripPoint

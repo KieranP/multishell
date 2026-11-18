@@ -62,10 +62,10 @@ One shell tab, idle, debug tools off: 193 MB.
   added 31 MB of live heap.
 - **Opening a tab briefly charges about 217 MB of GPU memory** before it settles
   near 117 MB; four 32 MB surfaces were made, not three.
-- **A file tab's row counts its text and image bytes, not its layout or
-  picture.** A shown tab's TextKit 2 layout, up to 186 MB at the 1 MiB cap, and
-  a shown image's decoded picture, up to 36 MB a copy
-  (design/files/image-tabs.md), stay in the app's row.
+- **The file tabs' line counts their text and image bytes, not layout or
+  picture.** It sits under the app's heap in use. A shown tab's TextKit 2
+  layout, up to 186 MB at the 1 MiB cap, and a shown image's decoded picture, up
+  to 36 MB a copy (design/files/image-tabs.md), are left out of the estimate.
 - **Debug Info added 105 to 117 MB while open**, from its `Canvas` strips, now
   shapes (design/debug-tools.md).
 
@@ -98,9 +98,10 @@ update, the same either way.
 
 ## Tried and not kept
 
-- **A GPU column in Memory by tab.** A patch reporting each surface's renderer
-  bytes worked, but nothing reports the app's own drawing or any child's GPU
-  memory, so a split for one source among many was dropped.
+- **A GPU column in Memory Breakdown.** A patch reporting each surface's
+  renderer bytes worked, but nothing splits the rest of the app's GPU memory by
+  tab or reports a child's, so it was dropped. The app's row shows its GPU as a
+  whole.
 - **Shrinking Ghostty's render targets needs a patch**, and none is to be added
   for it. What a patch could do, for an idle pane:
 

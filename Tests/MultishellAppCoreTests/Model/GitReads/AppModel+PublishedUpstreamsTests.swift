@@ -48,7 +48,9 @@ struct AppModelPublishedUpstreamsTests {
 
     await harness.model.refreshBranchScan(of: harness.project)
 
-    let asked = harness.git.runLog.drain().finishedRuns.filter { $0.command.hasPrefix("reflog") }
+    let asked = harness.git.runLog.drain().finishedRuns.filter { run in
+      run.command.hasPrefix("git reflog")
+    }
     #expect(asked.isEmpty)
   }
 
@@ -116,7 +118,9 @@ struct AppModelPublishedUpstreamsTests {
     harness.git.runLog.setRecording(true)
     await harness.model.refreshBranchScan(of: harness.project)
 
-    let asked = harness.git.runLog.drain().finishedRuns.filter { $0.command.hasPrefix("reflog") }
+    let asked = harness.git.runLog.drain().finishedRuns.filter { run in
+      run.command.hasPrefix("git reflog")
+    }
     #expect(asked.isEmpty)
     #expect(harness.model.remoteState.publishedTipChecks[id]?["feat"] == nil)
   }

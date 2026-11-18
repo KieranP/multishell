@@ -14,9 +14,10 @@ extension Helper {
         last N; stop after --count of them, or at an interrupt.
     usage: multishell debug samples --summary [--last N]
         Sum up the newest N samples, 60 by default: each reading's least,
-        mean and most, the git runs, reports and marks in them.
+        mean and most, and the CLI runs, reports, saves, file events and
+        marks in them.
     usage: multishell debug memory
-        Print the Memory by tab table as JSON, in bytes.
+        Print the Memory Breakdown table as JSON, in bytes.
     usage: multishell debug notifications
         Print the Dock badge and the banners posted this run, oldest first,
         each with the pane it is about and whether it is still up.

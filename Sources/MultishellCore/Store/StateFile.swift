@@ -56,14 +56,19 @@ struct StateFile: Sendable {
     }
   }
 
-  func save(_ workspace: Workspace) throws {
+  @discardableResult
+  func save(_ workspace: Workspace) throws -> Int? {
     try save(workspace, as: issueTicket())
   }
 
   /// The encode is outside the lock, so two saves encode side by side and
-  /// only the writes queue.
-  func save(_ workspace: Workspace, as ticket: SaveOrder.Ticket) throws {
+  /// only the writes queue. The bytes written, `nil` where a later save landed first.
+  @discardableResult
+  func save(_ workspace: Workspace, as ticket: SaveOrder.Ticket) throws -> Int? {
     let data = try JSONEncoder.forFile().encode(workspace)
-    try order.land(ticket) { try data.writeAtomicallyCreatingDirectory(to: fileURL.linkTarget) }
+    return try order.land(ticket) {
+      try data.writeAtomicallyCreatingDirectory(to: fileURL.linkTarget)
+      return data.count
+    }
   }
 }

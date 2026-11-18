@@ -1,10 +1,10 @@
-/// Consecutive points of a strip with a reading in each, so an area is drawn
+/// Consecutive points of a chart with a reading in each, so an area is drawn
 /// in pieces rather than bridged across slots no sample landed in.
 public struct DebugStripSegment: Sendable, Equatable {
   let firstIndex: Int
   let points: [DebugStripPoint]
 
-  /// Where each point is drawn, in slots from the strip's left edge. A lone
+  /// Where each point is drawn, in slots from the chart's left edge. A lone
   /// point spans its slot, a line through one point drawing nothing.
   public var slotPositions: [(slot: Double, point: DebugStripPoint)] {
     if points.count == 1, let point = points.first {

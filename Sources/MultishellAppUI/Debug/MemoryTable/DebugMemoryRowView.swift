@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A row of the Memory by tab table: in columns, or with its numbers stacked
+/// A row of the Memory Breakdown table: in columns, or with its numbers stacked
 /// under its name where the panel is too narrow for them. Never truncated.
 struct DebugMemoryRowView: View {
   let row: DebugMemoryRow

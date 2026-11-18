@@ -8,7 +8,15 @@ struct DebugSampler {
   var interval: Duration = .seconds(1)
   var frameRateMeter = FrameRateMeter()
   var cpuUsageMeter = CPUUsageMeter()
-  var stateReportCount = 0
+  var threadCPUMeter = ThreadCPUMeter()
+  var activityMeter = ProcessActivityMeter()
+  /// The reports handled on the main actor since the last sample, and how long each took.
+  var stateReports = DebugWorkTally.empty
+  var stateSaves = DebugWorkTally.empty
+  /// Directories the file watcher reported changed since the last sample.
+  var fileEventCount = 0
+  /// Read on the main actor at the start, so the scan can tell which thread is main.
+  var mainThreadID: UInt64 = 0
   /// Names `multishell debug mark` gave since the last sample.
   var pendingMarks: [String] = []
   var lastSampleAt: ContinuousClock.Instant?
@@ -16,8 +24,11 @@ struct DebugSampler {
   var generation = 0
   /// Reads the kernel's process table; a test stands in a scan of its own.
   var scanProcesses:
-    @Sendable (_ appPID: Int32, _ terminalPaths: [TerminalSession.ID: String]) -> DebugProcessScan =
-      DebugProcessScan.take
+    @Sendable (
+      _ appPID: Int32,
+      _ terminalPaths: [TerminalSession.ID: String],
+      _ mainThreadID: UInt64,
+    ) -> DebugProcessScan = DebugProcessScan.take
 
   /// Every reading starts from `now`: no frame or report from before counts.
   mutating func start(at now: ContinuousClock.Instant) {
@@ -37,8 +48,12 @@ struct DebugSampler {
   private mutating func clearReadings() {
     frameRateMeter = FrameRateMeter()
     cpuUsageMeter = CPUUsageMeter()
+    threadCPUMeter = ThreadCPUMeter()
+    activityMeter = ProcessActivityMeter()
     lastSampleAt = nil
-    stateReportCount = 0
+    stateReports = .empty
+    stateSaves = .empty
+    fileEventCount = 0
     pendingMarks = []
   }
 }

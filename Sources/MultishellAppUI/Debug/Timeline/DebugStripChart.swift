@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One metric across the range, a shape per colour: a `Canvas` drew the
+/// One tile's chart across the range, a shape per colour: a `Canvas` drew the
 /// whole panel through Metal, 105 MB of buffers (debug-tools.md).
 struct DebugStripChart: View, @MainActor Equatable {
   let metric: DebugMetric
@@ -17,13 +17,17 @@ struct DebugStripChart: View, @MainActor Equatable {
       DebugStripLayer(kind: .midline).fill(theme.debugInfo.border)
       if metric.drawsBars {
         DebugStripLayer(kind: .bars(points)).fill(theme.debugAppSeriesColor)
-      } else if metric.isSplitByOwner {
-        DebugStripLayer(kind: .band(points, lower: .baseline, upper: .app))
-          .fill(theme.debugAppSeriesColor.opacity(0.85))
-        DebugStripLayer(kind: .band(points, lower: .app, upper: .appWithTerminals))
-          .fill(theme.debugTerminalsSeriesColor)
-        DebugStripLayer(kind: .band(points, lower: .appWithTerminals, upper: .total))
-          .fill(theme.debugChildrenSeriesColor.opacity(0.85))
+      } else if !metric.series.isEmpty {
+        ForEach(Array(metric.series.enumerated()), id: \.offset) { index, band in
+          DebugStripLayer(
+            kind: .band(
+              points,
+              lower: index == 0 ? .baseline : .top(ofSeries: index - 1),
+              upper: .top(ofSeries: index),
+            )
+          )
+          .fill(theme.debugColor(of: band).opacity(0.85))
+        }
       } else {
         DebugStripLayer(kind: .band(points, lower: .baseline, upper: .total))
           .fill(theme.debugAppSeriesColor.opacity(0.15))

@@ -21,7 +21,7 @@ struct DebugTimelineTests {
       DebugSample.sample(
         sequence: sequence,
         framesPerSecond: sequence == 7 ? 30 : 120,
-        gitRunsStartedCount: sequence,
+        cliExecutionsStartedCount: sequence,
       )
     }
     let early = DebugTimeline(history: .of(Array(samples.prefix(11))), range: .fifteenMinutes)
@@ -29,7 +29,7 @@ struct DebugTimelineTests {
 
     let slot = try #require(later.slots[later.slots.count - 2])
     #expect(slot == early.slots[early.slots.count - 2])
-    #expect(slot.gitRunsStartedPerSecond == 7, "seconds 5 to 9")
+    #expect(slot.cliExecutionsStartedPerSecond == 7, "seconds 5 to 9")
   }
 
   @Test func aFreezeCountsTheSecondsItHeldTheFrame() {
@@ -55,35 +55,60 @@ struct DebugTimelineTests {
     #expect(DebugTimeline(history: .of(samples), range: .fiveMinutes).stalledSecondCount == 5)
   }
 
-  @Test func aStripIsScaledToItsPeakButNeverBelowItsFloor() throws {
+  @Test func aChartIsScaledToItsPeakButNeverBelowItsFloor() throws {
     let samples = [
-      DebugSample.sample(sequence: 0, gitRunsStartedCount: 2, appMemory: 100, childrenMemory: 300),
-      DebugSample.sample(sequence: 1, gitRunsStartedCount: 4, appMemory: 200, childrenMemory: 900),
+      DebugSample.sample(
+        sequence: 0,
+        cliExecutionsStartedCount: 2,
+        appMemory: 100,
+        childrenMemory: 300,
+      ),
+      DebugSample.sample(
+        sequence: 1,
+        cliExecutionsStartedCount: 4,
+        appMemory: 200,
+        childrenMemory: 900,
+      ),
     ]
     let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
 
-    let git = try #require(timeline.points(of: .gitRuns).last ?? nil)
-    #expect(git.total == 0.4, "ten runs a second is the least a strip shows")
+    let git = try #require(timeline.points(of: .cliActivity).last ?? nil)
+    #expect(git.total == 0.4, "ten runs a second is the least a tile shows")
     let memory = try #require(timeline.points(of: .memory).last ?? nil)
     #expect(abs(memory.total - 1 / 1.1) < 0.0001)
-    #expect(abs(memory.app - 200 / 1_210) < 0.0001)
+    #expect(abs(memory.tops[0] - 200 / 1_210) < 0.0001)
   }
 
-  @Test func theMemoryStripStacksTheTerminalsBetweenTheAppAndItsChildren() throws {
+  @Test func theMemoryTileStacksTheTerminalsBetweenTheAppAndItsChildren() throws {
     let samples = [
       DebugSample.sample(sequence: 0, appMemory: 400, terminalMemory: 150, childrenMemory: 700)
     ]
     let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
 
     let memory = try #require(timeline.points(of: .memory).last ?? nil)
-    #expect(abs(memory.app - 250 / 1_210) < 0.0001)
-    #expect(abs(memory.appWithTerminals - 400 / 1_210) < 0.0001)
+    #expect(memory.tops.count == 3)
+    #expect(abs(memory.tops[0] - 250 / 1_210) < 0.0001)
+    #expect(abs(memory.tops[1] - 400 / 1_210) < 0.0001)
     #expect(abs(memory.total - 1_100 / 1_210) < 0.0001)
-    let cpu = try #require(timeline.points(of: .cpu).last ?? nil)
-    #expect(cpu.appWithTerminals == cpu.app)
   }
 
-  @Test func aFractionAcrossTheStripNamesTheSlotUnderItClampedToTheEnds() {
+  @Test func theCPUTileStacksTheMainThreadTerminalsOtherThreadsThenChildren() throws {
+    let samples = [
+      DebugSample.sample(
+        sequence: 0,
+        appCPUPercent: 40,
+        childrenCPUPercent: 20,
+        mainThreadCPUPercent: 25,
+        terminalThreadsCPUPercent: 10,
+      )
+    ]
+    let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
+
+    let cpu = try #require(timeline.points(of: .cpu).last ?? nil)
+    #expect(cpu.tops == [0.25, 0.35, 0.4, 0.6])
+  }
+
+  @Test func aFractionAcrossTheChartNamesTheSlotUnderItClampedToTheEnds() {
     let timeline = DebugTimeline(history: DebugHistory(), range: .oneMinute)
     #expect(timeline.slotIndex(atFraction: 0) == 0)
     #expect(timeline.slotIndex(atFraction: 0.5) == 30)
@@ -94,18 +119,18 @@ struct DebugTimelineTests {
   @Test func eachSlotsMidpointIsTheXThatNamesItAgain() {
     let timeline = DebugTimeline(history: DebugHistory(), range: .oneMinute)
     for index in timeline.slots.indices {
-      let x = 80 + timeline.slotMidpointX(index, chartWidth: 300)
-      #expect(timeline.slotIndex(atX: x, labelWidth: 80, chartWidth: 300) == index)
+      let x = timeline.slotMidpointX(index, chartWidth: 300)
+      #expect(timeline.slotIndex(atX: x, chartWidth: 300) == index)
     }
   }
 
-  @Test func aPointerOverTheLabelsOrPastTheChartIsOverNoSlot() {
+  @Test func aPointerPastEitherEndOfTheChartIsOverNoSlot() {
     let timeline = DebugTimeline(history: DebugHistory(), range: .oneMinute)
-    #expect(timeline.slotIndex(atX: 40, labelWidth: 50, chartWidth: 600) == nil)
-    #expect(timeline.slotIndex(atX: 50, labelWidth: 50, chartWidth: 600) == 0)
-    #expect(timeline.slotIndex(atX: 350, labelWidth: 50, chartWidth: 600) == 30)
-    #expect(timeline.slotIndex(atX: 651, labelWidth: 50, chartWidth: 600) == nil)
-    #expect(timeline.slotIndex(atX: 60, labelWidth: 50, chartWidth: 0) == nil, "not laid out yet")
+    #expect(timeline.slotIndex(atX: -1, chartWidth: 600) == nil)
+    #expect(timeline.slotIndex(atX: 0, chartWidth: 600) == 0)
+    #expect(timeline.slotIndex(atX: 300, chartWidth: 600) == 30)
+    #expect(timeline.slotIndex(atX: 601, chartWidth: 600) == nil)
+    #expect(timeline.slotIndex(atX: 10, chartWidth: 0) == nil, "not laid out yet")
   }
 
   @Test func aSlotAskedForPastTheRangeIsNoneRatherThanOutOfBounds() {
@@ -118,8 +143,10 @@ struct DebugTimelineTests {
     #expect(timeline.slot(at: nil) == nil)
   }
 
-  @Test func aStripShowsTheHoveredSlotAndOtherwiseTheLatest() throws {
-    let samples = (0..<2).map { DebugSample.sample(sequence: $0, gitRunsStartedCount: $0 * 3) }
+  @Test func aTileShowsTheHoveredSlotAndOtherwiseTheLatest() throws {
+    let samples = (0..<2).map { sequence in
+      DebugSample.sample(sequence: sequence, cliExecutionsStartedCount: sequence * 3)
+    }
     let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
     let latest = try #require(timeline.slots[59])
     let earlier = try #require(timeline.slots[58])
@@ -138,5 +165,21 @@ struct DebugTimelineTests {
 
     #expect(DebugTimeline(history: .of(stalled), range: .oneMinute).hasStalls)
     #expect(!DebugTimeline(history: .of(smooth), range: .oneMinute).hasStalls)
+  }
+
+  @Test func theWakeupsTileStacksPackageIdleInsideInterruptNotOnTopOfIt() throws {
+    let counts = DebugActivityCounts(
+      diskBytesRead: 0,
+      diskBytesWritten: 0,
+      interruptWakeups: 30,
+      packageIdleWakeups: 8,
+    )
+    let timeline = DebugTimeline(
+      history: .of([.sample(sequence: 0, activity: counts)]),
+      range: .oneMinute,
+    )
+
+    let wakeups = try #require(timeline.points(of: .wakeups).last ?? nil)
+    #expect(wakeups.tops == [8.0 / 30, 1], "eight of thirty, the whole thirty at the top")
   }
 }

@@ -12,10 +12,10 @@ struct DebugSample: Sendable, Equatable {
   let elapsed: Duration
   /// `nil` where the display sent no frame: asleep, not stalled.
   let frameRate: FrameRateReading?
-  let gitRunsStartedCount: Int
+  let cliExecutionsStartedCount: Int
   /// Still going at the sample, which a git hung on a dead mount stays.
-  let gitRunningCount: Int
-  let gitCommands: [String: GitCommandTally]
+  let cliExecutionsRunningCount: Int
+  let cliExecutions: [String: CLIExecutionTally]
   let appCPUPercent: Double
   /// Everything the app started, panes and git alike.
   let childrenCPUPercent: Double
@@ -24,9 +24,22 @@ struct DebugSample: Sendable, Equatable {
   /// What the panes' terminals held, part of `appMemory`.
   let terminalMemory: UInt64
   let childrenMemory: UInt64
-  let stateReportCount: Int
+  /// Each report the socket brought, timed as the main actor handled it.
+  let stateReports: DebugWorkTally
   /// What `multishell debug mark` named in this second, oldest first.
   var marks: [String] = []
+  var threadCPU = DebugThreadCPU.unmeasured
+  var activity = DebugActivityCounts.zero
+  /// The largest footprint since launch, which macOS keeps for the process.
+  var peakMemory: UInt64 = 0
+  var threadCount = 0
+  /// Files, pipes and sockets; `nil` where the kernel would not say.
+  var openDescriptorCount: Int?
+  var memoryPressure: MemoryPressureLevel?
+  var stateSaves = DebugWorkTally.empty
+  var fileEventCount = 0
+
+  var stateReportCount: Int { stateReports.count }
 
   var totalMemory: UInt64 { appMemory + childrenMemory }
   var totalCPUPercent: Double { appCPUPercent + childrenCPUPercent }

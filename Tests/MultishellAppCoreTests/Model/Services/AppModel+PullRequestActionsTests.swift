@@ -294,7 +294,9 @@ struct AppModelPullRequestActionsTests {
     async let second: Void = harness.model.createPullRequest(for: feat)
     _ = await (first, second)
 
-    let asked = harness.git.runLog.drain().finishedRuns.filter { $0.command.hasPrefix("ls-remote") }
+    let asked = harness.git.runLog.drain().finishedRuns.filter { run in
+      run.command.hasPrefix("git ls-remote")
+    }
     #expect(asked.count == 1)
   }
 

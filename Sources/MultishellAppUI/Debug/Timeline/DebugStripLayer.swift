@@ -1,7 +1,7 @@
 import MultishellAppCore
 import SwiftUI
 
-/// One colour's part of a strip, every slot's piece in a single path.
+/// One colour's part of a chart, every slot's piece in a single path.
 struct DebugStripLayer: Shape {
   enum Kind: Sendable {
     case stalls([Bool])

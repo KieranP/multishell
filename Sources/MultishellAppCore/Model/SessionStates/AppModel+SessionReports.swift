@@ -28,10 +28,20 @@ extension AppModel {
     store.setAgentConversation(conversation, of: id)
   }
 
+  /// Timed for Debug Info only while the tools are on.
+  func receive(_ report: SessionStateReport) {
+    guard areDebugToolsEnabled else {
+      handle(report)
+      return
+    }
+    let started = ContinuousClock.now
+    handle(report)
+    debugSampler.stateReports.add(started.duration(to: .now))
+  }
+
   /// A report names a live session, or only a directory. One naming an
   /// unknown session is dropped, never matched by directory.
-  func receive(_ report: SessionStateReport) {
-    if areDebugToolsEnabled { debugSampler.stateReportCount += 1 }
+  private func handle(_ report: SessionStateReport) {
     // An older helper's walk from a prompt ends at this process, whose pid
     // never goes while it is looking; see Docs/design/agents/reports-and-hooks.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid

@@ -2,28 +2,32 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The colours a split strip stacks, named, so none is told by colour alone.
+/// The colours a split tile stacks, named, so none is told by colour alone.
+/// One run of text, so a legend wider than the label wraps between entries.
 struct DebugSeriesLegend: View {
-  let metric: DebugMetric
+  private static let nonBreakingSpace = "\u{00A0}"
+
+  let series: [DebugSeries]
   let theme: Theme
   let metrics: UIMetrics
 
   var body: some View {
-    HStack(spacing: 6) {
-      entry(t("debug.legend-app"), theme.debugAppSeriesColor)
-      if metric.showsTerminals {
-        entry(t("debug.legend-terminals"), theme.debugTerminalsSeriesColor)
-      }
-      entry(t("debug.legend-children"), theme.debugChildrenSeriesColor)
-    }
+    Text(legend)
+      .font(metrics.font(size: metrics.small))
+      .fixedSize(horizontal: false, vertical: true)
   }
 
-  private func entry(_ name: String, _ color: Color) -> some View {
-    HStack(spacing: 3) {
-      RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 7)
-      Text(name)
-        .font(metrics.font(size: metrics.small))
-        .foregroundStyle(theme.debugInfo.textSecondary)
+  /// Each square held to its name, and a name to itself, so lines break between entries.
+  private var legend: AttributedString {
+    series.reduce(into: AttributedString()) { text, band in
+      if !text.characters.isEmpty { text += AttributedString("   ") }
+      var square = AttributedString("■" + Self.nonBreakingSpace)
+      square.foregroundColor = theme.debugColor(of: band)
+      var name = AttributedString(
+        band.title.replacingOccurrences(of: " ", with: Self.nonBreakingSpace)
+      )
+      name.foregroundColor = theme.debugInfo.textSecondary
+      text += square + name
     }
   }
 }

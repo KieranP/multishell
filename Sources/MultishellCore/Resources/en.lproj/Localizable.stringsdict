@@ -16,6 +16,18 @@
       <key>other</key><string>%d background shells</string>
     </dict>
   </dict>
+  <key>count.cli-executions-running</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d running</string>
+      <key>other</key><string>%d running</string>
+    </dict>
+  </dict>
   <key>count.comments</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -50,30 +62,6 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d failed</string>
       <key>other</key><string>%d failed</string>
-    </dict>
-  </dict>
-  <key>count.frames-per-second</key>
-  <dict>
-    <key>NSStringLocalizedFormatKey</key>
-    <string>%#@count@</string>
-    <key>count</key>
-    <dict>
-      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
-      <key>NSStringFormatValueTypeKey</key><string>d</string>
-      <key>one</key><string>%d frame per second</string>
-      <key>other</key><string>%d frames per second</string>
-    </dict>
-  </dict>
-  <key>count.git-running</key>
-  <dict>
-    <key>NSStringLocalizedFormatKey</key>
-    <string>%#@count@</string>
-    <key>count</key>
-    <dict>
-      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
-      <key>NSStringFormatValueTypeKey</key><string>d</string>
-      <key>one</key><string>%d running</string>
-      <key>other</key><string>%d running</string>
     </dict>
   </dict>
   <key>count.matches</key>
@@ -220,6 +208,30 @@
       <key>other</key><string>%d terminals</string>
     </dict>
   </dict>
+  <key>count.threads</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d thread</string>
+      <key>other</key><string>%d threads</string>
+    </dict>
+  </dict>
+  <key>count.times</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d time</string>
+      <key>other</key><string>%d times</string>
+    </dict>
+  </dict>
   <key>count.to-send</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -268,7 +280,7 @@
       <key>other</key><string>%d worktrees</string>
     </dict>
   </dict>
-  <key>debug.file-tabs-row-subtitle</key>
+  <key>debug.app-part.file-tabs</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
     <string>%#@count@</string>
@@ -276,8 +288,8 @@
     <dict>
       <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
       <key>NSStringFormatValueTypeKey</key><string>d</string>
-      <key>one</key><string>The text of %d open file, estimated</string>
-      <key>other</key><string>The text of %d open files, estimated</string>
+      <key>one</key><string>File tabs, %d open, estimated</string>
+      <key>other</key><string>File tabs, %d open, estimated</string>
     </dict>
   </dict>
   <key>files-panel.footer-branch</key>

@@ -2,13 +2,9 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A nested row under an expanded Memory by tab row, a tab's Terminal or a process,
-/// indented by its level, its Self and Total under the columns.
+/// A nested row under an expanded Memory Breakdown row, a part of the app, a tab's
+/// Terminal or a process, indented by its level, its Self and Total under the columns.
 struct DebugNestedRowView: View {
-  /// Under its tab's title, so the rows read as that tab's.
-  private static let indent = 14.0
-  private static let indentPerLevel = 14.0
-
   let name: String
   let namesAProcess: Bool
   let indentLevel: Int
@@ -20,7 +16,14 @@ struct DebugNestedRowView: View {
 
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
-      nameCell
+      DebugNestedRowName(
+        name: name,
+        isMonospaced: namesAProcess,
+        indentLevel: indentLevel,
+        theme: theme,
+        metrics: metrics,
+      )
+      .frame(maxWidth: .infinity, alignment: .leading)
       switch layout {
       case .columns:
         Color.clear.frame(width: metrics.debugCountColumnWidth, height: 1)
@@ -48,24 +51,5 @@ struct DebugNestedRowView: View {
     .debugTableRowHighlight(theme)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(accessibilityLabel)
-  }
-
-  private var nameCell: some View {
-    HStack(alignment: .firstTextBaseline, spacing: 4) {
-      if indentLevel > 0 {
-        Image(systemName: "arrow.turn.down.right")
-          .font(metrics.font(size: metrics.debugTableGlyphSize))
-          .foregroundStyle(theme.debugInfo.textTertiary)
-          .accessibilityHidden(true)
-      }
-      Text(name)
-        .font(
-          namesAProcess
-            ? .system(size: metrics.caption, design: .monospaced)
-            : metrics.font(size: metrics.caption)
-        )
-    }
-    .padding(.leading, Self.indent + Double(indentLevel) * Self.indentPerLevel)
-    .frame(maxWidth: .infinity, alignment: .leading)
   }
 }

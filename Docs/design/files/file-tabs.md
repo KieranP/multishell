@@ -133,7 +133,7 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
 - **A Changes rotor walks the changed lines**, the text's attributes carrying no
   sign of an addition.
 - **A file tab's memory is labelled in Debug Info**, estimated from the text it
-  keeps, rather than left in the app's row.
+  keeps, as a line under the Multishell row's heap in use (debug-tools.md).
 - **Split is offset-locked**, the same offset being the same row on both sides
   under the forced geometry; a lock by row left the scrollers thousands of
   points apart.

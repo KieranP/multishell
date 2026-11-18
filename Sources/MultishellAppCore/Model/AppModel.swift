@@ -218,6 +218,8 @@ public final class AppModel<Surface> {
   var debugProcessAttribution = PaneProcessAttribution.empty
   /// What each pane's terminal held at the last sample, scrollback included.
   var debugTerminalMemoryBySession: [TerminalSession.ID: UInt64] = [:]
+  /// What the app's own footprint was made of at the last sample.
+  var debugAppMemoryParts: ProcessMemoryParts?
   /// What the panel shows while paused, the sampling going on under it.
   var pausedDebugSnapshot: DebugSnapshot?
   /// The table as it stood at the pause: built from live tabs, it moved as one closed.

@@ -23,6 +23,7 @@ struct AccessibilityTextDebugTests {
       totalMemory: 2_048,
       barFraction: 1,
       terminalRow: terminalRow,
+      appPartRows: [],
       processRows: [],
     )
   }
@@ -38,18 +39,14 @@ struct AccessibilityTextDebugTests {
   @Test func theQuickStatsAreSpokenWithTheirUnits() {
     let stats = DebugQuickStats(
       history: .of([
-        DebugSample.sample(
-          sequence: 0,
-          framesPerSecond: 1,
-          appCPUPercent: 30,
-          childrenCPUPercent: 4,
-        )
+        DebugSample.sample(sequence: 0, appCPUPercent: 30, childrenCPUPercent: 4)
       ])
     )
     let spoken = AccessibilityText.debugQuickStats(stats)
 
-    #expect(spoken.hasPrefix("Debug Info, 1 frame per second, 34% CPU, "))
-    #expect(spoken.hasSuffix(" memory"))
+    #expect(spoken.hasPrefix("Debug Info, 34% CPU, "))
+    #expect(spoken.contains(" memory, "))
+    #expect(spoken.hasSuffix(" of disk a second"))
   }
 
   @Test func theQuickStatsBeforeAnySampleAreSpokenAsTheirNameAlone() {
@@ -99,6 +96,67 @@ struct AccessibilityTextDebugTests {
     #expect(
       AccessibilityText.debugProcessRow(processRow(depth: 2), under: tabWithTerminal)
         == "p10, started by the process above, 2 deep, \(kilobyte) self, \(twoKilobytes) total"
+    )
+  }
+
+  @Test func aColumnHeaderSaysWhichWayTheTableIsSortedOnlyWhereItIsSortedByIt() {
+    let sort = DebugCLIActivityColumn.defaultSort
+    #expect(
+      AccessibilityText.debugColumnHeader("Total", column: .totalDuration, sort: sort)
+        == "Total, sorted descending"
+    )
+    #expect(
+      AccessibilityText.debugColumnHeader(
+        "Total",
+        column: .totalDuration,
+        sort: sort.selecting(.totalDuration),
+      ) == "Total, sorted ascending"
+    )
+    #expect(AccessibilityText.debugColumnHeader("Runs", column: .runs, sort: sort) == "Runs")
+  }
+
+  @Test func aPartOfTheAppIsSpokenWithItsOwnShareAndWhatItHoldsWithTheRowsUnderIt() {
+    #expect(
+      AccessibilityText.debugAppPartRow(
+        DebugAppPartRow(part: .heapInUse, selfMemory: 1_024, totalMemory: 2_048)
+      ) == "Heap in use, \(kilobyte) self, \(twoKilobytes) total"
+    )
+  }
+
+  @Test func anAppActivityRowIsSpokenWithItsTotalTime() {
+    var tally = DebugWorkTally.empty
+    tally.add(.milliseconds(1), bytesWritten: 100)
+    tally.add(.milliseconds(3), bytesWritten: 200)
+    let spoken = AccessibilityText.debugAppActivityRow(
+      DebugAppActivityRow(kind: .stateSaves, tally: tally)
+    )
+    #expect(spoken.hasPrefix("State saves, 4 ms total, "))
+  }
+
+  @Test func aThreadGroupIsSpokenWithItsFiguresAndWhetherItIsOpen() {
+    let row = DebugThreadGroupRow(
+      group: .terminals,
+      threads: [
+        DebugThreadRow(
+          key: DebugThreadKey(group: .terminals, name: "io"),
+          tally: DebugThreadTally(threadCount: 2, cpuTime: .milliseconds(40)),
+          meanPercent: 4,
+        )
+      ],
+      threadCount: 2,
+    )
+    #expect(
+      AccessibilityText.debugThreadRow(row, disclosure: .collapsed)
+        == "Terminals, 2 threads, mean 4% CPU, 40 ms CPU time, collapsed"
+    )
+  }
+
+  @Test func aPartDrawnUnderAnotherIsSpokenAsPartOfTheRowAbove() {
+    #expect(
+      AccessibilityText.debugAppPartRow(
+        DebugAppPartRow(part: .fileTabs, selfMemory: 1_024, indentLevel: 1, fileTabCount: 2)
+      )
+        == "File tabs, 2 open, estimated, part of the row above, \(kilobyte) self, \(kilobyte) total"
     )
   }
 

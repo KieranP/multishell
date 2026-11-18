@@ -1,9 +1,9 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellProcess
 
 @Suite @MainActor
 struct AppModelDebugMemoryTableTests {
@@ -43,6 +43,31 @@ struct AppModelDebugMemoryTableTests {
     #expect(tab.processList.totalMemory == 200)
     #expect(table.unattributed.totalMemory == 100)
     #expect(table.totalMemory == 700)
+  }
+
+  @Test func theAppsPartsComeFromTheSampleAndStayStillWhilePaused() async throws {
+    let (harness, _) = Harness.withOnePane()
+    let parts = ProcessMemoryParts(gpuMemory: 200, heapMemory: 100, heapInUse: 60)
+    harness.model.enableDebugTools(scan: .sample(appMemory: 400, trees: [], appParts: parts))
+    await harness.model.takeDebugSample()
+    harness.model.setDebugPaused(true)
+    harness.model.debugSampler.scanProcesses = { _, _, _ in .sample(appMemory: 400, trees: []) }
+
+    await harness.model.takeDebugSample()
+
+    #expect(harness.model.debugMemoryTable.appParts == parts)
+    #expect(harness.model.liveDebugMemoryTable.appParts == nil)
+  }
+
+  @Test func turningTheToolsOffDropsTheAppsParts() async throws {
+    let (harness, _) = Harness.withOnePane()
+    let parts = ProcessMemoryParts(gpuMemory: 200, heapMemory: 100, heapInUse: 60)
+    harness.model.enableDebugTools(scan: .sample(appMemory: 400, trees: [], appParts: parts))
+    await harness.model.takeDebugSample()
+
+    harness.model.setDebugToolsEnabled(false)
+
+    #expect(harness.model.debugAppMemoryParts == nil)
   }
 
   @Test func aTabWhoseShellIsNoLongerLiveIsLeftOutOfTheTable() async throws {

@@ -15,7 +15,7 @@ public enum DebugRange: CaseIterable, Sendable {
     }
   }
 
-  /// Seconds drawn as one point, so a strip draws at most 180 of them.
+  /// Seconds drawn as one point, so a chart draws at most 180 of them.
   var secondsPerSlot: Int {
     switch self {
     case .oneMinute: 1

@@ -19,4 +19,15 @@ extension WorkspaceStoreTests {
 
     #expect(try StateFile(fileURL: file).load().projects.count == 2)
   }
+
+  @Test func aSaveDroppedForALaterOneReportsNothingWritten() throws {
+    let file = Scratch.statePath("dropped-save")
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
+    let store = WorkspaceStore(file: StateFile(fileURL: file))
+    let first = try #require(store.prepareSave())
+    let second = try #require(store.prepareSave())
+
+    #expect((try second.write() ?? 0) > 0)
+    #expect(try first.write() == nil)
+  }
 }

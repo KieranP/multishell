@@ -38,8 +38,23 @@ struct DebugSummaryRecord: Encodable, Equatable {
   let appMemory: Spread?
   let terminalMemory: Spread?
   let childrenMemory: Spread?
-  let gitRunsStarted: Int
+  let mainThreadCPUPercent: Spread?
+  let terminalThreadsCPUPercent: Spread?
+  let diskBytesReadPerSecond: Spread?
+  let diskBytesWrittenPerSecond: Spread?
+  let interruptWakeupsPerSecond: Spread?
+  let packageIdleWakeupsPerSecond: Spread?
+  let threads: Spread?
+  /// `nil` where the kernel never said.
+  let openDescriptors: Spread?
+  let peakMemory: UInt64?
+  /// The worst any sample saw.
+  let memoryPressure: String?
+  let cliExecutionsStarted: Int
   let stateReports: Int
+  let stateReportHandling: DebugSampleRecord.WorkRecord
+  let stateSaves: DebugSampleRecord.WorkRecord
+  let fileEvents: Int
   let marks: [Mark]
 
   init(_ samples: ArraySlice<DebugSample>) {
@@ -57,8 +72,28 @@ struct DebugSummaryRecord: Encodable, Equatable {
     appMemory = spread { Double($0.appMemory) }
     terminalMemory = spread { Double($0.terminalMemory) }
     childrenMemory = spread { Double($0.childrenMemory) }
-    gitRunsStarted = samples.reduce(0) { $0 + $1.gitRunsStartedCount }
+    func perSecond(_ count: @escaping (DebugSample) -> UInt64) -> Spread? {
+      spread { Double(count($0)) / $0.elapsedSeconds }
+    }
+    mainThreadCPUPercent = spread(\.threadCPU.mainPercent)
+    terminalThreadsCPUPercent = spread(\.threadCPU.terminalsPercent)
+    diskBytesReadPerSecond = perSecond(\.activity.diskBytesRead)
+    diskBytesWrittenPerSecond = perSecond(\.activity.diskBytesWritten)
+    interruptWakeupsPerSecond = perSecond(\.activity.interruptWakeups)
+    packageIdleWakeupsPerSecond = perSecond(\.activity.packageIdleWakeups)
+    threads = spread { Double($0.threadCount) }
+    openDescriptors = spread { $0.openDescriptorCount.map(Double.init) }
+    peakMemory = samples.map(\.peakMemory).max()
+    memoryPressure = samples.compactMap(\.memoryPressure).max().map { String(describing: $0) }
+    cliExecutionsStarted = samples.reduce(0) { $0 + $1.cliExecutionsStartedCount }
     stateReports = samples.reduce(0) { $0 + $1.stateReportCount }
+    stateReportHandling = DebugSampleRecord.WorkRecord(
+      samples.reduce(into: DebugWorkTally.empty) { $0.merge($1.stateReports) }
+    )
+    stateSaves = DebugSampleRecord.WorkRecord(
+      samples.reduce(into: DebugWorkTally.empty) { $0.merge($1.stateSaves) }
+    )
+    fileEvents = samples.reduce(0) { $0 + $1.fileEventCount }
     marks = samples.flatMap { sample in
       sample.marks.map { Mark(sample: sample.sequence, name: $0) }
     }

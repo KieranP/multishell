@@ -39,13 +39,24 @@ extension AppModel {
     }
   }
 
-  /// Encoded and written off the main actor, a stalled volume otherwise
+  /// Encoded, written and timed off the main actor, a stalled volume otherwise
   /// holding the window; the store keeps the writes in order.
   func saveOffMain() {
     guard !isYieldingToRunningInstance, let save = store.prepareSave() else { return }
     Task { @MainActor [weak self] in
-      let outcome = await runOnDispatch { Result { try save.write() } }
-      self?.recordSaveOutcome(outcome)
+      let outcome = await runOnDispatch {
+        Result {
+          let started = ContinuousClock.now
+          let bytesWritten = try save.write()
+          return (bytesWritten: bytesWritten, duration: started.duration(to: .now))
+        }
+      }
+      self?.recordSaveOutcome(outcome.map { _ in })
+      if case .success(let written) = outcome, let bytesWritten = written.bytesWritten,
+        self?.areDebugToolsEnabled == true
+      {
+        self?.debugSampler.stateSaves.add(written.duration, bytesWritten: UInt64(bytesWritten))
+      }
     }
   }
 

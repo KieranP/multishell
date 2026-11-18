@@ -3,10 +3,11 @@ import MultishellCore
 import MultishellProcess
 import SwiftUI
 
-/// The app, each tab heaviest first, what no tab runs, and the total. A row
-/// with processes expands to list them.
+/// The app, each tab and what no tab runs, in the order the headers pick,
+/// then the total. The app expands to its parts, a row with processes to list them.
 struct DebugMemoryTableView: View {
   let table: DebugMemoryTable
+  @Binding var sort: DebugTableSort<DebugMemoryColumn>
   let layout: DebugTableLayout
   let theme: Theme
   let metrics: UIMetrics
@@ -16,7 +17,7 @@ struct DebugMemoryTableView: View {
   var body: some View {
     VStack(spacing: 0) {
       if layout == .columns { header }
-      ForEach(table.rows) { row in
+      ForEach(table.rows(sortedBy: sort)) { row in
         let disclosure = row.disclosure(isExpanded: expandedSources.contains(row.source))
         DebugMemoryRowView(
           row: row,
@@ -34,6 +35,18 @@ struct DebugMemoryTableView: View {
               indentLevel: 0,
               memory: terminal,
               accessibilityLabel: AccessibilityText.debugTerminalRow(terminal),
+              layout: layout,
+              theme: theme,
+              metrics: metrics,
+            )
+          }
+          ForEach(row.appPartRows) { part in
+            DebugNestedRowView(
+              name: part.title,
+              namesAProcess: false,
+              indentLevel: part.indentLevel,
+              memory: part,
+              accessibilityLabel: AccessibilityText.debugAppPartRow(part),
               layout: layout,
               theme: theme,
               metrics: metrics,
@@ -57,12 +70,16 @@ struct DebugMemoryTableView: View {
   }
 
   private var header: some View {
-    HStack(alignment: .bottom, spacing: UIMetrics.debugTableColumnSpacing) {
-      Text(t("debug.column.tab")).frame(maxWidth: .infinity, alignment: .leading)
-      Text(t("debug.column.worktree")).frame(maxWidth: .infinity, alignment: .leading)
-      Text(t("debug.column.processes")).debugColumnTitle(width: metrics.debugCountColumnWidth)
-      Text(t("debug.column.self")).debugColumnTitle(width: metrics.debugMemoryValueColumnWidth)
-      Text(t("debug.column.total-memory"))
+    let headers = DebugColumnHeaders(sort: $sort, theme: theme, metrics: metrics)
+    return HStack(alignment: .bottom, spacing: UIMetrics.debugTableColumnSpacing) {
+      headers.button(t("debug.column.tab"), .name).frame(maxWidth: .infinity, alignment: .leading)
+      headers.button(t("debug.column.worktree"), .worktree)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      headers.button(t("debug.column.processes"), .processCount)
+        .debugColumnTitle(width: metrics.debugCountColumnWidth)
+      headers.button(t("debug.column.self"), .selfMemory)
+        .debugColumnTitle(width: metrics.debugMemoryValueColumnWidth)
+      headers.button(t("debug.column.total-memory"), .totalMemory)
         .debugColumnTitle(width: metrics.debugMemoryBarColumnWidth)
     }
     .debugTableHeader(theme, metrics, leadingInset: UIMetrics.debugTableTitleInset)

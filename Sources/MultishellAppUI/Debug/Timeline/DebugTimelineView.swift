@@ -2,73 +2,52 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Every metric on one time axis, one pointer across them all, so a stall
-/// lines up with whatever ran in the same second.
+/// Every metric as a tile, most telling first, two to a row where they fit; one
+/// pointer runs across them all, so a stall lines up with what ran beside it.
 struct DebugTimelineView: View {
   let timeline: DebugTimeline
   let theme: Theme
   let metrics: UIMetrics
 
   @State private var hoveredSlotIndex: Int?
-  /// The charts' width, the strips' less their labels, to find the slot under
-  /// the pointer.
-  @State private var chartWidth = 0.0
+  @State private var width = 0.0
 
   var body: some View {
-    VStack(spacing: 0) {
-      ForEach(DebugMetric.allCases, id: \.self) { metric in
-        DebugStripView(
-          metric: metric,
-          timeline: timeline,
-          hoveredSlotIndex: hoveredSlotIndex,
-          theme: theme,
-          metrics: metrics,
-        )
-        .hairline(.bottom, theme.debugInfo)
+    let layout = DebugTileGridLayout.of(
+      width: width,
+      labelWidth: metrics.debugTileLabelWidth,
+      minimumChartWidth: metrics.debugTileMinimumChartWidth,
+      tilePadding: UIMetrics.debugTilePadding,
+      gap: UIMetrics.debugTileGap,
+    )
+    Grid(horizontalSpacing: UIMetrics.debugTileGap, verticalSpacing: UIMetrics.debugTileGap) {
+      ForEach(rows(of: layout.columnCount), id: \.self) { row in
+        GridRow {
+          ForEach(row, id: \.self) { metric in
+            DebugTileView(
+              metric: metric,
+              timeline: timeline,
+              chartBesideLabel: layout.chartsBesideLabels,
+              hoveredSlotIndex: $hoveredSlotIndex,
+              theme: theme,
+              metrics: metrics,
+            )
+          }
+        }
       }
-      axis
     }
-    .padding(.vertical, 6)
-    .columnBackground(theme.color(.blockBackground, in: .debugInfo))
-    .onContinuousHover { phase in
-      hoveredSlotIndex = slotIndex(under: phase)
+    .frame(maxWidth: .infinity)
+    .onGeometryChange(for: Double.self) { geometry in
+      geometry.size.width
+    } action: { newWidth in
+      width = newWidth
     }
     .onChange(of: timeline.range) { hoveredSlotIndex = nil }
   }
 
-  private var axis: some View {
-    HStack(spacing: 0) {
-      Color.clear.frame(width: metrics.debugStripLabelWidth, height: 1)
-      HStack {
-        Text(timeline.range.agoTitle)
-        Spacer()
-        if let slot = timeline.slot(at: hoveredSlotIndex) {
-          Text(slot.startedAtText)
-            .foregroundStyle(theme.debugInfo.textSecondary)
-          Spacer()
-        }
-        Text(t("debug.axis-now"))
-      }
-      .onGeometryChange(for: Double.self) { geometry in
-        geometry.size.width
-      } action: { newWidth in
-        chartWidth = newWidth
-      }
-      .padding(.trailing, UIMetrics.debugChartTrailingInset)
+  private func rows(of columnCount: Int) -> [[DebugMetric]] {
+    stride(from: 0, to: DebugMetric.allCases.count, by: columnCount).map { start in
+      Array(DebugMetric.allCases[start..<min(start + columnCount, DebugMetric.allCases.count)])
     }
-    .font(metrics.font(size: metrics.small))
-    .monospacedDigit()
-    .foregroundStyle(theme.debugInfo.textTertiary)
-    .padding(.top, 4)
-  }
-
-  /// The slot under the pointer, `nil` over the labels or off the strips.
-  private func slotIndex(under phase: HoverPhase) -> Int? {
-    guard case .active(let location) = phase else { return nil }
-    return timeline.slotIndex(
-      atX: location.x,
-      labelWidth: metrics.debugStripLabelWidth,
-      chartWidth: chartWidth,
-    )
   }
 }

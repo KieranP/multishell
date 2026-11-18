@@ -13,6 +13,7 @@ extension AppModel {
       history: debugHistory,
       attribution: debugProcessAttribution,
       terminalMemoryBySession: debugTerminalMemoryBySession,
+      appMemoryParts: debugAppMemoryParts,
     )
   }
 

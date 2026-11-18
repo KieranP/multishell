@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// The Memory by tab table as `multishell debug memory` prints it, in bytes.
+/// The Memory Breakdown table as `multishell debug memory` prints it, in bytes.
 struct DebugMemoryRecord: Encodable, Equatable {
   struct TabRecord: Encodable, Equatable {
     let id: TerminalTab.ID
@@ -20,6 +20,12 @@ struct DebugMemoryRecord: Encodable, Equatable {
     let contentMemory: UInt64
   }
 
+  struct AppPartRecord: Encodable, Equatable {
+    let part: String
+    /// Its own share; the heap in use's leaves out the file tabs' text under it.
+    let memory: UInt64
+  }
+
   struct ProcessRecord: Encodable, Equatable {
     let pid: Int32
     let parentPID: Int32
@@ -35,7 +41,8 @@ struct DebugMemoryRecord: Encodable, Equatable {
   }
 
   let appMemory: UInt64
-  let appMemoryOutsideTabs: UInt64
+  let appMemoryOutsideTerminals: UInt64
+  let appParts: [AppPartRecord]
   let totalMemory: UInt64
   let tabs: [TabRecord]
   let fileTabs: FileTabsRecord
@@ -43,7 +50,10 @@ struct DebugMemoryRecord: Encodable, Equatable {
 
   init(_ table: DebugMemoryTable) {
     appMemory = table.appMemory
-    appMemoryOutsideTabs = table.appMemoryOutsideTabs
+    appMemoryOutsideTerminals = table.appMemoryOutsideTerminals
+    appParts = table.appPartRows.map { row in
+      AppPartRecord(part: row.part.rawValue, memory: row.selfMemory)
+    }
     fileTabs = FileTabsRecord(
       count: table.fileTabs.tabCount,
       contentMemory: table.fileTabs.contentMemory,

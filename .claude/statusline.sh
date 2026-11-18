@@ -118,6 +118,53 @@ if [ -n "$week_pct" ]; then
   out="$out | $week_str"
 fi
 
+# Extra usage spend isn't in the statusline JSON, so read it from the
+# undocumented endpoint behind /usage, with the login token Claude Code keeps
+# in the macOS keychain. It refreshes in the background at most once a minute,
+# and the status line shows the last cached answer. Failed attempts count
+# toward the minute, so an expired token or a 429 doesn't turn every redraw
+# into a request, and a figure left over from them is hidden.
+USAGE_CACHE="$HOME/.claude/cache/oauth-usage.json"
+USAGE_ATTEMPT="$USAGE_CACHE.attempt"
+USAGE_REFRESH_EVERY=60
+USAGE_HIDE_AFTER=600
+refresh_usage() {
+  local lock="$USAGE_CACHE.lock"
+  mkdir -p "${USAGE_CACHE%/*}"
+  find "$lock" -maxdepth 0 -mmin +1 -exec rmdir {} \; 2>/dev/null
+  mkdir "$lock" 2>/dev/null || return
+  touch "$USAGE_ATTEMPT"
+  (
+    tmp="$USAGE_CACHE.$$"
+    security find-generic-password -s "Claude Code-credentials" -w |
+      jq -r '"Authorization: Bearer " + .claudeAiOauth.accessToken' |
+      curl -sf --max-time 5 -H @- -H 'anthropic-beta: oauth-2025-04-20' \
+        -o "$tmp" https://api.anthropic.com/api/oauth/usage &&
+      mv "$tmp" "$USAGE_CACHE"
+    rm -f "$tmp"
+    rmdir "$lock"
+  ) </dev/null >/dev/null 2>&1 &
+}
+if command -v security >/dev/null; then
+  last_attempt=$(stat -f %m "$USAGE_ATTEMPT" 2>/dev/null || echo 0)
+  [ $(( now - last_attempt )) -ge "$USAGE_REFRESH_EVERY" ] && refresh_usage
+
+  usage_mtime=$(stat -f %m "$USAGE_CACHE" 2>/dev/null || echo 0)
+  [ $(( now - usage_mtime )) -lt "$USAGE_HIDE_AFTER" ] && extra=$(jq -r '
+    .extra_usage
+    | select((.used_credits // 0) > 0)
+    | pow(10; .decimal_places // 2) as $scale
+    | [.used_credits / $scale, (.monthly_limit // empty) / $scale]
+    | map(tostring) | join(" ")
+  ' "$USAGE_CACHE" 2>/dev/null)
+  if [ -n "$extra" ]; then
+    read -r extra_used extra_limit <<< "$extra"
+    spend=$(printf '$%.2f' "$extra_used")
+    [ -n "$extra_limit" ] && spend="$spend/$(printf '$%.0f' "$extra_limit")"
+    out="$out | 󰄔 $spend"
+  fi
+fi
+
 right=${out# | }
 
 # Claude Code sets COLUMNS for the statusline command. The margin allows for

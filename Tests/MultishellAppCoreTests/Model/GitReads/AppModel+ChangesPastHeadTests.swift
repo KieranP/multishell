@@ -254,8 +254,8 @@ struct AppModelChangesPastHeadTests {
     await harness.model.refreshServices(ofProject: harness.project.id)
 
     let runs = harness.git.runLog.drain().finishedRuns
-    #expect(runs.contains { $0.command.hasPrefix("rev-list --no-merges") })
-    #expect(!runs.contains { $0.command.hasPrefix("cherry") })
+    #expect(runs.contains { $0.command.hasPrefix("git rev-list --no-merges") })
+    #expect(!runs.contains { $0.command.hasPrefix("git cherry") })
   }
 
   @Test func aBranchThatMergedTheTrunkAfterItsMergeIsNeverPatched() async throws {
@@ -282,8 +282,8 @@ struct AppModelChangesPastHeadTests {
     await harness.model.refreshServices(ofProject: harness.project.id)
 
     let runs = harness.git.runLog.drain().finishedRuns
-    #expect(runs.contains { $0.command.hasPrefix("rev-list --no-merges") })
-    #expect(!runs.contains { $0.command.hasPrefix("cherry") })
+    #expect(runs.contains { $0.command.hasPrefix("git rev-list --no-merges") })
+    #expect(!runs.contains { $0.command.hasPrefix("git cherry") })
     #expect(harness.model.services(of: feat).outgrownPullRequest == nil)
   }
 
@@ -449,7 +449,7 @@ struct AppModelChangesPastHeadTests {
     await harness.model.refreshBranchScan(of: harness.project)
 
     let runs = harness.git.runLog.drain().finishedRuns
-    #expect(!runs.contains { $0.command.hasPrefix("rev-list --no-merges") })
+    #expect(!runs.contains { $0.command.hasPrefix("git rev-list --no-merges") })
   }
 
   @Test func theServicesReadAsksAnUnansweredMergedHeadAgainAsAFetchMayHaveBroughtIt()
@@ -473,6 +473,6 @@ struct AppModelChangesPastHeadTests {
     await harness.model.refreshServices(ofProject: harness.project.id)
 
     let runs = harness.git.runLog.drain().finishedRuns
-    #expect(runs.contains { $0.command.hasPrefix("rev-list --no-merges") })
+    #expect(runs.contains { $0.command.hasPrefix("git rev-list --no-merges") })
   }
 }

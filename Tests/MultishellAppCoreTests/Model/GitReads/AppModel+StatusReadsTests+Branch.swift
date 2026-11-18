@@ -71,7 +71,7 @@ extension AppModelStatusReadsTests {
 
     var mergeBases = 0
     try await waitUntil {
-      mergeBases += git.runLog.drain().finishedRuns.count { $0.command.hasPrefix("merge-base") }
+      mergeBases += git.runLog.drain().finishedRuns.count { $0.command.hasPrefix("git merge-base") }
       return mergeBases > 0
     }
     #expect(mergeBases > 0)

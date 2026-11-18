@@ -49,6 +49,7 @@ extension AppModel {
       },
       unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst(),
       fileTabs: debugFileTabMemory,
+      appParts: snapshot.appMemoryParts,
     )
   }
 }

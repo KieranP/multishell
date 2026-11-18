@@ -20,6 +20,7 @@ struct DebugMemoryRowWordingTests {
       totalMemory: selfMemory,
       barFraction: 0,
       terminalRow: nil,
+      appPartRows: [],
       processRows: [],
     )
   }
@@ -32,12 +33,6 @@ struct DebugMemoryRowWordingTests {
     #expect(total.selfMemoryText == "")
     #expect(unplacedTab.processCountText == "–")
     #expect(unplacedTab.selfMemoryText == "–")
-  }
-
-  @Test func theFileTabsRowLeavesItsCountEmptyAsItRunsNoProcess() {
-    let fileTabs = row(.fileTabs, processCount: nil, selfMemory: 150, subtitle: "2 file tabs")
-
-    #expect(fileTabs.processCountText == "")
   }
 
   @Test func aNarrowRowSaysItsSubtitleCountAndSelfUnderItsName() {
