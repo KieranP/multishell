@@ -3,7 +3,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-extension DiffDocumentView {
+extension DiffColumn {
   func showReviewCards(
     _ placements: [ReviewCardPlacement],
     content: (ReviewCardPlacement) -> AnyView,
@@ -15,7 +15,7 @@ extension DiffDocumentView {
       clipWidth: clipWidth,
     )
     openReviewCardGaps(gaps)
-    reviewCards.layOut(in: textView.geometry, scrolledTo: scrollOrigin.x)
+    layOutGapViews()
   }
 
   /// Placed again only where what they show moved since `last`: an update runs on
@@ -24,7 +24,7 @@ extension DiffDocumentView {
     _ shown: ShownReviewCards,
     replacing last: inout ShownReviewCards?,
     model: AppModel,
-    tabID: FileTab.ID,
+    tabID: ReviewTabID,
   ) {
     guard last != shown else { return }
     last = shown
@@ -49,7 +49,7 @@ extension DiffDocumentView {
     guard clipHeight > 0 else {
       pendingCardReveal = card
       cancelPendingRestore()
-      needsLayout = true
+      canvasView?.needsLayout = true
       return
     }
     let geometry = textView.geometry

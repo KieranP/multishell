@@ -50,7 +50,8 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
       let anchor = rows.flatMap { view?.textView.displayText.anchor(ofChangeAt: $0) }
       model?.noteSteppedChangeAnchor(anchor, of: tabID)
     }
-    view.onCommentOnLines = { [weak model] lines in model?.openReviewComposer(on: lines, in: tabID)
+    view.onCommentOnLines = { [weak model] lines in
+      model?.openReviewComposer(on: lines, ofFile: path, in: tabID)
     }
     if let scroll = model.fileTabScroll(of: tabID) { view.restore(scroll) }
     if let anchor = model.steppedChangeAnchor(of: tabID) { view.restoreSteppedChangeAnchor(anchor) }

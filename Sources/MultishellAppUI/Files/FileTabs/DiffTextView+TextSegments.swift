@@ -1,4 +1,5 @@
 import AppKit
+import MultishellAppCore
 
 extension DiffTextView {
   /// `units` of the shown text as TextKit 2's range, `nil` past its end.
@@ -24,5 +25,30 @@ extension DiffTextView {
       frame.offsetBy(dx: origin.x, dy: origin.y).fill()
       return true
     }
+  }
+
+  /// Where `units` sit in the view: their rows, and their glyphs' span across
+  /// them once laid out, else the rows' start.
+  func rect(of units: Range<Int>) -> NSRect {
+    let first = displayText.row(atOffset: units.lowerBound)
+    let last = displayText.row(atOffset: max(units.lowerBound, units.upperBound - 1))
+    let top = geometry.top(ofRow: first)
+    let height = geometry.top(ofRow: last) + geometry.rowHeight - top
+    var span: NSRect?
+    if let layoutManager = textLayoutManager,
+      let textRange = textRange(of: units, in: layoutManager)
+    {
+      layoutManager.ensureLayout(for: textRange)
+      layoutManager.enumerateTextSegments(
+        in: textRange,
+        type: .standard,
+        options: .rangeNotRequired,
+      ) { _, frame, _, _ in
+        span = span.map { $0.union(frame) } ?? frame
+        return true
+      }
+    }
+    let x = (span?.minX ?? 0) + textContainerOrigin.x
+    return NSRect(x: x, y: top, width: span?.width ?? 1, height: height)
   }
 }

@@ -45,6 +45,7 @@ struct ReviewCardPlacementTests {
   @Test func theComposerGoesUnderTheCommentsSharingItsLastRow() {
     let comment = Self.comment(4...4)
     let composer = ReviewComposer(
+      path: "a.txt",
       side: .onDisk,
       lines: 1...4,
       quote: ["a", "b", "c", "d"],
@@ -91,6 +92,7 @@ struct ReviewCardPlacementTests {
   @Test func aComposerEditingACommentStandsForItsCard() {
     let comment = Self.comment(2...2)
     let composer = ReviewComposer(
+      path: "a.txt",
       side: .onDisk,
       lines: 2...2,
       quote: ["B"],

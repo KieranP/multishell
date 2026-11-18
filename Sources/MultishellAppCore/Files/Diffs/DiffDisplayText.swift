@@ -20,6 +20,9 @@ public struct DiffDisplayText: Equatable, Sendable {
   public let rowStarts: [Int]
   /// The first row of each change, ascending: what a step lands on.
   let changeStarts: [Int]
+  /// Rows a change starts at whatever is above them, so the All changes tab's
+  /// files, put end to end, keep their changes apart.
+  let changeBreaks: Set<Int>
   /// The sides every line of which these rows hold: a split side holds one, and
   /// a parse of the other's partial text would colour it wrong.
   let wholeSides: [DiffSide]
@@ -40,8 +43,15 @@ public struct DiffDisplayText: Equatable, Sendable {
   }
 
   /// `committedDigest` where already hashed, or for rows missing some committed lines.
-  init(_ lines: [DiffLine], wholeSides: [DiffSide], committedDigest: Int?, marksStaging: Bool) {
+  init(
+    _ lines: [DiffLine],
+    wholeSides: [DiffSide],
+    committedDigest: Int?,
+    marksStaging: Bool,
+    changeBreaks: Set<Int> = [],
+  ) {
     self.wholeSides = wholeSides
+    self.changeBreaks = changeBreaks
     self.marksStaging = marksStaging
     var starts: [Int] = []
     starts.reserveCapacity(lines.count)
@@ -68,7 +78,8 @@ public struct DiffDisplayText: Equatable, Sendable {
     self.cutRemainders = remainders
     self.rowStarts = starts
     self.changeStarts = capped.indices.filter { row in
-      capped[row].kind != .context && (row == 0 || capped[row - 1].kind == .context)
+      capped[row].kind != .context
+        && (row == 0 || capped[row - 1].kind == .context || changeBreaks.contains(row))
     }
     self.string = capped.map(\.text).joined(separator: "\n")
     self.committedDigest = committedDigest ?? Self.committedDigest(of: capped)

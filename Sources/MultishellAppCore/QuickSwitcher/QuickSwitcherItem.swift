@@ -7,6 +7,7 @@ public struct QuickSwitcherItem: Identifiable, Equatable, Sendable {
   public enum Kind: Equatable, Sendable {
     /// A pane with an agent at its prompt, by catalogue id.
     case agent(id: String)
+    case allChangesTab
     case command
     case file
     case fileTab

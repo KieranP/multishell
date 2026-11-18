@@ -20,4 +20,8 @@ public struct FileLineCounts: Hashable, Sendable {
     guard case .counted(let insertions, let deletions) = lines else { return nil }
     self.init(insertions: insertions, deletions: deletions)
   }
+
+  static func + (lhs: Self, rhs: Self) -> Self {
+    Self(insertions: lhs.insertions + rhs.insertions, deletions: lhs.deletions + rhs.deletions)
+  }
 }

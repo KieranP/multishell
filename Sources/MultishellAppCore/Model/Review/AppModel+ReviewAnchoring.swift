@@ -9,20 +9,35 @@ extension AppModel {
     to rows: [DiffLine],
     readUnder scope: ChangeScope,
   ) {
+    reanchorReviewComments(onFiles: [path: rows], in: worktreeID, readUnder: scope)
+  }
+
+  /// Every file's at once and set once: each set saves the comments and can
+  /// search the All changes tab again.
+  func reanchorReviewComments(
+    onFiles rowsByPath: [String: [DiffLine]],
+    in worktreeID: Worktree.ID,
+    readUnder scope: ChangeScope,
+  ) {
     let comments = reviewComments(in: worktreeID)
-    guard comments.contains(where: { $0.path == path }) else { return }
-    let moved = ReviewAnchoring.reanchor(comments, onFile: path, to: rows, readUnder: scope)
+    var moved = comments
+    for path in Set(comments.map(\.path)) {
+      guard let rows = rowsByPath[path] else { continue }
+      moved = ReviewAnchoring.reanchor(moved, onFile: path, to: rows, readUnder: scope)
+    }
     guard moved != comments else { return }
     setReviewComments(moved, of: worktreeID)
   }
 
-  /// The open composer follows its lines too, or its card would sit under other code.
+  /// The open composer follows its lines too, or its card would sit under other
+  /// code; only `path`'s, an All changes tab reading each file in turn.
   func reanchorReviewComposer(
-    in tabID: FileTab.ID,
+    in tabID: ReviewTabID,
+    onFile path: String,
     to rows: [DiffLine],
     readUnder scope: ChangeScope,
   ) {
-    guard let composer = reviewComposers[tabID] else { return }
+    guard let composer = reviewComposers[tabID], composer.path == path else { return }
     setIfChanged(
       \.reviewComposers[tabID],
       ReviewAnchoring.reanchor(composer, to: rows, readUnder: scope),

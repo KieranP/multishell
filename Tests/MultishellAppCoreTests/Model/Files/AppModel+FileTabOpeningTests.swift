@@ -22,7 +22,8 @@ struct AppModelFileTabOpeningTests {
 
     #expect(harness.model.workspace.fileTabs.map(\.path) == ["README.md"])
     #expect(harness.platform.beeps == 1)
-    #expect(harness.model.workspace.activeWorkspaceTab(in: main.id)?.fileTab?.path == "README.md")
+    let shown = harness.model.workspace.activeWorkspaceTab(in: main.id)?.id
+    #expect(shown == harness.model.workspace.fileTabs.first?.id)
   }
 
   @Test func aFileNamedAsAnImageOpensInATabOnDiskOrGone() async throws {

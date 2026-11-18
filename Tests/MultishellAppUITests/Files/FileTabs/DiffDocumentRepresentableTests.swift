@@ -36,7 +36,7 @@ struct DiffDocumentRepresentableTests {
     defer { withExtendedLifetime(window) {} }
     host.layoutSubtreeIfNeeded()
     host.display()
-    let topRow = host.descendants(of: DiffDocumentView.self).first?.topRow
+    let topRow = host.descendants(of: DiffDocumentView.self).first?.column.topRow
 
     let row = try #require(topRow)
     #expect(row.rounded() == 119, "top row \(row)")
@@ -71,7 +71,7 @@ struct DiffDocumentRepresentableTests {
     host.layoutSubtreeIfNeeded()
     host.display()
 
-    let row = try #require(host.descendants(of: DiffDocumentView.self).first?.topRow)
+    let row = try #require(host.descendants(of: DiffDocumentView.self).first?.column.topRow)
     #expect(row > 250, "top row \(row)")
   }
 
@@ -97,9 +97,9 @@ struct DiffDocumentRepresentableTests {
     let view = try #require(host.descendants(of: DiffDocumentView.self).first)
 
     harness.model.stepToChange(.next, in: tabID)
-    OffscreenWindow.settle(until: { view.topRow > 0 }, within: 2)
+    OffscreenWindow.settle(until: { view.column.topRow > 0 }, within: 2)
 
-    #expect(view.topRow == Double(300 - DiffRowGeometry.contextRowsAboveAChange))
+    #expect(view.column.topRow == Double(300 - DiffRowGeometry.contextRowsAboveAChange))
   }
 
   @Test func aViewRebuiltForATabBoxesTheChangeTheModelKept() throws {

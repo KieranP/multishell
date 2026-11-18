@@ -12,7 +12,7 @@ struct DiffDocumentViewChangeStepTests {
     defer { withExtendedLifetime(window) {} }
 
     view.step(toChange: .next)
-    let firstTop = view.topRow
+    let firstTop = view.column.topRow
     let firstSelection = view.textView.selectedRange()
     view.step(toChange: .next)
 
@@ -20,7 +20,7 @@ struct DiffDocumentViewChangeStepTests {
     #expect(
       firstSelection == NSRange(location: DiffDocumentFixture.twoChanges.rowStarts[300], length: 0)
     )
-    #expect(view.topRow == Double(350 - DiffRowGeometry.contextRowsAboveAChange))
+    #expect(view.column.topRow == Double(350 - DiffRowGeometry.contextRowsAboveAChange))
   }
 
   @Test func aStepUpAfterScrollingPastBothChangesLandsOnTheLower() {
@@ -30,7 +30,7 @@ struct DiffDocumentViewChangeStepTests {
 
     view.step(toChange: .previous)
 
-    #expect(view.topRow == Double(350 - DiffRowGeometry.contextRowsAboveAChange))
+    #expect(view.column.topRow == Double(350 - DiffRowGeometry.contextRowsAboveAChange))
   }
 
   @Test func aStepKeepsTheColumnScrolledSidewaysTo() {
@@ -54,7 +54,7 @@ struct DiffDocumentViewChangeStepTests {
     view.step(toChange: .next)
 
     #expect(view.scrollOrigin.x == 400)
-    #expect(view.topRow == Double(300 - DiffRowGeometry.contextRowsAboveAChange))
+    #expect(view.column.topRow == Double(300 - DiffRowGeometry.contextRowsAboveAChange))
   }
 
   @Test func stepsInAPaneTooShortForTheContextRowsStillMoveOnToTheNextChange() {

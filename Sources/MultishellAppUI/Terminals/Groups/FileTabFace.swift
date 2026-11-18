@@ -4,7 +4,7 @@ import MultishellGitKit
 import SwiftUI
 
 /// A file tab in the strip: a document glyph with its change's dot, the title struck
-/// through once the file has gone, a bubble counting comments to send, no rename.
+/// through once the file has gone, a bubble counting comments to send.
 struct FileTabFace: View {
   let model: AppModel
   let group: TabGroup
@@ -12,63 +12,37 @@ struct FileTabFace: View {
   let isFocusedGroup: Bool
   let theme: Theme
 
-  @State private var isHovered = false
-
-  private var isShown: Bool { tab.id == group.shownTabID }
-  private var hoverWash: Color? { theme.hoverWash(onShownTab: isShown, isHovered: isHovered) }
-  private var palette: AreaPalette { isShown ? theme.fileTab : theme.tabBar }
-
   var body: some View {
-    let isActive = isShown && isFocusedGroup
-    let textColor = isActive ? palette.text : palette.textSecondary
     let title = model.title(of: tab)
     let change = model.changeKind(of: tab)
-    return HStack(spacing: UIMetrics.tabItemGap) {
-      leadingGlyph(change: change, tint: textColor)
-      Text(title)
-        .font(
-          model.metrics.font(size: model.metrics.secondary, weight: isShown ? .medium : .regular)
-        )
-        .strikethrough(model.isFileGone(of: tab.id))
-        .foregroundStyle(textColor)
-        .lineLimit(1)
-        .truncationMode(.head)
-      let pendingComments = model.pendingReviewCommentCount(of: tab)
-      if pendingComments > 0 {
-        ReviewCountBadge(
-          count: pendingComments,
-          theme: theme,
-          metrics: model.metrics,
-        )
-      }
-      Spacer(minLength: 0)
-      TabCloseButton(
-        metrics: model.metrics,
-        palette: palette,
-        stripPalette: theme.tabBar,
-        isVisible: TabCloseButtonVisibility.isVisible(onShownTab: isShown, isHovered: isHovered),
-        close: { model.closeTab(tab.id) },
-      )
-    }
-    .tabFace(
-      isShown: isShown,
-      wash: hoverWash,
-      shownFill: theme.fileTab.background,
+    DiffTabFace(
+      model: model,
+      group: group,
+      tabID: tab.id,
+      title: title,
+      isTitleStruck: model.isFileGone(of: tab.id),
+      pendingComments: model.pendingReviewCommentCount(of: tab),
+      accessibilityLabel: AccessibilityText.fileTab(
+        title: title,
+        isShown: tab.id == group.shownTabID,
+        change: change,
+      ),
+      isFocusedGroup: isFocusedGroup,
       theme: theme,
-      activate: { model.activateTab(tab.id) },
-      close: { model.closeTab(tab.id) },
-    )
-    .tracksHover($isHovered)
-    .help(tab.path)
-    .accessibilityElement(children: .contain)
-    .accessibilityLabel(AccessibilityText.fileTab(title: title, isShown: isShown, change: change))
-    .selectableButtonTraits(isSelected: isShown)
-    .contextMenu {
+    ) { tint, ring, wash in
+      leadingGlyph(change: change, tint: tint, ring: ring, wash: wash)
+    } menu: {
       FileTabActions(model: model, tab: tab) { model.closeTab(tab.id) }
     }
+    .help(tab.path)
   }
 
-  private func leadingGlyph(change: StatusChange.Kind?, tint: Color) -> some View {
+  private func leadingGlyph(
+    change: StatusChange.Kind?,
+    tint: Color,
+    ring: AreaPalette,
+    wash: Color?,
+  ) -> some View {
     let size = model.metrics.paneGlyphSize
     let badgeScale = theme.stateDotScale
     let badgeDiameter = UIMetrics.scaledCornerBadgeSize(onGlyphOf: size, badgeScale: badgeScale)
@@ -79,8 +53,8 @@ struct FileTabFace: View {
       .cornerBadge(
         onGlyphOf: size,
         badgeScale: badgeScale,
-        ringFill: palette.background,
-        ringWash: hoverWash,
+        ringFill: ring.background,
+        ringWash: wash,
         change.map { change in
           Circle()
             .fill(theme.color(for: change))

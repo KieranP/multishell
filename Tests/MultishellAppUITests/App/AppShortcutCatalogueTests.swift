@@ -31,7 +31,8 @@ struct AppShortcutCatalogueTests {
     // WindowServer takes before a menu item can see it.
     #expect(AppShortcutCatalogue.moveTabToNewGroup.ghosttyCombo == "super+alt+g")
     #expect(AppShortcutCatalogue.findPrevious.ghosttyCombo == "super+shift+g")
-    #expect(AppShortcutCatalogue.closeFind.ghosttyCombo == "super+shift+f")
+    #expect(AppShortcutCatalogue.closeFind.ghosttyCombo == "super+alt+f")
+    #expect(AppShortcutCatalogue.filesPane.ghosttyCombo == "super+shift+f")
   }
 
   /// Two menu items on one combination is one of them never firing, and

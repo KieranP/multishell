@@ -64,8 +64,9 @@ beyond the code itself.
 - **Runtime state.** On the model, never the workspace. Keyed by worktree it
   also goes in the forget, or it outlives its row and the next worktree at that
   path inherits it (design/worktrees/creating-and-removing.md); keyed by
-  project, in the project's removal; keyed by file tab, in `pruneFileTabs`, or a
-  closed tab's id keeps its entry for the run. Nothing forces any of the three.
+  project, in the project's removal; keyed by file tab, in `pruneFileTabs`, and
+  by All changes tab, in `pruneAllChangesTabs`, or a closed tab's id keeps its
+  entry for the run. Nothing forces any of the three.
 - **A request a view acts on is a model property the view takes** in its update,
   `takeChangeStepRequests` and `takeFileTabFocusRequest` the pattern: a SwiftUI
   bar cannot reach the AppKit view beside it, and the take, read in

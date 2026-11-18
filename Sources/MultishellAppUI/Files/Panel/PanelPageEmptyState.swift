@@ -2,11 +2,12 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A panel page with nothing to show, Review or a services' page: why, and what
-/// would change that.
+/// A page with nothing to show, Review, a services' page or the All changes
+/// tab: why, and what would change that.
 struct PanelPageEmptyState<Glyph: Shape, Action: View>: View {
   let text: PanelPageEmptyText
-  let theme: Theme
+  /// The area the page sits in: the Files panel's, or a file tab's.
+  let palette: AreaPalette
   let metrics: UIMetrics
   /// Drawn large and thin in the page's faintest grey.
   let glyph: Glyph
@@ -23,15 +24,15 @@ struct PanelPageEmptyState<Glyph: Shape, Action: View>: View {
           )
         )
         .frame(width: metrics.emptyPageGlyphSide, height: metrics.emptyPageGlyphSide)
-        .foregroundStyle(theme.filesPanel.textTertiary)
+        .foregroundStyle(palette.textTertiary)
         .accessibilityHidden(true)
       Text(text.title)
         .font(metrics.font(size: metrics.bodySize, weight: .semibold))
-        .foregroundStyle(theme.filesPanel.text)
+        .foregroundStyle(palette.text)
       if let detail = text.detail {
         Text(detail)
           .font(metrics.font(size: metrics.caption))
-          .foregroundStyle(theme.filesPanel.textSecondary)
+          .foregroundStyle(palette.textSecondary)
           .fixedSize(horizontal: false, vertical: true)
       }
       action()

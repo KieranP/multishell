@@ -128,8 +128,12 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(AppShortcutCatalogue.quickSwitcher)
       Button(t("menu.quick-switcher-commands")) { model.toggleQuickSwitcher(.commands) }
         .keyboardShortcut(AppShortcutCatalogue.quickSwitcherCommands)
-      // No key yet; one is an `AppShortcut` in the catalogue (adding/interface.md).
-      Toggle(t("menu.files-panel"), isOn: model.showsFilesPanelBinding)
+      Toggle(t("menu.files-pane"), isOn: model.filesPanelBinding(on: .files))
+        .keyboardShortcut(AppShortcutCatalogue.filesPane)
+      Toggle(t("menu.changes-pane"), isOn: model.filesPanelBinding(on: .changes))
+        .keyboardShortcut(AppShortcutCatalogue.changesPane)
+      Toggle(t("menu.review-pane"), isOn: model.filesPanelBinding(on: .review))
+        .keyboardShortcut(AppShortcutCatalogue.reviewPane)
       Toggle(
         t("menu.show-hidden-files"),
         isOn: model.settingBinding(\.showsIgnoredFiles, write: model.setShowsIgnoredFiles),

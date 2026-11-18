@@ -99,9 +99,18 @@ extension DiffTextView {
         }
       }
       storage.endEditing()
+      layOutEditedViewport()
     }
     appliedRuns = runs
     return busy + turnStart.duration(to: clock.now)
+  }
+
+  /// An edit lets go of the rows on screen, and TextKit lays them out again by
+  /// its own estimate, which gaps between rows throw far enough that it drew none.
+  private func layOutEditedViewport() {
+    layOutRowsAroundView()
+    textLayoutManager?.textViewportLayoutController.layoutViewport()
+    needsDisplay = true
   }
 
   /// A run no longer highlighted, back to the text `show` set.

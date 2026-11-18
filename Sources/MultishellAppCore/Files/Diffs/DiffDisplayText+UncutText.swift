@@ -1,6 +1,21 @@
 /// The text a copy takes: a line cut for display goes whole, its mark standing
 /// for the rest. See Docs/design/files/file-tabs.md.
 extension DiffDisplayText {
+  /// The row's line whole, for a text built from this one's rows, which cuts
+  /// it again and so still copies it whole.
+  func uncutLine(ofRow row: Int) -> DiffLine {
+    let line = lines[row]
+    guard cutRemainders[row] != nil else { return line }
+    return DiffLine(
+      kind: line.kind,
+      oldNumber: line.oldNumber,
+      newNumber: line.newNumber,
+      text: uncutText(ofRow: row),
+      isStaged: line.isStaged,
+      changedParts: line.changedParts,
+    )
+  }
+
   func uncutText(ofRow row: Int) -> String {
     guard let remainder = cutRemainders[row] else { return lines[row].text }
     return lines[row].text.dropLast() + remainder

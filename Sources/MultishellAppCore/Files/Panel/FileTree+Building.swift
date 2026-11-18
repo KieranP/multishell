@@ -3,11 +3,21 @@ import MultishellCore
 
 /// Building a worktree's tree from its paths, once per listing.
 extension FileTree {
-  /// The order rows sort in: folders first, then by name as Finder does.
+  /// The order siblings sort in: folders first, then by name as Finder does.
+  /// The All changes tab lists its files in it too.
+  static func sortsBefore(
+    _ first: some StringProtocol,
+    isFolder firstIsFolder: Bool,
+    _ second: some StringProtocol,
+    isFolder secondIsFolder: Bool,
+  ) -> Bool {
+    if firstIsFolder != secondIsFolder { return firstIsFolder }
+    return first.localizedStandardCompare(second) == .orderedAscending
+  }
+
   private static func sorted(_ nodes: [Node]) -> [Node] {
     nodes.sorted { first, second in
-      if first.isFolder != second.isFolder { return first.isFolder }
-      return first.name.localizedStandardCompare(second.name) == .orderedAscending
+      sortsBefore(first.name, isFolder: first.isFolder, second.name, isFolder: second.isFolder)
     }
   }
 

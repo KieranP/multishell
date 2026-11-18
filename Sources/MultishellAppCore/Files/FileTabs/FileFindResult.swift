@@ -72,7 +72,7 @@ struct FileFindResult: Equatable, Sendable {
 
   /// The selected match carried onto another layout of the same rows, its
   /// offset meaning nothing there; `nil` selected where its line's text differs.
-  func carried(from old: DiffDisplayText, to new: DiffDisplayText) -> Self {
+  func carried(from old: SearchedLayout, to new: SearchedLayout) -> Self {
     var carried = self
     let match = selected.flatMap { matches.indices.contains($0) ? matches[$0] : nil }
     let moved = match.flatMap { new.rangeOnSameLine($0, from: old) }

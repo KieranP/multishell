@@ -91,6 +91,8 @@ struct DiffRowGeometryTests {
 
     let offset = gapped.scrollOffset(putting: 2, rowsBelowTop: 3)
 
-    #expect(gapped.top(ofRow: 2) - offset == 3 * geometry.rowHeight + DiffRowGeometry.verticalInset)
+    #expect(
+      gapped.top(ofRow: 2) - offset == 3 * geometry.rowHeight + DiffRowGeometry.fileTabVerticalInset
+    )
   }
 }

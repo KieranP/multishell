@@ -3,6 +3,8 @@ extension UIMetrics {
   /// The list's gap to the panel's edges, which its fit adds to the rows and
   /// the filter and scope switch above it keep.
   static let filesPanelListSideInset: Double = 6
+  /// Between the filter's well and the button beside it on the Changes page.
+  static let filesPanelFilterAccessoryGap: Double = 6
   /// A page's capitals heading, Review's and a services page's sections, letter-spaced.
   static let filesPanelHeadingTracking: Double = 0.4
 

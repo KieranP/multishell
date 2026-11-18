@@ -7,14 +7,16 @@ extension AppModel {
   func replyToSplitPane(_ axis: SplitAxis, inTab id: WorkspaceTab.ID?) -> ControlReply {
     if let id {
       // Refused before it is brought into view, which would switch to it.
-      if workspace.fileTab(id) != nil { return .refused(.tabShowsAFile(id: id)) }
+      if let refusal = refusalToSplit(id) { return .refused(refusal) }
       if let tab = workspace.tab(id), isBusy(tab.worktreeID) {
         return .refused(.worktreeNotReady(id: ControlID.worktree(tab.worktreeID)))
       }
       let selected = replyToSelectTab(id)
       guard selected == .done else { return selected }
     }
-    if case .file(let file) = workspaceTabInView { return .refused(.tabShowsAFile(id: file.id)) }
+    if let shown = workspaceTabInView, let refusal = refusalToSplit(shown.id) {
+      return .refused(refusal)
+    }
     guard let before = tabInView else { return .refused(.nothingInView) }
     // The split looks for the directory itself, raising the alert this answers with.
     guard let worktree = worktreeInView, !isBusy(worktree.id) else {

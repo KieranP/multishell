@@ -112,7 +112,7 @@ struct QuickSwitcherRow: View {
         }
       }
 
-    case .project, .fileTab, .file:
+    case .project, .fileTab, .allChangesTab, .file:
       EmptyView()
     }
   }

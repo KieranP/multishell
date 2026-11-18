@@ -27,7 +27,9 @@ extension AppModel {
   /// again over the text now shown, its selection carried by line.
   public func setFileTabLayout(_ layout: FileTabLayout) {
     guard workspace.fileTabLayout != layout else { return }
-    let searchedBefore = workspace.fileTabs.map { ($0.id, searchedText(of: $0.id)) }
+    let searchedBefore = (workspace.fileTabs.map(\.id) + workspace.allChangesTabs.map(\.id)).map {
+      id in (id, searchedLayout(of: id))
+    }
     store.setFileTabLayout(layout)
     for (id, text) in searchedBefore { rerunFileFind(in: id, laidOutBefore: text) }
   }

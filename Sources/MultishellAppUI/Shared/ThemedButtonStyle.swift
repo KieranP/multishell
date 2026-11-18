@@ -9,12 +9,15 @@ struct ThemedButtonStyle: ButtonStyle {
 
   let fill: Color
   let text: Color
+  /// `nil` hugs the title.
+  var minHeight: Double?
 
   func makeBody(configuration: Configuration) -> some View {
     ThemedButtonLabel(
       label: configuration.label,
       fill: fill.opacity(configuration.isPressed ? Self.pressedOpacity : 1),
       text: text,
+      minHeight: minHeight,
       cornerRadius: Self.cornerRadius,
       disabledOpacity: Self.disabledOpacity,
     )

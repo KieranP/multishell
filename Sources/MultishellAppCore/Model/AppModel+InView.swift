@@ -57,6 +57,15 @@ extension AppModel {
     worktreeIDInView == worktree.id
   }
 
+  /// A tab of any kind in front of its group, in the worktree in view: a file or
+  /// All changes tab reads its rows only then.
+  func isTabShown(_ id: WorkspaceTab.ID) -> Bool {
+    guard let tab = workspace.workspaceTab(id), tab.worktreeID == worktreeIDInView else {
+      return false
+    }
+    return workspace.group(tab.groupID)?.shownTabID == id
+  }
+
   func isWorktreeInView(of tab: TerminalTab) -> Bool {
     worktreeIDInView == tab.worktreeID
   }

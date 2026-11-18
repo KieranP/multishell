@@ -3,7 +3,9 @@ import Foundation
 /// What says a file changed without reading it: its size, date and inode, by
 /// `lstat`, so an atomic save that swaps the inode counts.
 struct FileSignature: Equatable, Sendable {
-  private let size: Int
+  let size: Int
+  /// A folder listed as a change, a submodule or nested repository.
+  let isFolder: Bool
   private let modified: Date
   private let inode: Int
 
@@ -14,6 +16,11 @@ struct FileSignature: Equatable, Sendable {
       let modified = attributes[.modificationDate] as? Date,
       let inode = attributes[.systemFileNumber] as? Int
     else { return nil }
-    return Self(size: size, modified: modified, inode: inode)
+    return Self(
+      size: size,
+      isFolder: attributes[.type] as? FileAttributeType == .typeDirectory,
+      modified: modified,
+      inode: inode,
+    )
   }
 }

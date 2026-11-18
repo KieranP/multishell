@@ -5,7 +5,7 @@ extension Helper {
         worktree, files or git, the filter, whether git's list is still
         being read, and each row with its depth, change and line counts.
         Refused while the panel is shut or shows Review, a pull request or a
-        CI page (`ui menu "View > Files Panel"` opens it), and while the main
+        CI page (`ui menu "View > Files Pane"` opens it), and while the main
         window is closed, covered or minimized, as the panel reads nothing
         then.
     usage: multishell files filter [TEXT]

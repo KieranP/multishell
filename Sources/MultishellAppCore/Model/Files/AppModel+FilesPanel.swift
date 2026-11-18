@@ -25,6 +25,9 @@ extension AppModel {
   /// Modified or Branch, drawn over the Changes list alone, Files counting from `HEAD`.
   public var filesPanelShowsChangeScopeSwitch: Bool { shownFilesPanelMode == .changes }
 
+  /// The button beside the filter opening the All changes tab, on the Changes page.
+  public var filesPanelOffersAllChangesTab: Bool { shownFilesPanelMode == .changes }
+
   /// Where the panel can be but is shut: open, its own header carries the toggle.
   public var worktreeHeaderShowsFilesPanelToggle: Bool {
     !showsFilesPanel && filesPanelWorktree != nil
@@ -43,6 +46,22 @@ extension AppModel {
 
   public func toggleFilesPanel() {
     setShowsFilesPanel(!showsFilesPanel)
+  }
+
+  /// Whether the panel is open on `mode`'s page, which View ticks.
+  public func isFilesPanelShowing(_ mode: FilesPanelMode) -> Bool {
+    showsFilesPanel && shownFilesPanelMode == mode
+  }
+
+  /// A View menu pane: shut where the panel shows its page or has no worktree
+  /// to list, else open on it.
+  public func toggleFilesPanel(on mode: FilesPanelMode) {
+    if isFilesPanelShowing(mode) || filesPanelWorktree == nil {
+      setShowsFilesPanel(false)
+    } else {
+      setFilesPanelMode(mode)
+      setShowsFilesPanel(true)
+    }
   }
 
   /// The rows' fit, measured only where asked: a services' page wraps its text
@@ -152,13 +171,19 @@ extension AppModel {
     )
   }
 
-  /// The row of the file whose tab is in front of the focused group.
+  /// The row of the file whose tab is in front of the focused group, or at the
+  /// top of the All changes tab there.
   public func isShownFile(_ row: FileTreeRow, in id: Worktree.ID) -> Bool {
     row.isShown(whenFileInFrontIs: shownFilePath(in: id))
   }
 
-  /// The file whose tab is in front of the focused group, which its row lights.
+  /// The file whose tab is in front of the focused group, or the file at the top
+  /// of the All changes tab in front, which its row lights.
   func shownFilePath(in id: Worktree.ID) -> String? {
-    workspace.activeWorkspaceTab(in: id)?.fileTab?.path
+    switch workspace.activeWorkspaceTab(in: id) {
+    case .file(let tab): tab.path
+    case .allChanges(let tab): allChangesLitPaths[tab.id]
+    case .terminal, nil: nil
+    }
   }
 }

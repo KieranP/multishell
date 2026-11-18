@@ -12,9 +12,10 @@ extension AppModel {
   public func setChangeScope(_ scope: ChangeScope) {
     guard workspace.changeScope != scope else { return }
     store.setChangeScope(scope)
-    noteFileTabsChanged(releasingDots: true, where: offersChangeScopeSwitch(for:))
+    noteFileTabsChanged(releasingDots: true) { offersChangeScopeSwitch(in: $0.worktreeID) }
     forgetBranchChangesUnlessListed()
     schedulePanelBranchChangesRead()
+    noteAllChangesTabsChanged { offersChangeScopeSwitch(in: $0.worktreeID) }
   }
 
   /// Branch counts from the base, which a fetch moves and a launch resolves late.
@@ -30,12 +31,13 @@ extension AppModel {
     noteFileTabsChanged(releasingDots: isNewBase) { tab in
       workspace.worktree(tab.worktreeID)?.projectID == id
     }
+    noteAllChangesTabsChanged { workspace.worktree($0.worktreeID)?.projectID == id }
   }
 
-  /// Only where the project has a base branch, a tab there counting from `HEAD`
-  /// whatever the choice.
-  public func offersChangeScopeSwitch(for tab: FileTab) -> Bool {
-    defaultBranch(ofWorktree: tab.worktreeID) != nil
+  /// A file or All changes tab's bar offers it only where the project has a base
+  /// branch, a tab there counting from `HEAD` whatever the choice.
+  public func offersChangeScopeSwitch(in worktreeID: Worktree.ID) -> Bool {
+    defaultBranch(ofWorktree: worktreeID) != nil
   }
 
   /// What a file tab in the worktree counts from in place of `HEAD`: its

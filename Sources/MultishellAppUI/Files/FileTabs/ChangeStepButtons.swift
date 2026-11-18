@@ -25,7 +25,7 @@ struct ChangeStepButtons: View {
       model.stepToChange(direction, in: tabID)
     } label: {
       SegmentFace(isSelected: false, palette: palette, metrics: model.metrics) {
-        Image(systemName: isNext ? "arrow.down" : "arrow.up")
+        Image(systemName: isNext ? "chevron.down" : "chevron.up")
           .foregroundStyle(isEnabled ? palette.textSecondary : palette.textTertiary)
       }
     }

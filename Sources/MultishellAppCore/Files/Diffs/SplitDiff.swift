@@ -6,6 +6,12 @@ public struct SplitDiff: Equatable, Sendable {
   public let committed: DiffDisplayText
   public let onDisk: DiffDisplayText
 
+  /// Two sides already laid row for row, as the All changes tab keeps a file's.
+  init(committed: DiffDisplayText, onDisk: DiffDisplayText) {
+    self.committed = committed
+    self.onDisk = onDisk
+  }
+
   /// `committedDigest` is the Unified text's where it was already hashed.
   init(_ lines: [DiffLine], marksStaging: Bool, committedDigest: Int? = nil) {
     var left: [DiffLine] = []

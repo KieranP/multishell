@@ -60,6 +60,12 @@
 "agents.row-label" = "%@:";
 "agents.section-preferred" = "Preferred agent";
 "agents.show" = "Show %@";
+"all-changes.collapse" = "Collapse File";
+"all-changes.collapse-all" = "Collapse All Files";
+"all-changes.expand" = "Expand File";
+"all-changes.expand-all" = "Expand All Files";
+"all-changes.open-file" = "Open File";
+"all-changes.show-branch" = "Show Branch";
 "ansi.black" = "Black";
 "ansi.blue" = "Blue";
 "ansi.bright-black" = "Bright black";
@@ -162,6 +168,7 @@
 "files-panel.files" = "Files";
 "files-panel.filter" = "Filter files";
 "files-panel.modified" = "Modified";
+"files-panel.open-all-changes" = "Show All Changes in One Tab";
 "files-panel.pull-request" = "PR";
 "files-panel.review" = "Review";
 "files-panel.title" = "Files";
@@ -210,12 +217,13 @@
 "label.command" = "Command:";
 "menu.about" = "About Multishell";
 "menu.add-project" = "Add Project…";
+"menu.changes-pane" = "Changes Pane";
 "menu.close-find" = "Close Find";
 "menu.close-pane" = "Close Pane";
 "menu.close-tab" = "Close Tab";
 "menu.cut" = "Cut";
 "menu.enable-debug-tools" = "Enable Debug Tools";
-"menu.files-panel" = "Files Panel";
+"menu.files-pane" = "Files Pane";
 "menu.find" = "Find";
 "menu.find-item" = "Find…";
 "menu.find-next" = "Find Next";
@@ -233,6 +241,7 @@
 "menu.quick-switcher" = "Quick Switcher…";
 "menu.quick-switcher-commands" = "Quick Switcher Commands…";
 "menu.redo" = "Redo";
+"menu.review-pane" = "Review Pane";
 "menu.select-all" = "Select All";
 "menu.show-hidden-files" = "Show Hidden Files";
 "menu.split-down" = "Split Down";
@@ -393,8 +402,8 @@
 "sidebar.sort-worktrees" = "Sort Worktrees";
 "status.ahead" = "↑%d";
 "status.behind" = "↓%d";
-"status.deletions" = "−%d";
-"status.insertions" = "+%d";
+"status.deletions" = "−%@";
+"status.insertions" = "+%@";
 "status.unscored-badge" = "~%d";
 "tab.close" = "Close Tab";
 "tab.more-left" = "More tabs to the left";

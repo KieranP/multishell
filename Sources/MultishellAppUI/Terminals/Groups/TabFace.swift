@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// What a tab in the strip shows, for either kind; `DraggableTab` wraps it in
+/// What a tab in the strip shows, for any kind; `DraggableTab` wraps it in
 /// both ends of a drag.
 struct TabFace: View {
   let model: AppModel
@@ -13,6 +13,15 @@ struct TabFace: View {
 
   var body: some View {
     switch tab {
+    case .allChanges(let allChanges):
+      AllChangesTabFace(
+        model: model,
+        group: group,
+        tab: allChanges,
+        isFocusedGroup: isFocusedGroup,
+        theme: theme,
+      )
+
     case .file(let file):
       FileTabFace(
         model: model,

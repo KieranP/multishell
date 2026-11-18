@@ -35,10 +35,36 @@ extension Workspace {
     fileTabs.firstIndex { $0.id == id }
   }
 
-  /// A tab of either kind.
+  public func allChangesTab(_ id: AllChangesTab.ID) -> AllChangesTab? {
+    allChangesTabs.first { $0.id == id }
+  }
+
+  func allChangesTabIndex(_ id: AllChangesTab.ID) -> Int? {
+    allChangesTabs.firstIndex { $0.id == id }
+  }
+
+  /// The worktree's All changes tab, of which there is at most one.
+  public func allChangesTab(in worktree: Worktree.ID) -> AllChangesTab? {
+    allChangesTabs.first { $0.worktreeID == worktree }
+  }
+
+  /// A tab of any kind: the one lookup a site asks before switching on the kind.
   public func workspaceTab(_ id: WorkspaceTab.ID) -> WorkspaceTab? {
     if let tab = tab(id) { return .terminal(tab) }
-    return fileTab(id).map(WorkspaceTab.file)
+    if let tab = fileTab(id) { return .file(tab) }
+    return allChangesTab(id).map(WorkspaceTab.allChanges)
+  }
+
+  /// Every tab of every kind by id, or one group's: a strip draws its own often.
+  private func workspaceTabsByID(
+    inGroup group: TabGroup.ID? = nil
+  ) -> [WorkspaceTab.ID: WorkspaceTab] {
+    let isShown = { (id: TabGroup.ID) in group == nil || id == group }
+    let all =
+      tabs.filter { isShown($0.groupID) }.map(WorkspaceTab.terminal)
+      + fileTabs.filter { isShown($0.groupID) }.map(WorkspaceTab.file)
+      + allChangesTabs.filter { isShown($0.groupID) }.map(WorkspaceTab.allChanges)
+    return all.keyedByID()
   }
 
   /// The worktree's tab showing `path`, of which there is at most one.
@@ -50,9 +76,10 @@ extension Workspace {
     fileTabs.filter { $0.worktreeID == worktree }
   }
 
-  /// How many tabs a worktree holds, of either kind.
+  /// How many tabs a worktree holds, of any kind.
   public func workspaceTabCount(in worktree: Worktree.ID) -> Int {
     tabs.count { $0.worktreeID == worktree } + fileTabs.count { $0.worktreeID == worktree }
+      + allChangesTabs.count { $0.worktreeID == worktree }
   }
 
   public func group(_ id: TabGroup.ID) -> TabGroup? {
@@ -82,28 +109,21 @@ extension Workspace {
     tabs.filter { $0.worktreeID == worktree }
   }
 
-  /// One group's tabs of both kinds, in strip order: its `tabOrder`.
+  /// One group's tabs of every kind, in strip order: its `tabOrder`.
   public func workspaceTabs(inGroup group: TabGroup.ID) -> [WorkspaceTab] {
     guard let order = self.group(group)?.tabOrder else { return [] }
-    let terminals = tabs.filter { $0.groupID == group }.keyedByID()
-    let files = fileTabs.filter { $0.groupID == group }.keyedByID()
-    return order.compactMap { id in
-      terminals[id].map(WorkspaceTab.terminal) ?? files[id].map(WorkspaceTab.file)
-    }
+    let byID = workspaceTabsByID(inGroup: group)
+    return order.compactMap { byID[$0] }
   }
 
-  /// Every worktree's tabs of both kinds, group by group in strip order, in one
+  /// Every worktree's tabs of every kind, group by group in strip order, in one
   /// pass: a lookup per worktree grows with the square of the worktrees.
   public func workspaceTabsByWorktree() -> [Worktree.ID: [WorkspaceTab]] {
-    let terminals = tabs.keyedByID()
-    let files = fileTabs.keyedByID()
+    let byID = workspaceTabsByID()
     var tabsByWorktree: [Worktree.ID: [WorkspaceTab]] = [:]
     for group in tabGroups {
-      tabsByWorktree[group.worktreeID, default: []] += group.tabOrder.compactMap { id in
-        if let tab = terminals[id], tab.groupID == group.id { return .terminal(tab) }
-        if let tab = files[id], tab.groupID == group.id { return .file(tab) }
-        return nil
-      }
+      tabsByWorktree[group.worktreeID, default: []] +=
+        group.tabOrder.compactMap { byID[$0] }.filter { $0.groupID == group.id }
     }
     return tabsByWorktree
   }

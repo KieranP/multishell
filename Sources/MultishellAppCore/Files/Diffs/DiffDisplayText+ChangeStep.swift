@@ -43,7 +43,7 @@ extension DiffDisplayText {
     guard lines.indices.contains(row), lines[row].kind != .context else { return nil }
     let start = changeStarts[changeStarts.partitioningIndex { $0 > row } - 1]
     var end = row + 1
-    while end < lines.count, lines[end].kind != .context { end += 1 }
+    while end < lines.count, lines[end].kind != .context, !changeBreaks.contains(end) { end += 1 }
     return start..<end
   }
 }

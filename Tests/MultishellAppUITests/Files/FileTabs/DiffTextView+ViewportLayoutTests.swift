@@ -22,7 +22,7 @@ struct DiffTextViewViewportLayoutTests {
       return true
     }
     #expect(laidOut < 300, "\(laidOut) rows laid out")
-    #expect(view.topRow > 5_000, "top row \(view.topRow)")
+    #expect(view.column.topRow > 5_000, "top row \(view.column.topRow)")
   }
 
   @Test func aReReadThatShrinksTheTextUnderTheViewLaysOutNoRowsOfTheOldText() throws {

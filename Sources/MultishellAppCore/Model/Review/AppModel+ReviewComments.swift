@@ -30,6 +30,11 @@ extension AppModel {
     reviewComments[tab.worktreeID]?.count { $0.path == tab.path && $0.isPending } ?? 0
   }
 
+  /// Every file's in the worktree, which the All changes tab shows together.
+  public func pendingReviewCommentCount(of tab: AllChangesTab) -> Int {
+    reviewComments[tab.worktreeID]?.count(where: \.isPending) ?? 0
+  }
+
   /// Every file's count at once, for its row in Files and Changes, so a list's rows
   /// take theirs from one pass.
   public func pendingReviewCommentCounts(in worktreeID: Worktree.ID) -> [String: Int] {
@@ -39,9 +44,9 @@ extension AppModel {
   }
 
   /// A sent or outdated comment's Dismiss, and a pending one's Delete.
-  public func removeReviewComment(_ id: ReviewComment.ID, in tabID: FileTab.ID) {
-    guard let tab = workspace.fileTab(tabID) else { return }
-    removeReviewComments([id], in: tab.worktreeID)
+  public func removeReviewComment(_ id: ReviewComment.ID, in tabID: ReviewTabID) {
+    guard let worktreeID = reviewWorktree(of: tabID) else { return }
+    removeReviewComments([id], in: worktreeID)
   }
 
   public func removeReviewComments(_ ids: Set<ReviewComment.ID>, in worktreeID: Worktree.ID) {

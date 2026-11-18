@@ -1,16 +1,16 @@
 import Foundation
 import MultishellCore
 
-/// A close waiting on its dialog: a pane or tab whose agent reported Working, or a
-/// file tab with a review comment being written. Cmd+W there is often a mistake.
+/// A close waiting on its dialog, Cmd+W there often a mistake: an agent reported
+/// Working, or a file or All changes tab holds a review comment being written.
 public enum PendingClose: Identifiable, Equatable, Sendable {
-  case fileTab(FileTab.ID)
   case pane(TerminalSession.ID)
+  case reviewTab(ReviewTabID)
   case tab(TerminalTab.ID)
 
   public var id: String {
     switch self {
-    case .fileTab(let id): "file-tab-\(id.uuidString)"
+    case .reviewTab(let id): "review-tab-\(id.uuidString)"
     case .pane(let id): "pane-\(id.uuidString)"
     case .tab(let id): "tab-\(id.uuidString)"
     }
@@ -19,13 +19,13 @@ public enum PendingClose: Identifiable, Equatable, Sendable {
   public var title: String {
     switch self {
     case .pane: t("close.pane-title")
-    case .fileTab, .tab: t("close.tab-title")
+    case .reviewTab, .tab: t("close.tab-title")
     }
   }
 
   public var message: String {
     switch self {
-    case .fileTab: t("close.review-draft-message")
+    case .reviewTab: t("close.review-draft-message")
     case .pane, .tab: t("dialog.agent-still-working")
     }
   }
@@ -33,7 +33,7 @@ public enum PendingClose: Identifiable, Equatable, Sendable {
   public var buttonLabel: String {
     switch self {
     case .pane: t("close.pane-button")
-    case .fileTab, .tab: t("close.tab-button")
+    case .reviewTab, .tab: t("close.tab-button")
     }
   }
 
@@ -41,7 +41,7 @@ public enum PendingClose: Identifiable, Equatable, Sendable {
   /// tab. What decides whether the question is asked at all.
   func sessionIDs(in tab: TerminalTab) -> [TerminalSession.ID] {
     switch self {
-    case .fileTab: []
+    case .reviewTab: []
     case .pane(let id): [id]
     case .tab: tab.sessionIDs
     }

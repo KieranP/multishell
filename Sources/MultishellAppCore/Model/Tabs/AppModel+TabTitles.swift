@@ -13,6 +13,11 @@ extension AppModel {
     workspace.title(of: tab)
   }
 
+  /// The same words on every worktree's, there being one a worktree.
+  public func title(of _: AllChangesTab) -> String {
+    t("tab.all-changes")
+  }
+
   /// One pane's, a split holding several: the user's name for the tab, else
   /// what this pane's shell last reported, else its starting title. Raw too.
   func title(ofPane session: TerminalSession, in tab: TerminalTab) -> String {

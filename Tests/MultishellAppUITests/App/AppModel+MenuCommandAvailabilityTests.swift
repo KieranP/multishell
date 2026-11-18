@@ -9,7 +9,7 @@ struct AppModelMenuCommandAvailabilityTests {
     let models = ModelHarness()
     let worktreeCommands = [
       t("menu.new-tab"), t("menu.split-right"), t("menu.close-pane"), t("menu.next-tab"),
-      t("menu.files-panel"),
+      t("menu.files-pane"), t("menu.changes-pane"), t("menu.review-pane"),
     ]
 
     for title in worktreeCommands {

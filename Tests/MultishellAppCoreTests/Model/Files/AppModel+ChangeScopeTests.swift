@@ -41,7 +41,7 @@ struct AppModelChangeScopeTests {
     let tab = try #require(harness.model.openFileTab("README.md", in: feature))
     let modifiedRows = try #require(try await harness.rowsArrive(in: tab.id))
     #expect(!modifiedRows.hasLineChanges, "committed, so nothing against HEAD")
-    #expect(harness.model.offersChangeScopeSwitch(for: tab))
+    #expect(harness.model.offersChangeScopeSwitch(in: tab.worktreeID))
 
     harness.model.setChangeScope(.branch)
 
@@ -56,7 +56,7 @@ struct AppModelChangeScopeTests {
     let (tab, _) = try harness.openFileTab()
     harness.model.defaultBranchScans[harness.project.id] = .absent
 
-    #expect(!harness.model.offersChangeScopeSwitch(for: tab))
+    #expect(!harness.model.offersChangeScopeSwitch(in: tab.worktreeID))
   }
 
   @Test func leavingBranchLetsGoOfItsReadSoComingBackDrawsNoneAsCurrent() async throws {

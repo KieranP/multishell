@@ -48,9 +48,11 @@ extension AppModel {
     }
     trackedFilesReadsAskedAgain = trackedFilesReadsAskedAgain.filter { !isForgotten($0) }
     ignoredEntriesReads.cancel(where: isForgotten)
-    branchChangesReads.cancel(where: isForgotten)
-    setIfChanged(\.branchChanges, branchChanges.filter { !isForgotten($0.key) })
-    setIfChanged(\.failedBranchReads, failedBranchReads.filter { !isForgotten($0.key) })
+    // A shown All changes tab takes its list from the Branch read, panel or not.
+    func forgetsBranch(_ id: Worktree.ID) -> Bool { isForgotten(id) && !readsBranchChanges(of: id) }
+    branchChangesReads.cancel(where: forgetsBranch)
+    setIfChanged(\.branchChanges, branchChanges.filter { !forgetsBranch($0.key) })
+    setIfChanged(\.failedBranchReads, failedBranchReads.filter { !forgetsBranch($0.key) })
     setIfChanged(\.trackedFiles, trackedFiles.filter { !isForgotten($0.key) })
     setIfChanged(\.ignoredEntries, ignoredEntries.filter { !isForgotten($0.key) })
     fileTreeCache = fileTreeCache.filter { !isForgotten($0.key) }
@@ -183,18 +185,20 @@ extension AppModel {
     )
   }
 
-  /// Events skipped while the window was covered: its file tabs and, in the
-  /// background where no return to the front reads it, the panel.
+  /// Events skipped while the window was covered: its file and All changes
+  /// tabs and, in the background where no return to the front reads it, the panel.
   func readWhatTheWindowShowsOnceVisible() {
     readShownFileTabs()
+    readShownAllChangesTabs()
     if showsFilesPanel, !platform.isActive, let worktree = filesPanelWorktree {
       readFilesPanel(of: worktree.id)
     }
   }
 
-  /// The panel's worktree is read on its events while its window shows, front
-  /// or not, so coming back never shows a stale list.
+  /// The panel's worktree, and a shown All changes tab's, is read on its events
+  /// while its window shows, front or not, so coming back never shows a stale list.
   func readsStatusInTheBackground(_ id: Worktree.ID) -> Bool {
-    isFileListOnScreen && platform.isWorkspaceWindowVisible && filesPanelWorktree?.id == id
+    guard platform.isWorkspaceWindowVisible else { return false }
+    return (isFileListOnScreen && filesPanelWorktree?.id == id) || shownAllChangesTab(in: id) != nil
   }
 }

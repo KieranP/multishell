@@ -6,6 +6,7 @@ extension View {
     palette: AreaPalette,
     resting: Color,
     lit: Color? = nil,
+    litFill: Color? = nil,
     inset: Double = 0,
   ) -> some View {
     modifier(
@@ -14,6 +15,7 @@ extension View {
         palette: palette,
         resting: resting,
         lit: lit,
+        litFill: litFill,
         inset: inset,
       )
     )

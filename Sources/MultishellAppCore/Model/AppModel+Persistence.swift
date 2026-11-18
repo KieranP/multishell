@@ -9,6 +9,7 @@ extension AppModel {
     pendingSave = nil
     guard !isYieldingToRunningInstance else { return }
     store.setFileTabScrolls(fileTabScrolls)
+    store.setAllChangesScrolls(allChangesScrolls)
     recordSaveOutcome(Result { try store.save() })
     writeReviewCommentsNow()
   }

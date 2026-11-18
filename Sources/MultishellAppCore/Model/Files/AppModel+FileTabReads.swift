@@ -5,10 +5,7 @@ import MultishellGitKit
 /// Keeping each file tab's rows or image current with its file and its git; see
 /// Docs/design/files/file-tabs.md.
 extension AppModel {
-  /// A burst of saves becomes one read: 0.15 s of FSEvents latency, then this.
-  private static var fileTabSettleDelay: Duration { .milliseconds(75) }
-
-  private var imageRule: ImageRule {
+  var imageRule: ImageRule {
     let platform = self.platform
     return ImageRule(
       opensAsImage: { platform.opensAsImage(named: $0) },
@@ -16,17 +13,11 @@ extension AppModel {
     )
   }
 
-  /// In front of its group, in the worktree in view.
-  func isFileTabShown(_ id: FileTab.ID) -> Bool {
-    guard let tab = workspace.fileTab(id), tab.worktreeID == worktreeIDInView else { return false }
-    return workspace.group(tab.groupID)?.shownTabID == id
-  }
-
   /// A shown tab reads again once the burst settles; a hidden one is owed a
   /// read for when shown, but a deletion strikes its title at once.
   func noteFileTabChanged(_ id: FileTab.ID) {
     guard workspace.fileTab(id) != nil else { return }
-    if isFileTabShown(id), platform.isWorkspaceWindowVisible {
+    if isTabShown(id), platform.isWorkspaceWindowVisible {
       scheduleFileTabRead(id)
       return
     }
@@ -85,11 +76,8 @@ extension AppModel {
   /// A hidden tab keeps its dot and strike, and a gone file's rows or copy on
   /// disk, the last it showed; see files/file-tabs.md. Its waiting read is owed instead.
   func releaseHiddenFileTabs() {
-    for tab in workspace.fileTabs where !isFileTabShown(tab.id) {
-      // Its view goes with it, and the next one says afresh where its arrows lead;
-      // a step queued for a view that never drew would jump the next one.
-      if fileTabChangeSteps[tab.id] != nil { fileTabChangeSteps[tab.id] = nil }
-      if changeStepRequests[tab.id] != nil { changeStepRequests[tab.id] = nil }
+    for tab in workspace.fileTabs where !isTabShown(tab.id) {
+      forgetChangeSteps(of: tab.id)
       if let task = pendingFileTabReads.removeValue(forKey: tab.id) {
         task.cancel()
         fileTabReadLog.owe(tab.id)
@@ -106,14 +94,11 @@ extension AppModel {
   /// `atOnce`; a change during a read is read again after it.
   private func scheduleFileTabRead(_ id: FileTab.ID, atOnce: Bool = false) {
     guard pendingFileTabReads[id] == nil else { return }
-    pendingFileTabReads[id] = Task { @MainActor [weak self] in
-      if !atOnce { try? await Task.sleep(for: Self.fileTabSettleDelay) }
-      while !atOnce, !Task.isCancelled, let due = self?.fileTabReadLog.nextDue(id), due > .now {
-        try? await Task.sleep(until: due)
-      }
-      guard !Task.isCancelled, let self else { return }
-      pendingFileTabReads[id] = nil
-      await readFileTab(id)
+    pendingFileTabReads[id] = pacedRead(atOnce: atOnce) { model in
+      model.fileTabReadLog.nextDue(id)
+    } read: { model in
+      model.pendingFileTabReads[id] = nil
+      await model.readFileTab(id)
     }
   }
 
@@ -141,7 +126,7 @@ extension AppModel {
     let readsAgain = fileTabReadLog.finish(id, cost: started.duration(to: .now))
     guard workspace.fileTab(id) != nil else { return }
     guard !isSuperseded else {
-      if isFileTabShown(id) { scheduleFileTabRead(id) } else { fileTabReadLog.owe(id) }
+      if isTabShown(id) { scheduleFileTabRead(id) } else { fileTabReadLog.owe(id) }
       return
     }
     // An unchanged reading has nothing new to anchor to, and a 1 MiB file is a long search.
@@ -155,6 +140,7 @@ extension AppModel {
       )
       reanchorReviewComposer(
         in: id,
+        onFile: tab.path,
         to: rows.lines,
         readUnder: Self.fileTabScope(readingSince: base),
       )
@@ -170,7 +156,7 @@ extension AppModel {
     releaseHiddenFileTabs()
     rerunFileFind(in: id)
     if readsAgain {
-      if isFileTabShown(id) { scheduleFileTabRead(id) } else { fileTabReadLog.owe(id) }
+      if isTabShown(id) { scheduleFileTabRead(id) } else { fileTabReadLog.owe(id) }
     }
     // Hidden meanwhile, its file may have gone since this read looked.
     if fileTabReadLog.owed.contains(id) { strikeIfGoneOrBack(id) }
@@ -195,7 +181,7 @@ extension AppModel {
         }
       // A file back on a hidden or released tab lets go of what was kept, its dot
       // following the status: that is no diff of what came back.
-      let isBackUnread = !isGone && (!isFileTabShown(id) || content.isReleased)
+      let isBackUnread = !isGone && (!isTabShown(id) || content.isReleased)
       let kept = isBackUnread ? FileTabContent.releasedFollowingStatus : content
       setIfChanged(\.fileTabReadings[id], FileTabReading(content: kept, isFileGone: isGone))
       rerunFileFind(in: id)
@@ -207,10 +193,10 @@ extension AppModel {
     fileTabReadLog.noteHighlightCost(cost, of: id)
   }
 
-  /// A closed tab's rows or image, reads, selection, scroll and requests go
-  /// with it. Run from the reconcile.
+  /// A closed tab's rows, reads, selection, scroll and requests go with it, the All
+  /// changes tab sharing every table but the reads. Run from the reconcile.
   func pruneFileTabs() {
-    let open = Set(workspace.fileTabs.map(\.id))
+    let open = Set(workspace.fileTabs.map(\.id) + workspace.allChangesTabs.map(\.id))
     setIfChanged(\.fileTabReadings, fileTabReadings.filter { open.contains($0.key) })
     for (id, task) in pendingFileTabReads where !open.contains(id) {
       task.cancel()

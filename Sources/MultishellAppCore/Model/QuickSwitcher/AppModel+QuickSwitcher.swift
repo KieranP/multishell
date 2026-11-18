@@ -156,7 +156,7 @@ extension AppModel {
       let opening = chooseFileRow(path, in: worktreeID, as: asker)
       return .openingFile(path: path, worktreeID: worktreeID, opening)
 
-    case .fileTab(let id):
+    case .allChangesTab(let id), .fileTab(let id):
       return goTo(worktreeChosen(by: target), as: asker) { store.activateTab(id) }
 
     case .pane(let id):
@@ -179,7 +179,10 @@ extension AppModel {
     switch target {
     case .command: nil
     case .file(_, let worktreeID): workspace.worktree(worktreeID)
-    case .fileTab(let id): workspace.fileTab(id).flatMap { workspace.worktree($0.worktreeID) }
+
+    case .allChangesTab(let id), .fileTab(let id):
+      workspace.workspaceTab(id).flatMap { workspace.worktree($0.worktreeID) }
+
     case .pane(let id): workspace.session(id).flatMap { workspace.worktree($0.worktreeID) }
     case .project(let id): preferredWorktree(ofProject: id)
     case .worktree(let id): workspace.worktree(id)
