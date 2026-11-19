@@ -31,6 +31,27 @@ struct AppModelServicePagesTests {
     )
   }
 
+  @Test func aMergedPullRequestSaysNothingOfAThreadReadThatFailedBeforeItSettled() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, _) = try await harness.showingAFailingPullRequest()
+    harness.model.remoteState.threads[feat.id] = PullRequestThreads(
+      pullRequestNumber: 9,
+      threads: nil,
+      failure: .failed("SSO required"),
+    )
+    let tip = try await harness.tip(of: feat)
+    host.answer(
+      .success([.sample(number: 9, state: .merged, headBranch: "feat", headCommit: tip)])
+    )
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    let pullRequest = try #require(harness.model.services(of: feat).shownPullRequest)
+    try #require(pullRequest.state == .merged)
+    #expect(harness.model.threadsReadProblem(of: pullRequest, in: feat) == nil)
+  }
+
   @Test func checksNotYetReadHoldTheMergeBack() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

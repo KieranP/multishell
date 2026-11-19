@@ -34,17 +34,6 @@ struct AppModelReviewSendTests {
   }
 
   /// Spelled from `drops` as given, a listing naming the temporary directory's `/private` target.
-  private static func handoffFiles(in drops: URL) -> [URL] {
-    let manager = FileManager.default
-    let directories = (try? manager.contentsOfDirectory(atPath: drops.path)) ?? []
-    return directories.flatMap { name in
-      let directory = drops.appendingPathComponent(name, isDirectory: true)
-      return ((try? manager.contentsOfDirectory(atPath: directory.path)) ?? []).map { file in
-        directory.appendingPathComponent(file, isDirectory: false)
-      }
-    }
-  }
-
   @Test func claudeCodeIsHandedAMentionOfTheReviewFileWithItsSpacesEscaped() throws {
     let (harness, agents) = Self.harness(withAgents: [AgentCatalogue.claudeID])
     let drops = harness.drops
@@ -53,7 +42,7 @@ struct AppModelReviewSendTests {
     let sent = harness.model.sendReviewToPickedAgent(of: harness.main)
 
     #expect(sent)
-    let file = try #require(Self.handoffFiles(in: drops).first)
+    let file = try #require(HandoffDrops.files(in: drops).first)
     let escaped = file.path.replacingOccurrences(of: " ", with: "\\ ")
     #expect(harness.engine.pasted.map(\.id) == [agents[0].id])
     #expect(harness.engine.pasted.map(\.text) == ["@\(escaped) "])
@@ -66,7 +55,7 @@ struct AppModelReviewSendTests {
 
     harness.model.sendReviewToPickedAgent(of: harness.main)
 
-    let file = try #require(Self.handoffFiles(in: harness.model.dropsDirectory).first)
+    let file = try #require(HandoffDrops.files(in: harness.model.dropsDirectory).first)
     let quoted = AnyShellQuoting.quote(file.path)
     #expect(harness.engine.pasted.map(\.text) == ["Address the review comments in \(quoted) "])
   }
@@ -94,7 +83,7 @@ struct AppModelReviewSendTests {
 
     #expect(!sent)
     #expect(harness.model.reviewComments(in: harness.main.id).allSatisfy { $0.isPending })
-    #expect(Self.handoffFiles(in: harness.model.dropsDirectory).isEmpty)
+    #expect(HandoffDrops.files(in: harness.model.dropsDirectory).isEmpty)
   }
 
   @Test func sendGoesToTheAgentThePickerShowedOrNowhereOnceItsPaneCloses() throws {
@@ -102,7 +91,7 @@ struct AppModelReviewSendTests {
       AgentCatalogue.claudeID, AgentCatalogue.codexID,
     ])
     harness.model.addReviewComment(Self.comment(), in: harness.main.id)
-    harness.model.pickReviewRecipient(agents[0].id, in: harness.main.id)
+    harness.model.pickHandoffRecipient(agents[0].id, in: harness.main.id)
     guard case .ready(let picked, _, _) = harness.model.reviewFooter(of: harness.main) else {
       Issue.record("the footer offers the agent")
       return
@@ -133,23 +122,8 @@ struct AppModelReviewSendTests {
     let (harness, _) = Harness.withOnePane()
     harness.model.addReviewComment(Self.comment(), in: harness.main.id)
 
-    #expect(harness.model.reviewRecipients(in: harness.main.id).isEmpty)
+    #expect(harness.model.handoffRecipients(in: harness.main.id).isEmpty)
     #expect(harness.model.reviewFooter(of: harness.main) == .noRecipient("No agent in main"))
-  }
-
-  @Test func theAgentFocusedLastIsWhereAReviewGoesUnlessOneIsPicked() {
-    let (harness, agents) = Self.harness(withAgents: [
-      AgentCatalogue.claudeID, AgentCatalogue.codexID,
-    ])
-    let claude = agents[0].id
-    let codex = agents[1].id
-
-    harness.model.reconciler.terminalHost(harness.engine, didFocus: codex)
-    harness.model.reconciler.terminalHost(harness.engine, didFocus: claude)
-    #expect(harness.model.reviewRecipient(in: harness.main.id)?.id == claude)
-
-    harness.model.pickReviewRecipient(codex, in: harness.main.id)
-    #expect(harness.model.reviewRecipient(in: harness.main.id)?.id == codex)
   }
 
   @Test func addingACommentClearsWhatTheLastSendSaid() {
@@ -182,7 +156,7 @@ struct AppModelReviewSendTests {
   @Test func anAgentStartedFromACustomCommandIsSentASentenceAroundThePath() throws {
     let (harness, agents) = Self.harness(withAgents: [AgentCatalogue.customID])
     harness.model.addReviewComment(Self.comment(), in: harness.main.id)
-    let recipient = try #require(harness.model.reviewRecipient(in: harness.main.id))
+    let recipient = try #require(harness.model.handoffRecipient(in: harness.main.id))
 
     let sent = harness.model.sendReviewToPickedAgent(of: harness.main)
 

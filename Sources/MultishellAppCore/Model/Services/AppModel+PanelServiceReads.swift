@@ -22,6 +22,10 @@ extension AppModel {
         remoteState.checks.filter { !withoutHost.contains($0.key) },
       )
       setIfChanged(
+        \.remoteState.threads,
+        remoteState.threads.filter { !withoutHost.contains($0.key) },
+      )
+      setIfChanged(
         \.remoteState.pendingMerges,
         remoteState.pendingMerges.filter { !withoutHost.contains($0.key) },
       )
@@ -54,6 +58,7 @@ extension AppModel {
       guard !Task.isCancelled, let self else { return }
       remoteState.pendingPanelRead = nil
       pruneRunDetails()
+      prunePanelThreads()
       guard let worktree = workspace.worktree(id) else { return }
       await readPanelServicesIfDue(of: worktree)
     }
@@ -84,13 +89,20 @@ extension AppModel {
     pruneRunDetails()
     let changesBefore = remoteState.integrationChanges[worktree.projectID]
     switch page {
-    case .pullRequest: await readChecks(of: worktree)
+    case .pullRequest:
+      async let checks: Void = readChecks(of: worktree)
+      async let threads: Void = readThreads(of: worktree)
+      _ = await (checks, threads)
+
     case .ciRuns: await readCIHistory(of: worktree)
     case .files, .changes, .review: break
     }
     guard remoteState.integrationChanges[worktree.projectID] == changesBefore else {
       remoteState.panelReadLog.markDue(read)
       return false
+    }
+    if let servicePage = ServicePage(page) {
+      pruneHandoffChoices(of: worktree, after: servicePage)
     }
     return true
   }
@@ -145,6 +157,43 @@ extension AppModel {
     setIfChanged(\.remoteState.checks[worktree.id], reading)
     reconcileMerges(of: [worktree.id])
     if headMovedPastTheList { Task { await refreshServices(ofProject: project.id) } }
+  }
+
+  /// Thread text is kept for the panel's worktree alone, whatever page it shows.
+  private func prunePanelThreads() {
+    let panel = filesPanelWorktree?.id
+    setIfChanged(\.remoteState.threads, remoteState.threads.filter { $0.key == panel })
+  }
+
+  /// An open pull request's unresolved threads; a settled one lists none, and
+  /// other worktrees' are dropped, thread text being kept for the panel's alone.
+  private func readThreads(of worktree: Worktree) async {
+    prunePanelThreads()
+    guard let project = workspace.project(worktree.projectID),
+      let (integration, host) = pullRequestHost(for: project),
+      let pullRequest = services(of: worktree).shownPullRequest,
+      !pullRequest.state.isSettled
+    else {
+      setIfChanged(\.remoteState.threads[worktree.id], nil)
+      return
+    }
+    var reading =
+      remoteState.threads[worktree.id].flatMap { reading in
+        reading.pullRequestNumber == pullRequest.number ? reading : nil
+      } ?? PullRequestThreads(pullRequestNumber: pullRequest.number)
+    let changesBefore = remoteState.integrationChanges[project.id]
+    do {
+      reading.threads = try await host.unresolvedThreads(of: pullRequest, in: worktree.path)
+      reading.failure = nil
+    } catch {
+      reading.failure = ServiceReadFailure(error)
+    }
+    // Thread text is kept for the panel's worktree alone, which may have moved on.
+    guard workspace.worktree(worktree.id) != nil, filesPanelWorktree?.id == worktree.id,
+      pullRequestHost(for: project)?.0 == integration,
+      remoteState.integrationChanges[project.id] == changesBefore
+    else { return }
+    setIfChanged(\.remoteState.threads[worktree.id], reading)
   }
 
   private func readCIHistory(of worktree: Worktree) async {
@@ -213,10 +262,12 @@ extension AppModel {
     let services = services(of: worktree)
     switch shownFilesPanelMode {
     case .pullRequest:
-      // Another pull request on the same head has checks of its own.
+      // Another pull request on the same head has checks of its own; another
+      // worktree's read dropped this one's threads.
       let checks = remoteState.checks[worktree.id]
       return services.shownPullRequest?.headCommit != checks?.headCommit
         || services.shownPullRequest?.number != checks?.pullRequestNumber
+        || lacksThreads(services.shownPullRequest, of: worktree)
 
     case .ciRuns:
       // A history of the branch it followed before is no history at all, where
@@ -227,6 +278,12 @@ extension AppModel {
     case .files, .changes, .review:
       return false
     }
+  }
+
+  /// An open pull request whose threads were never read, or were dropped.
+  private func lacksThreads(_ pullRequest: PullRequest?, of worktree: Worktree) -> Bool {
+    guard let pullRequest, !pullRequest.state.isSettled else { return false }
+    return remoteState.threads[worktree.id]?.pullRequestNumber != pullRequest.number
   }
 
   private func panelHasSomethingUnderWay(_ worktree: Worktree) -> Bool {

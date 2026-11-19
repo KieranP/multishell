@@ -10,4 +10,13 @@ public enum ServicePage: String, Codable, CaseIterable, Sendable {
     case .pullRequest: .pullRequest
     }
   }
+
+  /// The services' page `mode` shows, `nil` for one that lists files or comments.
+  public init?(_ mode: FilesPanelMode) {
+    switch mode {
+    case .ciRuns: self = .ciRuns
+    case .pullRequest: self = .pullRequest
+    case .changes, .files, .review: return nil
+    }
+  }
 }

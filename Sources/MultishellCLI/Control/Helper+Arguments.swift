@@ -61,6 +61,17 @@ extension Helper {
     return text
   }
 
+  /// `--worktree`'s id; `nil` where none is given, which the app takes for the one in view.
+  static func worktreeOption(in options: CommandOptions, topic: String) throws -> String? {
+    try options["worktree"].map { try worktreeID($0, topic: topic) }
+  }
+
+  /// A Send's `--to`; `nil` where none is given, which the app takes for the
+  /// agent the page's picker shows.
+  static func recipientOption(in options: CommandOptions, topic: String) throws -> UUID? {
+    try options["to"].map { try tabOrPaneID($0, topic: topic) }
+  }
+
   /// What comes before `--` and the command after it, `nil` where there is no `--`.
   static func splitAtDoubleDash(
     _ arguments: ArraySlice<String>

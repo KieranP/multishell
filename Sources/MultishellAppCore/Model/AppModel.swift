@@ -197,12 +197,12 @@ public final class AppModel<Surface> {
   @ObservationIgnored let reviewsDirectory: URL
   /// Each worktree's file written to this run, its writes landing in order.
   @ObservationIgnored var reviewFiles: [Worktree.ID: ReviewFile] = [:]
-  /// The agent pane Review's picker was set to in each worktree. Runtime state.
-  var reviewRecipientPicks: [Worktree.ID: TerminalSession.ID] = [:]
   /// What each worktree's last Send said, until a comment is added there.
   var reviewSendReceipts: [Worktree.ID: ReviewSendReceipt] = [:]
+  /// What Send's foot and picker hold by worktree. Runtime state.
+  @ObservationIgnored let handoff = HandoffState()
   /// Each worktree's panes by when they last took focus, newest first, which
-  /// picks the agent a review goes to.
+  /// picks the agent a Send goes to.
   var focusedSessionHistory: [Worktree.ID: [TerminalSession.ID]] = [:]
   /// The comment last clicked in each worktree's Review, its card outlined.
   var selectedReviewComments: [Worktree.ID: ReviewComment.ID] = [:]

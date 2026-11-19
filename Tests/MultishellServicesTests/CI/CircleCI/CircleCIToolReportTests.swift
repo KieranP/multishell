@@ -18,7 +18,7 @@ struct CircleCIToolReportTests {
   @Test func theCLIBeforeOneHasNoRunCommandsAndIsTooOld() {
     #expect(
       CircleCIToolReport.status(versionOutput: "0.1.31425+7ba21d2\n", authMe: .sample())
-        == .unsupportedVersion("0.1.31425+7ba21d2")
+        == .unsupportedVersion("0.1.31425+7ba21d2", minimum: "1")
     )
   }
 

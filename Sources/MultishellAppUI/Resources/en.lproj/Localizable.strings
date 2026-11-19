@@ -190,6 +190,14 @@
 "general.show-hidden-files-info" = "On, the Files panel lists what git ignores, greyed, and the quick switcher finds those files. Off, git's ignored files are neither read nor listed.";
 "general.state-file" = "State file:";
 "general.state-file-info" = "Projects, worktrees, tabs and these settings. Running shells are not saved.";
+"handoff.recipient-item" = "%1$@ · %2$@ · %3$@";
+"handoff.recipient-menu" = "Agent to send to";
+"handoff.send" = "Send";
+"handoff.send-again-hint" = "Click to send it again";
+"handoff.send-all-failures" = "Send all failures";
+"handoff.send-item" = "Send %@";
+"handoff.send-to" = "Send to";
+"handoff.sent-to" = "Sent to %@";
 "hooks.copied-paths" = "Copy into new worktrees";
 "hooks.copied-paths-info" = "Copied from the repository into the new worktree before the post-create hook. One path per line from the repository root; * and ? match within a name. A list in %@ fills a blank one.";
 "hooks.create" = "Create";
@@ -255,6 +263,7 @@
 "merge-form.subject" = "Commit subject";
 "notifications.header" = "Post a notification when a tab you are not looking at reports";
 "panel.branch-into-base" = "%1$@ → %2$@";
+"panel.ci-report-after-run" = "Its report is read once the run ends. Sent now, it goes without it.";
 "panel.latest-run" = "Latest run";
 "panel.required" = "Required";
 "paste.unsafe-message" = "The program in this pane could run this text as it lands, reading a line break or a sequence inside it as keys. Check it before pasting.";
@@ -343,10 +352,6 @@
 "review.composer-placeholder" = "What should the agent change here?";
 "review.edit" = "Edit";
 "review.quote-heading" = "When you wrote it, the lines read:";
-"review.recipient-item" = "%1$@ · %2$@ · %3$@";
-"review.recipient-menu" = "Agent to send the review to";
-"review.send" = "Send";
-"review.send-to" = "Send to";
 "review.title" = "Review";
 "rotor.changes" = "Changes";
 "settings.agent-hooks" = "Agent hooks";

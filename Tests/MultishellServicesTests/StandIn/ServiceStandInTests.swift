@@ -43,6 +43,76 @@ struct ServiceStandInTests {
     #expect(checks.first?.isRequired == true)
   }
 
+  @Test func theHostAnswersAPullRequestsThreadsAndAFailedChecksLogFromTheStandIn() async throws {
+    let json = """
+      {"pullRequests": [{"number": 7, "title": "a", "state": "open", "headBranch": "a",
+        "headCommit": "1", "headRepository": "me/demo",
+        "checks": [{"name": "test", "status": "failed", "log": "error: boom"},
+                   {"name": "lint", "status": "failed"}],
+        "threads": [{"id": "t1", "path": "a.swift",
+                     "comments": [{"id": "c1", "body": "Why?"}]}]}]}
+      """
+    let host = try ServiceStandIn(json: json).pullRequestHost
+    let pullRequest = try #require(try await host.pullRequests(in: Self.here).first)
+    let checks = try await host.checks(of: pullRequest, in: Self.here)
+    let test = try #require(checks.first { $0.name == "test" })
+    let lint = try #require(checks.first { $0.name == "lint" })
+
+    let threads = try await host.unresolvedThreads(of: pullRequest, in: Self.here)
+    let testLog = try await host.failedLog(of: test, keepingLast: 160, in: Self.here)
+    let lintLog = try await host.failedLog(of: lint, keepingLast: 160, in: Self.here)
+
+    #expect(threads.map(\.id) == ["t1"])
+    #expect(threads.first?.line == nil && threads.first?.isOutdated == false)
+    #expect(threads.first?.comments.first?.author == nil)
+    #expect(threads.first?.diffHunk == "")
+    #expect(testLog?.text == "error: boom")
+    #expect(lintLog == nil)
+  }
+
+  @Test func aPullRequestGivingNoThreadsHasNone() async throws {
+    let host = try ServiceStandIn(json: Self.json).pullRequestHost
+    let pullRequest = try #require(try await host.pullRequests(in: Self.here).first)
+
+    #expect(try await host.unresolvedThreads(of: pullRequest, in: Self.here).isEmpty)
+  }
+
+  @Test func aThreadWithNoCommentIsRefusedNamingWhere() {
+    let json = """
+      {"pullRequests": [{"number": 7, "title": "a", "state": "open", "headBranch": "a",
+        "headCommit": "1", "headRepository": "me/demo",
+        "threads": [{"id": "t1", "path": "a.swift", "comments": [{"id": "c1", "body": "x"}]},
+                    {"id": "t2", "path": "a.swift", "comments": []}]}]}
+      """
+
+    let error = #expect(throws: ServiceStandInUnreadable.self) { try ServiceStandIn(json: json) }
+
+    #expect(
+      error?.reason.hasPrefix("at pullRequests.0.threads.1.comments: ") == true,
+      "\(String(describing: error))",
+    )
+  }
+
+  @Test func aKeyNoThreadOrCommentTakesIsRefusedNamingWhere() {
+    for (field, path) in [
+      (#""resolved": true, "comments": [{"id": "c", "body": "x"}]"#, "threads.0.resolved"),
+      (#""comments": [{"id": "c", "body": "x", "login": "me"}]"#, "threads.0.comments.0.login"),
+    ] {
+      let json = """
+        {"pullRequests": [{"number": 7, "title": "a", "state": "open", "headBranch": "a",
+          "headCommit": "1", "headRepository": "me/demo",
+          "threads": [{"id": "t", "path": "a.swift", \(field)}]}]}
+        """
+
+      let error = #expect(throws: ServiceStandInUnreadable.self) { try ServiceStandIn(json: json) }
+
+      #expect(
+        error?.reason.hasPrefix("at pullRequests.0.\(path): ") == true,
+        "\(String(describing: error))",
+      )
+    }
+  }
+
   @Test func anOwnerAndNameStandForTheHeadRepositorysURL() async throws {
     let json = """
       {"pullRequests": [{"number": 1, "title": "t", "state": "draft", "headBranch": "b",
@@ -279,7 +349,11 @@ struct ServiceStandInTests {
         "isReadyToMerge": false, "headBranch": "a", "headCommit": "1",
         "headRepository": "me/demo", "baseBranch": "main", "updatedAt": "2026-10-29T10:00:00Z",
         "checks": [{"name": "build", "workflow": "ci", "status": "passed", "isRequired": true,
-                    "link": "https://x/c"}]}],
+                    "link": "https://x/c", "log": "ok"}],
+        "threads": [{"id": "t", "path": "a.swift", "line": 3, "originalLine": 2,
+                     "isOutdated": true, "diffHunk": "@@ -1 +1 @@",
+                     "comments": [{"id": "c", "author": "me", "body": "Why?",
+                                   "url": "https://x/c1"}]}]}],
        "ciRuns": [{"id": "r", "branch": "a", "commit": "1", "subject": "s", "status": "failed",
         "isFinished": true, "createdAt": "2026-10-29T10:00:00Z", "repository": "me/demo",
         "workflows": [{"name": "ci", "status": "failed",
@@ -290,6 +364,8 @@ struct ServiceStandInTests {
 
     let pullRequest = try #require(standIn.pullRequests.first)
     let check = try #require(standIn.checks[ServiceStandIn.key(of: pullRequest)]?.first)
+    let thread = try #require(standIn.threads[ServiceStandIn.key(of: pullRequest)]?.first)
+    let comment = try #require(thread.comments.first)
     let run = try #require(standIn.runs.first)
     let job = try #require(standIn.workflows["r"]?.first?.jobs.first)
 
@@ -300,6 +376,10 @@ struct ServiceStandInTests {
     #expect(
       check.workflow == "ci" && check.isRequired && check.link?.absoluteString == "https://x/c"
     )
+    #expect(standIn.logs[check] == "ok")
+    #expect(thread.path == "a.swift" && thread.line == 3 && thread.originalLine == 2)
+    #expect(thread.isOutdated && comment.author == "me" && comment.body == "Why?")
+    #expect(thread.diffHunk == "@@ -1 +1 @@" && comment.url?.absoluteString == "https://x/c1")
     #expect(run.subject == "s" && run.isFinished && run.createdAt != nil)
     #expect(run.repository?.isSame(as: RemoteRepository(owner: "me", name: "demo")) == true)
     #expect(job.id == "j" && job.status == .failed)

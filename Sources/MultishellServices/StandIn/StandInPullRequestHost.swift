@@ -25,6 +25,25 @@ struct StandInPullRequestHost: PullRequestHost {
     standIn.checks[ServiceStandIn.key(of: pullRequest)] ?? []
   }
 
+  func readsFailedLog(of check: PullRequestCheck) -> Bool {
+    standIn.logs[check] != nil
+  }
+
+  func failedLog(
+    of check: PullRequestCheck,
+    keepingLast lineLimit: Int,
+    in directory: URL,
+  ) async throws -> FailedCheckLog? {
+    standIn.logs[check].map { FailedCheckLog(text: $0, earlierLineCount: 0) }
+  }
+
+  func unresolvedThreads(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> [PullRequestThread] {
+    standIn.threads[ServiceStandIn.key(of: pullRequest)] ?? []
+  }
+
   /// A stand-in's pull requests move only as its list says.
   func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String {
     pullRequest.headCommit

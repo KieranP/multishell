@@ -9,6 +9,10 @@ extension ControlRefusal {
     case .agentWorking: "an agent is working there; --force goes ahead anyway"
     case .alert(let title, let message): "\(title) \(message)"
     case .autoRenameUnavailable(let id): "Auto Rename is greyed out for worktree \(id)"
+
+    case .checksNotRead(let id, let reason):
+      "worktree \(id)'s checks could not be read, so nothing was sent: \(reason)"
+
     case .debugToolsOff: "debug tools are off; `multishell debug tools on` turns them on"
 
     case .fileNotOpenable(let path):
@@ -26,6 +30,10 @@ extension ControlRefusal {
         + "`multishell ui menu \"View > Files Pane\"` opens it on its list"
 
     case .gitNotFound: "git is not on the login shell's PATH, so nothing is read from it"
+
+    case .handoffUnderWay(let id):
+      "worktree \(id)'s pull request page has a Send under way; ask again once it has sent"
+
     case .invalidBranchName(let name): "git would refuse the branch name \(name)"
     case .invalidValue(let key, let value): "\(key) takes no value \"\(value)\""
     case .menuItemDisabled(let path): "\(path) is greyed out in the menu now"
@@ -72,7 +80,7 @@ extension ControlRefusal {
     case .noReviewTab(let path):
       "no file tab of the worktree shows \(path); `multishell tabs open-file` opens one"
 
-    case .noReviewRecipient(let id):
+    case .noRecipient(let id):
       "worktree \(id) has no pane with an agent to send to, "
         + "or not the one named; `multishell tabs list` names its panes"
 
@@ -99,12 +107,24 @@ extension ControlRefusal {
     case .noTab(let id): "no tab \(id); `multishell tabs list` names them"
     case .nothingInView: "no worktree's tabs are on screen"
     case .nothingPresented: "no alert, dialog, sheet or field is up"
+
+    case .nothingToHandOff(.ciRuns, let id):
+      "worktree \(id)'s CI page has no failure checked and not sent already; it reads "
+        + "the newest run's jobs only while shown: `multishell ui show ci \(id)`"
+
+    case .nothingToHandOff(.pullRequest, let id):
+      "worktree \(id)'s pull request has no failing check or unresolved thread checked "
+        + "and not sent already"
+
     case .nothingToSend(let id): "worktree \(id) has no review comment waiting to be sent"
     case .noWindow: "the main window is closed"
 
     case .noWorktree(let id): "no worktree \(id); `multishell worktrees list` names them"
 
     case .onlyTabInGroup(let id): "tab \(id) is its group's only tab"
+
+    case .threadsNotRead(let id, let reason):
+      "worktree \(id)'s review threads could not be read, so nothing was sent: \(reason)"
 
     case .paneNotLive(let id):
       "pane \(id) has no shell yet; `multishell worktrees select WORKTREE_ID` starts its worktree's"

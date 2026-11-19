@@ -2,6 +2,7 @@
 /// usage errors and `help` name.
 enum ControlCommand: String, CaseIterable {
   case board
+  case ciRuns = "ci"
   case config
   case debug
   case files
@@ -9,6 +10,7 @@ enum ControlCommand: String, CaseIterable {
   case open
   case panes
   case projects
+  case pullRequest = "pr"
   case quit
   case review
   case sidebar

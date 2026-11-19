@@ -107,7 +107,7 @@ struct AppModelControlReviewTests {
     )
     #expect(
       await harness.messageSource.ask(.sendReview(worktree: nil, to: shell.id))
-        == .refused(.noReviewRecipient(id: worktree))
+        == .refused(.noRecipient(id: worktree))
     )
   }
 
@@ -136,6 +136,29 @@ struct AppModelControlReviewTests {
     #expect(harness.model.reviewComments(in: harness.main.id).first?.isPending == false)
     #expect(harness.model.workspaceTabInView?.id == tab.id)
     #expect(harness.engine.focused == focusedBefore)
+  }
+
+  @Test func aFileThatCannotBeWrittenIsAnsweredByTheWritesAlertNotAsAPaneWithNoShell() async throws
+  {
+    let (harness, _) = try Self.harnessWithFileRead()
+    _ = await harness.messageSource.ask(
+      .addReviewComment(Self.order(1...1, side: .onDisk, text: "One"))
+    )
+    let drops = harness.model.dropsDirectory
+    try? FileManager.default.removeItem(at: drops)
+    try FileManager.default.createDirectory(
+      at: drops.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
+    try Data("not a directory".utf8).write(to: drops)
+
+    let reply = await harness.messageSource.ask(.sendReview(worktree: nil, to: nil))
+
+    guard case .alert(_, let message) = reply?.refusal else {
+      Issue.record("Expected the write's alert, got \(String(describing: reply))")
+      return
+    }
+    #expect(message.contains("drops"))
   }
 
   @Test func clearSentLeavesThePendingAndClearRemovesEverything() async throws {

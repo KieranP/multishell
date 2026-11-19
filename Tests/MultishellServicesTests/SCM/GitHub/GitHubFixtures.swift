@@ -54,4 +54,21 @@ enum GitHubFixtures {
       "updatedAt":"2026-10-20T01:00:00Z","url":"https://github.com/KieranP/multishell/pull/\(number)"}
       """
   }
+
+  /// One page of review threads: `id` unresolved, and one resolved beside it.
+  static func reviewThreads(id: String, hasNextPage: Bool) -> String {
+    let cursor = hasNextPage ? #""c1""# : "null"
+    return """
+      {"data":{"repository":{"pullRequest":{"reviewThreads":{\
+      "pageInfo":{"hasNextPage":\(hasNextPage),"endCursor":\(cursor)},"nodes":[\
+      {"id":"\(id)","isResolved":false,"isOutdated":false,"path":"Sources/App.swift",\
+      "line":12,"originalLine":10,\
+      "firstComment":{"nodes":[{"diffHunk":"@@ -1,2 +1,2 @@\\n-let a\\n+let b"}]},\
+      "comments":{"nodes":[{"id":"\(id)-c","author":{"login":"jt"},"body":"Guard it.",\
+      "url":"https://github.com/me/demo/pull/44#discussion_r1"}]}},\
+      {"id":"\(id)-done","isResolved":true,"isOutdated":false,"path":"README.md",\
+      "line":null,"originalLine":null,"firstComment":{"nodes":[{"diffHunk":""}]},\
+      "comments":{"nodes":[{"id":"x","author":null,"body":"Fixed","url":null}]}}]}}}}}
+      """
+  }
 }

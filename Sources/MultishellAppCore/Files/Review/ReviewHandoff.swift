@@ -4,18 +4,14 @@ import MultishellCore
 /// What Send writes for the agent: every pending comment of a worktree as one
 /// note; see Docs/design/files/review-comments.md.
 enum ReviewHandoff {
-  private static var maxNameLength: Int { 200 }
-
   static var introduction: String { t("review.handoff-introduction") }
 
   static func entries(of comments: [ReviewComment]) -> [AgentHandoffEntry] {
     comments.inReviewOrder.map(entry(of:))
   }
 
-  /// Named for the worktree in the characters every file name takes, cut to a
-  /// length every disk takes.
   static func fileName(forWorktreeNamed name: String) -> String {
-    "review-\(name.portableName(maxLength: maxNameLength)).md"
+    AgentHandoff.fileName("review", forWorktreeNamed: name)
   }
 
   private static func entry(of comment: ReviewComment) -> AgentHandoffEntry {

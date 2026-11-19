@@ -25,8 +25,8 @@ extension IntegrationAvailability {
     case .tool(.loggedOut):
       return t("integrations.logged-out", tool, "\(tool) auth login")
 
-    case .tool(.unsupportedVersion(let version)):
-      return t("integrations.too-old", tool, version, tool)
+    case .tool(.unsupportedVersion(let version, let minimum)):
+      return t("integrations.too-old", tool, version, minimum, tool)
 
     case .tool(.unreadable(let said)):
       return t("integrations.unreadable", tool, said)

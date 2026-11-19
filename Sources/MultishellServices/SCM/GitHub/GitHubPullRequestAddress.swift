@@ -7,9 +7,10 @@ struct GitHubPullRequestAddress: Equatable {
   let repository: RemoteRepository
 
   init?(_ url: URL) {
-    let parts = url.pathComponents.filter { $0 != "/" }
-    guard let host = url.host(), parts.count >= 4, parts[2] == "pull" else { return nil }
-    self.host = host
-    repository = RemoteRepository(owner: parts[0], name: parts[1])
+    guard let path = GitHubRepositoryPath(url), path.pageParts.count >= 2,
+      path.pageParts[0] == "pull"
+    else { return nil }
+    host = path.host
+    repository = path.repository
   }
 }

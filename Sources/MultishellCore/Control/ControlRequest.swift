@@ -96,6 +96,16 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case selectPane(id: UUID)
   case selectTab(id: UUID)
   case selectWorktree(id: String)
+  /// The CI page's Send: the newest run's checked failures, to the agent pane
+  /// named, else the one its picker shows.
+  case sendCIFailures(worktree: String?, to: UUID?)
+  /// The pull request page's Send: its checked checks and threads, or one kind alone.
+  case sendPullRequestFeedback(
+    worktree: String?,
+    to: UUID?,
+    includesChecks: Bool,
+    includesThreads: Bool,
+  )
   /// Review's Send: to the agent pane named, else the one its picker shows.
   case sendReview(worktree: String?, to: UUID?)
   case setDebugInfo(shown: Bool)

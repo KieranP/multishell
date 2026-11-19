@@ -8,6 +8,7 @@ extension MergePath {
     isMergeTaken: Bool = false,
     isOutgrown: Bool = false,
     checksReadProblem: String? = nil,
+    unresolvedThreadCount: Int = 0,
   ) -> Self {
     MergePath(
       pullRequest,
@@ -15,6 +16,7 @@ extension MergePath {
       isMergeTaken: isMergeTaken,
       isOutgrown: isOutgrown,
       checksReadProblem: checksReadProblem,
+      unresolvedThreadCount: unresolvedThreadCount,
     )
   }
 }

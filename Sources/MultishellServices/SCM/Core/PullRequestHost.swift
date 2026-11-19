@@ -18,6 +18,24 @@ public protocol PullRequestHost: Sendable {
   /// The checks on the pull request's head, each once, and which are required.
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck]
 
+  /// Whether `failedLog` can read the check's log: it ran on the host's own CI.
+  func readsFailedLog(of check: PullRequestCheck) -> Bool
+
+  /// The last `lineLimit` lines of a failed check's failed steps; `nil` for a check
+  /// from anywhere else. Throws `ServiceReadFailure`.
+  func failedLog(
+    of check: PullRequestCheck,
+    keepingLast lineLimit: Int,
+    in directory: URL,
+  ) async throws -> FailedCheckLog?
+
+  /// The pull request's unresolved review threads, oldest first. Throws
+  /// `ServiceReadFailure`.
+  func unresolvedThreads(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> [PullRequestThread]
+
   /// The commit the pull request heads now, which a list read may be behind.
   /// Throws `ServiceReadFailure`.
   func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String

@@ -102,6 +102,17 @@ extension AppModel {
     case .clearReviewComments(let worktree, let sentOnly):
       await replyToClearReviewComments(in: worktree, sentOnly: sentOnly)
 
+    case .sendPullRequestFeedback(let worktree, let sessionID, let checks, let threads):
+      await replyToSendPullRequestFeedback(
+        in: worktree,
+        to: sessionID,
+        includesChecks: checks,
+        includesThreads: threads,
+      )
+
+    case .sendCIFailures(let worktree, let sessionID):
+      await replyToSendCIFailures(in: worktree, to: sessionID)
+
     case .filterFiles(let text): replyToFilterFiles(text)
 
     case .setFilesFolderExpanded(let path, let expanded):

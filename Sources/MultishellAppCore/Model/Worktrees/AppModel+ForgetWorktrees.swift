@@ -20,6 +20,7 @@ extension AppModel {
       remoteState.publishingWorktrees.subtracting(gone),
     )
     setIfChanged(\.remoteState.checks, remoteState.checks.filter { !gone.contains($0.key) })
+    setIfChanged(\.remoteState.threads, remoteState.threads.filter { !gone.contains($0.key) })
     setIfChanged(
       \.remoteState.ciHistories,
       remoteState.ciHistories.filter { !gone.contains($0.key) },
@@ -48,6 +49,7 @@ extension AppModel {
       filesPanelStates[id] = nil
     }
     forgetReviewState(of: gone)
+    forgetHandoffState(of: gone)
     forgetFileListings(where: gone.contains)
     panelFolderReads.cancel { gone.contains($0.worktreeID) }
     setIfChanged(\.submoduleReadings, submoduleReadings.filter { !gone.contains($0.key) })

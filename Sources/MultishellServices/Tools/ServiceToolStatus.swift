@@ -5,6 +5,7 @@ public enum ServiceToolStatus: Hashable, Sendable {
   case ready(version: String, account: String?)
   /// It answered in a way this build cannot read, said as it said it.
   case unreadable(String)
-  /// Older than the commands this build runs, by the version it gave.
-  case unsupportedVersion(String)
+  /// Older than the commands this build runs, by the version it gave and the
+  /// first that has them.
+  case unsupportedVersion(String, minimum: String)
 }

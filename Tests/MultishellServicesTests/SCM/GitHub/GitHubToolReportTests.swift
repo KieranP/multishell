@@ -29,6 +29,54 @@ struct GitHubToolReportTests {
     )
   }
 
+  @Test func aGhBeforeTheFirstWhoseApiTakesEscapeSequencesIsTooOld() {
+    let older = "gh version 2.96.1 (2026-07-20)\n"
+
+    #expect(
+      GitHubToolReport.status(versionOutput: older, authStatus: .sample())
+        == .unsupportedVersion("2.96.1", minimum: "2.97.0")
+    )
+  }
+
+  @Test func aGhTooOldAndLoggedOutSaysLoggedOutSinceNothingReadsWithoutALogin() {
+    let auth = ProcessOutput.sample(
+      error: "You are not logged into any GitHub hosts. To log in, run: gh auth login\n",
+      status: 1,
+    )
+
+    #expect(
+      GitHubToolReport.status(versionOutput: "gh version 2.90.0\n", authStatus: auth)
+        == .loggedOut
+    )
+  }
+
+  @Test func aGhAtTheFloorOrPastItIsNotTooOld() {
+    let atFloor = "gh version 2.97.0 (2026-07-31)\n"
+
+    #expect(
+      GitHubToolReport.status(versionOutput: atFloor, authStatus: .sample())
+        == .ready(version: "2.97.0", account: nil)
+    )
+    #expect(
+      GitHubToolReport.status(versionOutput: version, authStatus: .sample())
+        == .ready(version: "2.103.2", account: nil)
+    )
+  }
+
+  @Test func aVersionWithNoPatchNumberReadsAsItsZeroPatch() {
+    #expect(
+      GitHubToolReport.status(versionOutput: "gh version 2.97\n", authStatus: .sample())
+        == .ready(version: "2.97", account: nil)
+    )
+  }
+
+  @Test func aGhBuiltFromSourceWithNoVersionNumberIsNotCalledTooOld() {
+    #expect(
+      GitHubToolReport.status(versionOutput: "gh version DEV\n", authStatus: .sample())
+        == .ready(version: "DEV", account: nil)
+    )
+  }
+
   @Test func aGhWithNoLoginIsLoggedOut() {
     let auth = ProcessOutput.sample(
       error: "You are not logged into any GitHub hosts. To log in, run: gh auth login\n",

@@ -71,7 +71,7 @@ extension AppModel {
   }
 
   /// An earlier head's checks, or their failed read, say nothing of this one's.
-  private func checksReading(
+  func checksReading(
     of pullRequest: PullRequest,
     in worktree: Worktree,
   ) -> PullRequestChecks? {
@@ -91,7 +91,31 @@ extension AppModel {
       isMergeTaken: isMergeTaken(in: worktree),
       isOutgrown: services(of: worktree).outgrownPullRequest?.url == pullRequest.url,
       checksReadProblem: checksReadProblem(of: pullRequest, in: worktree),
+      unresolvedThreadCount: unresolvedThreads(of: pullRequest, in: worktree).count,
     )
+  }
+
+  /// The shown pull request's unresolved threads, oldest first, as last read; a
+  /// merged or closed one lists none, though a read before it settled is kept.
+  public func unresolvedThreads(
+    of pullRequest: PullRequest,
+    in worktree: Worktree,
+  ) -> [PullRequestThread] {
+    guard !pullRequest.state.isSettled, let reading = remoteState.threads[worktree.id],
+      reading.pullRequestNumber == pullRequest.number
+    else { return [] }
+    return reading.threads ?? []
+  }
+
+  /// Why the threads' last read failed, said under the card until one answers; a
+  /// merged or closed pull request lists no threads, so says nothing of them.
+  public func threadsReadProblem(of pullRequest: PullRequest, in worktree: Worktree) -> String? {
+    guard !pullRequest.state.isSettled, let reading = remoteState.threads[worktree.id],
+      reading.pullRequestNumber == pullRequest.number, let failure = reading.failure,
+      let project = workspace.project(worktree.projectID),
+      let (integration, _) = pullRequestHost(for: project)
+    else { return nil }
+    return t("panel.threads-not-read", failure.reason(integration: integration))
   }
 
   private func checksReadProblem(of pullRequest: PullRequest, in worktree: Worktree) -> String? {

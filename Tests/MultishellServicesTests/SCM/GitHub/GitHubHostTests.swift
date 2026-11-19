@@ -320,4 +320,69 @@ struct GitHubHostTests {
 
     #expect(tool.runLog.drain().finishedRuns.map(\.command) == ["gh pr list"])
   }
+  @Test func aFailedChecksLogIsReadFromItsJobsLogsEndpointWhichAnswersWhileItsRunGoes() async throws
+  {
+    let tool = try FakeTool(
+      named: "gh",
+      #"printf '2026-11-19T01:02:03.4567890Z error: boom\n'"#,
+    )
+    defer { tool.tearDown() }
+    let check = PullRequestCheck(
+      name: "test",
+      workflow: "CI",
+      status: .failed,
+      isRequired: true,
+      link: URL(string: "https://github.com/me/demo/actions/runs/7/job/135205394571"),
+    )
+
+    let log = try await host(for: tool).failedLog(of: check, keepingLast: 160, in: tool.directory)
+
+    #expect(log?.text == "error: boom\n")
+    #expect(
+      tool.calls.first?.arguments
+        == "api --hostname github.com --allow-escape-sequences repos/me/demo/actions/jobs/135205394571/logs"
+    )
+  }
+
+  @Test func aCheckLinkingOutsideActionsHasNoLogAndAsksNothing() async throws {
+    let tool = try FakeTool(named: "gh", "exit 0")
+    defer { tool.tearDown() }
+    let check = PullRequestCheck(
+      name: "ci/circleci: build",
+      workflow: nil,
+      status: .failed,
+      isRequired: true,
+      link: URL(string: "https://circleci.com/gh/me/demo/12"),
+    )
+
+    let log = try await host(for: tool).failedLog(of: check, keepingLast: 160, in: tool.directory)
+
+    #expect(log == nil)
+    #expect(tool.calls.isEmpty)
+  }
+
+  @Test func unresolvedThreadsAreReadPageByPageUntilGitHubSaysThereAreNoMore() async throws {
+    let tool = try FakeTool(
+      named: "gh",
+      """
+      case "$*" in
+        *after=c1*) cat <<'JSON'
+      \(GitHubFixtures.reviewThreads(id: "t2", hasNextPage: false))
+      JSON
+        ;;
+        *) cat <<'JSON'
+      \(GitHubFixtures.reviewThreads(id: "t1", hasNextPage: true))
+      JSON
+        ;;
+      esac
+      """,
+    )
+    defer { tool.tearDown() }
+    let onGitHub = Self.pullRequest(at: URL(string: "https://github.com/me/demo/pull/44")!)
+
+    let threads = try await host(for: tool).unresolvedThreads(of: onGitHub, in: tool.directory)
+
+    #expect(threads.map(\.id) == ["t1", "t2"])
+    #expect(tool.calls.count == 2)
+  }
 }

@@ -16,6 +16,9 @@ extension UIMetrics {
   var servicePageJobIndent: Double { badge + 8 }
   /// A section's or an earlier run's chevron, and a check's Required tag.
   var servicePageMarkSize: Double { small - 1 }
+  /// The trailing column a sendable row's checkbox or sent bubble sits in, and
+  /// a step's own checkbox above them, on the PR and CI pages alike.
+  var handoffSlotWidth: Double { badge + 6 }
   /// A card's lines under its title, so they start where the title does.
   var servicePageCardTextIndent: Double { serviceGlyphSize + Self.servicePageGlyphSpacing }
   /// How far a merge path glyph sits down, so it centres on its title's first line.

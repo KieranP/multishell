@@ -66,6 +66,7 @@ extension MergePath {
     case .blockedByRules: t("merge-path.rule", base)
     case .checks: t("merge-path.checks")
     case .checksNotRead: checksNotReadTitle
+    case .comments: t("merge-path.comments")
     case .conflicts: Self.conflictsTitle(step.status, base: base)
     case .draft: t("readiness.draft")
     case .review: Self.reviewTitle(step.status)
@@ -80,10 +81,22 @@ extension MergePath {
     case .blockedByRules: t("merge-path.rule-hint", host)
     case .checks: checks.map(Self.summary(of:))
     case .checksNotRead: checksReadProblem.map { t("merge-path.read-again", $0) }
+    case .comments: t("count.merge-path-unresolved", unresolvedThreadCount)
     case .conflicts: step.status == .failed ? t("merge-path.merge-base", base) : nil
     case .draft: t("merge-path.draft-hint", host)
-    case .review: step.status == .onHold ? t("merge-path.review-hint") : nil
+    case .review: reviewHint(step.status)
     }
+  }
+
+  /// A person's wait, then the threads listed under it.
+  private func reviewHint(_ status: CIRunStatus) -> String? {
+    let parts = [
+      status == .onHold ? t("merge-path.review-hint") : nil,
+      threadsStep == .review
+        ? t("count.merge-path-unresolved-comments", unresolvedThreadCount) : nil,
+    ]
+    .compactMap(\.self)
+    return parts.isEmpty ? nil : parts.joined(separator: ". ")
   }
 
   public func endTitle(base: String) -> String {

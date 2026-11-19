@@ -7,6 +7,6 @@ public struct ReviewSendReceipt: Equatable, Sendable {
 
   /// "3 comments sent to Claude Code".
   public var summary: String {
-    t("review.sent-summary", t("count.comments", count), agentName)
+    t("handoff.sent-summary", t("count.comments", count), agentName)
   }
 }

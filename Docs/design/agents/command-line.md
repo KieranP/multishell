@@ -75,8 +75,9 @@ The command line's requests on the reports' socket. Newest at the bottom.
   stops the pre-create hook or git as the sheet's Cancel does. The helper shuts
   its writing half after the request, so EOF says nothing; the reply polls for
   POLLHUP, which macOS sets only once both halves are shut, every 250 ms until
-  it is sent. A cancelled task stops nothing else: nothing else a request awaits
-  checks for it.
+  it is sent. `pr send` checks once its reads end, so a Ctrl-C while its logs
+  read pastes nothing into the agent. A cancelled task stops nothing else: the
+  reads themselves run on, and nothing else a request awaits checks for it.
 - **The app answers in data and the helper words it** (translation.md): ids and
   JSON on success, a typed refusal otherwise.
 - **Whatever a command prints is JSON**, indented and sorted as the app's
@@ -232,6 +233,13 @@ The command line's requests on the reports' socket. Newest at the bottom.
 - **`tabs open-all-changes` opens or turns to a worktree's All changes tab**,
   and `tabs list` reports it as kind `all-changes`; `tabs step` and `tabs find`
   reach it as a file tab (files/all-changes-tab.md).
+- **`pr send` and `ci send` take `--worktree` as `review` does** and send the
+  page's checked items without taking the keyboard, as `review send` does.
+  `--checks` or `--threads` sends that kind alone. With nothing checked and
+  unsent they are refused; `ci send` is told to show the page, which reads its
+  run's jobs only while shown, where `pr send` reads checks and threads itself
+  off the PR page (services/send-feedback.md). `pr send` waits with no timeout,
+  its answer coming once every checked check's log is read.
 
 ## Reviewed and left as is
 

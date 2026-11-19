@@ -18,6 +18,7 @@ struct ServiceStandInRecord: Decodable {
     let baseBranch: String?
     let updatedAt: Date?
     let checks: [CheckRecord]?
+    let threads: [ThreadRecord]?
 
     /// Its page on GitHub where no `url` is given, the slot it fills being GitHub's.
     /// Undated is the oldest, as an undated run is, which only orders them.
@@ -73,6 +74,8 @@ struct ServiceStandInRecord: Decodable {
     let status: CIRunStatus
     let isRequired: Bool?
     let link: URL?
+    /// What the host's failed log read gives for the check.
+    let log: String?
 
     var check: PullRequestCheck {
       PullRequestCheck(
@@ -82,6 +85,39 @@ struct ServiceStandInRecord: Decodable {
         isRequired: isRequired ?? false,
         link: link,
       )
+    }
+  }
+
+  struct ThreadRecord: Decodable {
+    let id: String
+    let path: String
+    let line: Int?
+    let originalLine: Int?
+    let isOutdated: Bool?
+    let diffHunk: String?
+    let comments: [CommentRecord]
+
+    var thread: PullRequestThread {
+      PullRequestThread(
+        id: id,
+        path: path,
+        line: line,
+        originalLine: originalLine,
+        isOutdated: isOutdated ?? false,
+        diffHunk: diffHunk ?? "",
+        comments: comments.map(\.comment),
+      )
+    }
+  }
+
+  struct CommentRecord: Decodable {
+    let id: String
+    let author: String?
+    let body: String
+    let url: URL?
+
+    var comment: PullRequestThreadComment {
+      PullRequestThreadComment(id: id, author: author, body: body, url: url)
     }
   }
 

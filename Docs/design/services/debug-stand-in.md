@@ -24,11 +24,15 @@ service's own command-line tool, for a scripted run.
   `title`, `state`, `headBranch`, `headCommit` and `headRepository` (a remote
   URL or `owner/name`), and optionally `url` (its GitHub page by default),
   `review`, `blocker`, `isReadyToMerge`, `autoMergesWhenReady`, `baseBranch`,
-  `updatedAt` and `checks` (`name`, `status`, `workflow`, `isRequired`, `link`);
-  and `ciRuns`, each with `id`, `branch`, `commit` and `status`, and optionally
-  `subject`, `isFinished`, `createdAt`, `repository` (where it ran; none matches
-  every project), `workflows` (`name`, `status`, `jobs` of `id`, `name`,
-  `status`) and `failures` (`workflow`, `job`, `text`). Dates are ISO 8601.
+  `updatedAt`, `checks` (`name`, `status`, `workflow`, `isRequired`, `link`,
+  `log`, the text a failed log read answers) and `threads` (`id`, `path`,
+  `line`, `originalLine`, `isOutdated`, `diffHunk`, `comments` of `id`,
+  `author`, `body`, `url`), a thread with no comments refused as the host never
+  answers one; and `ciRuns`, each with `id`, `branch`, `commit` and `status`,
+  and optionally `subject`, `isFinished`, `createdAt`, `repository` (where it
+  ran; none matches every project), `workflows` (`name`, `status`, `jobs` of
+  `id`, `name`, `status`) and `failures` (`workflow`, `job`, `text`). Dates are
+  ISO 8601.
 - **A value the stand-in cannot read refuses all of it**, a key no record takes
   or one missing included, naming the key path, rather than dropping one run
   unseen. The helper reads the file and sends its text, so the app opens no path

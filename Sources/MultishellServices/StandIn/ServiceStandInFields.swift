@@ -7,9 +7,13 @@ enum ServiceStandInFields {
   private static let pullRequest: Set = [
     "number", "title", "url", "state", "review", "blocker", "autoMergesWhenReady",
     "isReadyToMerge", "headBranch", "headCommit", "headRepository", "baseBranch", "updatedAt",
-    "checks",
+    "checks", "threads",
   ]
-  private static let check: Set = ["name", "workflow", "status", "isRequired", "link"]
+  private static let check: Set = ["name", "workflow", "status", "isRequired", "link", "log"]
+  private static let thread: Set = [
+    "id", "path", "line", "originalLine", "isOutdated", "diffHunk", "comments",
+  ]
+  private static let comment: Set = ["id", "author", "body", "url"]
   private static let run: Set = [
     "id", "branch", "commit", "subject", "status", "isFinished", "createdAt", "repository",
     "workflows", "failures",
@@ -32,6 +36,16 @@ enum ServiceStandInFields {
         item,
         path throws(ServiceStandInUnreadable) in
         try refuseUnknownKeys(of: item, allowed: check, at: path)
+      }
+      try each(record["threads"], at: path + ["threads"]) {
+        item,
+        path throws(ServiceStandInUnreadable) in
+        try refuseUnknownKeys(of: item, allowed: thread, at: path)
+        try each(item["comments"], at: path + ["comments"]) {
+          entry,
+          path throws(ServiceStandInUnreadable) in
+          try refuseUnknownKeys(of: entry, allowed: comment, at: path)
+        }
       }
     }
     try each(root["ciRuns"], at: ["ciRuns"]) { record, path throws(ServiceStandInUnreadable) in

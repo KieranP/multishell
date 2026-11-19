@@ -54,7 +54,13 @@ struct CIHistoryRow: View {
       .buttonStyle(.plain)
       .accessibilityValue(AccessibilityText.ciStatus(run.status, isExpanded: isExpanded))
       if isExpanded {
-        CIWorkflowList(model: model, worktree: worktree, run: run, theme: theme)
+        CIWorkflowList(
+          model: model,
+          worktree: worktree,
+          run: run,
+          listing: model.ciWorkflowListing(of: run, sendsFailures: false),
+          theme: theme,
+        )
       }
     }
   }

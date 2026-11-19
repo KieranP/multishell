@@ -54,6 +54,9 @@ final class RemoteState {
   /// The panel's pull request checks and run history, read only while it
   /// shows them, by worktree; and each failed run's report.
   var checks: [Worktree.ID: PullRequestChecks] = [:]
+  /// The panel's worktree's alone, as run details are: thread text is not kept
+  /// for rows passed by.
+  var threads: [Worktree.ID: PullRequestThreads] = [:]
   var ciHistories: [Worktree.ID: CIRunHistory] = [:]
   var failureReports: [CIRun.ID: CIRunDetail<CIFailureReport>] = [:]
   /// Why each run's last workflows or report read failed, until one answers.

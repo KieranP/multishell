@@ -44,6 +44,11 @@ extension AppModel {
     platform.openWebPage(page)
   }
 
+  public func openThread(_ thread: PullRequestThread) {
+    guard let page = thread.webPage else { return }
+    platform.openWebPage(page)
+  }
+
   /// The host's new pull request page against the trunk. A branch the remote
   /// lacks, or commits it lacks, is asked about first; see services/create-and-merge.md.
   public func createPullRequest(for worktree: Worktree) async {

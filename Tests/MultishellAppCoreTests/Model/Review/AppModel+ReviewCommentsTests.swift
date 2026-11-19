@@ -162,9 +162,7 @@ struct AppModelReviewCommentsTests {
     let wrote = AtomicFlag()
     withObservationTracking {
       _ = harness.model.selectedReviewComments
-      _ = harness.model.reviewRecipientPicks
       _ = harness.model.reviewSendReceipts
-      _ = harness.model.focusedSessionHistory
     } onChange: {
       wrote.raise()
     }

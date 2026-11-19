@@ -88,6 +88,42 @@
       <key>other</key><string>%d failed</string>
     </dict>
   </dict>
+  <key>count.failures</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d failure</string>
+      <key>other</key><string>%d failures</string>
+    </dict>
+  </dict>
+  <key>count.items</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d item</string>
+      <key>other</key><string>%d items</string>
+    </dict>
+  </dict>
+  <key>count.jobs</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d job</string>
+      <key>other</key><string>%d jobs</string>
+    </dict>
+  </dict>
   <key>count.matches</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -172,6 +208,30 @@
       <key>other</key><string>%d steps above to clear first</string>
     </dict>
   </dict>
+  <key>count.merge-path-unresolved</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d unresolved</string>
+      <key>other</key><string>%d unresolved</string>
+    </dict>
+  </dict>
+  <key>count.merge-path-unresolved-comments</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d unresolved comment</string>
+      <key>other</key><string>%d unresolved comments</string>
+    </dict>
+  </dict>
   <key>count.processes</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>
@@ -182,6 +242,18 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d process</string>
       <key>other</key><string>%d processes</string>
+    </dict>
+  </dict>
+  <key>count.reading-logs</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>Reading %d log</string>
+      <key>other</key><string>Reading %d logs</string>
     </dict>
   </dict>
   <key>count.runs</key>
@@ -350,6 +422,18 @@
       <key>NSStringFormatValueTypeKey</key><string>d</string>
       <key>one</key><string>%d more new file not listed.</string>
       <key>other</key><string>%d more new files not listed.</string>
+    </dict>
+  </dict>
+  <key>handoff.earlier-lines-cut</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d earlier line cut.</string>
+      <key>other</key><string>%d earlier lines cut.</string>
     </dict>
   </dict>
   <key>hook.stopped-after-seconds</key>

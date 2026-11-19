@@ -10,4 +10,16 @@ extension AppModel {
   func worktree(withControlID id: String) -> Worktree? {
     workspace.worktrees.first { ControlID.worktree($0.id) == id }
   }
+
+  /// `reply` in the worktree named, else the one in view; refused where there is none.
+  func replyingInWorktree(
+    _ id: String?,
+    _ reply: (Worktree) async -> ControlReply,
+  ) async -> ControlReply {
+    let named = id.map { worktree(withControlID: $0) } ?? worktreeInView
+    guard let worktree = named else {
+      return .refused(id.map { .noWorktree(id: $0) } ?? .nothingInView)
+    }
+    return await reply(worktree)
+  }
 }

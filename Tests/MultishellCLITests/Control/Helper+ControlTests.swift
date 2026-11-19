@@ -257,6 +257,47 @@ struct HelperControlTests {
       ),
       (["review", "clear", "--sent"], .clearReviewComments(worktree: nil, sentOnly: true)),
       (
+        ["pr", "send"],
+        .sendPullRequestFeedback(
+          worktree: nil,
+          to: nil,
+          includesChecks: true,
+          includesThreads: true,
+        ),
+      ),
+      (
+        ["pr", "send", "--checks", "--worktree", "w-89abcdef"],
+        .sendPullRequestFeedback(
+          worktree: "w-89abcdef",
+          to: nil,
+          includesChecks: true,
+          includesThreads: false,
+        ),
+      ),
+      (
+        ["pr", "send", "--threads", "--to", id.uuidString],
+        .sendPullRequestFeedback(
+          worktree: nil,
+          to: id,
+          includesChecks: false,
+          includesThreads: true,
+        ),
+      ),
+      (
+        ["pr", "send", "--threads", "--checks"],
+        .sendPullRequestFeedback(
+          worktree: nil,
+          to: nil,
+          includesChecks: true,
+          includesThreads: true,
+        ),
+      ),
+      (["ci", "send"], .sendCIFailures(worktree: nil, to: nil)),
+      (
+        ["ci", "send", "--to", id.uuidString, "--worktree", "w-89abcdef"],
+        .sendCIFailures(worktree: "w-89abcdef", to: id),
+      ),
+      (
         ["review", "clear", "--worktree", "w-89abcdef"],
         .clearReviewComments(worktree: "w-89abcdef", sentOnly: false),
       ),
@@ -377,6 +418,14 @@ struct HelperControlTests {
       ["review", "add", "a.swift", "1"],
       ["review", "send", "--to", "not-an-id"],
       ["review", "list", "--worktree", "main"],
+      ["pr", "send", "--to", "not-an-id"],
+      ["pr", "send", "--worktree", "main"],
+      ["pr", "send", "extra"],
+      ["pr", "list"],
+      ["pr"],
+      ["ci", "send", "--checks"],
+      ["ci", "send", "--to", "not-an-id"],
+      ["ci", "list"],
       ["tabs", "open", "--"],
       ["tabs", "open", "--agent", "claude", "--", "make"],
       ["tabs", "move", UUID().uuidString],
