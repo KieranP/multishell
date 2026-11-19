@@ -183,8 +183,8 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     views[id]?.performBindingAction(GhosttySearchActions.action(for: step)) ?? false
   }
 
-  func apply(_ theme: Theme, appearance: Appearance) {
-    lazyRuntime.apply(theme, appearance: appearance)
+  func apply(_ theme: Theme, appearance: Appearance, unbinding keys: [KeyCombination]) {
+    lazyRuntime.apply(theme, appearance: appearance, unbinding: keys)
   }
 
   /// A turn later, and only while still true: a frame raises this inside

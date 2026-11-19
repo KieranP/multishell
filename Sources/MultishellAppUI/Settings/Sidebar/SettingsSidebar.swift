@@ -2,7 +2,7 @@ import MultishellAppCore
 import SwiftUI
 
 /// The settings window's sidebar: whose settings, then their pages. A split
-/// page lists its parts beneath it, its own row opening the first.
+/// page lists its parts beneath it while open, its own row opening the first.
 struct SettingsSidebar: View {
   let model: AppModel
   let location: SettingsLocation
@@ -50,12 +50,13 @@ struct SettingsSidebar: View {
       SettingsSidebarRow(title: page.title, page: page, isSelected: location.selects(page)) {
         show(first)
       }
-      if first.isPart {
+      if first.isPart, location.showsParts(of: page) {
         ForEach(sections, id: \.self) { section in
           SettingsSidebarRow(
             title: section.partTitle ?? page.title,
             page: nil,
             isSelected: location.section == section,
+            changes: model.changedShortcutCount(in: section),
           ) { show(section) }
         }
       }

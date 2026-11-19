@@ -66,13 +66,17 @@ shortcuts, dialogs, icons and row orders.
   brings its sort key and caption wording with it, as the compiler asks for
   both. Raise the table's width in ems in `DebugTableLayout` by hand. Nothing
   measures the columns, so one left short crowds them before the rows stack.
-- **A keyboard shortcut.** An entry in the shortcuts table, listed in `all`,
-  which both the menu item and the engine's unbind derive from.
+- **A keyboard shortcut.** A `ShortcutCommand` case with its default, its menu
+  item reading `.keyboardShortcut(command, in: model)`, its title in
+  `ShortcutCommand+MenuTitle` and a place in a `ShortcutGroup` in the menu's
+  order, which ShortcutGroupTests checks lists every command once. The engine's
+  unbind and the `config global` row follow from the case (design/shortcuts.md).
 - **A key the engine names rather than takes the character of** needs a case in
   the name mapping, or the config carries a scalar it cannot parse.
-- **A combination the system owns goes in the system-owned list**, not on a menu
-  item: the WindowServer takes it before a menu bar sees it. Declared but left
-  out of `all` means it works everywhere but a pane.
+- **A combination the system owns goes in the reserved table**,
+  `ReservedShortcut`, not on a menu item: the WindowServer takes it before a
+  menu bar sees it. The table both refuses it on the Shortcuts page and unbinds
+  it from the surface.
 - **The clipboard combinations are kept by the surface**; a plain key the engine
   binds that must reach the program instead is released by the engine's own key
   name, nothing of ours being on the key.

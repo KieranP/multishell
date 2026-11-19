@@ -12,6 +12,10 @@ public enum ControlSettingsPage: String, Codable, CaseIterable, Sendable {
   case hooksEnvironment = "hooks-environment"
   case integrations
   case notifications
+  case shortcutsEdit = "shortcuts-edit"
+  case shortcutsFile = "shortcuts-file"
+  case shortcutsTerminal = "shortcuts-terminal"
+  case shortcutsView = "shortcuts-view"
   case terminal
   case worktrees
 }

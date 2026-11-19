@@ -10,7 +10,7 @@ struct SettingsPageTests {
   @Test func eachScopeListsItsOwnPagesInTheWindowsOrder() {
     #expect(
       SettingsPage.pages(in: .allProjects)
-        == [.general, .worktrees, .terminal, .agents, .notifications, .appearance]
+        == [.general, .worktrees, .terminal, .agents, .notifications, .appearance, .shortcuts]
     )
     #expect(
       SettingsPage.pages(in: Self.project)
@@ -33,6 +33,11 @@ struct SettingsPageTests {
   @Test func onlyAllProjectsAgentsAndAProjectsHooksAreSplitIntoParts() {
     #expect(SettingsPage.agents.sections(in: .allProjects) == [.agentSettings, .agentHooks])
     #expect(SettingsPage.agents.sections(in: Self.project) == [.agents])
+    #expect(
+      SettingsPage.shortcuts.sections(in: .allProjects)
+        == [.shortcutsFile, .shortcutsEdit, .shortcutsView, .shortcutsTerminal]
+    )
+    #expect(SettingsPage.shortcuts.sections(in: Self.project).isEmpty, "global only")
     #expect(
       SettingsPage.hooks.sections(in: Self.project)
         == [.hooksCreate, .hooksDelete, .hooksEnvironment]

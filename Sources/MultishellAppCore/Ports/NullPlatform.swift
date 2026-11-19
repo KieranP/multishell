@@ -63,4 +63,5 @@ public final class NullPlatform: Platform {
   public func performMenuItemOnItsTurn(_ path: [String]) async -> PlatformMenuOutcome { .notFound }
   public func chooseMenuItem(_ path: [String]) {}
   public func hasFontFamily(_ family: String) -> Bool { false }
+  public func setMenuShortcuts(_ shortcuts: [MenuShortcut]) {}
 }

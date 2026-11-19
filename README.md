@@ -245,6 +245,11 @@ been in that state.
 | ⌘F   | Find in the pane or file                                       |
 | ⇧⌘O  | Open the worktree in your editor                               |
 
+These are the defaults. Settings > Shortcuts changes any command's keys or
+removes them, and
+`multishell config global set shortcuts.split-right cmd+backslash` does the same
+from a script.
+
 ### Scripting
 
 The `multishell` command drives the app: projects, worktrees, tabs, panes,

@@ -25,6 +25,7 @@ struct SidebarView: View {
     VStack(spacing: 0) {
       SidebarHeader(
         showsFilterField: model.showsSidebarFilter,
+        addProjectHelp: t("sidebar.add-project", model.keysInParentheses(.addProject)),
         theme: theme,
         toggleFilter: model.toggleSidebarFilter,
         addProject: { Task { await model.addProjectFromPicker() } },

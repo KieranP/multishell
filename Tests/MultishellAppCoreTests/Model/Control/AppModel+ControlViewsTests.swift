@@ -104,7 +104,8 @@ struct AppModelControlViewsTests {
             .hooksCreate,
             pages: [
               .general, .worktrees, .terminal, .agents, .agentSettings, .agentHooks,
-              .notifications, .appearance,
+              .notifications, .appearance, .shortcutsFile, .shortcutsEdit, .shortcutsView,
+              .shortcutsTerminal,
             ],
           )
         )

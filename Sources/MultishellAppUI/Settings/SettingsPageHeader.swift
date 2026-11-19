@@ -1,11 +1,12 @@
 import SwiftUI
 
 /// The band atop the settings page, where the hidden title bar leaves room:
-/// the page, the part shown, and whose settings they are.
-struct SettingsPageHeader: View {
+/// the page, the part shown, whose settings they are, and the page's own button.
+struct SettingsPageHeader<Accessory: View>: View {
   let title: String
   let part: String?
   let caption: String
+  @ViewBuilder let accessory: () -> Accessory
 
   var body: some View {
     HStack(spacing: 6) {
@@ -22,6 +23,7 @@ struct SettingsPageHeader: View {
         .foregroundStyle(SettingsColors.secondaryText)
         .lineLimit(1)
         .truncationMode(.head)
+      accessory()
     }
     .padding(.horizontal, UIMetrics.settingsHeaderSideInset)
     .frame(height: UIMetrics.settingsHeaderHeight)

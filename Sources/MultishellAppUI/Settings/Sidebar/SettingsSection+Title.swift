@@ -9,6 +9,10 @@ extension SettingsSection {
     case .hooksCreate: t("hooks.create")
     case .hooksDelete: t("hooks.delete")
     case .hooksEnvironment: t("hooks.environment")
+    case .shortcutsEdit: t("settings.shortcuts-edit")
+    case .shortcutsFile: t("settings.shortcuts-file")
+    case .shortcutsTerminal: t("settings.shortcuts-terminal")
+    case .shortcutsView: t("settings.shortcuts-view")
     case .agents, .appearance, .general, .integrations, .notifications, .terminal, .worktrees: nil
     }
   }

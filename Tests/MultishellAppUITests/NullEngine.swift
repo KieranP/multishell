@@ -20,6 +20,6 @@ final class NullEngine: TerminalSurfaceHost {
   func selectionText(of id: TerminalSession.ID) -> String? { nil }
   func screenshot(of id: TerminalSession.ID) -> Data? { nil }
   func frame(of id: TerminalSession.ID) -> CGRect? { nil }
-  func apply(_ theme: Theme, appearance: Appearance) {}
+  func apply(_ theme: Theme, appearance: Appearance, unbinding: [KeyCombination]) {}
   func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
 }

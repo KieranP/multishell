@@ -34,7 +34,13 @@ struct TabStripSplitButton: View {
     .disabled(!model.canSplitShownTab(in: groupID))
     // Outside `disabled`, so a split enabled under a resting pointer hears it.
     .tracksHover($isHovered)
-    .help(TabStripButtonText.splitHelp(axis, isFocusedGroup: isFocusedGroup))
+    .help(
+      TabStripButtonText.splitHelp(
+        axis,
+        isFocusedGroup: isFocusedGroup,
+        keys: model.shortcutKeys(for: TabStripButtonText.splitCommand(axis)),
+      )
+    )
     .accessibilityLabel(TabStripButtonText.splitLabel(axis))
   }
 }

@@ -77,8 +77,9 @@ it reads. Newest at the bottom.
   only under the US layout.
 - **Ghostty keybinds are unbound by name**, not cleared wholesale, which also
   removes word movement and delete-to-start.
-- **Names and menu items come from one shortcuts table**; a shortcut in only one
-  list was a keystroke that worked everywhere but a pane.
+- **Names and menu items come from one shortcuts table**, the defaults with the
+  user's overrides over them (shortcuts.md); a shortcut in only one list was a
+  keystroke that worked everywhere but a pane.
 - **Clipboard binds stay bound**: in a pane the copy key is Ghostty's copy of
   the terminal's selection, and unbinding it hands the keystroke to a menu item
   with nothing to copy.

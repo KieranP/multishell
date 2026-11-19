@@ -10,6 +10,7 @@ extension SettingsPage {
     case .hooks: t("settings.hooks")
     case .integrations: t("settings.integrations")
     case .notifications: t("settings.notifications")
+    case .shortcuts: t("settings.shortcuts")
     case .terminal: t("settings.terminal")
     case .worktrees: t("settings.worktrees")
     }
@@ -24,6 +25,7 @@ extension SettingsPage {
     case .hooks: Color(red: 0.878, green: 0.659, blue: 0)
     case .integrations: Color(red: 0.078, green: 0.639, blue: 0.639)
     case .notifications: Color(red: 1, green: 0.231, blue: 0.188)
+    case .shortcuts: Color(red: 0.204, green: 0.78, blue: 0.349)
     case .terminal: Color(red: 0.227, green: 0.227, blue: 0.235)
     case .worktrees: Color(red: 0.941, green: 0.541, blue: 0.141)
     }

@@ -10,7 +10,11 @@ extension Helper {
         defaultShell takes a shell's full path, login or custom.
         renameModel and renameEffort take only what renameAgentID's agent
         lists, and are cleared when it changes; renameEffort is also cleared
-        by a renameModel that does not take it.
+        by a renameModel that does not take it. shortcuts.split-right and
+        the rest take keys as the state file spells them, cmd+backslash, or
+        as a menu draws them, ⌘\\, or none; an empty VALUE is the default.
+        Keys the Settings page would refuse or another command holds are
+        refused.
     usage: multishell config project PROJECT_ID list
     usage: multishell config project PROJECT_ID get KEY
     usage: multishell config project PROJECT_ID set KEY VALUE

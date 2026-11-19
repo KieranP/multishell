@@ -856,5 +856,9 @@ extension WorkspaceStore {
   public func setShowsAllTerminals(_ shows: Bool) {
     workspace.showsAllTerminals = shows
   }
+
+  public func setShortcutOverrides(_ overrides: ShortcutOverrides) {
+    workspace.shortcutOverrides = overrides
+  }
 }
 // swiftlint:enable no_grouping_extension

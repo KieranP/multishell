@@ -25,8 +25,8 @@ final class LazyGhosttyRuntime {
     self.readBase = readBase
   }
 
-  func apply(_ theme: Theme, appearance: Appearance) {
-    let layer = GhosttyAppLayer.configuration(theme, appearance)
+  func apply(_ theme: Theme, appearance: Appearance, unbinding keys: [KeyCombination]) {
+    let layer = GhosttyAppLayer.configuration(theme, appearance, unbinding: keys)
     latestAppLayer = (layer, theme.isDark)
     builtRuntime?.apply(appLayer: layer)
     builtRuntime?.setColorScheme(isDark: theme.isDark)

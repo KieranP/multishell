@@ -5,6 +5,8 @@ import SwiftUI
 /// bar is hidden. Add Project is a folder-plus so it does not read as a row's +.
 struct SidebarHeader: View {
   let showsFilterField: Bool
+  /// The Add Project button's tooltip, naming its keys in force.
+  let addProjectHelp: String
   let theme: Theme
   let toggleFilter: () -> Void
   let addProject: () -> Void
@@ -21,7 +23,7 @@ struct SidebarHeader: View {
       )
       HeaderGlyphButton(
         symbol: "folder.badge.plus",
-        help: t("sidebar.add-project"),
+        help: addProjectHelp,
         palette: theme.projectsPanel,
         resting: theme.projectsPanel.textSecondary,
         opensAWindow: true,

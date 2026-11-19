@@ -3,7 +3,11 @@ import MultishellCore
 /// The layer the app hands libghostty on top of the user's files: the theme,
 /// the font, the keybinds it unbinds and the integration it leaves to ours.
 enum GhosttyAppLayer {
-  static func configuration(_ theme: Theme, _ appearance: Appearance) -> GhosttyConfigText {
+  static func configuration(
+    _ theme: Theme,
+    _ appearance: Appearance,
+    unbinding keys: [KeyCombination],
+  ) -> GhosttyConfigText {
     GhosttyConfigText { config in
       // libghostty takes no alpha, and drops a line it refuses without a word.
       func set(_ name: String, _ key: TerminalColorKey) {
@@ -32,9 +36,9 @@ enum GhosttyAppLayer {
       // the engine injects nothing into a shell; see terminals/shell-integration.md.
       config.set("shell-integration", "none")
 
-      // Ghostty's defaults bind our shortcuts to actions this embedding
-      // cannot perform, so unbind exactly those.
-      for combo in GhosttyUnbinds.all {
+      // The menus' keys and the reserved ones, so the surface takes none before
+      // the menu bar or the system; Docs/design/shortcuts.md.
+      for combo in GhosttyUnbinds.all(unbinding: keys) {
         config.set("keybind", "\(combo)=unbind")
       }
     }

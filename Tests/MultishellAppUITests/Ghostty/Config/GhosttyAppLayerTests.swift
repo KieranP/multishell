@@ -10,7 +10,7 @@ struct GhosttyAppLayerTests {
   /// search colour or an unbind gone. Readable is WCAG's 3:1 for large text.
   @Test func everyBuiltInThemeSetsReadableSearchColoursInAConfigurationLibghosttyAccepts() throws {
     for theme in Theme.builtins {
-      let rendered = GhosttyAppLayer.configuration(theme, Appearance()).rendered
+      let rendered = GhosttyAppLayer.configuration(theme, Appearance(), unbinding: []).rendered
       #expect(rendered.contains("search-background = #"), "\(theme.name)")
       #expect(rendered.contains("search-selected-background = #"), "\(theme.name)")
       #expect(rendered.contains("search-foreground = #"), "\(theme.name)")
@@ -31,7 +31,8 @@ struct GhosttyAppLayerTests {
   /// `font-family` is a list in Ghostty; appended to a user's, ours was only a fallback.
   @Test func theFontChosenInSettingsEmptiesTheFontListBeforeNamingItself() throws {
     let appearance = Appearance(terminalFontName: "Menlo")
-    let rendered = GhosttyAppLayer.configuration(Theme.builtins[0], appearance).rendered
+    let rendered = GhosttyAppLayer.configuration(Theme.builtins[0], appearance, unbinding: [])
+      .rendered
     let cleared = try #require(rendered.range(of: "font-family = \"\"\n"))
     let ours = try #require(rendered.range(of: "font-family = Menlo"))
     #expect(cleared.upperBound <= ours.lowerBound)
@@ -40,7 +41,8 @@ struct GhosttyAppLayerTests {
   }
 
   @Test func theAppLayerTurnsTheEnginesShellIntegrationOff() {
-    let rendered = GhosttyAppLayer.configuration(Theme.builtins[0], Appearance()).rendered
+    let rendered = GhosttyAppLayer.configuration(Theme.builtins[0], Appearance(), unbinding: [])
+      .rendered
     #expect(rendered.contains("shell-integration = none"))
   }
 
@@ -55,7 +57,7 @@ struct GhosttyAppLayerTests {
         """##.utf8
       ),
     )
-    let rendered = GhosttyAppLayer.configuration(theme, Appearance()).rendered
+    let rendered = GhosttyAppLayer.configuration(theme, Appearance(), unbinding: []).rendered
     #expect(rendered.contains("background = #102030\n"))
     #expect(rendered.contains("cursor-text = #a0f0c0"))
     #expect(rendered.contains("search-selected-foreground = #a0f0c0"))

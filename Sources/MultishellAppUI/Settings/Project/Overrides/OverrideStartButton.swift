@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// The Override column while the project follows: "Same", reading "Override" under
-/// the pointer, and starting an override seeded with the value it followed.
+/// "Same", reading "Override" under the pointer, for a value that follows another:
+/// a project's setting the global, or a command its default.
 struct OverrideStartButton: View {
-  /// The setting's row label, for the tooltip and VoiceOver.
-  let label: String
+  /// The tooltip and VoiceOver's label, naming the row's setting.
+  let help: String
   let start: () -> Void
 
   @State private var isHovered = false
@@ -27,7 +27,7 @@ struct OverrideStartButton: View {
     }
     .buttonStyle(.plain)
     .tracksHover($isHovered)
-    .help(t("project.override-help", label))
-    .accessibilityLabel(t("project.override-help", label))
+    .help(help)
+    .accessibilityLabel(help)
   }
 }

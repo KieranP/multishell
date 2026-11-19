@@ -25,7 +25,8 @@ struct ProjectHooksPage: View {
       case .hooksEnvironment: HookEnvironmentSection(model: model)
 
       case .agentHooks, .agents, .agentSettings, .appearance, .general, .integrations,
-        .notifications, .terminal, .worktrees:
+        .notifications, .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView,
+        .terminal, .worktrees:
         EmptyView()
       }
     }

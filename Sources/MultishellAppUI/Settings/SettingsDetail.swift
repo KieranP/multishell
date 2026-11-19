@@ -14,7 +14,9 @@ struct SettingsDetail: View {
         title: location.section.page.title,
         part: location.section.partTitle,
         caption: model.settingsHeaderCaption,
-      )
+      ) {
+        if location.section.page == .shortcuts { ShortcutsRestoreButton(model: model) }
+      }
       page
         // A fresh page per place, so a page reused for another project or
         // part starts scrolled to the top.
@@ -43,6 +45,10 @@ struct SettingsDetail: View {
     case .appearance: AppAppearancePage(model: model)
     case .general: AppGeneralPage(model: model)
     case .notifications: AppNotificationsPage(model: model)
+
+    case .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView:
+      AppShortcutsPage(model: model, section: location.section)
+
     case .terminal: AppTerminalPage(model: model)
     case .worktrees: AppWorktreesPage(model: model)
     case .agents, .hooksCreate, .hooksDelete, .hooksEnvironment, .integrations: EmptyView()
@@ -65,7 +71,9 @@ struct SettingsDetail: View {
 
     case .worktrees: ProjectWorktreesPage(model: model, project: project)
 
-    case .agentHooks, .agentSettings, .appearance, .notifications: EmptyView()
+    case .agentHooks, .agentSettings, .appearance, .notifications, .shortcutsEdit, .shortcutsFile,
+      .shortcutsTerminal, .shortcutsView:
+      EmptyView()
     }
   }
 }

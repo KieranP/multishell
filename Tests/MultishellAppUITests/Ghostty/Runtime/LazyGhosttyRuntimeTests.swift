@@ -20,7 +20,7 @@ struct LazyGhosttyRuntimeTests {
     let reads = BaseReads()
     let lazyRuntime = LazyGhosttyRuntime(readBase: reads.read)
 
-    lazyRuntime.apply(Theme.builtins[0], appearance: Appearance())
+    lazyRuntime.apply(Theme.builtins[0], appearance: Appearance(), unbinding: [])
 
     #expect(reads.count == 0)
   }

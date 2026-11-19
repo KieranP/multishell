@@ -536,6 +536,7 @@
 "shell.named-login-shell" = "the login shell (%@)";
 "shell.path-blank" = "Blank, so tabs run the login shell, %@.";
 "shell.path-not-executable" = "Nothing executable at that path; a new tab would fail to start.";
+"shortcuts.in-parentheses" = " (%@)";
 "sidebar.counts" = "%1$@ · %2$@";
 "sidebar.no-projects" = "No projects yet";
 "sidebar.nothing-matches" = "Nothing matches";
@@ -662,10 +663,10 @@
 "tab.new-named-agent" = "New %@ Tab";
 "tab.shell" = "Shell";
 "tab.split-down" = "Split Down";
-"tab.split-down-here" = "Split Down (⇧⌘D)";
+"tab.split-down-here" = "Split Down%@";
 "tab.split-down-in-group" = "Split Down in This Group";
 "tab.split-right" = "Split Right";
-"tab.split-right-here" = "Split Right (⌘D)";
+"tab.split-right-here" = "Split Right%@";
 "tab.split-right-in-group" = "Split Right in This Group";
 "worker.background-shell" = "background shell";
 "worker.occurrences" = "×%d";

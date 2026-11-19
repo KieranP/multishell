@@ -32,18 +32,18 @@ struct MultishellCommands: Commands {
 
   private var newItems: some Commands {
     CommandGroup(replacing: .newItem) {
-      Button(t("menu.new-tab")) { model.newTab() }
-        .keyboardShortcut(AppShortcutCatalogue.newTab)
-      Button(t("menu.new-shell-tab")) { model.newShellTab() }
-        .keyboardShortcut(AppShortcutCatalogue.newShellTab)
-      Button(t("menu.new-agent-tab")) { model.newAgentTab() }
-        .keyboardShortcut(AppShortcutCatalogue.newAgentTab)
-      Button(t("menu.new-worktree")) { model.requestNewWorktree() }
-        .keyboardShortcut(AppShortcutCatalogue.newWorktree)
-      Button(t("menu.add-project")) { Task { await model.addProjectFromPicker() } }
-        .keyboardShortcut(AppShortcutCatalogue.addProject)
-      Button(t("action.open-in-editor")) { model.openWorktreeInViewInEditor() }
-        .keyboardShortcut(AppShortcutCatalogue.openInEditor)
+      Button(ShortcutCommand.newTab.menuTitle) { model.newTab() }
+        .keyboardShortcut(.newTab, in: model)
+      Button(ShortcutCommand.newShellTab.menuTitle) { model.newShellTab() }
+        .keyboardShortcut(.newShellTab, in: model)
+      Button(ShortcutCommand.newAgentTab.menuTitle) { model.newAgentTab() }
+        .keyboardShortcut(.newAgentTab, in: model)
+      Button(ShortcutCommand.newWorktree.menuTitle) { model.requestNewWorktree() }
+        .keyboardShortcut(.newWorktree, in: model)
+      Button(ShortcutCommand.addProject.menuTitle) { Task { await model.addProjectFromPicker() } }
+        .keyboardShortcut(.addProject, in: model)
+      Button(ShortcutCommand.openInEditor.menuTitle) { model.openWorktreeInViewInEditor() }
+        .keyboardShortcut(.openInEditor, in: model)
     }
   }
 
@@ -57,16 +57,22 @@ struct MultishellCommands: Commands {
   // lags the responder chain. These send the selectors and stay enabled.
   private var pasteboardItems: some Commands {
     CommandGroup(replacing: .pasteboard) {
-      Button(t("menu.cut")) { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }
-        .keyboardShortcut(AppShortcutCatalogue.cut)
-      Button(t("action.copy")) { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
-        .keyboardShortcut(AppShortcutCatalogue.copy)
-      Button(t("menu.paste")) { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }
-        .keyboardShortcut(AppShortcutCatalogue.paste)
-      Button(t("menu.select-all")) {
+      Button(ShortcutCommand.cut.menuTitle) {
+        NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil)
+      }
+      .keyboardShortcut(.cut, in: model)
+      Button(ShortcutCommand.copy.menuTitle) {
+        NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
+      }
+      .keyboardShortcut(.copy, in: model)
+      Button(ShortcutCommand.paste.menuTitle) {
+        NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil)
+      }
+      .keyboardShortcut(.paste, in: model)
+      Button(ShortcutCommand.selectAll.menuTitle) {
         NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
       }
-      .keyboardShortcut(AppShortcutCatalogue.selectAll)
+      .keyboardShortcut(.selectAll, in: model)
     }
   }
 
@@ -74,16 +80,16 @@ struct MultishellCommands: Commands {
   // editor keeps one the window never sees, and asking covers both.
   private var undoItems: some Commands {
     CommandGroup(replacing: .undoRedo) {
-      Button(t("menu.undo")) {
+      Button(ShortcutCommand.undo.menuTitle) {
         guard let manager = Self.focusedUndoManager, manager.canUndo else { return }
         manager.undo()
       }
-      .keyboardShortcut(AppShortcutCatalogue.undo)
-      Button(t("menu.redo")) {
+      .keyboardShortcut(.undo, in: model)
+      Button(ShortcutCommand.redo.menuTitle) {
         guard let manager = Self.focusedUndoManager, manager.canRedo else { return }
         manager.redo()
       }
-      .keyboardShortcut(AppShortcutCatalogue.redo)
+      .keyboardShortcut(.redo, in: model)
     }
   }
 
@@ -92,18 +98,18 @@ struct MultishellCommands: Commands {
   private var findMenu: some Commands {
     CommandGroup(replacing: .textEditing) {
       Menu(t("menu.find")) {
-        Button(t("menu.find-item")) { model.showFind() }
-          .keyboardShortcut(AppShortcutCatalogue.find)
+        Button(ShortcutCommand.find.menuTitle) { model.showFind() }
+          .keyboardShortcut(.find, in: model)
           .disabled(!model.findIsAvailable)
-        Button(t("menu.find-next")) { model.findNext() }
-          .keyboardShortcut(AppShortcutCatalogue.findNext)
+        Button(ShortcutCommand.findNext.menuTitle) { model.findNext() }
+          .keyboardShortcut(.findNext, in: model)
           .disabled(!model.findIsOpenInView)
-        Button(t("menu.find-previous")) { model.findPrevious() }
-          .keyboardShortcut(AppShortcutCatalogue.findPrevious)
+        Button(ShortcutCommand.findPrevious.menuTitle) { model.findPrevious() }
+          .keyboardShortcut(.findPrevious, in: model)
           .disabled(!model.findIsOpenInView)
         Divider()
-        Button(t("menu.close-find")) { model.closeFind() }
-          .keyboardShortcut(AppShortcutCatalogue.closeFind)
+        Button(ShortcutCommand.closeFind.menuTitle) { model.closeFind() }
+          .keyboardShortcut(.closeFind, in: model)
           .disabled(!model.findIsOpenInView)
       }
     }
@@ -111,10 +117,10 @@ struct MultishellCommands: Commands {
 
   private var closeItems: some Commands {
     CommandGroup(replacing: .saveItem) {
-      Button(t("menu.close-pane")) { model.closeActivePane() }
-        .keyboardShortcut(AppShortcutCatalogue.closePane)
-      Button(t("menu.close-tab")) { model.closeActiveTab() }
-        .keyboardShortcut(AppShortcutCatalogue.closeTab)
+      Button(ShortcutCommand.closePane.menuTitle) { model.closeActivePane() }
+        .keyboardShortcut(.closePane, in: model)
+      Button(ShortcutCommand.closeTab.menuTitle) { model.closeActiveTab() }
+        .keyboardShortcut(.closeTab, in: model)
     }
   }
 
@@ -122,18 +128,20 @@ struct MultishellCommands: Commands {
   // AppKit's: the board and the debug tools change what is shown, not act.
   private var viewItems: some Commands {
     CommandGroup(after: .toolbar) {
-      Button(t("label.agents")) { model.toggleAgentBoard() }
-        .keyboardShortcut(AppShortcutCatalogue.toggleAgentBoard)
-      Button(t("menu.quick-switcher")) { model.toggleQuickSwitcher(.all) }
-        .keyboardShortcut(AppShortcutCatalogue.quickSwitcher)
-      Button(t("menu.quick-switcher-commands")) { model.toggleQuickSwitcher(.commands) }
-        .keyboardShortcut(AppShortcutCatalogue.quickSwitcherCommands)
-      Toggle(t("menu.files-pane"), isOn: model.filesPanelBinding(on: .files))
-        .keyboardShortcut(AppShortcutCatalogue.filesPane)
-      Toggle(t("menu.changes-pane"), isOn: model.filesPanelBinding(on: .changes))
-        .keyboardShortcut(AppShortcutCatalogue.changesPane)
-      Toggle(t("menu.review-pane"), isOn: model.filesPanelBinding(on: .review))
-        .keyboardShortcut(AppShortcutCatalogue.reviewPane)
+      Button(ShortcutCommand.toggleAgentBoard.menuTitle) { model.toggleAgentBoard() }
+        .keyboardShortcut(.toggleAgentBoard, in: model)
+      Button(ShortcutCommand.quickSwitcher.menuTitle) { model.toggleQuickSwitcher(.all) }
+        .keyboardShortcut(.quickSwitcher, in: model)
+      Button(ShortcutCommand.quickSwitcherCommands.menuTitle) {
+        model.toggleQuickSwitcher(.commands)
+      }
+      .keyboardShortcut(.quickSwitcherCommands, in: model)
+      Toggle(ShortcutCommand.filesPane.menuTitle, isOn: model.filesPanelBinding(on: .files))
+        .keyboardShortcut(.filesPane, in: model)
+      Toggle(ShortcutCommand.changesPane.menuTitle, isOn: model.filesPanelBinding(on: .changes))
+        .keyboardShortcut(.changesPane, in: model)
+      Toggle(ShortcutCommand.reviewPane.menuTitle, isOn: model.filesPanelBinding(on: .review))
+        .keyboardShortcut(.reviewPane, in: model)
       Toggle(
         t("menu.show-hidden-files"),
         isOn: model.settingBinding(\.showsIgnoredFiles, write: model.setShowsIgnoredFiles),
@@ -145,24 +153,24 @@ struct MultishellCommands: Commands {
 
   private var terminalMenu: some Commands {
     CommandMenu(t("menu.terminal")) {
-      Button(t("menu.split-right")) { model.splitActivePane(.horizontal) }
-        .keyboardShortcut(AppShortcutCatalogue.splitRight)
-      Button(t("menu.split-down")) { model.splitActivePane(.vertical) }
-        .keyboardShortcut(AppShortcutCatalogue.splitDown)
+      Button(ShortcutCommand.splitRight.menuTitle) { model.splitActivePane(.horizontal) }
+        .keyboardShortcut(.splitRight, in: model)
+      Button(ShortcutCommand.splitDown.menuTitle) { model.splitActivePane(.vertical) }
+        .keyboardShortcut(.splitDown, in: model)
       Divider()
       // Beside the splits, which is the layout it is a step out from: a
       // split divides a tab, this divides the worktree.
-      Button(t("menu.move-tab-to-new-group")) { model.moveActiveTabToNewGroup() }
-        .keyboardShortcut(AppShortcutCatalogue.moveTabToNewGroup)
-      Button(t("menu.focus-next-group")) { model.focusNextGroup() }
-        .keyboardShortcut(AppShortcutCatalogue.nextGroup)
-      Button(t("menu.focus-previous-group")) { model.focusPreviousGroup() }
-        .keyboardShortcut(AppShortcutCatalogue.previousGroup)
+      Button(ShortcutCommand.moveTabToNewGroup.menuTitle) { model.moveActiveTabToNewGroup() }
+        .keyboardShortcut(.moveTabToNewGroup, in: model)
+      Button(ShortcutCommand.focusNextGroup.menuTitle) { model.focusNextGroup() }
+        .keyboardShortcut(.focusNextGroup, in: model)
+      Button(ShortcutCommand.focusPreviousGroup.menuTitle) { model.focusPreviousGroup() }
+        .keyboardShortcut(.focusPreviousGroup, in: model)
       Divider()
-      Button(t("menu.next-tab")) { model.activateNextTab() }
-        .keyboardShortcut(AppShortcutCatalogue.nextTab)
-      Button(t("menu.previous-tab")) { model.activatePreviousTab() }
-        .keyboardShortcut(AppShortcutCatalogue.previousTab)
+      Button(ShortcutCommand.nextTab.menuTitle) { model.activateNextTab() }
+        .keyboardShortcut(.nextTab, in: model)
+      Button(ShortcutCommand.previousTab.menuTitle) { model.activatePreviousTab() }
+        .keyboardShortcut(.previousTab, in: model)
       Divider()
       ThemePicker(title: t("menu.theme"), model: model)
     }

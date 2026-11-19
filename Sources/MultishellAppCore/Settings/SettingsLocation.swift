@@ -12,6 +12,12 @@ public struct SettingsLocation: Hashable, Sendable {
     !section.isPart && section.page == page
   }
 
+  /// Whether the sidebar lists a split page's parts: only while one of them is
+  /// open, so the pages around it stay one row each.
+  public func showsParts(of page: SettingsPage) -> Bool {
+    section.page == page
+  }
+
   /// The section `offset` rows down the sidebar's `pages`, their parts
   /// counted, held to the first and last, onto the list where it hides this one.
   func stepped(by offset: Int, among pages: [SettingsPage]) -> Self {

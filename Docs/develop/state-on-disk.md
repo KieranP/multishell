@@ -21,7 +21,9 @@ Under `~/Library/Application Support/Multishell`.
   scroll, each worktree's All changes tab with its scroll, the groups they sit
   in with their widths, order and shown tab, pane trees, worktree names, which
   worktrees are hidden, creation dates and port blocks, the Agents board's Show
-  all terminals, whether the Files panel is open, every setting.
+  all terminals, whether the Files panel is open, every setting, and under
+  `shortcuts` only the commands whose keys the user changed
+  (design/shortcuts.md).
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
   which Hidden sections are expanded, a file tab's text, the All changes tab's

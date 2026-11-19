@@ -16,7 +16,7 @@ struct ProjectAgentsPage: View {
           project: project,
           setting: \.preferredAgentID,
           label: t("project.preferred-agent"),
-          info: t("project.preferred-agent-info"),
+          info: t("project.preferred-agent-info", model.keysInParentheses(.newAgentTab)),
           options: model.agentDetection.options(selected:),
           globalValue: model.globalAgentValue,
           globalID: model.globalAgentID,
