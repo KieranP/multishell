@@ -63,7 +63,10 @@ reloaded. Newest at the bottom.
 - **MonochromeThemeTests renders the window with every colour white, then
   black**, and fails on any other pixel, which is the test for a part the theme
   does not reach. It allows two steps a channel: a menu button's glyph is
-  colour-matched once more and lands at 254.
+  colour-matched once more and lands at 254. It runs only under
+  `make theme-audit`: its eight full windows took a minute of the main actor
+  every UI test waits on, a fifth of `make test`. Run it after touching a
+  view's colours.
 - **A theme saved in the themes folder is drawn at once**, the folder riding the
   one FSEvents stream the worktrees use and made before it is armed, as the
   watcher skips a folder not there yet. The engine keeps its own copy of the

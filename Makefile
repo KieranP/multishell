@@ -22,7 +22,7 @@ else
 SWIFT_TEST = swift test --skip-build
 endif
 
-.PHONY: libghostty grammars build release test compile-app lint format require-prettier install run clean signing-identity
+.PHONY: libghostty grammars build release test theme-audit compile-app lint format require-prettier install run clean signing-identity
 
 ## Once per machine: the certificate that keeps the app's privacy permissions.
 signing-identity:
@@ -49,6 +49,12 @@ release: libghostty grammars
 test: libghostty grammars
 	swift build --build-tests
 	$(LOCK) Scripts/one-test-per-core.sh $(SWIFT_TEST)
+
+## Draw the window in an all-white and an all-black theme and fail on any part the
+## theme does not reach. Left out of `test`; why in Docs/design/appearance/themes.md.
+theme-audit: libghostty grammars
+	swift build --build-tests
+	MULTISHELL_THEME_AUDIT=1 $(LOCK) $(SWIFT_TEST) --filter MonochromeThemeTests
 
 ## Compile the macOS app without bundling; catches SwiftUI errors fast.
 compile-app: libghostty grammars

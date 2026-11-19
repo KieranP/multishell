@@ -12,6 +12,11 @@ The conventions a new test follows. Why each rule holds is in `design/`.
   RepositoryFixture, a bare clone with worktrees beside it included. FakeGit
   only for what real git cannot do on demand. Parsers get fixture text, odd
   lines included.
+- **A fixture repository is a copy of one `TestRepository` makes once per
+  process**, so every fixture starts on the same first commit and its hash; a
+  test that needs histories to differ commits its own. Five git runs per
+  fixture, hundreds of fixtures at once, kept AppCore at 156 s; copying took it
+  to 89 s.
 - **Real git comes from a fixture whose runner turns commit signing off**, or a
   developer whose global config signs would be asked for the key once per
   fixture commit. It rides on the runner, so a clone needs no step of its own.
@@ -77,6 +82,9 @@ The conventions a new test follows. Why each rule holds is in `design/`.
   gone** wherever the read can outlive the test: one started after teardown
   finds no gate to wait for and would spin for good, as the hung-read tests in
   AppModel+WorktreeRemovalRequestTests+StatusReads show.
+- **A fake git that holds only its first call claims it with `mkdir`**, never a
+  test for a file and then a `touch`: two status reads under load both passed
+  the test before either touched, both held, and the run hung for good.
 - **Never the developer's machine**: a shell runs against a home the test wrote,
   the model's login environment comes from the harness, detection runs against
   fake executables on a fake PATH, and git is the fixture's runner rather than

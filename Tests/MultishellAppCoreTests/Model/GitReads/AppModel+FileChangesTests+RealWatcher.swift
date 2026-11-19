@@ -64,7 +64,7 @@ extension AppModelFileChangesTests {
     defer { harness.tearDown() }
     let path = harness.project.path
     let sub = path.appending(path: "sub", directoryHint: .isDirectory)
-    try await TestRepository.initialise(at: sub, withFirstCommit: true, using: harness.git)
+    try await TestRepository.initialise(at: sub, withFirstCommit: true)
     _ = try await harness.git.run(["config", "core.fsmonitor", "true"], in: sub)
     _ = try await harness.git.run(["add", "sub"], in: path)
     _ = try await harness.git.run(["commit", "-qm", "sub"], in: path)

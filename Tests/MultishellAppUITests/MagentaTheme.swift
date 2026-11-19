@@ -17,8 +17,8 @@ enum MagentaTheme {
   }
 
   /// Loose bounds, as anti-aliasing blends the edges.
-  private static func isMagenta(atX x: Int, y: Int, in bitmap: NSBitmapImageRep) -> Bool {
-    guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+  private static func isMagenta(atX x: Int, y: Int, in pixels: SRGBPixels) -> Bool {
+    guard let pixel = pixels.color(x: x, y: y) else { return false }
     return pixel.redComponent > 0.7 && pixel.blueComponent > 0.7 && pixel.greenComponent < 0.35
   }
 
@@ -27,20 +27,23 @@ enum MagentaTheme {
   }
 
   static func pixelCount(in bitmap: NSBitmapImageRep, columns: Range<Int>) -> Int {
-    columns.clamped(to: 0..<bitmap.pixelsWide).reduce(0) { count, x in
-      count + (0..<bitmap.pixelsHigh).count { isMagenta(atX: x, y: $0, in: bitmap) }
+    let pixels = SRGBPixels(bitmap)
+    return columns.clamped(to: 0..<pixels.width).reduce(0) { count, x in
+      count + (0..<pixels.height).count { isMagenta(atX: x, y: $0, in: pixels) }
     }
   }
 
   static func inkedColumns(in bitmap: NSBitmapImageRep) -> [Int] {
-    (0..<bitmap.pixelsWide).filter { x in
-      (0..<bitmap.pixelsHigh).contains { isMagenta(atX: x, y: $0, in: bitmap) }
+    let pixels = SRGBPixels(bitmap)
+    return (0..<pixels.width).filter { x in
+      (0..<pixels.height).contains { isMagenta(atX: x, y: $0, in: pixels) }
     }
   }
 
   static func inkedRowCount(in bitmap: NSBitmapImageRep) -> Int {
-    (0..<bitmap.pixelsHigh).count { y in
-      (0..<bitmap.pixelsWide).contains { isMagenta(atX: $0, y: y, in: bitmap) }
+    let pixels = SRGBPixels(bitmap)
+    return (0..<pixels.height).count { y in
+      (0..<pixels.width).contains { isMagenta(atX: $0, y: y, in: pixels) }
     }
   }
 }

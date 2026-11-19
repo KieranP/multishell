@@ -66,7 +66,7 @@ struct AppModelControlProjectsTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let other = harness.root.appendingPathComponent("other", isDirectory: true)
-    try await TestRepository.initialise(at: other, withFirstCommit: true, using: harness.git)
+    try await TestRepository.initialise(at: other, withFirstCommit: true)
     let folder = other.appendingPathComponent("src", isDirectory: true)
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 

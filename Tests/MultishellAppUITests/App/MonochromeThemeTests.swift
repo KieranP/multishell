@@ -8,7 +8,7 @@ import Testing
 
 /// Every colour of a theme set to one value leaves nothing else on screen: a
 /// pixel of any other colour is something the theme does not reach.
-@Suite(.serialized) @MainActor
+@Suite(.serialized, .enabled(if: ThemeAudit.isRequested)) @MainActor
 struct MonochromeThemeTests {
   private enum Scene: CaseIterable {
     case agentBoard, debugInfo, quickSwitcher, worktreeWithFilesPanelAndFilter
@@ -21,40 +21,11 @@ struct MonochromeThemeTests {
       .allSatisfy { abs(Int($0) - Int($1)) <= 2 }
   }
 
-  /// Each pixel as `colorAt(x:y:)` reads it in sRGB, asked once per distinct pixel word:
-  /// asking per pixel took three seconds a scene, and a scene holds a few hundred words.
-  private static func forEachSRGBPixel(
-    in bitmap: NSBitmapImageRep,
-    _ body: (_ x: Int, _ y: Int, _ rgb: RGB) -> Void,
-  ) throws {
-    try #require(
-      bitmap.bitsPerSample == 8 && bitmap.bitsPerPixel == 32 && !bitmap.isPlanar,
-      "one 32-bit word a pixel",
-    )
-    let bytes = UnsafeRawPointer(try #require(bitmap.bitmapData))
-    let bytesPerRow = bitmap.bytesPerRow
-    var readings: [UInt32: RGB?] = [:]
-    for x in 0..<bitmap.pixelsWide {
-      for y in 0..<bitmap.pixelsHigh {
-        let word = bytes.loadUnaligned(fromByteOffset: y * bytesPerRow + x * 4, as: UInt32.self)
-        let rgb: RGB?
-        if let reading = readings[word] {
-          rgb = reading
-        } else {
-          rgb = sRGB(of: bitmap, x: x, y: y)
-          readings[word] = rgb
-        }
-        if let rgb { body(x, y, rgb) }
-      }
-    }
-  }
-
-  private static func sRGB(of bitmap: NSBitmapImageRep, x: Int, y: Int) -> RGB? {
-    guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return nil }
-    return RGB(
-      red: UInt8((pixel.redComponent * 255).rounded()),
-      green: UInt8((pixel.greenComponent * 255).rounded()),
-      blue: UInt8((pixel.blueComponent * 255).rounded()),
+  private static func rgb(_ colour: NSColor) -> RGB {
+    RGB(
+      red: UInt8((colour.redComponent * 255).rounded()),
+      green: UInt8((colour.greenComponent * 255).rounded()),
+      blue: UInt8((colour.blueComponent * 255).rounded()),
     )
   }
 
@@ -132,8 +103,11 @@ struct MonochromeThemeTests {
         OffscreenWindow.pixels(ofHosted: window, size: CGSize(width: 1100, height: 600))
       )
       let expected = try #require(HexColor.parse(hex))
+      let pixels = SRGBPixels(bitmap)
       var found: [String: (x: Int, y: Int)] = [:]
-      try Self.forEachSRGBPixel(in: bitmap) { x, y, rgb in
+      for (x, y) in pixels.firstPositionOfEachDistinctPixel() {
+        guard let colour = pixels.color(x: x, y: y) else { continue }
+        let rgb = Self.rgb(colour)
         if !Self.matches(rgb, expected), found[rgb.opaqueHex] == nil {
           found[rgb.opaqueHex] = (x, y)
         }

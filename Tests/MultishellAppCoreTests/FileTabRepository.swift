@@ -17,7 +17,7 @@ struct FileTabRepository {
     let runner = try TestGit.runner()
     let root = Scratch.path("filetab")
     let path = root.appending(path: "demo", directoryHint: .isDirectory)
-    try await TestRepository.initialise(at: path, withFirstCommit: commit, using: runner)
+    try await TestRepository.initialise(at: path, withFirstCommit: commit)
     return Self(root: root, path: path, runner: runner)
   }
 

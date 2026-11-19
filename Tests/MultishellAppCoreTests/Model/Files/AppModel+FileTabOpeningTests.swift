@@ -54,7 +54,7 @@ struct AppModelFileTabOpeningTests {
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)
     let library = harness.root.appending(path: "library", directoryHint: .isDirectory)
-    try await TestRepository.initialise(at: library, withFirstCommit: true, using: harness.git)
+    try await TestRepository.initialise(at: library, withFirstCommit: true)
     try await TestRepository.commit(
       "logo",
       files: ["logo.png": "pixels\n", "notes.txt": "hello\n"],

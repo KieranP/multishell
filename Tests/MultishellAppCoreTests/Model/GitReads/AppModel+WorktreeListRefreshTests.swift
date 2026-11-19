@@ -34,7 +34,7 @@ struct AppModelWorktreeListRefreshTests {
       """
       case "$*" in
         *"worktree list"*)
-          if [ ! -f "$SCRATCH/first" ]; then
+          if mkdir "$SCRATCH/first.claim" 2>/dev/null; then
             touch "$SCRATCH/first"
             /usr/bin/git "$@" > "$SCRATCH/stale.part"
             mv "$SCRATCH/stale.part" "$SCRATCH/stale"
@@ -67,7 +67,7 @@ struct AppModelWorktreeListRefreshTests {
       """
       case "$*" in
         *"worktree list"*)
-          if [ ! -f "$SCRATCH/held" ]; then
+          if mkdir "$SCRATCH/held.claim" 2>/dev/null; then
             touch "$SCRATCH/held"
             \(harness.holdLine(until: gate))
           else

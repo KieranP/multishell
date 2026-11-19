@@ -22,7 +22,8 @@
 
 - **The Makefile is the entry point**: `signing-identity` once per machine, then
   `test`, `compile-app`, `build`, `release`, `run`, `install`, `format` and
-  `lint`.
+  `lint`. `theme-audit` runs the one suite `test` leaves out
+  (design/appearance/themes.md).
 - **macOS needs a bundle** for a Dock icon, activation and the menu bar, and
   SwiftPM emits a bare executable, so `make-app.sh` builds the app and the CLI
   with `xcodebuild` and wraps them in one, the CLI among its helpers.

@@ -24,7 +24,7 @@ struct AppModelProjectAddingTests {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let other = harness.root.appendingPathComponent("other", isDirectory: true)
-    try await TestRepository.initialise(at: other, withFirstCommit: true, using: harness.git)
+    try await TestRepository.initialise(at: other, withFirstCommit: true)
     try "new\n".write(
       to: other.appendingPathComponent("new.txt"),
       atomically: true,

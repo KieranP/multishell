@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 
 @testable import MultishellGitKit
 
@@ -12,13 +13,37 @@ public enum TestRepository {
   /// a developer may have set to anything.
   private static let initialBranch = "main"
 
-  /// The identity goes on the repository, so a developer's global config cannot change
-  /// what tests commit as; the first commit makes `HEAD` resolvable.
-  public static func initialise(
-    at url: URL,
-    withFirstCommit: Bool,
-    using git: GitRunner,
-  ) async throws {
+  /// Hundreds of tests make a repository at once; copying one in place of five git runs
+  /// each took the AppCore suites from 156 s to 89 s.
+  private static let committedTemplate = Task {
+    try await makeTemplate(named: "committed", withFirstCommit: true)
+  }
+  private static let emptyTemplate = Task {
+    try await makeTemplate(named: "empty", withFirstCommit: false)
+  }
+
+  private static let templateRoot: URL = {
+    atexit { Scratch.remove(Self.templateRoot) }
+    return Scratch.path("repository-templates")
+  }()
+
+  /// A copy of a repository made once per process, whose own identity keeps a developer's
+  /// global config out of what tests commit as; the first commit makes `HEAD` resolvable.
+  public static func initialise(at url: URL, withFirstCommit: Bool) async throws {
+    let template = try await (withFirstCommit ? committedTemplate : emptyTemplate).value
+    let manager = FileManager.default
+    try manager.createDirectory(at: url, withIntermediateDirectories: true)
+    for item in try manager.contentsOfDirectory(atPath: template.path) {
+      try manager.copyItem(
+        at: template.appendingPathComponent(item),
+        to: url.appendingPathComponent(item),
+      )
+    }
+  }
+
+  private static func makeTemplate(named name: String, withFirstCommit: Bool) async throws -> URL {
+    let git = try TestGit.runner()
+    let url = templateRoot.appendingPathComponent(name, isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     _ = try await git.run(["init", "--initial-branch=\(initialBranch)"], in: url)
     _ = try await git.run(["config", "user.email", committerEmail], in: url)
@@ -26,6 +51,7 @@ public enum TestRepository {
     if withFirstCommit {
       try await commit("initial", files: ["README.md": "hello\n"], in: url, using: git)
     }
+    return url
   }
 
   /// One commit writing `files`, which with several is what a squash merge

@@ -33,7 +33,7 @@ struct AppModelWorktreeStatusRefreshTests {
       """
       case "$*" in
         *status*)
-          if [ ! -f "$SCRATCH/first" ]; then
+          if mkdir "$SCRATCH/first.claim" 2>/dev/null; then
             touch "$SCRATCH/first"
             \(harness.holdLine(until: gate))
             printf '## main\\0'
@@ -64,7 +64,7 @@ struct AppModelWorktreeStatusRefreshTests {
       """
       case "$*" in
         *status*)
-          if [ ! -f "$SCRATCH/first" ]; then
+          if mkdir "$SCRATCH/first.claim" 2>/dev/null; then
             touch "$SCRATCH/first"
             \(harness.holdLine(until: gate))
           fi

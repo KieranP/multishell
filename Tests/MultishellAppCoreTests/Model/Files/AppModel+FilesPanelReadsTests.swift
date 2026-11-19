@@ -86,7 +86,7 @@ struct AppModelFilesPanelReadsTests {
       """
       case "$*" in
         *ls-files*)
-          if [ ! -f "$SCRATCH/first" ]; then
+          if mkdir "$SCRATCH/first.claim" 2>/dev/null; then
             touch "$SCRATCH/first"
             \(harness.holdLine(until: gate))
             printf '\(record)before\\0'
@@ -142,7 +142,7 @@ struct AppModelFilesPanelReadsTests {
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     let sub = main.path.appending(path: "sub")
-    try await TestRepository.initialise(at: sub, withFirstCommit: true, using: harness.git)
+    try await TestRepository.initialise(at: sub, withFirstCommit: true)
     try "x\n".write(to: sub.appending(path: "new.txt"), atomically: true, encoding: .utf8)
     harness.model.scheduleSubmoduleRead("sub", in: main.id)
     try await waitUntil { harness.model.submoduleReadings[main.id]?["sub"]?.status != nil }

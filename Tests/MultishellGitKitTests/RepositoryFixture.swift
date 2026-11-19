@@ -20,7 +20,7 @@ struct RepositoryFixture {
     let runner = try TestGit.runner()
     let root = Scratch.path("gitkit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try await TestRepository.initialise(at: repository, withFirstCommit: commit, using: runner)
+    try await TestRepository.initialise(at: repository, withFirstCommit: commit)
     return Self(runner: runner, root: root, project: Project(path: repository))
   }
 

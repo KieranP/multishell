@@ -272,7 +272,7 @@ extension WorktreeGitStatusTests {
     try fixture.write("x\n", to: "build/out.o")
     try fixture.write("x\n", to: "top.txt")
     let nested = path.appending(path: "nested", directoryHint: .isDirectory)
-    try await TestRepository.initialise(at: nested, withFirstCommit: true, using: fixture.runner)
+    try await TestRepository.initialise(at: nested, withFirstCommit: true)
     try fixture.write("x\n", to: "nested/loose.txt")
     let git = fixture.git
     let main = try await fixture.worktree(onBranch: "main")

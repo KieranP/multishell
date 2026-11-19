@@ -93,7 +93,7 @@ extension AppModelFileChangesTests {
       """
       case "$*" in
         *check-ignore*)
-          if [ ! -f "$SCRATCH/held" ]; then
+          if mkdir "$SCRATCH/held.claim" 2>/dev/null; then
             /usr/bin/git "$@" > "$SCRATCH/answer"
             touch "$SCRATCH/held"
             \(harness.holdLine(until: gate))
