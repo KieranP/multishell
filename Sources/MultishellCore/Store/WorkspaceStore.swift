@@ -293,7 +293,7 @@ extension WorkspaceStore {
     }
   }
 
-  /// Moves a tab of either kind beside `anchor`, possibly in another group of
+  /// Moves a tab of any kind beside `anchor`, possibly in another group of
   /// the same worktree; see Docs/design/tabs-and-groups/groups-and-dragging.md.
   @discardableResult
   public func moveTab(
@@ -332,7 +332,7 @@ extension WorkspaceStore {
   }
 
   /// Moves a terminal tab, panes and all, to another worktree, refusing a file
-  /// tab; see Docs/design/tabs-and-groups/groups-and-dragging.md.
+  /// or All changes tab; see Docs/design/tabs-and-groups/groups-and-dragging.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard
@@ -402,7 +402,7 @@ extension WorkspaceStore {
     workspace.tabs[index].customTitle = title?.trimmedOfAllWhitespaceOrNil
   }
 
-  /// Shows a tab of either kind in its own group and hands that group the
+  /// Shows a tab of any kind in its own group and hands that group the
   /// focus: the tab the user just clicked is the one they are working in.
   public func activateTab(_ id: WorkspaceTab.ID) {
     guard let tab = workspace.workspaceTab(id) else { return }
@@ -421,7 +421,7 @@ extension WorkspaceStore {
     vacate(tab.id, ofGroup: tab.groupID, slot: vacated)
   }
 
-  /// Each open tab's scroll as the views last left it.
+  /// Each open file tab's scroll as the views last left it.
   public func setFileTabScrolls(_ scrolls: [FileTab.ID: FileTabScroll]) {
     for index in workspace.fileTabs.indices {
       let tab = workspace.fileTabs[index]
@@ -448,7 +448,7 @@ extension WorkspaceStore {
 }
 
 extension WorkspaceStore {
-  /// Moves a tab of either kind into a group of its own beside `neighbour`, which
+  /// Moves a tab of any kind into a group of its own beside `neighbour`, which
   /// gives up half its width; `nil` when nothing moved.
   @discardableResult
   public func moveTab(

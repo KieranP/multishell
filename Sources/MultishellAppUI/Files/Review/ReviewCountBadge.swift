@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// A speech bubble and how many comments a file has waiting to be sent, on its
-/// tab's title and its row in Files and Changes.
+/// tab's title, its row in Files and Changes, and its All changes header.
 struct ReviewCountBadge: View {
   let count: Int
   let theme: Theme

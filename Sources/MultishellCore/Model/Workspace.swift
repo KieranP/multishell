@@ -120,12 +120,12 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var gitStatusIndicator = GitStatusIndicator.default
   /// How that badge's line counts match old lines to new.
   public internal(set) var diffAlgorithm = DiffAlgorithm.default
-  /// Unified or Split, chosen in any file tab's bar and kept for the next.
+  /// Unified or Split, chosen in any file or All changes tab's bar and kept for the next.
   public internal(set) var fileTabLayout = FileTabLayout.default
   /// The Files panel's page, chosen in any worktree's panel and kept for the next.
   public internal(set) var filesPanelMode = FilesPanelMode.default
-  /// Modified or Branch, chosen in the panel or any file tab's bar, which
-  /// both follow it.
+  /// Modified or Branch, chosen in the panel or any file or All changes tab's
+  /// bar, which all follow it.
   public internal(set) var changeScope = ChangeScope.default
   /// The Files panel is open, one switch for the window kept for the next launch.
   public internal(set) var showsFilesPanel = false
@@ -305,7 +305,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     )
 
     // A file written before groups names no group but says which tab was
-    // active. Read here, or `repair` falls back to the last tab.
+    // active. Read here, or the group made for them shows its first tab.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
     let legacyShownTabs = legacy?.decodeTolerantly(
       [Worktree.ID: TerminalTab.ID].self,

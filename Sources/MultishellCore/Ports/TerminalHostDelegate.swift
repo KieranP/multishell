@@ -24,7 +24,7 @@ public protocol TerminalHostDelegate: AnyObject {
   /// learns which pane a split or close should act on.
   func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID)
   /// The shell's foreground command returned. Needs shell integration, which
-  /// only Ghostty has; the one signal outranking an agent's own report.
+  /// only Ghostty has; the one engine signal outranking a report.
   func terminalHost(
     _ host: any TerminalHost,
     didFinishCommandIn id: TerminalSession.ID,

@@ -65,8 +65,8 @@ struct PresentedErrorProcessAlertsTests {
     #expect(refused.message == "fatal: could not read from remote repository")
   }
 
-  /// `MultishellProcess` depends on nothing and so has no catalogue to
-  /// reach; the words for its failures live here. See translation.md.
+  /// `MultishellProcess` depends on no other module of ours and so has no catalogue
+  /// to reach; the words for its failures live here. See translation.md.
   @Test func theProcessLayersFailuresAreTranslatedRatherThanPrintedAsWritten() {
     let noDescriptor = PresentedError(DescriptorUnavailable(code: EMFILE))
     #expect(noDescriptor.title == "A command could not be started")

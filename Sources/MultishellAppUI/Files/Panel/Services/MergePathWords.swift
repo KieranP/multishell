@@ -1,7 +1,7 @@
 import MultishellCore
 import SwiftUI
 
-/// A merge path stop's words: its title, or the checks step's disclosure
+/// A merge path stop's words: its title, or the checks or threads step's disclosure
 /// around it, over its hint, which VoiceOver reads as one element.
 struct MergePathWords<Heading: View>: View {
   private static var lineSpacing: Double { 1 }

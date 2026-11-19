@@ -35,6 +35,6 @@ struct TabDescription: Encodable, Equatable {
   let focusedPane: TerminalSession.ID?
   let state: SessionState?
   let layout: Layout?
-  /// A file tab's find bar, `nil` while it is down; a pane's is `panes show`'s.
+  /// A file or All changes tab's find bar, `nil` while it is down; a pane's is `panes show`'s.
   let find: FindBarDescription?
 }

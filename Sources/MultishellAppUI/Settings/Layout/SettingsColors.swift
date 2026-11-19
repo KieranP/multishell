@@ -17,7 +17,7 @@ enum SettingsColors {
   static let sidebar = adaptive(light: 0xE7E7EB, dark: 0x252528)
   /// Rules between rows and around cards.
   static let rule = Color.primary.opacity(0.08)
-  /// A dashed or drawn outline: the Same button's.
+  /// A dashed or drawn outline: the Same button's and a text box's.
   static let outline = Color.primary.opacity(0.16)
   /// The search field's well and a sidebar row under the pointer.
   static let well = Color.primary.opacity(0.085)

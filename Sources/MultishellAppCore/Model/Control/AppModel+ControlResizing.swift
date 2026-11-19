@@ -52,7 +52,7 @@ extension AppModel {
     let groups = workspace.groups(in: worktree.id)
     guard !groups.isEmpty else { return .refused(.noGroups(id: id)) }
     let shownPanes = groups.map { workspace.shownTab(ofGroup: $0)?.root.sessionIDs }
-    // A group showing a file has no frames, so its width is not known.
+    // A group showing a file or the All changes tab has no frames, so its width is not known.
     let length =
       shownPanes.contains(nil)
       ? nil : laidOutLength(ofSides: shownPanes.compactMap(\.self), along: .horizontal)

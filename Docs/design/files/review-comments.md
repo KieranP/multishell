@@ -6,16 +6,13 @@ panel's Review page (issue #6). Newest at the bottom.
 - **Comments sit inline in the file tab, as cards under their lines.** A popover
   per comment and a tray under the file were tried in mockups and dropped:
   neither showed a comment beside the code it is about.
-- **Sending lives on a Review page of its own, between Changes and PR.** Changes
-  has no review section. A dot on Review's glyph says a comment waits,
-  files/panel.md having ruled out counts on the switch; the count is in the
-  page's heading, on each file tab's title and on the file's row in Files and
-  Changes (owner's choice, 2026-11-13).
-- **Every part of Review is in the theme** (owner's choice, 2026-11-13): its
-  buttons and the picker through `ThemedButtonStyle`, `.borderedProminent`
-  drawing the system accent; the composer's text, caret, selection and prompt in
-  the file tab's colours; the gutter's + knocked out of its mark in the file's
-  ground.
+- **Sending lives on a Review page of its own, between Changes and PR.** A dot
+  on Review's glyph says a comment waits, files/panel.md having ruled out counts
+  on the switch; the count is in the page's heading, on each file tab's title
+  and on the file's row in Files and Changes (owner's choice, 2026-11-13).
+- **Every part of Review is in the theme** (owner's choice, 2026-11-13):
+  `.borderedProminent` draws the system accent, so its buttons go through
+  `ThemedButtonStyle`.
 - **A Review row's menu deletes or dismisses its comment**, as its card does, so
   a comment on a file that no longer opens can still be removed.
 - **No hints in the composer or under the picker**, and Send's label carries no
@@ -34,28 +31,26 @@ panel's Review page (issue #6). Newest at the bottom.
 - **The picker defaults to the agent pane focused last in the worktree**, then
   the first the board lists. With no agent there, Send is off; starting one from
   Review was left out (owner's choice, 2026-11-12).
-- **Each worktree's comments are a file of their own**, under the reviews
-  directory, not in `state.json` (owner's choice, 2026-11-12): a review is
-  written over a while and a crash should not lose it, and a worktree's removal
-  deletes one file. The file records the worktree's path, so a digest's
-  collision would read as no comments rather than another's.
-- **A worktree's file is read when the worktree is first listed**, at launch or
-  by a later list read, so a worktree added again shows what was saved for its
-  path rather than writing over it.
+- **Each worktree's comments are a file of their own**, not in `state.json`
+  (owner's choice, 2026-11-12): a review is written over a while and a crash
+  should not lose it, and a worktree's removal deletes one file. The file
+  records the worktree's path, so a digest's collision would read as no comments
+  rather than another's.
+- **A worktree's file is read when the worktree is first listed**, so a worktree
+  added again shows what was saved for its path rather than writing over it.
 - **Taking a project off the sidebar keeps its worktrees' review files**, the
   worktrees staying on disk, so the project added again shows its comments.
 - **A file that will not read or decode is moved aside and said at launch**, as
-  the state file is, stamped so a second never replaces the first, and one
-  comment this build cannot read costs that comment alone.
+  the state file is, and one comment this build cannot read costs that comment
+  alone.
 - **A sent comment is dropped at launch once a week old**, the drops sweep
   having removed the file it went in. Pending comments never age out.
 - **Held by the text it quotes, not by row.** Each read of a tab looks for the
-  quote at its lines, then nearest them; a match moves the comment, lines added
-  above being the common case. Rows move with every change above, and Unified
-  and Split number them differently.
+  quote at its lines, then nearest them; lines added above are the common case.
+  Rows move with every change above, and Unified and Split number them
+  differently.
 - **A missed quote keeps the comment's lines**, so the next read searches near
-  them: a read landing mid-save sees a cut file. A card on lines past the file's
-  end sits under its last line.
+  them: a read landing mid-save sees a cut file.
 - **A sent comment whose lines changed is Outdated** and can only be dismissed:
   it is what the agent read. A read that finds its quote again makes it Sent, a
   read landing mid-save having missed it. **A pending one is kept, marked Lines
@@ -63,36 +58,28 @@ panel's Review page (issue #6). Newest at the bottom.
   saying the lines have moved on. Dropping it, or holding it out of Send, lost a
   comment the user still meant. Once sent it stays Sent: its quote was already
   missing, so a missing quote says nothing of the agent.
-- **Only a shown tab re-anchors.** A hidden tab holds no rows (file-tabs.md), so
-  a comment on a file not shown keeps its lines until the file is shown. Cost:
-  Review can list a stale line number for a file nobody has open. The All
-  changes tab re-anchors each of its files whose rows a read moved.
+- **Only a shown tab re-anchors.** A hidden tab holds no rows
+  (files/file-tabs.md), so a comment on a file not shown keeps its lines until
+  the file is shown. Cost: Review can list a stale line number for a file nobody
+  has open.
 - **A comment on removed lines shows only under the scope it was written in**,
   `HEAD` and the merge base holding different text. Review lists it either way,
-  marked "(Branch)" or "(Modified)". Cost: switching scope hides those cards. A
-  comment on the file on disk shows under both.
-- **A range never mixes sides.** The row a drag starts on picks the side, up the
-  gutter or down, so its numbers are one file's. Unchanged lines alone are the
-  file on disk's, even from a split's left column, whose card then sits right.
+  marked "(Branch)" or "(Modified)". Cost: switching scope hides those cards.
+- **A range never mixes sides**, the row a drag starts on picking the side, so
+  its numbers are one file's.
 - **The gap is in the row geometry**, which the forced layout, the tints, the
   gutter, find and the change steps all place rows through, so none of them
   learns about cards. Gaps are summed once and searched by halving, so a 1 MiB
-  file stays as fast; with none the geometry gives what it gave before, which
-  the drift tests hold, with a second run with gaps open.
+  file stays as fast; the drift tests run a second time with gaps open.
 - **A split opens each gap in both columns at the taller column's height**, so
-  one offset is still the same row on both sides. The card sits in the column
-  holding its lines. Cost: a comment inside a change sits between that change's
-  removed and added rows.
-- **Cards are hosted views over the text, not text.** Copy, find and the Changes
-  rotor see rows only, and a selection dragged across a card copies the rows
-  either side.
+  one offset is still the same row on both sides. Cost: a comment inside a
+  change sits between that change's removed and added rows.
+- **Cards are hosted views over the text, not text**, so copy, find and the
+  Changes rotor see rows only.
 - **The row at the top stays put as a card opens or closes**, so adding a
   comment above the view moves nothing in it.
-- **A composer opening below the clip scrolls just enough to show it**, and one
-  in view scrolls nothing; a comment picked in Review comes to near the top.
-- **Comment on Lines is in the text's own menu**, acting on the rows the
-  selection touches or the caret's row: the gutter's + is reachable by neither
-  the keyboard nor VoiceOver. No shortcut (owner's choice, 2026-11-12).
+- **Comment on Lines is in the text's own menu**: the gutter's + is reachable by
+  neither the keyboard nor VoiceOver. No shortcut (owner's choice, 2026-11-12).
 - **The composer's draft is the model's**, unobserved, so hiding the tab or
   switching layout keeps what was typed without redrawing the tab on every key.
 - **Closing a file tab whose composer holds text asks first**, as a close over a
@@ -102,16 +89,11 @@ panel's Review page (issue #6). Newest at the bottom.
   types would otherwise quote whatever moved onto those line numbers. An Edit
   whose comment was sent or removed meanwhile saves as a new comment, so the
   text typed is not lost.
-- **A composer holding text stays** when another line's + or an Edit is clicked,
-  unless the scope hides it, and closing it hands the keyboard back to the tab.
-  It takes the keyboard once when opened, not each time a layout switch rebuilds
-  its card.
 - **The composer is plain text**, as a hook script's field is: SwiftUI's editor
-  curls quotes and dashes, which would change code quoted to the agent. It
-  follows its lines as a read moves them, and hides under the other scope as a
-  comment on removed lines does.
-- **An agent with no catalogue entry, one from a custom command, gets a sentence
-  around the path** rather than a mention it might not read.
+  curls quotes and dashes, which would change code quoted to the agent.
+- **An agent whose prompt reads no mentions gets a sentence around the path**, a
+  bare path saying nothing: every catalogued agent but Claude Code, and one from
+  a custom command, which has no catalogue entry.
 - **Send goes to the pane the picker showed, or nowhere.** Working the recipient
   out again at the click would send to another agent, unannounced, when the
   picked pane closed in between.
@@ -122,14 +104,11 @@ panel's Review page (issue #6). Newest at the bottom.
   coming from its rows as a comment written in the tab does. A hidden tab holds
   none, so it is refused rather than quoting nothing. It never quotes through
   the All changes tab (owner's pick).
-- **The handoff is its own type, `AgentHandoff`**, writing entries and wording
-  the mention, so #34 can send a pull request's failing checks the same way.
-- **Cards show in the All changes tab too** (files/all-changes-tab.md), placed
-  per file against that file's rows. The composer carries its file's path, the
-  All changes tab holding several, and the tables a composer and its draft live
-  in are keyed by the tab hosting cards, a file or All changes tab.
-- **Review's foot and picker are shared with the PR and CI pages**, renamed
-  `Handoff*` in `Files/Panel/Handoff/` with one pick per worktree; see
+- **Cards show in the All changes tab too** (files/all-changes-tab.md). The
+  composer carries its file's path, that tab holding several, and the tables a
+  composer and its draft live in are keyed by the tab hosting cards.
+- **Review's foot and picker are shared with the PR and CI pages**, through one
+  handoff type so all three send alike (#34); see
   [services/send-feedback.md](../services/send-feedback.md).
 
 ## Reviewed and left as is
@@ -146,16 +125,18 @@ panel's Review page (issue #6). Newest at the bottom.
   Comments change on an action or a read that moved one, never per keystroke.
 - **A live resize re-measures each card** at every new width. Unmeasured; a file
   holds few cards.
-- **A paste that fails says nothing.** It happens only when the pane closes
-  between the picker drawing and the click, and the comments stay pending.
+- **A Review Send that sends nothing says nothing**, where the PR and CI pages
+  say why over their foot. It happens only when the pane closes between the
+  picker drawing and the click, and the comments stay pending.
 - **Placing cards walks the tab's rows on each update**, but only for a file
   with comments; any other tab returns before the walk.
 - **Launch tries each worktree's review file**, one failed open where none
   exists, rather than listing the directory first.
 - **The composer's label and a comment's line label each switch on side and
   count.** The words differ, and a helper taking four keys is longer than both.
-- **`review send` reports a failed handoff write as the pane not being live.**
-  The app's alert names the write, and the pane check is what fails otherwise.
+- **`review send` refuses a failed handoff write as the pane not being live**,
+  but the write's alert answers in its place, a request's alert replacing its
+  refusal (agents/command-line.md), so `sendReview` keeps its Bool.
 - **A tab hidden while its top cuts a card shows the row after the card** when
   shown again: the saved scroll is a row. Counting a point in a gap as its own
   row would move find, the change steps and the drift tests with it.
@@ -227,10 +208,11 @@ panel's Review page (issue #6). Newest at the bottom.
 - **A `review add` the command line gave up on may still add its comment**, so a
   retry adds it twice. It waits on one read of one file, which would have to run
   past the 30 s ask timeout.
-- **Review's state is eleven dictionaries on `AppModel`, cleared by hand** in
-  the worktree forget, the project release and the file-tab prune. One value per
-  worktree would redraw every file tab reading comments on each pane focus,
-  which writes the focus history, and would observe the drafts kept unobserved.
+- **Review's state is ten dictionaries and sets on `AppModel`, cleared by hand**
+  in the worktree forget, the project release and the file-tab prune; its picks
+  went to `HandoffState` with the PR and CI pages' Send. One value per worktree
+  would redraw every file tab reading comments on each pane focus, which writes
+  the focus history, and would observe the drafts kept unobserved.
 - **The handoff's mention is absolute, a drop's relative**, the drops directory
   being outside every worktree. Both take the agent's prefix from
   `fileMentionPrefix(ofAgent:)` and the wording from `FilePathText`.

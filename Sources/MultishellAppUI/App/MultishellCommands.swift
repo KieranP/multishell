@@ -48,7 +48,7 @@ struct MultishellCommands: Commands {
   }
 
   // Print and Page Setup would take Cmd+P and Shift+Cmd+P, the quick
-  // switcher's keys, and nothing here prints.
+  // switcher's default keys, and nothing here prints.
   private var printItems: some Commands {
     CommandGroup(replacing: .printItem) {}
   }
@@ -94,7 +94,7 @@ struct MultishellCommands: Commands {
   }
 
   // Spelling, Substitutions and Speech have no meaning in a terminal, and
-  // are the same lazily-validated kind as above. Find is the engine's.
+  // are the same lazily-validated kind as above. Find is the app's own.
   private var findMenu: some Commands {
     CommandGroup(replacing: .textEditing) {
       Menu(t("menu.find")) {

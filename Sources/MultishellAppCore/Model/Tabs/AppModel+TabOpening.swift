@@ -9,8 +9,8 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
-  /// Cmd+Shift+T: always a plain shell, so one stays reachable when every
-  /// New Tab starts an agent. A strip's menu names its group.
+  /// New Shell Tab (Cmd+Shift+T by default): always a plain shell, so one stays
+  /// reachable when every New Tab starts an agent. A strip's menu names its group.
   public func newShellTab(in group: TabGroup.ID? = nil) {
     guard let worktree = requireWorktreeForShell() else { return }
     store.openTab(in: worktree.id, group: group)
@@ -85,7 +85,7 @@ extension AppModel {
     return (id, "")
   }
 
-  /// Nothing running there, no tab of either kind yet, and the setting for
+  /// Nothing running there, no tab of any kind yet, and the setting for
   /// this reason says open one: a worktree holding only file tabs gets no shell.
   func wantsFirstTab(in worktree: Worktree, for reason: TabOpeningReason) -> Bool {
     !isBusy(worktree.id) && workspace.workspaceTabCount(in: worktree.id) == 0

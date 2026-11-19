@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A section of a project's settings beside the global values they override,
-/// under a heading naming the columns.
+/// A section of a project's settings beside the global values they override, or of
+/// commands beside their default keys, under a heading naming the columns.
 struct OverrideTable<Rows: View>: View {
   let title: String
   /// Help behind an (i) beside the title, `nil` for none.

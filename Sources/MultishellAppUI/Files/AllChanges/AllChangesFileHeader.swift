@@ -70,6 +70,7 @@ struct AllChangesFileHeader: View, @MainActor Equatable {
     .accessibilityLabel(section.path)
   }
 
+  /// On a square, as the mockups drew it.
   private var changeLetter: some View {
     let metrics = model.metrics
     return Text(AllChangesText.letter(section.change.kind))
@@ -87,7 +88,6 @@ struct AllChangesFileHeader: View, @MainActor Equatable {
       && lhs.theme == rhs.theme
   }
 
-  /// On a square, as the mockups drew it.
   private func location(palette: AreaPalette) -> some View {
     let folder = section.change.folder
     return HStack(spacing: 0) {

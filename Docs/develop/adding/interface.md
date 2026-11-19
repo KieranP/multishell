@@ -10,29 +10,23 @@ shortcuts, dialogs, icons and row orders.
   that holds it to every key. A port of someone's palette also takes a row in
   `THIRD-PARTY-NOTICES.md` and its licence in `Licenses/Themes/`.
 - **A new colour** is a key in its section's enum, in
-  `InterfaceSection.colorKeys` for a `ui` one, and in every built-in theme under
-  `Resources/themes`, which ThemeBuiltinsTests checks. The examples follow,
-  being copies.
+  `InterfaceSection.colorKeys` for a `ui` one, and in every built-in theme,
+  which ThemeBuiltinsTests checks.
 - **A new `ui` area** is a case of `InterfaceSection` with its keys, a palette
   in `Theme+ChromeColors`, and every view in it reading that palette.
-- **A tab strip measurement.** The metrics bound what a tab is drawn at,
-  `TabStripWidths` decides from them where the splits and arrows fit, and the
-  strip layout divides the rest. `UIMetricsTests` checks across the font-size
-  range that the floor leaves room for what a tab always draws.
-- **The split buttons' threshold is written out in that test** rather than
-  recomputed, the only place the widths are written down.
-- **The buttons and both gutters come off the room first**, so nothing measures
-  itself.
+- **A tab strip measurement.** `UIMetricsTests` checks across the font-size
+  range that the floor leaves room for what a tab always draws. The split
+  buttons' threshold is written out in that test rather than recomputed, the
+  only place the widths are written down, so a change updates it by hand.
 - **A field on a sidebar row** also goes in that row's hand-written `==`, which
   leaves the closures out; a field missing there never redraws the row, and no
   test catches it (design/appearance/window-chrome.md). A row of a new height
   goes into `UIMetrics.projectBlockHeight`, or the drop line lands in the wrong
   half. A field a script should read goes on `SidebarRowListing` too, filled
   from the same values the row draws.
-- **A column on the Agents board.** A case in the lane enum in draw order, its
-  title, the state whose colour its header wears, and a line in the lane lookup,
-  total over the state so a state with no column is a compile error. The
-  sidebar's counts are a separate list, `sidebarLanes`, which nothing forces.
+- **A column on the Agents board.** A case in the lane enum in draw order; the
+  compiler asks for the rest. The sidebar's counts are a separate list,
+  `sidebarLanes`, which nothing forces.
 - **Each further column asks for another column's width and gap**, and four
   already ask for more window than the app's minimum.
 - **A fact on a board card.** A field on the card, filled where cards are built,
@@ -44,17 +38,15 @@ shortcuts, dialogs, icons and row orders.
 - **An item on a card's context menu.** A line in the card menu: above the
   section if it acts on the pane, inside the worktree actions if it acts on the
   worktree, which puts it on the sidebar row and detail header too.
-- **A tile on Debug Info.** A case in `DebugMetric` in importance order, with
-  its values from a slot, one per band, and its scale's floor, and its title,
-  value, tone and detail text in `DebugMetric+Wording`. A reading no sample
-  takes yet also needs a field on `DebugSample`, filled in `takeDebugSample`,
-  and on `DebugTimelineSlot`, saying how a slot of several seconds combines it
+- **A tile on Debug Info.** A case in `DebugMetric` in importance order; the
+  compiler asks for its values and wording. A reading no sample takes yet also
+  needs a field on `DebugSample`, filled in `takeDebugSample`, and on
+  `DebugTimelineSlot`, saying how a slot of several seconds combines it
   (design/debug-tools.md). The test builder `DebugSample.sample` takes it with a
   default, and the widest slot in `DebugTileLabelTests` its widest figure, so
   the value fits the label column. A band in a split tile needs a `DebugSeries`
-  case, its colour in `Theme+DebugColors` and its name in `DebugSeries+Wording`;
-  a colour past the four there needs a key in `debug_info`'s `colorKeys` and
-  every built-in theme.
+  case; a colour past the four in `Theme+DebugColors` needs a key in
+  `debug_info`'s `colorKeys` and every built-in theme.
 - **A new reading also goes in `DebugSampleRecord`** for `debug samples`, and in
   `DebugSummaryRecord` for `--summary`. Nothing forces either: left out, the
   command line never sees it.
@@ -62,10 +54,9 @@ shortcuts, dialogs, icons and row orders.
   row at the same `UIMetrics` width, the figure in the stacked row's caption,
   and, for Memory Breakdown, a part in its accessibility text and a field in
   `DebugMemoryRecord` for `debug memory`. Its title is a `DebugColumnHeaders`
-  button with a case in the table's column enum, or it never sorts; the case
-  brings its sort key and caption wording with it, as the compiler asks for
-  both. Raise the table's width in ems in `DebugTableLayout` by hand. Nothing
-  measures the columns, so one left short crowds them before the rows stack.
+  button with a case in the table's column enum, or it never sorts. Raise the
+  table's width in ems in `DebugTableLayout` by hand. Nothing measures the
+  columns, so one left short crowds them before the rows stack.
 - **A keyboard shortcut.** A `ShortcutCommand` case with its default, its menu
   item reading `.keyboardShortcut(command, in: model)`, its title in
   `ShortcutCommand+MenuTitle` and a place in a `ShortcutGroup` in the menu's
@@ -98,7 +89,7 @@ shortcuts, dialogs, icons and row orders.
   shipped in. The test resolves every name through AppKit, catching a typo but
   not a symbol too new, the test machine being newer.
 - **The picker has no search**, so put a symbol in the group someone would look
-  in. The same test holds every name to the width the shipped ones draw at.
+  in.
 - **A way of ordering worktree rows.** A case with its display name, a
   comparison in the sort rule, and a case in its tests. Raw values reach
   repositories through the shared file, so renaming one silently turns a

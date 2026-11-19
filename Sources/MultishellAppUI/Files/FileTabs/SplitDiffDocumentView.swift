@@ -16,8 +16,8 @@ final class SplitDiffDocumentView: DiffCanvasView {
   var extraRowGaps: [Int: CGFloat] = [:] {
     didSet { if extraRowGaps != oldValue { openMergedReviewCardGaps() } }
   }
-  /// Where the divider runs in the document: the All changes tab's files, not
-  /// above the first header or under the last box; `nil` for the whole height.
+  /// Where the divider runs in the document: an All changes file's rows and
+  /// gaps; `nil` for the whole height.
   var dividerSpan: ClosedRange<CGFloat>? {
     didSet { if dividerSpan != oldValue { placeColumns() } }
   }

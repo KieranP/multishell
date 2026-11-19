@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One group of a worktree: its tab strip, the shown tab's pane tree, and
+/// One group of a worktree: its tab strip, the shown tab's content, and
 /// the two drop bands down its edges while a tab is dragged.
 struct TabGroupView: View {
   let model: AppModel

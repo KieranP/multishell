@@ -80,7 +80,7 @@ struct AutoRenameRun: Sendable {
       return .failure(.timedOut(agent: agentName, seconds: Int(Self.timeout.components.seconds)))
     }
     guard output.succeeded else {
-      // Both, the error last: a warning on one would hide an error on the other.
+      // Both, standard error first: a warning on one would hide an error on the other.
       // Unstyled before the trim, here off the main actor, a styled tail trimming to nothing.
       let said = [output.standardError, output.standardOutput]
         .map { PrintableText.of($0).trimmingCharacters(in: .whitespacesAndNewlines) }

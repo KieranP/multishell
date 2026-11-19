@@ -49,8 +49,6 @@ struct AppModelFetchTests {
     #expect(host.calls == ["list", "list"])
   }
 
-  /// A fetch waits on a network, so the sidebar has to say it is happening
-  /// and a second click must not start another one.
   @Test func aFetchFailingAfterItsProjectWasRemovedRaisesNoAlert() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -82,6 +80,8 @@ struct AppModelFetchTests {
     #expect(model.presentedError == nil)
   }
 
+  /// A fetch waits on a network, so the sidebar has to say it is happening
+  /// and a second click must not start another one.
   @Test func aFetchMarksItsProjectForAllOfItAndRefusesASecond() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

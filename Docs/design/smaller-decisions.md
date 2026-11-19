@@ -22,13 +22,11 @@
   then the button opens blue and only flashes red as it is pressed.
 - **macOS 27's alert button keeps no bezel colour**, and draws a destructive one
   red itself, the one taking Return solid in a key window and the rest pale; so
-  `theLeadChoiceIsPaintedRedOverTheDefaultButtonsAccent` reads the drawing
-  there, offscreen.
+  the test of the red reads the drawing there, offscreen.
 - **Clearing the pending value takes the sheet down with it.** A worktree
   removed outside the app clears `pendingWorktreeRemoval`, and a sheet left
   standing would confirm a removal on a path git no longer knows
-  (worktrees/creating-and-removing.md). The `destructiveAlert` modifier drops
-  the answer then, rather than reading it as a Cancel.
+  (worktrees/creating-and-removing.md).
 - **The shared-settings question stays a SwiftUI dialog.** Nothing it offers is
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a
@@ -39,6 +37,4 @@
 - **The quit and unsafe-paste alerts are AppKit's own.** `NSAlert` gives Return
   to its first button, and Escape only to one titled exactly "Cancel", so the
   app sets the key equivalent by hand, as `DestructiveAlert` does on its Cancel.
-  Otherwise a translated title would leave the alert with no way out
-  (`theCancelButtonTakesEscapeWhateverItIsCalled`,
-  `pasteTakesReturnAndCancelTakesEscape`).
+  Otherwise a translated title would leave the alert with no way out.

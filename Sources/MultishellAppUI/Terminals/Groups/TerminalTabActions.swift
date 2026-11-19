@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A tab's context menu. A view of its own, so its lookups run when the menu
+/// A terminal tab's context menu. A view of its own, so its lookups run when the menu
 /// does rather than on every render of the strip.
 struct TerminalTabActions: View {
   let model: AppModel

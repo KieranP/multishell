@@ -7,7 +7,7 @@ public enum ProjectIcon {
     case folder
     case symbol(String)
 
-    /// The symbol name a GUI draws for this icon, so the three places that
+    /// The symbol name a GUI draws for this icon, so the places that
     /// draw one need not each decide what the folder looks like.
     public var symbolName: String {
       switch self {

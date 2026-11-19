@@ -3,11 +3,11 @@ import Testing
 
 @testable import MultishellCore
 
-/// A hand edit or two spellings of one path can list an entry twice, and the New Worktree
-/// picker's labels are a dictionary that traps on a repeat.
+/// A hand edit or two spellings of one path can list an entry twice, and a dictionary built
+/// from the list traps on a repeat.
 extension WorkspaceRepairTests {
-  /// The same as the tab case below, one collection up: the dead copy is the
-  /// one kept, the prune then drops it, and its tabs and sessions go too.
+  /// The same as the tab case below, one collection up: deduping first keeps the dead copy,
+  /// the prune then drops it, and the live one's tabs and sessions go too.
   @Test func aWorktreeIDListedTwiceKeepsTheCopyWhoseProjectIsStillThere() throws {
     var workspace = try decodeJSON(
       Workspace.self,

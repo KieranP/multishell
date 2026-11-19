@@ -1,7 +1,7 @@
 import Foundation
 import MultishellCore
 
-/// A close waiting on its dialog, Cmd+W there often a mistake: an agent reported
+/// A close waiting on its dialog, a stray close there often a mistake: an agent reported
 /// Working, or a file or All changes tab holds a review comment being written.
 public enum PendingClose: Identifiable, Equatable, Sendable {
   case pane(TerminalSession.ID)

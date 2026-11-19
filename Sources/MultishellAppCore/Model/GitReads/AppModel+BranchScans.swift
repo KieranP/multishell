@@ -59,8 +59,8 @@ extension AppModel {
   /// `sharingRound` inside the poll's round, whose projects share one budget.
   func refreshBranchScan(of project: Project, sharingRound: Bool = false) async {
     guard let coordinator else { return }
-    // Resolved here, not taken from the caller: `fetch` holds its project
-    // across a network call, so its copy can predate a read of the file.
+    // Resolved here, not taken from the caller: one can hold its project
+    // across an await, so its copy can predate a read of the file.
     let project = currentCopy(of: project)
     let override = effectiveSettings(for: project).defaultBranch
     let scanNumber = remoteState.branchScansBegun[project.id, default: 0] + 1
@@ -199,8 +199,8 @@ extension AppModel {
     recordBranchUpstreams(ownUpstreams, of: project.id)
   }
 
-  /// What Auto Rename's menu item reads, the scan seeing a commit as its ref
-  /// moves where a worktree's listed `HEAD` waits for the next listing.
+  /// What Auto Rename's menu item and the rows' local tip read, the scan seeing a
+  /// commit as its ref moves where a worktree's listed `HEAD` waits for the next listing.
   private func recordScannedBranchTips(_ tips: [String: String], of id: Project.ID) {
     var fresh = scannedBranchTips
     for worktree in workspace.worktrees(of: id) {

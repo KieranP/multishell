@@ -1,5 +1,5 @@
-/// What `gh pr list --json` prints. `merged` is real output from this
-/// repository; the rest vary one record's fields.
+/// What `gh` prints. `merged` is real `gh pr list --json` output from this
+/// repository; `record(…)` varies one record's fields.
 enum GitHubFixtures {
   static let merged = """
     [{"autoMergeRequest":null,"baseRefName":"main","headRefName":"more-highlighting",\

@@ -1,29 +1,23 @@
 # Field, keys and look
 
-The quick switcher's box over the window: the keys that open it, its scopes, the
-AppKit field, its look and place, focus and closing, Return, scrolling and
-VoiceOver. Newest at the bottom, above "Reviewed and left as is".
+The quick switcher's box over the window: its keys and scopes, the AppKit field,
+its look, focus and closing, Return and VoiceOver. Newest at the bottom, above
+"Reviewed and left as is".
 
 - **Cmd+P opens it on All, Shift+Cmd+P on Commands.** Cmd+K is what every Mac
   terminal clears the screen with, Ghostty included, and the people here come
   from those terminals; Cmd+P and Shift+Cmd+P are the editors' Go To and command
   palette. Ghostty's own palette sits on Shift+Cmd+P and an embedding never
   shows it, so the surface gives the key up, as it does Cmd+F.
-- **One box with scopes, not two boxes.** The keys pick the scope it opens on;
-  Tab and Shift+Tab step through All, Agents, Worktrees, Tabs, Files and
-  Commands. A `>` typed into the empty field in All turns it to Commands, as an
-  editor's palette takes it; one carried into All by Tab stays text. The key of
-  the scope in view closes it, Cmd+P on All and Shift+Cmd+P on Commands; on any
-  other scope either key goes to its own.
-- **The pointer moving over a row selects it**, so one row is ever lit; it
-  neither scrolls nor is announced, and rows moving under a still pointer as the
-  text changes leave the selection. Only the selected row has a background.
-- **It sits below the tab strip**, the header's height and a tab's under the
-  window's top, so it covers neither the window's title nor its tabs.
+- **One box with scopes, not two boxes.** A `>` typed into the empty field in
+  All turns it to Commands, as an editor's palette takes it. The key of the
+  scope in view closes it; on any other scope either key goes to its own.
+- **The pointer moving over a row selects it**, so only one row is ever lit.
+- **It sits below the tab strip**, so it covers neither the window's title nor
+  its tabs.
 - **The field is AppKit's.** SwiftUI's never shows a binding changed while it is
-  edited, and the `>` rewrites the text; the arrows, Tab, Return and Escape go
-  to the list through the field's own commands. Undo is off in it, because an
-  undo changes the text without telling the delegate.
+  edited, and the `>` rewrites the text. Undo is off in it, because an undo
+  changes the text without telling the delegate.
 - **Its prompt is drawn over the field and hidden while an input method is
   composing**, the model's text being empty until the composition is confirmed.
   AppKit's own placeholder would hide itself, but setting it as the scope
@@ -31,28 +25,23 @@ VoiceOver. Newest at the bottom, above "Reviewed and left as is".
 - **Taking the keyboard selects the field's text**, so the caret is put at the
   end: MonochromeThemeTests found the selection, drawn in the system's colour
   before the field took `quick_switcher.selection_background`.
-- **It wears the find bar's look**, a panel lifted under a hairline with the
-  field in a well, under a `ui.quick_switcher` section of its own. The built-in
-  themes take its colours from their find bar, and its fainter text and
-  selection from their sidebar. Cost: a user's theme written before the section
-  draws the switcher in its base theme's colours, as every new key falls back.
-- **It closes when its field loses the keyboard to anything**, a find bar's
-  field or a pane, and leaves the keyboard where it went. A sheet takes the
-  window, not the field, which has the keyboard back when the sheet goes. A
-  reconcile taking focus closes it too, the model's own guarantee without a
-  window. Left up, it stayed drawn while keys went to whatever had taken them.
-- **Backspace in an empty field goes back to All**, with Option or Command too,
-  which undoes a `>` typed by mistake as an editor's palette does, though the
-  `>` itself is gone.
+- **It wears the find bar's look under a `ui.quick_switcher` section of its
+  own.** Cost: a user's theme written before the section draws the switcher in
+  its base theme's colours, as every new key falls back.
+- **It closes when its field loses the keyboard to anything**, and leaves the
+  keyboard where it went. Left up, it stayed drawn while keys went to whatever
+  had taken them. A sheet takes the window, not the field, so it does not close
+  it.
+- **Backspace in an empty field goes back to All**, which undoes a `>` typed by
+  mistake as an editor's palette does, though the `>` itself is gone.
 - **The field takes back the model's text as each edit lands**, not on the next
   redraw: a key typed hard on a `>` would otherwise send the `>` again.
-- **VoiceOver is told the row the arrows reach**, and only that, the keyboard
-  staying in the field and typing heard as typing; an announcement, not checked
-  with VoiceOver running.
+- **VoiceOver is told the row the arrows reach**, the keyboard staying in the
+  field so typing is heard as typing. An announcement, not checked with
+  VoiceOver running.
 - **Return chooses the row selected as the key lands**, so Down or a letter
-  typed hard before it acts first. Only the arrows, the text, the scope and the
-  row moved to going scroll the list; an arrow at either end brings its row back
-  into view, and a report re-ranking it leaves the scroll where the user put it.
+  typed hard before it acts first. Only the user's own moves scroll the list, so
+  a report re-ranking it leaves the scroll where the user put it.
 
 ## Reviewed and left as is
 
@@ -74,14 +63,13 @@ Raised by reviews and settled; a review need not raise these again.
   does not (`undoDoesNotReplayAnotherFieldsTypingIntoIt`).
 - **A click on the switcher, or beside it, reaching the pane under it.** Tested:
   `hitTest` finds the switcher's own views there, never the pane
-  (`aPaneUnderTheSwitcherIsNotWhatAClickOnItOrBesideItFinds`), so the pane
-  monitor does not take the click.
+  (`aPaneUnderTheSwitcherIsNotWhatAClickOnItOrBesideItFinds`).
 - **The empty-field Backspace reading the field rather than the model.** While
   an input method composes, the model's text is still empty and the field's is
   not, so the model's answer would take Backspace from the composition.
 - **A click on a row ending the field's editing before the click chooses.**
-  Unproven: the test window, offscreen, cannot become key, so no test can send
-  the click. It is under "Checked by hand" below.
+  Unproven: the offscreen test window cannot become key, so no test can send the
+  click. It is under "Checked by hand" below.
 - **The field's text set while it edits ending the editing and closing it.**
   Tested: the field keeps the keyboard and shows the text
   (`textTheModelSetsWhileTheFieldEditsIsShownWithoutClosingIt`).
@@ -89,7 +77,7 @@ Raised by reviews and settled; a review need not raise these again.
   asked for takes the keyboard as it opens, and anything taking the keyboard
   closes the switcher; the open takes milliseconds, a deleted file's a git read.
 - **Cmd+P after Tab going to All rather than closing.** Each key names a scope,
-  and the one in view is what it closes; the rule above says so.
+  and the one in view is what it closes.
 - **A report re-ranking the rows in the instant between a redraw and Return.**
   Return then takes the new first row; taking the drawn one instead lost the
   user's own Down or letter typed in the same burst, which is the likelier.

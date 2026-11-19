@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A multi-line monospaced field on a rounded fill: a setting's script or file
-/// list, and the merge form's commit message.
+/// list, the merge form's commit message and a review comment.
 struct MonospacedTextEditor<Fill: ShapeStyle>: View {
   private static var inset: Double { 4 }
   private static var cornerRadius: Double { 5 }

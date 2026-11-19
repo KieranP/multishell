@@ -2,9 +2,9 @@
 
 Under `~/Library/Application Support/Multishell`.
 
-- **A debug build keeps its own state file, socket, integration and drops
-  directories, and its own helper link**; themes and the hooks' helper link are
-  shared.
+- **A debug build keeps its own state file, socket, integration, drops and
+  reviews directories, and its own helper link**; themes and the hooks' helper
+  link are shared.
 - **A debug build made in a git worktree adds that worktree's name**, so two can
   run at once. The bundling script writes the name into the Info.plist, `open`
   passing no environment to what it launches.
@@ -17,30 +17,21 @@ Under `~/Library/Application Support/Multishell`.
   the first to launch takes.
 - **Settings prints the state file**, and `multishell info` the state file and
   socket of the copy that answered.
-- **`state.json`**: sidebar, terminal tabs and file tabs by path with their
-  scroll, each worktree's All changes tab with its scroll, the groups they sit
-  in with their widths, order and shown tab, pane trees, worktree names, which
-  worktrees are hidden, creation dates and port blocks, the Agents board's Show
-  all terminals, whether the Files panel is open, every setting, and under
-  `shortcuts` only the commands whose keys the user changed
-  (design/shortcuts.md).
+- **`state.json`** holds the workspace and every setting, and under `shortcuts`
+  only the commands whose keys the user changed (design/shortcuts.md).
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
   which Hidden sections are expanded, a file tab's text, the All changes tab's
   collapsed files and opened folds, the Files panel's filter and the folders
-  opened in it, the pull requests and CI runs last read, the quick switcher's
+  opened in it, the pull requests and CI runs last read, which of their checks,
+  threads and failures were picked or sent to an agent, the quick switcher's
   recent worktrees, whether the Agents board is up, or anything about the debug
   tools. Those are runtime state, so the debug tools start off at every launch
   and write nothing to disk or defaults.
-- **A file written before groups existed names no group**, and carries a key for
-  the active tab this build has no property for; the repair gathers each
-  worktree's ungrouped tabs into the one group they were saved as.
-- **A file written before file tabs gives no group an order**, so the repair
-  takes each group's from the order of its tabs (design/files/file-tabs.md).
-- **An agent id the catalogue retired is forgotten on load**
-  (design/state-and-store.md).
-- **A broken state file is moved aside with a timestamp**
-  (design/state-and-store.md).
+- **Files from before groups and before file tabs are repaired on load**
+  (design/tabs-and-groups/groups-and-dragging.md, design/files/file-tabs.md), an
+  agent id the catalogue retired is forgotten, and a broken file is moved aside
+  with a timestamp (design/state-and-store.md).
 - **Themes are JSON in a themes folder**, with the examples in an `examples`
   folder inside it, written when the user opens the folder and not loaded. Each
   is a copy of a built-in theme, and one that differs is rewritten then.
@@ -78,12 +69,11 @@ Under `~/Library/Application Support/Multishell`.
 - **The integration directory is generated at launch** from the scripts bundled
   in MultishellCore, so an edit there lasts until the next launch.
 - **The drops directory holds files a drag promised rather than handed over,
-  images pasted from the clipboard and the review files Send writes**, swept at
+  images pasted from the clipboard and the notes sent to an agent**, swept at
   launch once a week old.
 - **The reviews directory holds a file per worktree of its review comments**,
-  named by a digest of the worktree's path and recording the path inside,
-  removed with the worktree, a debug build keeping its own as it does drops. Not
-  in `state.json` (design/files/review-comments.md).
+  named by a digest of the worktree's path, removed with the worktree. Not in
+  `state.json` (design/files/review-comments.md).
 - **The merged Ghostty config passes through the temporary directory**, a file
   per load, gone once libghostty has read it
   (design/terminals/engine-and-config.md).
@@ -108,12 +98,9 @@ Under `~/Library/Application Support/Multishell`.
   its variant, so `window sidebar-width` on a scratch run never moves the
   installed app's. Cost: a debug build starts at the initial widths.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
-  with the same keys as a project's settings less the agent, its flags, the
-  shell, the integrations and the trust answers. Read at launch, when a
-  project's worktree records change, and when its modification date has moved,
-  which an event on the file or the project's `.git` and each minute's round
-  check. What it said is never saved in the state file, where a restored copy
-  would trust a file nobody looked at.
+  with a project's settings less the agent, its flags, the shell, the
+  integrations and the trust answers. What it said is never saved in the state
+  file, where a restored copy would trust a file nobody looked at.
 - **Decide what a blank one means.** Coerce to "none" where that and "no
   opinion" agree, and leave it alone where blank is how "none" is spelled. Left
   uncoerced, a blank hook counts as a hook, and the trust question asks about an

@@ -1,5 +1,5 @@
-/// A menu command whose keys the user may change; `ShortcutGroup` holds the
-/// menus' order. The raw value is the state file's key, so it never changes.
+/// A menu command whose keys the user may change unless `isFixed`; `ShortcutGroup`
+/// holds the menus' order. The raw value is the state file's key, so it never changes.
 public enum ShortcutCommand: String, CaseIterable, Sendable {
   case addProject = "add-project"
   case changesPane = "changes-pane"

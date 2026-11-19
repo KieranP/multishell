@@ -17,7 +17,7 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case fileNotOpenable(path: String)
   /// Shut, or showing Review, a pull request's or CI's page, which lists no files.
   case filesPanelListsNoFiles
-  /// A file tab's rows are still being read, so a step or find has nothing to act on.
+  /// A file or All changes tab still being read, so a step or find has nothing to act on.
   case fileTabNotRead(id: UUID)
   /// Drawn as an image, which has no lines for arrows or a find bar.
   case fileTabShowsImage(id: UUID)
@@ -34,11 +34,11 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   /// No catalogue agent has the id.
   case noAgent(id: String)
   case noAgentChosen
-  /// The file tab's view has no change that way, as its arrow is greyed.
+  /// The file or All changes tab's view has no change that way, as its arrow is greyed.
   case noChangeThatWay(id: UUID)
   /// The Files panel lists no folder at that path.
   case noFilesFolder(path: String)
-  /// A find step asked of a pane or file tab whose bar is down.
+  /// A find step asked of a pane, file or All changes tab whose bar is down.
   case noFindBar(id: UUID)
   /// A find with nothing to find: a pane's engine takes empty text as the end.
   case noFindText(id: UUID)
@@ -120,8 +120,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case tabInAnotherWorktree(id: UUID)
   /// The store refused the move with the tab and its group still there.
   case tabNotMoved(id: UUID)
-  /// Not in front in its group, or its worktree out of view: what a file tab's
-  /// bar does needs its view.
+  /// Not in front in its group, or its worktree out of view: what a file or All
+  /// changes tab's bar does needs its view.
   case tabNotShown(id: UUID)
   /// A file tab, which keeps its file's name and has no panes.
   case tabShowsAFile(id: UUID)
@@ -134,11 +134,11 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   /// A panel width a drag could not reach, in points.
   case widthOutOfRange(minimum: Double, maximum: Double)
   /// Open but behind another window or on another Space, where nothing reads a
-  /// file tab or the panel.
+  /// file or All changes tab, or the panel.
   case windowCovered
   /// Sized there, the window shrinks inside the full-screen space.
   case windowInFullScreen
-  /// In the Dock: nothing reads a file tab or the panel, and it takes no size.
+  /// In the Dock: nothing reads a file or All changes tab, or the panel, and it takes no size.
   case windowMinimized
   /// The create ended with no worktree and no alert, as a Cancel does.
   case worktreeNotCreated

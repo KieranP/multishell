@@ -159,7 +159,7 @@ final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
     return ViewScreenshot.png(of: view)
   }
 
-  /// libghostty frames this as a paste itself. `false` means there is no
+  /// libghostty frames this as a paste itself. `false` for empty text or no
   /// surface, which a session with no shell running has none of.
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {

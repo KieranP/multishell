@@ -18,7 +18,7 @@ extension AgentHookIntegration {
   }
 
   /// Which asked-for event a payload is, or nothing where it says nothing
-  /// about waiting. The hook exits quietly on nothing.
+  /// about the agent's state. The hook exits quietly on nothing.
   func event(for payload: AgentHookPayload) -> AgentHookEvent? {
     guard let event = events.first(where: { $0.reportedName == payload.eventName }) else {
       return nil

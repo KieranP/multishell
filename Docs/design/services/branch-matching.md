@@ -6,77 +6,64 @@ upstream, and a merged pull request as proof the branch landed.
 - **Matched by the branch's upstream**, its name on the remote and the owner and
   name the remote's URL gives, never its local name: a local branch can track
   another name, and a fork's branch of the same name is someone else's. A run is
-  matched the same way, by the `repository_url` CircleCI gives it, so a fork
-  shows none of the project's runs on its same-named branch; where either side
-  names no repository, the branch name alone decides.
+  matched the same way, by the `repository_url` CircleCI gives it; where either
+  side names no repository, the branch name alone decides.
 - **A remote's push URL is asked once which repository it names today**,
-  `gh repo view <url>`, and a pull request headed there matches too: GitHub
-  lists a renamed or moved repository's under its new name while the URL keeps
-  the old, which it redirects (`zeit/next.js` heads `vercel/next.js`, checked
-  2026-11-07). A fork resolves to itself, so its parent's same-named branch
-  stays someone else's; trusting any pull request from no fork with one remote
-  was tried and dropped for taking those. A URL `gh` cannot resolve, a GitLab
-  mirror, an ssh host alias or a timeout, waits ten minutes before it is asked
-  again, as each read waits on the asks. A run matches the new name only while
-  the pull request integration has asked, as CircleCI's read asks nothing of
-  GitHub.
+  `gh repo view <url>`: GitHub lists a renamed or moved repository's pull
+  requests under its new name while the URL keeps the old, which it redirects
+  (`zeit/next.js` heads `vercel/next.js`, checked 2026-11-07). A fork resolves
+  to itself, so its parent's same-named branch stays someone else's; trusting
+  any pull request from no fork with one remote was tried and dropped for taking
+  those. A URL `gh` cannot resolve, a GitLab mirror, an ssh host alias or a
+  timeout, waits ten minutes before it is asked again. A run matches the new
+  name only once the pull request integration has asked, as CircleCI's read asks
+  nothing of GitHub.
 - **The branch's upstream here is where it is published**: its own name on the
-  remote its pushes go to, `pushRemote` or `remote.pushDefault` resolved by
-  git's `%(push:remotename)`, where that remote has it; else the branch it
-  follows. A fork's push remote then finds the fork's pull request, and a branch
-  pushed without `-u` its own, its unpushed commits counted against that.
+  remote its pushes go to, where that remote has it; else the branch it follows.
+  A fork's push remote then finds the fork's pull request, and a branch pushed
+  without `-u` its own.
 - **Its own name that git does not track for it counts once the branch held that
-  tip**, as its reflog says; else it is the branch it follows. A new branch
-  reusing the name of one whose pull request was merged or closed took the old
-  remote branch, left undeleted, and with it the old pull request and runs. Read
-  again only when either tip moves. A branch with no reflog, or a read that
+  tip**, as its reflog says: a new branch reusing the name of one whose pull
+  request was merged or closed took the old remote branch, left undeleted, and
+  with it the old pull request and runs. A branch with no reflog, or a read that
   fails, keeps its own name. Cost: a teammate's push to a branch this clone
   pushed without `-u` hides its pull request until the branch is pulled.
 - **An upstream that is the trunk, on a branch that is not, is no upstream**: a
   branch cut from `main` still tracking it took `main`'s pull request and runs.
-  Nor is one on remote `.`, a local branch: nothing was pushed. A worktree's new
-  branch started from another remote branch is made with `--no-track`, as GitHub
-  Desktop does, or it would take that branch's pull request and push into it;
-  one started from the trunk tracks it, as git would. One an earlier build made
-  that way is known by its reflog's "Created from" entry, read once per branch a
-  worktree in the project's worktree folder has out, and its upstream set aside
-  the same way; a read git failed is asked again next scan. git logs the same
-  entry for a branch a user made to follow a teammate's, so one outside that
-  folder keeps what it follows.
+  Nor is one on remote `.`, a local branch: nothing was pushed.
+- **A new worktree's branch started from another remote branch is made with
+  `--no-track`**, as GitHub Desktop does, or it would take that branch's pull
+  request and push into it; one started from the trunk tracks it, as git would.
+  One an earlier build made that way is known by its reflog's "Created from"
+  entry and its upstream set aside the same way. git logs the same entry for a
+  branch a user made to follow a teammate's, so this is done only for branches
+  in the project's worktree folder.
 - **An open pull request wins over a newer closed one, then the newest.**
 - **A merged pull request stands for the merged badge only while its head is the
-  branch's tip.** Then it is proof, `.pullRequest` evidence, and the removal
-  dialog leads with deleting the branch. A commit after the merge leaves it
-  outgrown: drawn instead of the merged badge, said in the tooltip and to
-  VoiceOver, shown on the page with a new one offered, and git's own reads
-  decide the merge evidence. Outgrown where a commit on the tip is the branch's
-  own and its change is not the head's: `git cherry <head> <tip>` lists it, and
-  `git rev-list --no-merges <tip> --not <head> --remotes --branches`, the
-  branch's own remote and local branches excluded, holds it. A scan asks once
-  per head and tip, each services read again, as the remote branches it weighs
-  move with a fetch. A commit after the merge or an amend that changed the work
-  is outgrown. A branch behind its head, one the host rebased with Update branch
-  where the patches still match, and one synced after the merge by rebase, reset
-  or merge from any remote branch, the trunk, another remote's trunk or a
-  stacked base, hold nothing the merge left out, and are shown merged with Open
-  offered, as Create would push the deleted branch back. So is one whose head
-  this clone lacks; a scan leaves that question to the services' next read,
-  which a fetch brings. No trunk is asked, so a project with none resolved still
-  finds a branch outgrown.
+  branch's tip.** Then it is proof, and the removal dialog leads with deleting
+  the branch. A commit after the merge that is the branch's own leaves it
+  outgrown, and git's own reads decide the merge evidence. A commit is the
+  branch's own where `git cherry <head> <tip>` lists it and no other remote or
+  local branch holds it
+  (`git rev-list --no-merges <tip> --not <head> --remotes --branches`). So an
+  amend after the merge is outgrown, while a host's Update branch rebase and a
+  sync after the merge from any branch, the trunk, another remote's trunk or a
+  stacked base, are still merged, with Open offered, as Create would push the
+  deleted branch back. So is one whose head this clone lacks, until a fetch
+  brings it. No trunk is asked, so a project with none resolved still finds a
+  branch outgrown.
 - **Only a pull request merged into the trunk is proof**: one merged into
   another branch, as a stacked one is, has not landed.
 - **Removing a branch that proof calls merged deletes it with `-D`**: after a
   squash merge `git branch -d` refuses a branch the pull request shows landed.
   Whether the branch is still at the pull request's head is read once its
-  checkout is gone, on every removal path, so a commit made while the dialog was
-  up keeps the branch.
+  checkout is gone, so a commit made while the dialog was up keeps the branch.
 - **Cost of tip equality**: a worktree behind the head it was merged at falls
   back to git's reads too, which a fetch usually settles.
 - **A merge without a pull request is git's to see**, through the merged badge's
   own reads; the host can say nothing about it.
 - **A remote a partial clone filters is still a remote**: git prints its fetch
-  line with ` [blob:none]` after it. A branch is matched in the repository its
-  remote pushes to, which a triangular set-up sets apart from where it fetches.
+  line with ` [blob:none]` after it.
 
 ## Reviewed and left as is
 
@@ -92,17 +79,13 @@ upstream, and a merged pull request as proof the branch landed.
   upstream** where nothing names a push remote: git's own default is `origin`,
   and Create Pull Request asks about the remote's same-named branch as that.
 - **The changes past a merged head are asked before the merge reads plan.**
-  Answers, and questions git could not answer, are kept per head and tip, so a
-  scan asks only where one moved: a `git rev-list`, then a `git cherry` only
-  where the branch has commits of its own, merges left out, neither patching the
-  trunk; the plan does not wait on anything else. A services read asks every row
-  with a merged head again, a few at most, and a branch synced since its merge
-  costs it the `rev-list` alone. A scan records each branch's tip whether or not
-  a trunk resolved, so the question follows a commit either way.
+  Answers are kept per head and tip, so a scan asks only where one moved, and
+  `git cherry` runs only where `rev-list` found commits of the branch's own. A
+  branch synced since its merge costs the `rev-list` alone.
 - **A commit after the merge that another branch also holds is not the branch's
   own**, as a stacked child on it or a follow-up branch: the rule that lets a
-  sync from any branch, remote or local, leave nothing out cannot tell the two
-  apart, and that work has a home, and a pull request, of its own.
+  sync from any branch leave nothing out cannot tell the two apart, and that
+  work has a home, and a pull request, of its own.
 - **A rebase that changed a patch's context, or a squash before the merge, reads
   as outgrown.** Patch ids hash the context lines, as the merged badge's own
   patch proof does. Create then asks before it pushes, so the wrong answer costs
@@ -117,9 +100,7 @@ upstream, and a merged pull request as proof the branch landed.
 - **Another branch made, moved or deleted, local or by a fetch in a terminal, is
   weighed at the next services read**, not at once: it moves no upstream of the
   row's, so schedules none, and a poll is at most two minutes off. The menu's
-  Fetch schedules a read of its own. An overtaken scan may still ask its older
-  questions, one `rev-list` and `cherry` per merged row, which the next match
-  prunes.
+  Fetch schedules a read of its own.
 - **A branch scan overtaken by a newer one still writes its tips and dates.**
   Unproven: the two would have to land out of order, and the next scan rewrites
   both; `recordUpstreams` already refuses the older scan's upstreams.

@@ -2,7 +2,7 @@ import Observation
 
 @testable import MultishellCore
 
-/// `replaceWorktrees` writes `workspace` twice, so firings between two reads of `changes`
+/// `replaceWorktrees` writes `workspace` more than once, so firings between two reads of `changes`
 /// count as one operation. A write of an equal value still fires.
 @MainActor
 final class ChangeCounter {

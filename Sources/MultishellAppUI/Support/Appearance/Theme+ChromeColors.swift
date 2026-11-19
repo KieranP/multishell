@@ -13,7 +13,7 @@ extension Theme {
   var tabBar: AreaPalette { AreaPalette(self, .tabBar) }
   /// The shown terminal tab's face, and the dividers between its panes.
   var terminalTab: AreaPalette { AreaPalette(self, .terminalTab) }
-  /// The shown file tab's face, its bar and its notices.
+  /// The shown file or All changes tab's face, its bar and its notices.
   var fileTab: AreaPalette { AreaPalette(self, .fileTab) }
   var findBar: AreaPalette { AreaPalette(self, .findBar) }
   var quickSwitcher: AreaPalette { AreaPalette(self, .quickSwitcher) }

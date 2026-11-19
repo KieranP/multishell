@@ -91,7 +91,7 @@ extension Workspace {
   }
 
   /// Cycling stays inside the tab's own group, wrapping at either end, and
-  /// steps through both kinds in strip order.
+  /// steps through every kind in strip order.
   public func neighbour(
     ofTab id: WorkspaceTab.ID,
     _ direction: CycleDirection,
@@ -168,7 +168,7 @@ extension Workspace {
     tabs.firstIndex { $0.root.contains(session) }
   }
 
-  /// The terminal tab a group shows, `nil` where it shows a file.
+  /// The terminal tab a group shows, `nil` where it shows another kind.
   public func shownTab(ofGroup group: TabGroup) -> TerminalTab? {
     group.shownTabID.flatMap { tab($0) }
   }
@@ -178,12 +178,12 @@ extension Workspace {
   }
 
   /// The terminal tab the user is working in: the focused group's. What
-  /// Cmd+T, a split and a rename act on; `nil` where that group shows a file.
+  /// Cmd+T, a split and a rename act on; `nil` where that group shows another kind.
   public func activeTab(in worktree: Worktree.ID) -> TerminalTab? {
     focusedGroup(in: worktree).flatMap { shownTab(ofGroup: $0) }
   }
 
-  /// The focused group's tab, of either kind: what closing a tab acts on.
+  /// The focused group's tab, of any kind: what closing a tab acts on.
   public func activeWorkspaceTab(in worktree: Worktree.ID) -> WorkspaceTab? {
     focusedGroup(in: worktree).flatMap { shownWorkspaceTab(ofGroup: $0) }
   }

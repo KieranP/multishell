@@ -1,8 +1,8 @@
 # Debug tools
 
-What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
+What View > Enable Debug Tools measures, how, and why. They are for finding
+where sluggishness comes from, in every build. Newest at the bottom.
 
-- **For finding where sluggishness comes from**, in every build.
 - **The toggle is runtime state, not a preference.** Sampling costs a process
   table read a second, and the display link wakes the main thread every refresh,
   120 times a second on ProMotion, panel closed or not, so the Frame Rate tile
@@ -15,19 +15,16 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   counts.
 - **A second is judged by its longest frame, not its count.** 60 fps is smooth
   on a 60 Hz display and half speed on a 120 Hz one; a 50 ms frame is a hitch
-  and a 100 ms one a stall on both. The charts band every stalled slot red.
+  and a 100 ms one a stall on both.
 - **A display that stops is not a stall.** A sleeping display sends no frames,
   and the gap to its first frame on waking read as one long stall. The sampler
   runs on the main thread too, so a frameless reading that came on time means
   the thread was free and the gap is dropped; a stall holds the reading late and
   the gap is kept.
-- **Git runs are timed in `GitRunner`**, which every git the app starts goes
-  through. The log is shared by the runner a later PATH builds, and keeps
-  nothing while off, so nothing grows undrained. A run still going is shown: a
-  git hung on a dead mount stays running.
-- **`gh` and `circleci` are timed into the same log**, and every run is named
-  with its program, `git status` beside `gh pr list`, so the CLI Activity table
-  and tile say which tool ran.
+- **Every git, `gh` and `circleci` run is timed into one log**, named with its
+  program so the CLI Activity table says which tool ran. The log keeps nothing
+  while off, so nothing grows undrained. A run still going is shown: a git hung
+  on a dead mount stays running.
 - **Memory and CPU are `proc_pid_rusage`'s**: the footprint Activity Monitor's
   Memory column shows, and CPU time in mach ticks, not the nanoseconds the
   header says. A tick on Apple silicon is 125/3 ns, so read as nanoseconds it is
@@ -35,38 +32,33 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **Panes are matched by terminal, then foreground pid, never environment.**
   Each shell carries its session in `MULTISHELL_SESSION`, but macOS leaves the
   environment out of `KERN_PROCARGS2` for any process but one's own.
-- **The engine names the tty and foreground pid**, and a pane whose shell has no
-  pty yet has neither. Where it cannot, every pane's processes land under Other
-  processes and the totals stay right: they read every child of the app.
+- **A pane whose shell has no pty yet has no tty or foreground pid.** Its
+  processes land under Other processes meanwhile and the totals stay right, as
+  they read every child of the app.
 - **An expanded tab is a tree of who started whom.** Siblings go by what their
   whole tree holds, so a small shell running a large agent comes first. The
   parent is the one the scan walked down from, so the tree costs no syscall
   beyond the walk.
-- **Self and Total both, so the gap is what a shell started.** A tab's Self is
-  its terminals and its panes' shells. A tab the engine could not place shows
-  its terminal alone: its processes are under Other processes meanwhile, so the
-  rows still add up, and a sample or two places it. With no terminal reading
-  either it shows neither, rather than a zero that reads as measured.
+- **Self and Total both, so the gap is what a shell started.** A tab the engine
+  could not place yet shows its terminal alone, so the rows still add up. With
+  no terminal reading either it shows neither, rather than a zero that reads as
+  measured.
 - **Child processes means everything the app started**, git and hooks as well as
   panes, so a burst of git runs shows in the totals.
 - **One sample a second, fifteen minutes kept**, the spans a load average is
-  taken over. A point of a longer range is several seconds: the worst frame
-  rate, the mean rates, the latest memory. Slots are counted from the first
-  sample, so a slot holds the same seconds each time it is drawn.
+  taken over. Slots are counted from the first sample, so a slot holds the same
+  seconds each time it is drawn.
 - **A rate or a CPU share is counted over the time its samples covered**, not
   per sample. A stall holds the sampler too, and a sample it held four seconds
   holds four seconds of git runs, reports and CPU.
-- **The tiles share one time axis and one pointer**: over one tile it marks the
-  same second on all, so a stall lines up with the git burst or CPU spike in it.
-- **The memory tile stacks the terminals between the app and its children**, as
-  the table takes them out of the app's row.
+- **The tiles share one time axis and one pointer**, so a stall lines up with
+  the git burst or CPU spike in it.
 - **CPU splits by thread: main, the terminals', the rest, then children.** The
   terminals' are Ghostty's `renderer`, `cf_release`, `io`, `io-reader`,
   `io-gather` and `search`, and CoreVideo's `CVDisplayLink`, which a terminal's
   renderer starts while it draws; the app's own frame link starts no such
-  thread. They take the paler blue Memory gives them. The rest is what the app's
-  CPU leaves after the other two, so a thread that came and went between
-  readings lands there.
+  thread. The rest is what the app's CPU leaves after the other two, so a thread
+  that came and went between readings lands there.
 - **State Reports, not Worker Reports**: every report on the socket counts,
   shell prompts and agent hooks as well as workers, each handled on the main
   thread.
@@ -87,9 +79,8 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   runs in the app's process, so its screens and scrollback sit in the app's
   footprint. Our patch 0006 reads each surface's page and image bytes, the
   figure libghostty-vt reports since ghostty#14499, which the surface API lacks.
-  The Terminal line heads an open tab with its shells under it, since they run
-  in it. GPU buffers and the font atlas stay in the app's row: Ghostty counts
-  neither, and surfaces share the atlas.
+  GPU buffers and the font atlas stay in the app's row: Ghostty counts neither,
+  and surfaces share the atlas.
 - **The terminal read is on the main thread, under Ghostty's terminal lock**, as
   a copy of a selection is: the surface is freed there too, so the pointer
   cannot go stale mid-read. It walks every page, so it runs once a sample, and
@@ -99,10 +90,9 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   The Total row stays the footprint and children as measured.
 - **File tabs share one line, estimated from the text and image bytes the model
   keeps** (files/file-tabs.md), under the app's heap in use, since malloc holds
-  them. The layout a shown tab adds, up to 186 MB at the 1 MiB cap, and a shown
-  image's decoded picture, up to 36 MB a copy, are not in the estimate.
-  `debug memory` prints it as `contentMemory`, `textMemory` before images
-  counted.
+  them. All changes tabs count in it too (files/all-changes-tab.md). The layout
+  a shown tab adds, up to 186 MB at the 1 MiB cap, and a shown image's decoded
+  picture, up to 36 MB a copy, are not in the estimate.
 - **Freed memory stays in the footprint until macOS wants it**, so closing a tab
   leaves its terminal's pages counted until the next tab reuses them. Not a leak
   (develop/memory.md).
@@ -121,7 +111,7 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The charts are shapes, not a `Canvas`.** On macOS 27 one `Canvas` makes
   SwiftUI draw its whole hosting view through Metal into three window-sized
   buffers, 105 MB with Debug Info open, `.drawingGroup()` or not; shapes held 23
-  MB at the same CPU (develop/memory.md). A colour is a shape of its own.
+  MB at the same CPU (develop/memory.md).
 - **The command line reads the live history, not the paused panel**, so a
   script's samples run on while someone holds Debug Info still. With the tools
   off a reading is refused rather than answered empty
@@ -131,8 +121,7 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   it held.
 - **Git runs are also kept one by one, the newest 1,000**, each with the sample
   it ended in: the tallies add runs up per command and lose which one was slow.
-  A burst of status reads is hundreds. They go with the samples when the tools
-  turn off.
+  A burst of status reads is hundreds.
 - **A mark goes into the next sample and into Instruments' Points of Interest.**
   The signpost is sent with the tools off too, so a trace taken without the
   display link's wake-ups still shows where the action fell.
@@ -163,39 +152,24 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The region walk steps over submaps.** Entering the shared library cache, one
   submap of thousands of regions holding a few MB, made it 15 times as long: 2
   ms against 31 in a probe. What is skipped lands in the rest.
-- **Every table sorts by any column's header**, a second click turning it round,
-  through one `DebugTableSort`. Text starts A to Z and figures largest first; a
-  row with no reading, a peak never read or a run never placed, goes last either
-  way. Memory Breakdown keeps its Total row last, and a row's parts or processes
-  stay under it. The order is the panel's, not kept past it, and each caption
-  names its column.
-- **CPU Breakdown nests names under groups**, the CPU tile's bands: the main
-  thread, the terminals' and the rest. A thread has no parent to nest under;
-  macOS records no thread starting another. Nor can the terminals' split by tab:
-  every terminal's threads share the same seven names.
+- **CPU Breakdown nests threads under the CPU tile's groups**, not under one
+  another: macOS records no thread starting another. Nor can the terminals'
+  split by tab: every terminal's threads share the same seven names.
 - **The tiles run from the most telling of a slow app to the least**: frame
   rate, CPU, memory and memory pressure, then wakeups and disk, then the app's
   own work, then the leak signs, and peak memory, history, last.
-- **Two tiles share a row where both fit with their charts beside their
-  labels**, else one, its chart under its label where even a row is too narrow
-  (DebugTileGridLayout). Labels are 18 ems, their captions and legends wrapping,
-  so two fit from a panel about 810 points wide at 13 pt.
 - **Disk, wakeups and peak memory are the app's own**, from `proc_pid_rusage`'s
-  fourth version, a second call beside the first version every process gets.
-  Disk counts what reached the disk, not what was written to its cache.
+  fourth version. Disk counts what reached the disk, not what was written to its
+  cache.
 - **Threads are read in the app, with `task_threads`**, each one's CPU and its
   pthread name. The SDK has no public call naming another thread the main one,
   so its id is read on the main actor as sampling starts and handed to the scan.
 - **Memory pressure is the system's level, polled each sample** from the
   `kern.memorystatus_vm_pressure_level` sysctl: a dispatch source tells only of
-  changes after it starts. A slot shows its worst second.
-- **Open files counts every descriptor**, pipes and sockets as well as files.
-- **Reports are timed as the main actor handles them; saves as the dispatch
-  queue encodes and writes them**, the hop back to the main actor left out, with
-  the bytes the encode gave. File events count the directories the watcher
-  reported, untimed: what they start awaits git, which CLI Activity times.
-- **The sidebar's cells are CPU, memory and disk**, in that order; frame rate is
-  a tile only.
+  changes after it starts.
+- **A save is timed from the encode to the write**, the hop back to the main
+  actor left out. File events are counted, not timed: what they start awaits
+  git, which CLI Activity times.
 - **Wakeups are the interrupt count, package idle drawn inside it.** XNU adds a
   package idle wakeup only where it has just added an interrupt one, so the two
   summed counted those twice.

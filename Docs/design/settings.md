@@ -16,10 +16,9 @@
   agent skill on any create, or link `~/.ssh/id_ed25519` into a tree an agent
   reads.
 - **So a repo's three are confined to the checkout**, once at read time and held
-  on the project, since the sidebar asks per row per render. The tick's reader
-  confines off the main actor with the parse, and export writes, stamps and
-  confines there too: each touches the disk, and on a slow volume would hold the
-  window.
+  on the project, since the sidebar asks per row per render. The read, and
+  export's write, stamp and confine, run off the main actor: each touches the
+  disk, and on a slow volume would hold the window.
 - **The directory resolves symlinks**, so a committed link cannot carry it out.
 - **Resolved as far as it exists, the rest appended**: the resolver returns a
   path that does not exist unchanged, links and all, and before the first create
@@ -35,15 +34,14 @@
   value is the entry, the rest of the list kept. Pointing outside is the user's
   to do in settings, not the repository's. Cost: a repo can no longer ship
   `../{project}-worktrees`, and the drop is silent.
-- **Refusal reaches only what the file ships.** `place` takes
-  `isRepositoryList`, false for a user's list, whose entry spelled to leave the
-  root is skipped and named rather than failing the create (hooks.md), and whose
-  symlinked sources may lead anywhere. Both lists take an entry as a path inside
-  the repository and mirror it into the worktree; `~` and variables are never
+- **Refusal reaches only what the file ships.** A user's list entry spelled to
+  leave the root is skipped and named rather than failing the create (hooks.md),
+  and its symlinked sources may lead anywhere. Either list's entry is a path
+  inside the repository, mirrored into the worktree; `~` and variables are never
   expanded.
-- **A list is wholly one or the other.** `layered` takes the repo's only where
-  the user's is blank, so a create decides it once and carries it on the value
-  as `WorktreeFileList`.
+- **A list is wholly the user's or the repo's**, the repo's taken only where the
+  user's is blank, so a create decides it once and carries the answer on the
+  value (`WorktreeFileList`).
 - **A create re-confines against the disk** before `git worktree add`: a branch
   can commit the symlink without changing the bytes that were read, so the mtime
   never moves and the cached yes stands.
@@ -55,16 +53,12 @@
   asks nothing.
 - **The stored answer's key is still `sharedHooks`.** Renaming it would drop
   every answer already given.
-- **Trust is per file, held against the sha256 of its bytes**, asked when a
-  worktree of that project is selected and re-read when mtime moves. An answer
-  is kept per version of the file: the file is tracked, so one answer per
-  project would be asked again on every branch switch.
+- **Trust is per file, held against the sha256 of its bytes**, re-read when
+  mtime moves. An answer is kept per version of the file: the file is tracked,
+  so one answer per project would be asked again on every branch switch.
 - **Layering is asked of the model**, `effectiveSettings(for:)` and
   `effectiveWorktreeSettings(for:)`, never `project.settings`. The override
   forms are the exception, where blank must keep meaning "follow the global".
-- **The gate is one line.** `layered` drops what the yes covers, the same fields
-  the dialog names, then puts the user's over the rest, rather than each field
-  asking.
 - **The forms read that same view through `inherited`**, or a caption saying
   "from .multishell.json" names a value the layering left out, as it did for an
   untrusted `worktreeDirectory`.
@@ -103,44 +97,33 @@
   count.
 - **A page taller than its window is split, not scrolled.** A grouped form's
   scroller is an overlay, so what is below the fold says nothing, and forcing
-  the indicators changes nothing there. Project Hooks shows Create, Delete or
-  Environment, six editors being 973 pt; All Projects' Agents shows Agent
-  Settings or Agent hooks, the hooks growing with every agent installed. The
-  parts are sidebar rows under their page, not a segmented control in the form,
-  listed only while their page is open (owner, 2026-11-19).
+  the indicators changes nothing there. Project Hooks' six editors were 973 pt;
+  All Projects' agent hooks grow with every agent installed; Shortcuts splits by
+  menu (shortcuts.md). The parts are sidebar rows under their page, not a
+  segmented control in the form, listed only while their page is open (owner,
+  2026-11-19).
 - **One settings window, a sidebar of pages, for All Projects and each
   project.** Chosen over two toolbar-tab windows (2026-11-05) from mockups of
-  four designs. The menu atop the sidebar picks whose settings; Project
-  Settings… opens the window on that project's General, and a close returns it
-  to All Projects, so Multishell > Settings never opens on a project. Cost: two
-  projects can no longer be open side by side, and the window is 860 by 640, the
-  mockup's size.
+  four designs. A close returns it to All Projects, so Multishell > Settings
+  never opens on a project. Cost: two projects can no longer be open side by
+  side, and the window is 860 by 640, the mockup's size.
 - **The sidebar and page sit in a plain row, not a navigation split.** Inside
   the Settings scene the split brought a sidebar button and a toolbar band of
   empty space over the page, and its search field needs the split. So the search
   is a plain field in a grey well, as the mockup drew it.
 - **The title bar is hidden from AppKit**, `NSWindow.hideTitleBar`: SwiftUI's
-  `hiddenTitleBar` style does nothing to a Settings scene. The sidebar runs up
-  under the traffic lights and the page draws its 50 pt header over the band, as
-  the workspace window does.
-- **Where the window is lives on the model**, `settingsLocation`, so the
-  sidebar, the command line and a Global cell's link all move it, and a scope
-  change keeps the page where the other scope has it (SettingsLocationTests).
+  `hiddenTitleBar` style does nothing to a Settings scene.
 - **A project's page is a table: the setting, the Global column, the Override
   column.** The global value is read beside the override rather than in a
-  caption under a greyed control, three rows becoming one. "Same" means the
-  project follows; it reads "Override" under the pointer and starts one seeded
-  with the value followed. The arrow hands it back.
-- **That button, not a blank field, starts an override**, so the four fields
-  where blank is "none" keep that meaning: an override cleared to blank is none,
-  and only the arrow returns to following.
-- **The Global column names its source** when it is not the global: "From
-  .multishell.json" or "Detected", and only a global value links to its page.
-  Default branch's "Detected" is what the scan finds with the override set
-  aside, else the column would echo the override back.
-- **Search matches every word typed against a page's title and row labels**,
-  listed beside the page (`SettingsPage+SearchTerms`). Cost: a row added to a
-  page and not to that list cannot be found.
+  caption under a greyed control, three rows becoming one.
+- **A button, not a blank field, starts an override**, so the four fields where
+  blank is "none" keep that meaning: an override cleared to blank is none, and
+  only the arrow returns to following.
+- **Default branch's "Detected" is what the scan finds with the override set
+  aside**, else the Global column would echo the override back.
+- **Search matches a page's title and row labels from a list kept beside the
+  page** (`SettingsPage+SearchTerms`). Cost: a row added to a page and not to
+  that list cannot be found.
 - **The pages are drawn to the mockup, not a grouped `Form`.** The Form gave a
   white page under grey cards, 13 pt bold group titles and grey fields, the
   mockup's inverse. Cost: a native control the pages use must be given the
@@ -218,19 +201,20 @@
     table's heading matches a group's title.
   - `ThemePicker` stays in `Shared/` although only the Terminal menu draws it: a
     folder follows what a file is, not how many places call it.
-  - `Theme.builtins` and `theme(from:)`'s default stay public: 24 AppUI test
+  - `Theme.builtins` and `theme(from:)`'s default stay public: 20 AppUI test
     files name them without `@testable` importing Core.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something
-  failed", which is all some people want.
-- **Cost of that**: a state file written by this build reads as off on a build
-  with the picker. One caption at the foot says what holds for every toggle,
-  where three (i) buttons said it three times.
+  failed", which is all some people want. Cost: a state file written by this
+  build reads as off on a build with the picker. One caption at the foot says
+  what holds for every toggle, where three (i) buttons said it three times.
 - **Permission is asked as the toggle goes on**, not at the first report, so the
   dialog arrives while the user is looking at the thing it is about and a
-  refusal can be answered where it is read.
-- **The answer is runtime state**, re-read as the page opens and as the app
-  returns to the front, the way back from the settings the caption points at.
+  refusal can be answered where it is read. A toggle a hand edit turned on,
+  never asked about, asks at its first banner instead.
+- **The permission answer is runtime state**, re-read as the page opens and as
+  the app returns to the front, the way back from the system settings the
+  caption points at.
 - **Export stores its trust answer before the write**, the digest being known
   from the bytes. Stored after, a poll reading the file in between asked the
   user to trust hooks they had just exported, and nothing withdrew it.

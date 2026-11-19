@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// What a file tab shows in place of rows: a binary file, one too large, one
-/// that is nowhere, each with the editor a click away.
+/// What a file tab shows in place of rows: a binary file, one too large or
+/// unreadable, with the editor a click away, or one that is nowhere.
 struct FileTabNotice: View {
   let model: AppModel
   let tab: FileTab

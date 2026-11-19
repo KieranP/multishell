@@ -35,7 +35,7 @@ struct TabFaceModifier: ViewModifier {
       }
       .contentShape(.rect)
       .onTapGesture(perform: activate)
-      // Every tab strip closes on a middle click, the active one or not.
+      // Every tab closes on a middle click, the active one or not.
       .onMiddleClick(perform: close)
   }
 }

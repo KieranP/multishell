@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A shell, then every agent found on the PATH. What ⌘T does, which turns
-/// on auto-start, is not among them: each item here says what it starts.
+/// A shell, then every agent found on the PATH. What New Tab (⌘T by default) does,
+/// which turns on auto-start, is not among them: each item here says what it starts.
 struct NewTabMenu: View {
   let model: AppModel
   let groupID: TabGroup.ID

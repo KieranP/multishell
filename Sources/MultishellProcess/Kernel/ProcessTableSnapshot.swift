@@ -1,7 +1,7 @@
 import Darwin
 
-/// The kernel's whole process table read once, so a scan asks it nothing per
-/// pid but the usage: `proc_listchildpids` walks the table on every call.
+/// The kernel's whole process table read once, so a scan asks it per pid only for the usage
+/// and an interpreter's arguments: `proc_listchildpids` walks the table on every call.
 struct ProcessTableSnapshot {
   private let recordsByPID: [Int32: kinfo_proc]
   private let childrenByParent: [Int32: [Int32]]

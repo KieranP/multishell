@@ -8,11 +8,12 @@
 - **Reconcile, don't command.** One path for tab open and close, worktree or
   project removed, process exited, relaunch. Cost: a session that fails to open
   is removed after, not prevented.
-- **One `reconcileSessions(takingFocus:)`, and only a user's action passes
-  focus.** A refresh runs from the watcher, so focusing there would take the
-  keyboard off whatever is being typed. The exceptions are a held-back first tab
-  opening in view (terminals/sessions.md) and a command-line request on the
-  worktree in view, done as the click it stands for (agents/command-line.md).
+- **Only a user's action passes focus when sessions reconcile.** A refresh runs
+  from the watcher, so focusing there would take the keyboard off whatever is
+  being typed. The exceptions are launch, where no field is being typed in; a
+  held-back first tab opening in view (terminals/sessions.md); and a
+  command-line request on the worktree in view, done as the click it stands for
+  (agents/command-line.md).
 - **A shell exiting moves the keyboard only off its own pane**: one in a
   background tab took it from the field being typed in.
 - **A refresh still reconciles.** Without it a worktree removed outside the app
@@ -39,9 +40,8 @@
   let sixteen git processes run where the width is eight. A fresh log would drop
   the runs Debug Info counted before the login shell's PATH landed.
 - **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
-  thread per core until GCD ran out and the suite hung. Blocking file work goes
-  through `runOnDispatch`, the git library's stats, reads and line counts
-  included; worktrees/line-count-badge.md has the cost.
+  thread per core until GCD ran out and the suite hung, so blocking file work
+  goes to GCD instead; worktrees/line-count-badge.md has the cost.
 - **The directory check before a shell starts is the one wait**, a second at
   most on the main thread and never on a pool thread; worktrees/sidebar.md has
   why.

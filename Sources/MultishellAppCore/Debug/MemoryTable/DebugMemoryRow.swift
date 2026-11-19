@@ -14,8 +14,8 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   public let title: String
   /// The worktree for a tab, what the row counts for the others.
   public let subtitle: String
-  /// `nil` for a tab the engine could not place, as are its memories, and
-  /// for the total, which has no share.
+  /// The count is `nil` for a tab the engine could not place, whose memories are its
+  /// terminal's alone; the count and Self are `nil` for the total, which has no share.
   let processCount: Int?
   let selfMemory: UInt64?
   let totalMemory: UInt64?

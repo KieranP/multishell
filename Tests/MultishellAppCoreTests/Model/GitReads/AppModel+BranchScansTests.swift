@@ -127,7 +127,7 @@ struct AppModelBranchScansTests {
   }
 
   /// Writing a dictionary entry back unchanged still redraws every view watching it, and the
-  /// status poll would do that to the whole sidebar every five seconds.
+  /// status poll would do that to the whole sidebar every minute.
   @Test func aPassThatChangesNothingDoesNotDisturbTheViews() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

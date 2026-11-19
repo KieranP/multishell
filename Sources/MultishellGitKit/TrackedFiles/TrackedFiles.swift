@@ -1,4 +1,4 @@
-/// Every path a worktree's index tracks, for the Files panel's All list.
+/// Every path a worktree's index tracks, for the Files panel's Files list.
 public struct TrackedFiles: Equatable, Sendable {
   public static let empty = Self(
     paths: [],

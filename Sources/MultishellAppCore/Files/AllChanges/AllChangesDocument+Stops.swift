@@ -1,4 +1,4 @@
-/// Where the bar's arrows stop across the files; see "The bar's arrows step
+/// Where the bar's arrows stop across the files; see "The bar's step buttons go
 /// across files" in Docs/design/files/all-changes-tab.md.
 extension AllChangesDocument {
   /// The files still to be read, by section: each shows a Reading notice.

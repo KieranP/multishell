@@ -3,15 +3,13 @@
 - **CI runs on GitHub's `xcode-27` image**, a preview, for the toolchain
   development uses; the `macos-26` default had Xcode 26.6. Nothing builds with
   Xcode 26 any more, though COMPAT.md still names it as the floor.
-- **CI runs two jobs in parallel**: build and test, and the lint. It runs on a
-  push to main and on a pull request, so a branch with no pull request goes
-  untested and one with a pull request runs once per push. It calls `swift test`
-  directly, so it takes no lock and has no write sandbox: a test writing outside
-  the temporary directories passes there. It shares only the one-test-per-core
-  cap with `make test`, and a run past 60 minutes is stopped. libghostty's cache
-  is saved as soon as it is built, so a red run still keeps it; a cold build's
-  time on CI is unmeasured. It builds the package without debug info, which took
-  a cold build from 38 s to 29 s here, so a crash backtrace from CI has no line
+- **CI runs on a push to main and on a pull request**, so a branch with no pull
+  request goes untested and one with a pull request runs once per push. It calls
+  `swift test` directly, so it takes no lock and has no write sandbox: a test
+  writing outside the temporary directories passes there. libghostty's cache is
+  saved as soon as it is built, so a red run still keeps it; a cold build's time
+  on CI is unmeasured. It builds the package without debug info, which took a
+  cold build from 38 s to 29 s here, so a crash backtrace from CI has no line
   numbers, and without the index store, which only an editor reads: 97 s to 88 s
   at three jobs here, under the native build system.
 - **CI restores the last package build and dates each file by its last commit**,

@@ -183,8 +183,8 @@ struct WorkerRoster: Equatable, Sendable {
     overflowed[id] != nil || workers.contains { $0.id == id }
   }
 
-  /// Past the limit a worker shares one overflow place, so none still out is
-  /// dropped. A shell is, its pid having nowhere to go in a shared place.
+  /// Past the limit a worker shares one overflow place, so none still out is dropped
+  /// until it holds `overflowLimit` ids. A shell is dropped, its pid having nowhere to go there.
   @discardableResult
   mutating func add(_ worker: Worker) -> Place {
     let placed = workers.count - (overflowIndex == nil ? 0 : 1)

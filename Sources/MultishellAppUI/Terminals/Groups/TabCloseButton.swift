@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The X on a tab of either kind, its room kept while it is hidden. Closes its
+/// The X on a tab of any kind, its room kept while it is hidden. Closes its
 /// own tab, like the middle click; `closeActiveTab` asks which window is key.
 struct TabCloseButton: View {
   let metrics: UIMetrics

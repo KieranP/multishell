@@ -1,5 +1,5 @@
 /// A colour a theme's `file` section sets, written in the file as its raw
-/// value: one per highlight role, and the rest of a file tab's rows.
+/// value: one per highlight role, and the rest of a file or All changes tab's rows.
 public enum FileColorKey: String, CaseIterable, Sendable {
   case added
   case addedBackground = "added_background"

@@ -33,7 +33,7 @@ public final class SessionReconciler: TerminalHostDelegate {
   public var onLiveSessionsChanged: (@MainActor () -> Void)?
 
   /// A shell exited and its pane is closed, with whether that pane was the
-  /// active one: a file tab its close brought in front is the GUI's to focus.
+  /// active one: a file or All changes tab its close brought in front is the GUI's to focus.
   public var onExit: (@MainActor (_ heldTheKeyboard: Bool) -> Void)?
 
   /// The engine gave a pane the keyboard, on a click into it. After the

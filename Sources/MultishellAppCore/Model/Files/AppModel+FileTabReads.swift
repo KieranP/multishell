@@ -194,7 +194,7 @@ extension AppModel {
   }
 
   /// A closed tab's rows, reads, selection, scroll and requests go with it, the All
-  /// changes tab sharing every table but the reads. Run from the reconcile.
+  /// changes tab sharing all but the read, scroll and anchor tables. Run from the reconcile.
   func pruneFileTabs() {
     let open = Set(workspace.fileTabs.map(\.id) + workspace.allChangesTabs.map(\.id))
     setIfChanged(\.fileTabReadings, fileTabReadings.filter { open.contains($0.key) })

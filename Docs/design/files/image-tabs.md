@@ -1,52 +1,39 @@
 # Image tabs
 
-What an image's file tab shows and why each went the way it did. Newest at the
-bottom.
+Why an image's file tab went the way it did. Newest at the bottom.
 
-- **A file whose name types it as an image ImageIO decodes opens in a tab and is
-  drawn**: PNG, JPEG, GIF, HEIC, WebP, TIFF, ICO, PSD and camera raw among them.
-  Text wins, so an SVG, typed as both and read by no ImageIO, opens as text, and
-  a `.png` holding text reads as text. Bytes that decode as no image are read as
-  any other file, a binary notice or rows. A PDF is no image here.
-- **An image tab draws the committed copy beside the file where their bytes
-  differ**, captioned Before and After with each one's pixels and size, the
-  committed copy being `HEAD`'s, or the merge base's under Branch, as rows
-  count. One copy alone is uncaptioned by side: a new or unchanged file, or a
-  deleted one's committed copy, struck. A file deleted under an open tab keeps
-  the copy it last showed, as text does. No pixel diff, no Unified or Split, no
-  arrows or find; the command line refuses a step or find on one.
+- **Text wins where a name types a file as both**, so an SVG, which no ImageIO
+  reads, opens as text, and a `.png` holding text reads as text. A PDF is no
+  image here.
+- **The committed copy is drawn beside the file where their bytes differ**,
+  Before and After, the committed copy being the one rows count from. No pixel
+  diff, no Unified or Split, no arrows or find.
 - **An image is capped at 32 MiB a copy, against text's 1 MiB**: the text cap is
   TextKit's layout, and a picture's cost is its pixels, not its file. The view
-  decodes at most 3,072 pixels on the longest side, 36 MB, off the main thread,
-  turned by its orientation, and draws a point to a pixel, scaled down to fit
-  and never up. The model keeps the bytes, so a hidden tab lets them go as it
-  does rows and reads them again when shown, a deleted file's committed copy
-  included; the last copy on disk of a file deleted under its tab is kept, as
-  its text would be. A git read that fails keeps the last committed copy beside
-  the file as read, as rows are kept. A read asks git for the committed copy's
-  object id and reads the copy whole, by that id, only where that moved, and
-  keeps the last read's buffers where the bytes match, a copy matching the file
-  sharing its buffer, so the main actor's comparison of two readings reads no
-  bytes: 64 MiB compared took 1.8 ms, and a shared buffer none. Cost: a
-  committed copy past the cap or not an image is left out, so the tab draws one
-  copy while its dot says modified; a GIF draws its first frame; there is no
-  checkerboard behind transparency; a picture cut short past its header draws an
-  empty box, ImageIO calling it complete until decoded; and a Git LFS file's
-  committed copy is its pointer, read raw as `git diff` reads it, so it draws
-  one copy. A 16-bit or HDR picture is drawn again at 8 bits a channel, keeping
-  the 36 MB. ImageIO's peak while it scales grows with that cap, not the file: a
+  decodes at most 3,072 pixels on the longest side, 36 MB, and never scales up.
+  ImageIO's peak while it scales grows with that cap, not the file: a
   48-megapixel photo peaked at 130 MB at 3,072 and 430 MB at 4,096, and a
-  16,000-pixel square PNG of 4 MB at 161 and 403.
-- **An image tab takes no find bar**: Cmd+F and the menu's Find find nothing to
-  target there, where a notice keeps its bar for rows a later read may bring. A
-  find opened before the image was read ends when it is.
+  16,000-pixel square PNG of 4 MB at 161 and 403. A 16-bit or HDR picture is
+  drawn again at 8 bits a channel, keeping the 36 MB.
+- **The model keeps the bytes, not the picture**, so a hidden tab lets them go
+  as it does rows and reads them again when shown.
+- **A read fetches the committed copy only where its object id moved, and keeps
+  the last read's buffers where the bytes match**, a copy matching the file
+  sharing its buffer, so the main actor's comparison of two readings reads no
+  bytes: 64 MiB compared took 1.8 ms, and a shared buffer none.
+- **Costs**: a committed copy past the cap or not an image is left out, so the
+  tab draws one copy while its dot says modified; a GIF draws its first frame;
+  there is no checkerboard behind transparency; a picture cut short past its
+  header draws an empty box, ImageIO calling it complete until decoded; and a
+  Git LFS file's committed copy is its pointer, read raw as `git diff` reads it,
+  so it draws one copy.
+- **An image tab takes no find bar**, having nothing to target, where a notice
+  keeps its bar for rows a later read may bring.
 - **Decodes run one at a time on a queue of their own**, as the 3,072 cap holds
-  the peak for one only, and a decode whose bytes a newer read replaced before
-  its turn is skipped; one already running is not stopped.
+  the peak for one only.
 - **An image or a notice takes the keyboard through a view behind it**, so a
   click there focuses its tab and group and a reconcile's hand-off lands, as a
-  text view's does; the pictures and words let clicks through to it. Keys typed
-  there do nothing.
+  text view's does.
 
 ## Reviewed and left as is
 

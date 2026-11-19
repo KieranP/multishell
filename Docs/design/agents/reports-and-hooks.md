@@ -9,38 +9,31 @@ user's settings file. Newest at the bottom.
 - **Fields are only ever added.** A report naming an unknown session is dropped,
   not matched by directory.
 - **Every string off the channel is bounded**, since any process of the user's
-  can write a line. An id, agent or command word past 128 characters is dropped,
-  not cut, as a cut one could name something else; a worker's id past it counts
-  as an unnamed worker. A path past 1024 bytes is dropped. A worker's kind and
-  name are cut to 64, its description to 200 and the message to 500, all display
-  only. A Stop names at most 64 shells. A duration outside zero to a week is
-  dropped, being a writer's number, not a clock's.
+  can write a line. An id, agent or command word past the limit is dropped, not
+  cut, as a cut one could name something else; display-only text is cut. A
+  duration outside zero to a week is dropped, being a writer's number, not a
+  clock's.
 - **One naming only a directory marks the deepest worktree containing it**, so
   an agent started in a subfolder says that folder, and a nested worktree is the
   one meant.
 - **Each worktree's resolved path is kept, missing or not**: resolved per
   report, a mount answering only after its timeout stalled the window each time.
   Foundation leaves a missing path's links unresolved, so one kept then is
-  resolved again once a status read, the directory check or the next report's
-  look off the main actor sees the directory.
+  resolved again once something off the main actor sees the directory.
 - **The pid a report names is what the app polls** to clear a Working the agent
   never took back.
 - **The app hands each session its own pid**, or the helper's walk past the
   shells reaches the app itself, whose pid never goes. A report naming the app's
   pid, from an older helper, is taken as naming none.
-- **A report carries only what the app cannot see**: state, pid, message, a
-  duration so a fast command posts no banner, and the agent, since a pane's
-  agent is usually started by hand.
-- **A report moves a dot, raises a notification and decides how a dropped file
-  is written.** It opens no tab, runs no command and types nothing at a prompt;
-  a command-line request may do all three (agents/command-line.md).
+- **A report carries only what the app cannot see**: a duration so a fast
+  command posts no banner, the agent, since a pane's agent is usually started by
+  hand, and what only the agent knows of its workers and conversation.
+- **A report opens no tab, runs no command and types nothing at a prompt**; a
+  command-line request may do all three (agents/command-line.md).
 - **Shell reports never go in the background**, or a fast command's finished
   overtakes its started (terminals/shell-integration.md).
-- **Four agents share one hook line and one parser**, each running a command at
-  every lifecycle event with the same three fields. What differs is the file,
-  the event names and how the file spells a hook. A fifth, Antigravity, runs the
-  same line naming its event, its payload having its own reader.
-- **The app knows no agent by name anywhere else.**
+- **The agents share one hook line and one parser**, and the app knows no agent
+  by name anywhere else. Antigravity's payload has its own reader.
 - **Only the last month of each agent's releases is supported.** A feature every
   release of that month has is relied on with no branch for older ones. This
   limits the agents' releases, not the helper's own protocol.
@@ -63,14 +56,11 @@ user's settings file. Newest at the bottom.
 - **The first builds' `claude-hook` line is still known as ours**: the helper
   exits 0 on it and reports nothing until Update replaces it. An unknown command
   exits 2, which Claude takes as blocking a tool, a prompt or a stop, and Remove
-  and Update take out only a line known as ours
-  (`theLineTheFirstBuildsWroteIsStillOursToReplace`,
-  `theFirstBuildsClaudeHookLineExitsZeroInSilenceAndReportsNothing`).
+  and Update take out only a line known as ours.
 - **A file of the user's is never rewritten unasked**, since the write sorts its
-  keys and re-indents it. The row offers Update instead, which swaps ours for
-  this build's and keeps a hook of theirs inside our group.
-- **One reports to no command at all**, only to a plugin seeing a session's run
-  end, so it gets a plugin calling the helper as any script would.
+  keys and re-indents it. The row offers Update instead.
+- **OpenCode reports to no command at all**, only to a plugin seeing a session's
+  run end, so it gets a plugin calling the helper as any script would.
 - **That one alone says a permission was answered**, allowed or denied, so its
   pane alone clears Waiting on the answer rather than at the next tool call.
 - **Its permission hook is deliberately not used**: `permission.evaluate` runs
@@ -97,10 +87,8 @@ user's settings file. Newest at the bottom.
   Done the same turn had just reported.
 - **So the announcing types are named and everything else counts as waiting**, a
   deny list, so a question added later raises a dot instead of falling silently
-  out.
-- **The list is read from the agent's own**, plus two types it sends outside it.
-  A type saying the task will not go on without the user, such as a usage limit
-  reset waiting for Return, asks.
+  out. A type saying the task will not go on without the user, such as a usage
+  limit reset waiting for Return, asks.
 - **Sorted from the payload's own type, not the event's matcher**: a matcher is
   written into the settings file, so it would reach only installs made after the
   build that adds it, and an agent old enough to send no type would match none.
@@ -123,18 +111,16 @@ user's settings file. Newest at the bottom.
   own rules run with a payload that never says the mode.
 - **Claude words its question to the user as a permission request**: the
   question tool goes through the permission dialog, whose notification says
-  "Claude needs your permission" and names no tool. The helper reads the
-  transcript's last tool call and, where it is an unanswered `AskUserQuestion`,
-  marks the report a question. The app words that as needing input from its
-  catalogue, the helper having none; an older app shows the agent's message.
+  "Claude needs your permission" and names no tool, so only the transcript tells
+  a question apart. The app words it from its catalogue, the helper having none.
   Only Claude's transcript is read, though Copilot sends the same type.
 - **One error event is deliberately left**: it carries a recoverable flag, and a
   red dot for something the agent recovers from is worse than none.
 - **The hook line runs the helper rather than exec'ing it, and exits zero
   whatever became of it.** Two agents block a tool call on a non-zero hook exit,
   so under exec a helper killed by Gatekeeper would stop the agent working.
-- **Cost: one short-lived shell per event**, the pid coming from walking past
-  shells either way.
+  Cost: one short-lived shell per event, the pid coming from walking past shells
+  either way.
 - **The line sets no variable, so it parses in fish as well as sh**: which shell
   an agent runs its hooks through is not ours to choose.
 - **A settings file that is a symlink is written through, not over.** An atomic
@@ -145,13 +131,12 @@ user's settings file. Newest at the bottom.
   are decoded, as both parsers compare them.
 - **The copy kept sits beside the link**, not in the repo it points into, where
   the user's next status would have to explain it.
-- **Nothing under an event is written over.** Absent means an empty list to add
-  ours to; a string, an object or a shape a later version takes is the user's
-  and could not be put back, so Add refuses and names the event.
+- **Nothing under an event is written over.** A string, an object or a shape a
+  later version takes is the user's and could not be put back, so Add refuses
+  and names the event.
 - **Remove takes back what Add put in and nothing else**, inside a group as well
   as between them: a group holding one of ours beside one of theirs was written
-  by hand, so ours are stripped and the group stands. So too a group that is
-  also a bare hook, whichever half is ours.
+  by hand, so ours are stripped and the group stands.
 - **Dropping at group granularity read as Remove working**, the file even
   shrinking, while an audit hook someone had added to our entry went with it.
 - **Numbers are written back as the user spelled them.** Parsed to doubles, a
@@ -163,16 +148,15 @@ user's settings file. Newest at the bottom.
   replacement character over a byte of the user's.
 - **A settings file that will not read back as plain JSON is refused**, not
   parsed loosely: one agent's takes comments and keeps them when it writes the
-  file itself, and a re-serialisation here would take them out.
-- **Cost: those users add the entries by hand**, so the alert names the file and
-  points at the JSON.
+  file itself, and a re-serialisation here would take them out. Cost: those
+  users add the entries by hand, so the alert names the file and points at the
+  JSON.
 - **One agent will run no hook it has not been told to trust**, so the row says
   installing is not the end of it; nothing here can trust a hook for the user.
 - **No agent is recommended** or has anything of its own outside the catalogue.
   An install prompt for one agent was an endorsement in a workspace built to run
-  whichever agent the user already chose.
-- **Cost: a machine with none installed gets an empty picker and no help filling
-  it.**
+  whichever agent the user already chose. Cost: a machine with none installed
+  gets an empty picker and no help filling it.
 - **A failed tool call is Working, as a finished one is**: the agent reads the
   error and carries on. Claude and Copilot send it as its own event, their
   PostToolUse firing on success only; Codex's PostToolUse and Gemini's AfterTool
@@ -195,14 +179,11 @@ user's settings file. Newest at the bottom.
   serving on personal plans on 2026-06-18 but which Standard and Enterprise
   licences and API keys still reach; the user kept both on 2026-10-27.
 - **Its hooks go in `~/.gemini/config/hooks.json`**, Antigravity reading none
-  from its settings file, as sets of hooks by name. Ours is the set
-  `multishell`, merged into as a settings file is: Remove takes out our hooks
-  and keeps one of the user's put there, and a set left holding only its
-  `enabled` goes. Update keeps the set's `enabled` as it found it, so a set the
-  user switched off stays off.
+  from its settings file, as sets of hooks by name. Update keeps our set's
+  `enabled` as it found it, so a set the user switched off stays off.
 - **Its payload names no event**, so the hook line does with `--event`, and is
-  camelCase: the first of `workspacePaths` is the directory, the hook running in
-  the folder that holds its file. Read from a probe of 1.4.8 on 2026-10-27.
+  camelCase. The hook runs in the folder that holds its file, so the directory
+  comes from `workspacePaths`. Read from a probe of 1.4.8 on 2026-10-27.
 - **Its timeout is in seconds**, unlike Gemini's milliseconds: Antigravity's
   hooks page gives seconds with a default of 30, and the probe's hooks, given 5,
   ran their whole process walks, which a 5 ms limit would have killed.
@@ -233,9 +214,8 @@ user's settings file. Newest at the bottom.
   pane; the directory places only one naming none, and Antigravity lists the
   workspace it started in first.
 - **A named set's `enabled` handled in `hooksObject`, `isLeftEmpty` and
-  `replacingOurs`** (round 3): round 2 put the restore in one line of
-  `replacingOurs`; moving the drop from `removing` to Remove is another shape
-  for the same behaviour, which is tested, so it stays.
+  `replacingOurs`** (round 3): moving the drop from `removing` to Remove is
+  another shape for the same tested behaviour, so it stays.
 - **A switched-off Antigravity set still reads as current in Settings** (round
   5): Update keeps the switch as the user left it, and a state of its own for a
   switched-off set is a feature, not a fix.

@@ -5,7 +5,7 @@ extension AppModel {
   /// is on a screen, which a request drawn in the window does not need.
   var isWorkspaceWindowOpen: Bool { platform.workspaceWindowWidth != nil }
 
-  /// Shut or off screen, where neither a file tab nor the Files panel reads.
+  /// Shut or off screen, where no file or All changes tab reads, nor the Files panel.
   var refusalToReadInWorkspaceWindow: ControlRefusal? {
     if let refusal = refusalToTouchWorkspaceWindow { return refusal }
     return platform.isWorkspaceWindowVisible ? nil : .windowCovered

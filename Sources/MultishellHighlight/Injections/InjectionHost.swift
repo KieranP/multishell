@@ -1,7 +1,7 @@
 import MultishellAppCore
 
 /// A language whose files hold others: markup in its elements and attributes,
-/// Markdown in its fenced code blocks.
+/// Markdown in its fenced code blocks and HTML blocks.
 enum InjectionHost {
   case markdown
   case markup(MarkupHost)

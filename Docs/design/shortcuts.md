@@ -10,29 +10,24 @@ the bottom.
   page listing only the changes with an Add Shortcut… picker.
 - **Global only.** A project has no Shortcuts page; keys are the app's, not a
   repository's.
-- **Four parts, File, Edit, View and Terminal, as the menu bar lists the
-  commands.** 31 rows at 36 pt do not fit the 608 pt window, and a page is split
-  rather than scrolled (settings.md). A part's sidebar row counts its changes.
-- **Each card is a menu's run of items between two dividers**, `ShortcutGroup`
-  in AppCore, so the cards read as the menus do.
+- **Four parts, File, Edit, View and Terminal, each card a run of a menu's items
+  between two dividers**, so the cards read as the menus do. 31 rows at 36 pt do
+  not fit the 608 pt window, and a page is split rather than scrolled
+  (settings.md).
 - **One table of defaults, `ShortcutCommand` in Core.** The menus, the engine's
   unbinds, the settings rows and the command line all read it, so a default
   changed there reaches all four.
-- **The raw value is the state file's key**, `split-right`, and never changes.
-- **Only changes are stored**, `"shortcuts": {"split-right": "cmd+backslash"}`,
-  so a default a later build changes still reaches a command the user left
-  alone. Blank is "no keys", the menu item staying, as the four blank-is-none
-  fields read it.
+- **Only changes are stored**, keyed by the command's raw value, which never
+  changes, so a default a later build changes still reaches a command the user
+  left alone. Blank is "no keys", the menu item staying, as the four
+  blank-is-none fields read it.
 - **Hand-written `Codable`.** A synthesised enum-keyed dictionary encodes as an
   array, a nil as `null`, and assigning nil to a dictionary deletes the entry
   rather than storing "no keys".
 - **Punctuation is spelled by name in the file**, `cmd+backslash`, so `+` never
-  parts a combination and a quote needs no escape. Modifiers are written in menu
-  order, ctrl, alt, shift, cmd, and read in any order or case.
-- **The decode is tolerant per entry**: an unknown command, unreadable keys,
-  keys the page would refuse, a fixed command's entry, or a second claim on keys
-  an earlier command holds (in `ShortcutCommand` order, the fixed commands
-  first) drops that entry alone.
+  parts a combination and a quote needs no escape.
+- **The decode drops a bad entry alone**, a second claim on keys included, the
+  earlier command in `ShortcutCommand` order keeping them.
 - **Where a later build's new default lands on an override, the override wins**
   and the command with the new default has no keys. The user chose the override;
   the default was nobody's choice.
@@ -41,23 +36,20 @@ the bottom.
   held, so no command can take them.
 - **Fixed is not kept by the pane.** Only the clipboard four stay bound in a
   pane (`surfaceKeepsBinding`), being Ghostty's own copy and paste
-  (engine-and-config.md); ⌘Z, ⇧⌘Z and ⌘F are still unbound, or Ghostty's own
-  search bar takes ⌘F.
-- **A click on the keys records; the next combination typed replaces them.**
-  Escape cancels, Delete alone leaves the command with no keys.
+  (terminals/engine-and-config.md); ⌘Z, ⇧⌘Z and ⌘F are still unbound, or
+  Ghostty's own search bar takes ⌘F.
 - **Refused, the row saying why and still recording**:
   - a key with no ⌘, ⌃ or ⌥, F-keys excepted: every text field would lose it;
   - ⌥ with a character key and neither ⌘ nor ⌃: it types a character on many
     layouts (⌥L is @ on a German one) in every text field;
-  - the reserved table, `ReservedShortcut`: ⌘Q, ⌘H, ⌥⌘H, ⌘M, ⌥⌘M, ⌘,, ⌥⌘D (the
-    Dock's hiding, which the WindowServer takes before a menu bar sees it), ⌃⌘F,
-    ⌘⇥ and ⇧⌘⇥, ⌘Space, ⌘\` and ⇧⌘\`, ⇧⌘N, ⌘↩, which is also the review
-    composer's Send, the Apple menu's ⇧⌘Q, ⌥⇧⌘Q and ⌃⌘Q, and the system's own
-    hotkeys, which no menu sees: ⇧⌘3, ⇧⌘4 and ⇧⌘5 for screenshots, ⌃⇧⌘3 and ⌃⇧⌘4
-    for them to the clipboard, ⌃←, ⌃→, ⌃↑ and ⌃↓ for Spaces and Mission Control,
-    ⌥⌘Space for Finder search, ⌘F5 and ⌥⌘F5 for VoiceOver and its panel, ⌃⌘D for
-    Look Up, and ⌃Space and ⌃⌥Space for input sources. The page cannot record
-    those, but the command line and a hand edit could set them;
+  - the reserved table, `ReservedShortcut`: the quit, hide, minimise, settings,
+    full screen and window or app switching keys every Mac app shares, ⌥⌘D (the
+    Dock's hiding, which the WindowServer takes before a menu bar sees it), ⌘↩,
+    which is also the review composer's Send, the Apple menu's, and the system's
+    own hotkeys, which no menu sees: screenshots, Spaces and Mission Control,
+    Finder search, VoiceOver and the Accessibility Shortcuts panel, Look Up, and
+    input sources. The page cannot record those, but the command line and a hand
+    edit could set them;
   - ⌃C, ⌃D, ⌃Z, ⌃\\ and ⌃[, which a pane's program needs, ⌃[ being Escape;
   - ⌃↩ with any other modifier, and ⌃/ alone, which the pane types before any
     menu sees them (`GhosttyKeyEquivalent.offer`), so a menu item on them would
@@ -79,10 +71,8 @@ the bottom.
   keys, Cancel keeps both as they were. The reset arrow asks the same where the
   default now belongs to another command, so no path leaves two commands on one
   key.
-- **The judge is one function**, `ShortcutOverrides.judge`, and the page, the
-  reset arrow and `config global` all go through it. The page's steps
-  (recording, refused, asking) are `ShortcutEditing`, held on the model, so the
-  view only forwards keys and buttons.
+- **One judge, `ShortcutOverrides.judge`**, for the page, the reset arrow and
+  `config global`, so none lets through what another refuses.
 - **Restore Defaults sits in the page header and asks once, inline**, before
   clearing every change in every part. Not per part: a part is a fit to the
   window, not a unit anyone restores.
@@ -112,7 +102,7 @@ the bottom.
   layout, and remapping would move them to where the US key sits.
 - **The recorder is an `NSEvent` local monitor**, which sees a key before the
   menus do and swallows it, so typing ⌘W records ⌘W rather than closing the
-  window. A click anywhere ends it.
+  window.
 - **A named key's glyph spelled as the key is that key**: `cmd+←` from the
   command line is the arrow, not a character no key types. A glyph for a key
   with no case here, ⏎ or ⎋, is refused rather than kept as a character.
@@ -121,12 +111,8 @@ the bottom.
   Except an F-key or arrow, where that translation gives a control code (0x10,
   0x1C), not the private-use character AppKit's menus use; those come from
   `charactersIgnoringModifiers` (`ShortcutRecorderInputTests`).
-- **Text that quotes keys reads them live**: seven strings take ` (⌘T)` as an
-  argument, and a command with no keys drops the parenthesis.
-- **`config global` has a `shortcuts.<command>` row per changeable command**,
-  taking the state file's spelling or glyphs, `none`, or blank for the default,
-  refused through the judge. A command left to a default another's change took
-  reads blank, not `none`, which would write a change back.
+- **In `config global`, a command left to a default another's change took reads
+  blank, not `none`**, which would write a change back.
 - **The three questions the issue left open went as mocked**, pending the owner:
   keys without ⌘ are allowed with the warning rather than refused, a bare F-key
   is allowed, and Restore Defaults is once for the page.

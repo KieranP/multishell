@@ -14,8 +14,8 @@ struct ProjectRow: View, @MainActor Equatable {
   let isMissing: Bool
   let state: SessionState?
   let worktreeCount: Int
-  /// A `git fetch` is running here. The one thing this app does that waits
-  /// on a network, so it is the one thing the sidebar has to show waiting.
+  /// A `git fetch` is running here. It waits on a network, so the row shows
+  /// it waiting.
   let isFetching: Bool
   let theme: Theme
   let metrics: UIMetrics

@@ -3,28 +3,23 @@
 Where the words are, why they are not in the views, what stays in English.
 Newest at the bottom.
 
-- **Every word the app shows is a lookup by key.** The English sits against that
-  key in a catalogue sorted by key, which groups words by the part of the app
-  they are in and gives a new one a single place.
-- **Cost: nothing checks the order**, and six of the libraries' entries had
-  drifted out of it before a pass re-sorted them.
+- **Every word the app shows is a lookup by key**, in a catalogue sorted by key,
+  which groups words by the part of the app they are in and gives a new one a
+  single place. Cost: nothing checks the order, and six of the libraries'
+  entries had drifted out of it before a pass re-sorted them.
 - **A prefix is a thing, singular, or a settings page, plural**: `action.` for a
-  verb anywhere, `notification.` for a banner and `notifications.` for its page,
-  `worktree.` for a fault of one and `worktrees.` for the page.
+  verb anywhere, `notification.` for a banner and `notifications.` for its page.
 - **The key is written at the call site**, not behind a name for it. An enum of
   keys cost the English twice, as a case name and as a value, to buy a compile
   error on a typo.
-- **TranslationTests buys that instead**, one per catalogue, failing a missing
-  key, an unused entry and a wrong argument count
-  (develop/tests/interface-and-terminal.md).
-- **Cost: a mistyped key is a test failure, not a compile error**, and the scan
-  only sees a key written as a literal. Nothing builds one at runtime, and
-  nothing should.
+- **TranslationTests buys that instead**
+  (develop/tests/interface-and-terminal.md). Cost: a mistyped key is a test
+  failure, not a compile error, and the scan only sees a key written as a
+  literal. Nothing builds one at runtime, and nothing should.
 - **Views hold no literal.** A bare string would be looked up in the main
   bundle, where there is no catalogue, and every check above starts at a lookup
-  call, so none would see it. `noViewLabelsItselfWithALiteral` fails a literal
-  in an initialiser or modifier that takes a localized key, skipping one holding
-  an interpolation, which is a number rather than a word.
+  call, so none would see it. A literal holding an interpolation is a number
+  rather than a word, and passes.
 - **One catalogue per frontend and one for the libraries**, each inside the
   target that declares it, the only place SwiftPM promises a resource may be. A
   manifest reaching out of its target broke that: the same relative path in two
@@ -35,42 +30,35 @@ Newest at the bottom.
   make it adopt this catalogue whole or fork the lot.
 - **The lookup function is declared twice**, once per catalogue. A function in
   the module beats the same one imported, so a call site gets its own half
-  without saying so. Only a module importing both has to qualify it.
+  without saying so.
 - **App code never reads the libraries' catalogue.** The few words both halves
   say are written in both, because the alternative makes a frontend's words
-  depend on the model's.
-- **Cost: those few can drift**, and `aWordInBothCataloguesReadsTheSameInBoth`
-  fails a pair that has. It compares like with like, so a key that was a phrase
-  here and a counted form there passed unseen until
-  `noKeyIsAPhraseInOneHalfAndACountedFormInTheOther` failed that too.
+  depend on the model's. Cost: those few can drift, and a test fails a pair that
+  has.
 - **Not `.xcstrings`.** SwiftPM copies one verbatim rather than compiling it, so
   every lookup answers with its own key. Checked against the toolchain, not
   assumed.
 - **The catalogues, shell scripts and built-in themes are found through one
   wrapper**, because the `swift build` accessor looks beside the executable,
-  never where the bundling script puts the resource bundles. Both binaries in
-  the bundle come from xcodebuild, whose accessor does look there, so the
-  wrapper only guards a `swift build` binary, and the agent marks read
-  `Bundle.module` unwrapped. It does nothing for the helper, whose main bundle
-  is `Contents/Helpers`.
+  never where the bundling script puts the resource bundles. xcodebuild's
+  accessor does look there, so the wrapper only guards a `swift build` binary.
 - **A new key when in doubt, not a shared one.** The same English word is held
   by several keys on purpose: a column, a state and a sort order need not be one
   word in every language.
 - **Shared only where the word is the same act wherever it appears**: Cancel,
-  Copy, Reveal in Finder, Clear Status. Not Close Tab, the menu item and the
-  dialog button each having their own.
+  Copy, Reveal in Finder. Not Close Tab, the menu item and the dialog button
+  each having their own.
 - **Counted things have a rule, not an `s`.** An `s` on the noun is English's
   plural and no one else's, so each counted form is its own entry with the forms
   its language has.
 - **Read where it is shown**, not through a helper: the rule is in the
   catalogue, so a wrapper round the lookup would only be a second name for it.
 - **A phrase with two or more arguments numbers them**, so a translation may
-  reorder the sentence. `everyPhraseWithSeveralArgumentsNumbersThem` fails one
-  that does not.
+  reorder the sentence.
 - **A noun read mid-sentence has both forms in the catalogue**, not one and a
   lowercasing, which is right in English and wrong in German.
 - **What another program said stays English**: git's stderr, a hook's output, an
-  exception's description. The app's words around them are translated.
+  exception's description.
 - **Auto Rename's prompt is English whatever the language**: a model reads it
   and nobody sees it.
 - **The helper's own output stays English too.** Its words sit in a terminal
@@ -79,18 +67,16 @@ Newest at the bottom.
 - **It also must not start.** The helper's main bundle is `Contents/Helpers`,
   which holds no resource bundle, so a lookup there finds no catalogue and the
   accessor traps.
-- **Proper names stay**: the engine, the agents, the built-in themes. The icon
-  picker's group names and its Folder are the only words in it.
-- **The permission strings are in the Info.plist, not the catalogue.** A
-  translation of them is an `InfoPlist.strings` beside the same language's
-  catalogue, which the bundling script copies into the bundle's resources.
+- **Proper names stay**: the engine, the agents, the built-in themes.
+- **The permission strings are in the Info.plist, not the catalogue**, macOS
+  reading them through the main bundle. A translation of them is an
+  `InfoPlist.strings` the bundling script copies into the bundle's resources.
 - **An error type's `description` is not a translation.** One reached through
   the default arm printed as written in every language, and the tests cannot see
   it, there being no lookup call site.
 - **So the words live in `PresentedError`** and the error carries only its
-  fields, keeping the process library free of a catalogue. A `description` stays
-  on each as the form the log prints. A new error type the user will see needs
-  an arm there, not a sentence in its `description`.
+  fields, keeping the process library free of a catalogue. A new error type the
+  user will see needs an arm there, not a sentence in its `description`.
 - **The system decides the language and there is no picker.** macOS has one per
   app already; ours would want a persisted field, a resolver and either a
   relaunch prompt or every string re-read live.
@@ -117,18 +103,13 @@ Newest at the bottom.
   bare string reaches the screen in English and no test sees it; the trust
   question named its fields that way.
 - **Memory and file sizes do follow the region.** `ByteCountFormatter` takes no
-  locale, so in a region that writes a comma Debug Info's sizes, a file tab's
-  binary or too-large notice and an image's caption use one, and the rates and
-  durations beside them do not. The clock time under the timeline's pointer
+  locale, so in a region that writes a comma those sizes use one, and the rates
+  and durations beside them do not. The clock time under the timeline's pointer
   follows the region too, being `Date.formatted`.
-- **The app answers the command line in data and the helper words it.** A
-  refusal crosses the socket as a case and its fields, so neither catalogue
-  holds the helper's sentences (`ControlRefusal+Wording`).
-- **Cost: what the app said itself still comes back in its language.** An alert
-  a request raised returns as the refusal in its translated words, and
-  `multishell info` lists an alert's words and each window's title the same way,
-  as `multishell debug notifications` does each banner, so one line of the
-  helper's output can mix two languages.
-- **A menu item is named by its titles as the menu draws them**, so
-  `multishell ui menu` lists them in the app's language, and a script naming an
-  item works only under the language it was written in.
+- **The app answers the command line in data and the helper words it**, so
+  neither catalogue holds the helper's sentences.
+- **Cost: what the app said itself still comes back in its language.** An
+  alert's words, a window's title and a banner come back translated, so one line
+  of the helper's output can mix two languages.
+- **A menu item is named by its titles as the menu draws them**, so a script
+  naming an item works only under the language it was written in.

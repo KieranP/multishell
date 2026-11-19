@@ -54,8 +54,8 @@ extension AppModel {
     )
   }
 
-  /// Panes and file tabs, then worktrees, then projects, the sidebar's order
-  /// worked out once for both.
+  /// Panes and file or All changes tabs, then worktrees, then projects, the
+  /// sidebar's order worked out once for both.
   func quickSwitcherPlaces() -> [QuickSwitcherItem] {
     let sessions = sessionIDsByWorktree
     let order = quickSwitcherSidebarOrder(sessions: sessions)

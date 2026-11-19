@@ -7,7 +7,7 @@ public protocol PullRequestHost: Sendable {
   /// first, as many as one call returns. Throws `ServiceReadFailure`.
   func pullRequests(in directory: URL) async throws -> [PullRequest]
 
-  /// Every pull request `branch` heads, however old, by its name on the remote.
+  /// The pull requests `branch` heads, however old, by its name on the remote.
   /// Throws `ServiceReadFailure`.
   func pullRequests(headedBy branch: String, in directory: URL) async throws -> [PullRequest]
 
@@ -21,7 +21,7 @@ public protocol PullRequestHost: Sendable {
   /// Whether `failedLog` can read the check's log: it ran on the host's own CI.
   func readsFailedLog(of check: PullRequestCheck) -> Bool
 
-  /// The last `lineLimit` lines of a failed check's failed steps; `nil` for a check
+  /// The last `lineLimit` lines of a failed check's log; `nil` for a check
   /// from anywhere else. Throws `ServiceReadFailure`.
   func failedLog(
     of check: PullRequestCheck,

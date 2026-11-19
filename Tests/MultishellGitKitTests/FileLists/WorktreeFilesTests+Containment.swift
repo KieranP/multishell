@@ -24,8 +24,8 @@ extension WorktreeFilesTests {
     )
   }
 
-  /// The rule holds a repository to the checkout, not the user: a path they
-  /// typed into project settings is used as written. See settings.md.
+  /// The rule holds a repository to the checkout, not the user: an entry of theirs
+  /// that leaves it is skipped and named rather than failing. See settings.md.
   @Test(arguments: [WorktreeFilePlacement.copy, .link])
   func aPathTheUserListedThemselvesIsNotHeldToTheCheckout(_ placement: WorktreeFilePlacement) throws
   {

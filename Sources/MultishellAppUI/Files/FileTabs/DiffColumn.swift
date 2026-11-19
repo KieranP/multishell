@@ -11,7 +11,7 @@ final class DiffColumn {
   /// The text's own clip, so a sideways scroll moves the text and not the gutter.
   let textClip = NSView()
   weak var canvasView: DiffCanvasView?
-  /// The same by the file's line at the top, for the model to keep while a
+  /// The scroll by the file's line at the top, for the model to keep while a
   /// hidden tab drops the view.
   var onScrolledTo: ((FileTabScroll) -> Void)?
   /// Taken once the view has a size and text; until then no scroll is
@@ -34,7 +34,7 @@ final class DiffColumn {
   var pendingSteppedChangeAnchor: ChangeAnchor?
   let reviewCards = ReviewCardLayer()
   /// Where the cards are laid out again, so views hosted in the same gaps are too:
-  /// the All changes tab's headers, folds and notices.
+  /// the All changes tab's folds and notices.
   var onGapViewsLaidOut: ((DiffRowGeometry, CGFloat) -> Void)?
   /// The gap each card's row needs, as the cards or the clip's width change: a
   /// split opens both columns' alike, Unified its own.

@@ -3,106 +3,42 @@
 ## Layout
 
 - **One package: five libraries, a highlighting library, the helper and the
-  app.** MultishellCore holds the model, with user settings under
-  `Model/Settings/`, a repository's `.multishell.json` under
-  `Model/Settings/Shared/` and a worktree's tabs and panes under `Model/Tabs/`;
-  the store, theme and ports; sessions and their reports; the decoding every
-  persisted type leans on; the libraries' word lookup; state on disk under
-  `StateOnDisk/`; the command line's requests and the app's answers under
-  `Control/`; and under `Support/` the small helpers every other library reaches
-  for.
-- **MultishellProcess**: the children it starts, how a shell is started and
-  quoted, sockets, what the kernel answers about a process, descriptor or
-  terminal under `Kernel/`, and under `Support/` what belongs to no concern.
-  **MultishellGitKit**: worktree operations, a create's and a removal's each in
-  its own folder of `Worktrees/`; a project's hooks and file lists; the output
-  readers; what a branch is, where it points and whether it landed; what a
-  branch changed since its base, for the Branch list and Auto Rename, under
-  `BranchChanges/`; status; the paths an index tracks and one file's patches and
-  stored copies, for the Files panel and a file tab; a remote and a push to it
-  under `Remotes/`; the runner; and `Support/`. WorktreeGit and
-  WorktreeCoordinator sit at its root with their extensions under each concern,
-  since nine concerns extend them and none owns them, beside the state every
-  WorktreeGit a launch builds shares.
-- **MultishellServices**: the pull request hosts and CI providers, read through
-  each service's own tool. `SCM/Core/` and `CI/Core/` hold each kind's protocol
-  and the values it answers with, `SCM/GitHub/` and `CI/CircleCI/` the one
-  service of each there is, through `gh` and `circleci`. What both kinds share
-  sits beside them: `Runner/` times every call into git's log, `StandIn/` the
-  JSON `debug services stand-in` answers both kinds from, `Tools/` holds a
-  tool's status and read failures, `Remotes/` a remote's owner and name, and
-  `Support/` what belongs to no concern.
-- **MultishellAppCore**: AppModel, detections, dialogs, error mapping, inherited
-  settings, what a tab runs, what each session is doing, when to read git and to
-  notify, creates and removals under way, every decision a view makes, and what
-  a screen reader is told. What it needs from the app and its own
-  implementations of Core's ports go under `Ports/`, what Debug Info measures
-  and shows under `Debug/`, the JSON the command line prints, its settings keys
-  and what a request keeps while it runs under `Control/`, the pull request and
-  CI values the row, the menus and the panel's pages all read under `Services/`,
-  grouped as `PullRequests/`, `Merge/`, `CI/` and `Publish/` with what spans
-  them at its root, and the rest under `Support/`.
-- **AppModel's extensions sit under `Model/` by concern**, what spans them all
-  at the root beside the type: the concerns are too many for one alphabetical
-  listing to keep a concern's files together.
-- **AppCore's `Integrations/` is the app's own side of them**: the helper and
-  shell-integration files it installs, each agent's hooks as installed, and what
-  the app's executable hands the helper when started with a command.
-- **Everything about a program someone else wrote is in Core's
-  `Integrations/`**, one folder per kind: agents, editors, shells, and
-  `AgentHookFiles/` for the files hooks are written into. An agent's hooks sit
-  under `Agents/Hooks/`, and what reads or writes one agent's own files under
-  `Agents/Hooks/AgentOwnFiles/`.
+  app.** MultishellCore holds the model, the store, the theme and ports,
+  sessions and their reports, persisted state, the command line's requests and
+  the libraries' words. MultishellProcess holds the children it starts, shells,
+  sockets and what the kernel answers. MultishellGitKit holds worktree
+  operations, hooks and every git read and write. MultishellServices holds the
+  pull request hosts and CI providers, read through each service's own tool.
+  MultishellAppCore holds AppModel and every decision a view makes.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed as
   `multishell`, since it and the app would share one products path on a
-  case-insensitive disk. Commands that drive the app sit under `Control/`, a
-  group of several files in a folder of its own (`Debug/`, `Panes/`, `Tabs/`)
-  and a one-file group at the root with the parsing, polling and errors they
-  share, every usage text under `Usage/`, and the reports hooks and shells send
-  under `Reports/`. **MultishellAppUI is the app**, built as `Multishell`:
-  views, the engine host, the Mac platform port and its own word lookup.
-- **MultishellHighlight is a file tab's colouring**: the tree-sitter parse and
-  query over each grammar package, and the spans laid onto a diff's rows, at its
-  root; a grammar's compile, our query corrections and the text Svelte's grammar
-  is given under `Grammars/`; what an HTML, Svelte or Markdown file holds in
-  another language under `Injections/`; the reading of a Svelte block's head
-  under `SvelteBlockHeads/`; and `Support/`. Its own target keeps the grammars
-  out of the five libraries (Layering rules). **TreeSitterScanners** compiles
-  the four scanners copied under `ThirdParty/tree-sitter/` and gives Swift
-  nothing (dependencies.md).
-- **Views sit under the part of the window they draw**: sidebar, detail area, a
-  group of tabs or a pane, the Files panel, a file tab, board, Debug Info, the
-  quick switcher, a settings window, a dialog. Views that draw no part of one go
-  under `Shared/`, or `Settings/Controls/` where only the settings window uses
-  them, its pages' cards, rows and colours under `Settings/Layout/`, beside the
-  agent marks, the AppKit modifiers and representables reaching under SwiftUI,
-  and the scene and menus. The engine host and the platform port each have a
-  folder, the host split by what each part is to libghostty: config, runtime,
-  surface, input, clipboard, links.
-- **What draws nothing sits under `Support/`**, the in-app drag under
-  `Support/Drag/`, unless it is by nature a piece of one part: the mark parser
-  with the marks, a dialog's AppKit alert with the dialogs, the settings
-  window's own pieces at `Settings/`'s root. Every `Theme+` and `UIMetrics+`
-  extension sits under `Support/Appearance/`, whichever part reads it: placed
-  beside their parts, they moved back and forth between reviews.
+  case-insensitive disk. **MultishellAppUI is the app**, built as `Multishell`:
+  views, the engine host, the Mac platform port and its own words.
+- **MultishellHighlight is a file tab's colouring**, a target of its own to keep
+  the grammars out of the five libraries (Layering rules).
+  **TreeSitterScanners** compiles the four scanners copied under
+  `ThirdParty/tree-sitter/` and gives Swift nothing (dependencies.md).
+- **WorktreeGit and WorktreeCoordinator sit at GitKit's root** with their
+  extensions under each concern, since nine concerns extend them and none owns
+  them.
+- **AppModel's extensions sit under `Model/` by concern**: the concerns are too
+  many for one alphabetical listing to keep a concern's files together.
+- **Everything about a program someone else wrote is in Core's
+  `Integrations/`**, one folder per kind. AppCore's `Integrations/` is the app's
+  own side: what it installs and what it hands the helper.
+- **Views sit under the part of the window they draw**, and views that draw no
+  one part under `Shared/`. What draws nothing sits under `Support/` unless it
+  is by nature a piece of one part. Every `Theme+` and `UIMetrics+` extension
+  sits under `Support/Appearance/`, whichever part reads it: placed beside their
+  parts, they moved back and forth between reviews.
 - **AppCore's values for a part of the window sit under the folder its views
-  use**, `Sidebar/` or `Terminals/Panes/` for instance, so a view and the
-  decision it reads share one path in two targets.
+  use**, so a view and the decision it reads share one path in two targets.
 - **A generic extension stays in `Support/` when one concern alone calls it**
   (CLAUDE.md's folder rule); a file moves only when its folder is wrong for what
   it holds.
 - **Each half's words live in the target that says them.** The libraries' also
   carry the shell-integration scripts and the built-in themes, the app's the
   agent marks. A second frontend is a third.
-- **`Resources/` at the root is none of those**: the icon, the Info.plist
-  template, the entitlements and the stand-ins under `ghostty/`, which the
-  bundling script reads and SwiftPM never sees, and a smaller icon for the
-  README.
-- **`ThirdParty/` holds what is built rather than written here**: Ghostty as a
-  submodule, the patches the build lays over it, and the tree-sitter scanners
-  four grammar packages leave out. `Scripts/build-ghostty.sh` builds Ghostty
-  into the GhosttyKit binary target under `.build/ghostty/`, which only the app
-  links.
 - **A suite's harnesses and fakes stay at its root**, and a file covering
   several concerns is mirrored by the one it spends most of its lines on.
 - **What the suites share sits in plain targets**, a test target not being
@@ -112,8 +48,6 @@
   Core or Process suite does not link GitKit for a temporary path.
 - **TestScratch starts a child with the runner's own spawn options**, reached
   with `@testable`, so a test's shell and the app's cannot start differently.
-- **The app's suite, MultishellAppUITests, reaches TestScratch alone**; its
-  model harness is its own.
 
 ## Style
 

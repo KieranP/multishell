@@ -7,7 +7,7 @@ enum GhosttyUnbinds {
   /// its performable `esc=end_search` ate Escape under our bar; terminals/find.md.
   static let surfaceReleases = ["escape"]
 
-  /// The menus' keys, then every reserved combination, which no menu item of
+  /// The menus' keys, then every reserved combination, which no command of
   /// ours carries and the surface must still give up, then the releases.
   static func all(unbinding keys: [KeyCombination]) -> [String] {
     let reserved = ReservedShortcut.allCases.map(\.combination)

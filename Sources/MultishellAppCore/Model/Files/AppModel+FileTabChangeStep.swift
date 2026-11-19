@@ -1,6 +1,6 @@
 import MultishellCore
 
-/// A file tab bar's arrows, stepping its view from change to change.
+/// A file or All changes tab bar's arrows, stepping its view from change to change.
 extension AppModel {
   /// Queued, a second click possibly landing before the view takes the first.
   public func stepToChange(_ direction: CycleDirection, in id: FileTab.ID) {
@@ -28,7 +28,7 @@ extension AppModel {
   }
 
   /// The view's, as it updates: each step once, in the order asked. Read first,
-  /// as a removal of nothing still redraws every file tab.
+  /// as a removal of nothing still redraws every file and All changes tab.
   public func takeChangeStepRequests(_ id: FileTab.ID) -> [CycleDirection] {
     guard changeStepRequests[id] != nil else { return [] }
     return changeStepRequests.removeValue(forKey: id) ?? []

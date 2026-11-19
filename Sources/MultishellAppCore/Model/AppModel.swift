@@ -86,7 +86,7 @@ public final class AppModel<Surface> {
   /// The tab whose strip shows a name field; a commit arriving after the edit
   /// ended is ignored.
   public internal(set) var renamingTabID: TerminalTab.ID?
-  /// The panes and file tabs with a find bar up, each its own; see `showFind`.
+  /// The panes, file and All changes tabs with a find bar up, each its own; see `showFind`.
   /// Runtime state, dropped with the session or the tab.
   public internal(set) var findBarTargetIDs: Set<FindTargetID> = []
   /// Each target's find text, kept across closes so Cmd+F then Return repeats
@@ -105,9 +105,9 @@ public final class AppModel<Surface> {
   var takenFindSelections: [FindTargetID: String] = [:]
   /// What the engine's search last counted in each pane with a bar up.
   var searchCounts: [TerminalSession.ID: PaneSearchCount] = [:]
-  /// What each file tab's search found, here and not by the engine.
+  /// What each file or All changes tab's search found, here and not by the engine.
   var fileFindResults: [FileTab.ID: FileFindResult] = [:]
-  /// Each file tab's selected text, which a Cmd+F there finds.
+  /// Each file or All changes tab's selected text, which a Cmd+F there finds.
   @ObservationIgnored var fileTabSelections: [FileTab.ID: String] = [:]
   /// Written on every scroll, which nothing redraws for.
   @ObservationIgnored var fileTabScrolls: [FileTab.ID: FileTabScroll] = [:]
@@ -151,7 +151,7 @@ public final class AppModel<Surface> {
   /// Each file tab's last read, never saved: after a relaunch a deleted file's
   /// tab shows its committed text removed, or its committed image alone.
   public internal(set) var fileTabReadings: [FileTab.ID: FileTabReading] = [:]
-  /// The file tab a reconcile handed the keyboard to, taken by its view
+  /// The file or All changes tab a reconcile handed the keyboard to, taken by its view
   /// through `takeFileTabFocusRequest`, as a find field takes its request.
   var fileTabFocusRequest: FileTab.ID?
   /// Taken by each file tab's view, which alone knows the selection a step counts from.

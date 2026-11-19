@@ -1,7 +1,7 @@
 import AppKit
 import MultishellCore
 
-/// A file tab's colours, for AppKit, from the theme's `file` section.
+/// A file or All changes tab's colours, for AppKit, from the theme's `file` section.
 extension Theme {
   var fileBackground: NSColor { fileRGB(.background).nsColor }
   var fileText: NSColor { fileRGB(.text).nsColor }

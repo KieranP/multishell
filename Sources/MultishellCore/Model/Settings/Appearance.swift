@@ -27,7 +27,7 @@ public struct Appearance: Codable, Hashable, Sendable {
   public internal(set) var uiFontName: String?
   /// Sidebar, tabs and header. Every chrome measurement scales from it.
   public internal(set) var uiFontSize: Double
-  /// A file tab's text; `nil` uses the platform's default monospace face.
+  /// A file or All changes tab's text; `nil` uses the platform's default monospace face.
   public internal(set) var fileFontName: String?
   public internal(set) var fileFontSize: Double
 

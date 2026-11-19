@@ -1,5 +1,5 @@
 # Day-to-day entry points. Each is a thin wrapper; the real work is in
-# SwiftPM and Scripts/make-app.sh, so CI and the Makefile cannot drift.
+# SwiftPM and Scripts/, which CI calls too.
 
 CONFIG ?= debug
 APP     = build/Multishell.app
@@ -13,8 +13,8 @@ ifneq ($(LOCKF),)
 LOCK = $(LOCKF) -k "$(TEST_LOCK_FILE)"
 endif
 
-# Tests may write only the build tree and the temporary directories. Why --disable-sandbox,
-# and where it runs unconfined: Docs/develop/build/building-locally.md.
+# Tests may write only the build tree, SwiftPM's caches and the temporary directories. Why
+# --disable-sandbox, and where it runs unconfined: Docs/develop/build/building-locally.md.
 SANDBOX_EXEC := $(shell command -v sandbox-exec 2>/dev/null)
 ifneq ($(SANDBOX_EXEC),)
 SWIFT_TEST = $(SANDBOX_EXEC) -D REPO="$(CURDIR)" -D HOME="$(HOME)" -f Scripts/test-sandbox.sb swift test --skip-build --disable-sandbox
@@ -44,7 +44,7 @@ build: libghostty grammars
 release: libghostty grammars
 	Scripts/make-app.sh release
 
-## Test everything. Built before the lock and run under it; why in
+## Test everything but the theme audit. Built before the lock and run under it; why in
 ## Docs/develop/build/building-locally.md.
 test: libghostty grammars
 	swift build --build-tests

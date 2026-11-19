@@ -2,6 +2,6 @@
 public enum MergeAction: Equatable, Sendable {
   case cancelAutoMerge
   case merge
-  /// Only required checks still running hold it back: auto-merge.
+  /// Only machines hold it back, running required checks or an unchecked conflict: auto-merge.
   case mergeWhenReady
 }

@@ -15,17 +15,15 @@ beyond the code itself.
   them**, so an agent gets mentions, and a copied image as a file saved to the
   drops directory, only for the user's own paste
   (design/terminals/paste-and-drop.md).
-- **A surface host also gives a pane's text, frame and last drawn image** where
-  it can, which `panes read`, `tabs show` and `debug screenshot` answer from;
-  one that cannot returns `nil` and the request is refused or the frame left
-  out. Search counts reach the model through the delegate's `didCount`, and a
-  host that sends none leaves `panes find` printing what it has at its
-  two-second limit. A host that cannot say a session's terminal memory returns
-  `nil`, and Debug Info leaves that screen and scrollback in the app's row.
+- **A host that cannot give a pane's text, frame, last drawn image or terminal
+  memory returns `nil`**: `panes read`, `tabs show` and `debug screenshot` are
+  refused or leave it out, and Debug Info counts that memory in the app's row. A
+  host that sends no search counts through `didCount` leaves `panes find`
+  printing what it has at its two-second limit.
 - **A host judges a clicked link itself** before anything opens it, and hands a
   text file to the delegate's `didAskToEdit` for the user's editor. Nothing
   forces either. Left to libghostty, a link once ran whatever a program printed,
-  and from `ad97d33` one from a pane's text opens nothing
+  and from Ghostty `ad97d33` one from a pane's text opens nothing
   (design/terminals/links.md).
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
@@ -51,9 +49,8 @@ beyond the code itself.
   relative path resolves from where the pane started, and the shape and the
   wrappers are gone.
 - **`ShellIntegration.write`'s new parameter takes a default**, so the test
-  callers that pass it every path, `GeneratedIntegration`, `ShellTab` and
-  ShellIntegrationTests, still compile without the new one and write that
-  shell's file into the debug build's own integration folder.
+  callers that pass every path still compile without it, and write that shell's
+  file into the debug build's own integration folder.
 - **As a login shell it runs agents' lines only if it is in
   `ShellInvocation.interactiveLoginShells`**; left out, they run through
   `/bin/sh` and miss its PATH. One whose syntax is not sh's also needs a branch
@@ -76,12 +73,11 @@ beyond the code itself.
   ShellIntegrationScriptsTests+CommandWrappers runs beside Homebrew's.
 - **A second frontend.** A target in this package depending on the five
   libraries, the package exporting no library product; fix the model to its view
-  type once, and implement the platform, surface host and notifier ports. The
-  directory watcher and the socket are AppCore's already.
+  type once, and implement the platform, surface host and notifier ports.
 - **A port may do less.** Trash may delete outright, handing over to a running
   copy may return and leave the alert standing, a platform with no display link
   may never call back and leave the frame rate blank, and a notifier that needs
   no permission answers unavailable to both questions, which keeps the settings
   page from promising a dialog. A platform with no windows or menu bar lists
-  none, and refuses `window size`, `window full-screen`, choosing a menu item
-  and `debug screenshot`.
+  none, and refuses every `window` request, choosing a menu item and
+  `debug screenshot`.

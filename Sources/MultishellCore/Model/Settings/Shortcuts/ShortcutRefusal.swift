@@ -3,7 +3,7 @@ public enum ShortcutRefusal: Hashable, Sendable {
   /// ⌘ with an arrow or Delete, or ⌃⇧ with a sideways arrow, moves, selects or
   /// deletes to a line's or a text's ends in every text field.
   case editsText
-  /// Cut, Copy, Paste or Select All hold the keys and cannot let them go.
+  /// A fixed command, Copy or Undo say, holds the keys and cannot let them go.
   case heldByFixed(ShortcutCommand)
   /// No ⌘, ⌃ or ⌥, and not an F-key: every text field would lose the key.
   case needsModifier

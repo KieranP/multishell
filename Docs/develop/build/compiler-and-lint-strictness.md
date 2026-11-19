@@ -20,36 +20,32 @@
   Sources), `AllPublicDeclarationsHaveDocumentation` (733 undocumented), and
   `BeginDocumentationCommentWithOneLineSummary`, 965 doc comments written as
   prose.
-- **Every SwiftLint rule runs but those in `disabled_rules`**, each with its
-  reason in `.swiftlint.yml`. Layout rules run beside swift-format where the two
-  agree; where they disagree, as on brace placement after a full header, import
-  order and a lone wrapped element's trailing comma, swift-format's answer
-  stands. They cost about 0.3 s of SwiftLint's 1.1 s uncached; swift-format
-  takes 7 s serial and 1.5 to 4 s with `--parallel`, which `make` passes.
+- **SwiftLint's layout rules run beside swift-format where the two agree**;
+  where they disagree, as on brace placement after a full header, import order
+  and a lone wrapped element's trailing comma, swift-format's answer stands.
+  They cost about 0.3 s of SwiftLint's 1.1 s uncached; swift-format takes 7 s
+  serial and 1.5 to 4 s with `--parallel`.
 - **SwiftLint is pinned by `swiftlint_version`**, and any other version refuses
   to run. With every rule on, a newer SwiftLint would switch its new rules on
-  unasked, so a bump is when they are reviewed. CI downloads that release;
-  locally, Homebrew's must match.
-- **Sources take no force unwrap, `try!` or `as!`**; the one left is marked
-  where it stands. `Tests/.swiftlint.yml` lets a test stop on a broken fixture,
-  lets a suite run as long as its cases, and keeps `#expect(x == [])` over
-  `isEmpty`, since it prints `x` when it fails.
-- **Size and complexity limits sit just above the largest that exists**: 60-line
-  functions, complexity 15, 9 parameters, 4-member tuples, types nested two
-  deep, 120-column lines. They stop growth rather than force a split. Three
-  exceed them by choice and are marked: `SVGPathParser.path(fromData:)` (kept
-  whole on 2026-09-30), `Workspace.init(from:)`, a field per line, and
-  `AppModel.reply(to:)`, one case per control request; `WorkspaceStore` passes
-  400 lines because every writer of its `private(set)` state must live in the
-  file, and `AppModel` because no extension may hold a stored property.
-- **Members sit in SwiftLint's `type_contents_order`**: cases, type aliases,
-  nested types, static then instance properties, initializers, static then
-  instance methods, subscripts, `deinit`. Defaulted parameters come last.
+  unasked, so a bump is when they are reviewed. Locally, Homebrew's must match.
+- **Tests may do what Sources may not** (`Tests/.swiftlint.yml`): stop on a
+  broken fixture, run a suite as long as its cases, and keep `#expect(x == [])`
+  over `isEmpty`, since it prints `x` when it fails.
+- **Size and complexity limits sit just above the largest that exists**, to stop
+  growth rather than force a split. Those over them by choice are marked:
+  `SVGPathParser.path(fromData:)` (kept whole on 2026-09-30),
+  `Workspace.init(from:)`, a field per line, and the exhaustive switches holding
+  one case per control request, command group, key or settings page, so a new
+  one cannot go unanswered; `WorkspaceStore` passes 400 lines because every
+  writer of its `private(set)` state must live in the file, and `AppModel`
+  because no extension may hold a stored property.
 - **Enum cases are alphabetical unless the order means something**: what a
   picker, the board, a strip or the helper's usage error lists in that order,
   the order file lists are placed or a create or remove's stages run, the badge
-  fit's widest-first. Each such enum is marked with its reason. SwiftLint checks
-  top-level enums only; a nested one follows the rule unchecked and unmarked.
+  fit's widest-first, a level's mildest-first so the later case is the worse,
+  and the bottom-to-top order a Debug Info tile stacks its bands in. Each such
+  enum is marked with its reason. SwiftLint checks top-level enums only; a
+  nested one follows the rule unchecked and unmarked.
 - **A type's extension in its own file is folded into it**, except where it
   keeps a memberwise init synthesized, and `WorkspaceStore`'s concerns, which
   must share its file. Those are marked.

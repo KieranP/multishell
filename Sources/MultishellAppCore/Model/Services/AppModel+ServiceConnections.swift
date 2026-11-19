@@ -97,7 +97,8 @@ extension AppModel {
     return (integration, host, pullRequest)
   }
 
-  /// The same for CI. Whether the repository runs on it is asked at the read.
+  /// The project's CI provider, picked as `pullRequestHost` picks the host. Whether
+  /// the repository runs on it is asked at the read.
   func ciProvider(for project: Project) -> (ServiceIntegration, any CIProvider)? {
     firstEnabled(of: readableCIProviders, for: project)
   }

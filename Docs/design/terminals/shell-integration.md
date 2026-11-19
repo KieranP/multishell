@@ -3,24 +3,21 @@
 What a shell reports, through the integration injected into zsh, bash and fish.
 Newest at the bottom.
 
-- **Shell integration is injected, never written to a user's file.** It is
-  written at launch into the app's own directory, and every session pointed at
-  it.
+- **Shell integration is injected, never written to a user's file.** An agent's
+  hooks are the one exception, written only on the user's click
+  (agents/reports-and-hooks.md).
 - **The helper sits behind a symlink each launch points at its own build's**, so
-  a moved bundle breaks no hook line. An agent's hooks are the one exception,
-  written only on the user's click: merged into a settings file of theirs with a
-  copy kept, or a file of ours written whole (agents/reports-and-hooks.md).
+  a moved bundle breaks no hook line.
 - **The engine's own shell integration is off** (`shell-integration = none`), so
   ours is the only one in a pane; two integrations printing marks from their own
   hooks fought over the prompt. develop/dependencies.md has its scripts'
   licence.
 - **bash is launched through `sh`**: libghostty runs a command as `exec -l`,
   which makes bash a login shell, and a login bash skips `--init-file`. Run
-  straight, a bash tab got none of our hooks (EngineCommandLineTests).
+  straight, a bash tab got none of our hooks.
 - **A session starts with no `ZDOTDIR` of the user's**, as a stock terminal
   does, unless the app's own environment has one, as after a launch from a
-  shell; that one goes in as `MULTISHELL_USER_ZDOTDIR` for ours to chain to. Two
-  of our files capture one their own files set and the third hands it back.
+  shell; that one is handed on for ours to chain to.
 - **The captured login environment does not hand one in**: ours would then
   source that directory's copy in place of the home one, skipping the file that
   set it. Cost: a `ZDOTDIR` set system-wide redirects zsh past our files, as
@@ -42,16 +39,15 @@ Newest at the bottom.
 - **A bash prompt hook reading `PIPESTATUS` sees our entry's**, which runs first
   for `$?`. Owner's choice, 2026-11-14: replaying a pipeline's statuses would
   cost a subshell per stage at each prompt after one.
-- **It goes back in front at each prompt**, as zsh's precmd hook does: a
-  `.bashrc` sourced again puts its prepended entry first, which ours then read
-  the status of. Not in front of bash-preexec's, which reads `PIPESTATUS` there,
-  and before 5.1 into element 0, the only one bash runs.
+- **It goes back in front at each prompt**, where zsh's precmd hook is put once
+  at startup: a `.bashrc` sourced again puts its prepended entry first, which
+  ours then read the status of. Not in front of bash-preexec's, which reads
+  `PIPESTATUS` there, and before 5.1 into element 0, the only one bash runs.
 - **The user's DEBUG trap's status is ours to return**: under `extdebug` a
   non-zero one skips the command, and returning our own ran it.
 - **A shell that replaces itself keeps the integration.** The new shell read
-  only the user's files, so the pane's last report was `running` for good. For
-  an interactive `exec zsh` or omz's `reload`, preexec points `ZDOTDIR` back at
-  ours for that line, and precmd hands it back where the shell was not replaced;
+  only the user's files, so the pane's last report was `running` for good. zsh
+  points `ZDOTDIR` back at ours for an interactive `exec zsh` or omz's `reload`;
   `-f`, `-c` or a script read no `.zshrc` to hand it back. bash cannot be handed
   `--init-file` through the environment, so the DEBUG trap execs a plain
   `exec bash` as a tab's bash is started, only where the target is there, a
@@ -59,20 +55,18 @@ Newest at the bottom.
   another flag runs as typed, without.
 - **A tab's bash logs out as a login shell does**: `logout` exits and
   `~/.bash_logout` runs on `exit`, `logout` or end of input, which bash does
-  only for a login shell. Not on a hangup, which every pane close sends: a HUP
-  trap notes it and passes the signal on. Cost: an EXIT trap the user sets keeps
-  the logout file from running, theirs replacing ours.
+  only for a login shell. Not on a hangup, which every pane close sends. Cost:
+  an EXIT trap the user sets keeps the logout file from running, theirs
+  replacing ours.
 - **The bash init file is read in place of the rc file**, so the generated one
   reproduces a login shell's chain and reads the rc file only where that found
-  nothing, as a login shell does.
-- **Reading the rc file unconditionally ran it twice** for everyone whose
-  profile ends by sourcing it. A user whose profile does not source it sees what
-  they see in any login shell.
-- **The debug trap and prompt command are chained to, never replaced.**
-- **The trap is taken back at every prompt** rather than captured once:
-  bash-preexec installs its own at the first prompt, long after the rc file has
-  returned, and read ours before it existed, so ours was replaced and nothing
-  was reported for the rest of the session.
+  no profile, which a login shell would not. Reading the rc file unconditionally
+  ran it twice for everyone whose profile ends by sourcing it.
+- **The debug trap and prompt command are chained to, never replaced, and the
+  trap is taken back at every prompt** rather than captured once: bash-preexec
+  installs its own at the first prompt, long after the rc file has returned, and
+  read ours before it existed, so ours was replaced and nothing was reported for
+  the rest of the session.
 - **Both halves are spliced in as text, not called from a function**: inside an
   untraced function bash reports no debug trap and puts back the one set, so a
   function could neither see theirs nor install ours. Cost: a subshell per
@@ -81,19 +75,19 @@ Newest at the bottom.
   last word once it ends: a bare call broke `mkdir x && cd $_` in every bash
   tab, and handed bash-preexec's own `"$_"` our function's name. Theirs runs
   with no arguments of ours: it saw one, where bash gives a trap none.
-- **A `bind -x` widget does not take the arm either**, fzf's and Atuin's Ctrl-R
-  running commands before the line they fill does. bash sets READLINE_POINT only
-  inside one. Cost: bash 3.2 sets none, so there the widget still takes it. No
-  suite test holds this: under `script` in the suite the reports never reached
-  the fake helper, guard or not; a pty run outside it showed both sides.
+- **A `bind -x` widget does not take the arm**, fzf's and Atuin's Ctrl-R running
+  commands before the line they fill does. bash sets READLINE_POINT only inside
+  one. Cost: bash 3.2 sets none, so there the widget still takes it. No suite
+  test holds this: under `script` in the suite the reports never reached the
+  fake helper, guard or not; a pty run outside it showed both sides.
 - **bash-preexec's prompt entry does not take the arm.** It lands after ours at
   the first prompt, and running it took the arm meant for the command typed
   next, so an agent typed there went unreported.
 - **zsh's send keeps `REPLY` local**: `zsocket` answers in it, so every report
   left a `read`'s line as a descriptor number.
-- **zsh's command end is the first prompt hook and its marks the last**, moved
-  back there at each prompt: a slow theme hook was billed to every command, and
-  one a deferred loader added after ours rebuilt the prompt without the marks.
+- **zsh's command end is the first prompt hook and its marks the last**: a slow
+  theme hook was billed to every command, and one a deferred loader added after
+  ours rebuilt the prompt without the marks.
 - **fish reports nothing for a line holding only a comment**, whose postexec
   repeated the last command's status, so a comment after a failure failed.
 - **Theirs is unquoted before it is kept**, the print form being quoted for
@@ -102,25 +96,21 @@ Newest at the bottom.
 - **Our prompt hook returns the status it was given.** bash does not restore the
   last status between prompt-command entries, so a user's prompt reading it saw
   ours and every command looked successful. zsh needs none of this.
-- **A command starting carries its first word where that names an agent**, which
-  marks an agent typed at a prompt with no hooks installed
-  (agents/board-and-pane-rows.md).
-- **The two shells reach that word differently.** bash's is already
-  alias-expanded; zsh is handed the line as typed and the expanded one, and the
-  expanded one is read, or an alias left the pane a plain shell.
+- **A command starting carries its first word where that names an agent**, so an
+  agent typed at a prompt with no hooks installed is marked
+  (agents/board-and-pane-rows.md). bash's word is already alias-expanded; zsh is
+  handed the line as typed and the expanded one, and the expanded one is read,
+  or an alias left the pane a plain shell.
 - **zsh splits it into a real array first**, its word subscript taking
   characters rather than words for a bare path, which came out empty.
 - **A zsh hook returns 0 and counts words under zsh's own options.** Under a
   user's `err_exit` a hook returning 1 ended the shell at its first prompt, and
-  under `ksh_arrays` the word list began at 0 and the agent's name was lost
-  (`aUsersErrExitDoesNotEndTheShellAtItsFirstPrompt`).
-- **The trap is disarmed before anything else runs at the prompt.** The arm is
-  set last and consumed by the next command, so an empty Enter left it alive
-  into the next prompt, which reported the user's own prompt entry as a command
-  starting.
-- **That read as Working until the next Enter**, which then reported the whole
-  idle time as its duration. zsh has no preexec for an empty line and never had
-  this.
+  under `ksh_arrays` the word list began at 0 and the agent's name was lost.
+- **The trap is disarmed before anything else runs at the prompt.** An empty
+  Enter left the arm alive into the next prompt, which reported the user's own
+  prompt entry as a command starting: Working until the next Enter, which then
+  reported the whole idle time as its duration. zsh has no preexec for an empty
+  line and never had this.
 - **A click in the prompt moves the cursor because the prompt claims it.** The
   engine answers a click only for a shell whose prompt mark says the line is
   editable, over cells an input mark covers.
@@ -134,14 +124,10 @@ Newest at the bottom.
   opening a prompt that never ends. Cost: no click-to-move on the later lines of
   a multi-line buffer.
 - **The input mark goes on the end of a prompt only once**, our zsh hook leaving
-  it off a prompt a framework already ended with one. The output-start mark ends
-  the claim while a program runs.
-- **zsh titles a pane and shapes its cursor as Ghostty's own integration does**:
-  the directory at a prompt and the command while it runs, a bar to edit in, a
-  block in vi command mode and the configured shape back for a program. Each
-  only where the user's `shell-integration-features` ask, which Ghostty exports
-  whatever the integration setting, `cursor:steady` and all. bash shapes no
-  cursor.
+  it off a prompt a framework already ended with one.
+- **zsh titles a pane and shapes its cursor as Ghostty's own integration does**,
+  each only where the user's `shell-integration-features` ask, which Ghostty
+  exports whatever the integration setting. bash shapes no cursor.
 - **zsh and bash wrap `sudo` and `ssh` where those features ask**, as Ghostty's
   own zsh integration did before ours replaced it: `sudo` keeps the bundled
   `TERMINFO`, root's terminfo having no `xterm-ghostty`, and `ssh` sends
@@ -158,29 +144,26 @@ Newest at the bottom.
   after `cd x &&` resolves paths from the new one. Raw, in Ghostty's
   `kitty-shell-cwd://` form: percent-encoding tripled a long path past the 2 KB
   Ghostty reads it into. A directory holding a control character, able to end
-  the sequence early, is reported as unknown, an empty report; unreported, the
-  pane resolved links from the directory before it.
+  the sequence early, is reported as unknown; unreported, the pane resolved
+  links from the directory before it.
 - **Only after a first prompt**, so a `zsh -c` a hook runs in prints nothing
   into the output the hook is judged by.
 - **bash reports its directory at each prompt and at the first command after a
-  `cd`**, from the DEBUG trap, bash having no `cd` hook: one builtin test per
-  command, so `cd x && make` resolves `make`'s paths from `x`. fish 4 reports
-  its own. Cost: a function that does both waits for the prompt, bash running
-  the trap inside a function only under `set -T`, which would change the user's
-  own traps.
-- **bash titles its pane by directory at a prompt, never by the command**, `…/`
-  and the last three parts as zsh and Ghostty do, a tab having room for the end
-  of a path rather than the start. Only where the `title` feature asks: a pane
-  with no title takes libghostty's from each directory report, the raw full
-  path.
+  `cd`**, from the DEBUG trap, bash having no `cd` hook, so `cd x && make`
+  resolves `make`'s paths from `x`. fish 4 reports its own. Cost: a function
+  that does both waits for the prompt, bash running the trap inside a function
+  only under `set -T`, which would change the user's own traps.
+- **bash titles its pane by directory at a prompt, never by the command**, the
+  last three parts as zsh and Ghostty do, a tab having room for the end of a
+  path rather than the start. Only where the `title` feature asks: a pane with
+  no title takes libghostty's from each directory report, the raw full path.
 - **bash writes to the terminal on a descriptor of its own**, 61, opened on
   `/dev/tty`: the DEBUG trap runs inside a redirected block's redirect, and the
-  output mark it printed there landed at the top of the file
-  (`aBashBlockRedirectedToAFileGetsNoMarkInIt`). Not 63: a process substitution
-  takes the highest free descriptor under 64, and with 63 held the relay's pipe
-  landed on 62 and every report fell back to a helper (HelperRelayTests). It
-  goes to `/dev/tty` only once a write there succeeds, and to stdout otherwise,
-  a failed `exec` ending a script's shell.
+  output mark it printed there landed at the top of the file. Not 63: a process
+  substitution takes the highest free descriptor under 64, and with 63 held the
+  relay's pipe landed on 62 and every report fell back to a helper. It goes to
+  `/dev/tty` only once a write there succeeds, a failed `exec` ending a script's
+  shell.
 - **Cost: no continuation-prompt marks**, which Ghostty's integration writes on
   PS2.
 - **bash's start mark is printed rather than embedded**, because it moves to a
@@ -200,17 +183,15 @@ Newest at the bottom.
 - **bash's clock variable carries the same separator**, so the fraction is cut
   at either one; matching a dot alone left the whole string in the arithmetic
   and reported six figures.
-- **The worktree path is escaped on the zsh-built line** and built once at
-  startup rather than per report.
-- **git refuses a control character in a branch name but not in a parent
-  directory**, which the NUL-terminated list is read to allow, and a raw tab or
-  newline made every line from that tab unparseable, in silence.
-- **The socket path is taken on any stock zsh**, so the helper that encodes
-  correctly was never reached. bash always goes through the helper.
+- **The worktree path is escaped on the zsh-built line**: git refuses a control
+  character in a branch name but not in a parent directory, and a raw tab or
+  newline made every line from that tab unparseable, in silence. Any stock zsh
+  takes the socket path, so the helper that encodes correctly was never reached.
+  bash always goes through the helper.
 - **bash writes to one resident helper per shell**, `multishell relay` behind a
-  process substitution on descriptor 62, since bash 3.2 cannot open a socket. A
-  helper launched per report cost 9.4 ms a command, nearly all of it launch; a
-  pipe keeps the order as running inline did.
+  process substitution, since bash 3.2 cannot open a socket. A helper launched
+  per report cost 9.4 ms a command, nearly all of it launch; a pipe keeps the
+  order as running inline did.
 - **The relay is started in the background of the substitution**, which then
   exits. bash 4.4 and later set `$!` to a process substitution and a bare `wait`
   waits on it (`wait_for_background_pids` in bash's `jobs.c`), so a relay that
@@ -218,13 +199,11 @@ Newest at the bottom.
 - **Each write ignores SIGPIPE for itself alone**: a write to a relay that has
   gone kills an interactive bash. The disposition is put back before anything
   else runs, or it would pass to every command the user runs. A subshell per
-  write did the same at two forks a command. A failed write sends that report
-  and every later one inline.
+  write did the same at two forks a command.
 - **What is put back is the handler standing at that write**, read each time.
   Read once at startup, a `trap … PIPE` set later was lost at the next report.
 - **bash 5.3 reads it with `${ …; }`**, which runs in the shell: 0.14 ms a read
-  against 0.47 ms. Cost before 5.3: a command substitution, a fork per report,
-  as a subshell per write cost.
+  against 0.47 ms. Cost before 5.3: a command substitution, a fork per report.
 - **The prompt's read of the DEBUG trap keeps its fork, 5.3 included.** At the
   top level of the prompt command `${ …; }` runs the user's DEBUG trap on the
   read and captures what it prints, so bash-preexec took our read for a command.
@@ -247,9 +226,9 @@ Newest at the bottom.
   the helper inherits that. A Ctrl-C at the prompt left the loop running under
   bash 3.2 and 5.3; one with interrupt reset to default lost every later line.
 - **The relay ends at EOF or when the shell's pid exits**, whichever is first.
-  bash has no close-on-exec, so every command inherits descriptor 62, and 61 the
-  terminal reports go out on, and an editor or server started in the tab held
-  the pipe open long after the tab closed.
+  bash has no close-on-exec, so every command inherits the relay's descriptor
+  and the terminal one, and an editor or server started in the tab held the pipe
+  open long after the tab closed.
 - **Ghostty's manual-integration lines find files that do nothing.** libghostty
   exports its resources folder to every shell, and the line Ghostty documents
   for a manual setup sources a script from it; the bundle has a stand-in in each
@@ -257,11 +236,9 @@ Newest at the bottom.
 - **fish is told through `-C`**, a line it runs once its own config has, as bash
   is told through `--init-file`. Ghostty's route, a `vendor_conf.d` reached
   through `XDG_DATA_DIRS`, would be inherited by every child unless taken back.
-- **fish 4 writes every terminal mark itself**: prompt start with
-  `click_events`, input, output, the command's end with its status, OSC 7 and
-  the title. So the fish file adds only the cursor's shape and the `sudo` and
-  `ssh` wrappers in a Ghostty pane, and the engine's finished-command signal
-  comes from fish's own end mark.
+- **fish 4 writes every terminal mark itself**, the click claim, directory and
+  title included, so the fish file adds only the cursor's shape and the `sudo`
+  and `ssh` wrappers in a Ghostty pane.
 - **Cost: a fish before 4.0 writes no marks, and before 4.1 no click claim**,
   and fish titles its pane whatever the `title` feature says.
 - **The fish cursor stands back under fish's vi mode**, whose own handler draws
@@ -270,9 +247,8 @@ Newest at the bottom.
   bash's relay saves. fish opens no socket and holds no descriptor a relay could
   read, and a job of ours in the background would be the one a bare `fg`
   resumed.
-- **fish's own tokenizer reads the agent's word**, quotes off, past the same
-  prefixes as zsh and bash (agents/board-and-pane-rows.md). An abbreviation is
-  expanded before the event fires. Cost: an `alias` is a fish function, and the
-  word typed is its name.
+- **fish's own tokenizer reads the agent's word**, quotes off
+  (agents/board-and-pane-rows.md). An abbreviation is expanded before the event
+  fires. Cost: an `alias` is a fish function, and the word typed is its name.
 - **fish runs its postexec for `exit`**, so `exit 3` reports a failure, and the
   exit event then sends idle, ending the session as zsh's does.

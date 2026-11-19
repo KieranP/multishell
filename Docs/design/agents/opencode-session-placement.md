@@ -10,173 +10,74 @@ and which are another session's children. Newest at the bottom.
   other, remembering the answer. Read from the 2.1.4 binary and a probe on
   2026-10-27, not seen for a global plugin across two directories.
 - **An envelope naming another directory settles it unasked**; one naming this
-  one still asks, as only the answer says whether the session is a child, and an
-  answer naming another directory outweighs it. A location naming no directory
-  says nothing, in an envelope, a creation or an answer, and leaves the record's
-  source as it was, or an answer naming no directory outranked the envelope that
-  asked for it (`anAnswerNamingNoDirectoryLeavesALaterEnvelopeToSay`).
-- **Only the events the plugin reads are queued**, a session's creation and move
-  and the six it looks up for: a streamed part names its session too, and one
-  whose lookup failed was asked about again for each part
-  (`anEventThePluginDoesNotReadAsksNothing`).
+  one still asks, as only the answer says whether the session is a child. A
+  location naming no directory says nothing and leaves the record's source as it
+  was, or an answer naming no directory outranked the envelope that asked for
+  it.
+- **Only the events the plugin reads are queued**: a streamed part names its
+  session too, and one whose lookup failed was asked about again for each part.
 - **A session the TUI moves to another worktree is placed by its new location**,
   as `session.moved` says: kept here, the old worktree's dot showed the new
-  one's turns (`aSessionMovedAwayIsAnotherDirectorysAndOneMovedHereIsThisOnes`).
-  Moved away, mid-turn, after its Done or while asking, it ends here: its
-  children end and are dropped, filed with it as elsewhere's, and it goes Idle
-  wherever it stood, or the old worktree kept work now running elsewhere
-  (`aSessionMovedAwayMidTurnLeavesItsTurnAndChildrenEndedHere`,
-  `aSessionMovedAwayAfterItsDoneOrWhileAskingGoesIdleHere`,
-  `aMovedSessionsChildRunningLaterReportsNothingHere`). A move ends it here with
-  no placement record too: it goes Idle if the tracker remembers it reporting
-  here, its latest 512, or if a session under it on the roster leaves with it,
-  running or ended, as either's end woke its turn; for one with a parent that
-  end woke its parent's turn instead
-  (`aSessionForgottenAmongTheLatestStillEndsHereWhenMovedAway`,
-  `aParentUnseenHereThatMovesAwayMidTurnLeavesTheWorktreeIdle`,
-  `aChildTheRosterForgotSendsNoIdleWhenItLeavesWithAWorkerUnderIt`). The
-  sessions leaving with it are those the roster or the placement records put
-  under it, as the roster passes a forgotten parent's children up
-  (`aChildLeavingTakesTheGrandchildTheRosterPassedUpToItsSession`). Each is
-  dropped outright, taking no place among the 64 ended, or another session's
-  oldest ended child was forgotten
-  (`aMoveAwayForgetsNoOtherSessionsEndedChild`). A move back takes its children
-  out of elsewhere's again (`aSessionMovedBackGetsItsChildrenBack`). A child
-  whose parent moved away is elsewhere's, whatever an older answer says, unless
-  a hook named it here after the move, and so is any session further down that
-  line, though an answer filed the one between
-  (`aChildAnsweredAfterItsParentMovedAwayIsElsewheresToo`,
-  `aHookNamedChildOfAnotherDirectorysSessionStaysHere`,
-  `aGrandchildAnsweredAfterItsSessionMovedAwayIsElsewheresToo`). A session moved
-  here brings every session filed elsewhere under it, its children's children
-  too, as each one's record keeps its top-level session through an event naming
-  no parent (`aSessionMovedHereBringsItsChildrenFromElsewhere`,
-  `aSessionMovedHereBringsItsChildrensChildrenToo`,
-  `aMovedChildsEventElsewhereKeepsItFiledUnderItsSession`). A lookup answered
-  after the move cannot bring it back (`aLateAnswerDoesNotUndoAMove`).
+  one's turns. Moved away, it ends here with its children and goes Idle, or the
+  old worktree kept work now running elsewhere. Those leaving are dropped
+  outright, taking no place among the 64 ended, or another session's oldest
+  ended child was forgotten. A child whose parent moved away is elsewhere's
+  whatever an older answer says, unless a hook named it here after the move, and
+  a lookup answered after the move cannot bring it back.
 - **A session a hook named stays here whatever a late answer or its creation
   says**: hooks fire only for this directory's sessions, and where it ended up
-  turned on whether the answer beat the bound
-  (`aSessionAHookNamedStaysHereWhenALateAnswerNamesElsewhere`,
-  `aSessionAHookNamedStaysHereWhenItsCreationNamesElsewhere`).
-- **An answer naming a parent makes a child of a session a hook or envelope
-  placed here**, though the parent is unknown after a reload or forgotten past
-  1024, whether the answer came within the bound or after it
-  (`aSessionWhoseAnswerNamesAParentIsAChildWhereverItWasPlaced`,
-  `aLateAnswerNamingAParentMakesAChildOfASessionAHookNamed`).
-- **A child's record keeps its parent**, from a creation as from an answer, so
-  one a hook named first is still a child once the roster forgets it
-  (`aChildAHookNamedBeforeItsCreationStaysAChildOnceTheRosterForgetsIt`). A
-  creation naming a parent makes a child of a hook-named session as an answer
-  does (`aCreationNamingAParentMakesAChildOfASessionAHookNamed`).
-- **A child of a session here is here whatever its own location says**, in a
-  creation or a lookup's answer; read by its location alone, a resumed child's
-  answer naming no directory made it a parent
-  (`aChildWhoseAnswerNamesNoDirectoryIsStillAChildOfAParentHere`). A parent
-  unknown here is asked about once its child is placed, after a reload as for a
-  middle session silent on its task, so a move of the top-level session takes
-  the whole line (`aGrandchildUnderAnUnknownParentLeavesWithItsMovedSession`).
-- **A child the roster forgot rejoins it from its record** when it is resumed,
-  past the 64 ended; kept as a plain session here, its resumption read as the
-  parent's turn and announced Done
-  (`aChildTheRosterForgotIsReadAsAChildWhenResumedNotAsTheParent`,
-  `pastTheEndedChildLimitOnlyTheOldestLeavesTheRosterAndRejoinsAsAChild`).
+  turned on whether the answer beat the bound.
+- **A child's record keeps its parent**, so one a hook named first is still a
+  child once the roster forgets it, and an answer or creation naming a parent
+  makes a child even where the parent is unknown after a reload or forgotten.
+- **A child of a session here is here whatever its own location says**: read by
+  its location alone, a resumed child's answer naming no directory made it a
+  parent. A parent unknown here is asked about once its child is placed, so a
+  move of the top-level session takes the whole line.
+- **A child the roster forgot rejoins it from its record** when it is resumed;
+  kept as a plain session here, its resumption read as the parent's turn and
+  announced Done.
 - **Each session's events wait only for that session's lookup**, which has no
   bound. One queue for the whole bus held a parent's Done behind another
-  directory's lookup, landing after the next prompt's Working
-  (`aLookupForAnotherSessionHoldsBackNoEventOfThisOne`). A hook's lookup keeps
-  its one-second bound, and an answer landing after it still counts.
-- **A session's hooks take their place in the same queue**, the hook waiting at
-  most a second for its turn: a hook-named session is here before its lookup
-  ends, and an event during the lookup is reported after the hook's Working, not
-  dropped or overwritten (`anEventDuringAHooksLookupIsTheHookedSessions`). An
-  event waits up to a second for a hook's lookup still out, as its answer may
-  make a child: read before it, a resumed child's end was the parent's Done and
-  the late answer started a worker that never ended
-  (`aChildWhoseRunEndsBeforeItsLateAnswerEndsAsAChild`). An answer past that
-  second, after the session's own run ended, starts it on the roster and ends it
-  at once, read from its last own report: kept started, it was out in every
-  later Done, and joined silently, the worktree stayed on its Done mid-turn
-  (`aChildWhoseRunEndedBeforeAnAnswerPastTheBoundJoinsTheRosterEnded`). After
-  the parent's own Done it joins ended and silent, or its end over that Done
-  left the worktree Working with no Stop to come; a grandchild reads its
-  top-level session's Done, its own parent having none
-  (`aChildWhoseLateAnswerLandsAfterItsParentsDoneJoinsTheRosterQuietly`,
-  `aGrandchildWhoseLateAnswerLandsAfterTheSessionsDoneJoinsTheRosterQuietly`). A
-  prompt it raised as its own is answered there and raised again as the
-  worker's, or the reply, now the worker's, left the agent's prompt standing;
-  one any session is raising as its own stays up, as all share the agent's
-  prompt (`aPromptAChildRaisedAsItsOwnBecomesTheWorkersOnceItsLateAnswerLands`,
-  `aChildsLateAnswerLeavesItsParentsOwnPromptStanding`,
-  `aChildsLateAnswerLeavesAnotherSessionsPromptStanding`).
-- **Each session has one placement record**: here or elsewhere, the source that
-  said so and when, its parent and agent. A source overrides the record unless
-  one ranked above it set it: a hook or a move outranks a creation or an answer,
-  and those outrank an envelope; between equals the newer wins. A parent moved
-  away after a session was placed takes it along, a hook's word too, as the
-  answer naming that parent can land after the move
-  (`aChildAHookNamedBeforeItsParentMovedAwayIsElsewheresOnceAnswered`); a hook
-  naming it again after the move stamps it anew and keeps it here
-  (`aChildAHookNamesAgainAfterItsParentMovedAwayStaysHere`). A hook counts from
-  when it fired, not when its turn in the session's queue came: one fired before
-  the move but run after it kept a moved child here
-  (`aHookThatFiredBeforeItsParentMovedAwayKeepsNoChildHere`). The precedence
-  spread over four maps read worse and drifted between them.
+  directory's lookup, landing after the next prompt's Working. A hook's lookup
+  keeps its one-second bound, and an answer landing after it still counts.
+- **A session's hooks take their place in the same queue**, so an event during a
+  hook's lookup is reported after the hook's Working, not dropped or
+  overwritten. An event waits up to a second for a hook's lookup still out, as
+  its answer may make a child: read before it, a resumed child's end was the
+  parent's Done and the late answer started a worker that never ended.
+- **An answer past that second, after the child's run ended, joins it to the
+  roster ended**: kept started, it was out in every later Done, and joined
+  silently, the worktree stayed on its Done mid-turn. After the parent's own
+  Done it joins ended and silent, or its end over that Done left the worktree
+  Working with no Stop to come. A prompt it raised as its own is raised again as
+  the worker's, or the reply left the agent's prompt standing; one any session
+  is raising stays up, as all share the agent's prompt.
+- **Each session has one placement record**, its place, the source that said so
+  and when. A hook or a move outranks a creation or an answer, and those outrank
+  an envelope; between equals the newer wins. The precedence spread over four
+  maps read worse and drifted between them.
+- **A parent moved away takes a child placed before, a hook's word too**, as the
+  answer naming that parent can land after the move. A hook counts from when it
+  fired, not when its turn in the queue came: one fired before the move but run
+  after it kept a moved child here.
 - **A session leaves here one way, whatever filed it elsewhere**: a move, an
-  answer or an envelope re-files every session under it and drops them and the
-  session itself from the roster. An answer that left the children's records
-  here put them back on the roster in the old worktree
-  (`aSessionAnAnswerFilesElsewhereTakesItsChildrenAlong`), and a child filed
-  away by an envelope stayed out in its parent's Done for good
-  (`aChildAnEnvelopeFilesElsewhereLeavesItsParentsRoster`). The sessions under
-  it take the word that moved it, so one that outranks it brings them back
-  (`aSessionBackHereAfterAnEnvelopeFiledItElsewhereBringsItsChildrenBack`). A
-  session with a record moves them only on a change of place: another
-  directory's session moving to a third left its child here dropped
-  (`anotherDirectorysSessionMovingElsewhereLeavesItsChildHereAlone`). A session
-  whose record was forgotten still ends here if it reported here, its children
-  with it
-  (`aSessionWhoseRecordWasForgottenGoesIdleWhenAnEnvelopeFilesItElsewhere`,
-  `aForgottenSessionAnEnvelopeFilesElsewhereTakesItsChildrenAlong`); another
-  directory's session an envelope shows for the first time never moved, and its
-  child here runs on
-  (`anotherDirectorysSessionFirstSeenAfterItsChildIsHereLeavesTheChildRunning`),
-  but a parent unseen here that the TUI moves away takes its child along
-  (`aParentUnseenHereThatMovesAwayTakesItsChildAlong`). Any arrival here, and
-  any move here though the record already said here, has an envelope-filed
-  session asked about again
-  (`aSessionAHookBringsBackAsksAgainAboutAChildAnEnvelopeFiledElsewhere`,
-  `aMoveHereOfASessionAlreadyHereStillAsksAgainAboutAnEnvelopeFiledChild`). The
-  session joining the roster forgets its own reports, or one that reported as
-  its own before its parent was known sent a stray Idle long after its parent
-  moved away, from the roster or forgotten by it
-  (`aChildThatOnceReportedAsItsOwnSendsNoIdleLongAfterItsParentMovedAway`,
-  `aChildTheRosterForgotSendsNoIdleLongAfterItsParentMovedAway`).
+  answer or an envelope re-files every session under it and drops them from the
+  roster. An answer that left the children's records here put them back on the
+  roster in the old worktree, and a child filed away by an envelope stayed out
+  in its parent's Done for good. Only a change of place moves them: another
+  directory's session moving to a third left its child here dropped.
+- **A session joining the roster forgets its own reports**, or one that reported
+  as its own before its parent was known sent a stray Idle long after its parent
+  moved away.
 - **A top-level session is walked up the parents at each use**, never stored: a
   parent learned after its child, from a late answer, left the grandchild out of
-  the Done and behind on a move away
-  (`aGrandchildCreatedBeforeItsParentsLateAnswerCountsUnderTheTopLevelSession`).
-  An ended child the roster forgets passes its children to its own parent, so a
-  grandchild still running stays under its session
-  (`aGrandchildStillRunningCountsUnderTheSessionOnceItsEndedParentIsForgotten`).
-  A move re-files every record under the session, here or elsewhere, rather than
-  dropping them, or a grandchild seen before its parent was filed by its own
-  location
-  (`aSessionMovedHereBringsAGrandchildWhoseEventComesBeforeItsParents`).
-- **An envelope's word gives way to a later envelope naming the other side**: a
-  child an envelope filed elsewhere is asked about again once its parent is
-  moved here (`aChildAnEnvelopeFiledElsewhereComesBackWithItsMovedParent`). An
-  envelope names no parent, so a session it filed elsewhere before any move here
-  is asked about on its next event, whatever that event's envelope says
-  (`aChildAnEnvelopeFiledElsewhereIsAskedAgainOnceItsParentMovesHere`).
+  the Done and behind on a move away. A move re-files every record under the
+  session rather than dropping them, or a grandchild seen before its parent was
+  filed by its own location.
 - **The records are bounded at 1024 for each place**, the service running for
-  days, so other directories' sessions never push out this one's
-  (`aSessionAHookNamedKeepsItsPlaceWhileOtherDirectoriesSessionsComeAndGo`). One
-  forgotten costs a lookup, so a session a hook named is asked about again once
-  forgotten (`aSessionAHookNamedIsAskedAboutAgainOnceForgotten`); a child still
-  on the roster counts as here without one
-  (`aChildOnTheRosterWhosePlaceWasForgottenStillEnds`). The sessions' last own
-  reports are bounded at 512.
+  days, so other directories' sessions never push out this one's. One forgotten
+  costs a lookup. The sessions' last own reports are bounded at 512.
 
 ## Reviewed and left as is
 
@@ -209,9 +110,6 @@ and which are another session's children. Newest at the bottom.
 - **A session no answer can place is asked about at each event** (round 21):
   every session the probe saw carried a location, and a failed lookup asked
   again was round 1's fix for one that would otherwise be dropped for good.
-- **A creation naming no session** (round 22): the worker it would store under
-  no id never reaches the app, its report failing to spawn, and lists as nothing
-  in a Done; no observable effect was found.
 - **A grandchild whose parent was forgotten counts under that parent** (round
   24): outside the service a Done then leaves it out, but it takes 64 ended
   children and a late event or resume of the grandchild.
@@ -240,9 +138,8 @@ and which are another session's children. Newest at the bottom.
   a forgotten ended parent's children up, and the records forget too at 1024, so
   neither store alone names every session leaving; the move merges both.
 - **`relocate` scans every record** (round 33), up to 2048, to find one
-  session's children. It runs on a change of place and on any move of a session
-  with no record, in each directory's plugin; moves are rare, and an index kept
-  on every write costs more than the scan.
+  session's children. Moves are rare, and an index kept on every write costs
+  more than the scan.
 - **A child leaving after its parent's Done listed a grandchild sends no Idle**
   (round 41): the grandchild's end report then waits on a parent turn that may
   not come here. It needs an envelope naming another directory for a child here
@@ -252,10 +149,9 @@ and which are another session's children. Newest at the bottom.
   change no report under the parent-fact guard; they are the path on which the
   roster-based guard round 39 replaced sent the Idle.
 - **A session a hook named is asked about once** (round 55), however that lookup
-  ends (`theParentIsLookedUpOnceHoweverTheLookupEnds`): a resumed child whose
-  one lookup fails reports as its own session for good. Asking again on each
-  hook costs a lookup per tool call, for a `session.get` failing once, which
-  nothing shows.
+  ends: a resumed child whose one lookup fails reports as its own session for
+  good. Asking again on each hook costs a lookup per tool call, for a
+  `session.get` failing once, which nothing shows.
 
 ### Asked both ways
 

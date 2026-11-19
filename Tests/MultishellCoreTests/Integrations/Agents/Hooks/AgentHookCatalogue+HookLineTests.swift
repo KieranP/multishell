@@ -51,8 +51,8 @@ struct AgentHookCatalogueHookLineTests: AgentHookFixtures {
     return process.terminationStatus
   }
 
-  /// The helper no longer answers to that name, so the line exits 2, which Claude
-  /// takes as blocking; only knowing it as ours lets Remove and Update take it out.
+  /// The helper still answers that name with an exit of 0, since 2 is Claude blocking the
+  /// tool; only knowing it as ours lets Remove and Update take it out.
   @Test func theLineTheFirstBuildsWroteIsStillOursToReplace() {
     #expect(AgentHookCatalogue.isOurHook(retiredClaudeHookLine))
     #expect(

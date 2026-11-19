@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A group's terminal area, under the bands: it says when the pointer
+/// A group's area, under the bands: it says when the pointer
 /// arrives and leaves, and a drop between them joins this group.
 struct GroupAreaDropDelegate: DropDelegate {
   let groupID: TabGroup.ID

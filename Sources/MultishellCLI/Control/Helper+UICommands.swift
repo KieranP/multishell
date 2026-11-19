@@ -33,7 +33,7 @@ extension Helper {
     case ("menu", 0):
       return try ask(.listMenuItems, environment: environment)
 
-    // One word as `View > Find…`, or each title a word of its own.
+    // One word as `View > Files Pane`, or each title a word of its own.
     case ("menu", 1...):
       let path =
         words.count == 1

@@ -8,11 +8,8 @@ or an agent's hooks needs beyond the code itself.
   every built-in theme, empty where the project's mark has no colour of its own.
 - **A pull request host or CI provider.** A case in `ServiceIntegration` with
   its tool's name, a conformance to `PullRequestHost` or `CIProvider` in
-  MultishellServices under a folder of its own in `SCM/` or `CI/`, reading
-  through `ServiceToolRunner`, and an arm in `ServiceConnections`. The
-  Integrations page's label, help and install words follow, which the compiler
-  asks for, and its place in `ServiceIntegration.settingsPageOrder`, which a
-  test asks for. A second host also needs a way to choose between hosts:
+  MultishellServices reading through `ServiceToolRunner`, and an arm in
+  `ServiceConnections`. A second host also needs a way to choose between hosts:
   `pullRequestHost(for:)` takes the first turned on and installed, in `allCases`
   order, before either is asked whether the repository is its own.
 - **An agent's one-shot run**, for Auto Rename: the flags that run one prompt
@@ -30,12 +27,11 @@ or an agent's hooks needs beyond the code itself.
 - **The monogram needs none of that** and is what an agent ships with until
   someone draws one. Give the agent a row in COMPAT.md's table, the only place a
   user reads what the app does with it.
-- **A hook stage.** A case in the hook stage, an arm in each of the script and
-  directory lookups, the call from the coordinator in order, an error title
-  saying whether the operation happened, an editor on the Hooks page, and an
-  operation stage with its text. A stage that runs after the git operation also
-  goes in `isAfterOperation`, which nothing forces; left out, a removal reads
-  its failure as a veto.
+- **A hook stage.** The call from the coordinator in order, an editor on the
+  Hooks page and an operation stage with its text, beside what the compiler asks
+  for. A stage that runs after the git operation also goes in
+  `isAfterOperation`, which nothing forces; left out, a removal reads its
+  failure as a veto.
 - **A way a worktree stage can fail.** A failure type naming what is still on
   disk, an error title, and an arm in the removal describer saying whether the
   worktree is still there, which decides whether the row is restored or
@@ -49,10 +45,7 @@ or an agent's hooks needs beyond the code itself.
   spelled out (`trustCoveredFields`, `confined(to:)`), since it names paths on
   the reader's disk, and its name in the trust question in `trustCoveredNames`,
   at the same position, as a `shared-settings.` key in the libraries' catalogue.
-- **An agent's hooks.** An integration in the hook catalogue's list, naming the
-  file, the events, what each says the session is doing, which of two events
-  standing for one thing is silent, which two are a subagent's start and end,
-  which is the prompt that starts a turn, and which is its session starting.
+- **An agent's hooks.** An integration in the hook catalogue's list.
 - **An event's timeout goes below five seconds where the agent caps it**, as
   Codex does its two exit events at three, or it warns at every start.
 - **Every agent with events needs the turn-starting one.** Most agents fire no
@@ -90,9 +83,8 @@ or an agent's hooks needs beyond the code itself.
   Agent hooks part offering hooks for agents detection found.
 - **An agent with no hooks at all needs a plugin**, as one already has. A file
   that is ours alone is written whole and deleted to remove.
-- **A variable a hook receives.** A case in the hook variables, which both
-  builds the environment and draws the Hooks page's table, named by the
-  placeholder meaning the same, so the two cannot be spelled apart.
+- **A variable a hook receives.** A case in the hook variables, named by the
+  placeholder meaning the same.
 - **A placeholder an agent's flags may use.** A case with its value and the
   variable a custom command reads it from. The settings rows name one as an
   example rather than the list, and no page in the repository lists them yet, so

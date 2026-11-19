@@ -6,8 +6,8 @@ import MultishellGitKit
 /// even where confirmation is off, being the one part with no undo.
 public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   enum BranchHandling: Equatable, Sendable {
-    /// Settled before the dialog: the worktree is detached, or the setting
-    /// deletes the branch every time.
+    /// Settled before the dialog: the worktree is detached or on the default branch, or the
+    /// setting deletes the branch every time.
     case decided(deletesBranch: Bool)
     case offersBoth
   }

@@ -11,8 +11,7 @@
 - **Zig, at the version `ThirdParty/ghostty/build.zig.zon` names**, and Xcode's
   Metal toolchain (`xcodebuild -downloadComponent MetalToolchain`), for
   libghostty. Ghostty's own renderer shaders need the Metal compiler, which
-  custom shaders being off does not remove. The build script fetches the
-  submodule and keeps it at the pin, so a plain clone needs nothing more.
+  custom shaders being off does not remove. A plain clone needs nothing more.
 - **The script takes `$ZIG` when set, refusing it at another version, else the
   first matching Zig of `zig` on PATH and Homebrew's `zig@X.Y`.** Homebrew's
   plain `zig` moves to a new release before Ghostty does, and its versioned
@@ -20,44 +19,33 @@
 
 ## Build, test, run
 
-- **The Makefile is the entry point**: `signing-identity` once per machine, then
-  `test`, `compile-app`, `build`, `release`, `run`, `install`, `format` and
-  `lint`. `theme-audit` runs the one suite `test` leaves out
-  (design/appearance/themes.md).
+- **The Makefile is the entry point**, each target described above it. Run
+  `make signing-identity` once per machine first.
 - **macOS needs a bundle** for a Dock icon, activation and the menu bar, and
   SwiftPM emits a bare executable, so `make-app.sh` builds the app and the CLI
-  with `xcodebuild` and wraps them in one, the CLI among its helpers.
+  with `xcodebuild` and wraps them in one.
 - **libghostty finds its terminfo through `GHOSTTY_RESOURCES_DIR`**, which the
-  app sets to `Contents/Resources/ghostty` at launch: a release libghostty reads
-  the variable before its own walk up from the executable, so one inherited from
-  a Ghostty tab would win. TERMINFO points at `terminfo` beside it. Without it
-  every shell starts with a TERM it has no entry for, so the bundling script
-  refuses to finish without it.
-- **Signed with the hardened runtime and the entitlements** in `Resources/`
-  (design/signing.md).
+  app sets at launch: a release libghostty reads the variable before its own
+  walk up from the executable, so one inherited from a Ghostty tab would win.
+  Without terminfo every shell starts with a TERM it has no entry for, so the
+  bundling script refuses to finish without it.
 - **The short version is three integers**, the only form Apple's key takes: a
   `vX.Y.Z` tag on HEAD, else the commit's date. An rc tag on the same commit is
   passed over, where `git describe` picked it when annotated. The build number
   is the commit count, and `MultishellCommit` names the commit, with a suffix
-  for a modified tree. The About panel shows it beside the build number, so a
-  bug report still says what was installed: AboutPanelTests.
-- **Every target that compiles builds libghostty first**, from the submodule,
-  into `.build/ghostty`: about 80 s cold here, nothing while the submodule, the
-  patches, the script, Zig and Xcode are unchanged, and 2 s after a `make clean`
-  or `swift package reset`: Zig keeps its cache and fetched packages in the
-  submodule's `.zig-cache/` and `zig-pkg/`, which neither touches. A bare
-  `swift build` needs it built already, the package naming the xcframework by
-  path; `make libghostty` does it.
-- **And fetches the tree-sitter grammars**, into `.build/grammars`: about 2 s
-  cold, nothing while the pins are unchanged. A bare `swift build` needs
-  `make grammars` first, the package naming each grammar by path
+  for a modified tree, so a bug report still says what was installed.
+- **Every target that compiles builds libghostty first**: about 80 s cold here,
+  nothing while the submodule, the patches, the script, Zig and Xcode are
+  unchanged, and 2 s after a `make clean` or `swift package reset`, since Zig
+  keeps its cache and packages in the submodule's `.zig-cache/` and `zig-pkg/`.
+  A bare `swift build` needs `make libghostty` first.
+- **And fetches the tree-sitter grammars**: about 2 s cold, nothing while the
+  pins are unchanged. A bare `swift build` needs `make grammars` first
   (dependencies.md).
-- **The Info.plist is a template filled in by placeholder**, and
-  InfoPlistTemplateTests reads it out of the checkout
-  (tests/interface-and-terminal.md). Substitution is bash's own, so a value may
-  hold a newline or an ampersand unescaped. The replacement is quoted because
-  bash 5.2 and later read an unquoted `&` as the placeholder, and the assignment
-  is not, because 3.2 then keeps the quotes.
+- **The Info.plist template's substitution is bash's own**, so a value may hold
+  a newline or an ampersand unescaped. The replacement is quoted because bash
+  5.2 and later read an unquoted `&` as the placeholder, and the assignment is
+  not, because 3.2 then keeps the quotes.
 - **A worktree's name is spelled down to safe characters** before it reaches the
   Info.plist: an unescaped ampersand in a branch name makes the file
   unparseable, and a bundle whose Info.plist will not parse does not launch.
@@ -70,9 +58,8 @@
   (design/signing.md). `MULTISHELL_SIGN_IDENTITY` picks another certificate, for
   the build and for `make signing-identity` alike, and `-` forces ad hoc.
 - **Every target works the same from a git worktree**, and two can build at
-  once: the scratch directories are per-worktree and the shared caches lock only
-  briefly. Each worktree has its own clone of the submodule, so a new one's
-  first libghostty build starts with no `.zig-cache/` or `zig-pkg/`.
+  once. Each worktree has its own clone of the submodule, so a new one's first
+  libghostty build starts with no `.zig-cache/` or `zig-pkg/`.
 - **A worktree the app creates gets libghostty and the grammars copied in**,
   through `.multishell.json`'s `copiedPaths`, so its first build skips Zig: 10 s
   for the submodule clone against about 80 s. The package build is not copied.
@@ -93,10 +80,9 @@
   Where there is no `lockf`, the suites run unguarded.
 - **A bare `swift test` takes no lock**, and nothing caps the compiler's own
   parallelism, so several full builds at once still oversubscribe the machine.
-- **`make test` runs the suites in a write sandbox**, `Scripts/test-sandbox.sb`
-  through `sandbox-exec`: the build tree, SwiftPM's caches and the temporary
-  directories only. A bare `swift test` has none, so run the tests through make.
-  Without `sandbox-exec`, `make test` runs the suites unconfined.
+- **`make test` runs the suites in a write sandbox** through `sandbox-exec`. A
+  bare `swift test` has none, so run the tests through make. Without
+  `sandbox-exec`, `make test` runs the suites unconfined.
 - **SwiftPM sandboxes its manifest compile**, and one sandbox cannot be applied
   inside another, so the sandboxed run passes `--disable-sandbox`, which lifts
   only SwiftPM's.
@@ -111,9 +97,8 @@
   a TERM it had no entry for, drew doubled letters and lost key combinations.
 - **Xcode's own build of the same package writes no path** and looks in the
   bundle's resources first, so the script runs `xcodebuild` and refuses a binary
-  that carries a build path.
-- **The CLI is built the same way and checked the same**, linking the same
-  libraries and so able to carry the same path.
+  that carries a build path. The CLI links the same libraries, so it is built
+  and checked the same way.
 - **The checks pipe into a counting grep, not a quiet one**: under `pipefail` a
   quiet grep quits at its first match, `strings` writes into a closed pipe, and
   the pipeline's SIGPIPE status reads a match as a miss.

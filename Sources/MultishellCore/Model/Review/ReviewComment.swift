@@ -1,6 +1,6 @@
 import Foundation
 
-/// A note on lines of a file tab, collected per worktree until sent to an
+/// A note on lines of a file, collected per worktree until sent to an
 /// agent; see Docs/design/files/review-comments.md.
 public struct ReviewComment: Identifiable, Codable, Hashable, Sendable {
   public enum State: Codable, Hashable, Sendable {

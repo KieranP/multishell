@@ -7,9 +7,8 @@ reloaded. Newest at the bottom.
   as shorthand), so the core imports no UI framework and user theme files come
   free. Cost: the window follows the theme's `is_dark`, not the OS mode.
 - **The theme sets the engine's search colours**, or it paints matches in its
-  own defaults. The base themes paint matches in their yellow, the selected one
-  in the ring's colour, both with whichever of background and foreground is
-  darker as their text, since white on yellow cannot be read.
+  own defaults. A match's text is whichever of background and foreground is
+  darker, since white on yellow cannot be read.
 - **That layer sits over the user's Ghostty config**, so a search colour in
   their file is read and then overridden, as their background is. The family
   stays allowed because it carries nothing else a surface reads.
@@ -19,27 +18,22 @@ reloaded. Newest at the bottom.
   memory is the same blue paler, being inside the app's process, and the legend
   names it, so no colour carries it alone.
 - **A theme file has `terminal`, `file` and `ui` sections**, so one part of the
-  window is recoloured without touching the rest. Keys are snake_case; `ansi`
-  and `ui.project_icons` are maps by colour name, `ui.agent_marks` by agent id.
-  A file in the flat shape before sections is refused with a message saying so,
-  rather than drawn as the base under its own name: no migration, by choice.
+  window is recoloured without touching the rest. A file in the flat shape
+  before sections is refused with a message saying so, rather than drawn as the
+  base under its own name: no migration, by choice.
 - **Every key falls back on a base theme**, Multishell Dark or Light by the
-  file's `is_dark`, dark where it is left out, never on the theme's own
-  terminal. A key left out, of the wrong type or that will not parse takes the
-  base's, so a typo costs that colour and a theme need write only what it
-  changes. Cost: a theme recolouring its terminal alone keeps Multishell's
-  chrome around it.
-- **The built-in themes are complete JSON files in Core's resources**, read at
-  launch, and an example is a byte copy of one: what a user copies is what the
-  app draws, every key in it. ThemeBuiltinsTests holds each to every key.
+  file's `is_dark`, never on the theme's own terminal. A key left out, of the
+  wrong type or that will not parse takes the base's, so a typo costs that
+  colour and a theme need write only what it changes. Cost: a theme recolouring
+  its terminal alone keeps Multishell's chrome around it.
+- **The built-in themes are complete JSON files in Core's resources**, and an
+  example is a byte copy of one: what a user copies is what the app draws, every
+  key in it.
 - **An example that differs from its built-in theme is rewritten** when the
   folder is opened, an old one hiding keys. Cost: an edit made to an example is
-  lost; the copy to make is beside it. An `example.<id>.json` an earlier build
-  wrote is deleted at load, being a flat file no build reads.
+  lost; the copy to make is beside it.
 - **A key a section does not list is never read**, so a theme cannot set a
   colour nothing draws, and the examples list only what does something.
-- **Fainter text, lines and fills are keys of their own**, written with their
-  alpha, where they were once one text colour at fixed opacities.
 - **Some areas take another's colours where they are drawn on it**: a shown tab
   reads in `terminal_tab` or `file_tab`, whose background it joins, and the find
   bar's text sits on its `field_background`. A `tab_bar` text picked for a light
@@ -54,12 +48,8 @@ reloaded. Newest at the bottom.
   system appearance as their forms do. So do menus once open, tooltips and the
   spinners, which AppKit draws.
 - **Controls AppKit would draw in its own grey are drawn by the app** inside the
-  themed areas: the actions menus' buttons, through `glyphMenuStyle`; the
-  Modified/Branch, Unified/Split and Debug Info range switches, as
-  `SegmentedSwitch` on their section's `fill` and `selection_background`; Pause,
-  as one segment; the board's toggle, on the header's `accent` or `fill` and its
-  `knob`; and every field's prompt, laid over the field in the area's faintest
-  text.
+  themed areas, segmented switches, menu buttons, toggles and every field's
+  prompt among them.
 - **MonochromeThemeTests renders the window with every colour white, then
   black**, and fails on any other pixel, which is the test for a part the theme
   does not reach. It allows two steps a channel: a menu button's glyph is
@@ -75,19 +65,17 @@ reloaded. Newest at the bottom.
 - **The folder is read off the main actor, and a read overtaken by a later one
   is dropped**, as a stale re-arm is, or a slow read would put an older theme
   back until the next save.
-- **A broken theme file is alerted once, by name**, every file newly broken in
-  one read named in one alert: a save elsewhere in the folder, fixing one of
-  two, or saving a broken file again still broken raises nothing. Files are
-  known by name, the decoder's text varying between reads of one file.
+- **A broken theme file is alerted once, by name**, so a save elsewhere in the
+  folder, fixing one of two, or saving a broken file again still broken raises
+  nothing. Files are known by name, the decoder's text varying between reads of
+  one file.
 - **Colours are parsed from the theme's strings on every read, not cached**, and
   a palette resolves only the colour a view asks for. The parser reads the bytes
   in place, 1.0 µs a colour in a debug build where allocating cost 2.6 µs. A
   cache inside the theme would need an init order the base themes, each its own
   fallback, cannot give.
-- **Ten editor themes ship beside the base ones**: Dracula, One Dark, Nord,
-  Solarized Light, GitHub Dark and Light Default, and Catppuccin's Mocha,
-  Macchiato, Frappé and Latte. Each is a complete file, so none borrows
-  Multishell's chrome, and each takes its colours from its own source: the
+- **Ten editor themes ship beside the base ones**, each a complete file, so none
+  borrows Multishell's chrome. Each takes its colours from its own source: the
   published VS Code theme for Dracula, Nord and GitHub, Atom's Less variables
   evaluated for One Dark, VS Code's built-in port for Solarized Light, and the
   palette file and style guide for Catppuccin. A role a source leaves unset
@@ -100,11 +88,10 @@ reloaded. Newest at the bottom.
   went from 0x61 to 0x66 dark and 0x81 light, every `ui` area alike, from 2.97:1
   and 2.23:1 to 3.13:1 and 3.09:1 on the sidebar. A selected row's wash takes it
   to 2.68:1 and 2.89:1, and the file tab's line numbers and comments, `file`
-  keys, keep 0x61. It carries the idle ring, branch prefixes, unselected pages,
-  the header path and position badges. Cost: Light's secondary and faint tiers
-  sit closer, 0x99 against 0x81. Picked over raising the side panels alone, two
-  faint tiers in one window, and over a key of idle's own, which would reverse
-  idle's grey above.
+  keys, keep 0x61. Cost: Light's secondary and faint tiers sit closer, 0x99
+  against 0x81. Picked over raising the side panels alone, two faint tiers in
+  one window, and over a key of idle's own, which would reverse idle's grey
+  above.
 - **The editor themes' `tab_bar.fill` is their own text, translucent**, a key
   their sources have no counterpart for: 8%, or 16% where the terminal is
   lighter than the strip and 8% came out its colour, 12% in Solarized Light.
@@ -116,14 +103,11 @@ reloaded. Newest at the bottom.
   (GlyphHoverModifierTests), departing from three sources: GitHub Dark's sidebar
   fill at 13% where it was 10%, and GitHub Light's sidebar and find bar and
   Solarized Light's sidebar, header and find bar in their own text, translucent,
-  their source fills being too near the ground at any alpha. The same key paints
-  the count capsule, the filter wells and the switches there.
+  their source fills being too near the ground at any alpha.
 - **A text field's selection and caret are its area's `selection_background` and
   text**, set on the window's field editor while the field has the keyboard.
   AppKit takes both from the system accent, and SwiftUI's `tint` lightens the
-  selection towards white. `find_bar`, `tab_bar` and `terminal_tab` took a
-  `selection_background` for it, each built-in's `quick_switcher` one, as
-  `file_tab`'s is white in Multishell Light.
+  selection towards white.
 - **A selection in a view without the keyboard stays AppKit's grey**, a file
   tab's while its find bar has the keyboard, or a field's in a window not key.
   No public API sets it; overriding the private `_selectionBackgroundColor`
@@ -131,9 +115,8 @@ reloaded. Newest at the bottom.
 - **A theme sets how big the state dots draw**, `ui.state_dot_scale`, one
   multiplier over every dot's design size, so they keep their proportions to
   each other. Built in at 1.3 (2026-11-08): at their design sizes the dots read
-  too small. A file tab's change dot scales with them, matching the state badges
-  beside it in the strip, and a scaled corner badge keeps its centre, growing
-  evenly rather than all inward over the mark.
+  too small. A scaled corner badge keeps its centre, growing evenly rather than
+  all inward over the mark.
 - **The dot scale is clamped to 1 to 1.4.** Under 1 the rings' minimum strokes
   fill a dot and working reads as done; past 1.4 a worktree's dot outgrows the
   sidebar's glyph column at the 10 pt UI font. UIMetricsTests holds the upper

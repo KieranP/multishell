@@ -36,8 +36,8 @@ extension WorktreeGit {
     return parts
   }
 
-  /// Each path's patches as `patches(of:)` gives them, against `commit` else `base`;
-  /// a path git quoted is left out to read alone. `nil` where git cannot say.
+  /// Each path's patches as `patches(of:)` gives them, against `commit` else `base`; a
+  /// chunk naming a path git quoted is left out, to read alone. `nil` where git cannot say.
   public func patches(
     ofMany paths: [String],
     in directory: URL,

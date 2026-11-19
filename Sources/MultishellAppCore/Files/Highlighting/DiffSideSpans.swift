@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// Two parses for a file tab's rows, the file on disk and the committed text, each
-/// side's spans mapped onto the rows that show it.
+/// Up to two parses for a file or All changes tab's rows, the file on disk and the
+/// committed text, each side's spans mapped onto the rows that show it.
 public enum DiffSideSpans {
   /// The sides worth parsing: the committed one only where a removed row shows it alone,
   /// an unchanged or new file being the file on disk throughout.

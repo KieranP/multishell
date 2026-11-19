@@ -6,8 +6,8 @@ extension AppModel {
     PromptAgents(states: sessionStates, reported: reportedAgents, typed: commandAgentIDs)
   }
 
-  /// Which agent a pane holds: the one that reported while its process is up,
-  /// else the tab's own. Most panes get theirs typed at a shell prompt.
+  /// Which agent a pane holds: a program holding it, else one that reported while its
+  /// process is up, else one typed at its prompt, as most are, else the tab's own.
   func agentIDAtThePrompt(of session: TerminalSession) -> String? {
     promptAgents.agentID(of: session)
   }

@@ -189,7 +189,7 @@ _multishell_precmd() {
 _multishell_precmd_entry='_multishell_precmd && :'
 
 # A .bashrc sourced again puts its prepended entry before ours, which then reads
-# that entry's 0; ours goes back in front, as zsh's precmd hook does.
+# that entry's 0; ours goes back in front, where zsh's precmd hook goes at startup.
 # bash-preexec's entry stays first, where it reads PIPESTATUS before anything runs.
 _multishell_keep_precmd_first() {
   case "${PROMPT_COMMAND[0]-}" in

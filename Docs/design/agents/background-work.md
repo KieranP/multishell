@@ -11,8 +11,7 @@ of what is out and the workers launched under others. Newest at the bottom.
   Done as the last worker out would.
 - **Where a Stop does not list them, the helper finds them for Gemini**: no tool
   call is in flight at a Stop, so any tool shell still alive under the agent is
-  one it backgrounded. It lists the agent's children and keeps those whose
-  command line holds the agent's shell marker.
+  one it backgrounded, known by the agent's shell marker.
 - **The marker, not "any child"**: MCP servers and the agent's other helpers are
   children for the whole session and would hold every Done forever.
 - **Gemini's marker is the wrapper every shell-tool command runs in**, its
@@ -40,8 +39,6 @@ of what is out and the workers launched under others. Newest at the bottom.
 - **Under an empty `HOME` Gemini's settings are read from Node's temporary
   directory**, where Gemini reads them. Read from anywhere else, steering went
   unseen and a Done came at the shell's exit and again at the turn's Stop.
-- **The Stop says so**, the integration being the only place an agent is known,
-  and the entry keeps it beside the Done it owes.
 - **A cancelled worker wakes nobody, so its end says so**, and last out it pays
   the Done unless a turn is underway: one an earlier end woke, or one the agent
   is already reporting from. That turn's Stop pays it instead, or a cancel
@@ -73,7 +70,7 @@ of what is out and the workers launched under others. Newest at the bottom.
   for the list, a hook field Claude documents for telling a finished session
   from one waiting on its work. The transcript is still read at a Stop, but only
   for what the list cannot say: a notice queued and not delivered.
-- **Its shells come in the list under Claude's own id for them**, so no process
+- **Claude's shells come in the list under its own id for them**, so no process
   is walked for Claude, and the next Stop's list is a shell's end, Claude waking
   at each exit.
 - **A task can finish too late for its notice to join the turn and too early for
@@ -82,10 +79,10 @@ of what is out and the workers launched under others. Newest at the bottom.
   real transcripts 87 of 241 woken turns began under two seconds after the Stop,
   each a second Done.
 - **So Claude's Stop reads its own transcript for a notice queued since the last
-  Stop and not yet delivered**, taken off the queue or handed to the model, and
-  one there holds the Done as a worker out would. Replayed over every Stop in
-  those transcripts it caught all 80 queued before the Stop began, and the list
-  held the rest; every Stop it held was followed by a turn.
+  Stop and not yet delivered**, and one there holds the Done as a worker out
+  would. Replayed over every Stop in those transcripts it caught all 80 queued
+  before the Stop began, and the list held the rest; every Stop it held was
+  followed by a turn.
 - **Not a contract, so a changed format finds nothing**, which is the second
   Done again rather than Working for good.
 - **Only the kinds whose end is announced to the model count**: subagents,
@@ -105,29 +102,24 @@ of what is out and the workers launched under others. Newest at the bottom.
   `agent-<agent_id>.jsonl`, read from the binary.
 - **OpenCode's plugin sends its own list at the parent's Done**, the children it
   saw start and not end, which outranks what a missed event left behind. Only
-  that session's own, its children's children among them: two sessions in one
-  plugin listed each other's (`aSessionsDoneListsOnlyItsOwnChildrenAsOut`).
-  Under the service every session reports to the one worktree roster, so there a
-  Done lists every session's
-  (`underTheServiceADoneListsEverySessionsChildrenAsOut`).
+  that session's own: two sessions in one plugin listed each other's. Under the
+  service every session reports to the one worktree roster, so there a Done
+  lists every session's.
 - **And one report at a time, each once the helper before has exited**, with a
   two-second bound on a helper that never does. Started together they landed in
   either order, and a cancelled child's end landing after the Done that left it
   out put it back on the roster for good.
-- **A quiet Working already queued drops its twin**, a session's own or a
-  worker's that starts nothing and asks nothing, when only quiet Workings stand
-  between them: each helper that hangs holds the queue two seconds, and a burst
-  of tool calls queued minutes of reports, a parent's and a child's in turn
-  among them (`aParentsAndChildsToolCallsInTurnQueueOneWorkingEach`). A prompt
-  between them keeps both, or the reply's Working was taken for the tool call's
-  and the prompt never cleared
-  (`aWorkingQueuedBeforeAPromptDoesNotSwallowTheReplysWorking`). An app gone or
-  with a full backlog costs nothing here, macOS refusing the connect at once.
+- **A quiet Working already queued drops its twin** when only quiet Workings
+  stand between them: each helper that hangs holds the queue two seconds, and a
+  burst of tool calls queued minutes of reports. A prompt between them keeps
+  both, or the reply's Working was taken for the tool call's and the prompt
+  never cleared. An app gone or with a full backlog costs nothing here, macOS
+  refusing the connect at once.
 - **OpenCode's woken turn runs no prompt hook**: a child's end reaches the
   parent as a synthetic message, so the plugin reports that turn's start as a
   plain Working. Read as a new turn it emptied the roster of the children still
   out. A prompt naming no session starts no turn either, for the same reason.
-- **Shells and subagents are counted apart** wherever workers are counted, a
+- **Shells and subagents are counted apart** wherever a label counts workers, a
   shell not being a subagent to anyone reading the label.
 - **A sweep takes every dead agent before any dead shell.** An agent gone with
   its shell takes the shell with it; checked in a set's order, the shell was
@@ -135,12 +127,11 @@ of what is out and the workers launched under others. Newest at the bottom.
 - **The close guard and the quit alert count an agent's Working, not the
   shell's.** When they counted any running command, a plain `make` asked to be
   confirmed. An agent typed with no hooks installed counts, the command having
-  named it (`closingATabRunningAPlainCommandAsksNothing`,
-  `anAgentTypedAtThePromptWithNoHooksCountsAsWorking`).
-- **Debug Info covers the panes as the board does, through the same predicate**,
-  so under it too no pane is in view, no Done is seen and no banner held back.
-  An agent's pid is still polled only for the board, Debug Info showing no
-  agents (agents/board-and-pane-rows.md).
+  named it.
+- **Debug Info covers the panes as the board does**, so under it too no pane is
+  in view, no Done is seen and no banner held back. An agent's pid is still
+  polled only for the board, Debug Info showing no agents
+  (agents/board-and-pane-rows.md).
 - **A worker another worker launched is listed under it**, as Claude's own list
   draws a skill's workers under the skill. Flat, a review fanning out eight
   angles read as nine unrelated workers, each called `general-purpose`.
@@ -150,8 +141,7 @@ of what is out and the workers launched under others. Newest at the bottom.
 - **Claude writes it beside the transcript instead**:
   `<session>/subagents/agent-<id>.meta.json` holds `parentAgentId`, absent for
   the agent's own, and the `name` a skill runs under or the task's
-  `description`, which is what its own list shows. The helper reads it on each
-  event inside a worker and sends the parent, name and description with it.
+  `description`, which is what its own list shows.
 - **Not at the worker's start**: Claude runs that hook before it writes the
   file. In a real review the file came 30 to 65 ms after the worker's first
   transcript line and 5 to 11 seconds before its first tool call, so a worker
@@ -161,9 +151,8 @@ of what is out and the workers launched under others. Newest at the bottom.
 - **The id goes into a path, so only letters, digits, `-` and `_` are read**,
   and a parent naming anything else is no parent.
 - **OpenCode's plugin names a child's parent where that parent is itself a
-  child**, the session's `parentID`, read at its creation or its lookup. Codex
-  records its own in the child's rollout file, but whether a hook names that
-  file inside a worker is unread, so its workers stay flat.
+  child**. Codex records its own in the child's rollout file, but whether a hook
+  names that file inside a worker is unread, so its workers stay flat.
 - **A worker whose parent is no longer out is drawn at the top**, as is one in a
   loop of workers naming each other, so nothing out goes unlisted.
 - **The count still counts every worker**, nested or not, the chip saying how
@@ -174,11 +163,9 @@ of what is out and the workers launched under others. Newest at the bottom.
   background work, its filter skipping a task marked foreground, so a foreground
   worker launched by a background one was read as ended, and a prompt it had up
   went with it. Read from Claude 2.1.292's binary.
-- **The list follows Claude Code's own panel**, read from 2.1.292's binary: a
-  worker under the worker whose `parentAgentId` it names, siblings in the order
-  they started, the name it was launched under (else its kind) and what it was
-  launched to do. Unlike that panel, every level is drawn, a list opened on
-  demand having no viewed agent to follow.
+- **The list follows Claude Code's own panel**, read from 2.1.292's binary.
+  Unlike that panel, every level is drawn, a list opened on demand having no
+  viewed agent to follow.
 - **A worker's SubagentStop is not its end.** Claude fires one at every turn end
   of a worker's, and a worker waiting on its own workers or a backgrounded shell
   ends its turn to wait. Read as its end, a parent waiting on five went at once,
@@ -235,8 +222,7 @@ of what is out and the workers launched under others. Newest at the bottom.
   hook and ends none of its background work; without this rule, the first prompt
   after it dropped every worker and shell, no Stop having seen them out.
 - **Five captured Claude runs replay every payload through Claude's hook
-  integration and the roster**, in the `claudesCaptured` tests of
-  `SessionStatesTests+ClaudeCapture.swift` (develop/tests/conventions.md).
+  integration and the roster** (develop/tests/conventions.md).
 - **A start for a worker whose `meta.json` exists is a resume**, Claude starting
   a worker again under its id after a SendMessage, not a second worker under one
   place.

@@ -16,7 +16,7 @@ extension AppModel {
     isCommandLineToolInstalled ? t("agents.helper-installed") : t("agents.not-installed")
   }
 
-  /// Whose hooks and whether the command-line tool are installed. Six files,
+  /// Whose hooks and whether the command-line tool are installed. Seven files,
   /// read here on the main actor: the settings rows ask after writing one.
   public func refreshInstallState() {
     recordInstallState(IntegrationInstallState.read())

@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// Review's foot, its own view so an agent's state change redraws it and not the
-/// page's cards.
+/// page's comment rows.
 struct ReviewSendFooter: View {
   let model: AppModel
   let worktree: Worktree

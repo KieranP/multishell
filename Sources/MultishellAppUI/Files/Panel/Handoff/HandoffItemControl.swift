@@ -9,7 +9,7 @@ struct HandoffItemControl: View {
   /// `nil` for a row that keeps the slot with nothing to send.
   let candidate: HandoffCandidate?
   let worktreeID: Worktree.ID
-  /// What VoiceOver names the checkbox for, the row's check or job.
+  /// What VoiceOver names the checkbox for, the row's check, thread, job or output.
   let itemName: String
   let theme: Theme
 

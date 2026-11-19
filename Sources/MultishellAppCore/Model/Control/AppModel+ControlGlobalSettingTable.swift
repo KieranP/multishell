@@ -4,7 +4,8 @@ import MultishellCore
 extension AppModel {
   private static var noShortcutWord: String { "none" }
 
-  /// Named as `state.json` names them, a nested one with a dot.
+  /// Named as `state.json` names them, a nested one with a dot, though the
+  /// appearance ones drop their `appearance.`.
   var globalSettings: [ControlSetting] {
     appearanceSettings + agentSettings + worktreeSettings + filesSettings + terminalSettings
       + editorSettings

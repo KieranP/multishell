@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Review's glyph and a file tab's comment count: a rounded bubble with a tail
+/// Review's glyph, a comment count's and a merge step's: a rounded bubble with a tail
 /// at its lower left. A 16-unit square, scaled.
 struct SpeechBubbleShape: Shape {
   func path(in rect: CGRect) -> Path {

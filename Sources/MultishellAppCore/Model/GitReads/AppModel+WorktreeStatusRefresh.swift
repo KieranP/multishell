@@ -62,7 +62,8 @@ extension AppModel {
       }
       guard !Task.isCancelled, let self else { return }
       pendingStatusRefreshes[worktreeID] = nil
-      // Left to the read a return to the front makes, bar the panel's.
+      // Left to the read a return to the front makes, bar the panel's and a
+      // shown All changes tab's.
       guard platform.isActive || readsStatusInTheBackground(worktreeID) else { return }
       await refreshStatus(of: worktreeID)
     }

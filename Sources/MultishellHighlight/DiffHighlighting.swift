@@ -1,8 +1,8 @@
 import MultishellAppCore
 import MultishellCore
 
-/// A file tab's highlighting: each side worth parsing parsed apart, off the
-/// main actor, and its spans mapped onto the rows it colours, in text order.
+/// A file diff's highlighting, in a file tab or the All changes tab: each side worth parsing
+/// parsed apart, off the main actor, and its spans mapped onto the rows it colours, in text order.
 public enum DiffHighlighting {
   /// Past the size cap nothing is highlighted, the tab showing a notice.
   public static func spans(

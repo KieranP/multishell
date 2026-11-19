@@ -78,7 +78,7 @@ _multishell_owns_debug_or_saves_theirs || trap '\''_multishell_debug "$_"'\'' DE
           _multishell_prompt_marks _multishell_arm)
       else
         # Newlines, not `;`: a user value ending in a separator composed to
-        # `;;`, which bash refuses, so none of the three ran.
+        # `;;`, which bash refuses, so none of ours ran.
         PROMPT_COMMAND="$_multishell_precmd_entry
 ${PROMPT_COMMAND-}
 $_multishell_claim_debug

@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The find bar over one pane or file tab, in Ghostty's shape: a well for the
-/// text and three glyphs. Its text is the model's, per target; see terminals/find.md.
+/// The find bar over one pane, file tab or All changes tab, in Ghostty's shape: a well for
+/// the text and three glyphs. Its text is the model's, per target; see terminals/find.md.
 struct FindBar: View {
   /// What the bar takes when the pane has it; a narrower pane shrinks the
   /// well rather than drawing the bar over its neighbour.

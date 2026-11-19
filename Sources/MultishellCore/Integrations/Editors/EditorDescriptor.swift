@@ -1,4 +1,4 @@
-/// An editor Open in Editor can hand a worktree to.
+/// An editor Open in Editor can hand a worktree to, or a clicked link a file.
 public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   public enum Kind: Hashable, Sendable {
     /// A Mac application, found by bundle identifier, or through its command
@@ -13,8 +13,8 @@ public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   public let kind: Kind
   /// How the platform finds the application; the Mac's is the bundle id.
   public let bundleIdentifier: String?
-  /// A command on the login shell's PATH that opens a directory when given
-  /// its path: `code`, `subl`, `nvim`.
+  /// A command on the login shell's PATH that opens a directory or file when
+  /// given its path: `code`, `subl`, `nvim`.
   public let executable: String?
 
   init(

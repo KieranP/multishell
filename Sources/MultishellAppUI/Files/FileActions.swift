@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// What a file or folder of a worktree offers, on a Files panel row's context
-/// menu and a file tab's bar alike.
+/// menu and a file tab's bar and context menu alike.
 struct FileActions: View {
   let model: AppModel
   let worktreeID: Worktree.ID

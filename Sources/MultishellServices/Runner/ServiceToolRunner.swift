@@ -111,8 +111,8 @@ struct ServiceToolRunner: Sendable {
     }
   }
 
-  /// `gh pr list`: the program and its words before the first flag, so two
-  /// reads of different branches count as one command.
+  /// `gh pr list`: the program and up to two of its words before the first flag, so
+  /// two reads of different branches or runs count as one command.
   private func commandName(of arguments: [String]) -> String {
     ([executable.lastPathComponent] + arguments.prefix { !$0.hasPrefix("-") }.prefix(2))
       .joined(separator: " ")

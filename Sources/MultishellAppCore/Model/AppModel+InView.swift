@@ -13,12 +13,12 @@ extension AppModel {
   }
 
   /// The focused group's terminal tab in `worktreeInView`, which find and seen
-  /// act on; `nil` where that group shows a file.
+  /// act on; `nil` where that group shows a file or All changes tab.
   var tabInView: TerminalTab? {
     worktreeInView.flatMap { workspace.activeTab(in: $0.id) }
   }
 
-  /// The focused group's tab of either kind, which closing and cycling act on.
+  /// The focused group's tab of any kind, which closing and cycling act on.
   var workspaceTabInView: WorkspaceTab? {
     worktreeInView.flatMap { workspace.activeWorkspaceTab(in: $0.id) }
   }

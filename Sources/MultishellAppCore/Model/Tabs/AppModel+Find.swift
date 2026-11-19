@@ -13,8 +13,8 @@ extension AppModel {
     return findBarTargetIDs.contains(id)
   }
 
-  /// What the menu's find items act on: a file tab in front, else the bar whose
-  /// field has the keyboard, if the tab in front's, else its focused pane.
+  /// What the menu's find items act on: a file or All changes tab in front, else
+  /// the bar whose field has the keyboard, if the tab in front's, else its focused pane.
   private var menuFindTarget: FindTargetID? {
     switch workspaceTabInView {
     // An image has no lines to find in, and none come back as a notice's may.
@@ -58,7 +58,7 @@ extension AppModel {
     findFieldRequests.insert(id)
   }
 
-  /// The pane's or file tab's selection the first time a Cmd+F finds it there,
+  /// The pane's or tab's selection the first time a Cmd+F finds it there,
   /// outliving the find text typed over it; never from the field. terminals/find.md.
   private func takeSelection(in id: FindTargetID) -> String? {
     guard findFieldTargetID != id else { return nil }
@@ -228,7 +228,7 @@ extension AppModel {
     return true
   }
 
-  /// Bars and find texts whose pane or file tab has gone. From the reconcile, as
+  /// Bars and find texts whose pane, file or All changes tab has gone. From the reconcile, as
   /// `prunePendingClose` is, and from a shell exiting, which closes its session.
   func pruneFind() {
     let existingTargetIDs = Set(

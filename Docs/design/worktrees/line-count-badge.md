@@ -20,23 +20,19 @@ algorithm. Newest at the bottom, above "Reviewed and left as is".
 - **Those branches are read again when the default branch resolves or changes
   name.** Launch reads statuses before the first branch scan, so waiting for the
   next poll left the arrow missing. A row not yet read is read too, as a read
-  under way began without the base. Only rows a poll reads are read, each when
-  its pace allows. A tip moving needs nothing: the ref write reads the rows.
+  under way began without the base.
 - **Staged and unstaged come from one diff**, with the cached-only form as the
   fallback wherever that call fails. Before the first commit it counts from the
   empty tree, whose id `hash-object` gives without writing it: the cached form
   there counted a staged file's staged lines and none added since. Only an
   unborn HEAD gets the empty tree, or a failed read would badge the whole
-  checkout as added. Status's own header says HEAD is unborn, so no read asks
-  git again first.
-- **An untracked file has no diff at all**, so they are listed and their lines
-  counted by reading the files: without that a deleted file's lines counted and
-  a new file's did not, which is the shape of most branches early on.
-- **A file too big, not regular, or binary in its first bytes is counted as a
-  file with no lines**, as is whatever no longer fits in the budget.
-- **A symlink is one of those**: its own bytes are not its target's while the
-  read follows the link, so a short link into a huge file passed the per-file
-  cap and took the whole budget.
+  checkout as added.
+- **An untracked file has no diff at all**, so its lines are counted by reading
+  the file: without that a deleted file's lines counted and a new file's did
+  not, which is the shape of most branches early on.
+- **A symlink counts as a file with no lines**, as a file too big, not regular
+  or binary does: the read follows the link, so a short link into a huge file
+  passed the per-file cap and took the whole budget.
 - **The budget is checked against the file's size before the read**, so it
   cannot be overshot, and a small file after one that would not fit is still
   counted.
@@ -56,28 +52,26 @@ algorithm. Newest at the bottom, above "Reviewed and left as is".
   shown or not: the badge, its tooltip, the removal dialog, `worktrees show` and
   the Files panel. Counted in two reads, a new folder was one entry in the
   tooltip and every file in the removal dialog.
-- **Status collapses a new folder to one entry**, and the `ls-files --others`
-  list the line count already ran names every file inside it, so its entries are
-  what is counted, in full; only the first 500 are read for lines, so the lines
-  stay a floor and a folder nobody gitignored shows the first files' worth.
+- **Status collapses a new folder to one entry**, so the `ls-files --others`
+  list, which names every file inside it, is what is counted. Only the first 500
+  are read for lines, so the lines stay a floor.
 - **The list, not `status --untracked-files=all`**: that mode loses git's
   untracked cache, 294 ms on a large clean tree where the default mode reads in
-  115 ms, and the list holds the same files at no new cost. A real-git test
-  holds the two to the same files, a nested repository as `dir/` in both.
-- **The file list runs only where status counted an untracked file**, under
-  either indicator, and the runner's forced untracked-files setting keeps a
-  repository's own config from talking it out of counting one. Where it fails
-  the folder stays one entry, so the tree never reads as clean.
+  115 ms, and the list holds the same files at no new cost.
+- **The file list runs only where status counted an untracked file**, with
+  untracked files forced on so a repository's own config cannot talk it out of
+  counting one. Where it fails the folder stays one entry, so the tree never
+  reads as clean.
 - **A file's count is kept by its path, size and date**, so an unchanged tree is
   stat'ed rather than read: 500 files of 16 KB took 51 ms a poll, every poll. A
   file that could not be read is not kept, since fixing its permission later
   leaves its date alone.
 - **A binary file and a mode change have no line for either column**, and a zero
   badge on a plainly changed worktree read as broken. They are counted as files
-  instead, in the theme's `ui.git` `changed` colour.
+  instead.
 - **An unmerged path is not one of them**: it prints zeroes from the cached
-  diff, so a conflict read as a file with no lines, and the filter drops it. The
-  tooltip already says it is conflicted.
+  diff, so a conflict read as a file with no lines. The tooltip already says it
+  is conflicted.
 - **Nor is a row whose two counts are neither numbers nor both dashes**, which
   is not output git produces; read as zeroes it put a yellow count on the badge
   for a line nobody could parse.
@@ -101,11 +95,9 @@ algorithm. Newest at the bottom, above "Reviewed and left as is".
   a `git mv` was one file or two. A move is a file gone and a file added.
 - **The algorithm is a global setting, Histogram by default**, the user's choice
   over git's own Myers. It is about the person reading the badge, not the
-  repository, so no project overrides it, and a change re-reads every badge as
-  the indicator's does.
+  repository, so no project overrides it.
 - **A count of five digits or more is grouped**, `+16,621`, where `+16621` was
-  hard to read (owner's pick, 2026-11-17); four digits stay plain. The badge,
-  Changes rows and the All changes tab share it (`LineCountText`).
+  hard to read (owner's pick, 2026-11-17); four digits stay plain.
 
 ## Reviewed and left as is
 

@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The end of either kind of tab's context menu: a group of its own, and close.
+/// The end of every kind of tab's context menu: a group of its own, and close.
 struct TabMoveAndCloseActions: View {
   let model: AppModel
   let tabID: WorkspaceTab.ID
@@ -11,7 +11,7 @@ struct TabMoveAndCloseActions: View {
   let close: () -> Void
 
   var body: some View {
-    // The keyboard-only way to the layout the edge bands offer a drag, and
+    // A drag-free way to the layout the edge bands offer a drag, and
     // only where it would do something.
     Button(t("tab.move-to-new-group")) {
       model.moveTab(tabID, .after, toNewGroupOf: groupID)

@@ -10,8 +10,7 @@ how it decides a pane's dot. Newest at the bottom.
 - **Hooks still list the workers.** Claude's child records carry an id and a
   title only: no kind, no parent, no shell flag, no kill. Codex sends none. So
   while a pane's program holds the dot, an agent's hook reports keep the roster
-  and move nothing else
-  (`anAgentsHookUnderAProgramsStatusListsItsWorkersAndMovesNoDot`).
+  and move nothing else.
 - **The roster keeps its turn rules under a hold**: a Stop vouches for the
   workers out, and an Idle or a failure ends them. Skipped there, Codex's next
   prompt dropped a worker still running, whose Stop lists none, and its next
@@ -23,9 +22,6 @@ how it decides a pane's dot. Newest at the bottom.
 - **The query is answered with Ghostty's own reply**, the states and kinds its
   parser accepts, so a program asking for one Ghostty drops falls back as the
   specification says.
-- **A pane holds the program's records**: its own, and its children by id. A
-  report replaces its record; a clear takes the record and everything under it,
-  and a clear with no id takes all of them.
 - **The hold lasts from the first report that keeps a record to the program's
   own clear.** A child's finish or clear leaving no record is not the program
   leaving: read as one, a deploy reporting only per region lost its Working
@@ -33,56 +29,48 @@ how it decides a pane's dot. Newest at the bottom.
 - **A program known only by its children is at work while it holds**, as a
   foreground command is: left where its last child put it, a dot stayed Waiting
   after the question was answered.
-- **The dot is the most urgent record**, a blocked child above a working one,
-  either above the program's own finish. Claude ends its turn Done with
-  background tasks still listed, so the Done waits for the last child out, as a
-  Stop's waits for the last worker.
+- **The dot is the most urgent record**, either child state above the program's
+  own finish. Claude ends its turn Done with background tasks still listed, so
+  the Done waits for the last child out, as a Stop's waits for the last worker.
 - **Claude writes its own record before its children's in one write**, so a
   woken turn's Working lands before the finished task's clear.
 - **A child's own Done or Failed moves nothing**: the program's own record says
   how the whole ended. Claude sends its children only as working or blocked.
-- **So only a working or asking child takes a place**, the 64 the roster holds;
-  one reported finished goes. Kept, finished children a program never cleared
-  filled the places, and a later question was dropped.
+- **So only a working or asking child takes a place**, the 64 the roster holds.
+  Kept, finished children a program never cleared filled the places, and a later
+  question was dropped.
 - **Only a change of the dot is news.** Claude rewords its Working as the task
   summary moves; a report that keeps the state raises no banner and no note.
 - **The records keep states, not words**, save the program's own finish: stored
   whole, each reword changed the observed states and redrew every view reading
-  them. A dot moving to Working or Waiting takes the words of a report of that
-  state, and none from a clear or a child's own finish.
+  them.
 - **A Done the user saw stays cleared** while the program keeps repeating it:
   the comparison is with the records' last state, not the dot.
-- **What ends the hold**: the program's own clear, the shell's own report of a
-  command, the command finishing, the process going, the user's Clear. Each
-  hands the dot back to whatever reports next; kept past the user's Clear, a
-  program gone without a word muted the hooks for good.
-- **A clear is a process going**: Working, Waiting, the hooks' workers and the
-  pid go, a finish stays, the clear coming at the program's exit.
+- **The user's Clear ends the hold too**: kept past it, a program gone without a
+  word muted the hooks for good.
+- **A clear is a process going**, so a finish stays: the clear comes at the
+  program's exit.
 - **The pid is the session's foreground process when the report lands**, which
   is the agent for one typed at a prompt and for one the app launched, each in
-  its own process group. The poll uses it as it uses a hook's pid, and polls it
-  for as long as the hold lasts: a Done or an Idle drops a state's pid, and a
-  program killed there would otherwise hold the dot for good. Cost: the poll
-  runs while any program holds a dot, one signal check per program each pass.
+  its own process group. It is polled for as long as the hold lasts: a Done or
+  an Idle drops a state's pid, and a program killed there would otherwise hold
+  the dot for good. Cost: the poll runs while any program holds a dot, one
+  signal check per program each pass.
 - **The program's own record's `app` names the agent at the prompt** where the
-  catalogue knows the name: `claude-code` and `codex`. A child record's `app`
-  and a clear name nothing, a child being free to name another program.
+  catalogue knows the name: `claude-code` and `codex`. A child record's `app` is
+  not read, a child being free to name another program.
 - **The agent at the prompt is read from the hold first**, the hooks' agent map
   after it. Copied into that map, it needed a write wherever a hold ends, and an
   agent the program ran from its tool shell re-pointed it.
-- **The hold's agent is decided once and kept for the hold**: its own `app`
-  where the catalogue knows it, else the agent a hook named before the hold
-  began, else the first a hook names during the hold. Worked out again at each
-  report, a report naming no `app` mid-hold took Claude for a command, and an
-  agent a deploy tool ran became the tool.
+- **The hold's agent is kept for the hold**: worked out again at each report, a
+  report naming no `app` mid-hold took Claude for a command, and an agent a
+  deploy tool ran became the tool.
 - **A program the catalogue does not know is the agent its hooks name**, as
   Antigravity, whose `app` is not read from its binary: taken for a command, its
   hooks would have been muted, its turns timed and its questions worded as a
-  command's. The hooks' agent is kept with the pid it gave, a report with none
-  keeping it, and a sweep that finds the pid gone forgets the name; it is not
-  polled for that, a quiet agent being watched only while the board is up. Its
-  own clear takes the agent off the prompt, a pane with no shell integration
-  having no other sign.
+  command's. The name is not polled for, a quiet agent being watched only while
+  the board is up. Its own clear takes the agent off the prompt, a pane with no
+  shell integration having no other sign.
 - **An agent the program ran from its own tool shell is nested**: another agent
   than the hold's. Its hooks move nothing, the roster included: its Stop's list
   rewrote the holder's workers, and its name and directory took the holder's.
@@ -95,8 +83,7 @@ how it decides a pane's dot. Newest at the bottom.
 - **A finish with no work before it took no time**: timed from the work before
   the last Idle, a quick Done raised a banner for minutes it never spent.
 - **Any other program works as a command does**: its Working asks nothing at a
-  close or a quit, and its finish is timed from when its work began, through any
-  question it asked, so a quick one raises no banner. Where the shell reported
+  close or a quit, and a quick one raises no banner. Where the shell reported
   the command first, its start is when the work began: a program reporting only
   its Done was otherwise never timed, and its shell's timed Done was muted as
   announced. An agent's turn is not timed, as its hooks' never were.
@@ -105,8 +92,6 @@ how it decides a pane's dot. Newest at the bottom.
 - **Codex turns its Done and Failed to Idle at the user's next key, paste or
   click.** That clears a Failed the user typed into, which is the source
   reporting again.
-- **Banners take the program's message**, its permission text or turn summary. A
-  question it leaves unworded is worded from the catalogue, as a hook's is.
 - **Claude marks turns with OSC 133 only in its screen-reader mode.** There a
   turn's end is a finished command to Ghostty and ends the hold until the next
   report; read from 2.1.319's binary.
@@ -134,21 +119,16 @@ how it decides a pane's dot. Newest at the bottom.
   doing, and a title change painted Done over its idle.
 - **The command's end and the shell's report after a program's finish are no
   news**, whichever comes first: the hold's end keeps the finish it announced
-  for each, and each spends its own. A Done repeats any finish and a Failed
-  repeats a Failed; a failing exit after a Done still lands its Failed, and a
-  Done the user saw stays cleared. Work starting spends what is left, a hook's
-  or the next command's, and so does a later command's end, so over ssh, with no
-  report from the shell, the next command's end is news again. A hook's Idle, or
-  a late Stop repeating the finish, after the program left is no news: Claude's
-  session end can land after its clear.
+  for each, and each spends its own. A failing exit after a Done still lands its
+  Failed. Work starting spends what is left, and so does a later command's end,
+  so over ssh, with no report from the shell, the next command's end is news
+  again. A hook's Idle, or a late Stop repeating the finish, after the program
+  left is no news: Claude's session end can land after its clear.
 - **A report with no pid takes the pid the hooks' agent gave**, or the poll
-  could never see the program go; never the shell's own, which outlives it. The
-  poll ending a hold takes the hold's agent off the prompt with its directory, a
-  wrapper's pid having stood for it.
-- **The agent's directory goes wherever the agent leaves the prompt**: the
-  command's end, the program's clear, the poll. Kept, a pane's next agent with
-  no hooks to name one was handed the last one's for drops. It stays a map of
-  its own, unobserved, a hook's directory moving often.
+  could never see the program go; never the shell's own, which outlives it.
+- **The agent's directory goes wherever the agent leaves the prompt.** Kept, a
+  pane's next agent with no hooks to name one was handed the last one's for
+  drops. It stays a map of its own, unobserved, a hook's directory moving often.
 - **Patch 0007 passes every key the parser reads**, `progress` and `title`
   included, though the app reads neither yet: a feature that wants them then
   needs no new cut of the patch and no libghostty rebuild to try.

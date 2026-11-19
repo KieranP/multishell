@@ -28,7 +28,7 @@ the change says why and the file is updated with it.
 make format   # rewrite Swift and Markdown to project style, needs prettier
 make lint     # what CI runs, --strict: a warning fails; needs the swiftlint
               # version .swiftlint.yml names
-make test     # every suite, the app's included
+make test     # every suite but the theme audit, the app's included
 make build    # bundle it, which CI does not do for you
 make release  # the optimised bundle make install ships, which neither builds
 ```

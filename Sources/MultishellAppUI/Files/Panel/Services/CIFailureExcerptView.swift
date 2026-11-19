@@ -1,7 +1,7 @@
 import MultishellCore
 import SwiftUI
 
-/// What a failed run's report says, in the terminal's colours, selectable.
+/// What a failed run's report says, on the terminal's background, selectable.
 struct CIFailureExcerptView: View {
   let text: String
   let theme: Theme

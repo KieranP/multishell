@@ -68,8 +68,8 @@ extension ProcessRunnerTests {
     return releasedOut != nil || releasedErr != nil
   }
 
-  /// Each run opens four descriptors, and the status poll runs one per worktree every five
-  /// seconds, so a leak here would exhaust the process within the hour.
+  /// Each run opens five descriptors, and the status poll runs one per worktree every minute,
+  /// so a leak here would in time exhaust the process.
   @Test func successfulRunsDoNotLeakFileDescriptors() async throws {
     for _ in 0..<5 {
       _ = try await runner.run(bourneShell, ["-c", "printf x"], in: workingDirectory)

@@ -1,7 +1,7 @@
 import Foundation
 
 /// An unresolved review thread on a pull request: a comment on its diff and the
-/// replies under it. Runtime only, read while the PR page shows.
+/// replies under it. Runtime only, read while the PR page shows, or at a Send off it.
 public struct PullRequestThread: Hashable, Sendable {
   public let id: String
   public let path: String

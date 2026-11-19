@@ -122,7 +122,7 @@ extension AppModel {
     return .done
   }
 
-  /// A file tab runs nothing, so `force` never comes into it.
+  /// A file or All changes tab runs nothing, so `force` never comes into it.
   func replyToCloseTab(_ id: WorkspaceTab.ID, force: Bool) -> ControlReply {
     guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
     if case .terminal(let terminal) = tab,

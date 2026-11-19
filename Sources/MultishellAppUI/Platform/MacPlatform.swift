@@ -61,7 +61,7 @@ final class MacPlatform: Platform {
   }
 
   /// Only the workspace window's own changes: any window's, a settings window's
-  /// or a popover's, would re-read the file tabs while nothing came back.
+  /// or a popover's, would re-read the shown files and diffs while nothing came back.
   private func observeWorkspaceWindowOcclusion() {
     occlusionObservers.forEach(NotificationCenter.default.removeObserver)
     guard let workspaceWindow else {

@@ -15,7 +15,8 @@ struct QuickSwitcherListing: Encodable, Equatable {
   }
 
   struct Row: Encodable, Equatable {
-    /// `agent`, `command`, `file`, `file-tab`, `project`, `shell` or `worktree`.
+    /// `agent`, `all-changes-tab`, `command`, `file`, `file-tab`, `project`, `shell` or
+    /// `worktree`.
     let kind: String
     let title: String
     let location: String

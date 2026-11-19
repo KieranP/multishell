@@ -5,28 +5,24 @@ and how the plugin subscribes. Newest at the bottom.
 
 - **OpenCode 2 alone is supported**, the user's call on 2026-10-27: 2 runs no
   plugin written for 1.x, and one file serving both kept a second adapter to
-  test for a line about to go. The plugin is a default export of an `id` and a
-  `setup`, still at `plugin/multishell.js`, which 2.1.4 scans beside `plugins/`,
-  so an install from an older build reads as needing Update.
+  test for a line about to go. The plugin stays at `plugin/multishell.js`, which
+  2.1.4 scans beside `plugins/`, so an install from an older build reads as
+  needing Update.
 - **Under the service the helper is told of no tab**: the service keeps the
   environment of the tab that first started it, so every tab's sessions named
-  that one. The plugin reads `--service` in its process's arguments and hands
-  the helper an environment without the tab's session, worktree, socket and app,
-  so the helper finds the app's socket itself and the report marks the worktree
-  by its directory. A TUI started with `--standalone` runs the plugin in its own
-  process and keeps the tab. Cost: two OpenCode tabs in one worktree share one
-  dot.
-- **A run's end is one of three events**: succeeded is Done, failed is Failed,
-  and interrupted by the user is Idle, as Codex's `Interrupt` is, nothing having
-  finished. A run superseded by a prompt sent mid-turn reports nothing, the next
-  run carrying on. A failed run's error message is the report's. One ended for
-  inactivity is Failed, never having finished. A shutdown is the service going,
-  so it reports nothing and the pid poll clears the pane as the service's pid
-  goes.
+  that one. The plugin reads `--service` in its process's arguments and the
+  report marks the worktree by its directory instead. A TUI started with
+  `--standalone` runs the plugin in its own process and keeps the tab. Cost: two
+  OpenCode tabs in one worktree share one dot.
+- **A run interrupted by the user is Idle**, as Codex's `Interrupt` is, nothing
+  having finished. One ended for inactivity is Failed, never having finished. A
+  run superseded by a prompt sent mid-turn reports nothing, the next run
+  carrying on. A shutdown is the service going, so it reports nothing and the
+  pid poll clears the pane as the service's pid goes.
 - **A cancelled child wakes its parent in 2**, which hears of it as a message,
   so no end the plugin sends says it wakes nobody.
 - **No hook of the plugin's may throw**: a throw fails the user's prompt or tool
-  call, so every hook and event body swallows its errors.
+  call.
 - **It subscribes before it registers its hooks**, the bus replaying nothing. A
   hook that fails to register aborts the subscription before `setup` throws:
   OpenCode counts that plugin as failed, and its loop read on with nothing to
@@ -61,7 +57,7 @@ and how the plugin subscribes. Newest at the bottom.
   its own Idle over the other session's turn.
 - **"child" and "worker" in the plugin** (round 12): a child is OpenCode's
   session relation, by `parentID`; a worker is the roster's entry the app
-  counts. `isWorker(parentID)` asks whether the parent is on the roster.
+  counts.
 
 ### Asked both ways
 

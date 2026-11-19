@@ -8,12 +8,11 @@ were settled without a change, each with why. A review reads this first.
   says, so an edit above shifts which lines show open. Re-anchoring folds as
   comments are would cost a quote per fold for a run-only convenience.
 - **Find carried twice when a read moves comments** (review round 3, unproven):
-  setting the comments searches again from the old text, and the read then
-  carries the result from it once more. A test inserting a line above a repeated
-  match moved the selection with no comment involved, so this showed nothing of
-  its own. Round 17 found the cause: the carry went by line number across files.
-  Round 18 tried a read moving a comment with one row and five above the match,
-  and the selection held (`aReadMovingCommentsKeepsTheFindSelectionOnItsMatch`).
+  setting the comments searches again from the old text, and the read carries
+  the result once more. The selection also moved with no comment involved, which
+  round 17 traced to the carry going by line number across files. Round 18 tried
+  a read moving a comment with one row and five above the match, and the
+  selection held (`aReadMovingCommentsKeepsTheFindSelectionOnItsMatch`).
 - **The document's staging marks taken from its first file with rows** (review
   round 3, unproven): under Branch a file in an embedded repository counts from
   `HEAD` and marks staging while the worktree's own do not. No case has been
@@ -82,6 +81,3 @@ were settled without a change, each with why. A review reads this first.
 - **Find kept in step by each change to the layout** (review round 19): a rerun
   inside `allChangesDocument(of:)` would search from a getter; the four callers
   share `relayingOutAllChanges` or pass the old layout themselves.
-- **`DiffColumn.hasPendingScrolls` read by a test alone** (review round 20): a
-  file in the list cannot scroll on its own, so no scroll shows a pending one;
-  the property is the only way to see `forgetShownFile` clear all three.

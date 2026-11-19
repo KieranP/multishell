@@ -1,7 +1,7 @@
 import MultishellCore
 
 extension AppModel {
-  /// Either kind; only a terminal tab can leave its worktree.
+  /// Any kind; only a terminal tab can leave its worktree.
   public func beginTabDrag(_ id: WorkspaceTab.ID) {
     tabDragReleaseWatch?.cancel()
     tabDragReleaseWatch = nil
@@ -60,16 +60,16 @@ extension AppModel {
     moveTab(id, placement, anchor: anchor)
   }
 
-  /// Whether a release on this row would move the dragged tab, never a file
-  /// tab's. A missing directory lights, for its alert.
+  /// Whether a release on this row would move the dragged tab, never a file or
+  /// All changes tab's. A missing directory lights, for its alert.
   public func worktreeRowTakesDraggedTab(_ worktreeID: Worktree.ID) -> Bool {
     guard let id = tabDrag.tabID, let tab = workspace.tab(id) else { return false }
     return tab.worktreeID != worktreeID && !isBusy(tab.worktreeID) && !isBusy(worktreeID)
       && workspace.worktree(worktreeID) != nil
   }
 
-  /// A release over a drop target, `false` with no tab in the air or on its own
-  /// worktree's row. The move runs a turn later; a refused one puts it back.
+  /// A release over a drop target, `false` with no tab in the air or on a row
+  /// that would not take it. The move runs a turn later; a refused one puts it back.
   @discardableResult
   public func dropDraggedTab(on drop: TabDrop) -> Bool {
     guard let id = tabDrag.tabID else { return false }

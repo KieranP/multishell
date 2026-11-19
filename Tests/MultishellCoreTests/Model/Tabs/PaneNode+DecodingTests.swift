@@ -19,7 +19,7 @@ struct PaneNodeDecodingTests {
   }
 
   @Test func weightsThatDoNotMatchTheChildrenAreReplacedNotTrusted() throws {
-    // `removing` zips children with weights; a short list would drop a pane.
+    // The pane view sizes children by weight index; a short list leaves one unsized.
     let a = UUID()
     let b = UUID()
     for weights in ["[1]", "[1, 2, 3]", "[1, -1]", "[0, 1]"] {

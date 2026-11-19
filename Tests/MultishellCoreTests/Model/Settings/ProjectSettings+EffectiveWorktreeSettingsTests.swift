@@ -27,7 +27,7 @@ struct ProjectSettingsEffectiveWorktreeSettingsTests {
   }
 
   @Test func aWhitespaceOverrideMeansNone() {
-    // The sheet stores a lone space to opt a project out of a global
+    // A lone space typed as the override opts a project out of a global
     // prefix; it must not end up in the branch name.
     let effective = ProjectSettings(branchPrefix: " ").effectiveWorktreeSettings(defaults: defaults)
     #expect(effective.branchPrefix == "")

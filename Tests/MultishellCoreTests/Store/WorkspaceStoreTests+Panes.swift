@@ -89,7 +89,7 @@ extension WorkspaceStoreTests {
   }
 
   /// The same refusal `setGroupWeights` makes: a zero or a NaN is a pane
-  /// nothing can be laid out in, and the one writer never sends one.
+  /// nothing can be laid out in, and neither writer sends one.
   @Test func splitWeightsThatCannotLayOutAPaneAreRefused() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!

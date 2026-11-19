@@ -46,7 +46,8 @@ extension AppModel {
     )
   }
 
-  /// Posts a banner and keeps what takes it back and what Debug Info lists.
+  /// Posts a banner and keeps what takes it back and what
+  /// `multishell debug notifications` lists.
   func postNotification(title: String, body: String, about key: SessionStates.Key) {
     notifier.notify(title: title, body: body, about: key)
     notifiedKeys.insert(key)

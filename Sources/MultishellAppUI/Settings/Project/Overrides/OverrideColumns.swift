@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The three columns of a project's settings table, at one width for its
-/// heading and every row, so each column lines up down the table.
+/// The three columns of a project's settings table or a Shortcuts card, at one width
+/// for its heading and every row, so each column lines up down the table.
 struct OverrideColumns<Setting: View, Global: View, Override: View>: View {
   @ViewBuilder let setting: () -> Setting
   @ViewBuilder let global: () -> Global

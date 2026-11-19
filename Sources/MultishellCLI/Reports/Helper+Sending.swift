@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellProcess
 
 extension Helper {
-  /// Under the five seconds an agent gives a hook, and short of a prompt
+  /// Under the three or five seconds an agent gives a hook, and short of a prompt
   /// waiting on an app that has stopped reading.
   private static let reportTimeout: Duration = .seconds(2)
 

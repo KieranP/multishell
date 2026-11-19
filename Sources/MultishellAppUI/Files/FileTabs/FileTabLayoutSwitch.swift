@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Unified, the changes inline; Split, the last commit beside the file. One
+/// Unified, the changes inline; Split, the committed side beside the file. One
 /// choice for every file tab and the All changes tab.
 struct FileTabLayoutSwitch: View {
   /// The switch's choices, which a file tab's view menu lists too.

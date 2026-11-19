@@ -17,7 +17,7 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// `dontAsk` and the rest. Claude Code and Codex are the ones that say.
   var permissionMode: String?
   /// Which kind of notification this is, where the agent says. Claude Code
-  /// is the one that does.
+  /// and Copilot are the ones that do.
   var notificationType: String?
   /// The subagent the event fired inside, or the one a start or stop names.
   /// Claude Code and Codex set it on every event of a subagent's.

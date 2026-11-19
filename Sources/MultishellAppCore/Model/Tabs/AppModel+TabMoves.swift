@@ -35,7 +35,8 @@ extension AppModel {
   }
 
   /// A terminal tab dragged onto a worktree's row, shells and all; `false` where
-  /// it cannot move, a file tab's always. See tabs-and-groups/groups-and-dragging.md.
+  /// it cannot move, a file or All changes tab's always. See
+  /// tabs-and-groups/groups-and-dragging.md.
   @discardableResult
   func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard
@@ -59,7 +60,7 @@ extension AppModel {
   }
 
   /// Whether Move Tab to New Group can take a tab in this group: a group's
-  /// only tab, of either kind, has no group to leave, and the store refuses it.
+  /// only tab, of any kind, has no group to leave, and the store refuses it.
   public func canMoveTabToNewGroup(from group: TabGroup.ID) -> Bool {
     workspace.workspaceTabs(inGroup: group).count > 1
   }

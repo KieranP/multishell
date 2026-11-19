@@ -68,7 +68,7 @@ struct AppModelStatusReadsTests {
   }
 
   /// A status read can fail for a moment: a lock, a slow disk, a directory
-  /// mid-rename. The badge must not blink off for five seconds each time.
+  /// mid-rename. The badge must not blink off until the next read each time.
   @Test func aFailedStatusReadKeepsTheLastBadge() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

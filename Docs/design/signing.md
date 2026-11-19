@@ -28,7 +28,7 @@
   the script, the keychain's "codesign wants to use a key" dialog comes now
   rather than mid-build, and it prints the designated requirement, which names
   the certificate rather than a cdhash.
-- **Without the certificate the script signs ad hoc and says so**, a fresh clone
+- **Without the certificate the build signs ad hoc and says so**, a fresh clone
   still having to build. Where signing with it fails it says why first, a silent
   fall back being what the certificate exists to avoid.
 - **The hardened runtime is on a local build, not saved for release.**
@@ -39,9 +39,8 @@
   requirement is unchanged, so existing grants survive.
 - **One entitlement is this app's own**, for the AppleScript that links the CLI
   into `/usr/local/bin`, the one Apple event it sends.
-- **The rest are for a pane**: audio input, Bluetooth, camera, USB, contacts,
-  calendars, location, photo library. A coding agent takes dictation, a CLI
-  reads a calendar or flashes a board, and macOS holds this app responsible.
+- **The rest are for a pane**: a coding agent takes dictation, a CLI reads a
+  calendar or flashes a board, and macOS holds this app responsible.
 - **The documented reading, that an entitlement is checked against the process
   making the call, is wrong.** Two copies of the bundle with different
   identifiers, one holding the pane set and one not, each read the Photos
@@ -56,13 +55,11 @@
   read out of its own capability list. `com.apple.security.print` is a sandbox
   key with no privacy prompt behind it, so an unsandboxed pane prints without
   it.
-- **The `cs.` group is deliberately absent.** JIT, unsigned executable memory,
-  library validation and dyld variables are about this app's own code: no JIT
-  symbols, no third-party dylib, nothing setting dyld variables. A child's JIT
-  is the child's business.
-- **Usage strings go further than the entitlements.** The file locations, the
-  local network, the media library, speech recognition, a system setting, a file
-  provider's files and Focus status have a string and no entitlement to hold.
+- **The `cs.` group is deliberately absent.** It is about this app's own code,
+  which has no JIT, no third-party dylib and sets no dyld variables. A child's
+  JIT is the child's business.
+- **Usage strings go further than the entitlements**, as several services have a
+  string and no entitlement to hold.
 - **Calendars and reminders carry the legacy key and the newer split both**,
   because the string shown is the responsible app's and the asking CLI may be
   linked against either SDK.
@@ -75,7 +72,7 @@
   refused notarisation.
 - **Without it the runtime denies the debugger outright**: lldb refuses to
   attach to a binary signed with the runtime and runs the same binary signed
-  without it. The helper takes the same file in a debug build for that one key.
+  without it.
 - **A timestamp goes on only for a Developer ID identity**, being a call to
   Apple's server that a local build would fail offline for nothing.
 - **The debug tools add no entitlement.** `proc_pid_rusage` and the

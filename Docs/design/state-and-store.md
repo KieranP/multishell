@@ -25,44 +25,37 @@
   the directory's permission, not the file's, so without the move the first
   autosave replaces the user's projects with an empty workspace.
 - **Where even the move fails, saving is off until the file is gone**, silently,
-  the failed load having already said so. Each save asks whether it is still
-  there, so one the user moves away lets this session save again. Cost: a file
-  made readable mid-run is not read until relaunch.
+  the failed load having already said so. One the user moves away lets this
+  session save again. Cost: a file made readable mid-run is not read until
+  relaunch.
 - **A linked state file is saved through the link**, as an agent's settings file
   is: the atomic write put a plain file where a dotfiles repo's link was, and
   the repo's copy went stale. A repository's `.multishell.json` is not: a
   committed link would let Export write over whatever file it names.
 - **A link whose target is away is said so and saved through by nothing**: the
   app started empty unasked, and its first save wrote that over where the link
-  points, a volume not yet mounted included. Removing the link lets saves
-  resume.
+  points, a volume not yet mounted included.
 - **Duplicates are dropped after the prune, not before.** First entry wins, so a
   tab id written twice, once naming a worktree that has gone, kept the dead copy
   and lost the live one to the dangling prune.
 - **A project is a value, so a copy is only as fresh as the render that made
   it.** It stays a value because saves and git work take it off the main actor,
   where a class would share mutable state.
-- **So resolve per render and never store one.** The settings window looks its
-  project up each body; the model accessors trust what they are handed rather
-  than paying a lookup per row.
-- **Whatever holds one past its render looks the record up by id**: settings
-  bindings whose closures outlive it, a button action run after it, the worktree
-  order whose rule the settings window changes from its own scene, a fetch
-  holding a project across the network, an export, and the write-back of a read
-  taken before awaiting git.
+- **So resolve per render and never store one.** Whatever holds one past its
+  render, a binding's closure, a button action, a fetch across the network or
+  the write-back of a read taken before awaiting git, looks the record up by id.
+  The model accessors trust what they are handed rather than paying a lookup per
+  row.
 - **`ProjectTests` is the guard.** `Project` hand-writes its coding keys, `==`
   and `hash` to keep this run's read of a repo's file out of all three, so a
   field added later would be silently unsaved.
 - **Saves land off the main actor.** Encoding and writing on it held the window
   for every divider drag, tab move and rename on a network home directory. Cost:
   a failed save is reported a moment after the change.
-- **And in order.** The store hands out a snapshot with a ticket; a ticket older
-  than the last landed is dropped rather than written over newer state. The
-  encode, taking a ticket and asking whether one landed are all outside the
-  lock: the main actor does the last two, and a write stalled on a volume would
-  hold the window.
-- **Quit still writes on the calling thread**, through the same lock, so it
-  lands after whatever was in flight.
+- **And in order.** A snapshot older than the last landed is dropped rather than
+  written over newer state. Only the write is under the lock, as a write stalled
+  on a volume would otherwise hold the window. Quit writes on the calling thread
+  through the same lock, so it lands after whatever was in flight.
 - **One copy of a build runs at a time.** Two copies both autosaved, and
   whichever wrote last decided what the next launch opened, losing every tab and
   project added in the other.
@@ -77,22 +70,19 @@
   writes over its workspace. The themes folder and the hooks' helper link are
   shared, a debug launch pointing that link at its own helper.
 - **`WorkspaceStore` only grows**: `private(set) var workspace` keeps every
-  writer inside it, so each new mutation is another method there. Lookups it
-  repeats belong on `Workspace`, where the store's methods share them.
+  writer inside it, so each new mutation is another method there.
 - **A plain shell's title is saved empty**, put in words when drawn: saved as
   the word, a nu tab kept the old language's after a change, nu never retitling.
   Cost: a build before this one draws such a tab untitled until its shell names
   it.
-- **The load forgets a retired agent's id**: a tab restores as a plain shell, a
-  preference falls back. Kept, it raised an install alert at every run for an
-  agent the app no longer offers. Cost: the next save drops the id, so an older
-  build that still has the agent opens those tabs as shells.
-  `WorkspaceRetiredAgentsTests` holds it.
+- **The load forgets a retired agent's id**: kept, it raised an install alert at
+  every run for an agent the app no longer offers. Cost: the next save drops the
+  id, so an older build that still has the agent opens those tabs as shells.
 - **A renamed field keeps the key it was saved under**, as the preferred shell
-  keeps `defaultShell` and the failed notification toggle `error`: a new key
-  reads every earlier file as missing it, and the default replaces the user's
-  choice. `WorkspaceTests` counts `Workspace`'s keys against its fields, so a
-  field left out of the coding keys fails there rather than going unsaved.
+  keeps `defaultShell`: a new key reads every earlier file as missing it, and
+  the default replaces the user's choice. `WorkspaceTests` counts `Workspace`'s
+  keys against its fields, so a field left out of the coding keys fails there
+  rather than going unsaved.
 - **Debug tools keep nothing in the workspace**, the toggle included. A sample a
   second in the store would schedule a save a second; debug-tools.md says why
   the toggle ends with its launch.

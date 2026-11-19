@@ -1,7 +1,7 @@
 import MultishellAppCore
 import SwiftUI
 
-/// The band down one edge of a group's terminal area: on release the
+/// The band down one edge of a group's area: on release the
 /// dragged tab gets a group of its own on that side.
 struct GroupBandDropDelegate: DropDelegate {
   let band: TabGroupBand

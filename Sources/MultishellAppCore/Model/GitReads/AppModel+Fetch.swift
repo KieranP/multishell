@@ -8,8 +8,8 @@ extension AppModel {
     remoteState.fetchingProjects.contains(project.id)
   }
 
-  /// The menus' Fetch, the one git call that talks to a network and only on
-  /// a click. Marked for the whole of it, re-reads included.
+  /// The menus' Fetch, which talks to a network and so runs only when asked.
+  /// Marked for the whole of it, re-reads included.
   public func fetch(_ project: Project) async {
     guard let coordinator, remoteState.fetchingProjects.insert(project.id).inserted else { return }
     defer { remoteState.fetchingProjects.remove(project.id) }

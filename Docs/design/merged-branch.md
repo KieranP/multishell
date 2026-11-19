@@ -5,12 +5,10 @@
 - **Ancestry alone cannot tell "landed" from "never began"**, a branch being cut
   at its start commit, nor from "was carried up", a pull in a worktree cut
   before the trunk moved fast-forwarding it.
-- **Sign 1 is the branch's reflog**, read as a deny list. Creation, a rename or
+- **Sign 1 is the branch's reflog**, read as a deny list: creation, a rename or
   copy, reset, clone, fetch, a fast-forward and a rebase that replayed nothing
-  are arrivals; everything else is work of its own.
-- **A deny list because the arrivals are the closed set.** A message a later git
-  invents reads as work, which is what counting entries assumed of every entry
-  anyway.
+  are arrivals; everything else is work of its own. A deny list because the
+  arrivals are the closed set: a message a later git invents reads as work.
 - **Names go to git whole, with `--` after**, or a branch sharing a name with a
   path is "both revision and filename" and the read fails instead of answering.
 - **A bare rebase with nothing to replay writes the same words as one that
@@ -22,47 +20,43 @@
   badge where a reflog expired, and a badge not drawn tells nobody to remove the
   worktree.
 - **Sign 2 is patch ids.** A rebase-merge or a run of cherry-picks leaves no
-  reachable tip, so `git cherry` wants at least one `-` and no `+`.
-- **Not "no `+`" alone.** Cherry skips merge commits, so a worktree that merged
-  the trunk in and wrote nothing of its own prints nothing, which read as "every
-  patch landed".
+  reachable tip, so `git cherry` wants at least one `-` and no `+`. Not "no `+`"
+  alone: cherry skips merge commits, so a worktree that merged the trunk in and
+  wrote nothing of its own prints nothing, which read as "every patch landed".
 - **Sign 3 is a gone upstream.** A squash merge leaves neither other sign, and
   detecting one would need a write, so the sign taken is what "delete branch on
   merge" leaves behind.
 - **`[gone]` alone is three different stories**, so two reads go beside it.
-- **A base that has moved on**: the branch config outlives the branch it names,
-  so a reused name inherits an upstream that was never on the remote, spelled
-  the same way.
-- **The branch's own changes reading the same on the base**, which status cannot
-  see here, a `[gone]` upstream leaving git nothing to count against. Two diffs:
-  what the branch changed since it forked against where the two differ now,
-  nothing in both. A path the base changed counts as differing, erring towards
-  no badge.
+  First, a base that has moved on: the branch config outlives the branch it
+  names, so a reused name inherits an upstream that was never on the remote,
+  spelled the same way. Second, the branch's own changes reading the same on the
+  base, which status cannot see here, a `[gone]` upstream leaving git nothing to
+  count against: what the branch changed since it forked against where the two
+  differ now, nothing in both. A path the base changed counts as differing,
+  erring towards no badge.
 - **Sign 3 is inference**, a PR closed unmerged leaving it too, so `isCertain`
   separates the three. All three badge; only the two that are proof get a
   removal dialog led by the button that deletes the branch.
 - **A merged pull request headed by the branch's tip is a fourth sign**, and
-  proof, taken ahead of git's inference but not its proof; its glyph is drawn
-  instead of the badge (services/branch-matching.md).
+  proof, taken ahead of git's inference but not its proof
+  (services/branch-matching.md).
 - **The badge hides while the worktree holds uncommitted or unpushed work.**
   Unpushed means ahead of an upstream: a branch with none counts ahead of the
   base, and those are the commits a patch-id or content verdict found landed.
-- **A failed read is not a verdict.** Nil rather than an empty set from the
-  merged list, nil rather than false from the patch, behind and content reads,
-  nil from the ref read, which otherwise says a project has no branches and
-  drops every badge it has.
-- **git answers "no reflog" with success and no output**, so only a real failure
-  there is silent. A verdict is recorded, and memoised, only where git answered.
+- **A failed read is not a verdict.** Nil rather than an empty set or false, or
+  the ref read says a project has no branches and drops every badge it has. git
+  answers "no reflog" with success and no output, so only a real failure there
+  is silent. A verdict is recorded, and memoised, only where git answered.
 - **Base is `origin/HEAD`, then the usual trunk names, with a repo override.** A
   remote-tracking ref beats a local branch of the same name, and an override
   resolving to nothing means no badges rather than a guess.
 - **Fetching on a timer is out**, being network, credentials and a git call that
   can hang. So a badge is only as fresh as the last fetch, and Fetch is a menu
   item with a timeout and a spinner.
-- **The check runs when a ref, the index, `HEAD`, the config or another entry
-  worktrees/watching-and-status-reads.md counts changes in the project's
-  `.git`**, and on the backstop poll. Four projects are scanned at once there,
-  one after another having been the tick's longest wait at ten projects.
+- **The check runs on the changes worktrees/watching-and-status-reads.md counts
+  in the project's `.git`**, and on the backstop poll. Four projects are scanned
+  at once there, one after another having been the tick's longest wait at ten
+  projects.
 - **Each verdict is memoised on base, base tip, branch, branch tip and whether
   the upstream was gone.** The branch because two may sit on one commit with
   only one gone upstream; the upstream because a first push puts one back
@@ -73,18 +67,13 @@
 - **Paced by cost, not all at once**: `git cherry` takes 0.6 to 1.3 s a branch
   on a 7,700-commit repository, so thirty long-lived branches after one fetch
   started 20 to 40 s of git together. Each round starts re-asks until their last
-  costs reach 2 s across all its projects, always one a project, the longest
-  since answered first, so every branch is reached in turn. A budget per project
-  let a round of four start four budgets' worth. A lone project's refresh, a
-  fetch's or a new worktree's, has a budget of its own and leaves the round's as
-  it found it. Re-asks a round leaves over run on the five-second ticks between
-  rounds, not the minute's round. Cost: after a fetch the last of thirty such
-  branches changes about 75 s later.
+  costs reach 2 s across all its projects, the longest since answered first, so
+  every branch is reached in turn. A budget per project let a round of four
+  start four budgets' worth. A lone project's refresh has a budget of its own.
+  Cost: after a fetch the last of thirty such branches changes about 75 s later.
 - **A branch never read is not paced**, having no badge to show meanwhile:
-  paced, a project of forty took five rounds at launch to badge them all. Cost:
-  the first round asks every branch, held to the shared width below. Each counts
-  as 250 ms against the round, so re-asks beside them get what is left of the
-  budget.
+  paced, a project of forty took five rounds at launch to badge them all. Each
+  counts as 250 ms against the round, so re-asks beside them get what is left.
 - **A failed read is logged at its cost like an answer**, or it stayed never
   read and went unpaced every round.
 - **Nothing observable is written unless it changed**, or the sidebar redraws on
@@ -93,7 +82,8 @@
   comes off disk describing a branch that has moved since.
 - **The user's git config cannot change what a read means.** Every runner turns
   signature printing and columns off and untracked files on, through the
-  environment rather than `-c`, which a failure would report in its arguments.
+  environment rather than `-c`, which a failure would report in its arguments. A
+  caller's own entry still wins.
 - **`column.ui=always` lays `branch --merged` out in columns**, `--format`
   notwithstanding: one line of every name matched no branch, and each lost its
   badge.
@@ -102,15 +92,13 @@
   and certain gets the dialog led by the delete button.
 - **Untracked files hidden empties the porcelain** for a worktree whose work is
   all untracked, which reads as clean, so the badge goes over uncommitted work
-  and the directory is trashed or deleted. A caller's own entry still wins over
-  both.
+  and the directory is trashed or deleted.
 - **A branch is named to git by refname, never bare.** A bare name reaches a tag
   of that name first, and git's ambiguity warning goes to stderr, which the
-  poll's reads discard.
-- **The short print form is wrong the other way**, answering a `heads/`-prefixed
-  name where a tag ties, which matches no worktree's branch.
-- **Either direction costs something**: the tie loses a badge the branch earned,
-  or hands a certain "merged" to a branch holding work nobody has landed.
+  poll's reads discard. The short print form is wrong the other way, answering a
+  `heads/`-prefixed name where a tag ties, which matches no worktree's branch.
+  Either way costs something: the tie loses a badge the branch earned, or hands
+  a certain "merged" to a branch holding work nobody has landed.
 - **The base goes by refname too**: a tag ties with a local trunk and with a
   remote-tracking one alike, a tag named `origin/main` included. The short form
   stays for what a badge says it was merged into.

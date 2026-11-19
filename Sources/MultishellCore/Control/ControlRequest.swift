@@ -35,7 +35,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   /// The Files panel's filter field, on the worktree it lists.
   case filterFiles(text: String)
   case filterSidebar(text: String)
-  /// The find bar over a file tab on screen.
+  /// The find bar over a file or All changes tab on screen.
   case findInFileTab(id: UUID, action: FindBarAction)
   case findInPane(id: UUID, action: FindBarAction)
   case hideView(ControlView)
@@ -132,7 +132,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   /// Pull requests and CI runs answered from this JSON in place of the
   /// tools, until a `nil` hands back to them.
   case standInServices(json: String?)
-  /// A file tab's bar arrow, to the next or previous change.
+  /// A file or All changes tab's bar arrow, to the next or previous change.
   case stepToChange(tab: UUID, direction: CycleDirection)
   case typeIntoPane(id: UUID, text: String, pressingReturn: Bool)
   case writeGlobalSetting(key: String, value: String)

@@ -32,7 +32,7 @@ extension AppModel {
   }
 
   /// Read again at once for the reason `setGitStatusIndicator` gives, and
-  /// every file tab with them, a tab counting as its row does.
+  /// every file and All changes tab with them, a tab counting as its row does.
   public func setDiffAlgorithm(_ algorithm: DiffAlgorithm) {
     store.setDiffAlgorithm(algorithm)
     statusReadLog.invalidate()

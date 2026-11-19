@@ -18,10 +18,10 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   /// Share of the worktree's width, relative to the other groups' rather
   /// than a fraction, so a removal needs no renormalising.
   public internal(set) var weight: Double
-  /// The tab this group shows, of either kind. Never `nil` for a group the
+  /// The tab this group shows, of any kind. Never `nil` for a group the
   /// store kept: a group whose last tab left is removed rather than left empty.
   public internal(set) var shownTabID: WorkspaceTab.ID?
-  /// Every tab in the group, terminal and file, left to right. An older build
+  /// Every tab in the group, of every kind, left to right. An older build
   /// reads strip order from `Workspace.tabs`, which the store keeps in step.
   var tabOrder: [WorkspaceTab.ID]
 

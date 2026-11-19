@@ -69,19 +69,18 @@ The conventions a new test follows. Why each rule holds is in `design/`.
   adds no thread while default-QoS threads fill the cores, so three
   `SaveOrderTests` froze every CI run on a three-core runner. `HeldWrite` runs
   on a `Thread` of its own; production code reaches Dispatch through
-  `runOnDispatch`, whose utility queue is another pool.
+  `runOnDispatch`, whose utility queue is another pool, bar the directory check
+  before a shell starts, which waits a second at most (design/architecture.md).
 - **At most one test runs per core**, through `Scripts/one-test-per-core.sh` in
   `make test` and CI. Without it, CI froze with all 1,550 tests started within
   1.4 s and none finished. A swift-testing from before the cap
   (swift-testing#1390) fails the script rather than running uncapped.
-- **A debug-tools test turns them on with `enableDebugTools`**, which pushes the
-  sampling tick out to an hour and stands in a process scan, and takes each
+- **A debug-tools test turns them on with `enableDebugTools`** and takes each
   sample itself with `takeDebugSample`. A live tick would race the test's own
-  sample, and the real scan reads whatever the machine is running.
+  sample, and the real process scan reads whatever the machine is running.
 - **A fake git that waits on a gate file also stops once the scratch root is
   gone** wherever the read can outlive the test: one started after teardown
-  finds no gate to wait for and would spin for good, as the hung-read tests in
-  AppModel+WorktreeRemovalRequestTests+StatusReads show.
+  finds no gate to wait for and would spin for good.
 - **A fake git that holds only its first call claims it with `mkdir`**, never a
   test for a file and then a `touch`: two status reads under load both passed
   the test before either touched, both held, and the run hung for good.
@@ -103,8 +102,7 @@ The conventions a new test follows. Why each rule holds is in `design/`.
   for the editor; a test starting bash or ksh through that or any other way must
   empty it too, or it truncates or rewrites that history.
 - **A hook or the login capture leaves a named history file alone**:
-  ShellCommandTests+HookShells under bash, sh and ksh, and
-  LoginShellEnvironmentTests.
+  ShellCommandTests+HookShells and LoginShellEnvironmentTests.
 - **The test process ignores SIGPIPE**, set by `Detached.output`: input written
   to a shell that had already exited killed the whole run about one time in
   three under the shell suites' load.

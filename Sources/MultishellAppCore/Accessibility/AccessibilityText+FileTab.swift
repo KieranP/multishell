@@ -1,6 +1,6 @@
 import MultishellCore
 
-/// What a file tab's Changes rotor says of each changed line: its rows
+/// What a file or All changes tab's Changes rotor says of each changed line: its rows
 /// carry no attribute a screen reader could tell an addition from.
 extension AccessibilityText {
   /// "Removed, unstaged, was line 21: …", "Added, staged, line 40: …"; with

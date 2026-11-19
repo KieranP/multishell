@@ -14,8 +14,8 @@ extension AppModel {
     markInViewSeen()
   }
 
-  /// A close question or rename field on the gone pane goes with it, and a
-  /// file tab it brought in front is read, taking the keyboard where the pane had it.
+  /// A close question or rename field on the gone pane goes with it, and a file or
+  /// All changes tab it brought in front is read, taking the keyboard where the pane had it.
   func noteSessionExited(heldTheKeyboard: Bool) {
     reconcile()
     if heldTheKeyboard { requestFocusForFileTabInView() }

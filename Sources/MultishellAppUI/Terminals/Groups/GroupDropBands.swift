@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The two drop bands down a group's terminal area, drawn while a tab is
-/// over it: dropping on one gives the tab a group of its own that side.
+/// The two drop bands down a group's area, whatever tab it shows, drawn while a
+/// tab is over it: dropping on one gives the tab a group of its own that side.
 struct GroupDropBands: View {
   let model: AppModel
   let group: TabGroup

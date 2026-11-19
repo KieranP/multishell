@@ -2,8 +2,8 @@ import MultishellAppCore
 import SwiftUI
 
 extension View {
-  /// The new-worktree sheet, opened by Cmd+N, the project row's + and the
-  /// project menu. The request carries which project it starts on.
+  /// The new-worktree sheet, opened by New Worktree (Cmd+N by default), the project
+  /// row's + and the project menu. The request carries which project it starts on.
   func newWorktreeSheet(model: AppModel) -> some View {
     sheet(item: Bindable(model).newWorktreeRequest) { request in
       NewWorktreeForm(model: model, initialProjectID: request.projectID)

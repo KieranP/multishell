@@ -15,8 +15,8 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
-  /// Whether a strip's split buttons work: not over a file, which has no
-  /// panes. Disabled rather than hidden, the strip's width staying put.
+  /// Whether a strip's split buttons work: not over a file or All changes tab,
+  /// which has no panes. Disabled rather than hidden, the strip's width staying put.
   public func canSplitShownTab(in group: TabGroup.ID) -> Bool {
     workspace.group(group).flatMap { workspace.shownTab(ofGroup: $0) } != nil
   }

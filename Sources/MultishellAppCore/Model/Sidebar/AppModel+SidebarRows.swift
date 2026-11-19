@@ -27,7 +27,7 @@ extension AppModel {
     let focused = workspace.activeTab(in: worktree.id)?.focusedSessionID
     // Once per call, not per pane: a session lookup is a scan of them all.
     let sessions = workspace.sessions(in: worktree.id).keyedByID()
-    // `tabs` keeps each group's places, so a tab opened in the first group after a
+    // `tabs` is in creation order, so a tab opened in the first group after a
     // second was made sits after the second's there.
     let stripOrder = workspace.groups(in: worktree.id)
       .flatMap { workspace.workspaceTabs(inGroup: $0.id) }

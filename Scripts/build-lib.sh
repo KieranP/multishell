@@ -112,7 +112,7 @@ verify_binary() {
 }
 
 # The targets' catalogues, shell scripts and grammar queries, as SwiftPM
-# resource bundles; a file tab misses a query whose bundle is left out.
+# resource bundles; a file or All changes tab misses a query whose bundle is left out.
 copy_resource_bundles() {
     local products="$1" destination="$2" bundle count=0
     for bundle in "$products"/*.bundle; do

@@ -5,8 +5,8 @@ public struct ProcessOutput: Sendable {
   public let standardOutputBytes: Data
   public let standardError: String
   public let status: Int32
-  /// Set when this side ended the child: the timeout ran out, or the
-  /// caller's `ProcessStopper` was used. `status` is then 128 plus the signal.
+  /// Set when this side ended the child: the timeout ran out, or the caller's `ProcessStopper`
+  /// was used. `status` is then 128 plus the signal, or 1 from a zsh or csh that exits on it.
   public let stopReason: ProcessStopReason?
 
   /// Decoded as UTF-8, a malformed byte read as U+FFFD.

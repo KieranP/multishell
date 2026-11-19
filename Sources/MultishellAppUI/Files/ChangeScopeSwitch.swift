@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// Modified or Branch: one switch drawn in the panel's Changes list and in each
-/// file tab's bar, both setting the one choice they follow.
+/// file and All changes tab's bar, all setting the one choice they follow.
 struct ChangeScopeSwitch: View {
   /// The switch's choices, which a file tab's view menu lists too.
   static var options: [(title: String, value: ChangeScope)] {

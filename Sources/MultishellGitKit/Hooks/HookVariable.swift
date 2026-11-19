@@ -24,7 +24,7 @@ public enum HookVariable: CaseIterable, Sendable {
     }
   }
 
-  /// The one-line description the Hooks tab shows beside the name.
+  /// The one-line description the Hooks page shows beside the name.
   public var meaning: String {
     switch self {
     case .projectPath: t("hook-variable.project-path")

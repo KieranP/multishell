@@ -5,16 +5,13 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
 
 - **A worktree's name is the user's, kept beside the worktrees.** Every refresh
   replaces a project's whole list, so a name written onto the worktree would be
-  gone next tick. It is cleared wherever the store forgets a worktree.
+  gone next tick.
 - **The branch is never replaced, only demoted**: every git command in that
   directory acts on it, so a row that hid it would lie. The removal dialog names
-  the worktree as its row does, and the branch in its body, where what cannot be
-  undone belongs.
-- **The trunk row holds the top whatever the sort says.** Rows sort in tiers
-  first: git's main worktree, a linked worktree on the trunk, the active ones if
-  asked for, then the rest. The trunk gets a tier of its own because a bare
-  clone's trunk is a linked worktree, and it is what every other row is read
-  against.
+  the branch in its body, where what cannot be undone belongs.
+- **The trunk row holds the top whatever the sort says**, under git's main
+  worktree. It gets a tier of its own because a bare clone's trunk is a linked
+  worktree, and it is what every other row is read against.
 - **The trunk is the default branch the badges use**, falling back to the usual
   names until the first scan resolves one. Cost: a project on another trunk can
   settle its rows once, seconds after launch.
@@ -32,19 +29,17 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
   the default, being the only order that reads the same everywhere.
 - **Active-at-the-top is off by default**: a worktree is active while it has a
   terminal or a reported state, so rows would move as agents report in.
-- **Both order settings are shippable by a repo and run nothing**, and the
-  override form seeds from what is in force, not the user's global.
 - **The two globals are a menu behind a sort glyph beside the sidebar's Projects
   caption**, not a settings row: an order is changed while looking at the rows
   it moves, and the settings window was three clicks away.
 - **A project's override stays in its settings**, the only place with room for
   the (i) text. Cost: the help saying the main and trunk rows hold the top is
   only there.
-- **The glyph is badge-sized and dimmer than the caption**, lit as a button only
-  under the pointer (appearance/window-chrome.md; it was a mark that only
-  brightened until 2026-11-05). It uses the strip's plain menu style, since the
-  borderless AppKit one draws the image at its own size and tint whatever the
-  label asks (tabs-and-groups/tab-strip.md).
+- **The glyph is lit as a button only under the pointer**
+  (appearance/window-chrome.md; it was a mark that only brightened until
+  2026-11-05). It uses the strip's plain menu style, since the borderless AppKit
+  one draws the image at its own size and tint whatever the label asks
+  (tabs-and-groups/tab-strip.md).
 - **A missing directory is refused, not worked around.** A shell spawned in one
   silently lands in the home directory.
 - **That check waits a second at most**, the stat running off the main actor: a
@@ -52,12 +47,11 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
   stuck is not joined by another, and the click is refused as not answering.
   Cost: a volume that takes longer to wake is refused once.
 - **A project whose directory is gone stays dimmed rather than dropped**, an
-  unmounted drive not being reason to delete someone's setup. Its tooltip says
-  why; a project that is there but git fails on is reported once.
+  unmounted drive not being reason to delete someone's setup.
 - **Both ends of a refresh check the project is still listed** before dimming
   it: one removed while its git call was failing was dimmed under a stale id and
   alerted about after it had left.
-- **A bare repository is a project.** The work-tree question answers false for
+- **A bare repository is a project.** git's work-tree question answers false for
   one, so the git-dir question is what is asked.
 - **A repo hidden inside a folder takes that folder's name.** Cost: the default
   sibling worktree directory then lands inside it.
@@ -77,50 +71,41 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
 - **Closing hands the keyboard to the active pane**, or first responder drops to
   the window and typing reaches nothing. Cost: the filter is a click further
   away, with no keyboard route to it.
-- **While the filter has text it holds every project it shows open**, and the
-  chevron says so. A click collapses the project for that text alone, as Xcode's
-  navigator does, and leaves the stored flag for after the filter. Reading the
-  flag, the chevron pointed right over open rows and its click moved nothing.
-- **A collapse lasts until the text changes**, being about the rows that text
-  found. Rows a text change brings back out of a collapse are read, as those it
-  brings back out of hiding are.
+- **While the filter has text it holds every project it shows open**, and a
+  chevron click collapses the project for that text alone, as Xcode's navigator
+  does. Reading the stored flag, the chevron pointed right over open rows and
+  its click moved nothing. A collapse lasts until the text changes, being about
+  the rows that text found.
 - **Whether the field is up is the model's, as its text is**, and only closing
   takes it down. Held by the view, a reopened window showed the field for the
   text left in the model, and emptying that text removed the field with the
   keyboard in it.
 - **A worktree's dot is the most urgent state among its tabs**, a project's
-  among its worktrees: failed, waiting, working, done, idle.
-- **Failed above waiting**, where it was below: a question answered still leaves
-  the failure. Done needs one finished tab, not all of them. Idle only when
-  every tab is.
+  among its worktrees. Failed ranks above waiting, where it was below: a
+  question answered still leaves the failure. Done needs one finished tab, not
+  all of them.
 - **A hidden worktree moves to a Hidden row under its project's others**,
   collapsed until clicked, rather than leaving the sidebar behind a global
   toggle. The rows stay one click from where they were, and the row's count says
   what is there.
 - **The main worktree cannot be hidden**, so every project keeps a row and the
-  trunk every other row is read against stays in sight. A hand-edited file
-  marking it is ignored.
+  trunk every other row is read against stays in sight.
 - **Which rows are hidden is saved; whether a section is expanded is not.** Kept
-  beside the custom names, for the reason those are, and dropped with the
-  worktree. Each launch starts with hidden rows out of sight.
-- **A collapsed section's rows are not polled**, as a collapsed project's are
-  not. Expanding it, or showing a worktree again, reads those rows at once.
-  Hidden and shown rows are sorted as one list and split, so the sort cache
-  keeps one entry per project.
+  beside the custom names, for the reason those are. Each launch starts with
+  hidden rows out of sight.
 - **The filter narrows the Hidden section and leaves it collapsed**; its count
   says what the text found inside. Holding it expanded would mean a second
   collapse-while-filtering, and a match in a hidden row alone still lists the
-  project. Rename expands the section, the field being on the row.
+  project.
 - **A cramped name gives up the part before its last `/` first**, drawn fainter,
   then `…/` and the leaf, then the leaf's middle. Middle truncation of the whole
   name made `feat/dashboard` `feat…oard`, keeping the prefix half the branches
   share and cutting what told them apart. The leaf keeps both its ends, so
-  `fix-login-v2` and `-v3` still differ. The tooltip names it whole.
-- **A crowded row keeps three characters of its name and drops badges whole**:
-  the terminal count, then the PR and CI glyphs, then the git counts, a running
-  or failed glyph always staying; a pane row drops its workers, then its time.
-  At the 18 pt UI size and the narrowest sidebar the badges kept their widths
-  and the branch drew nothing.
+  `fix-login-v2` and `-v3` still differ.
+- **A crowded row keeps three characters of its name and drops badges whole**,
+  least telling first, a running or failed glyph always staying. At the 18 pt UI
+  size and the narrowest sidebar the badges kept their widths and the branch
+  drew nothing.
 
 ## Reviewed and left as is
 
