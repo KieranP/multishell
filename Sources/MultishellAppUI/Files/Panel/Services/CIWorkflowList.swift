@@ -3,21 +3,21 @@ import MultishellCore
 import MultishellServices
 import SwiftUI
 
-/// A run's workflows and their jobs, a job opening on the provider at a click,
-/// and under each failed job what the run's failure report says of it.
+/// A run's workflows and jobs, under each failed job what its report says, and
+/// on the newest run each failure's checkbox; see services/send-feedback.md.
 struct CIWorkflowList: View {
   let model: AppModel
   let worktree: Worktree
   let run: CIRun
+  /// The run's workflows, report text and, on the newest run, what can be sent.
+  let listing: CIWorkflowListing
   let theme: Theme
 
   var body: some View {
     let metrics = model.metrics
-    let workflows = model.ciWorkflows(ofRun: run) ?? []
-    let report = model.failureReport(of: run)
     VStack(alignment: .leading, spacing: 0) {
-      ForEach(Array(workflows.enumerated()), id: \.offset) {
-        _,
+      ForEach(Array(listing.workflows.enumerated()), id: \.offset) {
+        workflowIndex,
         workflow in
         HStack(spacing: 7) {
           CIRunGlyph(
@@ -35,15 +35,35 @@ struct CIWorkflowList: View {
         .frame(height: metrics.paneRowHeight)
         .accessibilityElement(children: .combine)
         .accessibilityValue(AccessibilityText.ciStatus(workflow.status))
-        ForEach(Array(workflow.jobs.enumerated()), id: \.offset) { _, job in
-          CIJobRow(model: model, worktree: worktree, job: job, theme: theme)
-          if let excerpt = report?.excerpt(ofJob: job.name, inWorkflow: workflow.name) {
+        ForEach(Array(workflow.jobs.enumerated()), id: \.offset) { jobIndex, job in
+          let position = CIJobPosition(workflow: workflowIndex, job: jobIndex)
+          let item = listing.item(at: position)
+          CIJobRow(
+            model: model,
+            worktree: worktree,
+            job: job,
+            showsHandoffSlot: listing.showsHandoffSlot,
+            candidate: item?.candidate,
+            theme: theme,
+          )
+          if let excerpt = listing.excerpt(ofJobAt: position) {
             CIFailureExcerptView(text: excerpt, theme: theme, metrics: metrics)
               .padding(.leading, metrics.servicePageJobIndent)
+          } else if item?.awaitsReport == true {
+            Text(t("panel.ci-report-after-run"))
+              .font(metrics.font(size: metrics.caption))
+              .foregroundStyle(theme.filesPanel.textSecondary)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.leading, UIMetrics.servicePageSideInset + 2 * metrics.servicePageJobIndent)
+              .padding(.trailing, UIMetrics.servicePageSideInset)
+              .padding(.bottom, 4)
           }
         }
       }
-      ForEach(Array((report?.unplaced(among: workflows) ?? []).enumerated()), id: \.offset) {
+      if let output = listing.runOutput {
+        CIRunOutputRow(model: model, worktree: worktree, output: output, theme: theme)
+      }
+      ForEach(Array(listing.unplacedExcerpts.enumerated()), id: \.offset) {
         _,
         excerpt in
         CIFailureExcerptView(text: excerpt, theme: theme, metrics: metrics)

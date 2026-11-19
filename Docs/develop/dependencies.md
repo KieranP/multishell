@@ -117,8 +117,11 @@
 - **`gh` and `circleci` are optional**, found on the login shell's PATH and
   never shipped: without one its integration shows nothing, and the Integrations
   page says how to install it. `circleci` 1.0 is the floor, the first with the
-  run commands. Their output is read as JSON, any field optional, so a release
-  that drops one costs that record (design/services/reads.md).
+  run commands; `gh` 2.97.0 is, the first whose `gh api` takes
+  `--allow-escape-sequences`, which a job's log needs; an older one still reads
+  the rest, the Integrations page saying it is too old. Their output is read as
+  JSON, any field optional, so a release that drops one costs that record
+  (design/services/reads.md).
 - **prettier formats the Markdown** for `make format` and the Claude Code hook.
   From Homebrew rather than a `package.json`: there is no Node toolchain here,
   and a `node_modules` for one formatter is more than the docs are worth.

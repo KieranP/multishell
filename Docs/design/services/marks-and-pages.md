@@ -92,6 +92,9 @@ panel's pages.
   hold at most once a minute however often its list appears, one read at a time
   per run, and once more as it ends, a run reading failed while jobs still went;
   an earlier run's when its row opens.
+- **The PR page also reads its open pull request's unresolved review threads**,
+  beside the checks and at their pace, kept for the panel's worktree alone. Both
+  pages send what failed to an agent; see [send-feedback.md](send-feedback.md).
 
 ## Reviewed and left as is
 

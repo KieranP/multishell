@@ -34,6 +34,9 @@ extension Helper {
       files list|filter|expand|collapse
                                  The Files panel's list
       review list|add|send|clear Review's comments
+      pr send                    Send the pull request page's checked items to
+                                 an agent
+      ci send                    Send the CI page's checked failures to an agent
       board list                 The Agents board's columns and cards
       sidebar list               The sidebar's rows as drawn
       ui show|hide|filter|dismiss|menu|switcher
@@ -87,11 +90,13 @@ extension Helper {
     switch command {
     case .info, .open, .quit: appUsage
     case .board: boardUsage
+    case .ciRuns: ciUsage
     case .config: configUsage
     case .debug: debugUsage
     case .files: filesUsage
     case .panes: paneUsage
     case .projects: projectUsage
+    case .pullRequest: pullRequestUsage
     case .review: reviewUsage
     case .sidebar: sidebarUsage
     case .tabs: tabUsage

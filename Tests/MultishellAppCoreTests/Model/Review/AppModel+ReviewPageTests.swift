@@ -55,11 +55,11 @@ struct AppModelReviewPageTests {
 
     harness.model.sendReviewToPickedAgent(of: harness.main)
 
-    guard case .sent(let receipt) = harness.model.reviewFooter(of: harness.main) else {
+    guard case .sent(let summary) = harness.model.reviewFooter(of: harness.main) else {
       Issue.record("the footer says what was sent")
       return
     }
-    #expect(receipt.summary == "1 comment sent to Claude Code")
+    #expect(summary == "1 comment sent to Claude Code")
   }
 
   @Test func aRemovedLinesCommentHasNoScopeNoteWhereBranchFallsBackToModified() throws {

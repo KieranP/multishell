@@ -7,20 +7,26 @@ import Testing
 @testable import MultishellCore
 
 @Suite @MainActor
-struct ReviewSendFooterTests {
+struct HandoffSendFooterTests {
   private static func footer(
     in harness: ModelHarness,
     fontSize: Double = 13,
-  ) throws -> ReviewSendFooter {
+  ) throws -> HandoffSendFooter {
     let worktree = harness.addPrimaryWorktree()
     harness.model.select(worktree)
     harness.model.setUIFontSize(fontSize)
     harness.store.openTab(in: worktree.id, title: "claude", agentID: AgentCatalogue.claudeID)
     harness.model.liveSessionIDs = Set(harness.model.workspace.sessions(in: worktree.id).map(\.id))
-    let offersTheAgent =
-      if case .ready = harness.model.reviewFooter(of: worktree) { true } else { false }
+    let footer = harness.model.reviewFooter(of: worktree)
+    let offersTheAgent = if case .ready = footer { true } else { false }
     try #require(offersTheAgent)
-    return ReviewSendFooter(model: harness.model, worktree: worktree, theme: .multishellDark)
+    return HandoffSendFooter(
+      footer: footer,
+      metrics: harness.model.metrics,
+      theme: .multishellDark,
+      pick: { _ in },
+      send: { _ in },
+    )
   }
 
   private static func height(ofFooterAtWidth width: CGFloat) throws -> CGFloat {

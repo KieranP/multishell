@@ -570,6 +570,10 @@ struct AppModelPanelServiceReadsTests {
       headCommit: tip,
       checks: [],
     )
+    harness.model.remoteState.threads[feat.id] = PullRequestThreads(
+      pullRequestNumber: 9,
+      threads: [],
+    )
     harness.store.setFilesPanelMode(.pullRequest)
     let read = PanelRead(worktree: feat.id, page: .pullRequest)
     _ = harness.model.remoteState.panelReadLog.begin(read, at: .now - .seconds(90))

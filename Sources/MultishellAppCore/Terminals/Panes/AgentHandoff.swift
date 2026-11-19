@@ -4,6 +4,14 @@ import MultishellCore
 /// A note too long to paste, written to the drops directory for an agent to read:
 /// Claude Code folds a long paste. See terminals/paste-and-drop.md.
 enum AgentHandoff {
+  private static var maxNameLength: Int { 200 }
+
+  /// `<stem>-<worktree>.md`, the worktree named in the characters every file name
+  /// takes, cut to a length every disk takes.
+  static func fileName(_ stem: String, forWorktreeNamed name: String) -> String {
+    "\(stem)-\(name.portableName(maxLength: maxNameLength)).md"
+  }
+
   /// Markdown, each entry under a heading. Code is indented rather than fenced,
   /// so a quoted line holding a fence cannot end the block.
   static func document(introduction: String, entries: [AgentHandoffEntry]) -> String {

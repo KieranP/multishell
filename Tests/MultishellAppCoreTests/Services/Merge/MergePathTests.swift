@@ -127,4 +127,38 @@ struct MergePathTests {
       MergePath.sample(.sample(state: .merged), checks: []).end == .merged(isOutgrown: false)
     )
   }
+
+  @Test func threadsWithNoReviewStepGetAStepOfTheirOwnThatHoldsNoMergeBack() {
+    let path = MergePath.sample(
+      .sample(review: .notRequired),
+      checks: [.sample(status: .failed)],
+      unresolvedThreadCount: 2,
+    )
+
+    #expect(path.steps.map(\.kind) == [.conflicts, .checks, .comments])
+    #expect(path.threadsStep == .comments)
+    #expect(path.end == .waits(.steps(1)))
+  }
+
+  @Test func threadsListUnderTheReviewStepWhereThereIsOne() {
+    let path = MergePath.sample(
+      .sample(review: .changesRequested),
+      checks: [.sample(status: .passed)],
+      unresolvedThreadCount: 2,
+    )
+
+    #expect(!path.steps.contains { $0.kind == .comments })
+    #expect(path.threadsStep == .review)
+  }
+
+  @Test func aSettledPullRequestListsNoThreads() {
+    let path = MergePath.sample(
+      .sample(state: .merged, review: .approved),
+      checks: [.sample(status: .passed)],
+      unresolvedThreadCount: 2,
+    )
+
+    #expect(path.threadsStep == nil)
+    #expect(!path.steps.contains { $0.kind == .comments })
+  }
 }

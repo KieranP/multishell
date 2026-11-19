@@ -10,6 +10,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case alert(title: String, message: String)
   /// Auto Rename is greyed out for the worktree.
   case autoRenameUnavailable(id: String)
+  /// A worktree's checks could not be read for a Send, in the tool's words.
+  case checksNotRead(id: String, reason: String)
   case debugToolsOff
   /// Not a file the worktree holds that opens as text or an image, which a click beeps at.
   case fileNotOpenable(path: String)
@@ -23,6 +25,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case fileTabShowsNotice(id: UUID)
   /// No git on the login shell's PATH, which every git read needs.
   case gitNotFound
+  /// A Send from the pull request page is still under way.
+  case handoffUnderWay(id: String)
   case invalidBranchName(String)
   case invalidValue(key: String, value: String)
   /// Greyed out in the menu now, as a click would find it.
@@ -51,12 +55,12 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case noProjectChosen
   /// The directory a request came from is in no project or worktree.
   case noProjectHolding(path: String)
+  /// The worktree has no live pane with an agent, or not the one named.
+  case noRecipient(id: String)
   /// `--removed` on lines that hold no removed line, which are the file on disk's.
   case noRemovedLines(path: String)
   /// The file's tab holds no such lines on that side.
   case noReviewLines(path: String)
-  /// The worktree has no live pane with an agent, or not the one named.
-  case noReviewRecipient(id: String)
   /// No file tab of the worktree shows the file.
   case noReviewTab(path: String)
   /// The worktree's row draws no glyph for the page, having nothing on it.
@@ -75,6 +79,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case nothingInView
   /// No alert, dialog, sheet or field is up to dismiss.
   case nothingPresented
+  /// Nothing checked and unsent; the CI page reads its run's jobs only while shown.
+  case nothingToHandOff(ServicePage, id: String)
   /// Review holds no comment waiting to be sent.
   case nothingToSend(id: String)
   /// The main window is closed, so there is nothing to size or draw.
@@ -123,6 +129,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case tabShowsAllChanges(id: UUID)
   /// A terminal tab, which has no file's bar to step or find in.
   case tabShowsNoFile(id: UUID)
+  /// A worktree's review threads could not be read for a Send, in the tool's words.
+  case threadsNotRead(id: String, reason: String)
   /// A panel width a drag could not reach, in points.
   case widthOutOfRange(minimum: Double, maximum: Double)
   /// Open but behind another window or on another Space, where nothing reads a

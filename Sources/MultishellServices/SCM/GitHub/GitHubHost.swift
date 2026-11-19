@@ -11,6 +11,9 @@ public struct GitHubHost: PullRequestHost {
   static let listLimit = 100
   /// Every pull request one branch has headed, reopened as new ones included.
   static let branchListLimit = 10
+  /// Ten pages of a hundred threads: a pull request past that is not one an
+  /// agent is handed whole.
+  private static let threadPageLimit = 10
 
   /// No prompt, no colour and no update check, which writes a state file. A
   /// login shell's `CLICOLOR_FORCE` outranks `NO_COLOR` and colours `--json`.
@@ -104,6 +107,61 @@ public struct GitHubHost: PullRequestHost {
       from: all,
       required: GitHubCheckRecord.keys(from: required),
     )
+  }
+
+  /// One job's log, by the job its link names. A check from another CI links elsewhere.
+  public func readsFailedLog(of check: PullRequestCheck) -> Bool {
+    check.link.flatMap(GitHubJobAddress.init) != nil
+  }
+
+  public func failedLog(
+    of check: PullRequestCheck,
+    keepingLast lineLimit: Int,
+    in directory: URL,
+  ) async throws -> FailedCheckLog? {
+    guard let link = check.link, let job = GitHubJobAddress(link) else { return nil }
+    // `gh run view --job` refuses every job until the whole run ends.
+    let output = try await runner.read(
+      ["api", "--hostname", job.host, "--allow-escape-sequences", job.logsEndpoint],
+      in: directory,
+      failure: GitHubErrorText.failure(from:),
+    )
+    return GitHubJobLog.log(
+      from: String(decoding: output, as: UTF8.self),
+      keepingLast: lineLimit,
+    )
+  }
+
+  /// No `gh pr` command says whether a thread is resolved, so this asks the
+  /// GraphQL API through `gh api`, a page of a hundred at a time.
+  public func unresolvedThreads(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> [PullRequestThread] {
+    guard let address = GitHubPullRequestAddress(pullRequest.url) else {
+      throw ServiceReadFailure.failed(
+        t("integration.page-names-no-threads", pullRequest.url.absoluteString)
+      )
+    }
+    var threads: [PullRequestThread] = []
+    var cursor: String?
+    for _ in 0..<Self.threadPageLimit {
+      // `-f`, not `-F`, so an owner named all in digits stays a string.
+      let json = try await runner.read(
+        [
+          "api", "graphql", "--hostname", address.host,
+          "-f", "owner=\(address.repository.owner)", "-f", "name=\(address.repository.name)",
+          "-F", "number=\(pullRequest.number)", "-f", "query=\(GitHubReviewThreadRecord.query)",
+        ] + (cursor.map { ["-f", "after=\($0)"] } ?? []),
+        in: directory,
+        failure: GitHubErrorText.failure(from:),
+      )
+      let page = try GitHubReviewThreadRecord.page(from: json)
+      threads += page.threads
+      guard let next = page.next else { break }
+      cursor = next
+    }
+    return threads
   }
 
   /// By number, as `checks` asks, so both name the same repository.

@@ -9,7 +9,9 @@ enum CircleCIToolReport {
     guard let (version, major) = version(in: versionOutput) else {
       return .unreadable(versionOutput.firstLine)
     }
-    guard major >= firstMajorWithRuns else { return .unsupportedVersion(version) }
+    guard major >= firstMajorWithRuns else {
+      return .unsupportedVersion(version, minimum: String(firstMajorWithRuns))
+    }
     guard authMe.succeeded else {
       let text = authMe.standardOutput + "\n" + authMe.standardError
       switch CircleCIErrorText.failure(from: text) {

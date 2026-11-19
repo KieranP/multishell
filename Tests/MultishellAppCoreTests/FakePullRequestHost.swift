@@ -10,6 +10,7 @@ final class FakePullRequestHost: PullRequestHost {
   private struct State {
     var answer: Result<[PullRequest], ServiceReadFailure> = .success([])
     var checks: [PullRequestCheck] = []
+    var checksFailure: ServiceReadFailure?
     var headCommit: String?
     var calls: [String] = []
     var branchAnswers: [String: Result<[PullRequest], ServiceReadFailure>] = [:]
@@ -25,6 +26,10 @@ final class FakePullRequestHost: PullRequestHost {
     var renamedRepositories: [String: RemoteRepository] = [:]
     var askedRemoteURLs: [String] = []
     var repositoryFailures: [ServiceReadFailure] = []
+    var logs: [URL: Result<String, ServiceReadFailure>] = [:]
+    var threads: Result<[PullRequestThread], ServiceReadFailure> = .success([])
+    var holdsLogs = false
+    var holdsThreads = false
   }
 
   private let state = Mutex(State())
@@ -108,6 +113,11 @@ final class FakePullRequestHost: PullRequestHost {
     state.withLock { $0.checks = checks }
   }
 
+  /// Every check read fails as `failure`, as a logged-out `gh` would.
+  func failChecks(_ failure: ServiceReadFailure) {
+    state.withLock { $0.checksFailure = failure }
+  }
+
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck] {
     let holds = state.withLock { state in
       state.calls.append("checks #\(pullRequest.number)")
@@ -116,7 +126,65 @@ final class FakePullRequestHost: PullRequestHost {
     if holds {
       for await _ in heldReads.stream {}
     }
-    return state.withLock { $0.checks }
+    return try state.withLock { state in
+      if let failure = state.checksFailure { throw failure }
+      return state.checks
+    }
+  }
+
+  /// A check whose link has no log set is from another CI, and has none.
+  func answerLog(of link: URL, _ answer: Result<String, ServiceReadFailure>) {
+    state.withLock { $0.logs[link] = answer }
+  }
+
+  /// Every log read waits, as a slow `gh` would, until `releaseHeldReads`.
+  func holdLogs() {
+    state.withLock { $0.holdsLogs = true }
+  }
+
+  func readsFailedLog(of check: PullRequestCheck) -> Bool {
+    state.withLock { state in check.link.flatMap { state.logs[$0] } != nil }
+  }
+
+  func failedLog(
+    of check: PullRequestCheck,
+    keepingLast lineLimit: Int,
+    in directory: URL,
+  ) async throws -> FailedCheckLog? {
+    let holds = state.withLock { state in
+      state.calls.append("log \(check.name)")
+      return state.holdsLogs
+    }
+    if holds {
+      for await _ in heldReads.stream {}
+    }
+    return try state.withLock { state in
+      try check.link.flatMap { state.logs[$0] }?.get()
+    }
+    .map { FailedCheckLog(text: $0, earlierLineCount: 0) }
+  }
+
+  func answerThreads(_ answer: Result<[PullRequestThread], ServiceReadFailure>) {
+    state.withLock { $0.threads = answer }
+  }
+
+  /// Every thread read waits until `releaseHeldReads`.
+  func holdThreads() {
+    state.withLock { $0.holdsThreads = true }
+  }
+
+  func unresolvedThreads(
+    of pullRequest: PullRequest,
+    in directory: URL,
+  ) async throws -> [PullRequestThread] {
+    let holds = state.withLock { state in
+      state.calls.append("threads #\(pullRequest.number)")
+      return state.holdsThreads
+    }
+    if holds {
+      for await _ in heldReads.stream {}
+    }
+    return try state.withLock { try $0.threads.get() }
   }
 
   func headCommit(of pullRequest: PullRequest, in directory: URL) async throws -> String {

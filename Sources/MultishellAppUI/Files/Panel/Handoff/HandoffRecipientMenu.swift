@@ -2,10 +2,10 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Which agent pane a review goes to: each with its mark, its tab and its state.
-struct ReviewRecipientMenu: View {
-  let recipients: [ReviewRecipient]
-  let picked: ReviewRecipient
+/// Which agent pane a Send goes to: each with its mark, its tab and its state.
+struct HandoffRecipientMenu: View {
+  let recipients: [HandoffRecipient]
+  let picked: HandoffRecipient
   let now: Date
   let theme: Theme
   let pick: (TerminalSession.ID) -> Void
@@ -19,7 +19,7 @@ struct ReviewRecipientMenu: View {
           Label {
             Text(
               t(
-                "review.recipient-item",
+                "handoff.recipient-item",
                 recipient.agentName,
                 recipient.tabTitle,
                 recipient.stateText(at: now),
@@ -47,10 +47,10 @@ struct ReviewRecipientMenu: View {
     .menuIndicator(.hidden)
     .buttonStyle(ThemedButtonStyle(fill: theme.filesPanel.fill, text: theme.filesPanel.text))
     .fixedSize(horizontal: false, vertical: true)
-    .accessibilityLabel(t("review.recipient-menu"))
+    .accessibilityLabel(t("handoff.recipient-menu"))
   }
 
-  private func mark(of recipient: ReviewRecipient) -> Image? {
+  private func mark(of recipient: HandoffRecipient) -> Image? {
     AgentMarkImage.image(for: recipient.agentID, tint: theme.agentMarkRGB(recipient.agentID))
   }
 }

@@ -70,7 +70,7 @@ extension AppModel {
     }
   }
 
-  /// A removed worktree's review goes with it: comments, file, picks and receipts.
+  /// A removed worktree's review goes with it: comments, file and receipts.
   /// Its file stays known, so a quit before the removal lands removes it again.
   func forgetReviewState(of gone: Set<Worktree.ID>) {
     for id in gone where reviewFiles[id] != nil {
@@ -79,9 +79,7 @@ extension AppModel {
     for id in gone {
       worktreesWithReviewFilesRead.remove(id)
       // A write of nil to a key never set still redraws every file tab.
-      setIfChanged(\.reviewRecipientPicks[id], nil)
       setIfChanged(\.reviewSendReceipts[id], nil)
-      setIfChanged(\.focusedSessionHistory[id], nil)
       setIfChanged(\.selectedReviewComments[id], nil)
     }
   }

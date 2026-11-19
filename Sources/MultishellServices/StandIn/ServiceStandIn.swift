@@ -10,6 +10,11 @@ public struct ServiceStandIn: Sendable {
   let pullRequests: [PullRequest]
   /// By `key(of:)`: two repositories' may share a number.
   let checks: [String: [PullRequestCheck]]
+  /// By `key(of:)`, as checks are.
+  let threads: [String: [PullRequestThread]]
+  /// Two pull requests' identical checks share the first one's log: the read
+  /// is handed the check alone.
+  let logs: [PullRequestCheck: String]
   /// Newest first, undated ones last, ties in the order given.
   let runs: [CIRun]
   let workflows: [CIRun.ID: [CIWorkflow]]
@@ -51,8 +56,20 @@ public struct ServiceStandIn: Sendable {
         "#\(built[repeated].0.number) into \(built[repeated].0.baseBranch) is given twice",
       )
     }
+    try Self.refuseThreadsWithoutComments(in: pullRequests)
     self.pullRequests = built.map(\.0).newestFirst(by: \.updatedAt)
     checks = Dictionary(uniqueKeysWithValues: built.map { (Self.key(of: $0.0), $0.1) })
+    threads = Dictionary(
+      uniqueKeysWithValues: zip(built, pullRequests).map { built, record in
+        (Self.key(of: built.0), (record.threads ?? []).map(\.thread))
+      }
+    )
+    logs = Dictionary(
+      pullRequests.flatMap { record in
+        (record.checks ?? []).compactMap { check in check.log.map { (check.check, $0) } }
+      },
+      uniquingKeysWith: { first, _ in first },
+    )
     self.runs = runs.map(\.run).newestFirst { $0.createdAt ?? .distantPast }
     workflows = Dictionary(
       uniqueKeysWithValues: runs.map { ($0.id, ($0.workflows ?? []).map(\.workflow)) }
@@ -62,6 +79,21 @@ public struct ServiceStandIn: Sendable {
         (run.id, CIFailureReport(excerpts: (run.failures ?? []).map(\.excerpt)))
       }
     )
+  }
+
+  /// A thread is its first comment and the replies under it, so it has one.
+  private static func refuseThreadsWithoutComments(
+    in pullRequests: [ServiceStandInRecord.PullRequestRecord]
+  ) throws(ServiceStandInUnreadable) {
+    for (index, record) in pullRequests.enumerated() {
+      guard let empty = (record.threads ?? []).firstIndex(where: \.comments.isEmpty) else {
+        continue
+      }
+      throw ServiceStandInUnreadable(
+        at: "pullRequests.\(index).threads.\(empty).comments",
+        "a thread holds at least its first comment",
+      )
+    }
   }
 
   /// What tells one pull request from another: its head repository, number and

@@ -1,7 +1,7 @@
 import MultishellServices
 
-/// The checks on a pull request's head, read while the panel shows it.
-/// Runtime only; see Docs/design/services/marks-and-pages.md.
+/// The checks on a pull request's head, read while the panel shows it, or at a
+/// Send off its page. Runtime only; see Docs/design/services/marks-and-pages.md.
 struct PullRequestChecks: Equatable, Sendable {
   let pullRequestNumber: Int
   /// The head they were last asked about, answered or not: a push moves it,

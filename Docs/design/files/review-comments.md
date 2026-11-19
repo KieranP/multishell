@@ -128,6 +128,9 @@ panel's Review page (issue #6). Newest at the bottom.
   per file against that file's rows. The composer carries its file's path, the
   All changes tab holding several, and the tables a composer and its draft live
   in are keyed by the tab hosting cards, a file or All changes tab.
+- **Review's foot and picker are shared with the PR and CI pages**, renamed
+  `Handoff*` in `Files/Panel/Handoff/` with one pick per worktree; see
+  [services/send-feedback.md](../services/send-feedback.md).
 
 ## Reviewed and left as is
 

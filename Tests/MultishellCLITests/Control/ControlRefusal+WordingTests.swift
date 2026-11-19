@@ -26,6 +26,23 @@ struct ControlRefusalWordingTests {
     )
   }
 
+  @Test func nothingToSendCoversItemsSentAlreadyAndOnlyTheCIPageSaysToShowItself() {
+    let pullRequest = ControlRefusal.nothingToHandOff(.pullRequest, id: "w-89abcdef").wording
+    let ciRuns = ControlRefusal.nothingToHandOff(.ciRuns, id: "w-89abcdef").wording
+
+    #expect(pullRequest.contains("not sent already"))
+    #expect(!pullRequest.contains("only while shown"))
+    #expect(ciRuns.contains("not sent already"))
+    #expect(ciRuns.hasSuffix("`multishell ui show ci w-89abcdef`"))
+  }
+
+  @Test func aSecondSendWhileTheFirstIsUnderWaySaysSoWithoutNamingLogs() {
+    let wording = ControlRefusal.handoffUnderWay(id: "w-89abcdef").wording
+
+    #expect(wording.contains("under way"))
+    #expect(!wording.contains("logs"))
+  }
+
   @Test func aReviewCommentRefusedSaysWhetherTheTabOrTheLinesAreMissing() {
     #expect(
       ControlRefusal.noReviewTab(path: "a.swift").wording

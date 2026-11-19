@@ -10,6 +10,8 @@ public struct MergePath: Equatable, Sendable {
       case checks
       /// Being read, or the read failed with none read before it.
       case checksNotRead
+      /// Unresolved review threads where no review step holds them.
+      case comments
       case conflicts
       case draft
       case review
@@ -45,6 +47,15 @@ public struct MergePath: Equatable, Sendable {
   public let end: End
   /// Why the checks' last read failed.
   let checksReadProblem: String?
+  /// An open pull request's unresolved review threads, listed under the review
+  /// step or a Comments step of their own; a settled one lists none.
+  let unresolvedThreadCount: Int
+
+  /// The step the threads list under: the review's, else Comments.
+  var threadsStep: Step.Kind? {
+    guard unresolvedThreadCount > 0 else { return nil }
+    return steps.contains { $0.kind == .review } ? .review : .comments
+  }
 
   init(
     _ pullRequest: PullRequest,
@@ -52,11 +63,14 @@ public struct MergePath: Equatable, Sendable {
     isMergeTaken: Bool,
     isOutgrown: Bool,
     checksReadProblem: String?,
+    unresolvedThreadCount: Int = 0,
   ) {
-    let steps = Self.steps(of: pullRequest, readiness: readiness)
+    let threads = pullRequest.state.isSettled ? 0 : unresolvedThreadCount
+    let steps = Self.steps(of: pullRequest, readiness: readiness, unresolvedThreads: threads)
     self.steps = steps
     checks = readiness.checks
     self.checksReadProblem = checksReadProblem
+    self.unresolvedThreadCount = threads
     end =
       switch pullRequest.state {
       case .closed: .closed
@@ -74,7 +88,11 @@ public struct MergePath: Equatable, Sendable {
       }
   }
 
-  private static func steps(of pullRequest: PullRequest, readiness: MergeReadiness) -> [Step] {
+  private static func steps(
+    of pullRequest: PullRequest,
+    readiness: MergeReadiness,
+    unresolvedThreads: Int,
+  ) -> [Step] {
     var steps: [Step] = []
     // A merged or closed one has nothing left to merge, though GitHub still
     // answers it BLOCKED or BEHIND, and its conflicts UNKNOWN for good.
@@ -91,6 +109,8 @@ public struct MergePath: Equatable, Sendable {
     }
     if let review = reviewStatus(of: pullRequest) {
       steps.append(Step(kind: .review, status: review))
+    } else if unresolvedThreads > 0 {
+      steps.append(Step(kind: .comments, status: .unknown))
     }
     if isOpen, readiness.blockers.contains(.blockedByRules) {
       steps.append(Step(kind: .blockedByRules, status: .failed))
@@ -121,8 +141,9 @@ public struct MergePath: Equatable, Sendable {
   }
 
   private static func wait(readiness: MergeReadiness, steps: [Step]) -> Wait {
-    // Machines alone holding it back would offer Merge When Ready, so the only
-    // machine wait left here is Multishell's read of the checks.
-    readiness.awaitsChecksRead ? .checksRead : .steps(steps.count { $0.status != .passed })
+    // Only Multishell's checks read is a machine wait here: machines alone would
+    // offer Merge When Ready. Threads hold no merge back, so are not counted.
+    readiness.awaitsChecksRead
+      ? .checksRead : .steps(steps.count { $0.status != .passed && $0.kind != .comments })
   }
 }

@@ -46,6 +46,9 @@ or more checks the failing one sat among the passing ones.
 - **The words are the theme's text colour, not its secondary grey**: at 11 pt
   the grey measured 4.0:1 on the panel in Multishell Light. The chevron and the
   card keep their greys.
+- **Unresolved review threads list under the review step**, or a Comments step
+  of their own where there is none, which is not counted among the steps left: a
+  thread holds no merge back. See [send-feedback.md](send-feedback.md).
 
 ## Reviewed and left as is
 

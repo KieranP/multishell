@@ -20,6 +20,7 @@ extension AppModel {
       recomputeWorktreeServices(ofProject: id)
     }
     setIfChanged(\.remoteState.checks, [:])
+    setIfChanged(\.remoteState.threads, [:])
     setIfChanged(\.remoteState.ciHistories, [:])
     pruneRunDetails()
     // Its own reads below cover what turns readable, which would read it twice.

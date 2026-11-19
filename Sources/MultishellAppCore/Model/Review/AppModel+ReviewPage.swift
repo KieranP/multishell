@@ -24,18 +24,14 @@ extension AppModel {
     )
   }
 
-  public func reviewFooter(of worktree: Worktree) -> ReviewFooter {
+  public func reviewFooter(of worktree: Worktree) -> HandoffFooter {
     let comments = reviewComments(in: worktree.id)
     let hasPending = comments.contains(where: \.isPending)
     // Said only while what was sent is still listed: Clear sent or a last Dismiss ends it.
     if !hasPending, !comments.isEmpty, let receipt = reviewSendReceipts[worktree.id] {
-      return .sent(receipt)
+      return .sent(summary: receipt.summary)
     }
-    let recipients = reviewRecipients(in: worktree.id)
-    guard let picked = reviewRecipient(from: recipients, in: worktree.id) else {
-      return .noRecipient(t("review.no-agent", workspace.displayName(of: worktree)))
-    }
-    return .ready(picked: picked, recipients: recipients, canSend: hasPending)
+    return handoffPickerFooter(of: worktree, canSend: hasPending)
   }
 
   /// A click on a comment's row: its card outlined in the shown All changes tab

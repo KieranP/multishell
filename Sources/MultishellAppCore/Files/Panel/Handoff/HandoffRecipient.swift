@@ -1,8 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// An agent pane a review can be sent to, as Review's picker lists it.
-public struct ReviewRecipient: Identifiable, Equatable, Sendable {
+/// An agent pane a Send can go to, as a page's picker lists it.
+public struct HandoffRecipient: Identifiable, Equatable, Sendable {
   public let id: TerminalSession.ID
   public let agentID: String
   public let agentName: String
@@ -25,11 +25,11 @@ public struct ReviewRecipient: Identifiable, Equatable, Sendable {
   public func stateText(at now: Date) -> String {
     switch lane {
     case .working:
-      ElapsedText.short(since: since, now: now).map { t("review.recipient-working-for", $0) }
+      ElapsedText.short(since: since, now: now).map { t("handoff.recipient-working-for", $0) }
         ?? lane.title(inSentence: true)
 
     case .waiting: lane.title(inSentence: true)
-    case .done, .idle: t("review.recipient-at-prompt")
+    case .done, .idle: t("handoff.recipient-at-prompt")
     }
   }
 }

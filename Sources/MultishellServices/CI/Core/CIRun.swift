@@ -3,9 +3,6 @@ import Foundation
 /// One CI run of a branch, its newest as the service lists them. Runtime
 /// only; see Docs/develop/state-on-disk.md.
 public struct CIRun: Hashable, Sendable, Identifiable {
-  /// git's own shortest abbreviation; anything shorter names too many commits.
-  private static let shortestCommitPrefix = 7
-
   public let id: String
   /// The branch it ran on, by its name on the remote.
   public let branch: String
@@ -22,7 +19,7 @@ public struct CIRun: Hashable, Sendable, Identifiable {
   public let repository: RemoteRepository?
 
   /// The commit as git abbreviates it, which is all 1.11 prints anyway.
-  public var shortCommit: String { String(commit.prefix(Self.shortestCommitPrefix)) }
+  public var shortCommit: String { commit.abbreviatedCommit }
 
   /// Its phase's word, not its status's, which says failed while jobs still
   /// run; one on hold waits on a person, perhaps for days.
@@ -50,9 +47,6 @@ public struct CIRun: Hashable, Sendable, Identifiable {
 
   /// Whether it ran `commit`, which a provider may name by a prefix of it.
   public func ran(_ commit: String?) -> Bool {
-    guard let commit else { return false }
-    if commit == self.commit { return true }
-    guard min(commit.count, self.commit.count) >= Self.shortestCommitPrefix else { return false }
-    return commit.hasPrefix(self.commit) || self.commit.hasPrefix(commit)
+    commit?.namesSameCommit(as: self.commit) ?? false
   }
 }
