@@ -54,6 +54,8 @@ final class FakePlatform: Platform {
   var commandMenuItems: [PlatformMenuItem] { menuItems }
   var performedMenuItems: [[String]] = []
   var chosenMenuItems: [[String]] = []
+  /// The keys each command's menu item was last given.
+  var menuShortcuts: [ShortcutCommand: KeyCombination?] = [:]
   var shownWindows: [AuxiliaryWindow] = []
   var closedWindows: [AuxiliaryWindow] = []
   /// `nil` stands for a closed main window.
@@ -140,6 +142,9 @@ final class FakePlatform: Platform {
   func screenshotSettingsWindow() -> Data? { settingsWindowScreenshot }
   func signpost(_ name: String) { signposts.append(name) }
   func hasFontFamily(_ family: String) -> Bool { fontFamilies.contains(family) }
+  func setMenuShortcuts(_ shortcuts: [MenuShortcut]) {
+    for shortcut in shortcuts { menuShortcuts[shortcut.command] = .some(shortcut.keys) }
+  }
   func performMenuItem(_ path: [String]) -> PlatformMenuOutcome {
     guard let item = menuItems.first(where: { $0.path == path }) else { return .notFound }
     guard item.isEnabled else { return .disabled }

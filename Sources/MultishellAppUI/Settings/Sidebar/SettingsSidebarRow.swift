@@ -8,6 +8,8 @@ struct SettingsSidebarRow: View {
   /// The page whose tile leads the row; `nil` for a part.
   let page: SettingsPage?
   let isSelected: Bool
+  /// Shown at the trailing edge where above zero: a Shortcuts part's changes.
+  var changes = 0
   let select: () -> Void
 
   @State private var isHovered = false
@@ -33,6 +35,11 @@ struct SettingsSidebarRow: View {
           .foregroundStyle(textStyle)
           .lineLimit(1)
         Spacer(minLength: 0)
+        if changes != 0 {
+          Text(changes, format: .number)
+            .font(.system(size: UIMetrics.settingsSidebarControlFontSize))
+            .foregroundStyle(textStyle)
+        }
       }
       .padding(.vertical, 4)
       .padding(

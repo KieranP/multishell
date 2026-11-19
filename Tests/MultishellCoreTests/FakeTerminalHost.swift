@@ -43,6 +43,6 @@ final class FakeTerminalHost: TerminalHost {
     return true
   }
 
-  func apply(_ theme: Theme, appearance: Appearance) {}
+  func apply(_ theme: Theme, appearance: Appearance, unbinding: [KeyCombination]) {}
   func search(_ step: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
 }

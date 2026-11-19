@@ -30,7 +30,7 @@ struct NewWorktreeForm: View {
       Form {
         if model.workspace.projects.isEmpty {
           NewWorktreeFormNote(
-            text: t("sheet.no-projects"),
+            text: t("sheet.no-projects", model.keysInParentheses(.addProject)),
             symbol: "folder.badge.plus",
             tint: .secondary,
           )

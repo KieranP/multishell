@@ -2,11 +2,14 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
+  private static var noShortcutWord: String { "none" }
+
   /// Named as `state.json` names them, a nested one with a dot.
   var globalSettings: [ControlSetting] {
     appearanceSettings + agentSettings + worktreeSettings + filesSettings + terminalSettings
       + editorSettings
       + NotificationPreference.notifiableStates.map(notificationSetting)
+      + ShortcutCommand.changeable.map(shortcutSetting)
   }
 
   private var appearanceSettings: [ControlSetting] {
@@ -234,6 +237,36 @@ extension AppModel {
         self.setNotificationPreference(preference)
       },
     )
+  }
+
+  /// `shortcuts.split-right`: keys as the state file spells them or as glyphs,
+  /// `none`, or blank to follow the default; refused where the page would refuse.
+  private func shortcutSetting(_ command: ShortcutCommand) -> ControlSetting {
+    ControlSetting(
+      key: "shortcuts.\(command.rawValue)",
+      read: { self.shortcutSettingText(command) },
+      write: { text in
+        guard let trimmed = text.trimmedOrNil else {
+          self.followDefaultShortcut(command)
+          return true
+        }
+        if trimmed.lowercased() == Self.noShortcutWord {
+          return self.setShortcut(nil, for: command).isAllowed
+        }
+        guard let keys = KeyCombination(spelled: trimmed) ?? KeyCombination(glyphs: trimmed)
+        else { return false }
+        return self.setShortcut(keys, for: command).isAllowed
+      },
+    )
+  }
+
+  /// Blank for a command left to a default another's change took, as writing
+  /// blank leaves it: `none` would write a change.
+  private func shortcutSettingText(_ command: ShortcutCommand) -> String {
+    guard let keys = shortcutKeys(for: command) else {
+      return isShortcutChanged(command) ? Self.noShortcutWord : ""
+    }
+    return keys.spelled
   }
 
   private func worktreeDefault(

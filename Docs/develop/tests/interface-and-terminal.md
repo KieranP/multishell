@@ -6,9 +6,11 @@ highlighting. Why each rule holds is in `design/`.
 
 ## What catches a breach of the rules
 
-- **A shortcut's two spellings agree**: AppShortcutCatalogueTests. **The
-  clipboard ones stay with the terminal**: GhosttyUnbindsTests, pinned against
-  the config the engine was given.
+- **No two commands default to one key, and none to a reserved one**:
+  ShortcutCommandTests. **Every key the recorder takes is one libghostty
+  parses**: KeyCombinationGhosttyTests. **The clipboard ones stay with the
+  terminal**: GhosttyUnbindsTests, pinned against the config the engine was
+  given.
 - **Identifiers spelled in both Swift and the generated Info.plist still
   match**: InfoPlistTemplateTests. Nothing at build or run time notices these
   having parted.

@@ -38,13 +38,23 @@ struct SettingsLocationTests {
     )
   }
 
+  @Test func aSplitPagesPartsShowOnlyWhileThatPageIsOpen() {
+    let general = SettingsLocation(scope: .allProjects, section: .general)
+    #expect(!general.showsParts(of: .agents))
+    #expect(!general.showsParts(of: .shortcuts))
+
+    let terminalPart = SettingsLocation(scope: .allProjects, section: .shortcutsTerminal)
+    #expect(terminalPart.showsParts(of: .shortcuts))
+    #expect(!terminalPart.showsParts(of: .agents))
+  }
+
   @Test func theArrowsStepThroughPagesAndPartsAndStopAtEitherEnd() {
     let general = SettingsLocation(scope: .allProjects, section: .general)
     let pages = SettingsPage.pages(in: .allProjects)
     #expect(general.stepped(by: -1, among: pages) == general)
     #expect(general.stepped(by: 3, among: pages).section == .agentSettings)
     #expect(general.stepped(by: 4, among: pages).section == .agentHooks)
-    #expect(general.stepped(by: 99, among: pages).section == .appearance)
+    #expect(general.stepped(by: 99, among: pages).section == .shortcutsTerminal)
 
     let terminal = SettingsLocation(scope: Self.project, section: .terminal)
     #expect(

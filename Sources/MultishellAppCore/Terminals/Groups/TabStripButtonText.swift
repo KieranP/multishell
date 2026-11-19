@@ -10,13 +10,24 @@ public enum TabStripButtonText {
     isFocusedGroup ? t("tab.new") : t("tab.new-in-group")
   }
 
-  public static func splitHelp(_ axis: SplitAxis, isFocusedGroup: Bool) -> String {
-    switch (axis, isFocusedGroup) {
-    case (.horizontal, true): t("tab.split-right-here")
+  /// `keys` are the split's own, in force now; none drops the parenthesis.
+  public static func splitHelp(
+    _ axis: SplitAxis,
+    isFocusedGroup: Bool,
+    keys: KeyCombination?,
+  ) -> String {
+    let named = keys.map { t("shortcuts.in-parentheses", $0.glyphs) } ?? ""
+    return switch (axis, isFocusedGroup) {
+    case (.horizontal, true): t("tab.split-right-here", named)
     case (.horizontal, false): t("tab.split-right-in-group")
-    case (.vertical, true): t("tab.split-down-here")
+    case (.vertical, true): t("tab.split-down-here", named)
     case (.vertical, false): t("tab.split-down-in-group")
     }
+  }
+
+  /// The command whose keys a split button names.
+  public static func splitCommand(_ axis: SplitAxis) -> ShortcutCommand {
+    axis == .horizontal ? .splitRight : .splitDown
   }
 
   public static func splitLabel(_ axis: SplitAxis) -> String {

@@ -19,7 +19,7 @@ struct AppGeneralPage: View {
           ),
           options: model.editorDetection.options(selected:),
           refreshing: model,
-          info: t("general.editor-info"),
+          info: t("general.editor-info", model.keysInParentheses(.openInEditor)),
         )
         if model.usesCustomEditor {
           CustomChoiceField(

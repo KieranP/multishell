@@ -67,6 +67,9 @@ struct SettingsPageGlyph: View {
     case .notifications:
       appendBell(to: &path)
 
+    case .shortcuts:
+      appendKeyboard(to: &path)
+
     case .terminal:
       path.addRoundedRect(
         in: CGRect(x: 1.5, y: 2.5, width: 13, height: 11),
@@ -142,6 +145,22 @@ struct SettingsPageGlyph: View {
       control1: CGPoint(x: 8 + clapper, y: 15),
       control2: CGPoint(x: 9.5, y: 13.5 + clapper),
     )
+  }
+
+  /// A keyboard: its body, two rows of keys and the space bar.
+  private func appendKeyboard(to path: inout Path) {
+    path.addRoundedRect(
+      in: CGRect(x: 1.5, y: 3.5, width: 13, height: 9),
+      cornerSize: CGSize(width: 1.5, height: 1.5),
+    )
+    for x in [4.0, 6.7, 9.3, 12] {
+      path.move(to: CGPoint(x: x, y: 6))
+      path.addLine(to: CGPoint(x: x, y: 6))
+      path.move(to: CGPoint(x: x, y: 8))
+      path.addLine(to: CGPoint(x: x, y: 8))
+    }
+    path.move(to: CGPoint(x: 5.5, y: 10.3))
+    path.addLine(to: CGPoint(x: 10.5, y: 10.3))
   }
 
   /// The palette: a left half circle, a thumb notch, and three paint dots.

@@ -34,7 +34,9 @@ struct OverrideRow<Value: Equatable & Sendable, Control: View>: View {
             .labelsHidden()
           SettingsSymbolButton.useGlobal { isOverridden.wrappedValue = false }
         } else {
-          OverrideStartButton(label: label) { isOverridden.wrappedValue = true }
+          OverrideStartButton(help: t("project.override-help", label)) {
+            isOverridden.wrappedValue = true
+          }
         }
       }
       if let caption {

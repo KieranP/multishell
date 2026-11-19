@@ -22,6 +22,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode, changeScope
     case showsFilesPanel, showsIgnoredFiles, showsAllTerminals
     case portBlockStart, portBlockSize, portBlocks
+    case shortcutOverrides = "shortcuts"
   }
 
   /// Keys no property answers to any more, read only to carry what an older
@@ -137,6 +138,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// block's ports; only a worktree left without a port changes block.
   public internal(set) var portBlockStart = PortBlock.defaultStart
   public internal(set) var portBlockSize = PortBlock.defaultSize
+  public internal(set) var shortcutOverrides = ShortcutOverrides()
 
   /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var projectHookTimeout: Duration? {
@@ -296,6 +298,11 @@ public struct Workspace: Codable, Hashable, Sendable {
       guard case .integer(let index) = value else { return nil }
       return index
     }
+    shortcutOverrides = container.decodeTolerantly(
+      ShortcutOverrides.self,
+      forKey: .shortcutOverrides,
+      or: ShortcutOverrides(),
+    )
 
     // A file written before groups names no group but says which tab was
     // active. Read here, or `repair` falls back to the last tab.

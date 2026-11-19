@@ -77,6 +77,9 @@ public final class AppModel<Surface> {
   public internal(set) var settingsLocation = SettingsLocation.start
   /// What the settings sidebar's search holds, emptied as the window closes.
   public internal(set) var settingsSearchText = ""
+  /// Ended by any change to the shortcuts or the page going, so a question
+  /// never outlives what it asked about.
+  var shortcutsPageEdit: ShortcutsPageEdit?
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
   var renamingWorktreeID: Worktree.ID?
@@ -469,7 +472,7 @@ public final class AppModel<Surface> {
 
     take(loadThemeCatalogue(themesDirectory))
     rebuildNewTabAgents()
-    host.apply(currentTheme, appearance: store.workspace.appearance)
+    applyTerminalConfiguration()
     // A git missing here is said once the login shell's PATH lacks it too.
     if let loadError { present(loadError) }
 

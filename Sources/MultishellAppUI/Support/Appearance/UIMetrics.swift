@@ -113,6 +113,9 @@ struct UIMetrics: Equatable {
   static let settingsGlobalColumnWidth: Double = 140
   static let settingsOverrideColumnWidth: Double = 210
   static let settingsColumnSpacing: Double = 10
+  /// A Shortcuts row's keys and its recorder, as wide as the mockup's "Same".
+  static let settingsShortcutKeysWidth: Double = 76
+  static let settingsShortcutKeysSideInset: Double = 8
   static let newWorktreeSheetWidth: Double = 520
 
   let bodySize: Double

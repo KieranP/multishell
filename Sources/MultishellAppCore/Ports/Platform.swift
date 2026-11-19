@@ -132,4 +132,6 @@ public protocol Platform: AnyObject, Sendable {
   func chooseMenuItem(_ path: [String])
   /// Whether a font family by this name is installed now, as the font picker lists them.
   func hasFontFamily(_ family: String) -> Bool
+  /// Each command's menu item given its keys.
+  func setMenuShortcuts(_ shortcuts: [MenuShortcut])
 }

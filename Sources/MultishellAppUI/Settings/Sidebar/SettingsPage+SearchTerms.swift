@@ -41,6 +41,10 @@ extension SettingsPage {
         t("terminal.open-on-create"),
       ]
 
+    case .shortcuts:
+      [t("shortcuts.restore-defaults")] + ShortcutGroup.allCases.map(\.title)
+        + ShortcutCommand.allCases.map(\.menuTitle)
+
     case .worktrees:
       [
         t("worktrees.section-creating"), t("worktrees.path"), t("worktrees.branch-prefix"),
@@ -92,7 +96,7 @@ extension SettingsPage {
         t("project.default-branch"),
       ]
 
-    case .appearance, .notifications: []
+    case .appearance, .notifications, .shortcuts: []
     }
   }
 

@@ -31,12 +31,18 @@ extension AppModel {
 
   public func setTheme(_ id: Theme.ID) {
     store.setTheme(id)
-    host.apply(currentTheme, appearance: workspace.appearance)
+    applyTerminalConfiguration()
   }
 
   func setTerminalFont(name: String?, size: Double) {
     store.setTerminalFont(name: name, size: size)
-    host.apply(currentTheme, appearance: workspace.appearance)
+    applyTerminalConfiguration()
+  }
+
+  /// The engine keeps its own copy of the theme, font and unbinds, so each is
+  /// handed over again whenever one changes.
+  func applyTerminalConfiguration() {
+    host.apply(currentTheme, appearance: workspace.appearance, unbinding: surfaceUnbinds)
   }
 
   /// Takes a font picker's row id, keeping the size; the divider is no choice.
@@ -100,7 +106,7 @@ extension AppModel {
     guard reload == themeReloads else { return }
     let shown = currentTheme
     take(catalogue)
-    if currentTheme != shown { host.apply(currentTheme, appearance: workspace.appearance) }
+    if currentTheme != shown { applyTerminalConfiguration() }
   }
 
   /// Every newly broken file is named in one alert, and each only once, not

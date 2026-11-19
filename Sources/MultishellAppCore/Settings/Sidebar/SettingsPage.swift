@@ -7,11 +7,12 @@ public enum SettingsPage: Hashable, Sendable {
   case hooks
   case integrations
   case notifications
+  case shortcuts
   case terminal
   case worktrees
 
   private static let allProjectsOrder: [Self] = [
-    .general, .worktrees, .terminal, .agents, .notifications, .appearance,
+    .general, .worktrees, .terminal, .agents, .notifications, .appearance, .shortcuts,
   ]
   private static let projectOrder: [Self] = [
     .general, .worktrees, .hooks, .terminal, .agents, .integrations,
@@ -33,6 +34,10 @@ public enum SettingsPage: Hashable, Sendable {
     case .hooks: isAllProjects ? [] : [.hooksCreate, .hooksDelete, .hooksEnvironment]
     case .integrations: isAllProjects ? [] : [.integrations]
     case .notifications: isAllProjects ? [.notifications] : []
+
+    case .shortcuts:
+      isAllProjects ? [.shortcutsFile, .shortcutsEdit, .shortcutsView, .shortcutsTerminal] : []
+
     case .terminal: [.terminal]
     case .worktrees: [.worktrees]
     }

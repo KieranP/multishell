@@ -6,15 +6,40 @@ import Testing
 @Suite
 struct TabStripButtonTextTests {
   @Test func onlyTheFocusedGroupsSplitButtonsNameTheKeystroke() {
-    #expect(TabStripButtonText.splitHelp(.horizontal, isFocusedGroup: true) == "Split Right (⌘D)")
-    #expect(TabStripButtonText.splitHelp(.vertical, isFocusedGroup: true) == "Split Down (⇧⌘D)")
+    let right = ShortcutCommand.splitRight.defaultCombination
+    let down = ShortcutCommand.splitDown.defaultCombination
     #expect(
-      TabStripButtonText.splitHelp(.horizontal, isFocusedGroup: false)
+      TabStripButtonText.splitHelp(.horizontal, isFocusedGroup: true, keys: right)
+        == "Split Right (⌘D)"
+    )
+    #expect(
+      TabStripButtonText.splitHelp(.vertical, isFocusedGroup: true, keys: down)
+        == "Split Down (⇧⌘D)"
+    )
+    #expect(
+      TabStripButtonText.splitHelp(.horizontal, isFocusedGroup: false, keys: right)
         == "Split Right in This Group"
     )
     #expect(
-      TabStripButtonText.splitHelp(.vertical, isFocusedGroup: false) == "Split Down in This Group"
+      TabStripButtonText.splitHelp(.vertical, isFocusedGroup: false, keys: down)
+        == "Split Down in This Group"
     )
+  }
+
+  @Test func aSplitWithChangedKeysNamesThemAndOneWithNoneNamesNothing() {
+    let changed = KeyCombination(.character("\\"), .command)
+    #expect(
+      TabStripButtonText.splitHelp(.horizontal, isFocusedGroup: true, keys: changed)
+        == "Split Right (⌘\\)"
+    )
+    #expect(
+      TabStripButtonText.splitHelp(.vertical, isFocusedGroup: true, keys: nil) == "Split Down"
+    )
+  }
+
+  @Test func eachSplitButtonNamesItsOwnCommandsKeys() {
+    #expect(TabStripButtonText.splitCommand(.horizontal) == .splitRight)
+    #expect(TabStripButtonText.splitCommand(.vertical) == .splitDown)
   }
 
   @Test func anotherGroupsNewTabMenuSaysItOpensThere() {

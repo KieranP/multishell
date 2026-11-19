@@ -13,6 +13,10 @@ public enum SettingsSection: Hashable, Sendable {
   case hooksEnvironment
   case integrations
   case notifications
+  case shortcutsEdit
+  case shortcutsFile
+  case shortcutsTerminal
+  case shortcutsView
   case terminal
   case worktrees
 
@@ -20,6 +24,7 @@ public enum SettingsSection: Hashable, Sendable {
   public var isPart: Bool {
     switch self {
     case .agentHooks, .agentSettings, .hooksCreate, .hooksDelete, .hooksEnvironment: true
+    case .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView: true
     case .agents, .appearance, .general, .integrations, .notifications, .terminal, .worktrees: false
     }
   }
@@ -32,6 +37,7 @@ public enum SettingsSection: Hashable, Sendable {
     case .hooksCreate, .hooksDelete, .hooksEnvironment: .hooks
     case .integrations: .integrations
     case .notifications: .notifications
+    case .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView: .shortcuts
     case .terminal: .terminal
     case .worktrees: .worktrees
     }

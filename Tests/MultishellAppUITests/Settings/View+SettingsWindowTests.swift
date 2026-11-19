@@ -27,6 +27,22 @@ struct ViewSettingsWindowTests {
       Page(name: "Notifications", view: AnyView(AppNotificationsPage(model: model))),
       Page(name: "Appearance", view: AnyView(AppAppearancePage(model: model))),
       Page(
+        name: "Shortcuts, File",
+        view: AnyView(AppShortcutsPage(model: model, section: .shortcutsFile)),
+      ),
+      Page(
+        name: "Shortcuts, Edit",
+        view: AnyView(AppShortcutsPage(model: model, section: .shortcutsEdit)),
+      ),
+      Page(
+        name: "Shortcuts, View",
+        view: AnyView(AppShortcutsPage(model: model, section: .shortcutsView)),
+      ),
+      Page(
+        name: "Shortcuts, Terminal",
+        view: AnyView(AppShortcutsPage(model: model, section: .shortcutsTerminal)),
+      ),
+      Page(
         name: "Project General",
         view: AnyView(ProjectGeneralPage(model: model, project: project)),
       ),

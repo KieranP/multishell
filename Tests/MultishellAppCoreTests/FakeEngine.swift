@@ -32,6 +32,8 @@ final class FakeEngine: TerminalSurfaceHost {
   var frames: [TerminalSession.ID: CGRect] = [:]
   /// Every theme handed to the engine, in order.
   var appliedThemes: [Theme] = []
+  /// The keys the engine was last told to unbind.
+  var unbound: [KeyCombination] = []
 
   func open(_ session: TerminalSession) throws {
     if refusesToOpen { throw OpenRefused() }
@@ -76,5 +78,8 @@ final class FakeEngine: TerminalSurfaceHost {
   }
   func screenshot(of id: TerminalSession.ID) -> Data? { screenshots[id] }
   func frame(of id: TerminalSession.ID) -> CGRect? { frames[id] }
-  func apply(_ theme: Theme, appearance: Appearance) { appliedThemes.append(theme) }
+  func apply(_ theme: Theme, appearance: Appearance, unbinding: [KeyCombination]) {
+    appliedThemes.append(theme)
+    unbound = unbinding
+  }
 }

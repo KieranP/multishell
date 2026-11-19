@@ -106,7 +106,8 @@
   the indicators changes nothing there. Project Hooks shows Create, Delete or
   Environment, six editors being 973 pt; All Projects' Agents shows Agent
   Settings or Agent hooks, the hooks growing with every agent installed. The
-  parts are sidebar rows under their page, not a segmented control in the form.
+  parts are sidebar rows under their page, not a segmented control in the form,
+  listed only while their page is open (owner, 2026-11-19).
 - **One settings window, a sidebar of pages, for All Projects and each
   project.** Chosen over two toolbar-tab windows (2026-11-05) from mockups of
   four designs. The menu atop the sidebar picks whose settings; Project

@@ -27,8 +27,9 @@ public protocol TerminalHost: AnyObject {
   @discardableResult
   func press(_ keys: [ControlKey], in id: TerminalSession.ID) -> Bool
 
-  /// Applied to every open terminal and to any opened afterwards.
-  func apply(_ theme: Theme, appearance: Appearance)
+  /// Applied to every open terminal and to any opened afterwards. `unbinding`
+  /// are the menus' keys, which the engine must not take first.
+  func apply(_ theme: Theme, appearance: Appearance, unbinding: [KeyCombination])
 
   /// A step of the engine's own search over the session's scrollback.
   /// `false` where the engine has no such session, or no search at all.

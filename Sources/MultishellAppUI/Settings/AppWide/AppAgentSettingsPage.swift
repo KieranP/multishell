@@ -45,7 +45,11 @@ struct AppAgentSettingsPage: View {
       }
       InfoToggle(
         t("agents.auto-start-tab"),
-        info: t("agents.auto-start-tab-info"),
+        info: t(
+          "agents.auto-start-tab-info",
+          model.keysInParentheses(.newTab),
+          model.keysInParentheses(.newShellTab),
+        ),
         isOn: model.settingBinding(\.autoStartsAgent, write: model.setAutoStartsAgent),
       )
       .disabled(!model.hasPreferredAgent)
