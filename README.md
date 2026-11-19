@@ -93,7 +93,7 @@ gained and lost.
 <td width="55%" align="center">
 <a href="Screenshots/screenshot-git-light.png"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-git-dark.png">
-  <img src="Screenshots/small/screenshot-git-light.png" width="300" alt="The Git panel under Branch, listing changed files with their line counts">
+  <img src="Screenshots/small/screenshot-git-light.png" width="280" alt="The Git panel under Branch, listing changed files with their line counts">
 </picture></a>
 </td>
 </tr>
@@ -128,6 +128,20 @@ later edits.
 </tr>
 <tr>
 <td width="45%" valign="middle">
+<h3>Every change in one scroll</h3>
+All changes shows each file the branch touched as one list of diffs, in the
+Changes list's order. Step, find and comment across files as in a file tab, and
+collapse any file you have already read.
+</td>
+<td width="55%">
+<a href="Screenshots/screenshot-all-changes-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-all-changes-dark.png">
+  <img src="Screenshots/small/screenshot-all-changes-light.png" width="100%" alt="The All changes tab listing five files' diffs one under another: auth.js, token.js, orders.js, token.test.js and README.md">
+</picture></a>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
 <h3>Merge once the checks pass</h3>
 A row's pull request or CI mark opens its page in the side panel: each step left
 before the merge and what clears it, every check, and the failing job's log.
@@ -142,6 +156,20 @@ required checks still run.
 <a href="Screenshots/screenshot-ci-light.png"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-ci-dark.png">
   <img src="Screenshots/small/screenshot-ci-light.png" width="48%" alt="A CircleCI page for a failed run, with the failing test job's log excerpt">
+</picture></a>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Hand failures to an agent</h3>
+Failing checks, unresolved review threads and failed CI jobs each get a box.
+Send writes the ones you tick, with the end of each failure's log, to one file
+and mentions it in the prompt of the agent you pick.
+</td>
+<td width="55%" align="center">
+<a href="Screenshots/screenshot-handoff-light.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-handoff-dark.png">
+  <img src="Screenshots/small/screenshot-handoff-light.png" width="240" alt="A pull request page with its failing test check and two unresolved review comments ticked, and Send to Claude Code at the foot">
 </picture></a>
 </td>
 </tr>
@@ -171,6 +199,16 @@ been in that state.
   <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-board-dark.png">
   <img src="Screenshots/small/screenshot-board-light.png" width="100%" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
 </picture></a>
+</td>
+</tr>
+<tr>
+<td width="45%" valign="middle">
+<h3>Your keys, not ours</h3>
+Settings > Shortcuts lists every menu command beside its default. Click one and
+press the keys you want; a clash with another command asks before it takes them.
+</td>
+<td width="55%" align="center">
+<a href="Screenshots/screenshot-shortcuts.png"><img src="Screenshots/small/screenshot-shortcuts.png" width="100%" alt="Settings > Shortcuts on its Terminal page, Split Right changed from Command-D to Command-Backslash with a button to put it back"></a>
 </td>
 </tr>
 </table>
@@ -213,6 +251,8 @@ been in that state.
   page for it.
 - **Merge from the pull request page**, with GitHub's own commit message to edit
   first, or turn auto-merge on while required checks still run.
+- **Send failures to an agent**: failing checks, review threads and failed CI
+  jobs, from either page.
 - **Settings > (a project) > Integrations** shows each tool's version and login,
   and turns either off per project.
 
@@ -226,7 +266,9 @@ been in that state.
 - **Syntax highlighting follows embedded code**, such as a Svelte file's scripts
   and styles or a Markdown fence in the language it names.
 - **Arrows in a file tab** step from one change to the next.
+- **All changes** shows the whole diff as one tab.
 - **Review comments** on a diff's lines go to an agent all at once.
+- **Show Hidden Files** off keeps what git ignores out of the Files panel.
 - **Your shell rc files are never edited.**
 
 ### Keyboard
@@ -263,8 +305,9 @@ multishell panes wait PANE_ID --state done
 multishell state running --message "building"   # set this tab's dot from any script
 ```
 
-`multishell help` lists every command. View > Enable Debug Tools shows frame
-rate, CPU, memory and git timings.
+`multishell help` lists every command. View > Enable Debug Tools shows CPU,
+memory and disk use in the sidebar, and Debug Info breaks them down by thread,
+by kind of memory and by each git or gh run.
 
 ## Install
 
