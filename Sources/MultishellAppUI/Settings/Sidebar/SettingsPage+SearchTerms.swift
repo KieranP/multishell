@@ -42,7 +42,7 @@ extension SettingsPage {
       ]
 
     case .shortcuts:
-      [t("shortcuts.restore-defaults")] + ShortcutGroup.allCases.map(\.title)
+      [t("shortcuts.restore-defaults")]
         + ShortcutCommand.allCases.map(\.menuTitle)
 
     case .worktrees:

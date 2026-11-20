@@ -6,7 +6,7 @@ struct NoSelectionPlaceholder: View {
   let hasProjects: Bool
   let theme: Theme
   let metrics: UIMetrics
-  let addProject: () -> Void
+  let newProject: () -> Void
 
   var body: some View {
     DetailPlaceholder(
@@ -18,8 +18,8 @@ struct NoSelectionPlaceholder: View {
       PlaceholderSymbol(symbol: "arrow.trianglehead.branch", theme: theme)
     } footer: {
       if !hasProjects {
-        Button(action: addProject) {
-          Label(t("menu.add-project"), systemImage: "plus")
+        Button(action: newProject) {
+          Label(t("menu.new-project"), systemImage: "plus")
         }
         .buttonStyle(.borderedProminent)
         .padding(.top, UIMetrics.placeholderFooterGap)

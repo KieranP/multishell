@@ -16,4 +16,17 @@ struct ShortcutGroupTests {
       #expect(!ShortcutGroup.groups(in: section).isEmpty, "\(section)")
     }
   }
+
+  @Test func theEditPartDividesUndoFromThePasteboardAsItsMenuDoes() {
+    let commands = ShortcutGroup.groups(in: .shortcutsEdit).map(\.commands)
+    #expect(commands.prefix(2) == [[.undo, .redo], [.cut, .copy, .paste, .selectAll]])
+  }
+
+  @Test func onlyTheFirstCardOfEachPartHeadsIt() {
+    for section in SettingsPage.shortcuts.sections(in: .allProjects) {
+      let groups = ShortcutGroup.groups(in: section)
+      let laterCards = Array(repeating: false, count: groups.count - 1)
+      #expect(groups.map(\.headsItsPart) == [true] + laterCards, "\(section)")
+    }
+  }
 }

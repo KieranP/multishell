@@ -25,10 +25,11 @@ struct SidebarView: View {
     VStack(spacing: 0) {
       SidebarHeader(
         showsFilterField: model.showsSidebarFilter,
-        addProjectHelp: t("sidebar.add-project", model.keysInParentheses(.addProject)),
+        filterProjectsHelp: t("sidebar.filter-projects", model.keysInParentheses(.filterProjects)),
+        newProjectHelp: t("sidebar.new-project", model.keysInParentheses(.newProject)),
         theme: theme,
         toggleFilter: model.toggleSidebarFilter,
-        addProject: { Task { await model.addProjectFromPicker() } },
+        newProject: { Task { await model.addProjectFromPicker() } },
       )
       if model.showsSidebarFilter {
         SidebarFilterField(
@@ -36,6 +37,7 @@ struct SidebarView: View {
           isFiltering: model.isFilteringSidebar,
           theme: theme,
           metrics: metrics,
+          focusRequests: model.sidebarFilterFocusRequests,
           close: { model.setShowsSidebarFilter(false) },
         )
       }

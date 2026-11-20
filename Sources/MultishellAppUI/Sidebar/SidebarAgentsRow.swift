@@ -19,7 +19,7 @@ struct SidebarAgentsRow: View, @MainActor Equatable {
           isSelected ? theme.projectsPanel.text : theme.projectsPanel.textSecondary
         )
         .frame(width: metrics.sidebarGlyphColumn)
-      Text(t("label.agents"))
+      Text(t("label.agents-dashboard"))
         .font(metrics.font(size: metrics.secondary, weight: .medium))
         .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
         .lineLimit(1)

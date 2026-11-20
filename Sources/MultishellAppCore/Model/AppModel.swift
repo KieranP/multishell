@@ -9,6 +9,7 @@ import MultishellProcess
 /// see Docs/design/architecture.md.
 @Observable
 @MainActor
+// swiftlint:disable:next type_body_length
 public final class AppModel<Surface> {
   // Each property left its own: bundling the observed ones into structs
   // coarsens what `@Observable` tracks.
@@ -67,6 +68,9 @@ public final class AppModel<Surface> {
   /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false
+  /// Counted rather than flagged: the field takes the keyboard on each change,
+  /// and a field already up has no appearance to take it on.
+  public internal(set) var sidebarFilterFocusRequests = 0
   /// The quick switcher while it is up; see `toggleQuickSwitcher`.
   public internal(set) var quickSwitcher: QuickSwitcherState?
   /// Worktrees by when they were last selected, newest first, for the

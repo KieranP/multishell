@@ -14,6 +14,11 @@ extension AppModel {
     canOpenTab && tabInView != nil
   }
 
+  /// Focus Next and Previous Pane: a split tab in view.
+  public var canFocusAnotherPane: Bool {
+    (tabInView?.root.sessionIDs.count ?? 0) > 1
+  }
+
   /// Next and Previous Tab: another tab in the strip to go to.
   public var canActivateAnotherTab: Bool {
     workspaceTabInView.map { workspace.neighbour(ofTab: $0.id, .next) != nil } ?? false

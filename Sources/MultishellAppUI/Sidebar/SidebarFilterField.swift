@@ -8,6 +8,8 @@ struct SidebarFilterField: View {
   let isFiltering: Bool
   let theme: Theme
   let metrics: UIMetrics
+  /// Filter Projects asking again while the field is up.
+  let focusRequests: Int
   let close: () -> Void
 
   @FocusState private var isFocused: Bool
@@ -32,6 +34,7 @@ struct SidebarFilterField: View {
         // A turn later: focus does not take on a field the hierarchy has not
         // installed yet.
         .task { isFocused = true }
+        .onChange(of: focusRequests) { isFocused = true }
         .onExitCommand(perform: close)
       if isFiltering {
         ClearFilterButton(

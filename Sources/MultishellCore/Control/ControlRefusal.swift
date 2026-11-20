@@ -94,7 +94,7 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case projectBesideItself(id: String)
   /// The project's folder is gone, so git listed nothing.
   case projectFolderMissing(id: String)
-  /// Add Project took the path but no project holds it, and raised no alert.
+  /// New Project took the path but no project holds it, and raised no alert.
   case projectNotAdded(path: String)
   /// A project row chosen whose project has no worktree to show.
   case projectWithNoWorktree(id: String)

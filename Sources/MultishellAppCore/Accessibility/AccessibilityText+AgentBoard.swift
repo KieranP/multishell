@@ -26,10 +26,10 @@ extension AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
-  /// The sidebar's Agents entry, which carries the counts.
+  /// The sidebar's Agents Dashboard entry, which carries the counts.
   public static func agentsRow(_ counts: [AgentBoardLaneCount]) -> String {
     let said = counts.map { t("spoken.lane-count", $0.count, $0.lane.title(inSentence: true)) }
     let tail = said.isEmpty ? [t("spoken.nothing-running")] : said
-    return ([t("label.agents")] + tail).joined(separator: ", ")
+    return ([t("label.agents-dashboard")] + tail).joined(separator: ", ")
   }
 }

@@ -22,6 +22,13 @@ extension AppModel {
     setShowsSidebarFilter(!showsSidebarFilter)
   }
 
+  /// Filter Projects: the field up with the keyboard in it, its text kept.
+  public func filterProjects() {
+    dismissQuickSwitcher()
+    showsSidebarFilter = true
+    sidebarFilterFocusRequests += 1
+  }
+
   func sidebarEntries(
     filteredBy text: String,
     collapsing collapsed: Set<Project.ID>,

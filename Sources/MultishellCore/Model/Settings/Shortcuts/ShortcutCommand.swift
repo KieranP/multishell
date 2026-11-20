@@ -1,7 +1,6 @@
 /// A menu command whose keys the user may change unless `isFixed`; `ShortcutGroup`
 /// holds the menus' order. The raw value is the state file's key, so it never changes.
 public enum ShortcutCommand: String, CaseIterable, Sendable {
-  case addProject = "add-project"
   case changesPane = "changes-pane"
   case closeFind = "close-find"
   case closePane = "close-pane"
@@ -9,13 +8,17 @@ public enum ShortcutCommand: String, CaseIterable, Sendable {
   case copy
   case cut
   case filesPane = "files-pane"
+  case filterProjects = "filter-projects"
   case find
   case findNext = "find-next"
   case findPrevious = "find-previous"
   case focusNextGroup = "focus-next-group"
+  case focusNextPane = "focus-next-pane"
   case focusPreviousGroup = "focus-previous-group"
+  case focusPreviousPane = "focus-previous-pane"
   case moveTabToNewGroup = "move-tab-to-new-group"
   case newAgentTab = "new-agent-tab"
+  case newProject = "add-project"
   case newShellTab = "new-shell-tab"
   case newTab = "new-tab"
   case newWorktree = "new-worktree"
@@ -54,7 +57,7 @@ public enum ShortcutCommand: String, CaseIterable, Sendable {
     case .newShellTab: .command("t", .shift)
     case .newAgentTab: .command("t", .option)
     case .newWorktree: .command("n")
-    case .addProject: .command("o")
+    case .newProject: .command("o")
     case .openInEditor: .command("o", .shift)
     case .closePane: .command("w")
     case .closeTab: .command("w", .shift)
@@ -77,6 +80,7 @@ public enum ShortcutCommand: String, CaseIterable, Sendable {
 
     case .quickSwitcher: .command("p")
     case .quickSwitcherCommands: .command("p", .shift)
+    case .filterProjects: .command("p", .option)
 
     // Cmd+Shift+F is Ghostty's end-search key, which would end a search under a bar of ours.
     case .filesPane: .command("f", .shift)
@@ -85,6 +89,11 @@ public enum ShortcutCommand: String, CaseIterable, Sendable {
     case .reviewPane: .command("r", .shift)
     case .splitRight: .command("d")
     case .splitDown: .command("d", .shift)
+
+    // Ghostty's own pane keys, and iTerm's.
+    case .focusNextPane: .command("]")
+
+    case .focusPreviousPane: .command("[")
 
     // Not Cmd+Option+D, the system's Dock hiding, which a menu bar never sees.
     case .moveTabToNewGroup: .command("g", .option)

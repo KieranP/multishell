@@ -13,4 +13,12 @@ struct ArrayNeighbourTests {
     #expect(items.neighbour(of: 9, .next) == nil)
     #expect([Item(id: 1)].neighbour(of: 1, .next) == nil)
   }
+
+  @Test func aNeighbourOfAPlainValueWrapsAsAnIdentifiedOneDoes() {
+    let values = ["a", "b", "c"]
+    #expect(values.neighbour(ofValue: "c", .next) == "a")
+    #expect(values.neighbour(ofValue: "a", .previous) == "c")
+    #expect(values.neighbour(ofValue: "z", .next) == nil)
+    #expect(["a"].neighbour(ofValue: "a", .next) == nil)
+  }
 }

@@ -57,4 +57,31 @@ struct AppModelSidebarFilterTests {
     #expect(harness.model.showsSidebarFilter)
     #expect(harness.engine.focused.isEmpty)
   }
+
+  @Test func filteringProjectsOpensTheFieldAndAsksForTheKeyboardEachTime() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+
+    harness.model.filterProjects()
+    #expect(harness.model.showsSidebarFilter)
+    #expect(harness.model.sidebarFilterFocusRequests == 1)
+
+    harness.model.sidebarFilterText = "side"
+    harness.model.filterProjects()
+
+    #expect(harness.model.showsSidebarFilter, "a field already up stays up")
+    #expect(harness.model.sidebarFilterText == "side")
+    #expect(harness.model.sidebarFilterFocusRequests == 2)
+  }
+
+  @Test func filteringProjectsClosesTheQuickSwitcher() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.toggleQuickSwitcher(.all)
+    #expect(harness.model.quickSwitcher != nil)
+
+    harness.model.filterProjects()
+
+    #expect(harness.model.quickSwitcher == nil)
+  }
 }

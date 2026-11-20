@@ -11,7 +11,7 @@ the bottom.
 - **Global only.** A project has no Shortcuts page; keys are the app's, not a
   repository's.
 - **Four parts, File, Edit, View and Terminal, each card a run of a menu's items
-  between two dividers**, so the cards read as the menus do. 31 rows at 36 pt do
+  between two dividers**, so the cards read as the menus do. 34 rows at 36 pt do
   not fit the 608 pt window, and a page is split rather than scrolled
   (settings.md).
 - **One table of defaults, `ShortcutCommand` in Core.** The menus, the engine's
@@ -125,7 +125,29 @@ the bottom.
 - **The recorder takes keys typed in its own window only**; a key in another
   window ends recording and goes through, or a Delete in a pane cleared the
   command.
+- **Focus Next and Previous Pane are ⌘] and ⌘[**, Ghostty's own `goto_split`
+  keys and iTerm's, so they take the keys a pane already had for this. They walk
+  the tab's panes in reading order and wrap, as the group pair does; a direction
+  per arrow would take ⌘⌥← and ⌘⌥→ from the groups.
+- **Filter Projects is ⌥⌘P**, P for projects beside the switcher's ⌘P; ⌥⌘F is
+  Close Find. It opens the sidebar's field or, already open, takes the keyboard
+  back to it, keeping the text. The Files panel has no such command: the quick
+  switcher reaches its files.
+- **The menus' groups are the owner's, set on 2026-11-20**: File is New Project
+  and New Worktree, the three new tabs, Open in Editor, then the closes; View is
+  Agents Dashboard, the Files panel, the quick switcher and Filter Projects,
+  then Theme, moved from Terminal; Terminal is the splits, pane focus, tabs,
+  then Move Tab to New Group with group focus. Add Project became New Project,
+  its state file key staying `add-project`. The board is the Agents Dashboard.
+- **Only a part's first card has a heading row**, Default and Yours over the
+  columns the cards below share, as their widths are fixed. Four Terminal cards
+  each with a heading needed 563 pt of a 558 pt column. The row has no title,
+  the sidebar naming the part, and so no (i) on Edit's keys; the owner's call on
+  2026-11-20.
 - **Reviewed and left as is**:
+  - Filter Projects stays ⌥⌘P, the owner's call on 2026-11-20, though ⌥⌘F is the
+    Mac's "go to the search field" and ⌥⌘J Xcode's Filter in Navigator. ⌥⌘F
+    would mean moving Close Find off it.
   - ` (⌘T)` is formatted in both halves, `keysInParentheses` in AppUI and
     `TabStripButtonText.splitHelp` in AppCore, each from its own catalogue: a
     view never reads the libraries' words (translation.md).

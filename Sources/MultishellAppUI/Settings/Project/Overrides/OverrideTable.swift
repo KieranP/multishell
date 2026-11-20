@@ -4,15 +4,13 @@ import SwiftUI
 /// commands beside their default keys, under a heading naming the columns.
 struct OverrideTable<Rows: View>: View {
   let title: String
-  /// Help behind an (i) beside the title, `nil` for none.
-  let info: String?
   let columnTitles: (global: String, override: String)
   @ViewBuilder let rows: () -> Rows
 
   var body: some View {
     SettingsGroup {
       OverrideColumns {
-        if let info { InfoLabel(sectionHeader: title, info: info) } else { Text(title) }
+        Text(title)
       } global: {
         Text(columnTitles.global)
       } override: {
@@ -27,14 +25,12 @@ struct OverrideTable<Rows: View>: View {
 
   init(
     _ title: String = "",
-    info: String? = nil,
     columnTitles: (global: String, override: String) = (
       t("project.column-global"), t("project.column-override"),
     ),
     @ViewBuilder rows: @escaping () -> Rows,
   ) {
     self.title = title
-    self.info = info
     self.columnTitles = columnTitles
     self.rows = rows
   }

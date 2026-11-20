@@ -18,6 +18,8 @@ enum MenuCommandAvailability {
     (.closeTab, \.hasTabToClose),
     (.splitRight, \.canSplitPane),
     (.splitDown, \.canSplitPane),
+    (.focusNextPane, \.canFocusAnotherPane),
+    (.focusPreviousPane, \.canFocusAnotherPane),
     (.moveTabToNewGroup, \.canMoveActiveTabToNewGroup),
     (.focusNextGroup, \.canFocusAnotherGroup),
     (.focusPreviousGroup, \.canFocusAnotherGroup),

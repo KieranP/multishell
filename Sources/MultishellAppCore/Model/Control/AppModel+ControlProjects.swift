@@ -19,7 +19,7 @@ extension AppModel {
   }
 
   /// A project by its path, or by any directory in one of its worktrees: what
-  /// Add Project was given, which may have been a subfolder.
+  /// New Project was given, which may have been a subfolder.
   private func project(atPath path: String) -> Project? {
     workspace.project(URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path)
       ?? worktree(atPath: path).flatMap { workspace.project($0.projectID) }
@@ -36,7 +36,7 @@ extension AppModel {
     }
   }
 
-  /// Add Project's, a subfolder or a linked worktree adding its repository.
+  /// New Project's, a subfolder or a linked worktree adding its repository.
   func replyToAddProject(at path: String) async -> ControlReply {
     await addProject(at: URL(fileURLWithPath: path, isDirectory: true))
     guard let project = project(atPath: path) else {

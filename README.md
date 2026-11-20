@@ -46,8 +46,9 @@ working, waiting on you, or done.
 - **A worktree per task.** Each agent gets its own branch, checkout, ports and
   environment files, so two of them never share a checkout or bind the same
   port.
-- **You see who needs you.** Dots on every tab and row, an Agents board, a Dock
-  badge and notifications. ⌘P opens on the agents waiting on you, longest first.
+- **You see who needs you.** Dots on every tab and row, an Agents Dashboard, a
+  Dock badge and notifications. ⌘P opens on the agents waiting on you, longest
+  first.
 - **Native and local.** Swift, SwiftUI and AppKit, not Electron. No account and
   no telemetry. The app makes no network calls of its own, and agents use your
   own logins.
@@ -197,7 +198,7 @@ been in that state.
 <td width="55%">
 <a href="Screenshots/screenshot-board-light.png"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="Screenshots/small/screenshot-board-dark.png">
-  <img src="Screenshots/small/screenshot-board-light.png" width="100%" alt="The Agents board: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
+  <img src="Screenshots/small/screenshot-board-light.png" width="100%" alt="The Agents Dashboard: columns for waiting, working, done and idle, each card naming its project, worktree, lines changed and how long it has been in that state">
 </picture></a>
 </td>
 </tr>
@@ -218,8 +219,8 @@ press the keys you want; a clash with another command asks before it takes them.
 - **The agent you already use.** Claude Code, Codex, Gemini CLI, Antigravity
   CLI, Copilot CLI and OpenCode, each marked on its tab, or any command you
   name.
-- **An Agents board** of every running agent, with a chip counting the subagents
-  and background shells each has out.
+- **An Agents Dashboard** of every running agent, with a chip counting the
+  subagents and background shells each has out.
 - **A Dock badge** for the agents waiting on you, and **notifications** for tabs
   you are not looking at, toggled per state.
 - **Your preferred agent** one shortcut away, with its flags set globally or per
@@ -273,19 +274,21 @@ press the keys you want; a clash with another command asks before it takes them.
 
 ### Keyboard
 
-| Keys | Action                                                         |
-| ---- | -------------------------------------------------------------- |
-| ⌘P   | Go to any agent, worktree, tab, project or file, waiting first |
-| ⇧⌘P  | Run any menu command                                           |
-| ⌘N   | New worktree                                                   |
-| ⌥⌘T  | New tab with your preferred agent                              |
-| ⇧⌘T  | New shell tab                                                  |
-| ⌘D   | Split right                                                    |
-| ⇧⌘D  | Split down                                                     |
-| ⌥⌘G  | Move the tab to a new group                                    |
-| ⇧⌘A  | Agents board                                                   |
-| ⌘F   | Find in the pane or file                                       |
-| ⇧⌘O  | Open the worktree in your editor                               |
+| Keys  | Action                                                         |
+| ----- | -------------------------------------------------------------- |
+| ⌘P    | Go to any agent, worktree, tab, project or file, waiting first |
+| ⇧⌘P   | Run any menu command                                           |
+| ⌘N    | New worktree                                                   |
+| ⌥⌘T   | New tab with your preferred agent                              |
+| ⇧⌘T   | New shell tab                                                  |
+| ⌘D    | Split right                                                    |
+| ⇧⌘D   | Split down                                                     |
+| ⌘] ⌘[ | Next or previous pane in the tab                               |
+| ⌥⌘G   | Move the tab to a new group                                    |
+| ⇧⌘A   | Agents Dashboard                                               |
+| ⌥⌘P   | Filter the sidebar's projects                                  |
+| ⌘F    | Find in the pane or file                                       |
+| ⇧⌘O   | Open the worktree in your editor                               |
 
 These are the defaults. Settings > Shortcuts changes any command's keys or
 removes them, and

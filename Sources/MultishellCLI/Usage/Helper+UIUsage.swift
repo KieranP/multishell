@@ -3,7 +3,7 @@ extension Helper {
     usage: multishell ui show board|all-terminals
     usage: multishell ui show settings [--page PAGE]
     usage: multishell ui show project-settings [PROJECT_ID] [--page PAGE]
-        Open what the menu item or click opens: the Agents board, its Show
+        Open what the menu item or click opens: the Agents Dashboard, its Show
         all terminals, or the Settings window on All Projects or on a
         project, turned to PAGE as its sidebar's row would. All Projects
         has general, worktrees, terminal, agent-settings, agent-hooks,

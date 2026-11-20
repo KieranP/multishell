@@ -62,9 +62,9 @@ struct AccessibilityTextAgentBoardTests {
       AccessibilityText.agentsRow([
         AgentBoardLaneCount(.waiting, 2), AgentBoardLaneCount(.working, 3),
       ])
-        == "Agents, 2 waiting for you, 3 working"
+        == "Agents Dashboard, 2 waiting for you, 3 working"
     )
-    #expect(AccessibilityText.agentsRow([]) == "Agents, nothing running")
+    #expect(AccessibilityText.agentsRow([]) == "Agents Dashboard, nothing running")
   }
 
   @Test func aTabRowAndACardSayHowManyWorkersAreOutAndTheChipSaysWhich() {

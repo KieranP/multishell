@@ -1,11 +1,11 @@
 /* Every word the libraries show, sorted by key and read through
    `t("the.key")`; see Docs/design/translation.md. */
 
-"action.add-project" = "Add Project";
 "action.cancel-auto-merge" = "Cancel Auto-Merge";
 "action.create-pull-request" = "Create Pull Request…";
 "action.merge" = "Merge…";
 "action.merge-when-ready" = "Merge When Ready…";
+"action.new-project" = "New Project";
 "action.open-pull-request" = "Open Pull Request #%@";
 "agent-hooks.codex-trust" = "Run /hooks in Codex once to trust Multishell's.";
 "agent-hooks.installed-in" = "Installed in %@";
@@ -371,7 +371,7 @@
 "kind.linked-in-sentence" = "linked worktree";
 "kind.main" = "Main worktree";
 "kind.main-in-sentence" = "main worktree";
-"label.agents" = "Agents";
+"label.agents-dashboard" = "Agents Dashboard";
 "lane.done" = "Done";
 "lane.done-in-sentence" = "done";
 "lane.idle" = "Idle";

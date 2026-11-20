@@ -36,7 +36,8 @@ struct GhosttyUnbindsTests {
         "super+period", "super+ctrl+shift+3", "super+ctrl+shift+digit_3", "super+ctrl+shift+4",
         "super+ctrl+shift+digit_4", "super+alt+m", "super+alt+key_m", "super+f5", "super+alt+f5",
         "super+ctrl+d",
-        "super+ctrl+key_d", "escape",
+        "super+ctrl+key_d", "super+]", "super+bracket_right", "super+[", "super+bracket_left",
+        "super+alt+p", "super+alt+key_p", "escape",
       ]
     )
   }

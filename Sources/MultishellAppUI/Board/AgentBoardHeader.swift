@@ -12,7 +12,7 @@ struct AgentBoardHeader: View {
 
   var body: some View {
     PanelHeader(
-      title: t("label.agents"),
+      title: t("label.agents-dashboard"),
       summary: board.summary,
       summaryColor: theme.header.textTertiary,
       theme: theme,

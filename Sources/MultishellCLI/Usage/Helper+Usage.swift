@@ -37,7 +37,7 @@ extension Helper {
       pr send                    Send the pull request page's checked items to
                                  an agent
       ci send                    Send the CI page's checked failures to an agent
-      board list                 The Agents board's columns and cards
+      board list                 The Agents Dashboard's columns and cards
       sidebar list               The sidebar's rows as drawn
       ui show|hide|filter|dismiss|menu|switcher
                                  The board, settings, filter, dialogs, menus,
