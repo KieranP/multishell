@@ -1,10 +1,11 @@
 /// What Copy puts on the pasteboard: from a unified file tab, a selection
-/// touching a change as `git diff` prints it; see Docs/design/files/file-tabs.md.
+/// holding removed and added lines as `git diff` prints it; see Docs/design/files/file-tabs.md.
 extension DiffDisplayText {
   /// `selections` are UTF-16 ranges into `string`, as the view holds it.
   public func diffCopy(selections: [Range<Int>]) -> String {
     let touched = selections.map(rows(touching:))
-    guard touched.joined().contains(where: { lines[$0].isChange }) else {
+    let kinds = Set(touched.joined().map { lines[$0].kind })
+    guard kinds.contains(.added), kinds.contains(.removed) else {
       return selections.map(uncutText(in:)).joined(separator: "\n")
     }
     return touched.joined().filter { lines[$0].kind != .padding }.map { index in

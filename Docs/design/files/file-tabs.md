@@ -106,8 +106,10 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
 - **The file view clips to its frame.** Views no longer clip by default, and
   TextKit 2 asks for a background over more than the view shows: unclipped, it
   painted over the header, the tab strip and the bar.
-- **A selection touching a change copies as `git diff` prints it**; a split side
-  copies plain text.
+- **A selection holding removed and added lines copies as `git diff` prints
+  it**, whole lines with their marks (owner, 2026-11-20). Any other selection,
+  one changed line or one side with its context, copies as selected, as does a
+  split side.
 - **Find is the app's own floating bar**, appearance/window-chrome.md having
   ruled out a find strip; a file tab is searched in the model, the engine
   searching only panes.
