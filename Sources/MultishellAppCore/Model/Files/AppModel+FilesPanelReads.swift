@@ -68,9 +68,8 @@ extension AppModel {
     fileTreeChanges = fileTreeChanges.filter { !isForgotten($0.key) }
   }
 
-  /// Read on git changes, never because a count moved; one at a time per worktree,
-  /// one asked for meanwhile running after it, the index maybe past what it read.
-  /// With `withIgnoredEntries`, what git ignores lands with it, so one listing is built.
+  /// Read on git changes, never on a count moving; one at a time per worktree, one asked
+  /// meanwhile running after it. `withIgnoredEntries` brings what git ignores, for one listing.
   func scheduleTrackedFilesRead(of id: Worktree.ID, withIgnoredEntries readsIgnored: Bool = false) {
     guard pendingTrackedFilesReads[id] == nil else {
       trackedFilesReadsAskedAgain.insert(id)
@@ -166,8 +165,9 @@ extension AppModel {
       in: id,
       on: \.panelFolderReads,
       reading: { () -> SubmoduleReading? in
-        guard await git.isRepositoryTop(directory) else { return SubmoduleReading.uninitialised }
-        // A list or status git could not read is no answer, and keeps the last reading.
+        // A read git could not make is no answer, and keeps the last reading.
+        guard let isTop = await git.isRepositoryTop(directory) else { return nil }
+        guard isTop else { return SubmoduleReading.uninitialised }
         guard let tracked = await git.trackedFiles(in: directory),
           let status = try? await git.status(
             inRepositoryAt: directory,

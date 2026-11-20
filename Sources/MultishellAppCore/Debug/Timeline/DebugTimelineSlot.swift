@@ -41,6 +41,7 @@ public struct DebugTimelineSlot: Sendable, Equatable {
   }
   /// Never below zero: Ghostty's figure for a terminal is an estimate.
   var appMemoryOutsideTerminals: UInt64 { appMemory.subtractingFlooredAtZero(terminalMemory) }
+  var terminalMemoryWithinApp: UInt64 { appMemory - appMemoryOutsideTerminals }
 
   /// `samples` is never empty: a slot no sample landed in is not made.
   init(samples: [DebugSample]) {

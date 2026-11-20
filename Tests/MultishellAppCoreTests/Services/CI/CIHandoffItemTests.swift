@@ -33,7 +33,12 @@ struct CIHandoffItemTests {
     #expect(items.map(\.excerpt) == ["Expectation failed", nil])
     #expect(
       items.first?.candidate.id
-        == .ciJob(runID: "r1", position: CIJobPosition(workflow: 0, job: 1), jobID: "12")
+        == .ciJob(
+          runID: "r1",
+          position: CIJobPosition(workflow: 0, job: 1),
+          jobID: "12",
+          isReportRead: true,
+        )
     )
   }
 

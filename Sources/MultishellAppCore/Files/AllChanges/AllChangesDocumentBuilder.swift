@@ -21,7 +21,7 @@ struct AllChangesDocumentBuilder {
   /// unchanged run too short to fold.
   private static func keptRows(of lines: [DiffLine], heldOpen: [AllChangesLineSpan]) -> [Bool] {
     var kept = [Bool](repeating: false, count: lines.count)
-    let held = AllChangesHeldLines(heldOpen)
+    let held = AllChangesHeldLines(heldOpen, within: lines)
     for (row, line) in lines.enumerated() {
       if line.kind != .context {
         let first = max(0, row - AllChangesDocument.contextLines)

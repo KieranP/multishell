@@ -41,6 +41,7 @@ enum FileTabReader {
     switch onDisk {
     case .bytes(let bytes): data = bytes
     case .gone: data = nil
+    case .unreadable: return lastReadingOrUnreadable(previous, isFileGone: false)
 
     case .tooLarge(let bytes):
       return FileTabReading(content: .tooLarge(bytes: bytes), isFileGone: false)

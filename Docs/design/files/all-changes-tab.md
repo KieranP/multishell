@@ -94,12 +94,19 @@ bottom.
   scroll back parses nothing again; parsing every file of a large worktree on
   each read held a core for tens of seconds.
 - **The bar's step buttons go across files**: every change of every file is a
-  stop, ordered by where it starts in the list.
+  stop, ordered by where it starts in the list. A step counts from the boxed
+  change while it is in view and from the clip's top otherwise, as a file tab
+  counts from its caret: a box left behind by a scroll sent the next step back
+  to it.
+- **A switch between Unified and Split keeps the line at the top**, as a file
+  tab does: the offset into the file it kept before landed later files at the
+  top, a Split file being shorter.
 - **A selection stays within one file**, each file being its own text. Copy
   across files was not wanted (owner).
 - **Find searches the rows shown**: folded and collapsed lines are not searched,
   the file tab having them all. In Split it searches the right side, the file on
-  disk, so a deleted file is not searched.
+  disk, so a deleted file is not searched. A match running on into the next file
+  is dropped: selecting it overran the first file's text view.
 - **The scroll is saved by the file at the top and its line there**, so files
   coming or going above, or folds opening, return to the same line. It is put
   back by the built file's own row geometry, folds included; by row height alone
@@ -115,6 +122,8 @@ bottom.
   comment on them, open the fold first.
 - **A comment holds its lines and two either side open inside a fold**, as the
   owner picked; a comment's lines are always on screen to place its card under.
+  Lines past the file's end hold its last line, where the card sits; held as
+  given, they held no row and the card was lost.
 - **A comment picked in Review is revealed here where a group shows it**,
   following the mockup rather than an explicit pick. A comment on a file still
   unread scrolls to that file and shows once it is read; taken at once, the

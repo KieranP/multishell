@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 extension WorktreeGit {
   /// The retry leaves out every atom a git could refuse as unknown, and
@@ -40,9 +41,21 @@ extension WorktreeGit {
     return (refs.filter(\.isLocal).map(\.shortName), refs.filter(\.isRemote).map(\.shortName))
   }
 
+  /// HEAD's branch abbreviated as git can resolve it, `heads/main` beside a tag `main`.
   public func currentBranch(_ project: Project) async throws -> String {
     try await runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: project.path)
       .trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  /// HEAD's branch as a full refname, `refs/heads/main`; `nil` only for the
+  /// detached HEAD `-q`'s exit 1 says, and a throw where git failed.
+  func headRef(_ project: Project) async throws -> String? {
+    do {
+      return try await runner.run(["symbolic-ref", "-q", "HEAD"], in: project.path)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    } catch let failure as ProcessFailure where failure.status == 1 && failure.stopReason == nil {
+      return nil
+    }
   }
 
   /// The local branch leaving no room for a new `branch`: the same name, or one git

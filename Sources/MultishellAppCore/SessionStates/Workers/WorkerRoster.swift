@@ -15,6 +15,9 @@ struct WorkerRoster: Equatable, Sendable {
   /// Workers past the roster limit by id, all under the one overflow place,
   /// so a tool call is told from a new worker and a stray end from their own.
   var overflowed: [String: Int] = [:]
+  /// Overflowed workers a launch or list named before their start, which is
+  /// then theirs rather than a second worker's, as `Worker.awaitsStart` is.
+  var overflowedAwaitingStart: Set<String> = []
   /// Workers taken off, newest last, so a child whose parent is named only
   /// after that parent ended is still drawn under it.
   var retired: [Worker] = []
@@ -86,7 +89,9 @@ struct WorkerRoster: Equatable, Sendable {
         bringBackRetiredParents(of: id)
         return place
       }
-      if report.phase == .started { _ = addToOverflow(id) }
+      if report.phase == .started, overflowedAwaitingStart.remove(id) == nil {
+        _ = addToOverflow(id)
+      }
       if let overflow = overflowIndex { workers[overflow].wasHeardSinceStop = true }
       return overflowPlace
     }
@@ -193,6 +198,7 @@ struct WorkerRoster: Equatable, Sendable {
       return Place(id: worker.id)
     }
     guard worker.pid == nil, addToOverflow(worker.id) else { return Place(id: worker.id) }
+    if worker.awaitsStart { overflowedAwaitingStart.insert(worker.id) }
     return overflowPlace
   }
 

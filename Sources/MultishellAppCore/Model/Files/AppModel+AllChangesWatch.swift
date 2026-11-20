@@ -26,11 +26,23 @@ extension AppModel {
         let touched = changed.isEmpty ? [] : reading.filesTouched(by: changed)
         if !touched.isEmpty { checkAllChangesSignatures(of: touched, in: tab, at: worktree.path) }
       }
+      if !changed.isEmpty, allChangesReadLog.isReading(tab.id) {
+        noteChangesDuringRead(changed, in: tab)
+      }
       // Its window in the background, only the panel's worktree has its status read.
       if !platform.isActive, isTabShown(tab.id), targets.mayHaveChangedStatus(of: worktree) {
         scheduleStatusRefresh(of: worktree.id)
       }
     }
+  }
+
+  /// A read under way may have read a file before this change, which the
+  /// reading it replaces held unread or stale and so would not check.
+  private func noteChangesDuringRead(_ changed: [String], in tab: AllChangesTab) {
+    guard let list = allChangesList(of: tab.worktreeID) else { return }
+    let isTouched = AllChangesReading.isTouched(by: changed)
+    let touched = Set(list.map(\.path).filter(isTouched))
+    if !touched.isEmpty { noteAllChangesTabChanged(tab.id, staleness: .paths(touched)) }
   }
 
   /// Off the main actor, a dead mount being able to hold an `lstat`.

@@ -43,11 +43,7 @@ extension WorktreeCoordinator {
         onStep: onStep,
       )
     }
-    // A bare clone's HEAD names a branch no checkout holds, and `branch -d` measures
-    // merged against HEAD, so it would take that branch and its unpushed commits.
-    if deletesBranch, let branch = worktree.branch,
-      (try? await git.currentBranch(project)) != branch
-    {
+    if deletesBranch, let branch = worktree.branch, await mayDeleteBranch(branch, in: project) {
       onStep?(.deletingBranch)
       if forcesBranchDeletion {
         try await deleteBranch(branch, in: project, force: true)
@@ -55,6 +51,16 @@ extension WorktreeCoordinator {
         // The tip is read once the checkout is gone, so no commit can land after it.
         try await deleteBranch(branch, in: project, forcingAtTip: forcedTip)
       }
+    }
+  }
+
+  /// A bare clone's HEAD names a branch no checkout holds, and `branch -d` measures
+  /// merged against HEAD, so it would take that branch; a failed read keeps it too.
+  private func mayDeleteBranch(_ branch: String, in project: Project) async -> Bool {
+    do {
+      return try await git.headRef(project) != RefName.local(branch)
+    } catch {
+      return false
     }
   }
 
@@ -70,6 +76,9 @@ extension WorktreeCoordinator {
     onStep: (@Sendable (WorktreeRemovalStep) -> Void)?,
   ) async throws {
     let path = worktree.path
+    if directoryExists, let work = try await git.workHeld(by: worktree, in: project) {
+      throw WorktreeHoldsOtherWork(path: path, work: work)
+    }
     let branchOrHead = worktree.branch ?? worktree.head
     try await WorktreeHooks.run(
       .preDelete,

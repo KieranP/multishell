@@ -44,6 +44,6 @@ struct WorktreeGitTests {
     try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
     _ = try await fixture.runner.run(["init", "-q"], in: nested)
 
-    #expect(await fixture.git.isRepositoryTop(nested))
+    #expect(await fixture.git.isRepositoryTop(nested) == true)
   }
 }

@@ -199,6 +199,9 @@
 "error.forget-refused" = "Worktree directory gone, but git still lists it";
 "error.git-not-found-message" = "Multishell runs git from your PATH and could not find it.";
 "error.git-not-found-title" = "git not found";
+"error.holds-other-work-title" = "Worktree not removed: it holds other work";
+"error.holds-submodules-message" = "%@ holds initialised submodules. Their repositories, and any commits not pushed from them, would go with it, so git refuses this too. Push their work, then run git submodule deinit --all in the worktree.";
+"error.holds-worktree-message" = "%1$@ holds the worktree %2$@, which would go with it. Remove that worktree first, or move it elsewhere with git worktree move.";
 "error.hook-did-not-finish" = "did not finish";
 "error.hook-failed" = "failed";
 "error.hook-was-stopped" = "was stopped";

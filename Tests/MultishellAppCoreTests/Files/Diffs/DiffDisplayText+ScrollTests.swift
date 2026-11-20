@@ -76,4 +76,14 @@ struct DiffDisplayTextScrollTests {
 
     #expect(deleted.row(of: scroll) == 50)
   }
+
+  @Test func aSavedScrollFarPastTheEndPutsBackTheLastRow() {
+    let unified = Self.rows.displayText
+    let lastRow = Double(unified.lines.count - 1)
+
+    for line in [0, 41] {
+      let scroll = FileTabScroll(line: line, isCommittedLine: false, rowsFromLine: 1e300, x: 0)
+      #expect(unified.row(of: scroll) == lastRow)
+    }
+  }
 }

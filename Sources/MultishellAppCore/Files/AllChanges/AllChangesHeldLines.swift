@@ -6,9 +6,23 @@ struct AllChangesHeldLines {
   private let committed: [ClosedRange<Int>]
   private let onDisk: [ClosedRange<Int>]
 
-  init(_ spans: [AllChangesLineSpan]) {
-    committed = Self.merged(spans.filter { $0.side == .committed }.map(\.lines))
-    onDisk = Self.merged(spans.filter { $0.side == .onDisk }.map(\.lines))
+  /// A span past a side's last line in `lines` holds that line instead, where
+  /// `ReviewCardPlacement` puts a card whose lines the file no longer reaches.
+  init(_ spans: [AllChangesLineSpan], within lines: [DiffLine]) {
+    committed = Self.merged(Self.clamped(spans, on: .committed, within: lines))
+    onDisk = Self.merged(Self.clamped(spans, on: .onDisk, within: lines))
+  }
+
+  private static func clamped(
+    _ spans: [AllChangesLineSpan],
+    on side: DiffSide,
+    within lines: [DiffLine],
+  ) -> [ClosedRange<Int>] {
+    let ranges = spans.filter { $0.side == side }.map(\.lines)
+    guard let last = lines.last(where: { $0.number(on: side) != nil })?.number(on: side) else {
+      return ranges
+    }
+    return ranges.map { min($0.lowerBound, last)...min($0.upperBound, last) }
   }
 
   private static func number(_ number: Int?, isIn ranges: [ClosedRange<Int>]) -> Bool {

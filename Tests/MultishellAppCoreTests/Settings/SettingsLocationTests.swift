@@ -48,18 +48,29 @@ struct SettingsLocationTests {
     #expect(!terminalPart.showsParts(of: .agents))
   }
 
-  @Test func theArrowsStepThroughPagesAndPartsAndStopAtEitherEnd() {
+  @Test func theArrowsStepThroughTheRowsListedAndStopAtEitherEnd() {
     let general = SettingsLocation(scope: .allProjects, section: .general)
     let pages = SettingsPage.pages(in: .allProjects)
     #expect(general.stepped(by: -1, among: pages) == general)
     #expect(general.stepped(by: 3, among: pages).section == .agentSettings)
-    #expect(general.stepped(by: 4, among: pages).section == .agentHooks)
-    #expect(general.stepped(by: 99, among: pages).section == .shortcutsTerminal)
+    #expect(general.stepped(by: 4, among: pages).section == .notifications)
+    #expect(general.stepped(by: 99, among: pages).section == .shortcutsFile)
+
+    let agentSettings = SettingsLocation(scope: .allProjects, section: .agentSettings)
+    #expect(agentSettings.stepped(by: 1, among: pages).section == .agentHooks)
+  }
+
+  @Test func anArrowOntoASplitPageWhosePartsAreHiddenOpensItsFirstPart() {
+    let notifications = SettingsLocation(scope: .allProjects, section: .notifications)
+    #expect(
+      notifications.stepped(by: -1, among: SettingsPage.pages(in: .allProjects)).section
+        == .agentSettings
+    )
 
     let terminal = SettingsLocation(scope: Self.project, section: .terminal)
     #expect(
       terminal.stepped(by: -1, among: SettingsPage.pages(in: Self.project)).section
-        == .hooksEnvironment
+        == .hooksCreate
     )
   }
 

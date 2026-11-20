@@ -81,3 +81,6 @@ were settled without a change, each with why. A review reads this first.
 - **Find kept in step by each change to the layout** (review round 19): a rerun
   inside `allChangesDocument(of:)` would search from a getter; the four callers
   share `relayingOutAllChanges` or pass the old layout themselves.
+- **A click off the boxed change keeps the box** (bug hunt, 2026-11-20): a test
+  clicking below it found the box let go, the column's own selection handling
+  clearing it.

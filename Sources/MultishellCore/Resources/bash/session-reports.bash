@@ -188,9 +188,8 @@ _multishell_precmd() {
 # back for the user's entries ended a `set -e` shell at every prompt after a failure.
 _multishell_precmd_entry='_multishell_precmd && :'
 
-# A .bashrc sourced again puts its prepended entry before ours, which then reads
-# that entry's 0; ours goes back in front, where zsh's precmd hook goes at startup.
-# bash-preexec's entry stays first, where it reads PIPESTATUS before anything runs.
+# A .bashrc sourced again puts its entry before ours, which then reads its 0; ours goes
+# back in front, behind bash-preexec's. Why: Docs/design/terminals/shell-integration.md.
 _multishell_keep_precmd_first() {
   case "${PROMPT_COMMAND[0]-}" in
     "$_multishell_precmd_entry" | "$_multishell_precmd_entry"$'\n'* | __bp_precmd_invoke_cmd*)

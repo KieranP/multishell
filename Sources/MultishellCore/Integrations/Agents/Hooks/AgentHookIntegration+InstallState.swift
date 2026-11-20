@@ -20,7 +20,9 @@ extension AgentHookIntegration {
     }
     // Any of ours, not one under every event: an older build's file lacks the
     // events added since, and that is the update this is here to offer.
-    guard let settings = try? AgentHookFile.read(file), holdsAnyOfOurHooks(settings) else {
+    guard let settings = try? AgentHookFile.readIgnoringComments(file),
+      holdsAnyOfOurHooks(settings)
+    else {
       return .absent
     }
     return isCurrent(in: settings, helper: helper) ? .current : .stale

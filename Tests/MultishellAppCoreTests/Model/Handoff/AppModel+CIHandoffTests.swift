@@ -171,4 +171,46 @@ struct AppModelCIHandoffTests {
         == .sent(agentName: "Claude Code")
     )
   }
+
+  @Test func aJobSentBeforeItsReportComesBackUnsentOnceTheReportLands() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, agent, _) = try await harness.showingAFailedRun()
+    let report = harness.model.remoteState.failureReports["r2"]
+    harness.model.remoteState.failureReports["r2"] = nil
+    #expect(
+      harness.model.sendCIFailures(of: feat.id, to: agent.id, takingFocus: false).sentItemCount
+        == 1
+    )
+
+    harness.model.remoteState.failureReports["r2"] = report
+    harness.model.pruneHandoffChoices(of: feat, after: .ciRuns)
+
+    let item = try #require(
+      harness.model.ciHandoffItems(of: .sample(id: "r2", status: .failed)).first
+    )
+    #expect(
+      harness.model.handoffState(of: item.candidate, in: feat.id) != .sent(agentName: "Claude Code")
+    )
+  }
+
+  @Test func aSendOffThePageWaitsForTheNewestRunTheRowFoundSinceTheHistoryWasRead() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, agent, provider) = try await harness.showingAFailedRun()
+    harness.model.setFilesPanelMode(.files)
+    let tip = try await harness.tip(of: feat)
+    let newer = CIRun.sample(id: "r3", branch: "feat", commit: tip, status: .running)
+    provider.answer(recent: [newer], history: [.sample(id: "r2", commit: tip, status: .failed)])
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+    try #require(harness.model.services(of: feat).ciRun?.id == "r3")
+
+    #expect(harness.model.ciPage(of: feat) == .run(newer))
+    #expect(
+      harness.model.sendCIFailures(of: feat.id, to: agent.id, takingFocus: false).sentItemCount
+        == nil
+    )
+    #expect(harness.engine.pasted.isEmpty)
+  }
 }

@@ -45,7 +45,9 @@ public struct CIHandoffItem: Hashable, Sendable {
         }
         let position = CIJobPosition(workflow: workflowIndex, job: jobIndex)
         return Self(
-          candidate: HandoffCandidate(.ciJob(runID: run.id, position: position, jobID: job.id)),
+          candidate: HandoffCandidate(
+            .ciJob(runID: run.id, position: position, jobID: job.id, isReportRead: report != nil)
+          ),
           workflow: workflow.name,
           job: job,
           excerpt: excerpt,

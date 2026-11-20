@@ -9,15 +9,44 @@ struct AllChangesHeldLinesTests {
   }
 
   @Test func overlappingAndTouchingSpansHoldEveryLineTheyCoverOnTheirOwnSide() {
-    let held = AllChangesHeldLines([
-      AllChangesLineSpan(side: .onDisk, lines: 20...22),
-      AllChangesLineSpan(side: .onDisk, lines: 23...25),
-      AllChangesLineSpan(side: .onDisk, lines: 21...24),
-      AllChangesLineSpan(side: .committed, lines: 40...40),
-    ])
+    let lines = (0...50).map(Self.context)
+    let held = AllChangesHeldLines(
+      [
+        AllChangesLineSpan(side: .onDisk, lines: 20...22),
+        AllChangesLineSpan(side: .onDisk, lines: 23...25),
+        AllChangesLineSpan(side: .onDisk, lines: 21...24),
+        AllChangesLineSpan(side: .committed, lines: 40...40),
+      ],
+      within: lines,
+    )
 
-    let heldNumbers = (0...50).filter { held.holds(Self.context($0)) }
+    let heldNumbers = lines.indices.filter { held.holds(lines[$0]) }
 
     #expect(heldNumbers == [10, 11, 12, 13, 14, 15, 40])
+  }
+
+  @Test func aSpanPastASidesLastLineHoldsThatLastLine() {
+    let lines = (0...30).map(Self.context)
+    let held = AllChangesHeldLines(
+      [AllChangesLineSpan(side: .committed, lines: 38...42)],
+      within: lines,
+    )
+
+    let heldNumbers = lines.indices.filter { held.holds(lines[$0]) }
+
+    #expect(heldNumbers == [30])
+  }
+
+  @Test func aSpanPastTheEndHoldsASplitsLastPairedRowThoughItIsChanged() {
+    let lines = [
+      DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: ""),
+      DiffLine(kind: .added, oldNumber: 2, newNumber: 2, text: ""),
+    ]
+    let held = AllChangesHeldLines(
+      [AllChangesLineSpan(side: .committed, lines: 5...6)],
+      within: lines,
+    )
+
+    #expect(lines.map(held.holds) == [false, true])
   }
 }

@@ -90,6 +90,7 @@ extension WorkerRoster {
     }
     if kept.workers.contains(where: { $0.id == Worker.overflowID }) {
       kept.overflowed = overflowed
+      kept.overflowedAwaitingStart = overflowedAwaitingStart
     }
     kept.retired = retired
     let keptIDs = Set(kept.workers.map(\.id))

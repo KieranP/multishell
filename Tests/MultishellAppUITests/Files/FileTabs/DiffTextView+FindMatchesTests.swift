@@ -18,8 +18,13 @@ struct DiffTextViewFindMatchesTests {
     )
     defer { withExtendedLifetime(window) {} }
     let text = view.textView.displayText
-    let matches = FileFindResult.searching("xx", in: text, after: nil, keepingSelection: false)
-      .matches
+    let matches = FileFindResult.searching(
+      "xx",
+      in: .fileText(text),
+      after: nil,
+      keepingSelection: false,
+    )
+    .matches
     let find = FindMatchesShown(text: "xx", matches: matches, selected: 0, selectionMoves: 1)
 
     view.textView.showFindMatches(find, after: find, isFirstPaint: false, tint: Self.tint)

@@ -20,26 +20,27 @@ public struct AllChangesSteps: Sendable {
     self.placed = placed.sorted { $0.top < $1.top }
   }
 
-  /// The stop a step lands on from `origin`: the boxed stop's top, or with
-  /// nothing boxed the clip's top, where a stop at it is the first step.
+  /// The stop a step lands on from `origin`, where a stop at the clip's top is
+  /// the first step with nothing boxed.
   public func stop(
     _ direction: CycleDirection,
-    from origin: Double,
-    isBoxed: Bool,
-  ) -> AllChangesFileRow? {
+    from origin: AllChangesStepOrigin,
+  )
+    -> AllChangesFileRow?
+  {
     switch direction {
     case .next:
-      placed.first { isBoxed ? $0.top > origin : $0.top >= origin }?.stop
+      placed.first { origin.isBoxed ? $0.top > origin.top : $0.top >= origin.top }?.stop
 
     case .previous:
-      placed.last { $0.top < origin }?.stop
+      placed.last { $0.top < origin.top }?.stop
     }
   }
 
-  public func changeSteps(from origin: Double, isBoxed: Bool) -> ChangeSteps {
+  public func changeSteps(from origin: AllChangesStepOrigin) -> ChangeSteps {
     ChangeSteps(
-      hasNext: stop(.next, from: origin, isBoxed: isBoxed) != nil,
-      hasPrevious: stop(.previous, from: origin, isBoxed: isBoxed) != nil,
+      hasNext: stop(.next, from: origin) != nil,
+      hasPrevious: stop(.previous, from: origin) != nil,
     )
   }
 }

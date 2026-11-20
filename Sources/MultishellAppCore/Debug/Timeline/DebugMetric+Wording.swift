@@ -62,7 +62,7 @@ extension DebugMetric {
       t(
         "debug.split-memory",
         DebugValueText.memory(slot.appMemoryOutsideTerminals),
-        DebugValueText.memory(slot.terminalMemory),
+        DebugValueText.memory(slot.terminalMemoryWithinApp),
         DebugValueText.memory(slot.childrenMemory),
       )
 

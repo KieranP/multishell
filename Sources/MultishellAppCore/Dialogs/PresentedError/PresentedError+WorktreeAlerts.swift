@@ -35,6 +35,16 @@ extension PresentedError {
         t("error.not-a-worktree-title"), t("worktree.not-removable", notRemovable.path.path),
       )
 
+    case let holding as WorktreeHoldsOtherWork:
+      let message =
+        switch holding.work {
+        case .worktree(let inner):
+          t("error.holds-worktree-message", holding.path.path, inner.path)
+
+        case .submodules: t("error.holds-submodules-message", holding.path.path)
+        }
+      return (t("error.holds-other-work-title"), message)
+
     case is GitUnavailable:
       return (t("error.git-not-found-title"), t("error.git-not-found-message"))
 

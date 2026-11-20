@@ -595,6 +595,24 @@ struct FileTabReaderTests {
     #expect(text.lines.allSatisfy { $0.kind == .context })
   }
 
+  @Test func aFileThatCannotBeOpenedIsNotShownDeleted() async throws {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    let file = repository.path.appending(path: "README.md")
+    try repository.write("hello\n", to: "README.md")
+    let before = await repository.read("README.md")
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+    defer {
+      try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
+    }
+
+    let fresh = await repository.read("README.md")
+    let again = await repository.read("README.md", previous: before)
+
+    #expect(!fresh.isFileGone)
+    #expect(again == before)
+  }
+
   @Test func aBinaryFileAModeChangeAndAFileTooLargeEachSaySo() async throws {
     let repository = try await FileTabRepository.make()
     defer { repository.tearDown() }

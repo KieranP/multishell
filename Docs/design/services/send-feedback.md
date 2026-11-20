@@ -34,8 +34,9 @@ issue.
   clear a bubble: a check by its name, link and head, since two checks can share
   a link and some keep theirs across a push; a thread by its id and newest
   comment, so a new comment comes back checked; a CI job by run, its place and
-  job id, two workflows able to share a name; Run output by run and its text's
-  hash, a CircleCI rerun keeping the run's id.
+  job id, two workflows able to share a name, and whether its report was read,
+  so one sent while its run went comes back checked when the report lands; Run
+  output by run and its text's hash, a CircleCI rerun keeping the run's id.
 - **Choices and sent marks are runtime state**, not saved as Review's comments
   are: a relaunch shows everything unsent, which costs a second send at most. A
   kind's keys are let go only once that kind's read answered, so a failing
@@ -126,3 +127,7 @@ issue.
   `diffSide` and `startLine` would say more.
 - **Unproven: OSC escapes, such as terminal hyperlinks, are not stripped** from
   a log, only CSI codes. No log here has carried one.
+- **`pr send` off the page sends checks with no word of a threads read that
+  failed** (bug hunt, 2026-11-20): one kind's failure should not hold back the
+  other, as on the page
+  (`aPageWhoseThreadsCouldNotBeReadStillSendsItsCheckedCheck`).

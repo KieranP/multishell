@@ -53,7 +53,7 @@ public enum DebugMetric: CaseIterable, Sendable {
     case .memory:
       [
         Double(slot.appMemoryOutsideTerminals),
-        Double(slot.appMemory - slot.appMemoryOutsideTerminals),
+        Double(slot.terminalMemoryWithinApp),
         Double(slot.childrenMemory),
       ]
 

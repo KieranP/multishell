@@ -26,7 +26,7 @@ struct WorktreeStageHandlesTests {
     var handles = WorktreeStageHandles()
     let stopper = ProcessStopper()
     handles.holdStopper(stopper, on: tree)
-    handles.trackSetup(Task {}, on: tree)
+    handles.trackSetup(Task {}, stoppedBy: stopper, on: tree)
 
     handles.releaseStopper(stopper, on: tree)
     #expect(handles.stopper(of: tree) == nil)
@@ -34,6 +34,20 @@ struct WorktreeStageHandlesTests {
 
     handles.endSetup(stopper, on: tree)
     #expect(handles.setupTask(of: tree) == nil)
+  }
+
+  @Test func anOlderSetupEndingLeavesTheSetupTaskOfALaterOneOnTheSamePath() {
+    var handles = WorktreeStageHandles()
+    let older = ProcessStopper()
+    let later = ProcessStopper()
+    handles.holdStopper(older, on: tree)
+    handles.trackSetup(Task {}, stoppedBy: older, on: tree)
+    handles.holdStopper(later, on: tree)
+    handles.trackSetup(Task {}, stoppedBy: later, on: tree)
+
+    handles.endSetup(older, on: tree)
+
+    #expect(handles.setupTask(of: tree) != nil)
   }
 
   @Test func onlyTheCreateTheSheetIsShowingIsTheOneCancelReaches() {

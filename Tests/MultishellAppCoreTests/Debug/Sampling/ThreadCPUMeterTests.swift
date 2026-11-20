@@ -50,7 +50,7 @@ struct ThreadCPUMeterTests {
 
   @Test func threadsSharingANameAddUpUnderOneKeyApartFromTheMainThread() {
     var meter = ThreadCPUMeter()
-    _ = meter.takeReading(of: [], at: start)
+    _ = meter.takeReading(of: [thread(1, "", cpuTime: .zero, isMain: true)], at: start)
 
     let reading = meter.takeReading(
       of: [
@@ -72,7 +72,7 @@ struct ThreadCPUMeterTests {
 
   @Test func aThreadStartedSinceTheLastReadingCountsAllItSpent() {
     var meter = ThreadCPUMeter()
-    _ = meter.takeReading(of: [], at: start)
+    _ = meter.takeReading(of: [thread(1, "", cpuTime: .zero, isMain: true)], at: start)
 
     let reading = meter.takeReading(
       of: [thread(9, "renderer", cpuTime: .milliseconds(300))],
@@ -80,5 +80,18 @@ struct ThreadCPUMeterTests {
     )
 
     #expect(reading.terminalsPercent == 30)
+  }
+
+  @Test func aFailedThreadReadLeavesTheNextReadingMeasuredFromTheLastOneThatLanded() {
+    var meter = ThreadCPUMeter()
+    _ = meter.takeReading(of: [thread(1, "", cpuTime: .seconds(10), isMain: true)], at: start)
+
+    #expect(meter.takeReading(of: [], at: start + .seconds(1)) == .unmeasured)
+    let reading = meter.takeReading(
+      of: [thread(1, "", cpuTime: .milliseconds(10_500), isMain: true)],
+      at: start + .seconds(2),
+    )
+
+    #expect(reading.mainPercent == 25)
   }
 }

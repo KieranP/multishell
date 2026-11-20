@@ -219,4 +219,24 @@ struct AppModelFileFindTests {
 
     #expect(harness.model.fileFindShown(of: tab.id) == nil)
   }
+
+  @Test func findInTheAllChangesTabMatchesNoTextRunningFromOneFileIntoTheNext() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.openAllChangesTab(in: harness.main.id))
+    let rows = { (prefix: String) in
+      FileTabRows(
+        lines: [DiffLine(kind: .added, oldNumber: nil, newNumber: 1, text: "\(prefix) end")],
+        marksStaging: true,
+      )
+    }
+    harness.model.allChangesReadings[tab.id] = .sample(rows: [
+      ("a.txt", rows("first")), ("b.txt", rows("second")),
+    ])
+    harness.model.showFind()
+
+    harness.model.setFindText("end\nsecond", of: tab.id)
+
+    #expect(harness.model.fileFindMatches(of: tab.id).isEmpty)
+  }
 }

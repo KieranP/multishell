@@ -173,3 +173,9 @@ where sluggishness comes from, in every build. Newest at the bottom.
 - **Wakeups are the interrupt count, package idle drawn inside it.** XNU adds a
   package idle wakeup only where it has just added an interrupt one, so the two
   summed counted those twice.
+
+## Reviewed and left as is
+
+- **A missed activity reading counts two samples' disk and wakeups in the next**
+  (bug hunt, 2026-11-20): a slot sums its samples, so its rate is right; only
+  one sample's own figure doubles, and the read almost never fails.

@@ -45,8 +45,8 @@ shortcuts, dialogs, icons and row orders.
   (design/debug-tools.md). The test builder `DebugSample.sample` takes it with a
   default, and the widest slot in `DebugTileLabelTests` its widest figure, so
   the value fits the label column. A band in a split tile needs a `DebugSeries`
-  case; a colour past the four in `Theme+DebugColors` needs a key in
-  `debug_info`'s `colorKeys` and every built-in theme.
+  case; a colour past the five in `debug_info`'s `colorKeys` needs a key there,
+  in `Theme+DebugColors` and in every built-in theme.
 - **A new reading also goes in `DebugSampleRecord`** for `debug samples`, and in
   `DebugSummaryRecord` for `--summary`. Nothing forces either: left out, the
   command line never sees it.

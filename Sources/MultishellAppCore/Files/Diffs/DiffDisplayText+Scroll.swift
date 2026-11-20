@@ -30,7 +30,12 @@ extension DiffDisplayText {
 
   /// The top row putting `scroll`'s line back: the first row with that line or
   /// a later one, by the committed side's numbering where the file's has none.
+  /// Never past the last row, whatever a saved scroll says.
   public func row(of scroll: FileTabScroll) -> Double {
+    min(unclampedRow(of: scroll), Double(max(lines.count - 1, 0)))
+  }
+
+  private func unclampedRow(of scroll: FileTabScroll) -> Double {
     guard scroll.line > 0 else { return max(0, scroll.rowsFromLine) }
     let byDisk = { (index: Int) in (lines[index].newNumber ?? 0) >= scroll.line }
     let byCommittedLine = { (index: Int) in (lines[index].oldNumber ?? 0) >= scroll.line }

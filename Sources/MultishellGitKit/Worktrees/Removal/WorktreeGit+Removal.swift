@@ -4,6 +4,9 @@ import MultishellCore
 /// Taking a worktree's record out of git, and making sure first that the
 /// directory at its path is still its checkout.
 extension WorktreeGit {
+  /// How `ls-files --stage` begins a submodule's entry.
+  private static let gitlinkModePrefix = "160000 "
+
   /// Takes out one record whose directory has already gone, a lock included.
   /// Only after the trash: with the directory there it would unlink it.
   func removeRecord(of worktree: Worktree, in project: Project) async throws {
@@ -101,6 +104,36 @@ extension WorktreeGit {
         return Self.sameComparablePath(target.deletingLastPathComponent(), checkout)
       }
     }
+  }
+
+  /// What removing `worktree` would take that nothing else keeps, each refused
+  /// by `worktree remove` too: a populated submodule's repository lives in the
+  /// worktree's record. `nil` where it holds neither; a throw where git failed.
+  func workHeld(
+    by worktree: Worktree,
+    in project: Project,
+  ) async throws
+    -> WorktreeHoldsOtherWork.Work?
+  {
+    let outer = worktree.path.resolvingSymlinksInPath()
+    let inner = try await list(project).first { other in
+      other.path.resolvingSymlinksInPath().pathComponents(under: outer)?.isEmpty == false
+    }
+    if let inner { return .worktree(inner.path) }
+    let index = try await runner.run(
+      ["--no-optional-locks", "ls-files", "-z", "--stage"],
+      in: worktree.path,
+    )
+    let submodules = index.split(separator: "\0").compactMap { entry in
+      entry.hasPrefix(Self.gitlinkModePrefix) ? entry.split(separator: "\t").last : nil
+    }
+    let checkout = worktree.path
+    let isPopulated = await runOnDispatch {
+      submodules.contains { path in
+        FileManager.default.fileExists(atPath: checkout.appending(path: "\(path)/.git").path)
+      }
+    }
+    return isPopulated ? .submodules : nil
   }
 
   /// `worktree remove` with no `--force`, which refuses a tree holding anything

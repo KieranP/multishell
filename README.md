@@ -205,7 +205,7 @@ been in that state.
 <tr>
 <td width="45%" valign="middle">
 <h3>Your keys, not ours</h3>
-Settings > Shortcuts lists every menu command beside its default. Click one and
+Settings > Shortcuts lists the menu commands beside their defaults. Click one and
 press the keys you want; a clash with another command asks before it takes them.
 </td>
 <td width="55%" align="center">
@@ -290,8 +290,8 @@ press the keys you want; a clash with another command asks before it takes them.
 | ⌘F    | Find in the pane or file                                       |
 | ⇧⌘O   | Open the worktree in your editor                               |
 
-These are the defaults. Settings > Shortcuts changes any command's keys or
-removes them, and
+These are the defaults. Settings > Shortcuts changes a command's keys or removes
+them, bar the system's editing keys such as Undo and Copy, and
 `multishell config global set shortcuts.split-right cmd+backslash` does the same
 from a script.
 

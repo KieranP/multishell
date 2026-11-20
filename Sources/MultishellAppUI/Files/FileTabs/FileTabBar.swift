@@ -31,8 +31,8 @@ struct FileTabBar: View {
       bar(switchesInMenu: true, offersChangeScope: offersChangeScope, offersLayout: offersLayout)
     }
     .font(model.metrics.font(size: model.metrics.secondary))
-    .padding(.leading, 12)
-    .padding(.trailing, 8)
+    .padding(.leading, UIMetrics.fileTabBarLeadingPadding)
+    .padding(.trailing, UIMetrics.fileTabBarTrailingPadding)
     .frame(height: UIMetrics.fileTabBarHeight)
     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
     .clipped()

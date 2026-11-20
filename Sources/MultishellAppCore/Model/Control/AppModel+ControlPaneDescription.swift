@@ -21,7 +21,7 @@ extension AppModel {
           ? FindBarDescription(
             text: findText(of: id),
             total: searchCounts[id]?.total,
-            selected: searchCounts[id]?.selected,
+            selected: searchCounts[id]?.selectedWithinTotal,
           ) : nil,
       )
     )

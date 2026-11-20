@@ -9,7 +9,7 @@ public struct GitHubHost: PullRequestHost {
   /// The newest pull requests, open or not; a branch whose own are older is
   /// asked alone. Why in Docs/design/services/reads.md.
   static let listLimit = 100
-  /// Every pull request one branch has headed, reopened as new ones included.
+  /// The newest pull requests one branch has headed, reopened as new ones included.
   static let branchListLimit = 10
   /// Ten pages of a hundred threads: a pull request past that is not one an
   /// agent is handed whole.

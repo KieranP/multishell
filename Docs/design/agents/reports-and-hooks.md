@@ -150,7 +150,8 @@ user's settings file. Newest at the bottom.
   parsed loosely: one agent's takes comments and keeps them when it writes the
   file itself, and a re-serialisation here would take them out. Cost: those
   users add the entries by hand, so the alert names the file and points at the
-  JSON.
+  JSON. The row reads past comments for its status, or entries added by hand
+  read as never installed.
 - **One agent will run no hook it has not been told to trust**, so the row says
   installing is not the end of it; nothing here can trust a hook for the user.
 - **No agent is recommended** or has anything of its own outside the catalogue.

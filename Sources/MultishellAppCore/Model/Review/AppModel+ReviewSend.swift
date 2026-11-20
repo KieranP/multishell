@@ -2,9 +2,8 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Every pending comment written to one file, mentioned in the agent's prompt,
-  /// then marked sent; nothing is marked where any step fails. The pane named,
-  /// never another: Send's picker showed it, and a script named it.
+  /// Every pending comment written to one file, mentioned in the named pane's agent
+  /// prompt, then marked sent; none is marked where a step fails. review-comments.md.
   @discardableResult
   public func sendReview(
     of worktreeID: Worktree.ID,

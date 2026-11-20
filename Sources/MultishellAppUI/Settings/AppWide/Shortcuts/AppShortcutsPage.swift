@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Shortcuts, one part per menu: a card per group of commands, each
-/// beside its default keys, the first card's heading naming the columns for all;
-/// Docs/design/shortcuts.md.
+/// Settings > Shortcuts, one part per menu: a card per group of commands beside its
+/// default keys, the first card's heading naming the columns; Docs/design/shortcuts.md.
 struct AppShortcutsPage: View {
   let model: AppModel
   let section: SettingsSection

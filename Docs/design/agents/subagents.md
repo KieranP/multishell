@@ -25,9 +25,10 @@ hold, and the chip that shows them. Newest at the bottom.
   count exceeds the places only where an agent names two workers alike.
 - **The roster holds 64 places, and one more shared by every worker past them**,
   which keeps their ids and counts, so the count stays true, a tool call is not
-  a new worker and a stray end takes nothing. Dropping the oldest paid a Done
-  while it still ran. Cost: a shell past 64 is dropped, its pid having nowhere
-  to go in a shared place, and so is a worker past 1,024 ids.
+  a new worker and a stray end takes nothing. It remembers which a launch or
+  list named before their start, or that start counted one twice. Dropping the
+  oldest paid a Done while it still ran. Cost: a shell past 64 is dropped, its
+  pid having nowhere to go in a shared place, and so is a worker past 1,024 ids.
 - **A worker does not carry the tool it is in, though the payload says**: shown,
   it changed with every call and made the list flash; carried, it re-rendered
   the sidebar per call.

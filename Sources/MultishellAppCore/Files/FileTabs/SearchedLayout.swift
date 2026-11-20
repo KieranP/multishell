@@ -11,6 +11,15 @@ enum SearchedLayout {
     }
   }
 
+  /// Each file of the All changes tab is its own text view, which a range
+  /// running on into the next file's would overrun.
+  func isWithinOneFile(_ range: Range<Int>) -> Bool {
+    switch self {
+    case .allChanges(let document): document.isWithinOneFile(range)
+    case .fileText: true
+    }
+  }
+
   func rangeOnSameLine(_ range: Range<Int>, from previous: Self) -> Range<Int>? {
     switch (self, previous) {
     case (.allChanges(let document), .allChanges(let previousDocument)):

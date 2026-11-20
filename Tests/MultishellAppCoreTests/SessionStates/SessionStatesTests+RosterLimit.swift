@@ -42,6 +42,16 @@ extension SessionStatesTests {
     #expect(workersOut(states).isEmpty)
   }
 
+  @Test func aWorkerLaunchedPastTheRosterLimitIsCountedOnceWhenItsStartLands() {
+    var states = SessionStates()
+    for index in 0..<capacity { _ = report(&states, .running, started("w\(index)")) }
+
+    _ = report(&states, .init(state: .running, launched: started("late")))
+    _ = report(&states, .running, started("late"))
+
+    #expect(states.workers(.session(a)).workerCount == capacity + 1)
+  }
+
   @Test func aStrayEndPastTheRosterLimitPaysNoWorkerStillOut() {
     var states = SessionStates()
     for index in 0..<capacity + 6 { _ = report(&states, .running, started("w\(index)")) }

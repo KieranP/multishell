@@ -23,11 +23,11 @@ struct FileFindResult: Equatable, Sendable {
   /// keeping the selection holds to the match nearest the one selected before.
   static func searching(
     _ text: String,
-    in display: DiffDisplayText,
+    in layout: SearchedLayout,
     after previous: Self?,
     keepingSelection: Bool,
   ) -> Self {
-    var result = found(text, in: display, keepingSelectionOf: keepingSelection ? previous : nil)
+    var result = found(text, in: layout, keepingSelectionOf: keepingSelection ? previous : nil)
     result.selectionMoves = (previous?.selectionMoves ?? 0) + (keepingSelection ? 0 : 1)
     return result
   }
@@ -42,23 +42,12 @@ struct FileFindResult: Equatable, Sendable {
 
   private static func found(
     _ text: String,
-    in display: DiffDisplayText,
+    in layout: SearchedLayout,
     keepingSelectionOf previous: Self?,
   ) -> Self {
     guard !text.isEmpty else { return Self(matches: [], selected: nil) }
-    let searchedText = display.string as NSString
-    var matches: [Range<Int>] = []
-    var from = 0
-    while from < searchedText.length {
-      let found = searchedText.range(
-        of: text,
-        options: [.caseInsensitive],
-        range: NSRange(location: from, length: searchedText.length - from),
-      )
-      guard found.location != NSNotFound, found.length > 0 else { break }
-      matches.append(found.integerRange)
-      from = NSMaxRange(found)
-    }
+    let matches = CaseInsensitiveMatches.ranges(of: text, in: layout.text.string)
+      .filter(layout.isWithinOneFile)
     guard !matches.isEmpty else { return Self(matches: [], selected: nil) }
     guard let previous, let old = previous.selected, previous.matches.indices.contains(old) else {
       return Self(matches: matches, selected: 0)

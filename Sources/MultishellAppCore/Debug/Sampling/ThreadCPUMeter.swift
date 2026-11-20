@@ -11,6 +11,8 @@ struct ThreadCPUMeter {
     of threads: [ThreadUsage],
     at instant: ContinuousClock.Instant,
   ) -> DebugThreadCPU {
+    // No threads means the read failed, and the meter waits for the next.
+    guard !threads.isEmpty else { return .unmeasured }
     let isFirstReading = lastReadingAt == nil
     let elapsed = lastReadingAt.map { $0.duration(to: instant).inSeconds } ?? 0
     defer {

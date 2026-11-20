@@ -66,7 +66,7 @@ extension AppModel {
     if let previousLayout { previous = previous?.carried(from: previousLayout, to: searched) }
     var result = FileFindResult.searching(
       text,
-      in: searched.text,
+      in: searched,
       after: previous,
       keepingSelection: keepingSelection,
     )

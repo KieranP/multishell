@@ -49,6 +49,7 @@ extension AppModel {
           runsPostCreateHook: runsPostCreateHook,
         )
       },
+      stoppedBy: stopper,
       on: worktree.id,
     )
   }

@@ -31,4 +31,21 @@ struct ExecutableLookupTests {
     #expect(ExecutableLookup.find("sh", searchPath: path) != nil)
     #expect(ExecutableLookup.find("claude", searchPath: "/usr/bin") == nil)
   }
+
+  @Test func aDirectoryOfTheToolsNameIsPassedOverForTheToolLaterOnThePath() throws {
+    let root = try Scratch.directory("path")
+    defer { Scratch.remove(root) }
+    let early = root.appendingPathComponent("early")
+    let late = root.appendingPathComponent("late")
+    try FileManager.default.createDirectory(
+      at: early.appendingPathComponent("git"),
+      withIntermediateDirectories: true,
+    )
+    try FileManager.default.createDirectory(at: late, withIntermediateDirectories: true)
+    let tool = try Scratch.script("exit 0", at: late.appendingPathComponent("git"))
+
+    let found = ExecutableLookup.find("git", searchPath: "\(early.path):\(late.path)")
+
+    #expect(found?.path == tool.path)
+  }
 }

@@ -22,8 +22,9 @@ extension Helper {
         Print the Dock badge and the banners posted this run, oldest first,
         each with the pane it is about and whether it is still up.
     usage: multishell debug git [--last N]
-        Print the newest N git runs, 20 by default, one by one: command,
-        directory, milliseconds, peak memory and the sample each ended in.
+        Print the newest N git, gh and circleci runs, 20 by default, one by
+        one: command, directory, milliseconds, peak memory and the sample
+        each ended in.
     usage: multishell debug mark NAME
         Put NAME into the next sample's marks, to line an action up with
         the readings around it, and into Instruments' Points of Interest.

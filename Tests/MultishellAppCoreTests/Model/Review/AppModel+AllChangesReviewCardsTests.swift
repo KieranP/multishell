@@ -189,6 +189,21 @@ struct AppModelAllChangesReviewCardsTests {
     #expect(shown == [1, 2, 3, 4, 18, 19, 20, 21, 22])
   }
 
+  @Test func aCommentOnLinesPastTheFilesEndKeepsItsCardUnderTheLastLine() throws {
+    let harness = Harness()
+    let tab = try Self.tabWithTwoFiles(harness, lines: 30)
+    let comment = Self.comment(on: "a.txt", line: 40, quote: "gone")
+    harness.model.addReviewComment(comment, in: harness.main.id)
+
+    let document = try #require(harness.model.allChangesDocument(of: tab.id))
+    let placement = try #require(
+      harness.model.reviewCardPlacements(of: tab, in: document, section: 0).first
+    )
+
+    #expect(placement.id == .comment(comment.id))
+    #expect(document.slice(ofSection: 0).text.lines[placement.rows.lowerBound].text == "a 30")
+  }
+
   @Test func closingTheTabWhileItsComposerHoldsTextAsksFirst() throws {
     let harness = Harness()
     let tab = try Self.tabWithTwoFiles(harness)

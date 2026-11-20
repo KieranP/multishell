@@ -84,6 +84,12 @@ struct AllChangesListRepresentable: NSViewRepresentable {
     coordinator.pendingComments = pendingComments
     let textChanged = coordinator.document != document || coordinator.theme != theme
     if textChanged {
+      // A switch changes each file's height, so the line at the top is put back, not its offset.
+      if coordinator.document.map({ $0.isSplit != document.isSplit }) == true,
+        coordinator.pendingReveal == nil
+      {
+        coordinator.savedScroll = model.allChangesScroll(of: tab.id)
+      }
       coordinator.noteDocument(document)
       coordinator.theme = theme
       list.show(
@@ -196,10 +202,9 @@ struct AllChangesListRepresentable: NSViewRepresentable {
   /// Which ways the bar's arrows can step from the boxed change or the top.
   func noteChangeSteps(of list: AllChangesListView, coordinator: Coordinator) {
     let geometry = geometry
-    let (origin, isBoxed) = coordinator.stepOrigin(on: list, geometry: geometry)
+    let origin = coordinator.stepOrigin(on: list, geometry: geometry)
     model.noteChangeSteps(
-      coordinator.outermostSteps(on: list, geometry: geometry)
-        .changeSteps(from: origin, isBoxed: isBoxed),
+      coordinator.outermostSteps(on: list, geometry: geometry).changeSteps(from: origin),
       of: tab.id,
     )
   }

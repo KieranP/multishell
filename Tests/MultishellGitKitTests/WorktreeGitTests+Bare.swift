@@ -71,6 +71,48 @@ extension WorktreeGitTests {
     #expect(try await fixture.branches() == ["main"])
   }
 
+  @Test func removingTheTrunksWorktreeKeepsTheBranchTheBareRepositoryNamesBesideATagOfItsName()
+    async throws
+  {
+    let (fixture, checkout) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
+    try await TestRepository.commit(
+      "unpushed",
+      files: ["local.txt": "work"],
+      in: checkout,
+      using: fixture.runner,
+    )
+    _ = try await fixture.runner.run(["tag", "main", "main"], in: fixture.project.path)
+    let trunk = try await fixture.worktree(onBranch: "main")
+
+    try? await fixture.coordinator.removeUnlinking(trunk, in: fixture.project, deletesBranch: true)
+
+    #expect(try await fixture.branches() == ["main"])
+  }
+
+  @Test func removingTheTrunksWorktreeKeepsTheBranchWhereGitCannotSayWhatHEADNames()
+    async throws
+  {
+    let (fixture, checkout) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
+    try await TestRepository.commit(
+      "unpushed",
+      files: ["local.txt": "work"],
+      in: checkout,
+      using: fixture.runner,
+    )
+    let trunk = try await fixture.worktree(onBranch: "main")
+    let failingHEADRead = try TestGit.runner(
+      wrappingRealGitIn: #"if [ "$1" = symbolic-ref ]; then exit 128; fi"#,
+      at: fixture.root.appendingPathComponent("fake-git"),
+    )
+
+    try? await TestGit.coordinator(runner: failingHEADRead)
+      .removeUnlinking(trunk, in: fixture.project, deletesBranch: true)
+
+    #expect(try await fixture.branches() == ["main"])
+  }
+
   @Test func theCommonDirectoryIsTheBareRepositoryItself() async throws {
     let (fixture, _) = try await RepositoryFixture.makeBare()
     defer { fixture.tearDown() }

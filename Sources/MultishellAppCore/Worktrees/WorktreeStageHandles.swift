@@ -4,7 +4,8 @@ import MultishellProcess
 /// The handles to what is running while a worktree is built or removed.
 /// Never drawn: `WorktreeOperations` beside it is what the pane shows.
 struct WorktreeStageHandles: Sendable {
-  private var setupTasks: [Worktree.ID: Task<Void, Never>] = [:]
+  /// Each with the stop handle it started with, so only its own end takes it.
+  private var setupTasks: [Worktree.ID: (stopper: ProcessStopper, task: Task<Void, Never>)] = [:]
   private var stoppers: [Worktree.ID: ProcessStopper] = [:]
   /// The pre-create hook and `git worktree add` under the sheet, which run
   /// before there is a worktree to key a handle by; read by a test.
@@ -15,7 +16,7 @@ struct WorktreeStageHandles: Sendable {
 
   /// The file lists and post-create hook still running on `id`, as one task,
   /// so a test can await it.
-  func setupTask(of id: Worktree.ID) -> Task<Void, Never>? { setupTasks[id] }
+  func setupTask(of id: Worktree.ID) -> Task<Void, Never>? { setupTasks[id]?.task }
 
   /// The stop handle held for `id`, so a test can see an ended stage let it go.
   func stopper(of id: Worktree.ID) -> ProcessStopper? { stoppers[id] }
@@ -31,8 +32,12 @@ struct WorktreeStageHandles: Sendable {
     stoppers[id] = stopper
   }
 
-  mutating func trackSetup(_ setup: Task<Void, Never>, on id: Worktree.ID) {
-    setupTasks[id] = setup
+  mutating func trackSetup(
+    _ setup: Task<Void, Never>,
+    stoppedBy stopper: ProcessStopper,
+    on id: Worktree.ID,
+  ) {
+    setupTasks[id] = (stopper, setup)
   }
 
   /// The stop handle goes only where it is still `stopper`: a later stage on
@@ -41,9 +46,10 @@ struct WorktreeStageHandles: Sendable {
     if stoppers[id] === stopper { stoppers[id] = nil }
   }
 
-  /// A setup stage ended: its task and, if still its own, its stop handle.
+  /// A setup stage ended: its task and stop handle, each only if still its own,
+  /// as a later create at the same path holds its own.
   mutating func endSetup(_ stopper: ProcessStopper, on id: Worktree.ID) {
-    setupTasks[id] = nil
+    if setupTasks[id]?.stopper === stopper { setupTasks[id] = nil }
     releaseStopper(stopper, on: id)
   }
 

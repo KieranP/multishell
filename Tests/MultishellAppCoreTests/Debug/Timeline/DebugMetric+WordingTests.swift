@@ -45,6 +45,18 @@ struct DebugMetricWordingTests {
     #expect(DebugMetric.disk.valueText(of: slot) == "\(DebugValueText.memory(3_072))/s")
   }
 
+  @Test func terminalsEstimatedAboveTheAppsFootprintAreCaptionedAtTheFootprint() {
+    let overEstimated = DebugTimelineSlot(samples: [
+      .sample(sequence: 0, appMemory: 800, terminalMemory: 1_000, childrenMemory: 0)
+    ])
+
+    #expect(
+      DebugMetric.memory.detailText(of: overEstimated)
+        == "App \(DebugValueText.memory(0)) · Terminals \(DebugValueText.memory(800)) · "
+        + "Child processes \(DebugValueText.memory(0))"
+    )
+  }
+
   @Test func countsReadAsPlainNumbersAndThePressureByItsLevel() {
     #expect(DebugMetric.threads.valueText(of: slot) == "41")
     #expect(DebugMetric.openFiles.valueText(of: slot) == "63")

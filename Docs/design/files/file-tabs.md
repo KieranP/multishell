@@ -113,6 +113,10 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
 - **Find is the app's own floating bar**, appearance/window-chrome.md having
   ruled out a find strip; a file tab is searched in the model, the engine
   searching only panes.
+- **Find compares bytes where the find text and the file are both ASCII**, and
+  asks `NSString` only otherwise, for case and composed forms past ASCII. One
+  `NSString` search per match took 24 to 30 ms in release for a first letter or
+  a space in a 1 MiB file, on every keystroke; the byte pass takes 2 ms.
 - **Find's matches are painted under the text with the line tints**, not as
   TextKit 2 rendering attributes, which marked none of its line views for
   drawing: a search typed into the bar showed its matches only at the next

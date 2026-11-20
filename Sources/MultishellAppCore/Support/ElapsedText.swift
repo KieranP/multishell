@@ -28,7 +28,7 @@ enum ElapsedText {
     return short(max(now, since).timeIntervalSince(since))
   }
 
-  /// A command's runtime: `0.4s`, `9s`, `1m 12s`. Under ten seconds it keeps
+  /// A command's runtime: `0.4s`, `9.5s`, `45s`, `1m 12s`. Under ten seconds it keeps
   /// a decimal, where a prompt and a build differ.
   static func precise(_ interval: TimeInterval) -> String? {
     guard interval.isFinite, interval >= 0, interval < renderable else { return nil }

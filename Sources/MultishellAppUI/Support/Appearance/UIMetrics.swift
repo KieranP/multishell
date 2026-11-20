@@ -46,6 +46,8 @@ struct UIMetrics: Equatable {
   static let newWorktreeSheetWidth: Double = 520
   /// A file tab's bar; the All changes tab's bar and file headers match it.
   static let fileTabBarHeight: Double = 30
+  static let fileTabBarLeadingPadding: Double = 12
+  static let fileTabBarTrailingPadding: Double = 8
 
   let bodySize: Double
   /// Settings > Appearance's UI font; `nil` is the system font.

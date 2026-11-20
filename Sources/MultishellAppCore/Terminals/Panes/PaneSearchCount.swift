@@ -13,13 +13,23 @@ struct PaneSearchCount: Equatable, Sendable {
 
   var matchCount: FindMatchCount? {
     guard let total else { return nil }
-    // A switch to the alternate screen posts its total but no cleared match.
-    let shownSelected = (selected ?? selectedBeforeStep).flatMap { $0 < total ? $0 : nil }
+    let shownSelected = Self.match(selected ?? selectedBeforeStep, within: total)
     return FindMatchCount(position: shownSelected.map { total - $0 }, total: total)
+  }
+
+  /// `selected` unless the total no longer holds it, and `nil` mid-step, which `panes find` waits on.
+  var selectedWithinTotal: Int? {
+    guard let total else { return selected }
+    return Self.match(selected, within: total)
   }
 
   init(replacedSearchEndsAwaited: Int = 0) {
     self.replacedSearchEndsAwaited = replacedSearchEndsAwaited
+  }
+
+  /// A switch to the alternate screen posts its total but no cleared match.
+  private static func match(_ match: Int?, within total: Int) -> Int? {
+    match.flatMap { $0 < total ? $0 : nil }
   }
 
   /// A new search's count starts empty, still awaiting the ends of the searches

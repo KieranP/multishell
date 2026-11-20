@@ -32,9 +32,8 @@ extension AppModel {
     }
   }
 
-  /// One file's cards on its own shown rows, for its view in the per-file list:
-  /// a collapsed file's are left out, and a committed-side card shows only under
-  /// its scope, as in a file tab. `side` is a split column's.
+  /// One file's cards on its own shown rows, none for a collapsed file; a committed-side
+  /// card shows only under its scope, as in a file tab. `side` is a split column's.
   public func reviewCardPlacements(
     of tab: AllChangesTab,
     in document: AllChangesDocument,

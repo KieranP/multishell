@@ -95,7 +95,8 @@ The command line's requests on the reports' socket. Newest at the bottom.
   clamped. A clamped write answered done and read back as another number.
 - **Waiting and following are polled from the helper**, so a long wait holds no
   connection open in the app and a helper killed mid-wait leaves nothing behind.
-  Cost: a look every 250 ms, a pane read or a describe, each a main-thread turn.
+  Cost: a look every 250 ms for a wait and 500 ms for `debug samples --follow`,
+  a pane read, a describe or a sample, each a main-thread turn.
 - **A wait with `--scrollback` reads the scrollback at its first look only**,
   then the screen. Ghostty keeps up to 50 MB of it by default, read under the
   renderer lock on the main thread, so a full read each look holds the window

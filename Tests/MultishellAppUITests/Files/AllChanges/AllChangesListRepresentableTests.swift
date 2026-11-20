@@ -143,6 +143,29 @@ struct AllChangesListRepresentableTests {
     #expect(list.file(at: 1)?.mainColumn.textView.steppedChange != nil)
   }
 
+  @Test func aStepAfterAScrollByHandAwayFromTheBoxCountsFromWhatIsInView() throws {
+    let harness = ModelHarness()
+    let tab = AllChangesTab(worktreeID: "/repos/demo", groupID: UUID())
+    let (list, host, window) = Self.shown(
+      (0..<6).map { Self.modified("f\($0).txt", rows: 30) },
+      harness: harness,
+      tab: tab,
+    )
+    defer { withExtendedLifetime(window) {} }
+    harness.model.stepToChange(.next, in: tab.id)
+    host.rootView = host.rootView
+    host.layoutSubtreeIfNeeded()
+    try #require(list.file(at: 0)?.mainColumn.textView.steppedChange != nil)
+
+    list.scroll(toY: try #require(list.top(ofFile: 4)))
+    host.layoutSubtreeIfNeeded()
+    harness.model.stepToChange(.next, in: tab.id)
+    host.rootView = host.rootView
+    host.layoutSubtreeIfNeeded()
+
+    #expect(list.file(at: 4)?.mainColumn.textView.steppedChange != nil)
+  }
+
   @Test func cmdDownGoesToTheListsEndFromAnyFile() {
     let harness = ModelHarness()
     let tab = AllChangesTab(worktreeID: "/repos/demo", groupID: UUID())
@@ -531,6 +554,49 @@ struct AllChangesListRepresentableTests {
     host.layoutSubtreeIfNeeded()
 
     #expect(list.fileIndex(at: list.scrollY) == 5)
+  }
+
+  @Test func switchingToSplitDeepInAFileKeepsTheLineAtTheTopInThatFile() throws {
+    let harness = ModelHarness()
+    let tab = AllChangesTab(worktreeID: "/repos/demo", groupID: UUID())
+    let files = (0..<4).map { index in
+      Self.file(
+        "f\(index).txt",
+        (1...12).map { (number: Int) in
+          DiffLine(kind: .removed, oldNumber: number, newNumber: nil, text: "old \(number)")
+        }
+          + (1...12).map { (number: Int) in
+            DiffLine(kind: .added, oldNumber: nil, newNumber: number, text: "new \(number)")
+          },
+        kind: .modified,
+      )
+    }
+    let (list, host, window) = Self.shown(files, harness: harness, tab: tab)
+    defer { withExtendedLifetime(window) {} }
+    let rowHeight = host.rootView.geometry.rowHeight
+    let unifiedTop = try #require(list.top(ofFile: 1))
+    list.scroll(toY: unifiedTop + AllChangesFileView.headerHeight + 20 * rowHeight)
+    host.layoutSubtreeIfNeeded()
+
+    host.rootView = AllChangesListRepresentable(
+      model: harness.model,
+      tab: tab,
+      document: AllChangesDocument(
+        AllChangesReading(listed: files.map(\.change), files: files),
+        collapsed: [],
+        heldOpen: [:],
+        layout: .split,
+      ),
+      theme: host.rootView.theme,
+      font: host.rootView.font,
+      find: host.rootView.find,
+    )
+    host.layoutSubtreeIfNeeded()
+
+    #expect(list.fileIndex(at: list.scrollY) == 1)
+    let splitTop = try #require(list.top(ofFile: 1))
+    let rowAtTop = (list.scrollY - splitTop - AllChangesFileView.headerHeight) / rowHeight
+    #expect(abs(rowAtTop - 8) < 0.5, "row \(rowAtTop) at the top")
   }
 
   @Test func filesMeasuredBeforeEveryFileCollapsedTakeTheirCollapsedHeight() throws {

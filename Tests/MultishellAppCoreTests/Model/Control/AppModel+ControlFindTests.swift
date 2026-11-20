@@ -23,6 +23,21 @@ struct AppModelControlFindTests {
     #expect(find["selected"] as? Int == 0)
   }
 
+  @Test func aSelectedMatchPastANewTotalIsDescribedAsNoneSelectedAsTheBarShows() async throws {
+    let (harness, onlyPane) = Harness.withOnePane()
+    let pane = onlyPane.id
+
+    _ = await harness.messageSource.ask(.findInPane(id: pane, action: .open("error")))
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(20), in: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .selected(16), in: pane)
+    harness.engine.delegate?.terminalHost(harness.engine, didCount: .total(3), in: pane)
+    let reply = try #require(await harness.messageSource.ask(.describePane(id: pane)))
+
+    let find = try #require(reply.outputFields["find"] as? [String: Any])
+    #expect(find["total"] as? Int == 3)
+    #expect(find["selected"] == nil)
+  }
+
   @Test func aStepNeedsTheBarUpAndCloseTakesItDownAndItsCount() async throws {
     let (harness, onlyPane) = Harness.withOnePane()
     let pane = onlyPane.id

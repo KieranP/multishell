@@ -69,8 +69,8 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
 - **Closing it clears the text**, so rows are never missing with nothing on
   screen saying why, and Escape closes rather than empties.
 - **Closing hands the keyboard to the active pane**, or first responder drops to
-  the window and typing reaches nothing. Cost: the filter is a click further
-  away, with no keyboard route to it.
+  the window and typing reaches nothing. Cost: the filter is a click or Filter
+  Projects (⌥⌘P) away.
 - **While the filter has text it holds every project it shows open**, and a
   chevron click collapses the project for that text alone, as Xcode's navigator
   does. Reading the stored flag, the chevron pointed right over open rows and

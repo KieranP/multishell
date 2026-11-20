@@ -34,9 +34,8 @@ extension AppModel {
     )
   }
 
-  /// A terminal tab dragged onto a worktree's row, shells and all; `false` where
-  /// it cannot move, a file or All changes tab's always. See
-  /// tabs-and-groups/groups-and-dragging.md.
+  /// A terminal tab dragged onto a worktree's row, shells and all; `false` where it
+  /// cannot move, a file or All changes tab's always; tabs-and-groups/groups-and-dragging.md.
   @discardableResult
   func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard

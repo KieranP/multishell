@@ -156,11 +156,32 @@ struct AppModelFilesPanelReadsTests {
     #expect(harness.model.submoduleReadings[main.id]?["sub"] == first)
   }
 
+  @Test func aSubmoduleWhoseTopGitCannotReadKeepsTheLastReading() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let sub = main.path.appending(path: "sub")
+    try await TestRepository.initialise(at: sub, withFirstCommit: true)
+    harness.model.scheduleSubmoduleRead("sub", in: main.id)
+    try await waitUntil { harness.model.submoduleReadings[main.id]?["sub"]?.status != nil }
+    let first = try #require(harness.model.submoduleReadings[main.id]?["sub"])
+    try harness.wrapGit(in: #"case "$*" in *show-toplevel*) exit 128 ;; esac"#)
+
+    harness.model.scheduleSubmoduleRead("sub", in: main.id)
+    try await waitUntil { !harness.model.panelFolderReads.isRunning { _ in true } }
+
+    #expect(harness.model.submoduleReadings[main.id]?["sub"] == first)
+  }
+
   @Test func submoduleReadsAskedForWhileOneRunsWaitForIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let main = try #require(harness.worktree(onBranch: "main"))
     let git = try #require(harness.model.coordinator?.git)
+    try FileManager.default.createDirectory(
+      at: main.path.appending(path: "src"),
+      withIntermediateDirectories: true,
+    )
     git.runLog.setRecording(true)
     defer { git.runLog.setRecording(false) }
     _ = git.runLog.drain()

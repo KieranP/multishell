@@ -101,7 +101,8 @@
   All Projects' agent hooks grow with every agent installed; Shortcuts splits by
   menu (shortcuts.md). The parts are sidebar rows under their page, not a
   segmented control in the form, listed only while their page is open (owner,
-  2026-11-19).
+  2026-11-19). The arrow keys step through the rows listed, a closed page's row
+  opening its first part as a click does.
 - **One settings window, a sidebar of pages, for All Projects and each
   project.** Chosen over two toolbar-tab windows (2026-11-05) from mockups of
   four designs. A close returns it to All Projects, so Multishell > Settings
@@ -199,7 +200,7 @@
   - (i) buttons and the Global cell keep the system's `.secondary`; titles,
     headings and captions take `SettingsColors.secondaryText`, so the override
     table's heading matches a group's title.
-  - `ThemePicker` stays in `Shared/` although only the Terminal menu draws it: a
+  - `ThemePicker` stays in `Shared/` although only the View menu draws it: a
     folder follows what a file is, not how many places call it.
   - `Theme.builtins` and `theme(from:)`'s default stay public: 20 AppUI test
     files name them without `@testable` importing Core.

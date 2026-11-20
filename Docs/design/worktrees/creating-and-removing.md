@@ -74,7 +74,15 @@ the bottom.
 - **The branch the repository's `HEAD` names is never deleted**, and the dialog
   offers no deletion of the default branch. A bare clone's `HEAD` is a branch no
   checkout holds, and `branch -d` measures merged against `HEAD`, so removing
-  the trunk's worktree deleted `main` with its unpushed commits.
+  the trunk's worktree deleted `main` with its unpushed commits. `HEAD` is read
+  as a full refname: `rev-parse --abbrev-ref` says `heads/main` beside a tag
+  `main`, which the guard took for another branch. A failed read deletes no
+  branch, as it once let the delete through.
+- **A worktree holding another worktree or a populated submodule is refused**,
+  as `worktree remove` refuses both. The Trash took the inner worktree's
+  uncommitted files, and the record took the submodule's repository, kept under
+  it, with its unpushed commits. Populated, as git judges it: a `.git` in the
+  submodule's folder, so `git submodule deinit` lets the removal through.
 - **A detached worktree's commits on no branch are read before removing it**,
   and the dialog asks about them even with confirmation off. Its record holds
   the only `HEAD` and reflog, so `worktree remove` leaves them dangling.

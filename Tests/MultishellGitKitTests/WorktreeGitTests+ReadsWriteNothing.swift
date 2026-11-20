@@ -91,7 +91,7 @@ extension WorktreeGitTests {
         #expect(try await git.status(of: worktree, counting: indicator).isDirty)
       }
       #expect(await git.trackedFiles(in: worktree.path)?.paths.contains("kept.txt") == true)
-      #expect(await git.isRepositoryTop(worktree.path))
+      #expect(await git.isRepositoryTop(worktree.path) == true)
       #expect(await git.ignoredEntries(in: worktree.path) != nil)
       for path in ["kept.txt", "README.md", "new.txt"] {
         _ = try await git.committedSize(of: path, in: worktree.path)

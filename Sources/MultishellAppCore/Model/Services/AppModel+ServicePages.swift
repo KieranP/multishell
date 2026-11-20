@@ -50,9 +50,7 @@ extension AppModel {
     guard let upstream = remoteState.upstreams[worktree.id] else {
       return .notPushed(branch: branch)
     }
-    if let newest = ciHistory(of: worktree)?.runs.first ?? services(of: worktree).ciRun {
-      return .run(newest)
-    }
+    if let newest = newestCIRun(of: worktree) { return .run(newest) }
     guard reading?.hasAnswered == true else {
       return .notRead(problem: reading.flatMap { $0.failure?.reason(integration: $0.integration) })
     }
@@ -153,7 +151,18 @@ extension AppModel {
 
   /// The runs before the newest, for the page's Earlier Runs.
   public func earlierCIRuns(of worktree: Worktree) -> [CIRun] {
-    Array(ciHistory(of: worktree)?.runs.dropFirst() ?? [])
+    let newest = newestCIRun(of: worktree)
+    return ciHistory(of: worktree)?.runs.filter { $0.id != newest?.id } ?? []
+  }
+
+  /// The history's newest, unless the row has found a newer run since it was
+  /// read, which the history read only while the page shows it.
+  private func newestCIRun(of worktree: Worktree) -> CIRun? {
+    let rowsRun = services(of: worktree).ciRun
+    guard let history = ciHistory(of: worktree),
+      rowsRun == nil || history.askedForRun == rowsRun?.id
+    else { return rowsRun }
+    return history.runs.first ?? rowsRun
   }
 
   /// The history read, where it is of the branch the worktree is published at now.

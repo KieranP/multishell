@@ -214,30 +214,21 @@ final class AllChangesListCoordinator {
     }
   }
 
-  /// The boxed change's top, else the clip's.
-  func stepOrigin(
-    on list: AllChangesListView,
-    geometry: DiffRowGeometry,
-  ) -> (Double, isBoxed: Bool) {
-    if let boxed,
-      let top = top(of: boxed, on: list, geometry: geometry)
-    {
-      return (Double(top), true)
-    }
-    return (Double(list.scrollY), false)
+  func stepOrigin(on list: AllChangesListView, geometry: DiffRowGeometry) -> AllChangesStepOrigin {
+    AllChangesStepOrigin(
+      boxedTop: boxed.flatMap { top(of: $0, on: list, geometry: geometry) }.map(Double.init),
+      clipTop: Double(list.scrollY),
+      clipHeight: Double(list.clipHeight),
+    )
   }
 
   /// The next or previous change across the files, a few rows under the top
   /// and boxed.
   func step(_ direction: CycleDirection, on list: AllChangesListView, geometry: DiffRowGeometry) {
-    let (origin, isBoxed) = stepOrigin(on: list, geometry: geometry)
-    guard
-      let stop = steps(on: list, geometry: geometry).stop(
-        direction,
-        from: origin,
-        isBoxed: isBoxed,
-      )
-    else { return }
+    let origin = stepOrigin(on: list, geometry: geometry)
+    guard let stop = steps(on: list, geometry: geometry).stop(direction, from: origin) else {
+      return
+    }
     let previous = boxed
     boxed = stop
     if let previous, let view = list.file(at: previous.section) {

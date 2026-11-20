@@ -43,6 +43,7 @@ extension WorkerRoster {
   mutating func removeFromOverflow(_ id: String) -> Place {
     let place = overflowPlace
     overflowed[id] = overflowed[id].flatMap { $0 > 1 ? $0 - 1 : nil }
+    if overflowed[id] == nil { overflowedAwaitingStart.remove(id) }
     if let overflow = overflowIndex { removeOne(at: overflow) }
     return place
   }

@@ -33,11 +33,14 @@ public struct WorktreeGit: Sendable {
 
   /// The folder of an initialised repository: a submodule nobody has
   /// initialised, as every new worktree's is, runs `git -C` against its parent.
-  public func isRepositoryTop(_ directory: URL) async -> Bool {
-    guard
-      let top = await runner.output(["rev-parse", "--show-toplevel"], in: directory)?
-        .gitLines.first
-    else { return false }
+  /// `nil` where git failed in a folder that is there, which says neither.
+  public func isRepositoryTop(_ directory: URL) async -> Bool? {
+    guard await runOnDispatch({ FileManager.default.fileExists(atPath: directory.path) }) else {
+      return false
+    }
+    guard let output = await runner.output(["rev-parse", "--show-toplevel"], in: directory)
+    else { return nil }
+    guard let top = output.gitLines.first else { return false }
     return await runOnDispatch { Self.sameComparablePath(URL(fileURLWithPath: top), directory) }
   }
 

@@ -12,10 +12,16 @@ public enum ExecutableLookup {
     for directory in searchPath.split(separator: ":", omittingEmptySubsequences: true) {
       let candidate = URL(fileURLWithPath: String(directory), isDirectory: true)
         .appending(path: name)
-      if FileManager.default.isExecutableFile(atPath: candidate.path) {
-        return candidate
-      }
+      if isExecutableFile(candidate) { return candidate }
     }
     return nil
+  }
+
+  /// A directory passes `isExecutableFile` as searchable; a shell passes it over.
+  private static func isExecutableFile(_ candidate: URL) -> Bool {
+    var isDirectory: ObjCBool = false
+    return FileManager.default.fileExists(atPath: candidate.path, isDirectory: &isDirectory)
+      && !isDirectory.boolValue
+      && FileManager.default.isExecutableFile(atPath: candidate.path)
   }
 }

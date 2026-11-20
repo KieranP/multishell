@@ -118,7 +118,7 @@ public enum TestRepository {
 
   /// Local branch names, sorted.
   public static func branches(in url: URL, using git: GitRunner) async throws -> [String] {
-    try await git.run(["for-each-ref", "--format=%(refname:short)", "refs/heads"], in: url)
+    try await git.run(["for-each-ref", "--format=%(refname:lstrip=2)", "refs/heads"], in: url)
       .split(whereSeparator: \.isNewline).map(String.init).sorted()
   }
 

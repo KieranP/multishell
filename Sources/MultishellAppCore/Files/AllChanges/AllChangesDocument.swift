@@ -21,6 +21,8 @@ public struct AllChangesDocument: Equatable, Sendable {
   private let sectionByPath: [String: Int]
   public let lineCounts: FileLineCounts
 
+  public var isSplit: Bool { committedText != nil }
+
   /// Split's two sides as a split view takes them; `nil` in Unified.
   var split: SplitDiff? {
     committedText.map { SplitDiff(committed: $0, onDisk: text) }
@@ -77,6 +79,13 @@ public struct AllChangesDocument: Equatable, Sendable {
   public func section(atRow row: Int) -> Int? {
     let index = sections.partitioningIndex { $0.headerAfterRow >= row }
     return index > 0 ? index - 1 : nil
+  }
+
+  /// Whether a range of `text` starts and ends in the same file's rows.
+  func isWithinOneFile(_ range: Range<Int>) -> Bool {
+    let last = max(range.lowerBound, range.upperBound - 1)
+    return section(atRow: text.row(atOffset: range.lowerBound))
+      == section(atRow: text.row(atOffset: last))
   }
 
   /// Whether a file's view shows Split's two columns; one shown whole is

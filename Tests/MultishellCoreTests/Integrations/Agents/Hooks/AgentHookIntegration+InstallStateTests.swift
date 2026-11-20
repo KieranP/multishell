@@ -156,4 +156,20 @@ struct AgentHookIntegrationInstallStateTests: AgentHookFixtures {
     #expect(claude.installState(in: file, helper: helper) == .current)
     #expect(try !String(contentsOf: file, encoding: .utf8).contains("claude-hook"))
   }
+
+  @Test func hooksTheUserAddedByHandToASettingsFileWithCommentsReadAsInstalled() throws {
+    let directory = Scratch.path("hooks")
+    defer { Scratch.remove(directory) }
+    let file = directory.appendingPathComponent(".gemini/settings.json")
+    try FileManager.default.createDirectory(
+      at: file.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
+    let gemini = AgentHookCatalogue.gemini
+    let settings = AgentHookFile.render(gemini.adding(to: [:], helper: helper))
+    try ("// mine, with a \"quote\" and /* a block */\n" + settings)
+      .write(to: file, atomically: true, encoding: .utf8)
+
+    #expect(gemini.installState(in: file, helper: helper) == .current)
+  }
 }

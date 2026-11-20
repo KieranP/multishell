@@ -6,6 +6,8 @@ enum FileOnDisk: Sendable {
   /// Gone, or no longer a regular file.
   case gone
   case tooLarge(bytes: Int)
+  /// There, but the read failed: no permission, or no descriptor left.
+  case unreadable
 
   var bytes: Data? {
     if case .bytes(let data) = self { data } else { nil }
@@ -14,13 +16,31 @@ enum FileOnDisk: Sendable {
   /// Blocking: callers run it through `runOnDispatch`. Unmapped, as a mapped
   /// file truncated under the read faults; see worktrees/line-count-badge.md.
   static func read(_ url: URL, sizeLimit: Int) -> Self {
-    guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
-      values.isRegularFile == true
-    else { return .gone }
+    let values: URLResourceValues
+    do {
+      values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+    } catch {
+      return goneOrUnreadable(after: error)
+    }
+    guard values.isRegularFile == true else { return .gone }
     let size = values.fileSize ?? 0
     guard size <= sizeLimit else { return .tooLarge(bytes: size) }
-    guard let data = try? Data(contentsOf: url) else { return .gone }
-    return data.count <= sizeLimit ? .bytes(data) : .tooLarge(bytes: data.count)
+    do {
+      let data = try Data(contentsOf: url)
+      return data.count <= sizeLimit ? .bytes(data) : .tooLarge(bytes: data.count)
+    } catch {
+      return goneOrUnreadable(after: error)
+    }
+  }
+
+  /// Only a missing file is gone; any other failure says nothing of whether it is there.
+  private static func goneOrUnreadable(after error: any Error) -> Self {
+    let error = error as NSError
+    let isMissing =
+      (error.domain == NSCocoaErrorDomain
+        && [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(error.code))
+      || (error.domain == NSPOSIXErrorDomain && [ENOENT, ENOTDIR].contains(Int32(error.code)))
+    return isMissing ? .gone : .unreadable
   }
 
   /// Whether the disk spells `path`'s folders and name as given; one that ignores

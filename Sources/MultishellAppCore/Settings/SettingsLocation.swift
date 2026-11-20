@@ -18,10 +18,13 @@ public struct SettingsLocation: Hashable, Sendable {
     section.page == page
   }
 
-  /// The section `offset` rows down the sidebar's `pages`, their parts
-  /// counted, held to the first and last, onto the list where it hides this one.
+  /// The section `offset` rows down the sidebar's `pages`, held to the first and
+  /// last, onto the list where it hides this one. A closed split page's row opens its first part.
   func stepped(by offset: Int, among pages: [SettingsPage]) -> Self {
-    let sections = pages.flatMap { $0.sections(in: scope) }
+    let sections = pages.flatMap { page in
+      let sections = page.sections(in: scope)
+      return showsParts(of: page) ? sections : Array(sections.prefix(1))
+    }
     guard let last = sections.indices.last else { return self }
     let start = sections.firstIndex(of: section) ?? (offset > 0 ? -1 : last + 1)
     let next = min(max(start + offset, 0), last)
