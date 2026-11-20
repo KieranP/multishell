@@ -7,7 +7,7 @@ struct TrustDecision: Codable, Hashable, Sendable {
     case isTrusted = "trusted"
   }
 
-  /// `FileDigest.sha256` of the `.multishell.json` this answers for.
+  /// `HexDigest.sha256` of the `.multishell.json` this answers for.
   var digest: String
   var isTrusted: Bool
 }

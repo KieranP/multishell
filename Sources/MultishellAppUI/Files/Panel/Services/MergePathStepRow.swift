@@ -65,7 +65,7 @@ struct MergePathStepRow: View {
                 model: model,
                 check: check,
                 worktreeID: worktree.id,
-                showsHandoffSlot: items.showsCheckSlot,
+                showsHandoffSlot: items.showsHandoffSlot,
                 candidate: items.checkCandidates[check],
                 theme: theme,
               )

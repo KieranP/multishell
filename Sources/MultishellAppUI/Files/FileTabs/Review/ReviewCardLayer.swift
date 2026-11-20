@@ -34,7 +34,7 @@ final class ReviewCardLayer {
       heights[id] = nil
     }
     for placement in placements {
-      let host = hosts[placement.id] ?? makeHost(in: textView)
+      let host = hosts[placement.id] ?? .overTextFragments(in: textView)
       host.rootView = content(placement)
       hosts[placement.id] = host
     }
@@ -72,16 +72,6 @@ final class ReviewCardLayer {
       let frame = hosts[placement.id]?.view.frame
     else { return nil }
     return (frame.minY - Self.verticalMargin)...(frame.maxY + Self.verticalMargin)
-  }
-
-  private func makeHost(in textView: NSView) -> NSHostingController<AnyView> {
-    let host = NSHostingController(rootView: AnyView(EmptyView()))
-    host.sizingOptions = []
-    host.view.wantsLayer = true
-    // TextKit 2 adds its fragments' views as it lays out; the cards stay over them.
-    host.view.layer?.zPosition = 1
-    textView.addSubview(host.view)
-    return host
   }
 
   /// Nothing before the clip has a width: cards measured at zero open tall gaps,

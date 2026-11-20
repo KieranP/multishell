@@ -17,11 +17,7 @@ struct DebugThreadRowView: View {
 
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
-      Image(systemName: disclosure == .expanded ? "chevron.down" : "chevron.right")
-        .font(metrics.font(size: metrics.debugTableGlyphSize, weight: .semibold))
-        .foregroundStyle(theme.debugInfo.textTertiary)
-        .opacity(disclosure.isExpandable ? 1 : 0)
-        .frame(width: UIMetrics.debugTableChevronWidth)
+      DebugDisclosureChevron(disclosure: disclosure, theme: theme, metrics: metrics)
       switch layout {
       case .columns:
         name.frame(maxWidth: .infinity, alignment: .leading)
@@ -62,7 +58,7 @@ struct DebugThreadRowView: View {
     } else {
       HStack(alignment: .firstTextBaseline, spacing: 6) {
         RoundedRectangle(cornerRadius: 2)
-          .fill(theme.debugColor(of: group.series))
+          .fill(theme.color(for: group.series))
           .frame(width: 7, height: 7)
         Text(row.title).foregroundStyle(theme.debugInfo.text)
       }

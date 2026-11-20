@@ -26,12 +26,11 @@ extension MacPlatform {
   ]
 
   var commandMenuItems: [PlatformMenuItem] {
-    let menusMacOSFills = [NSApp.servicesMenu, NSApp.windowsMenu, NSApp.helpMenu]
     let isAvailable = isCommandAvailable ?? { _ in true }
     return NSApp.mainMenu.map { bar in
       Self.commandItems(
         in: bar,
-        leavingOutMenus: menusMacOSFills.compactMap(\.self),
+        leavingOutMenus: Self.menusMacOSFills,
         isAvailable: isAvailable,
       )
     } ?? []

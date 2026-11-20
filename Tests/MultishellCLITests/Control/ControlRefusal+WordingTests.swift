@@ -27,8 +27,8 @@ struct ControlRefusalWordingTests {
   }
 
   @Test func nothingToSendCoversItemsSentAlreadyAndOnlyTheCIPageSaysToShowItself() {
-    let pullRequest = ControlRefusal.nothingToHandOff(.pullRequest, id: "w-89abcdef").wording
-    let ciRuns = ControlRefusal.nothingToHandOff(.ciRuns, id: "w-89abcdef").wording
+    let pullRequest = ControlRefusal.nothingToHandoff(.pullRequest, id: "w-89abcdef").wording
+    let ciRuns = ControlRefusal.nothingToHandoff(.ciRuns, id: "w-89abcdef").wording
 
     #expect(pullRequest.contains("not sent already"))
     #expect(!pullRequest.contains("only while shown"))

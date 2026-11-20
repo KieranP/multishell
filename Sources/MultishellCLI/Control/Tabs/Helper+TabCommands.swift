@@ -82,7 +82,7 @@ extension Helper {
     _ optionWords: ArraySlice<String>,
   ) throws -> ControlRequest {
     let topic = ControlCommand.tabs.rawValue
-    let usage =
+    let message =
       "tabs move needs one of --before TAB_ID, --after TAB_ID, --worktree WORKTREE_ID "
       + "or --new-group"
     let options = try CommandOptions(
@@ -91,9 +91,9 @@ extension Helper {
       flags: ["new-group"],
       topic: topic,
     )
-    let beside = try placement(in: options, usage: usage, topic: topic)
+    let beside = try placement(in: options, message: message, topic: topic)
     let asked = [beside != nil, options["worktree"] != nil, options.has("new-group")]
-    guard asked.filter(\.self).count == 1 else { throw UsageError(usage, topic: topic) }
+    guard asked.filter(\.self).count == 1 else { throw UsageError(message, topic: topic) }
     if let (placement, anchor) = beside {
       return .moveTab(id: id, placement: placement, anchor: try tabOrPaneID(anchor, topic: topic))
     }

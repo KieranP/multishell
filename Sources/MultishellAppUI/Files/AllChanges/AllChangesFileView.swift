@@ -7,10 +7,10 @@ import SwiftUI
 /// see Docs/design/files/all-changes-tab.md.
 @MainActor
 final class AllChangesFileView: NSView {
-  static var headerHeight: CGFloat { CGFloat(UIMetrics.allChangesHeaderBarHeight) }
+  static var headerHeight: CGFloat { CGFloat(UIMetrics.fileTabBarHeight) }
 
   /// Its diff: `unified`, or `split`'s two columns.
-  let canvas: DiffCanvasView
+  let diffView: DiffCanvasView
   let unified: DiffDocumentView?
   let split: SplitDiffDocumentView?
   /// What find, highlighting and the arrows' box work on: Unified's column, or
@@ -37,7 +37,7 @@ final class AllChangesFileView: NSView {
   /// Where the code starts across the gap views: Unified's, or Split's left.
   var codeX: CGFloat {
     let column = split?.committed ?? mainColumn
-    return column.textClip.frame.minX - canvas.spanningGapViews.frame.minX
+    return column.textClip.frame.minX - diffView.spanningGapViews.frame.minX
       + column.textView.textContainerOrigin.x
   }
 
@@ -50,13 +50,13 @@ final class AllChangesFileView: NSView {
   init(geometry: DiffRowGeometry, isSplit: Bool, scrollsWith list: NSView?) {
     if isSplit {
       let split = SplitDiffDocumentView(geometry: geometry)
-      canvas = split
+      diffView = split
       self.split = split
       unified = nil
       mainColumn = split.onDisk
     } else {
       let unified = DiffDocumentView(geometry: geometry)
-      canvas = unified
+      diffView = unified
       self.unified = unified
       split = nil
       mainColumn = unified.column
@@ -66,13 +66,13 @@ final class AllChangesFileView: NSView {
     layer?.borderWidth = 1
     layer?.cornerRadius = CGFloat(UIMetrics.allChangesBoxCornerRadius)
     layer?.masksToBounds = true
-    canvas.forwardsWheelTo = list
-    canvas.listHeaderHeight = Self.headerHeight
-    canvas.scrollView.keepsOverlayScrollers = true
+    diffView.forwardsWheelTo = list
+    diffView.listHeaderHeight = Self.headerHeight
+    diffView.scrollView.keepsOverlayScrollers = true
     for column in [split?.committed, mainColumn].compactMap(\.self) {
       column.textView.offersChangesRotor = false
     }
-    addSubview(canvas)
+    addSubview(diffView)
     addSubview(headerHost)
     unified?.onReviewCardGaps = { [weak self] gaps in
       self?.cardGaps = gaps
@@ -121,7 +121,7 @@ final class AllChangesFileView: NSView {
       contentKey: theme,
       height: itemHeight,
       content: item,
-      in: canvas.spanningGapViews,
+      in: diffView.spanningGapViews,
     )
     openGaps()
     return showsTextAnew
@@ -148,7 +148,7 @@ final class AllChangesFileView: NSView {
     shownHeader = nil
     headerHost.rootView = AnyView(EmptyView())
     box(nil)
-    canvas.scroll(to: .zero)
+    diffView.scroll(to: .zero)
   }
 
   /// The list scrolled its rows from under the pointer: no + stays on one.
@@ -177,7 +177,7 @@ final class AllChangesFileView: NSView {
   private func layOutItems(in geometry: DiffRowGeometry) {
     guard slice != nil else { return }
     split?.dividerSpan = 0...diffHeight
-    gapLayer.layOut(in: geometry, width: canvas.spanningGapViews.bounds.width, codeX: codeX)
+    gapLayer.layOut(in: geometry, width: diffView.spanningGapViews.bounds.width, codeX: codeX)
   }
 
   /// A view let go of, showing no file, asks the list for no layout.
@@ -191,6 +191,6 @@ final class AllChangesFileView: NSView {
   override func layout() {
     super.layout()
     headerHost.frame = NSRect(x: 0, y: 0, width: bounds.width, height: Self.headerHeight)
-    canvas.frame = NSRect(x: 0, y: Self.headerHeight, width: bounds.width, height: diffHeight)
+    diffView.frame = NSRect(x: 0, y: Self.headerHeight, width: bounds.width, height: diffHeight)
   }
 }

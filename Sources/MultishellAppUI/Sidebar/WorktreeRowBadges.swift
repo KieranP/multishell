@@ -6,16 +6,7 @@ import SwiftUI
 /// The glyphs at a worktree row's right end. Several views rather than one,
 /// so the row's own spacing sits between them.
 struct WorktreeRowBadges: View {
-  /// What a crowded row keeps, giving up the terminal count, then the
-  /// services, then the git counts; a running or failed glyph always stays.
-  enum Shown {
-    case all
-    case withoutCount
-    case withoutServices
-    case alertsOnly
-  }
-
-  let shown: Shown
+  let fit: WorktreeRowBadgeFit
   let operation: WorktreeOperation?
   let autoRename: AutoRenameState?
   let isLocked: Bool
@@ -28,16 +19,6 @@ struct WorktreeRowBadges: View {
   let clearAutoRenameFailure: () -> Void
   let showPullRequest: () -> Void
   let showCIRuns: () -> Void
-
-  private var showsCount: Bool {
-    shown == .all && TerminalCountCapsule.showsCount(of: terminalCount)
-  }
-
-  private var showsServices: Bool {
-    (shown == .all || shown == .withoutCount) && standing.services.showsAnything
-  }
-
-  private var showsGitState: Bool { shown != .alertsOnly }
 
   var body: some View {
     if let operation {
@@ -63,8 +44,8 @@ struct WorktreeRowBadges: View {
     }
     // Git changes and the services sit left of the terminal count, so the count
     // stays at the row's right edge and lines up with rows that have neither.
-    if showsGitState { gitState }
-    if showsServices {
+    if fit.showsGitState { gitState }
+    if fit.showsServices(standing.services) {
       WorktreeRowServicesButtons(
         services: standing.services,
         theme: theme,
@@ -75,7 +56,7 @@ struct WorktreeRowBadges: View {
     }
     // No room kept with no terminals: an empty slot left the row's other badges
     // stranded off the edge.
-    if showsCount { countCapsule }
+    if fit.showsCount(of: terminalCount) { countCapsule }
   }
 
   /// The lock, the merged glyph and the change counts.

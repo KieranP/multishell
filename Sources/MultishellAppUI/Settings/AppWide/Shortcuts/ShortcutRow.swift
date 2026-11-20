@@ -99,7 +99,7 @@ struct ShortcutRow: View {
 
   private func take(_ input: ShortcutRecorderInput) {
     switch input {
-    case .keys(let keys): model.takeRecordedShortcut(keys, for: command)
+    case .keys(let keys): model.submitRecordedShortcut(keys, for: command)
     case .cancel: model.endShortcutsPageEdit()
     case .clear: model.clearRecordedShortcut(for: command)
     case .ignored: break

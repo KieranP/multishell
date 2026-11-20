@@ -13,8 +13,8 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
     var theme: Theme?
     let paintedFindMatches: PaintedFindMatches
     var highlighting: Task<Void, Never>?
-    var committedReviewCards: ShownReviewCards?
-    var onDiskReviewCards: ShownReviewCards?
+    var shownCommittedCards: ShownReviewCards?
+    var shownCards: ShownReviewCards?
 
     init(paintedFindMatches: PaintedFindMatches) {
       self.paintedFindMatches = paintedFindMatches
@@ -107,8 +107,8 @@ struct SplitDiffDocumentRepresentable: NSViewRepresentable {
         DiffColumn, DiffSide, DiffDisplayText,
         ReferenceWritableKeyPath<Coordinator, ShownReviewCards?>
       )] = [
-        (view.committed, .committed, split.committed, \.committedReviewCards),
-        (view.onDisk, .onDisk, split.onDisk, \.onDiskReviewCards),
+        (view.committed, .committed, split.committed, \.shownCommittedCards),
+        (view.onDisk, .onDisk, split.onDisk, \.shownCards),
       ]
     view.placeReviewCards {
       for (column, side, text, shownPath) in columns {

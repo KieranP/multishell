@@ -24,7 +24,7 @@ struct AllChangesDocumentStopsTests {
     #expect(document.unreadSections == [1])
     #expect(
       document.changeStops == [
-        AllChangesSteps.Stop(section: 0, row: 1), AllChangesSteps.Stop(section: 1, row: 0),
+        AllChangesFileRow(section: 0, row: 1), AllChangesFileRow(section: 1, row: 0),
       ]
     )
   }

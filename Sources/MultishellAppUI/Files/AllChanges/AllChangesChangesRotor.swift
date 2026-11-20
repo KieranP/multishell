@@ -11,7 +11,7 @@ final class AllChangesChangesRotor: NSObject,
   private weak var list: AllChangesListView?
   private weak var coordinator: AllChangesListCoordinator?
   /// The last item given and its stop: its text view may since show another file.
-  private var given: (item: NSAccessibilityCustomRotor.ItemResult, stop: AllChangesSteps.Stop)?
+  private var given: (item: NSAccessibilityCustomRotor.ItemResult, stop: AllChangesFileRow)?
 
   init(list: AllChangesListView, coordinator: AllChangesListCoordinator) {
     self.list = list
@@ -29,7 +29,7 @@ final class AllChangesChangesRotor: NSObject,
     let current = parameters.currentItem.flatMap { item in
       given.flatMap { $0.item === item ? $0.stop : nil } ?? stop(of: item, in: list)
     }
-    guard let stop = document.changedLine(direction, from: current, slice: coordinator.slice)
+    guard let stop = document.changedRow(direction, from: current, slice: coordinator.slice)
     else { return nil }
     coordinator.scroll(to: stop, below: list.clipHeight / 3, on: list, geometry: geometry)
     let item = textView(showing: stop, in: list)?.changesRotorItem(atRow: stop.row)
@@ -39,7 +39,7 @@ final class AllChangesChangesRotor: NSObject,
 
   /// Split's left where the change is a removed line beside the right's padding.
   private func textView(
-    showing stop: AllChangesSteps.Stop,
+    showing stop: AllChangesFileRow,
     in list: AllChangesListView,
   )
     -> DiffTextView?
@@ -58,13 +58,13 @@ final class AllChangesChangesRotor: NSObject,
   private func stop(
     of item: NSAccessibilityCustomRotor.ItemResult,
     in list: AllChangesListView,
-  ) -> AllChangesSteps.Stop? {
+  ) -> AllChangesFileRow? {
     let target = item.targetElement
     for (index, view) in list.builtFiles {
       for column in [view.mainColumn, view.split?.committed].compactMap(\.self)
       where column.textView === target {
         let row = column.textView.displayText.row(atOffset: item.targetRange.location)
-        return AllChangesSteps.Stop(section: index, row: row)
+        return AllChangesFileRow(section: index, row: row)
       }
     }
     return nil

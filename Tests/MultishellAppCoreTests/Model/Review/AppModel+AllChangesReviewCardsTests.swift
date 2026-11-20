@@ -107,7 +107,7 @@ struct AppModelAllChangesReviewCardsTests {
     harness.model.addReviewComment(comment, in: harness.main.id)
     let document = try #require(harness.model.allChangesDocument(of: tab.id))
 
-    let stop = harness.model.reviewCardStop(.comment(comment.id), of: tab, in: document)
+    let stop = harness.model.reviewCardRow(.comment(comment.id), of: tab, in: document)
 
     let row = try #require(stop?.row)
     #expect(stop?.section == 1)

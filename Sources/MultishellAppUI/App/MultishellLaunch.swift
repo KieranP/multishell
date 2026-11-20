@@ -4,11 +4,11 @@ import MultishellCore
 import SwiftUI
 
 /// The executable's entry: run as `multishell` with a command, it becomes the
-/// helper (HelperHandOff); otherwise the app starts.
+/// helper (HelperHandOver); otherwise the app starts.
 @main
 enum MultishellLaunch {
   static func main() {
-    if let arguments = HelperHandOff.helperArguments(from: CommandLine.arguments) {
+    if let arguments = HelperHandOver.helperArguments(from: CommandLine.arguments) {
       handOver(arguments)
     }
     // Before any child: every pane is a session of its own, not the launching shell's.

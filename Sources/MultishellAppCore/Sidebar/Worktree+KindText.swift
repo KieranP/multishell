@@ -8,7 +8,7 @@ extension Worktree {
       return inSentence ? t("kind.bare-in-sentence") : t("kind.bare")
     }
     if isDetached {
-      let shortHead = String(head.prefix(7))
+      let shortHead = head.abbreviatedCommit
       return inSentence
         ? t("kind.detached-in-sentence", shortHead) : t("kind.detached", shortHead)
     }

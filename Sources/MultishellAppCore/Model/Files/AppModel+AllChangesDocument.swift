@@ -90,16 +90,6 @@ extension AppModel {
     }
   }
 
-  /// The view's, as it scrolls: the file at the top of the clip.
-  public func noteAllChangesTopFile(_ top: AllChangesTopFile?, in id: AllChangesTab.ID) {
-    setIfChanged(\.allChangesTopFiles[id], top)
-    setIfChanged(\.allChangesLitPaths[id], top?.path)
-  }
-
-  public func allChangesTopFile(of id: AllChangesTab.ID) -> AllChangesTopFile? {
-    allChangesTopFiles[id]
-  }
-
   /// Uncached, as `layout` though another may be shown: what a find searched
   /// before a switch that came while the tab was hidden.
   func allChangesDocument(

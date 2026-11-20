@@ -34,7 +34,7 @@ extension AppModel {
   }
 
   /// The header glyph's and the View menu's, kept for the next launch.
-  public func setShowsFilesPanel(_ shows: Bool) {
+  func setShowsFilesPanel(_ shows: Bool) {
     guard showsFilesPanel != shows else { return }
     store.setShowsFilesPanel(shows)
     if shows, let worktree = filesPanelWorktree {

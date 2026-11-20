@@ -55,7 +55,7 @@ extension AppModel {
 
   /// The window closing, or the project it shows removed: back on All
   /// Projects, its search empty as any change of scope leaves it.
-  public func returnSettingsToAllProjects() {
+  func returnSettingsToAllProjects() {
     setIfChanged(\.settingsLocation, .start)
     setIfChanged(\.settingsSearchText, "")
   }

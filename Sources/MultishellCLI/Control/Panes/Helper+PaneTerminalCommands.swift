@@ -5,13 +5,13 @@ extension Helper {
   /// The commands on a pane's terminal: typing, reading and finding; `nil`
   /// for any other.
   static func runPaneTerminal(
-    _ command: String?,
+    _ subcommand: String?,
     _ words: [String],
     _ optionWords: ArraySlice<String>,
     environment: [String: String],
   ) throws -> Int32? {
     let topic = ControlCommand.panes.rawValue
-    switch (command, words.count) {
+    switch (subcommand, words.count) {
     case ("type", 2):
       return try typeIntoPane(
         try tabOrPaneID(words[0], topic: topic),

@@ -5,7 +5,7 @@ import MultishellCore
 /// merge box opens on for this user, and GitHub's own message for each.
 struct GitHubMergeOptionsRecord: Decodable {
   /// The answer's `data`; `gh` exits non-zero for any `errors` beside it.
-  struct Envelope: Decodable {
+  private struct Envelope: Decodable {
     struct Answer: Decodable {
       let repository: GitHubMergeOptionsRecord?
     }

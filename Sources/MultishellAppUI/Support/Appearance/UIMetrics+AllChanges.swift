@@ -8,8 +8,6 @@ extension UIMetrics {
 
   /// Above each file's header, setting one file's box apart from the last.
   static let allChangesFileGap: Double = 10
-  /// As tall as a file tab's bar, which the header stands in for.
-  static let allChangesHeaderBarHeight: Double = 30
   static let allChangesHeaderSpacing: Double = 8
   /// The hit square of a header's chevron and open button, and the bar's
   /// collapse-all button.
@@ -39,8 +37,8 @@ extension UIMetrics {
   var allChangesGlyphLineWidth: Double { allChangesGlyphSide * 1.5 / GlyphGrid.side }
 
   /// One line of the UI's text with room either side.
-  var allChangesFoldHeight: Double { (bodySize * 2).rounded() }
-  var allChangesNoticeHeight: Double { (bodySize * 3).rounded() }
+  private var allChangesFoldHeight: Double { (bodySize * 2).rounded() }
+  private var allChangesNoticeHeight: Double { (bodySize * 3).rounded() }
 
   func allChangesHeight(of kind: AllChangesGapItem.Kind) -> Double {
     switch kind {

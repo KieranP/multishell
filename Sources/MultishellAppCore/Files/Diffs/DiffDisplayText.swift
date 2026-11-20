@@ -33,7 +33,7 @@ public struct DiffDisplayText: Equatable, Sendable {
   /// commit than `HEAD`, whose changes the index holds too.
   public let marksStaging: Bool
 
-  public init(_ lines: [DiffLine], marksStaging: Bool) {
+  init(_ lines: [DiffLine], marksStaging: Bool) {
     self.init(
       lines,
       wholeSides: [.committed, .onDisk],

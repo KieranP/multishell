@@ -3,8 +3,13 @@ import MultishellCore
 import MultishellServices
 
 extension AppModel {
-  public func ciWorkflows(ofRun run: CIRun) -> [CIWorkflow]? {
+  func ciWorkflows(ofRun run: CIRun) -> [CIWorkflow]? {
     remoteState.ciWorkflows[run.id]?.value
+  }
+
+  /// `nil` once a rerun has the run going again or passed.
+  func failureReport(of run: CIRun) -> CIFailureReport? {
+    run.status == .failed ? remoteState.failureReports[run.id]?.value : nil
   }
 
   /// Why the run's workflows or report could not be read, `nil` once a read answers.

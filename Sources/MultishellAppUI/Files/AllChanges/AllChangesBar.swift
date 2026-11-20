@@ -49,7 +49,7 @@ struct AllChangesBar: View {
     .font(model.metrics.font(size: model.metrics.secondary))
     .padding(.leading, 12)
     .padding(.trailing, 8)
-    .frame(height: UIMetrics.allChangesHeaderBarHeight)
+    .frame(height: UIMetrics.fileTabBarHeight)
     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
     .clipped()
     .background(palette.background)

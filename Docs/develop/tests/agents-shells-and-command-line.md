@@ -83,7 +83,7 @@ in `design/`.
   `MULTISHELL_OPENER`, a debug build's alone, since a test may not launch an
   app.
 - **`multishell` in a pane is the helper, not the app**: SessionEnvironmentTests
-  and HelperHandOffTests. **A login profile moving `/etc/paths` ahead leaves
+  and HelperHandOverTests. **A login profile moving `/etc/paths` ahead leaves
   ours in front**: ShellIntegrationScriptsTests+LeadingPath and TabCommandTests.
 - **Each request does what its menu item or click does, and is refused rather
   than asked over a working agent**: the AppModelControl suites, on real git.

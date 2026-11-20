@@ -66,7 +66,7 @@ struct MacPlatformMenuShortcutsTests {
         )
       ],
       in: menu,
-      leavingOut: [services],
+      leavingOutMenus: [services],
     )
 
     #expect(services.items[0].keyEquivalent.isEmpty)

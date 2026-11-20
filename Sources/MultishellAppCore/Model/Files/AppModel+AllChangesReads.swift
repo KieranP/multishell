@@ -41,6 +41,17 @@ extension AppModel {
     }
   }
 
+  /// A new scope, algorithm or base: every file of the tabs it reaches is read
+  /// afresh, at once rather than at the pace the old diffs set.
+  func noteAllChangesTabsChanged(where isReached: (AllChangesTab) -> Bool) {
+    for tab in workspace.allChangesTabs where isReached(tab) {
+      allChangesReadLog.forgetPace(of: tab.id)
+      pendingAllChangesReads.removeValue(forKey: tab.id)?.cancel()
+      noteAllChangesTabChanged(tab.id, staleness: .everything)
+    }
+    readShownAllChangesTabs()
+  }
+
   /// The tabs on screen holding nothing, or owed a read while hidden, and the
   /// Branch read their list waits on.
   func readShownAllChangesTabs() {
@@ -118,7 +129,7 @@ extension AppModel {
   private func scheduleAllChangesRead(_ id: AllChangesTab.ID, atOnce: Bool = false) {
     if atOnce { pendingAllChangesReads.removeValue(forKey: id)?.cancel() }
     guard pendingAllChangesReads[id] == nil else { return }
-    pendingAllChangesReads[id] = pacedRead(atOnce: atOnce) { model in
+    pendingAllChangesReads[id] = pacedTabRead(atOnce: atOnce) { model in
       model.allChangesReadLog.nextDue(id, costScale: model.filesOwed(by: id))
     } read: { model in
       model.pendingAllChangesReads[id] = nil

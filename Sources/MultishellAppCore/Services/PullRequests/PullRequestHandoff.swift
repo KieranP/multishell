@@ -12,7 +12,7 @@ enum PullRequestHandoff {
     t("handoff.pull-request-introduction", number)
   }
 
-  static func fileName(number: Int, worktreeNamed name: String) -> String {
+  static func fileName(number: Int, forWorktreeNamed name: String) -> String {
     AgentHandoff.fileName("pr-\(number)", forWorktreeNamed: name)
   }
 

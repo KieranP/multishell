@@ -18,11 +18,6 @@ extension AppModel {
 
   public var showsCIPanelPage: Bool { !readableCIProviders.isEmpty }
 
-  /// `nil` once a rerun has the run going again or passed.
-  public func failureReport(of run: CIRun) -> CIFailureReport? {
-    run.status == .failed ? remoteState.failureReports[run.id]?.value : nil
-  }
-
   public func pullRequestPage(of worktree: Worktree) -> PullRequestPage {
     guard let project = workspace.project(worktree.projectID), pullRequestHost(for: project) != nil
     else { return .turnedOff }

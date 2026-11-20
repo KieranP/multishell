@@ -45,19 +45,6 @@ extension DebugMetric {
     }
   }
 
-  /// What colours the value: the frame rate by how smooth the slot was, the
-  /// pressure by its level; the rest read plain.
-  public func valueTone(of slot: DebugTimelineSlot?) -> DebugValueTone? {
-    switch self {
-    case .frameRate: slot.map { DebugValueTone($0.smoothness) }
-    case .memoryPressure: slot?.memoryPressure.map(DebugValueTone.init)
-
-    case .cpu, .memory, .wakeups, .disk, .stateReports, .cliActivity, .fileEvents, .threads,
-      .openFiles, .peakMemory:
-      nil
-    }
-  }
-
   /// A line under the value: each band's share where the tile splits, what
   /// a figure counts where its name alone does not say, else nothing.
   public func detailText(of slot: DebugTimelineSlot) -> String? {

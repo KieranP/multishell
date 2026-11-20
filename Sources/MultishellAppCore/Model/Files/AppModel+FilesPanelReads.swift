@@ -99,7 +99,7 @@ extension AppModel {
   func scheduleIgnoredEntriesRead(of id: Worktree.ID) {
     guard showsIgnoredFiles, let coordinator, let worktree = workspace.worktree(id) else { return }
     let git = coordinator.git
-    schedulePacedRead(
+    schedulePacedPanelRead(
       id,
       in: id,
       on: \.ignoredEntriesReads,
@@ -140,7 +140,7 @@ extension AppModel {
   func scheduleIgnoredFolderRead(_ path: String, in id: Worktree.ID) {
     guard showsIgnoredFiles, let worktree = workspace.worktree(id) else { return }
     let folder = worktree.path.appending(path: path)
-    schedulePacedRead(
+    schedulePacedPanelRead(
       PanelFolderRead(kind: .ignoredFolder, path: path, worktreeID: id),
       in: id,
       on: \.panelFolderReads,
@@ -161,7 +161,7 @@ extension AppModel {
     let directory = worktree.path.appending(path: path)
     let indicator = workspace.gitStatusIndicator
     let algorithm = workspace.diffAlgorithm
-    schedulePacedRead(
+    schedulePacedPanelRead(
       PanelFolderRead(kind: .submodule, path: path, worktreeID: id),
       in: id,
       on: \.panelFolderReads,

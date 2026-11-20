@@ -5,7 +5,7 @@ import MultishellCore
 /// not, and where the next page starts.
 struct GitHubReviewThreadRecord: Decodable {
   /// The answer's `data`; `gh` exits non-zero for any `errors` beside it.
-  struct Envelope: Decodable {
+  private struct Envelope: Decodable {
     struct Answer: Decodable {
       let repository: Repository?
     }

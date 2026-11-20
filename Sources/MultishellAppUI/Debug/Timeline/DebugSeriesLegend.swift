@@ -22,7 +22,7 @@ struct DebugSeriesLegend: View {
     series.reduce(into: AttributedString()) { text, band in
       if !text.characters.isEmpty { text += AttributedString("   ") }
       var square = AttributedString("■" + Self.nonBreakingSpace)
-      square.foregroundColor = theme.debugColor(of: band)
+      square.foregroundColor = theme.color(for: band)
       var name = AttributedString(
         band.title.replacingOccurrences(of: " ", with: Self.nonBreakingSpace)
       )

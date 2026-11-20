@@ -12,17 +12,17 @@ struct AppModelShortcutEditingTests {
     let harness = Harness()
     harness.model.startRecordingShortcut(for: .splitRight)
 
-    harness.model.takeRecordedShortcut(backslash, for: .splitRight)
+    harness.model.submitRecordedShortcut(backslash, for: .splitRight)
     #expect(harness.model.shortcutEditing == nil)
     #expect(harness.model.shortcutKeys(for: .splitRight) == backslash)
 
-    harness.model.takeRecordedShortcut(ReservedShortcut.quit.combination, for: .splitDown)
+    harness.model.submitRecordedShortcut(ReservedShortcut.quit.combination, for: .splitDown)
     #expect(
       harness.model.shortcutEditing
         == ShortcutEditing(command: .splitDown, step: .recording(.reserved(.quit)))
     )
 
-    harness.model.takeRecordedShortcut(backslash, for: .splitDown)
+    harness.model.submitRecordedShortcut(backslash, for: .splitDown)
     #expect(
       harness.model.shortcutEditing
         == ShortcutEditing(
@@ -42,8 +42,8 @@ struct AppModelShortcutEditingTests {
 
   @Test func replaceAnswersTheOpenQuestionLeavingTheHolderNone() {
     let harness = Harness()
-    harness.model.takeRecordedShortcut(backslash, for: .splitRight)
-    harness.model.takeRecordedShortcut(backslash, for: .splitDown)
+    harness.model.submitRecordedShortcut(backslash, for: .splitRight)
+    harness.model.submitRecordedShortcut(backslash, for: .splitDown)
 
     harness.model.replaceAskedShortcut()
 
@@ -54,8 +54,8 @@ struct AppModelShortcutEditingTests {
 
   @Test func anOpenQuestionEndsWhenTheShortcutsChangeUnderIt() {
     let harness = Harness()
-    harness.model.takeRecordedShortcut(backslash, for: .splitRight)
-    harness.model.takeRecordedShortcut(backslash, for: .splitDown)
+    harness.model.submitRecordedShortcut(backslash, for: .splitRight)
+    harness.model.submitRecordedShortcut(backslash, for: .splitDown)
 
     harness.model.restoreDefaultShortcuts()
 

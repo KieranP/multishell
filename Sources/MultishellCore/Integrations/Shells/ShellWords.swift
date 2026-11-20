@@ -6,7 +6,7 @@ public enum ShellWords {
 
   /// Words the way a shell reads them, by scalar so a combining mark cannot hide a
   /// quote. A quote left open takes the rest of the line, there being nobody to ask.
-  public static func split(_ line: String) -> [String] {
+  static func split(_ line: String) -> [String] {
     var words: [String] = []
     var word = ""
     var hasWord = false

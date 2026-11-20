@@ -134,25 +134,6 @@ extension AppModel {
     return .done
   }
 
-  /// A drag onto another tab's edge, which may be in another group of the
-  /// same worktree.
-  func replyToMoveTab(
-    _ id: WorkspaceTab.ID,
-    _ placement: WorkspaceTab.Placement,
-    anchor: WorkspaceTab.ID,
-  ) -> ControlReply {
-    guard let tab = workspace.workspaceTab(id) else { return .refused(.noTab(id: id)) }
-    guard let other = workspace.workspaceTab(anchor) else { return .refused(.noTab(id: anchor)) }
-    guard tab.worktreeID == other.worktreeID else {
-      return .refused(.tabInAnotherWorktree(id: anchor))
-    }
-    let takingFocus = worktreeIDInView == tab.worktreeID
-    guard moveTab(id, placement, anchor: anchor, takingFocus: takingFocus) else {
-      return .refused(.noTab(id: anchor))
-    }
-    return .done
-  }
-
   func replyToRenameTab(_ id: WorkspaceTab.ID, to title: String?) -> ControlReply {
     do { _ = try reachTerminalTab(id) } catch { return .refused(error) }
     renameTab(id, to: title)

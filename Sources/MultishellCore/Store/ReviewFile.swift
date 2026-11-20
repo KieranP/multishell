@@ -37,7 +37,7 @@ public struct ReviewFile: Sendable {
   /// Named by a digest of the worktree's path, which may be longer than a file name allows.
   public init(worktreeID: Worktree.ID, in directory: URL) {
     self.worktreeID = worktreeID
-    let name = FileDigest.sha256(of: Data(worktreeID.utf8))
+    let name = HexDigest.sha256(of: Data(worktreeID.utf8))
     self.fileURL = directory.appendingPathComponent("\(name).json", isDirectory: false)
   }
 

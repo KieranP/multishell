@@ -37,7 +37,7 @@ extension AppModel {
         [
           QuickSwitcherSection(
             kind: .tabs,
-            items: quickSwitcherRanked(quickSwitcherPanesAndFileTabs(), by: query),
+            items: quickSwitcherRanked(quickSwitcherPanesAndTabs(), by: query),
           )
         ]
 

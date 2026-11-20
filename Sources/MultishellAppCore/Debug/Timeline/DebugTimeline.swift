@@ -72,7 +72,7 @@ public struct DebugTimeline: Sendable, Equatable {
   }
 
   /// Each slot's bands stacked, the scale set by the tallest stack.
-  public func points(of metric: DebugMetric) -> [DebugStripPoint?] {
+  public func points(of metric: DebugMetric) -> [DebugChartPoint?] {
     let stacks = slots.map { slot in
       slot.flatMap(metric.values(of:)).map { values in
         values.reduce(into: [Double]()) { tops, value in tops.append((tops.last ?? 0) + value) }
@@ -80,7 +80,7 @@ public struct DebugTimeline: Sendable, Equatable {
     }
     let scale = metric.scale(forPeak: stacks.compactMap { $0?.last }.max() ?? 0)
     return stacks.map { stack in
-      stack.map { tops in DebugStripPoint(tops: tops.map { min($0 / scale, 1) }) }
+      stack.map { tops in DebugChartPoint(tops: tops.map { min($0 / scale, 1) }) }
     }
   }
 }

@@ -196,16 +196,16 @@ struct AllChangesListRepresentableTests {
     let (list, host, window) = Self.shown(files, harness: harness, tab: tab)
     defer { withExtendedLifetime(window) {} }
     let first = list.file(at: 0)!
-    first.canvas.scroll(to: NSPoint(x: 200, y: 0))
+    first.diffView.scroll(to: NSPoint(x: 200, y: 0))
     host.layoutSubtreeIfNeeded()
-    #expect(first.canvas.scrollOrigin.x > 0)
+    #expect(first.diffView.scrollOrigin.x > 0)
 
     var offsetsWhenReused: [CGFloat] = []
     while list.scrollY + list.clipHeight < list.scrollView.documentView!.frame.height - 1 {
       list.scroll(toY: list.scrollY + 30)
       host.layoutSubtreeIfNeeded()
       for (index, view) in list.builtFiles where index > 0 && view === first {
-        offsetsWhenReused.append(first.canvas.scrollOrigin.x)
+        offsetsWhenReused.append(first.diffView.scrollOrigin.x)
       }
     }
 
@@ -222,7 +222,7 @@ struct AllChangesListRepresentableTests {
     let geometry = file.mainColumn.textView.geometry
 
     #expect(geometry.top(ofRow: 0) == 0)
-    #expect(file.canvas.frame.height == 4 * geometry.rowHeight)
+    #expect(file.diffView.frame.height == 4 * geometry.rowHeight)
   }
 
   @Test func aTabShownAgainReturnsToTheSameLineHoweverOftenItIsShown() {
@@ -1212,7 +1212,10 @@ struct AllChangesListRepresentableTests {
     let column = file.mainColumn
 
     let codeInList = column.textClip.convert(NSPoint.zero, to: list)
-    let codeXInList = file.canvas.spanningGapViews.convert(NSPoint(x: file.codeX, y: 0), to: list)
+    let codeXInList = file.diffView.spanningGapViews.convert(
+      NSPoint(x: file.codeX, y: 0),
+      to: list,
+    )
 
     #expect(column.gutterWidth > 0)
     #expect(abs(codeXInList.x - codeInList.x) < 0.5)

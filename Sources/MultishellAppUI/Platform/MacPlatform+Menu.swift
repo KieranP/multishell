@@ -2,6 +2,11 @@ import AppKit
 import MultishellAppCore
 
 extension MacPlatform {
+  /// Services, Window and Help, whose items macOS adds and names itself.
+  static var menusMacOSFills: [NSMenu] {
+    [NSApp.servicesMenu, NSApp.windowsMenu, NSApp.helpMenu].compactMap(\.self)
+  }
+
   /// Walked after each menu validates its items, so enabled means now.
   var menuItems: [PlatformMenuItem] {
     NSApp.mainMenu.map { Self.items(in: $0, under: []) } ?? []

@@ -63,7 +63,7 @@ struct SharedProjectSettingsTests {
     #expect(loaded.branchPrefix == "team/")
     #expect(
       loaded.digest
-        == FileDigest.sha256(of: try Data(contentsOf: SharedProjectSettings.file(in: root))),
+        == HexDigest.sha256(of: try Data(contentsOf: SharedProjectSettings.file(in: root))),
       "the digest is of the file's bytes, and is what a hook decision is held against",
     )
     try "not json".write(

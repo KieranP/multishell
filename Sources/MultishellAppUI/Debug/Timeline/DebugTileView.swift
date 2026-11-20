@@ -7,7 +7,7 @@ import SwiftUI
 struct DebugTileView: View {
   let metric: DebugMetric
   let timeline: DebugTimeline
-  let chartBesideLabel: Bool
+  let showsChartBesideLabel: Bool
   @Binding var hoveredSlotIndex: Int?
   let theme: Theme
   let metrics: UIMetrics
@@ -18,7 +18,7 @@ struct DebugTileView: View {
     let slot = timeline.shownSlot(hovering: hoveredSlotIndex)
     let label = DebugTileLabel(metric: metric, slot: slot, theme: theme, metrics: metrics)
     Group {
-      if chartBesideLabel {
+      if showsChartBesideLabel {
         HStack(alignment: .top, spacing: UIMetrics.debugTileGap) {
           label.frame(width: metrics.debugTileLabelWidth, alignment: .leading)
           chartColumn
@@ -43,10 +43,10 @@ struct DebugTileView: View {
 
   private var chartColumn: some View {
     VStack(spacing: 2) {
-      DebugStripChart(metric: metric, timeline: timeline, theme: theme)
+      DebugTileChart(metric: metric, timeline: timeline, theme: theme)
         .equatable()
         .overlay {
-          DebugStripPointer(
+          DebugChartPointer(
             slotIndex: hoveredSlotIndex,
             timeline: timeline,
             color: theme.debugInfo.textSecondary,

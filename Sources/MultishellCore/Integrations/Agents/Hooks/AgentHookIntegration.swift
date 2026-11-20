@@ -134,8 +134,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.id = id
     self.file = file
     self.events = events
-    var names: Set<String> = []
-    writtenEvents = events.filter { names.insert($0.name).inserted }
+    writtenEvents = events.uniqued(by: \.name)
     self.format = format
     self.payloadSpelling = payloadSpelling
     self.trustNote = trustNote

@@ -108,11 +108,11 @@ extension ControlRefusal {
     case .nothingInView: "no worktree's tabs are on screen"
     case .nothingPresented: "no alert, dialog, sheet or field is up"
 
-    case .nothingToHandOff(.ciRuns, let id):
+    case .nothingToHandoff(.ciRuns, let id):
       "worktree \(id)'s CI page has no failure checked and not sent already; it reads "
         + "the newest run's jobs only while shown: `multishell ui show ci \(id)`"
 
-    case .nothingToHandOff(.pullRequest, let id):
+    case .nothingToHandoff(.pullRequest, let id):
       "worktree \(id)'s pull request has no failing check or unresolved thread checked "
         + "and not sent already"
 

@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Pull requests and CI runs `multishell debug services stand-in` hands the app,
 /// answered in place of `gh` and `circleci`; see Docs/design/services/debug-stand-in.md.
@@ -65,10 +66,9 @@ public struct ServiceStandIn: Sendable {
       }
     )
     logs = Dictionary(
-      pullRequests.flatMap { record in
+      keepingFirst: pullRequests.flatMap { record in
         (record.checks ?? []).compactMap { check in check.log.map { (check.check, $0) } }
-      },
-      uniquingKeysWith: { first, _ in first },
+      }
     )
     self.runs = runs.map(\.run).newestFirst { $0.createdAt ?? .distantPast }
     workflows = Dictionary(

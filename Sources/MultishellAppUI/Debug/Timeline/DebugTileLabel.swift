@@ -35,7 +35,7 @@ struct DebugTileLabel: View {
   }
 
   private var valueColor: Color {
-    metric.valueTone(of: slot).map { theme.toneColor($0) }
+    metric.valueTone(of: slot).map { theme.color(for: $0) }
       ?? theme.debugInfo.text
   }
 }

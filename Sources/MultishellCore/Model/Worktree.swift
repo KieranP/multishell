@@ -32,7 +32,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// repository, which has neither.
   public var name: String {
     if isBare { return path.lastPathComponent }
-    return branch ?? String(head.prefix(7))
+    return branch ?? head.abbreviatedCommit
   }
   public var isDetached: Bool { branch == nil && !isBare }
   /// What the menu offers Remove on and the coordinator agrees to take: the

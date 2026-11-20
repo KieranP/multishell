@@ -105,9 +105,7 @@ extension Workspace {
       !worktreeIDs.contains(tab.worktreeID) || !FileTab.isContained(tab.path)
         || terminalIDs.contains(tab.id)
     }
-    fileTabs = fileTabs.uniqued(by: \.id)
-    var seen: Set<[String]> = []
-    fileTabs.removeAll { !seen.insert([$0.worktreeID, $0.path]).inserted }
+    fileTabs = fileTabs.uniqued(by: \.id).uniqued(by: { [$0.worktreeID, $0.path] })
   }
 
   /// Drops an All changes tab whose worktree went or whose id another tab

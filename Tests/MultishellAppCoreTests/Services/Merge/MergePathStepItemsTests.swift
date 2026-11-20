@@ -21,7 +21,7 @@ struct MergePathStepItemsTests {
 
     #expect(items.checkCandidates.keys.map(\.name) == ["test"])
     #expect(items.threads.isEmpty)
-    #expect(items.showsCheckSlot)
+    #expect(items.showsHandoffSlot)
     #expect(items.collapsibleList == .checks)
   }
 
@@ -30,7 +30,7 @@ struct MergePathStepItemsTests {
 
     #expect(items.threads.map(\.id) == ["t1"])
     #expect(items.candidates == [items.candidate(of: .sample())].compactMap(\.self))
-    #expect(!items.showsCheckSlot)
+    #expect(!items.showsHandoffSlot)
     #expect(items.collapsibleList == .threads)
   }
 

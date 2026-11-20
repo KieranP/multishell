@@ -171,10 +171,10 @@ struct WorktreeRow: View, @MainActor Equatable {
       && a.metrics == b.metrics
   }
 
-  private func badges(_ shown: WorktreeRowBadges.Shown) -> some View {
+  private func badges(_ fit: WorktreeRowBadgeFit) -> some View {
     HStack(spacing: UIMetrics.sidebarGlyphGap) {
       WorktreeRowBadges(
-        shown: shown,
+        fit: fit,
         operation: operation,
         autoRename: autoRename,
         isLocked: worktree.isLocked,

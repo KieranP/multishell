@@ -13,7 +13,7 @@ struct ThemedButtonStyle: ButtonStyle {
   var minHeight: Double?
 
   func makeBody(configuration: Configuration) -> some View {
-    ThemedButtonLabel(
+    ThemedButtonFace(
       label: configuration.label,
       fill: fill.opacity(configuration.isPressed ? Self.pressedOpacity : 1),
       text: text,

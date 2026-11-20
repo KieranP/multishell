@@ -69,7 +69,7 @@ struct AppModelAllChangesOpeningTests {
     let tab = try #require(harness.model.openAllChangesTab(in: harness.main.id))
     harness.model.select(harness.feature)
 
-    let row = harness.model.quickSwitcherPanesAndFileTabs().first { $0.kind == .allChangesTab }
+    let row = harness.model.quickSwitcherPanesAndTabs().first { $0.kind == .allChangesTab }
     harness.model.toggleQuickSwitcher(.tabs)
     harness.model.chooseQuickSwitcherRow(.allChangesTab(tab.id))
 

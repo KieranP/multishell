@@ -26,7 +26,7 @@ public struct MergePathStepItems: Equatable, Sendable {
   }
 
   /// Whether every check row keeps the trailing slot, so the Required tags line up.
-  public var showsCheckSlot: Bool { !checkCandidates.isEmpty }
+  public var showsHandoffSlot: Bool { !checkCandidates.isEmpty }
 
   /// `threads` is the pull request's, listed only where `step` holds them; which
   /// checks are sendable is `PullRequestHandoffItem.items`'s rule, as the foot's.

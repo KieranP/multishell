@@ -78,7 +78,7 @@ struct ProjectSettingsTrustTests {
   @Test func theOldestAnswerIsDroppedSoAnEditedFileCannotGrowTheStateForever() {
     var settings = ProjectSettings()
     let digests = (0...ProjectSettings.rememberedDecisionLimit).map { number in
-      FileDigest.sha256(of: Data("post-create:\necho \(number)".utf8))
+      HexDigest.sha256(of: Data("post-create:\necho \(number)".utf8))
     }
     for digest in digests { settings.recordTrustDecision(digest: digest, isTrusted: true) }
     #expect(settings.trustDecisions.count == ProjectSettings.rememberedDecisionLimit)

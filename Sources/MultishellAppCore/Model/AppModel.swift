@@ -470,7 +470,7 @@ public final class AppModel<Surface> {
     self.notifier = notifier
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 
-    take(loadThemeCatalogue(themesDirectory))
+    adoptThemeCatalogue(loadThemeCatalogue(themesDirectory))
     rebuildNewTabAgents()
     applyTerminalConfiguration()
     // A git missing here is said once the login shell's PATH lacks it too.

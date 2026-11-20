@@ -10,26 +10,23 @@ extension MacPlatform {
   static func setMenuShortcuts(
     _ shortcuts: [MenuShortcut],
     in menu: NSMenu,
-    leavingOut menusMacOSFills: [NSMenu] = [],
+    leavingOutMenus menusMacOSFills: [NSMenu] = [],
   ) {
-    let byTitle = Dictionary(
-      shortcuts.map { ($0.command.menuTitle, $0) },
-      uniquingKeysWith: { first, _ in first },
-    )
-    setKeys(byTitle, in: menu, leavingOut: menusMacOSFills)
+    let byTitle = Dictionary(keepingFirst: shortcuts.map { ($0.command.menuTitle, $0) })
+    setKeys(byTitle, in: menu, leavingOutMenus: menusMacOSFills)
   }
 
   private static func setKeys(
     _ byTitle: [String: MenuShortcut],
     in menu: NSMenu,
-    leavingOut menusMacOSFills: [NSMenu],
+    leavingOutMenus menusMacOSFills: [NSMenu],
   ) {
     for item in menu.items {
       if let submenu = item.submenu {
         // Theme names are the user's own and may match a command's title.
         let isThemePicker = item.title == t("menu.theme")
         guard !isThemePicker, !menusMacOSFills.contains(where: { $0 === submenu }) else { continue }
-        setKeys(byTitle, in: submenu, leavingOut: menusMacOSFills)
+        setKeys(byTitle, in: submenu, leavingOutMenus: menusMacOSFills)
         continue
       }
       guard let shortcut = byTitle[item.title] else { continue }
@@ -41,7 +38,6 @@ extension MacPlatform {
 
   func setMenuShortcuts(_ shortcuts: [MenuShortcut]) {
     guard let bar = NSApp.mainMenu else { return }
-    let menusMacOSFills = [NSApp.servicesMenu, NSApp.windowsMenu, NSApp.helpMenu]
-    Self.setMenuShortcuts(shortcuts, in: bar, leavingOut: menusMacOSFills.compactMap(\.self))
+    Self.setMenuShortcuts(shortcuts, in: bar, leavingOutMenus: Self.menusMacOSFills)
   }
 }

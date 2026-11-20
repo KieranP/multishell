@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 
 @testable import MultishellGitKit
 
@@ -23,6 +24,11 @@ public enum TestGit {
       return try GitRunner(searchPath: searchPath, configuration: merged)
     }
     return try GitRunner(executable: executable, searchPath: searchPath, configuration: merged)
+  }
+
+  /// A runner whose git is a script at `url` running `prelude`, then the real git.
+  public static func runner(wrappingRealGitIn prelude: String, at url: URL) throws -> GitRunner {
+    try runner(executable: try Scratch.script(prelude + "\nexec git \"$@\"", at: url))
   }
 
   /// No index settling, which would spend a run of a fake git on every add.

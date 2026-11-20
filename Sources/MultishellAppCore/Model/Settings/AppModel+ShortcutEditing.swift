@@ -26,7 +26,7 @@ extension AppModel {
   }
 
   /// Set where allowed, which ends the edit; otherwise the next step.
-  public func takeRecordedShortcut(_ keys: KeyCombination, for command: ShortcutCommand) {
+  public func submitRecordedShortcut(_ keys: KeyCombination, for command: ShortcutCommand) {
     switch setShortcut(keys, for: command) {
     case .allowed: shortcutEditing = nil
 

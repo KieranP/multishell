@@ -4,7 +4,7 @@ import MultishellCore
 /// insertion line is drawn on.
 public struct ProjectInsertion: Equatable, Sendable {
   public let projectID: Project.ID
-  let placement: ProjectPlacement
+  private let placement: ProjectPlacement
 
   public init(projectID: Project.ID, placement: ProjectPlacement) {
     self.projectID = projectID

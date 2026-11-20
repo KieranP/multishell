@@ -23,7 +23,7 @@ public struct WorktreeServices: Equatable, Sendable {
   /// What git is asked of a merged pull request whose head is not the tip.
   var changesPastMergedHead: ChangesPastHead?
 
-  public var showsAnything: Bool { shownPullRequest != nil || ciRun != nil }
+  var showsAnything: Bool { shownPullRequest != nil || ciRun != nil }
 
   /// What the row and the page draw: its own, else a merged one it went
   /// past, whose tooltip says so and beside which a new one is offered.

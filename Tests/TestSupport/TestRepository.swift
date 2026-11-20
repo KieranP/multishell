@@ -74,6 +74,18 @@ public enum TestRepository {
     _ = try await git.run(["commit", "-q", "-m", message], in: url)
   }
 
+  /// `data` written to `file` and committed alone, the file's name its message.
+  public static func commit(
+    _ data: Data,
+    as file: String,
+    in url: URL,
+    using git: GitRunner,
+  ) async throws {
+    try data.write(to: url.appendingPathComponent(file))
+    _ = try await git.run(["add", file], in: url)
+    _ = try await git.run(["commit", "-q", "-m", file], in: url)
+  }
+
   /// A bare clone of `repository` at `root/repo.git`, with `main` checked out
   /// in a linked worktree at `root/<worktree>`.
   public static func bareClone(

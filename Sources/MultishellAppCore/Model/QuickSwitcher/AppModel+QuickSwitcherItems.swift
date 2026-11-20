@@ -38,7 +38,7 @@ extension AppModel {
 
   /// Every pane and file or All changes tab, the saved ones of worktrees not yet opened
   /// included, worktree by worktree in sidebar order, each in its strips' order.
-  func quickSwitcherPanesAndFileTabs() -> [QuickSwitcherItem] {
+  func quickSwitcherPanesAndTabs() -> [QuickSwitcherItem] {
     quickSwitcherTabRows(
       in: quickSwitcherSidebarOrder(sessions: sessionIDsByWorktree),
       agentsOnly: false,

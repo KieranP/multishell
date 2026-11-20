@@ -60,7 +60,7 @@ struct AllChangesFileHeader: View, @MainActor Equatable {
     .font(metrics.font(size: metrics.secondary))
     .padding(.leading, UIMetrics.allChangesHeaderLeadingInset)
     .padding(.trailing, UIMetrics.allChangesHeaderTrailingInset)
-    .frame(height: UIMetrics.allChangesHeaderBarHeight)
+    .frame(height: UIMetrics.fileTabBarHeight)
     .frame(maxWidth: .infinity, alignment: .leading)
     // Opaque, so the sticky copy hides the rows it sits over.
     .background(palette.fill)

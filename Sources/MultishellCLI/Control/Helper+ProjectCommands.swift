@@ -37,10 +37,10 @@ extension Helper {
       return try ask(request, environment: environment)
 
     case ("move", 1):
-      let usage = "projects move needs one of --before PROJECT_ID or --after PROJECT_ID"
+      let message = "projects move needs one of --before PROJECT_ID or --after PROJECT_ID"
       let options = try CommandOptions(optionWords, valued: ["before", "after"], topic: topic)
-      guard let (placement, anchor) = try placement(in: options, usage: usage, topic: topic)
-      else { throw UsageError(usage, topic: topic) }
+      guard let (placement, anchor) = try placement(in: options, message: message, topic: topic)
+      else { throw UsageError(message, topic: topic) }
       let request = ControlRequest.moveProject(
         id: try projectID(words[0], topic: topic),
         placement: placement == .before ? .above : .below,

@@ -1,11 +1,33 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite @MainActor
 struct AppModelControlTabMovesTests {
+  @Test func aTabMovesBesideAnotherOfItsWorktreeAndNotBesideAnotherWorktrees() async throws {
+    let harness = Harness()
+    let first = harness.openBackgroundTab()
+    let second = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.select(harness.feature)
+    let elsewhere = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+
+    #expect(
+      await harness.messageSource.ask(
+        .moveTab(id: second.id, placement: .before, anchor: first.id)
+      )
+        == .done
+    )
+    #expect(harness.model.workspace.tabs(in: harness.main.id).map(\.id) == [second.id, first.id])
+    #expect(
+      await harness.messageSource.ask(
+        .moveTab(id: second.id, placement: .before, anchor: elsewhere.id)
+      )
+        == .refused(.tabInAnotherWorktree(id: elsewhere.id))
+    )
+  }
+
   @Test func aTerminalTabMovesToAnotherWorktreeWithItsShellAndShowsIt() async throws {
     let (harness, session) = Harness.withOnePane()
     let tab = try #require(harness.model.workspace.tab(owning: session.id))

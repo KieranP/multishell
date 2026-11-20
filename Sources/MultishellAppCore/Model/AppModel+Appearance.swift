@@ -105,13 +105,13 @@ extension AppModel {
     // A reload begun after this one read the folder later; this would undo it.
     guard reload == themeReloads else { return }
     let shown = currentTheme
-    take(catalogue)
+    adoptThemeCatalogue(catalogue)
     if currentTheme != shown { applyTerminalConfiguration() }
   }
 
   /// Every newly broken file is named in one alert, and each only once, not
   /// again on a later save while it stays broken.
-  func take(_ catalogue: ThemeCatalogue) {
+  func adoptThemeCatalogue(_ catalogue: ThemeCatalogue) {
     let shownFiles = Set(themeCatalogue.problems.map(\.fileName))
     themeCatalogue = catalogue
     let fresh = catalogue.problems.filter { !shownFiles.contains($0.fileName) }

@@ -45,4 +45,16 @@ struct DebugMetricTests {
       ]
     )
   }
+
+  @Test func onlyTheFrameRateAndThePressureAreColoured() {
+    let stalled = DebugTimelineSlot(samples: [
+      .sample(sequence: 0, longestFrame: .milliseconds(150), memoryPressure: .critical)
+    ])
+    #expect(DebugMetric.frameRate.valueTone(of: stalled) == .alarm)
+    #expect(DebugMetric.memoryPressure.valueTone(of: stalled) == .alarm)
+    #expect(DebugMetric.frameRate.valueTone(of: nil) == nil)
+    for metric in DebugMetric.allCases where metric != .frameRate && metric != .memoryPressure {
+      #expect(metric.valueTone(of: stalled) == nil, "\(metric)")
+    }
+  }
 }

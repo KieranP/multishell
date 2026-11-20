@@ -27,11 +27,11 @@ struct WorktreeSortRule: Equatable, Sendable {
   /// the guess git itself makes.
   private static let fallbackTrunkNames = ["main", "master"]
 
-  let sortOrder: WorktreeSortOrder
-  let showsActiveFirst: Bool
+  private let sortOrder: WorktreeSortOrder
+  private let showsActiveFirst: Bool
   /// The project's trunk, as `DefaultBranch.nameWithoutRemote` gives it, or `nil`
   /// while none is resolved.
-  let trunkBranch: String?
+  private let trunkBranch: String?
 
   init(sortOrder: WorktreeSortOrder, showsActiveFirst: Bool, trunkBranch: String? = nil) {
     self.sortOrder = sortOrder

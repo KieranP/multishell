@@ -80,7 +80,7 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   /// No alert, dialog, sheet or field is up to dismiss.
   case nothingPresented
   /// Nothing checked and unsent; the CI page reads its run's jobs only while shown.
-  case nothingToHandOff(ServicePage, id: String)
+  case nothingToHandoff(ServicePage, id: String)
   /// Review holds no comment waiting to be sent.
   case nothingToSend(id: String)
   /// The main window is closed, so there is nothing to size or draw.

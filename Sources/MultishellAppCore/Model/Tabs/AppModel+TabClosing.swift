@@ -16,14 +16,14 @@ extension AppModel {
   public func closeTab(_ id: WorkspaceTab.ID) {
     switch workspace.workspaceTab(id) {
     case .terminal(let tab): requestClose(.tab(id), in: tab)
-    case .file, .allChanges: closeReviewCardTab(id)
+    case .file, .allChanges: closeReviewTab(id)
     case nil: break
     }
   }
 
   /// A file or All changes tab runs nothing, so it asks only where a review
   /// comment is being written in it, which would go with it.
-  private func closeReviewCardTab(_ id: WorkspaceTab.ID) {
+  private func closeReviewTab(_ id: WorkspaceTab.ID) {
     if reviewComposerHoldsUnsavedText(in: id) {
       pendingClose = .reviewTab(id)
       return
@@ -66,8 +66,8 @@ extension AppModel {
     }
     switch workspaceTabDrawn {
     case .terminal(let tab): requestClose(closing(tab), in: tab)
-    case .file(let tab): closeReviewCardTab(tab.id)
-    case .allChanges(let tab): closeReviewCardTab(tab.id)
+    case .file(let tab): closeReviewTab(tab.id)
+    case .allChanges(let tab): closeReviewTab(tab.id)
     case nil: break
     }
   }

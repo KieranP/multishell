@@ -26,7 +26,7 @@ public struct DiffLine: Hashable, Sendable {
   /// in UTF-16 units of `text`.
   public let changedParts: [Range<Int>]
 
-  public var isChange: Bool { kind == .added || kind == .removed }
+  var isChange: Bool { kind == .added || kind == .removed }
 
   init(
     kind: Kind,

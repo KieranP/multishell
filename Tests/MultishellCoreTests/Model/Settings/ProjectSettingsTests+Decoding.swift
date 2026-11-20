@@ -135,7 +135,7 @@ extension ProjectSettingsTests {
   }
 
   @Test func projectSettingsWithoutADecisionHaveNoneAndABrokenOneCostsOnlyItself() throws {
-    let digest = FileDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
+    let digest = HexDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
     #expect(try decodeJSON(ProjectSettings.self, "{}").trustDecisions.isEmpty)
     let decided = try decodeJSON(
       ProjectSettings.self,
@@ -166,7 +166,7 @@ extension ProjectSettingsTests {
   }
 
   @Test func aWrittenDecisionComesBackUnderSharedHooks() throws {
-    let digest = FileDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
+    let digest = HexDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
     var two = ProjectSettings()
     two.trustDecisions = [
       TrustDecision(digest: digest, isTrusted: true),

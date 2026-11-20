@@ -54,7 +54,7 @@ extension AppModel {
     else { return }
     let algorithm = workspace.diffAlgorithm
     let git = coordinator.git
-    schedulePacedRead(
+    schedulePacedPanelRead(
       id,
       in: id,
       on: \.branchChangesReads,

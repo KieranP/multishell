@@ -10,7 +10,7 @@ class DiffCanvasView: NSView {
   /// Views across the columns in the gaps: the All changes tab's folds and
   /// notices, placed by the file's own rows.
   let spanningGapViews = SpanningGapViewsLayer()
-  private(set) var columns: [DiffColumn] = []
+  private let columns: [DiffColumn]
   /// Each scroll, after the columns followed it.
   var onScroll: (() -> Void)?
   /// Where a restore left the clip: reported back, a split's anchor would

@@ -21,13 +21,13 @@ struct DebugTimelineView: View {
       gap: UIMetrics.debugTileGap,
     )
     Grid(horizontalSpacing: UIMetrics.debugTileGap, verticalSpacing: UIMetrics.debugTileGap) {
-      ForEach(rows(of: layout.columnCount), id: \.self) { row in
+      ForEach(layout.metricRows, id: \.self) { row in
         GridRow {
           ForEach(row, id: \.self) { metric in
             DebugTileView(
               metric: metric,
               timeline: timeline,
-              chartBesideLabel: layout.chartsBesideLabels,
+              showsChartBesideLabel: layout.showsChartsBesideLabels,
               hoveredSlotIndex: $hoveredSlotIndex,
               theme: theme,
               metrics: metrics,
@@ -43,11 +43,5 @@ struct DebugTimelineView: View {
       width = newWidth
     }
     .onChange(of: timeline.range) { hoveredSlotIndex = nil }
-  }
-
-  private func rows(of columnCount: Int) -> [[DebugMetric]] {
-    stride(from: 0, to: DebugMetric.allCases.count, by: columnCount).map { start in
-      Array(DebugMetric.allCases[start..<min(start + columnCount, DebugMetric.allCases.count)])
-    }
   }
 }

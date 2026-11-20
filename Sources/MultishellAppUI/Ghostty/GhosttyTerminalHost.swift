@@ -8,7 +8,7 @@ import OSLog
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalSurfaceHost {
   private static let bundleDirectories =
-    Bundle.main.executableURL.flatMap(HelperHandOff.bundleDirectories(of:))
+    Bundle.main.executableURL.flatMap(HelperHandOver.bundleDirectories(of:))
   /// Each OSC 7501 report as it lands, for `multishell debug log --follow`.
   private static let programStatusLog = Logger(
     subsystem: AppBundle.identifier,

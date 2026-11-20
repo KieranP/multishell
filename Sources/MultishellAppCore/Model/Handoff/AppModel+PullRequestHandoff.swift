@@ -184,7 +184,7 @@ extension AppModel {
       document,
       named: PullRequestHandoff.fileName(
         number: pullRequest.number,
-        worktreeNamed: workspace.displayName(of: worktree),
+        forWorktreeNamed: workspace.displayName(of: worktree),
       ),
       sentence: { t("handoff.pull-request-sentence", $0) },
       to: recipient,
@@ -235,6 +235,6 @@ extension AppModel {
         return (id, .failed(ServiceReadFailure(error).reason(integration: integration)))
       }
     }
-    return Dictionary(logs, uniquingKeysWith: { first, _ in first })
+    return Dictionary(keepingFirst: logs)
   }
 }

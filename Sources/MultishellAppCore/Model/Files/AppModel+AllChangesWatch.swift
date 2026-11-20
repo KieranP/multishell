@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-/// Which All changes tabs a watcher batch, a status or Branch read, or a new
-/// scope moved, and which of their files; see Docs/design/files/all-changes-tab.md.
+/// Which All changes tabs a watcher batch or a status or Branch read moved, and
+/// which of their files; see Docs/design/files/all-changes-tab.md.
 extension AppModel {
   /// What moved each tab's files, as each file tab would read it; see "A read
   /// reads only what moved" in Docs/design/files/all-changes-tab.md.
@@ -69,16 +69,5 @@ extension AppModel {
     let listed = Set(reading.listed)
     let moved = list.filter { !listed.contains($0) }.map(\.path)
     noteAllChangesTabChanged(tab.id, staleness: .paths(Set(moved)))
-  }
-
-  /// A new scope, algorithm or base: every file of the tabs it reaches is read
-  /// afresh, at once rather than at the pace the old diffs set.
-  func noteAllChangesTabsChanged(where isReached: (AllChangesTab) -> Bool) {
-    for tab in workspace.allChangesTabs where isReached(tab) {
-      allChangesReadLog.forgetPace(of: tab.id)
-      pendingAllChangesReads.removeValue(forKey: tab.id)?.cancel()
-      noteAllChangesTabChanged(tab.id, staleness: .everything)
-    }
-    readShownAllChangesTabs()
   }
 }

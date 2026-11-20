@@ -3,7 +3,7 @@
 struct AllChangesReadSlots {
   private var files: [AllChangesFile?]
   private let rowCap: Int
-  private(set) var capIndex: Int?
+  private var capIndex: Int?
   private var settled = 0
   private var heldRows = 0
   private var landedRows = 0

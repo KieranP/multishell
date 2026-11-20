@@ -9,6 +9,6 @@ public struct AllChangesGapItem: Hashable, Sendable {
 
   /// The document row it sits under, -1 above the first.
   public let afterRow: Int
-  public let section: Int
+  let section: Int
   public let kind: Kind
 }

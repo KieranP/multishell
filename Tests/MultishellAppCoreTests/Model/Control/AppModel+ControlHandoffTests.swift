@@ -64,7 +64,7 @@ struct AppModelControlHandoffTests {
     #expect(states == [.sent(agentName: "Claude Code"), .checked])
   }
 
-  @Test func prSendWithNothingCheckedIsRefusedAsNothingToHandOff() async throws {
+  @Test func prSendWithNothingCheckedIsRefusedAsNothingToHandoff() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (feat, _, _) = try await harness.showingAFailingPullRequest()
@@ -75,7 +75,7 @@ struct AppModelControlHandoffTests {
 
     let reply = await harness.model.answer(Self.sendPullRequestFeedback())
 
-    #expect(reply == .refused(.nothingToHandOff(.pullRequest, id: ControlID.worktree(feat.id))))
+    #expect(reply == .refused(.nothingToHandoff(.pullRequest, id: ControlID.worktree(feat.id))))
     #expect(harness.engine.pasted.isEmpty)
   }
 
@@ -91,7 +91,7 @@ struct AppModelControlHandoffTests {
 
     let reply = await harness.model.answer(Self.sendPullRequestFeedback(includesChecks: false))
 
-    #expect(reply == .refused(.nothingToHandOff(.pullRequest, id: ControlID.worktree(feat.id))))
+    #expect(reply == .refused(.nothingToHandoff(.pullRequest, id: ControlID.worktree(feat.id))))
   }
 
   @Test func prSendToAShellPaneIsRefusedAsHavingNoAgentToSendTo() async throws {
@@ -179,7 +179,7 @@ struct AppModelControlHandoffTests {
     #expect(harness.engine.pasted.map(\.id) == [agent.id])
   }
 
-  @Test func ciSendWithTheFailedJobUncheckedIsRefusedAsNothingToHandOff() async throws {
+  @Test func ciSendWithTheFailedJobUncheckedIsRefusedAsNothingToHandoff() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (feat, _, _) = try await harness.showingAFailedRun()
@@ -190,7 +190,7 @@ struct AppModelControlHandoffTests {
 
     let reply = await harness.model.answer(.sendCIFailures(worktree: nil, to: nil))
 
-    #expect(reply == .refused(.nothingToHandOff(.ciRuns, id: ControlID.worktree(feat.id))))
+    #expect(reply == .refused(.nothingToHandoff(.ciRuns, id: ControlID.worktree(feat.id))))
     #expect(harness.engine.pasted.isEmpty)
   }
 
@@ -206,7 +206,7 @@ struct AppModelControlHandoffTests {
     #expect(reply == .refused(.noServicePage(.ciRuns, id: mainID)))
   }
 
-  @Test func prSendWhoseItemsWereAllUncheckedDuringTheReadIsRefusedAsNothingToHandOff() async throws
+  @Test func prSendWhoseItemsWereAllUncheckedDuringTheReadIsRefusedAsNothingToHandoff() async throws
   {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -223,7 +223,7 @@ struct AppModelControlHandoffTests {
     host.releaseHeldReads()
     let reply = await asking.value
 
-    #expect(reply == .refused(.nothingToHandOff(.pullRequest, id: ControlID.worktree(feat.id))))
+    #expect(reply == .refused(.nothingToHandoff(.pullRequest, id: ControlID.worktree(feat.id))))
     #expect(harness.engine.pasted.isEmpty)
   }
 
@@ -244,7 +244,7 @@ struct AppModelControlHandoffTests {
     #expect(reply.outputFields["itemCount"] as? Int == 1)
   }
 
-  @Test func ciSendWithNothingCheckedAndNoAgentIsRefusedAsNothingToHandOff() async throws {
+  @Test func ciSendWithNothingCheckedAndNoAgentIsRefusedAsNothingToHandoff() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let (feat, agent, _) = try await harness.showingAFailedRun()
@@ -256,6 +256,6 @@ struct AppModelControlHandoffTests {
 
     let reply = await harness.model.answer(.sendCIFailures(worktree: nil, to: nil))
 
-    #expect(reply == .refused(.nothingToHandOff(.ciRuns, id: ControlID.worktree(feat.id))))
+    #expect(reply == .refused(.nothingToHandoff(.ciRuns, id: ControlID.worktree(feat.id))))
   }
 }

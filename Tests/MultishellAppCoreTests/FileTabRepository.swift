@@ -26,17 +26,15 @@ struct FileTabRepository {
   }
 
   func commit(_ data: Data, as file: String) async throws {
-    try data.write(to: path.appending(path: file))
-    _ = try await runner.run(["add", file], in: path)
-    _ = try await runner.run(["commit", "-q", "-m", file], in: path)
+    try await TestRepository.commit(data, as: file, in: path, using: runner)
   }
 
   func wrappingGit(in prelude: String) throws -> Self {
-    let script = try Scratch.script(
-      prelude + "\nexec git \"$@\"",
+    let runner = try TestGit.runner(
+      wrappingRealGitIn: prelude,
       at: root.appending(path: "fake-git"),
     )
-    return Self(root: root, path: path, runner: try TestGit.runner(executable: script))
+    return Self(root: root, path: path, runner: runner)
   }
 
   func read(

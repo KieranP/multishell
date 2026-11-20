@@ -5,7 +5,6 @@ import SwiftUI
 /// A file tab's bar: where the file is, its name, the counts of the diff the
 /// tab drew, and the same menu a Files panel row has.
 struct FileTabBar: View {
-  private static let height: Double = 30
   private static let spacing: Double = 6
 
   let model: AppModel
@@ -34,7 +33,7 @@ struct FileTabBar: View {
     .font(model.metrics.font(size: model.metrics.secondary))
     .padding(.leading, 12)
     .padding(.trailing, 8)
-    .frame(height: Self.height)
+    .frame(height: UIMetrics.fileTabBarHeight)
     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
     .clipped()
     .background(theme.fileTab.background)

@@ -1,4 +1,5 @@
 import Foundation
+import TestSupport
 
 @testable import MultishellAppCore
 @testable import MultishellCore
@@ -10,9 +11,7 @@ extension GitHarness {
   }
 
   func commitFile(_ file: String, holding data: Data, in worktree: Worktree) async throws {
-    try data.write(to: worktree.path.appendingPathComponent(file))
-    _ = try await git.run(["add", file], in: worktree.path)
-    _ = try await git.run(["commit", "-q", "-m", file], in: worktree.path)
+    try await TestRepository.commit(data, as: file, in: worktree.path, using: git)
   }
 
   /// Another branch's work, then `head`'s squashed, off `main` and on no branch:

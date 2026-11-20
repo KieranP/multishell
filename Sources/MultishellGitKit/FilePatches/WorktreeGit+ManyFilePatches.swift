@@ -10,10 +10,7 @@ extension WorktreeGit {
   /// Each file's part of a patch naming many, by its `diff --git a/P b/P`
   /// header; `nil` where a header names none of `paths` as written.
   private static func patchesByPath(_ output: Data, of paths: [String]) -> [String: Data]? {
-    let headers = Dictionary(
-      paths.map { ("diff --git a/\($0) b/\($0)", $0) },
-      uniquingKeysWith: { first, _ in first },
-    )
+    let headers = Dictionary(keepingFirst: paths.map { ("diff --git a/\($0) b/\($0)", $0) })
     var starts: [Data.Index] = []
     var searchFrom = output.startIndex
     while let range = output.range(of: headerStart, in: searchFrom..<output.endIndex) {

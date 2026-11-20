@@ -42,7 +42,7 @@ struct GitHubPullRequestRecord: Decodable {
 
   /// `nil` where a field the row needs is missing or names a state this
   /// build does not know.
-  var pullRequest: PullRequest? {
+  private var pullRequest: PullRequest? {
     guard let number, let title, let url = url.flatMap(URL.init(string:)),
       let state = pullRequestState, let headRefName, let headRefOid,
       let owner = headRepositoryOwner?.login, let name = headRepository?.name,

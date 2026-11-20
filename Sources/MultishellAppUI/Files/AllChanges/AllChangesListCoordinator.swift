@@ -10,7 +10,7 @@ final class AllChangesListCoordinator {
   /// The latest update's, which the list's closures call: the one that made
   /// the list holds the document and theme it was made with.
   var representable: AllChangesListRepresentable?
-  var document: AllChangesDocument?
+  private(set) var document: AllChangesDocument?
   /// Comments to send by path, counted once an update for every header shown.
   var pendingComments: [String: Int] = [:]
   var theme: Theme?
@@ -27,10 +27,10 @@ final class AllChangesListCoordinator {
   /// Where a Changes click left the list, its file lit there whatever is at the top.
   var scrollYLeftByReveal: CGFloat?
   /// The change the arrows last landed on, boxed in its file's view.
-  private(set) var boxed: AllChangesSteps.Stop?
+  private var boxed: AllChangesFileRow?
   private var paintedFind: FindMatchesShown?
   /// Every change's file and row there, in list order, cut once a document.
-  private var stops: [AllChangesSteps.Stop]?
+  private var stops: [AllChangesFileRow]?
   private var findTint = NSColor.clear
 
   func noteDocument(_ document: AllChangesDocument) {
@@ -49,16 +49,16 @@ final class AllChangesListCoordinator {
   /// The boxed change in a new document, by its lines as a file tab keeps its
   /// box: rows move as folds open or files come and go above.
   private func carried(
-    _ stop: AllChangesSteps.Stop,
+    _ stop: AllChangesFileRow,
     to next: AllChangesDocument,
-  ) -> AllChangesSteps.Stop? {
+  ) -> AllChangesFileRow? {
     guard let document, document.sections.indices.contains(stop.section),
       let text = slice(stop.section)?.text, let rows = text.change(containing: stop.row),
       let anchor = text.anchor(ofChangeAt: rows),
       let section = next.section(at: document.sections[stop.section].path),
       let moved = next.slice(ofSection: section).text.change(at: anchor)
     else { return nil }
-    return AllChangesSteps.Stop(section: section, row: moved.lowerBound)
+    return AllChangesFileRow(section: section, row: moved.lowerBound)
   }
 
   func slice(_ index: Int) -> AllChangesFileSlice? {
@@ -147,16 +147,16 @@ final class AllChangesListCoordinator {
     return fileTop + AllChangesFileView.headerHeight + intoRows
   }
 
-  /// `stop` put `offset` below the clip's top. Twice: the first scroll builds its
+  /// `row` put `offset` below the clip's top. Twice: the first scroll builds its
   /// file, whose own geometry then places the row exactly.
   func scroll(
-    to stop: AllChangesSteps.Stop,
+    to row: AllChangesFileRow,
     below offset: CGFloat,
     on list: AllChangesListView,
     geometry: DiffRowGeometry,
   ) {
     for _ in 0..<2 {
-      guard let top = top(of: stop, on: list, geometry: geometry) else { return }
+      guard let top = top(of: row, on: list, geometry: geometry) else { return }
       list.scroll(toY: top - offset)
     }
   }
@@ -169,14 +169,14 @@ final class AllChangesListCoordinator {
     return header + CGFloat(rows) * geometry.rowHeight
   }
 
-  /// Where a stop starts: a file still to be read, at its header.
+  /// Where a row starts: in a file still to be read, at its header.
   private func top(
-    of stop: AllChangesSteps.Stop,
+    of row: AllChangesFileRow,
     on list: AllChangesListView,
     geometry: DiffRowGeometry,
   ) -> CGFloat? {
-    guard !isUnread(stop.section) else { return list.top(ofFile: stop.section) }
-    return top(ofRow: stop.row, inFile: stop.section, on: list, geometry: geometry)
+    guard !isUnread(row.section) else { return list.top(ofFile: row.section) }
+    return top(ofRow: row.row, inFile: row.section, on: list, geometry: geometry)
   }
 
   func isUnread(_ section: Int) -> Bool {
@@ -195,7 +195,7 @@ final class AllChangesListCoordinator {
     return AllChangesSteps(placed(ends, on: list, geometry: geometry))
   }
 
-  private func allStops() -> [AllChangesSteps.Stop] {
+  private func allStops() -> [AllChangesFileRow] {
     if let stops { return stops }
     let cut = document?.changeStops ?? []
     stops = cut
@@ -203,7 +203,7 @@ final class AllChangesListCoordinator {
   }
 
   private func placed(
-    _ stops: [AllChangesSteps.Stop],
+    _ stops: [AllChangesFileRow],
     on list: AllChangesListView,
     geometry: DiffRowGeometry,
   ) -> [AllChangesSteps.Placed] {
@@ -288,7 +288,7 @@ final class AllChangesListCoordinator {
     guard let section = document.section(atRow: row) else { return find.shown }
     let fileRow = row - document.sections[section].rows.lowerBound
     scroll(
-      to: AllChangesSteps.Stop(section: section, row: fileRow),
+      to: AllChangesFileRow(section: section, row: fileRow),
       below: list.clipHeight / 3,
       on: list,
       geometry: geometry,

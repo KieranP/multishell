@@ -8,11 +8,11 @@ extension AppModel {
 
   /// Where a card Review picked sits: its file and its first line's row in that
   /// file's view, either side in Split; `nil` where no card stands for it.
-  public func reviewCardStop(
+  public func reviewCardRow(
     _ card: ReviewCardPlacement.CardID,
     of tab: AllChangesTab,
     in document: AllChangesDocument,
-  ) -> AllChangesSteps.Stop? {
+  ) -> AllChangesFileRow? {
     guard let path = reviewCardPath(card, in: tab), let section = document.section(at: path)
     else { return nil }
     let sides: [DiffSide?] = document.split == nil ? [nil] : [.onDisk, .committed]
@@ -20,7 +20,7 @@ extension AppModel {
       self.reviewCardPlacements(of: tab, in: document, section: section, side: side)
         .first { $0.stands(for: card) }
     }.first
-    return placement.map { AllChangesSteps.Stop(section: section, row: $0.rows.lowerBound) }
+    return placement.map { AllChangesFileRow(section: section, row: $0.rows.lowerBound) }
   }
 
   /// The file a card is on: its comment's, or the composer's.

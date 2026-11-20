@@ -7,7 +7,7 @@ import Testing
 @testable import MultishellAppUI
 
 @Suite @MainActor
-struct DiffDocumentViewReviewCardsTests {
+struct DiffColumnReviewCardsTests {
   private static let cardHeight: CGFloat = 70
 
   private static func placement(after row: Int) -> ReviewCardPlacement {

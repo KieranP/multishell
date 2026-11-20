@@ -11,7 +11,4 @@ extension PullRequestThread {
 
   /// Who started it, a deleted account by those words.
   public var authorName: String { comments.first?.author ?? t("handoff.thread-ghost") }
-
-  /// Its first comment's page where the host gave a web link.
-  public var webPage: URL? { comments.first?.url?.asWebPage }
 }

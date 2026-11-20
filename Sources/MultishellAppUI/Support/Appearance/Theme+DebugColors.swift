@@ -10,7 +10,7 @@ extension Theme {
   var debugChildrenSeriesColor: Color { color(.seriesChildren, in: .debugInfo) }
   var debugStallColor: Color { color(.stall, in: .debugInfo) }
 
-  func toneColor(_ tone: DebugValueTone) -> Color {
+  func color(for tone: DebugValueTone) -> Color {
     switch tone {
     case .normal: debugInfo.text
     case .caution: color(.hitch, in: .debugInfo)
@@ -20,7 +20,7 @@ extension Theme {
 
   /// A split tile's band: blue for the app's own or a tile's main figure, the paler
   /// blue for the terminals' or a part of it, yellow for children or writes, else grey.
-  func debugColor(of series: DebugSeries) -> Color {
+  func color(for series: DebugSeries) -> Color {
     switch series {
     case .app, .mainThread, .diskRead, .otherInterruptWakeups: debugAppSeriesColor
     case .appTerminals, .terminalThreads, .packageIdleWakeups: debugTerminalsSeriesColor

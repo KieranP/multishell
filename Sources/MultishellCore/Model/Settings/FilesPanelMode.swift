@@ -13,5 +13,5 @@ public enum FilesPanelMode: String, CaseIterable, Codable, Hashable, Sendable {
   public var listsFiles: Bool { self == .files || self == .changes }
 
   /// A pull request's or CI's page, read from the services rather than git.
-  public var isServicePage: Bool { self == .pullRequest || self == .ciRuns }
+  public var isServicePage: Bool { ServicePage(self) != nil }
 }

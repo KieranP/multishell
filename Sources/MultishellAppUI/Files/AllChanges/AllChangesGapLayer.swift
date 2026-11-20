@@ -1,5 +1,6 @@
 import AppKit
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 /// One file's folds and notices, each in the gap under the row before it and below
@@ -36,7 +37,7 @@ final class AllChangesGapLayer {
     self.contentKey = contentKey
     self.content = content
     self.parent = parent
-    heights = Dictionary(items.map { ($0, height($0)) }, uniquingKeysWith: { first, _ in first })
+    heights = Dictionary(keepingFirst: items.map { ($0, height($0)) })
     for item in hosts.keys where heights[item] == nil { retire(item) }
     return items.reduce(into: [:]) { gaps, item in
       gaps[item.afterRow, default: 0] += heights[item] ?? 0
@@ -88,12 +89,6 @@ final class AllChangesGapLayer {
       spare.view.isHidden = false
       return spare
     }
-    let host = NSHostingController(rootView: AnyView(EmptyView()))
-    host.sizingOptions = []
-    host.view.wantsLayer = true
-    // TextKit 2 adds its fragments' views as it lays out; these stay over them.
-    host.view.layer?.zPosition = 1
-    parent?.addSubview(host.view)
-    return host
+    return .overTextFragments(in: parent)
   }
 }

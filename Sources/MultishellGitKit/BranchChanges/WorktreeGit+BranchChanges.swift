@@ -7,7 +7,7 @@ import MultishellProcess
 extension WorktreeGit {
   /// Where `HEAD` and the base last shared a commit: `nil` where they share
   /// none, a branch with no commits included, and a throw where git cannot say.
-  public func mergeBase(
+  func mergeBase(
     with base: DefaultBranch,
     inRepositoryAt path: URL,
   ) async throws

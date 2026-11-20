@@ -144,3 +144,10 @@ What a shell is launched as, and what its state means. Newest at the bottom.
   shell whose own files rebuild PATH and for `Multishell help` typed against the
   bundle. AppKit's are a single dash and a name, as `-psn_` and
   `-AppleLanguages` are, `-h` excepted.
+
+## Reviewed and left as is
+
+- **A shell an agent or editor tab hands over to waits for a key after `exit`**
+  (2026-11-20, issue 21): libghostty sets `wait-after-command` on any surface
+  given a command, bash and fish tabs included. A key or Cmd+W closes it, and
+  the fix needs a Ghostty patch or closing on `SHOW_CHILD_EXITED`.

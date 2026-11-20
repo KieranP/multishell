@@ -64,12 +64,12 @@ extension AppModel {
     // A page opened before the login shell's PATH arrived would wait forever;
     // asked aside, as `gh auth status` goes to the network.
     if remoteState.wantsToolStatuses { Task { await refreshServiceToolStatuses() } }
-    dropReadingsWithoutATool()
+    forgetReadingsWithoutATool()
     readFilesPanelIfItsKindChanged()
   }
 
   /// A tool gone from the path answers nothing more, so what it read goes.
-  private func dropReadingsWithoutATool() {
+  private func forgetReadingsWithoutATool() {
     forgetPanelReadsWithoutAService(ofProjects: workspace.projects.map(\.id))
     let hosts = remoteState.connections.pullRequestHosts
     let orphanedLists = remoteState.pullRequests.filter { hosts[$0.value.integration] == nil }.keys
@@ -115,7 +115,7 @@ extension AppModel {
     let wasUnreadable = remoteState.unreadableProviders
     let fresh = wasUnreadable.subtracting(connections.ciProviders.keys).union(unreadable)
     guard setIfChanged(\.remoteState.unreadableProviders, fresh) else { return }
-    dropReadingsWithoutATool()
+    forgetReadingsWithoutATool()
     readFilesPanelIfItsKindChanged()
     guard readsWhatTurnsReadable, !wasUnreadable.subtracting(fresh).isEmpty else { return }
     let projects = Array(projectsWithRowsInView())

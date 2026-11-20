@@ -65,7 +65,7 @@ extension AllChangesListRepresentable {
     on list: AllChangesListView,
     coordinator: Coordinator,
   ) {
-    guard let stop = model.reviewCardStop(card, of: tab, in: document) else { return }
+    guard let stop = model.reviewCardRow(card, of: tab, in: document) else { return }
     coordinator.savedScroll = nil
     if case .composer = card, let span = shownSpan(of: card, in: stop.section, on: list) {
       let belowHeader = span.lowerBound - AllChangesFileView.headerHeight

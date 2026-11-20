@@ -9,12 +9,31 @@ struct DebugTileGridLayoutTests {
   }
 
   @Test func twoTilesShareARowOnlyWhereBothFitWithTheirChartsBeside() {
-    #expect(layout(width: 710) == DebugTileGridLayout(columnCount: 2, chartsBesideLabels: true))
-    #expect(layout(width: 709) == DebugTileGridLayout(columnCount: 1, chartsBesideLabels: true))
+    #expect(
+      layout(width: 710) == DebugTileGridLayout(columnCount: 2, showsChartsBesideLabels: true)
+    )
+    #expect(
+      layout(width: 709) == DebugTileGridLayout(columnCount: 1, showsChartsBesideLabels: true)
+    )
   }
 
   @Test func aRowTooNarrowForLabelAndChartSideBySidePutsTheChartUnder() {
-    #expect(layout(width: 350) == DebugTileGridLayout(columnCount: 1, chartsBesideLabels: true))
-    #expect(layout(width: 349) == DebugTileGridLayout(columnCount: 1, chartsBesideLabels: false))
+    #expect(
+      layout(width: 350) == DebugTileGridLayout(columnCount: 1, showsChartsBesideLabels: true)
+    )
+    #expect(
+      layout(width: 349) == DebugTileGridLayout(columnCount: 1, showsChartsBesideLabels: false)
+    )
+  }
+
+  @Test func everyMetricLandsOnceInRowsNoWiderThanTheColumnCount() {
+    for columnCount in [1, 2] {
+      let rows = DebugTileGridLayout(columnCount: columnCount, showsChartsBesideLabels: true)
+        .metricRows
+
+      #expect(rows.flatMap(\.self) == DebugMetric.allCases)
+      #expect(rows.allSatisfy { $0.count <= columnCount })
+      #expect(rows.dropLast().allSatisfy { $0.count == columnCount })
+    }
   }
 }

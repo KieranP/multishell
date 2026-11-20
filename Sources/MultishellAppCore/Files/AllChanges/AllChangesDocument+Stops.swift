@@ -8,16 +8,16 @@ extension AllChangesDocument {
 
   /// Each change, and each file still to be read as one stop at its top: a
   /// step onto it brings it near, so it is read and its changes follow.
-  public var changeStops: [AllChangesSteps.Stop] {
+  public var changeStops: [AllChangesFileRow] {
     var rowsBySection: [Int: [Int]] = [:]
     for start in text.changeStarts {
       guard let section = section(atRow: start) else { continue }
       rowsBySection[section, default: []].append(start - sections[section].rows.lowerBound)
     }
     let unread = unreadSections
-    return sections.indices.flatMap { index -> [AllChangesSteps.Stop] in
+    return sections.indices.flatMap { index -> [AllChangesFileRow] in
       let rows = unread.contains(index) ? [0] : rowsBySection[index] ?? []
-      return rows.map { AllChangesSteps.Stop(section: index, row: $0) }
+      return rows.map { AllChangesFileRow(section: index, row: $0) }
     }
   }
 }

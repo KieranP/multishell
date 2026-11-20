@@ -1,3 +1,4 @@
+import TestScratch
 import Testing
 
 @testable import MultishellProcess

@@ -4,7 +4,7 @@ import MultishellGitKit
 /// file with no rows to count, its `+n −n` come from.
 public struct AllChangesFileChange: Hashable, Sendable {
   /// Relative to the worktree.
-  public let path: String
+  let path: String
   public let kind: StatusChange.Kind
   /// `nil` for a change git scores no lines for, a binary file's.
   let lineCounts: FileLineCounts?

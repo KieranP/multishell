@@ -12,7 +12,7 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
     var theme: Theme?
     let paintedFindMatches: PaintedFindMatches
     var highlighting: Task<Void, Never>?
-    var reviewCards: ShownReviewCards?
+    var shownCards: ShownReviewCards?
 
     init(paintedFindMatches: PaintedFindMatches) {
       self.paintedFindMatches = paintedFindMatches
@@ -94,7 +94,7 @@ struct DiffDocumentRepresentable: NSViewRepresentable {
     guard let tab = model.workspace.fileTab(tabID) else { return }
     view.showReviewCards(
       ShownReviewCards(of: tab, in: text.lines, model: model, theme: theme),
-      replacing: &coordinator.reviewCards,
+      replacing: &coordinator.shownCards,
       model: model,
       tabID: tabID,
     )

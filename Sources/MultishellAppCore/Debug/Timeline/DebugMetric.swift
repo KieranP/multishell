@@ -75,6 +75,19 @@ public enum DebugMetric: CaseIterable, Sendable {
     }
   }
 
+  /// What colours the value: the frame rate by how smooth the slot was, the
+  /// pressure by its level; the rest read plain.
+  public func valueTone(of slot: DebugTimelineSlot?) -> DebugValueTone? {
+    switch self {
+    case .frameRate: slot.map { DebugValueTone($0.smoothness) }
+    case .memoryPressure: slot?.memoryPressure.map(DebugValueTone.init)
+
+    case .cpu, .memory, .wakeups, .disk, .stateReports, .cliActivity, .fileEvents, .threads,
+      .openFiles, .peakMemory:
+      nil
+    }
+  }
+
   /// The top of the tile's chart for a peak, never so low that a quiet second
   /// fills it: a frame rate in whole 60s, one core, ten executions, five reports.
   func scale(forPeak peak: Double) -> Double {

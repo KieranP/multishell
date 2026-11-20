@@ -14,7 +14,7 @@ extension MacPlatform {
   /// Static too, for the launch that hands its arguments over before any
   /// platform exists.
   nonisolated static var bundledHelper: URL? {
-    Bundle.main.executableURL.flatMap(HelperHandOff.helper(inBundleOf:))
+    Bundle.main.executableURL.flatMap(HelperHandOver.helper(inBundleOf:))
   }
 
   var bundledHelper: URL? { Self.bundledHelper }

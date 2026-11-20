@@ -94,7 +94,7 @@ extension AppModel {
   /// `atOnce`; a change during a read is read again after it.
   private func scheduleFileTabRead(_ id: FileTab.ID, atOnce: Bool = false) {
     guard pendingFileTabReads[id] == nil else { return }
-    pendingFileTabReads[id] = pacedRead(atOnce: atOnce) { model in
+    pendingFileTabReads[id] = pacedTabRead(atOnce: atOnce) { model in
       model.fileTabReadLog.nextDue(id)
     } read: { model in
       model.pendingFileTabReads[id] = nil

@@ -143,7 +143,7 @@ extension AppModel {
 
     case .resizeGroups(let worktree, let shares): replyToResizeGroups(shares, in: worktree)
     case .setPanelWidth(let panel, let width): replyToSetPanelWidth(panel, to: width)
-    case .showServicePage(let page, let worktree): replyToShowServicePage(page, of: worktree)
+    case .showServicePage(let page, let worktree): await replyToShowServicePage(page, of: worktree)
     case .standInServices(let json): await replyToStandInServices(json)
     case .quickSwitcher(let order): await replyToQuickSwitcher(order)
     }

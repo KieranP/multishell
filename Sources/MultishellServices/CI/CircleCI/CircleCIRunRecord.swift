@@ -39,7 +39,7 @@ struct CircleCIRunRecord: Decodable {
 
   /// `nil` where a field the row needs is missing. A status in words this
   /// build does not know is `.unknown`, so the run before it is not shown.
-  var run: CIRun? {
+  private var run: CIRun? {
     guard let id, let branch, let revision else { return nil }
     let status = Self.status(phase, outcome, currentOutcome)
     return CIRun(
@@ -56,7 +56,7 @@ struct CircleCIRunRecord: Decodable {
 
   /// Every workflow and job with a name; a word neither list knows is
   /// `.unknown`, as a run's is, rather than guessed.
-  var ciWorkflows: [CIWorkflow] {
+  private var ciWorkflows: [CIWorkflow] {
     (workflows?.elements ?? []).compactMap { workflow in
       guard let name = workflow.name else { return nil }
       let jobs = (workflow.jobs?.elements ?? []).compactMap { job in

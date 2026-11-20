@@ -131,7 +131,7 @@ struct AllChangesFileViewTests {
       isSplit: false,
       scrollsWith: nil,
     )
-    view.canvas.scrollView.scrollerStyle = .legacy
+    view.diffView.scrollView.scrollerStyle = .legacy
     _ = view.show(
       slice,
       header: .sample(of: document),
@@ -144,7 +144,7 @@ struct AllChangesFileViewTests {
     defer { withExtendedLifetime(window) {} }
     view.layoutSubtreeIfNeeded()
 
-    #expect(view.canvas.clipHeight >= view.height - AllChangesFileView.headerHeight)
+    #expect(view.diffView.clipHeight >= view.height - AllChangesFileView.headerHeight)
   }
 
   @Test func aSplitViewLetGoOfWhileScrolledSidewaysAsksTheListForNoLayout() {
@@ -190,7 +190,7 @@ struct AllChangesFileViewTests {
     let window = OffscreenWindow.holding(view, deferred: false)
     defer { withExtendedLifetime(window) {} }
     view.layoutSubtreeIfNeeded()
-    view.canvas.scroll(to: NSPoint(x: 100, y: 0))
+    view.diffView.scroll(to: NSPoint(x: 100, y: 0))
     var reported = 0
     view.onHeightChanged = { reported += 1 }
 

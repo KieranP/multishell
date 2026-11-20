@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// One CI run of a branch, its newest as the service lists them. Runtime
 /// only; see Docs/develop/state-on-disk.md.

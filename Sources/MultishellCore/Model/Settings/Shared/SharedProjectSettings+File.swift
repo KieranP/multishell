@@ -12,7 +12,7 @@ extension SharedProjectSettings {
     guard FileManager.default.fileExists(atPath: url.path) else { return nil }
     let data = try Data(contentsOf: url)
     var settings = try JSONDecoder().decode(SharedProjectSettings.self, from: data)
-    settings.digest = FileDigest.sha256(of: data)
+    settings.digest = HexDigest.sha256(of: data)
     return settings
   }
 
@@ -37,7 +37,7 @@ extension SharedProjectSettings {
     let data = try encoder.encode(kept.merging(fields) { _, field in field })
     var written = self
     written.unrecognisedKeys = kept
-    written.digest = FileDigest.sha256(of: data)
+    written.digest = HexDigest.sha256(of: data)
     return (data, written)
   }
 

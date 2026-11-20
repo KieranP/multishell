@@ -52,7 +52,7 @@ extension AppModel {
       return .refused(.noServicePage(page, id: worktreeControlID))
 
     case .nothingChecked:
-      return .refused(.nothingToHandOff(page, id: worktreeControlID))
+      return .refused(.nothingToHandoff(page, id: worktreeControlID))
 
     case .notPasted(let sessionID):
       return .refused(.paneNotLive(id: sessionID))

@@ -21,7 +21,7 @@ extension AllChangesListRepresentable {
           headerBarTop: Double(top),
           nextHeaderBarTop: list.top(ofFile: index + 1).map(Double.init),
           scrolledTo: Double(y),
-          barHeight: UIMetrics.allChangesHeaderBarHeight,
+          barHeight: UIMetrics.fileTabBarHeight,
         ),
         in: tab.id,
       )
@@ -82,7 +82,7 @@ extension AllChangesListRepresentable {
     let fileRow = row - Double(document.sections[index].rows.lowerBound)
     let cut = CGFloat(fileRow - fileRow.rounded(.down)) * geometry.rowHeight
     coordinator.scroll(
-      to: AllChangesSteps.Stop(section: index, row: Int(fileRow)),
+      to: AllChangesFileRow(section: index, row: Int(fileRow)),
       below: -cut,
       on: list,
       geometry: geometry,
