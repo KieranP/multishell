@@ -18,6 +18,17 @@ struct GitHubReviewThreadRecordTests {
     #expect(page.threads.first?.line == 12)
   }
 
+  @Test func aCommentKeepsItsMarkupForTheAgentAndItsPlainTextForThePage() throws {
+    let json = Data(GitHubFixtures.reviewThreads(id: "t1", hasNextPage: false).utf8)
+
+    let comment = try #require(
+      try GitHubReviewThreadRecord.page(from: json).threads.first?.comments.first
+    )
+
+    #expect(comment.body.hasPrefix("<a href=\"#\"><img alt=\"P1\""))
+    #expect(comment.bodyText == "logic: Guard it.")
+  }
+
   @Test func theLastPageHasNoNextCursor() throws {
     let json = Data(GitHubFixtures.reviewThreads(id: "t2", hasNextPage: false).utf8)
 

@@ -25,7 +25,7 @@ struct PullRequestThreadRow: View {
               .font(metrics.font(size: metrics.secondary, weight: .semibold))
               .foregroundStyle(theme.filesPanel.text)
               .lineLimit(1)
-              .fixedSize()
+              .layoutPriority(1)
             Text(thread.placeLabel)
               .font(.system(size: metrics.caption, design: .monospaced))
               .foregroundStyle(theme.filesPanel.textSecondary)
@@ -41,7 +41,7 @@ struct PullRequestThreadRow: View {
               .fixedSize()
             }
           }
-          Text(first?.body ?? "")
+          Text(first?.bodyText ?? "")
             .font(metrics.font(size: metrics.secondary))
             .foregroundStyle(theme.filesPanel.text)
             .lineLimit(2)

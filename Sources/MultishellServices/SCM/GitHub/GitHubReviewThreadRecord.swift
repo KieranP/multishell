@@ -51,6 +51,7 @@ struct GitHubReviewThreadRecord: Decodable {
     let id: String
     let author: Author?
     let body: String
+    let bodyText: String
     let url: URL?
   }
 
@@ -65,7 +66,7 @@ struct GitHubReviewThreadRecord: Decodable {
             nodes {
               id isResolved isOutdated path line originalLine
               firstComment: comments(first: 1) { nodes { diffHunk } }
-              comments(first: 100) { nodes { id author { login } body url } }
+              comments(first: 100) { nodes { id author { login } body bodyText url } }
             }
           }
         }
@@ -102,6 +103,7 @@ struct GitHubReviewThreadRecord: Decodable {
               id: comment.id,
               author: comment.author?.login,
               body: comment.body,
+              bodyText: comment.bodyText,
               url: comment.url,
             )
           },

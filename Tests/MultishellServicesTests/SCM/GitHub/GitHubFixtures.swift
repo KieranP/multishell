@@ -64,11 +64,13 @@ enum GitHubFixtures {
       {"id":"\(id)","isResolved":false,"isOutdated":false,"path":"Sources/App.swift",\
       "line":12,"originalLine":10,\
       "firstComment":{"nodes":[{"diffHunk":"@@ -1,2 +1,2 @@\\n-let a\\n+let b"}]},\
-      "comments":{"nodes":[{"id":"\(id)-c","author":{"login":"jt"},"body":"Guard it.",\
-      "url":"https://github.com/me/demo/pull/44#discussion_r1"}]}},\
+      "comments":{"nodes":[{"id":"\(id)-c","author":{"login":"jt"},\
+      "body":"<a href=\\"#\\"><img alt=\\"P1\\" src=\\"p1.svg\\"></a> **logic:** Guard it.",\
+      "bodyText":"logic: Guard it.","url":"https://github.com/me/demo/pull/44#discussion_r1"}]}},\
       {"id":"\(id)-done","isResolved":true,"isOutdated":false,"path":"README.md",\
       "line":null,"originalLine":null,"firstComment":{"nodes":[{"diffHunk":""}]},\
-      "comments":{"nodes":[{"id":"x","author":null,"body":"Fixed","url":null}]}}]}}}}}
+      "comments":{"nodes":[{"id":"x","author":null,"body":"Fixed","bodyText":"Fixed",\
+      "url":null}]}}]}}}}}
       """
   }
 }

@@ -117,7 +117,7 @@ struct ServiceStandInRecord: Decodable {
     let url: URL?
 
     var comment: PullRequestThreadComment {
-      PullRequestThreadComment(id: id, author: author, body: body, url: url)
+      PullRequestThreadComment(id: id, author: author, body: body, bodyText: body, url: url)
     }
   }
 

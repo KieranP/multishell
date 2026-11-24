@@ -24,6 +24,7 @@ extension PullRequestThread {
           id: "\(id)-c\(index)",
           author: "jt",
           body: body,
+          bodyText: body,
           url: URL(string: "https://github.com/me/demo/pull/44#discussion_r\(index)"),
         )
       },

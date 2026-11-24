@@ -80,6 +80,14 @@ issue.
   details are. Only the first comment's hunk is asked for: it places the thread.
 - **An outdated thread is labelled by the line it was written on**, its `line`
   being gone.
+- **A thread's row shows GitHub's `bodyText`, the agent gets `body`.** Bots such
+  as Greptile open with an HTML badge, so the raw body showed
+  `<a href="#"><img …` in place of the comment. The agent keeps the markdown,
+  code fences and all. A stand-in's comment shows its `body`, having no
+  renderer.
+- **A thread's login truncates before the row widens.** Held at its full width,
+  `github-code-quality` beside Outdated drew past the panel's narrowest and over
+  its resize handle, which then took no drag.
 
 ## Reviewed and left as is
 
