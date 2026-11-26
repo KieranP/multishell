@@ -7,6 +7,7 @@ extension ControlSettingsPage {
   init(_ section: SettingsSection) {
     self =
       switch section {
+      case .actions: .actions
       case .agentHooks: .agentHooks
       case .agents: .agents
       case .agentSettings: .agentSettings

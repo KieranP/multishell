@@ -112,6 +112,7 @@ enum Helper {
     }
     let rest = arguments.dropFirst()
     switch command {
+    case .actions: return try runActions(rest, environment: environment)
     case .open: return try runOpen(rest, environment: environment)
     case .quit: return try runQuit(rest, environment: environment)
     case .info: return try runInfo(rest, environment: environment)

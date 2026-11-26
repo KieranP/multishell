@@ -21,6 +21,9 @@ struct StateDot: View {
   var diameter = UIMetrics.stateDotDiameter
   /// Off where the dot names a state rather than reports one, as an empty column's header.
   var isAnimated = true
+  /// A still orbit's angle as a share of a turn: frames of the motion, for an
+  /// AppKit menu, which shows images and nothing that moves.
+  var stillTurn = 0.0
 
   @Environment(\.accessibilityReduceMotion) private var reducesMotion
 
@@ -63,6 +66,7 @@ struct StateDot: View {
         } else {
           StillGlyphShape(motion: .orbit, lineWidth: orbitLineWidth)
             .stroke(color, style: StrokeStyle(lineWidth: orbitLineWidth, lineCap: .round))
+            .rotationEffect(.radians(2 * .pi * stillTurn))
         }
       }
 

@@ -53,6 +53,8 @@ public final class AppModel<Surface> {
   var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
   public internal(set) var pendingClose: PendingClose?
+  /// An action picked while its tab still runs something, waiting on the restart question.
+  public internal(set) var pendingActionRestart: PendingActionRestart?
   /// Held here, not by the sidebar, because the poll reads the rows it opens.
   public var sidebarFilterText = "" {
     didSet {
@@ -88,6 +90,8 @@ public final class AppModel<Surface> {
   /// Ended by any change to the shortcuts or the page going, so a question
   /// never outlives what it asked about.
   var shortcutsPageEdit: ShortcutsPageEdit?
+  /// The Actions page's row recording keys, ended as the page goes.
+  var recordingActionKeys: ActionKeysRecording?
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
   var renamingWorktreeID: Worktree.ID?
@@ -283,6 +287,12 @@ public final class AppModel<Surface> {
   @ObservationIgnored var newWorktreeFirstTabs: [Worktree.ID: NewWorktreeFirstTab] = [:]
   /// The task each agent tab starts on, taken by its first launch.
   @ObservationIgnored var pendingAgentTasks: [TerminalSession.ID: String] = [:]
+  /// The action each new session runs at its first launch, and only then, so a
+  /// relaunch never starts one; see Docs/design/actions.md.
+  @ObservationIgnored var pendingActionRuns: [TerminalSession.ID: ProjectAction] = [:]
+  /// When each action still running started: the tab's dot cannot say, as the
+  /// shell taking over after it reports its own commands there.
+  var actionRunStarts: [TerminalSession.ID: Date] = [:]
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.

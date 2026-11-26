@@ -38,8 +38,8 @@ struct SettingsGroup<Content: View, Header: View, Footer: View>: View {
           }
           row
             .padding(.horizontal, UIMetrics.settingsRowSideInset)
-            .padding(.top, isCaption ? 0 : 6)
-            .padding(.bottom, isCaption ? 8 : 6)
+            .padding(.top, isCaption ? 0 : UIMetrics.settingsRowVerticalInset)
+            .padding(.bottom, isCaption ? 8 : UIMetrics.settingsRowVerticalInset)
             .frame(minHeight: isCaption ? 0 : UIMetrics.settingsRowMinHeight, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
         }

@@ -57,6 +57,23 @@ struct AccessibilityTextAgentBoardTests {
     )
   }
 
+  @Test func anActionsCardSaysItIsAnAction() {
+    var action = card(occupant: .shell("zsh"), state: nil)
+    action.isAction = true
+
+    #expect(
+      AccessibilityText.card(action, at: now)
+        == "Nothing running, multishell, agents-view, claude — repairReferences, zsh, action"
+    )
+  }
+
+  @Test func anAgentStartedInAnActionsTabIsSpokenAsTheAgent() {
+    var agent = card(occupant: .agent(id: "claude", name: "Claude Code"), state: nil)
+    agent.isAction = true
+
+    #expect(AccessibilityText.card(agent, at: now).hasSuffix("Claude Code, agent"))
+  }
+
   @Test func theSidebarAgentsRowReadsItsCounts() {
     #expect(
       AccessibilityText.agentsRow([

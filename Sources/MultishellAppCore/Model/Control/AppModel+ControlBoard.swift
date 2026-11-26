@@ -16,6 +16,7 @@ extension AppModel {
                 worktree: ControlID.worktree(card.worktreeID),
                 title: card.title,
                 agent: card.occupant.agentID,
+                isAction: card.isAction,
                 project: workspace.worktree(card.worktreeID).map { worktree in
                   ControlID.project(worktree.projectID)
                 },

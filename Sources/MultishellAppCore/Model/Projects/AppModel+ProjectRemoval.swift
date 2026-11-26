@@ -54,10 +54,14 @@ extension AppModel {
     if pendingProjectRemoval?.project.id == project.id { pendingProjectRemoval = nil }
     // Only the view changing hands the keyboard on; see Docs/design/architecture.md.
     let wasInView = worktreeInView?.projectID == project.id
+    // Off the workspace's copy: the caller's may predate keys given since.
+    let hadActionKeys = workspace.project(project.id)?.settings.actionShortcuts.isEmpty == false
     let removed = store.removeProject(project.id)
     releaseReviewFiles(of: removed)
     forgetWorktrees(removed)
     reconcileSessions(takingFocus: wasInView)
+    // Its actions' keys go back to the panes.
+    if hadActionKeys { applyTerminalConfiguration() }
     Task { await rearmWatcher() }
   }
 }

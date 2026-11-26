@@ -86,6 +86,14 @@ struct ViewSettingsWindowTests {
         view: AnyView(ProjectAgentsPage(model: model, project: project)),
       ),
       Page(
+        name: "Project Actions",
+        view: AnyView(ProjectActionsPage(model: model, project: project)),
+      ),
+      Page(
+        name: "Project Actions, a repository file asking for trust",
+        view: AnyView(ProjectActionsPage(model: model, project: project.sharingActions())),
+      ),
+      Page(
         name: "Project Integrations",
         view: AnyView(ProjectIntegrationsPage(model: model, project: project)),
       ),

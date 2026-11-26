@@ -143,4 +143,133 @@ struct SharedProjectSettingsTests {
       "what write returns is the file",
     )
   }
+
+  @Test func aFilesActionsReadInOrderAndABlankOrBrokenEntryCostsItselfOnly() throws {
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
+      """
+      { "actions": [
+        { "name": "Start Server", "command": "npm run dev" },
+        { "name": "  ", "command": "true" },
+        { "name": "Broken" },
+        "not an action",
+        { "name": "Run Migrations", "command": "bin/rails db:migrate" },
+        { "name": "Start Server", "command": "a second claim on the name" }
+      ] }
+      """,
+    )
+
+    #expect(shared.actions == [.serve, .migrate])
+  }
+
+  @Test func actionsThatAreNotAListCostTheKeyAndAnEmptyListIsAbsent() throws {
+    #expect(try decodeJSON(SharedProjectSettings.self, #"{ "actions": "x" }"#).actions == nil)
+    #expect(try decodeJSON(SharedProjectSettings.self, #"{ "actions": [] }"#).actions == nil)
+  }
+
+  @Test func exportLeavesOutARowTheActionsPageHasNotFilledIn() {
+    let unfilled = ProjectAction(name: "New Action", command: "  ")
+
+    let exported = SharedProjectSettings(exporting: ProjectSettings(actions: [.serve, unfilled]))
+
+    #expect(exported.actions == [.serve])
+    #expect(SharedProjectSettings(exporting: ProjectSettings(actions: [unfilled])).actions == nil)
+  }
+
+  @Test func exportOverAnUntrustedFileKeepsTheTeammatesActionsBesideTheUsersOwn() throws {
+    let file = try writtenAndReadBack(SharedProjectSettings(actions: [.serve, .migrate]))
+    let ownServe = ProjectAction(name: "Start Server", command: "bin/dev")
+    let mine = SharedProjectSettings(
+      exporting: ProjectSettings(actions: [ownServe, .seed]).layered(over: file)
+    )
+
+    let kept = mine.carryingOver(from: file)
+
+    #expect(kept.actions == [ownServe, .seed, .migrate])
+  }
+
+  @Test func theUsersOwnActionsInTheFilesOrderAreStillWhollyTheirs() throws {
+    let file = try writtenAndReadBack(SharedProjectSettings(actions: [.migrate, .serve]))
+    let mine = SharedProjectSettings(actions: [.serve, .migrate])
+    let onlyServe = SharedProjectSettings(actions: [.serve])
+
+    #expect(mine.ownsEverythingTrustCovers(in: mine.carryingOver(from: file)))
+    #expect(!onlyServe.ownsEverythingTrustCovers(in: onlyServe.carryingOver(from: file)))
+  }
+
+  @Test func exportKeepsTheActionEntriesAndFieldsThisBuildCannotRead() throws {
+    let root = try Scratch.directory("shared")
+    defer { Scratch.remove(root) }
+    let file = SharedProjectSettings.file(in: root)
+    try #"""
+    { "actions": [
+        { "name": "Start Server", "command": "npm run dev", "cwd": "web" },
+        { "name": "Deploy", "steps": ["a", "b"] },
+        { "name": "Migrate", "command": "bin/migrate", "cwd": "api" } ] }
+    """#.write(to: file, atomically: true, encoding: .utf8)
+    let existing = try #require(try SharedProjectSettings.load(from: root))
+    let ownMigrate = ProjectAction(name: "Migrate", command: "make migrate")
+    let mine = SharedProjectSettings(actions: [ownMigrate, .seed])
+
+    let written = try mine.carryingOver(from: existing).write(to: root)
+
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
+    let entries = try #require(json["actions"] as? [[String: Any]])
+    #expect(
+      entries.map { $0["name"] as? String } == [
+        "Migrate", "Seed Database", "Start Server", "Deploy",
+      ]
+    )
+    #expect(
+      entries[0]["command"] as? String == "make migrate" && entries[0]["cwd"] as? String == "api"
+    )
+    #expect(entries[2]["cwd"] as? String == "web")
+    #expect(entries[3]["steps"] as? [String] == ["a", "b"])
+    #expect(
+      try SharedProjectSettings.load(from: root) == written,
+      "what write returns is the file",
+    )
+  }
+
+  @Test func aFileWhoseActionsSayNothingMoreThanTheirFieldsReadsAsThemAlone() throws {
+    let file = try writtenAndReadBack(SharedProjectSettings(actions: [.serve]))
+
+    #expect(file == SharedProjectSettings(actions: [.serve], digest: file.digest))
+  }
+
+  @Test func anOwnActionIsWrittenOverAnEntryOfItsNameThisBuildCannotRead() throws {
+    let root = try Scratch.directory("shared")
+    defer { Scratch.remove(root) }
+    let file = SharedProjectSettings.file(in: root)
+    try #"{ "actions": [ { "name": " Deploy ", "steps": ["a"] } ] }"#.write(
+      to: file,
+      atomically: true,
+      encoding: .utf8,
+    )
+    let existing = try #require(try SharedProjectSettings.load(from: root))
+    let ownDeploy = ProjectAction(name: "Deploy", command: "make deploy")
+
+    try SharedProjectSettings(actions: [ownDeploy]).carryingOver(from: existing).write(to: root)
+
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
+    let entries = try #require(json["actions"] as? [[String: Any]])
+    #expect(entries.count == 1)
+    #expect(entries.first?["name"] as? String == "Deploy")
+    #expect(entries.first?["command"] as? String == "make deploy")
+  }
+
+  @Test func aTeammatesEntryThisBuildCannotReadIsNotTheUsersOwn() throws {
+    let file = try writtenAndReadBack(SharedProjectSettings(actions: [.serve]))
+    var withDeploy = file
+    withDeploy.actionEntriesAsWritten =
+      try SharedProjectSettings.entries(of: [.serve]) + [.object(["name": .string("Deploy")])]
+    let mine = SharedProjectSettings(actions: [.serve])
+
+    #expect(mine.ownsEverythingTrustCovers(in: mine.carryingOver(from: file)))
+    #expect(!mine.ownsEverythingTrustCovers(in: mine.carryingOver(from: withDeploy)))
+  }
 }

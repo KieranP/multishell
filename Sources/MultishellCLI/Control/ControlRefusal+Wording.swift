@@ -5,6 +5,16 @@ extension ControlRefusal {
 
   var wording: String {
     switch self {
+    case .actionNotFound(let name):
+      "no action \(name) here; `multishell actions list WORKTREE_ID` names them"
+
+    case .actionNotTrusted(let name):
+      "\(name) is .multishell.json's, which has not been trusted; its project's Actions settings"
+        + " page trusts it"
+
+    case .actionTabOccupied(let name):
+      "something still runs in \(name)'s tab; --restart stops it and runs \(name) again"
+
     case .agentNotInstalled(let id): "\(id) is not on the login shell's PATH"
     case .agentWorking: "an agent is working there; --force goes ahead anyway"
     case .alert(let title, let message): "\(title) \(message)"

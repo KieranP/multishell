@@ -32,6 +32,8 @@ extension AppModel {
     guard var settings = workspace.project(id)?.settings else { return }
     settings.recordTrustDecision(digest: digest, isTrusted: isTrusted)
     store.setSettings(settings, forProject: id)
+    // The file's actions come into force or go, and their keys with them.
+    noteActionsInForceChanged()
   }
 
   /// The dialog's answer. Either way the question is not asked again for

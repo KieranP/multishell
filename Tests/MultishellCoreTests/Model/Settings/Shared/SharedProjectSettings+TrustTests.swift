@@ -133,4 +133,15 @@ struct SharedProjectSettingsTrustTests {
     let shown = try #require(shared.trustCoveredText).components(separatedBy: "\n")
     #expect(shown.count == SharedProjectSettings.trustCoveredStarts.count)
   }
+
+  @Test func theTrustQuestionListsEachActionByNameAndCommand() throws {
+    let shared = SharedProjectSettings(actions: [.serve, .migrate])
+
+    #expect(shared.asksForTrust)
+    #expect(
+      shared.trustCoveredText
+        == "\(t("shared-settings.actions")):\nStart Server: npm run dev\n"
+        + "Run Migrations: bin/rails db:migrate"
+    )
+  }
 }

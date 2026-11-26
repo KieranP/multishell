@@ -4,6 +4,7 @@ import SwiftUI
 extension SettingsPage {
   var title: String {
     switch self {
+    case .actions: t("settings.actions")
     case .agents: t("label.agents")
     case .appearance: t("settings.appearance")
     case .general: t("settings.general")
@@ -19,6 +20,7 @@ extension SettingsPage {
   /// The tile behind the glyph, each page its own as System Settings colours them.
   var tileColor: Color {
     switch self {
+    case .actions: Color(red: 0.204, green: 0.659, blue: 0.325)
     case .agents: Color(red: 0.545, green: 0.361, blue: 0.965)
     case .appearance: Color(red: 0.039, green: 0.518, blue: 1)
     case .general: Color(red: 0.557, green: 0.557, blue: 0.576)

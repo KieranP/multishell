@@ -3,6 +3,12 @@ import Foundation
 /// Why the app did not do what a request asked. Data, not words: the
 /// helper says each in English, as its output stays (translation.md).
 public enum ControlRefusal: Error, Codable, Equatable, Sendable {
+  /// The worktree's project has no action of that name in force.
+  case actionNotFound(name: String)
+  /// The action is the repository's, which has not been trusted.
+  case actionNotTrusted(name: String)
+  /// Its tab still runs something, its last run or what came after; `--restart` ends it.
+  case actionTabOccupied(name: String)
   /// Not on the login shell's PATH, so the tab would open as a plain shell.
   case agentNotInstalled(id: String)
   case agentWorking

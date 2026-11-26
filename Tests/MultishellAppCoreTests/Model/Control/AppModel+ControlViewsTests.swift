@@ -140,7 +140,7 @@ struct AppModelControlViewsTests {
             .agentHooks,
             pages: [
               .general, .worktrees, .hooksCreate, .hooksDelete, .hooksEnvironment, .terminal,
-              .agents, .integrations,
+              .agents, .actions, .integrations,
             ],
           )
         )

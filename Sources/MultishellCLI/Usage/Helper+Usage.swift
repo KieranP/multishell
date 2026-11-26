@@ -28,6 +28,8 @@ extension Helper {
                                  The sidebar's projects
       worktrees list|add|show|rename|remove|update|select|auto-rename|hide|
                 unhide|clear-status|resize-groups
+      actions list|run           A worktree's project actions, as its play
+                                 button runs them
       tabs list|open|open-all-changes|open-file|show|select|close|move|
            rename|resize|clear-status|step|find
       panes split|select|close|type|paste|key|show|read|wait|find|clear-status
@@ -86,8 +88,11 @@ extension Helper {
     usageByTopic[topic]
   }
 
+  // One case a command, exhaustive, as `runControl` is.
+  // swiftlint:disable:next cyclomatic_complexity
   private static func usage(of command: ControlCommand) -> String {
     switch command {
+    case .actions: actionsUsage
     case .info, .open, .quit: appUsage
     case .board: boardUsage
     case .ciRuns: ciUsage

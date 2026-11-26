@@ -54,7 +54,8 @@ struct SettingsDetail: View {
     case .worktreesExisting, .worktreesNew:
       AppWorktreesPage(model: model, section: location.section)
 
-    case .agents, .hooksCreate, .hooksDelete, .hooksEnvironment, .integrations, .worktrees:
+    case .actions, .agents, .hooksCreate, .hooksDelete, .hooksEnvironment, .integrations,
+      .worktrees:
       EmptyView()
     }
   }
@@ -62,6 +63,8 @@ struct SettingsDetail: View {
   @ViewBuilder
   private func projectPage(_ project: Project) -> some View {
     switch location.section {
+    case .actions: ProjectActionsPage(model: model, project: project)
+
     case .agents: ProjectAgentsPage(model: model, project: project)
 
     case .general: ProjectGeneralPage(model: model, project: project)

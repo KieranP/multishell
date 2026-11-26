@@ -6,7 +6,7 @@ extension SharedProjectSettings {
     case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
     case opensTerminalOnSelect, opensTerminalOnCreate, preCreateHook, postCreateHook, preDeleteHook,
       postDeleteHook, linkedPaths, copiedPaths, worktreeSortOrder, showsActiveWorktreesFirst,
-      iconGlyph, iconTint
+      iconGlyph, iconTint, actions
   }
 
   public init(from decoder: any Decoder) throws {
@@ -40,11 +40,19 @@ extension SharedProjectSettings {
       showsActiveWorktreesFirst: bool(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
       iconTint: container.decodeTolerantly(Int.self, forKey: .iconTint),
+      actions: container.decodeTolerantly(LossyArray<ProjectAction>.self, forKey: .actions)?
+        .elements,
     )
     let file = try decoder.container(keyedBy: RawCodingKey.self)
     let written = Set(try fields().keys)
     for key in file.allKeys where !written.contains(key.stringValue) {
       unrecognisedKeys[key.stringValue] = try file.decode(JSONValue.self, forKey: key)
+    }
+    let actionsKey = RawCodingKey(stringValue: CodingKeys.actions.stringValue)
+    if case .array(let entries)? = try? file.decodeIfPresent(JSONValue.self, forKey: actionsKey),
+      try entries != Self.entries(of: actions)
+    {
+      actionEntriesAsWritten = entries
     }
   }
 }

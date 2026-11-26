@@ -87,4 +87,19 @@ struct AppModelControlSidebarTests {
     #expect((project["hiddenWorktrees"] as? [Any])?.isEmpty == true)
     #expect(project["hiddenWorktreeCount"] as? Int == 1)
   }
+
+  @Test func anActionsPaneIsListedAsAnAction() async throws {
+    let harness = Harness()
+    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
+    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
+    harness.model.runAction(named: serve.name, in: harness.main)
+
+    let reply = try #require(await harness.messageSource.ask(.listSidebar))
+
+    let projects = try #require(reply.outputFields["projects"] as? [[String: Any]])
+    let worktrees = try #require(projects.first?["worktrees"] as? [[String: Any]])
+    let inView = try #require(worktrees.first { $0["isInView"] as? Bool == true })
+    let panes = try #require(inView["panes"] as? [[String: Any]])
+    #expect(panes.map { $0["isAction"] as? Bool } == [true])
+  }
 }

@@ -49,6 +49,7 @@ extension AppModel {
             workers: workers(ofPane: id),
             agentID: agentID,
             agentName: agentID.map(agentDisplayName),
+            isAction: session.actionName != nil,
           )
         }
       }

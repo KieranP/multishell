@@ -1,6 +1,7 @@
 /// A page in the settings window's sidebar. Some pages exist in one scope
 /// only, and a page too tall for the window lists its parts beneath it.
 public enum SettingsPage: Hashable, Sendable {
+  case actions
   case agents
   case appearance
   case general
@@ -15,7 +16,7 @@ public enum SettingsPage: Hashable, Sendable {
     .general, .worktrees, .terminal, .agents, .notifications, .appearance, .shortcuts,
   ]
   private static let projectOrder: [Self] = [
-    .general, .worktrees, .hooks, .terminal, .agents, .integrations,
+    .general, .worktrees, .hooks, .terminal, .agents, .actions, .integrations,
   ]
 
   /// The sidebar's pages for `scope`, in the order it lists them.
@@ -28,6 +29,7 @@ public enum SettingsPage: Hashable, Sendable {
   public func sections(in scope: SettingsScope) -> [SettingsSection] {
     let isAllProjects = scope == .allProjects
     return switch self {
+    case .actions: isAllProjects ? [] : [.actions]
     case .agents: isAllProjects ? [.agentSettings, .agentHooks] : [.agents]
     case .appearance: isAllProjects ? [.appearance] : []
     case .general: [.general]

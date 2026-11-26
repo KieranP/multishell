@@ -17,6 +17,12 @@ public enum ShellCommand {
   /// comes after whatever the rc files printed.
   static let stderrStartMarker = "--multishell-hook-output--"
 
+  /// The line a login shell is handed to run `script` as sh, and the variable
+  /// carrying it, for a caller that starts the shell itself: a terminal tab.
+  public static func evaluating(_ script: String) -> (line: String, environment: [String: String]) {
+    (evalScriptCommand, [scriptVariable: script])
+  }
+
   /// Runs a command line to its end with no pipes and no timeout, throwing on
   /// a failure: an editor shim may hold this open; see terminals/sessions.md.
   public static func runUncaptured(

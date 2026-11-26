@@ -29,6 +29,21 @@ extension PaneNode {
     }
   }
 
+  /// The same tree with the terminal `id` swapped for `newSession` in its place.
+  func replacing(_ id: TerminalSession.ID, with newSession: TerminalSession.ID) -> PaneNode {
+    switch self {
+    case .terminal(let existing):
+      existing == id ? .terminal(newSession) : self
+
+    case .split(let axis, let children, let weights):
+      .split(
+        axis: axis,
+        children: children.map { $0.replacing(id, with: newSession) },
+        weights: weights,
+      )
+    }
+  }
+
   /// Splits the terminal `id` in half for `newSession`. The enclosing
   /// split's own axis adds a sibling, as tmux does; another axis nests.
   func splitting(

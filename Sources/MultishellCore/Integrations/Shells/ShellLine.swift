@@ -63,9 +63,10 @@ public struct ShellLine: Hashable, Sendable {
     return "\(quote)\(read)\(quote)"
   }
 
-  /// The command that runs `command` with the environment set, through
-  /// `env` so no shell parses a value on the way.
-  public func prefixing(_ command: [String]) -> [String] {
+  /// The command that runs `command` with the environment set, `extra` over
+  /// it, through `env` so no shell parses a value on the way.
+  public func prefixing(_ command: [String], adding extra: [String: String] = [:]) -> [String] {
+    let environment = environment.merging(extra) { $1 }
     guard !environment.isEmpty else { return command }
     let assignments = environment.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }
     return ["/usr/bin/env"] + assignments + command

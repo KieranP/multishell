@@ -9,6 +9,11 @@ extension AppModel {
     var prepared = session
     prepared.shellOverride = shellPath(forWorktree: session.worktreeID)
     prepared.port = workspace.port(of: session.worktreeID)
+    if let action = pendingActionRuns.removeValue(forKey: session.id) {
+      prepared.command = actionCommand(action, for: prepared)
+      setIfChanged(\.actionRunStarts, actionRunStarts.merging([session.id: Date()]) { $1 })
+      return prepared
+    }
     guard let agentID = session.agentID else { return prepared }
     let besideAnotherTabOfItsAgent = workspace.sessions.contains { other in
       other.id != session.id && other.worktreeID == session.worktreeID && other.agentID == agentID
@@ -79,7 +84,7 @@ extension AppModel {
     return TabCommand.running(arguments + flags + taskArguments, shell: shell, handOver: handOver)
   }
 
-  private func worktreeAndProject(
+  func worktreeAndProject(
     _ worktreeID: Worktree.ID
   ) -> (worktree: Worktree, project: Project)? {
     guard let worktree = workspace.worktree(worktreeID),
@@ -88,8 +93,8 @@ extension AppModel {
     return (worktree, project)
   }
 
-  /// What `{{branch}}` and the rest stand for here.
-  private func placeholderValues(
+  /// What `{{branch}}` and the rest stand for here, and an action's variables hold.
+  func placeholderValues(
     _ place: (worktree: Worktree, project: Project)
   ) -> [WorktreePlaceholder: String] {
     WorktreePlaceholder.values(

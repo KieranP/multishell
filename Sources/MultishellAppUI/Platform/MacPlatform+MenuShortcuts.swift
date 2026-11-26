@@ -23,16 +23,14 @@ extension MacPlatform {
   ) {
     for item in menu.items {
       if let submenu = item.submenu {
-        // Theme names are the user's own and may match a command's title.
-        let isThemePicker = item.title == t("menu.theme")
-        guard !isThemePicker, !menusMacOSFills.contains(where: { $0 === submenu }) else { continue }
+        // Theme and action names are the user's own and may match a command's title.
+        let isNamedByUser = item.title == t("menu.theme") || item.title == t("menu.actions")
+        guard !isNamedByUser, !menusMacOSFills.contains(where: { $0 === submenu }) else { continue }
         setKeys(byTitle, in: submenu, leavingOutMenus: menusMacOSFills)
         continue
       }
       guard let shortcut = byTitle[item.title] else { continue }
-      item.keyEquivalent = shortcut.keys.map { String($0.menuKeyCharacter) } ?? ""
-      item.keyEquivalentModifierMask = shortcut.keys?.modifiers.modifierFlags ?? []
-      item.allowsAutomaticKeyEquivalentLocalization = !shortcut.isChanged
+      item.setKeys(shortcut.keys, isChanged: shortcut.isChanged)
     }
   }
 

@@ -56,6 +56,7 @@ extension AppModel {
           isFocused: pane.isFocused,
           state: pane.state,
           agent: pane.agentID,
+          isAction: pane.isAction,
         )
       },
     )

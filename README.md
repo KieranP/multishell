@@ -243,6 +243,10 @@ press the keys you want; a clash with another command asks before it takes them.
 - **Merge from or rebase onto the base** from a worktree's menu, its remote
   fetched first. Nothing is stashed, and conflicts wait for you or go to an
   agent, which a setting can do on its own.
+- **Named actions per project**, such as Start Server or Run Migrations, run
+  from the header's play button, the quick switcher, their own keys or
+  `multishell actions run`, each in a tab of its own. Share them in
+  `.multishell.json`.
 - **Auto Rename** asks an agent's CLI to name a worktree from its branch's
   changes. No API key, and the git branch keeps its name.
 - **Removing a worktree moves it to the Trash**, or deletes it if you prefer.

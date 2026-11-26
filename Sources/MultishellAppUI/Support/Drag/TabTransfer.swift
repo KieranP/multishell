@@ -11,14 +11,6 @@ enum TabTransfer {
   /// What the drag hands over. `.onDrag` rather than `.draggable`, which
   /// would not say which tab is moving as the drag starts.
   static func itemProvider() -> NSItemProvider {
-    let provider = NSItemProvider()
-    provider.registerDataRepresentation(
-      forTypeIdentifier: contentType.identifier,
-      visibility: .ownProcess,
-    ) { completion in
-      completion(Data(), nil)
-      return nil
-    }
-    return provider
+    .inApp(contentType)
   }
 }

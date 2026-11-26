@@ -50,6 +50,9 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   public internal(set) var workers: [Worker] = []
   /// `nil` for a tab with one pane.
   public internal(set) var position: PanePosition?
+  /// Runs a project action, which the board lists as it lists an agent
+  /// (Docs/design/actions.md).
+  public internal(set) var isAction = false
 
   var lane: AgentBoardLane { AgentBoardLane.of(state) }
 

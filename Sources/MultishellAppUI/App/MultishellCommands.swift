@@ -182,6 +182,25 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(.focusNextGroup, in: model)
       Button(ShortcutCommand.focusPreviousGroup.menuTitle) { model.focusPreviousGroup() }
         .keyboardShortcut(.focusPreviousGroup, in: model)
+      actionItems
+    }
+  }
+
+  /// The selected worktree's actions, which the quick switcher lists as
+  /// commands from here, each with the keys its Actions page gave it.
+  @ViewBuilder private var actionItems: some View {
+    let groups = model.actionMenuBarGroups
+    if !groups.isEmpty {
+      Divider()
+      Menu(t("menu.actions")) {
+        ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
+          if index > 0 { Divider() }
+          ForEach(group) { item in
+            Button(item.name) { model.runActionInView(named: item.name) }
+              .keyboardShortcut(item.keys?.keyboardShortcut(isChanged: true))
+          }
+        }
+      }
     }
   }
 }

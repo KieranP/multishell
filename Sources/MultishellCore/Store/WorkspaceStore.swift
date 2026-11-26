@@ -236,9 +236,16 @@ extension WorkspaceStore {
     title: String? = nil,
     command: [String]? = nil,
     agentID: String? = nil,
+    actionName: String? = nil,
   ) -> TerminalTab? {
     guard
-      let session = makeSession(in: worktreeID, title: title, command: command, agentID: agentID),
+      let session = makeSession(
+        in: worktreeID,
+        title: title,
+        command: command,
+        agentID: agentID,
+        actionName: actionName,
+      ),
       let groupID = findOrMakeGroup(group, in: worktreeID)
     else { return nil }
     workspace.sessions.append(session)
@@ -351,6 +358,8 @@ extension WorkspaceStore {
     for index in workspace.sessions.indices where moving.contains(workspace.sessions[index].id) {
       workspace.sessions[index].worktreeID = worktreeID
       workspace.sessions[index].workingDirectory = destination.path
+      // Its run serves the worktree it left, on that worktree's port.
+      workspace.sessions[index].actionName = nil
     }
     return true
   }
@@ -657,6 +666,61 @@ extension WorkspaceStore {
     return session
   }
 
+  /// A new session in place of `id`, in the same pane of the same tab, which is
+  /// shown: an action run again. The old one's shell ends as a closed one's does.
+  @discardableResult
+  public func replaceSession(_ id: TerminalSession.ID) -> TerminalSession? {
+    guard let tabIndex = workspace.tabIndex(owning: id),
+      let index = workspace.sessions.firstIndex(where: { $0.id == id })
+    else { return nil }
+    let old = workspace.sessions[index]
+    let session = TerminalSession(
+      worktreeID: old.worktreeID,
+      workingDirectory: old.workingDirectory,
+      title: old.title,
+      actionName: old.actionName,
+    )
+    workspace.sessions[index] = session
+    workspace.tabs[tabIndex].root = workspace.tabs[tabIndex].root.replacing(id, with: session.id)
+    if workspace.tabs[tabIndex].focusedSessionID == id {
+      workspace.tabs[tabIndex].focusedSessionID = session.id
+    }
+    activateTab(workspace.tabs[tabIndex].id)
+    return session
+  }
+
+  /// An action renamed, its tabs in `worktreeIDs` following; where a worktree
+  /// has a tab of the new name already, its tab is no action's, one name one tab.
+  public func renameActionSessions(
+    from old: String,
+    to new: String,
+    in worktreeIDs: Set<Worktree.ID>,
+  ) {
+    let holdingNew = Set(workspace.sessions.filter { $0.actionName == new }.map(\.worktreeID))
+    for index in workspace.sessions.indices
+    where workspace.sessions[index].actionName == old
+      && worktreeIDs.contains(workspace.sessions[index].worktreeID)
+    {
+      guard !holdingNew.contains(workspace.sessions[index].worktreeID) else {
+        workspace.sessions[index].actionName = nil
+        continue
+      }
+      workspace.sessions[index].actionName = new
+      workspace.sessions[index].title = new
+    }
+  }
+
+  /// An action removed: its tabs in `worktreeIDs` are no action's, or the next
+  /// action given its name would take them over.
+  public func forgetActionSessions(named name: String, in worktreeIDs: Set<Worktree.ID>) {
+    for index in workspace.sessions.indices
+    where workspace.sessions[index].actionName == name
+      && worktreeIDs.contains(workspace.sessions[index].worktreeID)
+    {
+      workspace.sessions[index].actionName = nil
+    }
+  }
+
   /// Written back when a divider is dragged, so a layout survives relaunch.
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {
     guard LayoutWeight.allUsable(weights),
@@ -670,6 +734,7 @@ extension WorkspaceStore {
     title: String?,
     command: [String]?,
     agentID: String? = nil,
+    actionName: String? = nil,
   ) -> TerminalSession? {
     guard let worktree = workspace.worktree(worktreeID) else { return nil }
     return TerminalSession(
@@ -678,6 +743,7 @@ extension WorkspaceStore {
       title: title ?? defaultTitle(for: command),
       command: command,
       agentID: agentID,
+      actionName: actionName,
     )
   }
 

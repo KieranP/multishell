@@ -40,6 +40,8 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case findInPane(id: UUID, action: FindBarAction)
   case hideView(ControlView)
   case info
+  /// The worktree's actions as its play button lists them, those waiting on trust too.
+  case listActions(worktree: String)
   /// The Agents board's columns and cards, as it would draw them now.
   case listBoard
   /// The Files panel's rows as drawn.
@@ -91,6 +93,9 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   /// The shares of the split at `path` down the tab's pane tree, `[]` its root.
   case resizeSplit(tab: UUID, path: [Int], shares: [Double])
   case resizeWindow(width: Double, height: Double)
+  /// An action run in the worktree, as its play menu runs it; `restart` stops
+  /// what still runs in its tab rather than asking, a working agent only `force`d.
+  case runAction(worktree: String, name: String, restart: Bool, force: Bool)
   /// The main window as drawn, or one pane, as a PNG screenshot.
   case screenshot(pane: UUID?)
   case selectPane(id: UUID)

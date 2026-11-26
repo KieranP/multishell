@@ -61,6 +61,7 @@ extension AppModel {
     for project: Project,
   ) {
     var snapshot = project.sharedSettingsSnapshot
+    let previousActions = snapshot.confined?.actions
     let isFirstRead = !snapshot.hasBeenRead
     // The date is recorded whatever the bytes say: a touch moves it
     // without changing them, and an unrecorded date is re-read every tick.
@@ -72,6 +73,8 @@ extension AppModel {
     )
     store.setSharedSettingsSnapshot(snapshot, forProject: project.id)
     guard changed else { return }
+    // Its actions, and so their keys, come into force or go with the bytes.
+    if previousActions != nil || reading.confined?.actions != nil { noteActionsInForceChanged() }
     // A question already up is about a file the disk no longer has, and
     // trusting it would store an answer for bytes nobody committed.
     let wasAsking = pendingSharedSettingsTrust?.projectID == project.id
@@ -98,8 +101,10 @@ extension AppModel {
       String(describing: error),
     )
     let isNew = snapshot.problem != problem
+    let hadActions = snapshot.confined?.actions != nil
     snapshot.recordFailure(problem: problem, modificationDate: reading.modificationDate)
     store.setSharedSettingsSnapshot(snapshot, forProject: project.id)
     if isNew { platform.log("\(project.name): \(problem)") }
+    if hadActions { noteActionsInForceChanged() }
   }
 }

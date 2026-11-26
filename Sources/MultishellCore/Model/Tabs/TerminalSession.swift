@@ -5,7 +5,7 @@ import Foundation
 public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// `shellOverride` and `port` are left out on purpose; see their doc comments.
   enum CodingKeys: String, CodingKey {
-    case id, worktreeID, workingDirectory, title, command, agentID, agentConversationID
+    case id, worktreeID, workingDirectory, title, command, agentID, agentConversationID, actionName
   }
 
   public let id: UUID
@@ -20,6 +20,9 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// The conversation that agent last reported, which a relaunch resumes by id:
   /// its own resume flag takes the latest, so two tabs of it came back as one.
   public internal(set) var agentConversationID: String?
+  /// The project action this tab runs. Only a run asked for this time starts
+  /// it, so a relaunch opens a shell here; see Docs/design/actions.md.
+  public internal(set) var actionName: String?
   /// The shell to run when `command` is nil. Runtime only, never saved: a
   /// relaunched tab reads the setting again.
   public var shellOverride: String?
@@ -42,6 +45,7 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     title: String,
     command: [String]? = nil,
     agentID: String? = nil,
+    actionName: String? = nil,
     shellOverride: String? = nil,
   ) {
     self.id = UUID()
@@ -50,6 +54,7 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     self.title = title
     self.command = command
     self.agentID = agentID
+    self.actionName = actionName
     self.shellOverride = shellOverride
   }
 }

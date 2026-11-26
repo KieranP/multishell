@@ -30,6 +30,9 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
   public internal(set) var showsActiveWorktreesFirst: Bool?
   public internal(set) var iconGlyph: String?
   public internal(set) var iconTint: Int?
+  /// Commands the user may run in a worktree, in menu order. Runs something,
+  /// so waits for the yes; empty is absent.
+  public internal(set) var actions: [ProjectAction]?
 
   /// The sha256 the trust decision is stored against; `nil` trusts nothing.
   /// Taken from the bytes by `load` and `fileContents`, as it decides what is trusted.
@@ -37,6 +40,9 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
   /// The file's keys the fields would not write back: ones this build has no
   /// field for, and values it could not read. Export keeps them; see settings.md.
   var unrecognisedKeys: [String: JSONValue] = [:]
+  /// The file's action entries as written, kept only where they say more than
+  /// `actions` does: an entry or a field this build cannot read. Export keeps them.
+  var actionEntriesAsWritten: [JSONValue]?
 
   init(
     worktreeDirectory: String? = nil,
@@ -56,6 +62,7 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
     showsActiveWorktreesFirst: Bool? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
+    actions: [ProjectAction]? = nil,
     digest: String? = nil,
   ) {
     self.worktreeDirectory = worktreeDirectory
@@ -75,6 +82,7 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.iconGlyph = Self.nonBlank(iconGlyph)
     self.iconTint = iconTint
+    self.actions = actions.map(ProjectAction.uniquelyNamed).flatMap { $0.isEmpty ? nil : $0 }
     self.digest = digest
   }
 
@@ -99,6 +107,7 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
       showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
       iconGlyph: ProjectIcon.normalizedGlyph(settings.iconGlyph),
       iconTint: ProjectIcon.usableTint(settings.iconTint),
+      actions: settings.actions.filter(\.isFilledIn),
     )
   }
 

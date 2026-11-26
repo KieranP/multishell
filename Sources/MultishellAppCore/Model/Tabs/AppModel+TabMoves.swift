@@ -47,6 +47,9 @@ extension AppModel {
     // cold destination is one the next reconcile would close them for.
     warmWorktrees.insert(worktreeID)
     select(worktree)
+    // A moved action tab stops being one, which the board counts by.
+    settlePendingActionRestart()
+    updateDockBadge()
     return true
   }
 

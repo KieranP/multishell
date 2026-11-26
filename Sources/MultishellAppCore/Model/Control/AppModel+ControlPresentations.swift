@@ -8,6 +8,7 @@ extension AppModel {
       up.append(PresentationEntry(.alert, title: alert.title, message: alert.message))
     }
     if pendingClose != nil { up.append(PresentationEntry(.closeConfirmation)) }
+    if pendingActionRestart != nil { up.append(PresentationEntry(.actionRestart)) }
     if pendingWorktreeRemoval != nil { up.append(PresentationEntry(.worktreeRemoval)) }
     if pendingProjectRemoval != nil { up.append(PresentationEntry(.projectRemoval)) }
     if pendingSharedSettingsTrust != nil { up.append(PresentationEntry(.sharedSettingsTrust)) }
@@ -37,6 +38,9 @@ extension AppModel {
 
     case .closeConfirmation:
       if let close = pendingClose { answerClose(close, confirmed: false) }
+
+    case .actionRestart:
+      if let restart = pendingActionRestart { answerActionRestart(restart, restarts: false) }
 
     case .worktreeRemoval:
       if let removal = pendingWorktreeRemoval { answerWorktreeRemoval(removal, choice: nil) }

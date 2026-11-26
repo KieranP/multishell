@@ -85,6 +85,11 @@
             <key>UTTypeDescription</key><string>Multishell Terminal Tab</string>
             <key>UTTypeConformsTo</key><array><string>public.data</string></array>
         </dict>
+        <dict>
+            <key>UTTypeIdentifier</key><string>io.multishell.action-row</string>
+            <key>UTTypeDescription</key><string>Multishell Action Row</string>
+            <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+        </dict>
     </array>
 </dict>
 </plist>

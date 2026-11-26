@@ -29,6 +29,11 @@ extension ProjectSettings {
     result.linkedPaths = linkedPaths.isEmpty ? shared.linkedPaths ?? "" : linkedPaths
     result.copiedPaths = copiedPaths.isEmpty ? shared.copiedPaths ?? "" : copiedPaths
     result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
+    // A row the Actions page has not filled in stands in for nothing.
+    result.actions = ProjectAction.layered(
+      own: actions.filter(\.isFilledIn),
+      over: shared.actions ?? [],
+    )
     return result
   }
 }

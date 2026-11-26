@@ -160,4 +160,14 @@ struct ProjectSettingsLayeringTests {
     let optedOut = settings.layered(over: shared)
     #expect(optedOut.postCreateHook == " ", "kept as the user's none, not replaced")
   }
+
+  @Test func anUntrustedFilesActionsAreOutOfForceAndATrustedFilesAreLayeredIn() throws {
+    let shared = try writtenAndReadBack(SharedProjectSettings(actions: [.serve, .migrate]))
+    var settings = ProjectSettings(actions: [.seed])
+
+    #expect(settings.layered(over: shared).actions == [.seed])
+
+    settings.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
+    #expect(settings.layered(over: shared).actions == [.seed, .serve, .migrate])
+  }
 }

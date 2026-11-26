@@ -2,10 +2,11 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Every key the project's own settings have but the trust answers, which
-  /// only the app's own question may give; null follows the global.
+  /// Every key the project's own settings have but the trust answers and the
+  /// actions, the app's own question's and page's; see Docs/design/actions.md.
   private static var projectSettingKeys: [String] {
-    ProjectSettings.CodingKeys.allCases.filter { $0 != .trustDecisions }.map(\.rawValue)
+    let unsettable: Set<ProjectSettings.CodingKeys> = [.trustDecisions, .actions, .actionShortcuts]
+    return ProjectSettings.CodingKeys.allCases.filter { !unsettable.contains($0) }.map(\.rawValue)
   }
 
   func replyToReadProjectSettings(of id: String, key: String?) -> ControlReply {
@@ -48,13 +49,17 @@ extension AppModel {
     with key: String,
     setTo value: Any,
   ) -> ProjectSettings? {
-    var fields = encodedFields(of: ownSettings(of: project))
+    let own = ownSettings(of: project)
+    var fields = encodedFields(of: own)
     fields[key] = value is NSNull ? nil : value
     // The parser reads `-1e400` as -inf, which the writer raises on, past `try?`.
     guard JSONSerialization.isValidJSONObject(fields),
       let data = try? JSONSerialization.data(withJSONObject: fields),
-      let settings = try? JSONDecoder().decode(ProjectSettings.self, from: data)
+      var settings = try? JSONDecoder().decode(ProjectSettings.self, from: data)
     else { return nil }
+    // Unsettable here, so as they were: the read drops a row not filled in yet.
+    settings.actions = own.actions
+    settings.actionShortcuts = own.actionShortcuts
     let kept = encodedFields(of: settings)[key]
     let isKept = value is NSNull ? kept == nil : (kept as? NSObject)?.isEqual(value) == true
     return isKept ? settings : nil

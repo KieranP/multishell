@@ -51,6 +51,7 @@ struct RootView: View {
     .baseUpdateDialog(model: model)
     .updateAbortAlert(model: model)
     .pendingCloseAlert(model: model)
+    .actionRestartAlert(model: model)
     .newWorktreeSheet(model: model)
     .presentedErrorAlert(model: model, window: .workspace)
   }

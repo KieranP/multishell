@@ -1,6 +1,7 @@
 /// The first word of each command that drives the app, and the topic its
 /// usage errors and `help` name.
 enum ControlCommand: String, CaseIterable {
+  case actions
   case board
   case ciRuns = "ci"
   case config

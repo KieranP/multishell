@@ -37,6 +37,9 @@ struct UIMetrics: Equatable {
   static let headerGlyphSize: Double = 13
   /// The square a header's glyph button or menu takes around that glyph.
   static let headerGlyphButtonSide: Double = 28
+  /// An AppKit menu row's mark: an agent's, or an action's state dot. Sized
+  /// against a menu title: the marks run to their square's edges, so 15 drew large.
+  static let menuMarkSide: Double = 13
   /// Between the segments in a well, a switch's and the file bar's arrows alike.
   static let segmentSpacing: Double = 2
 

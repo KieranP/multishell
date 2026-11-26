@@ -92,7 +92,7 @@ struct TerminalTabFace: View {
   ) -> some View {
     let glyph = PaneGlyph(
       agentID: agentID,
-      unmarkedSymbol: tab.isSplit ? PaneSymbol.split : PaneSymbol.terminal,
+      unmarkedSymbol: model.glyph(of: tab).symbol,
       state: state,
       ringFill: palette.background,
       ringWash: hoverWash,

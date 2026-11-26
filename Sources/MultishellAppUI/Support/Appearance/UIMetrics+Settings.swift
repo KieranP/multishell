@@ -36,6 +36,8 @@ extension UIMetrics {
   /// A pop-up's, a button's and the Same button's, so the three in a row match.
   static let settingsControlVerticalInset: Double = 3
   static let settingsRowSideInset: Double = 12
+  /// Above and below a group's row, its rule between; a caption's differ.
+  static let settingsRowVerticalInset: Double = 6
   static let settingsRowMinHeight: Double = 36
   static let settingsRowSpacing: Double = 12
   /// Between the controls on a row's right, a status and its buttons.
@@ -78,4 +80,7 @@ extension UIMetrics {
   /// A Shortcuts row's keys and its recorder, as wide as the mockup's "Same".
   static let settingsShortcutKeysWidth: Double = 76
   static let settingsShortcutKeysSideInset: Double = 8
+  /// The Actions page's name column and keys column, the command taking the rest.
+  static let settingsActionNameColumnWidth: Double = 130
+  static let settingsActionKeysColumnWidth: Double = 120
 }

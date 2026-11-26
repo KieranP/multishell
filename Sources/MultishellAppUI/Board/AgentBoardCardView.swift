@@ -89,6 +89,7 @@ struct AgentBoardCardView: View {
       }
       PaneGlyph(
         agentID: card.occupant.agentID,
+        unmarkedSymbol: TerminalTabGlyph(paneIsAction: card.isAction).symbol,
         state: nil,
         ringFill: theme.agentsCard.background,
         plainTint: theme.agentsCard.textSecondary,

@@ -27,18 +27,42 @@ extension SharedProjectSettings {
     for start in Self.trustCoveredStarts {
       kept[keyPath: start] = self[keyPath: start] ?? existing[keyPath: start]
     }
+    // Merged, not replaced: an untrusted file's actions are out of force, and
+    // an own action would otherwise drop every one of a teammate's.
+    let actions = ProjectAction.layered(own: actions ?? [], over: existing.actions ?? [])
+    kept.actions = actions.isEmpty ? nil : actions
     kept.unrecognisedKeys = existing.unrecognisedKeys
+    kept.actionEntriesAsWritten = existing.actionEntriesAsWritten
     return kept
+  }
+
+  /// Whether every word a yes covers in `merged`, these carried over a file,
+  /// is these settings' own, whatever order the merge puts their actions in.
+  public func ownsEverythingTrustCovers(in merged: SharedProjectSettings) -> Bool {
+    // An action entry this build cannot read is a teammate's word a newer build runs.
+    let own = Set((try? Self.entries(of: actions)) ?? [])
+    guard let entries = try? merged.mergedActionEntries(), entries.allSatisfy(own.contains)
+    else { return false }
+    var reordered = self
+    let names = Set(actions?.map(\.name) ?? [])
+    reordered.actions = merged.actions?.filter { names.contains($0.name) }
+    return merged.trustCoveredText == reordered.trustCoveredText
   }
 
   /// The file's bytes, sorted and indented so a diff reads well, and these settings
   /// as they will read back, digest set. The digest is known before the file is there.
   public func fileContents() throws -> (data: Data, settings: SharedProjectSettings) {
     let encoder = JSONEncoder.forFile()
-    let fields = try fields()
+    var fields = try fields()
+    var written = self
+    let actionsKey = CodingKeys.actions.stringValue
+    if fields[actionsKey] != nil {
+      let entries = try mergedActionEntries()
+      fields[actionsKey] = .array(entries)
+      written.actionEntriesAsWritten = try entries == Self.entries(of: actions) ? nil : entries
+    }
     let kept = unrecognisedKeys.filter { fields[$0.key] == nil }
     let data = try encoder.encode(kept.merging(fields) { _, field in field })
-    var written = self
     written.unrecognisedKeys = kept
     written.digest = HexDigest.sha256(of: data)
     return (data, written)

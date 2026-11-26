@@ -26,4 +26,18 @@ struct AppModelControlBoardTests {
     #expect(waiting.first?["projectName"] as? String == harness.project.name)
     #expect(waiting.first?["state"] as? String == "attention")
   }
+
+  @Test func anActionsCardIsListedAsAnAction() async throws {
+    let harness = Harness()
+    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
+    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
+    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.showAgentBoard()
+
+    let reply = try #require(await harness.messageSource.ask(.listBoard))
+
+    let columns = try #require(reply.outputFields["columns"] as? [[String: Any]])
+    let cards = columns.flatMap { $0["cards"] as? [[String: Any]] ?? [] }
+    #expect(cards.map { $0["isAction"] as? Bool } == [true])
+  }
 }

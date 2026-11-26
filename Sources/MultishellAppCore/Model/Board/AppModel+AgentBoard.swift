@@ -43,6 +43,7 @@ extension AppModel {
         status: statuses[worktree.id],
         workers: states.workers(key),
         position: position,
+        isAction: session.actionName != nil,
       )
     }
   }
@@ -71,7 +72,9 @@ extension AppModel {
     let showsAll = showsAllTerminals
     var counts: [AgentBoardLane: Int] = [:]
     for session in workspace.sessions
-    where live.contains(session.id) && (showsAll || agents.agentID(of: session) != nil) {
+    where live.contains(session.id)
+      && (showsAll || agents.agentID(of: session) != nil || session.actionName != nil)
+    {
       counts[AgentBoardLane.of(agents.states[.session(session.id)]), default: 0] += 1
     }
     return counts
