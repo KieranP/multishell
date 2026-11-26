@@ -39,7 +39,7 @@ public enum SettingsPage: Hashable, Sendable {
       isAllProjects ? [.shortcutsFile, .shortcutsEdit, .shortcutsView, .shortcutsTerminal] : []
 
     case .terminal: [.terminal]
-    case .worktrees: [.worktrees]
+    case .worktrees: isAllProjects ? [.worktreesNew, .worktreesExisting] : [.worktrees]
     }
   }
 }

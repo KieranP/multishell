@@ -135,6 +135,8 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   /// A file or All changes tab's bar arrow, to the next or previous change.
   case stepToChange(tab: UUID, direction: CycleDirection)
   case typeIntoPane(id: UUID, text: String, pressingReturn: Bool)
+  /// Merge from Base or Rebase onto Base, answered once it ends or stops on conflicts.
+  case updateWorktree(WorktreeUpdateOrder)
   case writeGlobalSetting(key: String, value: String)
   case writeProjectSetting(project: String, key: String, value: String)
 

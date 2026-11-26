@@ -65,7 +65,7 @@ extension AccessibilityText {
     }
     if worktree.isLocked { parts.append(t("spoken.locked")) }
     if standing.showsMergedBadge(with: status) { parts.append(standing.mergeState.summary) }
-    if let status = WorktreeStatus.badged(status) { parts.append(status.summary) }
+    if let badge = WorktreeRowGitBadge(status) { parts.append(badge.summary) }
     if let spoken = standing.services.spokenSummary { parts.append(spoken) }
     if TerminalCountCapsule.showsCount(of: terminalCount) {
       parts.append(t("count.terminals", terminalCount))
@@ -77,6 +77,12 @@ extension AccessibilityText {
   /// read out with the label on every visit to the row.
   public static func worktreeHint(autoRename: AutoRenameState?) -> String {
     autoRename?.failureMessage ?? ""
+  }
+
+  /// A check, fetch, merge, rebase or Abort running on the row, said as its value so the
+  /// label VoiceOver reads on every visit stays as it was.
+  public static func worktreeValue(baseUpdateStep: BaseUpdateStep?) -> String {
+    baseUpdateStep?.help ?? ""
   }
 
   /// A pane's row in the sidebar: its title, which pane of a split it is, whether

@@ -26,6 +26,21 @@ struct AppModelControlWorktreeDescriptionTests {
     #expect(reply.outputFields["operation"] == nil)
   }
 
+  @Test func aWorktreeStoppedMidRebaseIsShownWithItsConflicts() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let feature = try await harness.featureBehindOrigin(conflicting: true)
+    await harness.model.requestBaseUpdate(of: feature, by: .rebase)
+
+    let reply = await harness.model.answer(.describeWorktree(id: ControlID.worktree(feature.id)))
+
+    let status = try #require(reply.outputFields["status"] as? [String: Any])
+    let unfinished = try #require(status["unfinishedUpdate"] as? [String: Any])
+    #expect(unfinished["method"] as? String == "rebase")
+    #expect(unfinished["conflicts"] as? Int == 1)
+    #expect(reply.outputFields["baseUpdateStep"] == nil)
+  }
+
   @Test func aWorktreeIsShownWithItsPullRequestAndRun() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

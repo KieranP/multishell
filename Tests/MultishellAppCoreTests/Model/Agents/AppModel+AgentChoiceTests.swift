@@ -51,4 +51,38 @@ struct AppModelAgentChoiceTests {
     #expect(harness.model.globalAgentID == AgentCatalogue.noneID)
     #expect(!harness.model.hasPreferredAgent)
   }
+
+  @Test func aStoredBlankIsNoPreferredAgentSoItsSwitchesGreyAsTheyCountOff() {
+    let harness = Harness()
+    harness.store.setPreferredAgent("")
+
+    #expect(!harness.model.hasPreferredAgent)
+    #expect(harness.model.preferredAgentNeededCaption != nil)
+  }
+
+  @Test func aSwitchGreyedForWantOfAnAgentSaysWhereToPickOne() {
+    let harness = Harness()
+    #expect(
+      harness.model.preferredAgentNeededCaption
+        == "Needs a preferred agent. Pick one in All Projects > Agents > Preferred agent."
+    )
+    #expect(harness.model.agentNeededCaption(in: harness.project)?.contains("Agents") == true)
+
+    harness.model.setPreferredAgent("claude")
+
+    #expect(harness.model.preferredAgentNeededCaption == nil)
+    #expect(harness.model.agentNeededCaption(in: harness.project) == nil)
+  }
+
+  @Test func aProjectHasAnAgentFromTheGlobalOrItsOwnUnlessItOptsOut() {
+    let harness = Harness()
+    #expect(!harness.model.hasAgent(in: harness.project))
+
+    harness.model.setSettings(ProjectSettings(preferredAgentID: "codex"), for: harness.project)
+    #expect(harness.model.hasAgent(in: harness.project))
+
+    harness.model.setPreferredAgent("claude")
+    harness.model.setSettings(ProjectSettings(preferredAgentID: "none"), for: harness.project)
+    #expect(!harness.model.hasAgent(in: harness.project))
+  }
 }

@@ -34,6 +34,7 @@ extension AppModel {
     case .listWorktrees(let project): replyToListWorktrees(of: project)
     case .newWorktree(let order): await replyToNewWorktree(order)
     case .removeWorktree(let order): await replyToRemoveWorktree(order)
+    case .updateWorktree(let order): await replyToUpdateWorktree(order)
     case .selectWorktree(let id): replyToSelectWorktree(id)
     case .listTabs(let worktree): replyToListTabs(of: worktree)
     case .newTab(let order): replyToNewTab(order)

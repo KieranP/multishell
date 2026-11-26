@@ -7,8 +7,8 @@ struct SettingsLocationTests {
   private static let project = SettingsScope.project("/repo")
 
   @Test func aPageBothScopesHaveIsKeptAcrossAScopeChange() {
-    let worktrees = SettingsLocation(scope: Self.project, section: .worktrees)
-    #expect(worktrees.moved(to: .allProjects) == .init(scope: .allProjects, section: .worktrees))
+    let general = SettingsLocation(scope: Self.project, section: .general)
+    #expect(general.moved(to: .allProjects) == .init(scope: .allProjects, section: .general))
 
     let terminal = SettingsLocation(scope: .allProjects, section: .terminal)
     #expect(terminal.moved(to: Self.project) == .init(scope: Self.project, section: .terminal))
@@ -20,6 +20,16 @@ struct SettingsLocationTests {
 
     let hooks = SettingsLocation(scope: .allProjects, section: .agentHooks)
     #expect(hooks.moved(to: Self.project) == .init(scope: Self.project, section: .agents))
+  }
+
+  @Test func aSplitWorktreesPageLandsOnItsFirstPartAndEitherPartOnTheWholePage() {
+    let worktrees = SettingsLocation(scope: Self.project, section: .worktrees)
+    #expect(
+      worktrees.moved(to: .allProjects) == .init(scope: .allProjects, section: .worktreesNew)
+    )
+
+    let existing = SettingsLocation(scope: .allProjects, section: .worktreesExisting)
+    #expect(existing.moved(to: Self.project) == .init(scope: Self.project, section: .worktrees))
   }
 
   @Test func aPageTheOtherScopeLacksFallsBackToGeneral() {

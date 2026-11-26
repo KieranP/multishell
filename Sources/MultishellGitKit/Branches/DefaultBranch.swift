@@ -14,6 +14,9 @@ public struct DefaultBranch: Hashable, Sendable {
   /// short form and wins it; see Docs/design/merged-branch.md.
   let fullName: String
 
+  /// A remote's copy, fetched before an update, rather than a local branch.
+  var isRemoteTracking: Bool { fullName.hasPrefix(RefName.remotePrefix) }
+
   /// The refs to try, in order. A remote-tracking ref beats a local branch
   /// of the same name; an override falls back to no default at all.
   static func candidateRefs(override: String?, originHeadTarget: String?) -> [String] {
@@ -52,5 +55,11 @@ public struct DefaultBranch: Hashable, Sendable {
       )
     }
     return nil
+  }
+
+  /// Whether a worktree on `branch` sits on the base itself. A remote's name may
+  /// hold a slash, which `nameWithoutRemote` cannot tell from the branch's own.
+  public func isSameBranch(as branch: String) -> Bool {
+    fullName == RefName.local(branch) || (isRemoteTracking && fullName.hasSuffix("/" + branch))
   }
 }

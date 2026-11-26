@@ -18,13 +18,19 @@ public enum SettingsSection: Hashable, Sendable {
   case shortcutsTerminal
   case shortcutsView
   case terminal
+  /// A project's worktree overrides, its whole Worktrees page.
   case worktrees
+  /// Change counts, removing and updating from the base: All Projects' second Worktrees part.
+  case worktreesExisting
+  /// Creating and ports, the first part of All Projects' Worktrees.
+  case worktreesNew
 
   /// One of a split page's parts, listed under its page in the sidebar.
   public var isPart: Bool {
     switch self {
     case .agentHooks, .agentSettings, .hooksCreate, .hooksDelete, .hooksEnvironment: true
     case .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView: true
+    case .worktreesExisting, .worktreesNew: true
     case .agents, .appearance, .general, .integrations, .notifications, .terminal, .worktrees: false
     }
   }
@@ -39,7 +45,7 @@ public enum SettingsSection: Hashable, Sendable {
     case .notifications: .notifications
     case .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView: .shortcuts
     case .terminal: .terminal
-    case .worktrees: .worktrees
+    case .worktrees, .worktreesExisting, .worktreesNew: .worktrees
     }
   }
 }

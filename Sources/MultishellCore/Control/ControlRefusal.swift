@@ -10,6 +10,9 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case alert(title: String, message: String)
   /// Auto Rename is greyed out for the worktree.
   case autoRenameUnavailable(id: String)
+  /// Detached, bare, on the default branch itself, or in a project
+  /// with none resolved: its menu offers no Merge from Base.
+  case baseUpdateUnavailable(id: String)
   /// A worktree's checks could not be read for a Send, in the tool's words.
   case checksNotRead(id: String, reason: String)
   /// A detached worktree's commits no branch holds, which its removal would
@@ -93,6 +96,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case onlyTabInGroup(id: UUID)
   /// Its shell has not started: its worktree has never been shown.
   case paneNotLive(id: UUID)
+  /// A cherry-pick, revert or `git am` stopped partway there, which no update starts over.
+  case pickingCommits(id: String)
   /// A project moved beside itself, which moves nothing.
   case projectBesideItself(id: String)
   /// The project's folder is gone, so git listed nothing.
@@ -107,6 +112,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case removalVetoed(id: String, message: String)
   /// The app did what was asked but could not write its answer down.
   case replyNotEncoded
+  /// A rebase would rewrite commits the remote holds.
+  case rewritesPushedBranch(id: String)
   /// Off screen, or not yet drawn, so there is nothing to capture.
   case screenshotFailed
   /// `debug services stand-in` was given JSON it cannot read: where, and why.
@@ -134,6 +141,12 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case tabShowsNoFile(id: UUID)
   /// A worktree's review threads could not be read for a Send, in the tool's words.
   case threadsNotRead(id: String, reason: String)
+  /// Never stashed, so a merge or rebase over them is refused; as status prints each.
+  case uncommittedChanges(id: String, changes: [String])
+  /// A merge or rebase is stopped partway there, the app's or anyone's.
+  case unfinishedUpdate(id: String, method: UpdateMethod)
+  /// The app is busy with the base there: its checks, the fetch, the update or an Abort.
+  case updateUnderWay(id: String)
   /// A panel width a drag could not reach, in points.
   case widthOutOfRange(minimum: Double, maximum: Double)
   /// Open but behind another window or on another Space, where nothing reads a

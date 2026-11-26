@@ -50,6 +50,10 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// any post-create hook, is done. `nil` follows the global.
   public var opensTerminalOnCreate: Bool?
 
+  /// Whether conflicts from updating a worktree here go to the agent unasked.
+  /// `nil` follows the global; a repository's file cannot say it.
+  public var sendsConflictsToPreferredAgent: Bool?
+
   /// Shell override by path. `nil` follows the global;
   /// `ShellChoice.loginShellID` means `$SHELL` here whatever it says.
   public var preferredShellID: String?
@@ -85,6 +89,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     autoStartsAgentOnCreate: Bool? = nil,
     opensTerminalOnSelect: Bool? = nil,
     opensTerminalOnCreate: Bool? = nil,
+    sendsConflictsToPreferredAgent: Bool? = nil,
     worktreeSortOrder: WorktreeSortOrder? = nil,
     showsActiveWorktreesFirst: Bool? = nil,
     preferredShellID: String? = nil,
@@ -107,6 +112,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.autoStartsAgentOnCreate = autoStartsAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
     self.opensTerminalOnCreate = opensTerminalOnCreate
+    self.sendsConflictsToPreferredAgent = sendsConflictsToPreferredAgent
     self.worktreeSortOrder = worktreeSortOrder
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.preferredShellID = preferredShellID

@@ -145,6 +145,11 @@ extension AppModel {
         { self.workspace.trashesRemovedWorktrees },
         setTrashesRemovedWorktrees,
       ),
+      .flag(
+        "sendConflictsToPreferredAgent",
+        { self.workspace.sendsConflictsToPreferredAgent },
+        setSendsConflictsToPreferredAgent,
+      ),
       .number(
         "hookTimeoutSeconds",
         { self.workspace.projectHookTimeoutSeconds },

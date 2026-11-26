@@ -13,6 +13,8 @@ extension SettingsSection {
     case .shortcutsFile: t("settings.shortcuts-file")
     case .shortcutsTerminal: t("settings.shortcuts-terminal")
     case .shortcutsView: t("settings.shortcuts-view")
+    case .worktreesExisting: t("settings.worktrees-existing")
+    case .worktreesNew: t("settings.worktrees-new")
     case .agents, .appearance, .general, .integrations, .notifications, .terminal, .worktrees: nil
     }
   }

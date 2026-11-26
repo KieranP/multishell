@@ -120,6 +120,7 @@ struct ProjectBlock: View {
       terminalCount: sessions[worktree.id].count,
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
+      baseUpdateStep: model.baseUpdateSteps[worktree.id],
       autoRename: model.autoRenames[worktree.id],
       isSelected: model.isInView(worktree),
       isDropTarget: tabDropTarget == worktree.id,

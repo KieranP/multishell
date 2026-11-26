@@ -6,7 +6,8 @@ import MultishellServices
 /// row's git status, merge badge, stage under way, pull request and CI run.
 struct WorktreeDescription: Encodable, Equatable {
   enum CodingKeys: String, CodingKey {
-    case status, isStatusFresh, merge, mergedInto, lastCommit, operation, pullRequest
+    case status, isStatusFresh, merge, mergedInto, lastCommit, operation, baseUpdateStep
+    case pullRequest
     case ciRun = "ci"
   }
 
@@ -20,6 +21,15 @@ struct WorktreeDescription: Encodable, Equatable {
     let ahead: Int
     let behind: Int
     let summary: String
+    /// A merge or rebase stopped there, the row's "Rebasing · 2 conflicts".
+    let unfinishedUpdate: UnfinishedUpdate?
+  }
+
+  /// A merge or rebase stopped partway, and the paths it left unmerged.
+  struct UnfinishedUpdate: Encodable, Equatable {
+    /// merge or rebase.
+    let method: String
+    let conflicts: Int
   }
 
   /// The create or remove stage it is in, or failed in.
@@ -86,6 +96,8 @@ struct WorktreeDescription: Encodable, Equatable {
   let mergedInto: String?
   let lastCommit: Date?
   let operation: Operation?
+  /// checking, fetching, merging, rebasing or aborting, while its row's spinner turns.
+  let baseUpdateStep: String?
   let pullRequest: PullRequestRecord?
   let ciRun: CIRunRecord?
 
@@ -99,6 +111,7 @@ struct WorktreeDescription: Encodable, Equatable {
     try container.encodeIfPresent(mergedInto, forKey: .mergedInto)
     try container.encodeIfPresent(lastCommit, forKey: .lastCommit)
     try container.encodeIfPresent(operation, forKey: .operation)
+    try container.encodeIfPresent(baseUpdateStep, forKey: .baseUpdateStep)
     try container.encodeIfPresent(pullRequest, forKey: .pullRequest)
     try container.encodeIfPresent(ciRun, forKey: .ciRun)
   }

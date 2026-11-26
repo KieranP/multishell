@@ -37,10 +37,10 @@ extension InheritedSetting where Value == WorktreeSortOrder {
 
 extension InheritedSetting where Value == String {
   /// A branch prefix, blank being none.
-  public var prefixGlobalValue: OverrideGlobalValue { globalValue(value, setIn: .worktrees) }
+  public var prefixGlobalValue: OverrideGlobalValue { globalValue(value, setIn: .worktreesNew) }
 
   /// A worktree directory, blank being the default one.
   public var directoryGlobalValue: OverrideGlobalValue {
-    globalValue(value, setIn: .worktrees, blankWord: t("inherited.default"))
+    globalValue(value, setIn: .worktreesNew, blankWord: t("inherited.default"))
   }
 }

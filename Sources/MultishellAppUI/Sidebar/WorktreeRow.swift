@@ -15,6 +15,8 @@ struct WorktreeRow: View, @MainActor Equatable {
   let state: SessionState?
   /// A create or remove running here, or failed and not yet dismissed.
   let operation: WorktreeOperation?
+  /// What the app is doing about the base here, from its checks to the merge or rebase.
+  let baseUpdateStep: BaseUpdateStep?
   let autoRename: AutoRenameState?
   let isSelected: Bool
   /// A tab is being dragged over this row and would land here on release.
@@ -92,6 +94,7 @@ struct WorktreeRow: View, @MainActor Equatable {
       )
     )
     .accessibilityHint(AccessibilityText.worktreeHint(autoRename: autoRename))
+    .accessibilityValue(AccessibilityText.worktreeValue(baseUpdateStep: baseUpdateStep))
     .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
     // The row ignores its children, so the badge's button is reached here.
@@ -165,6 +168,7 @@ struct WorktreeRow: View, @MainActor Equatable {
   static func == (a: Self, b: Self) -> Bool {
     a.worktree == b.worktree && a.customName == b.customName && a.isRenaming == b.isRenaming
       && a.terminalCount == b.terminalCount && a.state == b.state && a.operation == b.operation
+      && a.baseUpdateStep == b.baseUpdateStep
       && a.autoRename == b.autoRename
       && a.isSelected == b.isSelected && a.isDropTarget == b.isDropTarget
       && a.status == b.status && a.standing == b.standing && a.theme == b.theme
@@ -176,6 +180,7 @@ struct WorktreeRow: View, @MainActor Equatable {
       WorktreeRowBadges(
         fit: fit,
         operation: operation,
+        baseUpdateStep: baseUpdateStep,
         autoRename: autoRename,
         isLocked: worktree.isLocked,
         standing: standing,

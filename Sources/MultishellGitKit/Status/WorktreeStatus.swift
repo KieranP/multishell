@@ -6,7 +6,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   var staged = 0
   var unstaged = 0
   var untracked = 0
-  var conflicted = 0
+  public internal(set) var conflicted = 0
   public internal(set) var ahead = 0
   public internal(set) var behind = 0
   /// What `ahead` and `behind` count against, `origin/main` and the like.
@@ -38,6 +38,9 @@ public struct WorktreeStatus: Hashable, Sendable {
   public internal(set) var branch: String?
   /// The branch has no commit yet, so `HEAD` names nothing to count from.
   var isUnborn = false
+  /// A merge or rebase stopped partway here, which the row says in place of its
+  /// line counts until it is continued or aborted.
+  public internal(set) var unfinishedUpdate: UpdateMethod?
 
   /// New files counted but not listed by path.
   public var unlistedUntrackedFiles: Int { max(0, untracked - untrackedPaths.count) }

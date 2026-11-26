@@ -6,6 +6,7 @@
 "action.cancel" = "Cancel";
 "action.clear-auto-rename-failure" = "Clear Auto Rename Failure";
 "action.clear-status" = "Clear Status";
+"action.conflicts-recipient" = "%1$@ · %2$@";
 "action.copy" = "Copy";
 "action.copy-branch" = "Copy Branch";
 "action.copy-path" = "Copy Path";
@@ -14,6 +15,7 @@
 "action.export" = "Export";
 "action.fetch" = "Fetch";
 "action.hide-worktree" = "Hide Worktree";
+"action.merge-from-base" = "Merge from %@";
 "action.more-info" = "More Info";
 "action.new-worktree" = "New Worktree…";
 "action.open-ci" = "Open in %@";
@@ -22,6 +24,7 @@
 "action.open-on" = "Open on %@";
 "action.project-settings" = "Project Settings…";
 "action.quit" = "Quit";
+"action.rebase-onto-base" = "Rebase onto %@";
 "action.refresh" = "Refresh";
 "action.remove" = "Remove";
 "action.remove-project" = "Remove Project…";
@@ -29,6 +32,7 @@
 "action.rename" = "Rename…";
 "action.rename-spoken" = "Rename";
 "action.reveal-in-finder" = "Reveal in Finder";
+"action.send-conflicts-to" = "Send Conflicts To";
 "action.show-ci-runs" = "Show CI Runs";
 "action.show-modified-files" = "Show Modified Files";
 "action.show-pull-request" = "Show Pull Request";
@@ -308,9 +312,11 @@
 "project.refresh-from-git" = "Refresh from git";
 "project.remove-info" = "Takes the project out of the sidebar and closes its terminals, after asking. Nothing on disk is touched.";
 "project.repository" = "Repository:";
+"project.send-conflicts-info" = "Whether conflicts from a merge or rebase here open a new tab running this project's agent, whatever the global says. Greyed while the project has no agent.";
 "project.sort-worktrees" = "Sort worktrees";
 "project.sort-worktrees-info" = "The order this project's worktree rows are listed in, whatever the global says. The main worktree, and the one on the default branch, stay at the top.";
 "project.table-new-worktrees" = "New worktrees";
+"project.table-updating" = "Updating from base";
 "project.tint-info" = "One of the theme's sixteen project icon colours, so a later theme change recolours the icon with it.";
 "project.tint-label" = "Tint:";
 "project.use-global" = "Use the value in the Global column";
@@ -377,6 +383,8 @@
 "settings.shortcuts-view" = "View";
 "settings.terminal" = "Terminal";
 "settings.worktrees" = "Worktrees";
+"settings.worktrees-existing" = "Existing worktrees";
+"settings.worktrees-new" = "New worktrees";
 "sheet.agent" = "Agent:";
 "sheet.all-branches-checked-out" = "Every local branch is already checked out. Switch to New branch to create one.";
 "sheet.based-on" = "Based on:";
@@ -542,5 +550,8 @@
 "worktrees.section-creating" = "Creating";
 "worktrees.section-ports" = "Ports";
 "worktrees.section-removing" = "Removing";
+"worktrees.section-updating" = "Updating from base";
+"worktrees.send-conflicts" = "Send conflicts to the preferred agent";
+"worktrees.send-conflicts-info" = "When a merge or rebase from the base stops on conflicts, open a new tab running the preferred agent on them. Greyed until Agents names one; off, conflicts wait for Send Conflicts To.";
 "worktrees.trash-removed" = "Move a removed worktree to the Trash";
 "worktrees.trash-removed-info" = "On, the directory and any uncommitted work can be put back from the Trash. Off, it is deleted outright, for trees too large to keep there. A volume with no Trash deletes it either way.";

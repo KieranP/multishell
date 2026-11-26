@@ -29,6 +29,12 @@ extension AppModel {
             ahead: status.ahead,
             behind: status.behind,
             summary: status.summary,
+            unfinishedUpdate: status.unfinishedUpdate.map { method in
+              WorktreeDescription.UnfinishedUpdate(
+                method: method.rawValue,
+                conflicts: status.conflicted,
+              )
+            },
           )
         },
         isStatusFresh: isStatusFresh,
@@ -43,6 +49,7 @@ extension AppModel {
             didTimeOut: operation.didTimeOut,
           )
         },
+        baseUpdateStep: baseUpdateSteps[worktree.id]?.commandLineName,
         pullRequest: services.shownPullRequest.flatMap { pullRequest in
           services.pullRequestIntegration.map { integration in
             WorktreeDescription.PullRequestRecord(

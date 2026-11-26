@@ -142,4 +142,31 @@ struct ControlRefusalWordingTests {
       }
     }
   }
+
+  @Test func uncommittedChangesAreListedOneALineUnderTheRefusal() {
+    let wording = ControlRefusal.uncommittedChanges(
+      id: "w-89abcdef",
+      changes: ["M src/a.js", "? notes.md"],
+    ).wording
+
+    #expect(
+      wording.hasPrefix("worktree w-89abcdef has uncommitted changes, which are never stashed")
+    )
+    #expect(wording.hasSuffix(":\n  M src/a.js\n  ? notes.md"))
+  }
+
+  @Test func anUnfinishedRebaseNamesGitsOwnContinueAndAbort() {
+    let wording = ControlRefusal.unfinishedUpdate(id: "w-89abcdef", method: .rebase).wording
+
+    #expect(wording.contains("`git rebase --continue`"))
+    #expect(wording.contains("`git rebase --abort`"))
+  }
+
+  @Test func aLongListOfUncommittedChangesIsCutToTwelveAndACount() {
+    let changes = (1...40).map { "? build/\($0).o" }
+    let wording = ControlRefusal.uncommittedChanges(id: "w-89abcdef", changes: changes).wording
+
+    #expect(wording.contains("  ? build/12.o\n  and 28 more"))
+    #expect(!wording.contains("build/13.o"))
+  }
 }

@@ -9,7 +9,7 @@ extension WorktreeGit {
   private static let noMatchingRefStatus: Int32 = 2
   /// Before a remote's name, which the repository's config gives and git would
   /// take as an option, `--upload-pack=` running what it names.
-  private static let endOfOptions = "--"
+  static let endOfOptions = "--"
 
   /// Every remote with its fetch URL. `nil` is a failed read, not no remotes.
   public func remotes(_ project: Project) async -> [GitRemote]? {

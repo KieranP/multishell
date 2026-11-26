@@ -7,11 +7,11 @@ extension AppModel {
     worktreeOperations.isBusy(id)
   }
 
-  /// Whether Remove may start: nothing runs there, and no create, ours or a
-  /// terminal's, is still checking out the row git lists before it ends.
+  /// Whether Remove may start: nothing runs there, no merge or rebase from the base,
+  /// and no create, ours or a terminal's, is still checking out the row git lists.
   public func mayRemove(_ worktree: Worktree) -> Bool {
     worktree.isRemovable && !isBusy(worktree.id) && !pathClaims.isClaimed(worktree.id)
-      && !worktree.isInitializing
+      && !worktree.isInitializing && baseUpdateSteps[worktree.id] == nil
   }
 
   /// A checkout, a file list or a hook of a create or a removal is writing

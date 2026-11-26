@@ -13,6 +13,10 @@ extension AppModel {
     store.setTrashesRemovedWorktrees(enabled)
   }
 
+  public func setSendsConflictsToPreferredAgent(_ enabled: Bool) {
+    store.setSendsConflictsToPreferredAgent(enabled)
+  }
+
   public func setProjectHookTimeoutSeconds(_ seconds: Int) {
     store.setProjectHookTimeoutSeconds(seconds)
   }

@@ -16,6 +16,14 @@ extension AppModel {
     return globalValue(label ?? agentDisplayName(id), setIn: .agentSettings)
   }
 
+  /// A repository's file cannot set it, so the global alone is followed.
+  public var sendsConflictsGlobalValue: OverrideGlobalValue {
+    globalValue(
+      workspace.sendsConflictsToPreferredAgentGlobally ? t("inherited.on") : t("inherited.off"),
+      setIn: .worktreesExisting,
+    )
+  }
+
   /// The global flags of the agent this project runs, which may be its own.
   /// Agent settings edits the global agent's flags alone, so only those open it.
   public func globalAgentFlagsValue(for project: Project) -> OverrideGlobalValue {

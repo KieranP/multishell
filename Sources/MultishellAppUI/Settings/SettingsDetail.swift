@@ -50,8 +50,12 @@ struct SettingsDetail: View {
       AppShortcutsPage(model: model, section: location.section)
 
     case .terminal: AppTerminalPage(model: model)
-    case .worktrees: AppWorktreesPage(model: model)
-    case .agents, .hooksCreate, .hooksDelete, .hooksEnvironment, .integrations: EmptyView()
+
+    case .worktreesExisting, .worktreesNew:
+      AppWorktreesPage(model: model, section: location.section)
+
+    case .agents, .hooksCreate, .hooksDelete, .hooksEnvironment, .integrations, .worktrees:
+      EmptyView()
     }
   }
 
@@ -72,7 +76,7 @@ struct SettingsDetail: View {
     case .worktrees: ProjectWorktreesPage(model: model, project: project)
 
     case .agentHooks, .agentSettings, .appearance, .notifications, .shortcutsEdit, .shortcutsFile,
-      .shortcutsTerminal, .shortcutsView:
+      .shortcutsTerminal, .shortcutsView, .worktreesExisting, .worktreesNew:
       EmptyView()
     }
   }

@@ -21,7 +21,14 @@ struct ViewSettingsWindowTests {
     let project = harness.project
     return [
       Page(name: "General", view: AnyView(AppGeneralPage(model: model))),
-      Page(name: "Worktrees", view: AnyView(AppWorktreesPage(model: model))),
+      Page(
+        name: "New worktrees",
+        view: AnyView(AppWorktreesPage(model: model, section: .worktreesNew)),
+      ),
+      Page(
+        name: "Existing worktrees",
+        view: AnyView(AppWorktreesPage(model: model, section: .worktreesExisting)),
+      ),
       Page(name: "Terminal", view: AnyView(AppTerminalPage(model: model))),
       Page(name: "Agents, Agent settings", view: AnyView(AppAgentSettingsPage(model: model))),
       Page(name: "Notifications", view: AnyView(AppNotificationsPage(model: model))),

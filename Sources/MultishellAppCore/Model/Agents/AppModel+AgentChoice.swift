@@ -9,8 +9,11 @@ extension AppModel {
 
   /// Whether any agent is chosen, without which neither auto-start has
   /// anything to start.
-  public var hasPreferredAgent: Bool {
-    globalAgentID != AgentCatalogue.noneID
+  public var hasPreferredAgent: Bool { workspace.hasGlobalAgent }
+
+  /// Under a switch greyed for want of a preferred agent: where to pick one.
+  public var preferredAgentNeededCaption: String? {
+    hasPreferredAgent ? nil : t("settings.preferred-agent-needed")
   }
 
   /// The agent picker's row for the global choice, None where nothing is
@@ -38,6 +41,17 @@ extension AppModel {
 
   public func setAutoStartsAgentOnCreate(_ enabled: Bool) {
     store.setAutoStartsAgentOnCreate(enabled)
+  }
+
+  /// Whether the project runs an agent, its own or the global; a setting that
+  /// starts one is greyed without.
+  public func hasAgent(in project: Project) -> Bool {
+    workspace.effectiveAgentID(for: effectiveProject(project)) != nil
+  }
+
+  /// Under a project's switch greyed while it has no agent: where to pick one.
+  public func agentNeededCaption(in project: Project) -> String? {
+    hasAgent(in: project) ? nil : t("settings.project-agent-needed")
   }
 
   public func effectiveAgentID(for worktree: Worktree) -> String? {

@@ -12,6 +12,7 @@ extension AppModel {
     forgetMergeStates(ofWorktrees: gone)
     setIfChanged(\.lastCommitDates, lastCommitDates.filter { !gone.contains($0.key) })
     setIfChanged(\.autoRenames, autoRenames.filter { !gone.contains($0.key) })
+    setIfChanged(\.baseUpdateSteps, baseUpdateSteps.filter { !gone.contains($0.key) })
     oneShotRunner.stop(gone)
     setIfChanged(\.scannedBranchTips, scannedBranchTips.filter { !gone.contains($0.key) })
     forgetBranchServices(of: gone)
@@ -60,6 +61,12 @@ extension AppModel {
     }
     if let pending = pendingBranchPublish, gone.contains(pending.worktree.id) {
       pendingBranchPublish = nil
+    }
+    if let pending = pendingBaseUpdate, gone.contains(pending.worktree.id) {
+      pendingBaseUpdate = nil
+    }
+    if let pending = pendingUpdateAbort, gone.contains(pending.worktree.id) {
+      pendingUpdateAbort = nil
     }
   }
 }

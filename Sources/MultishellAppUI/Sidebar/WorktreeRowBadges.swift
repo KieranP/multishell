@@ -8,6 +8,7 @@ import SwiftUI
 struct WorktreeRowBadges: View {
   let fit: WorktreeRowBadgeFit
   let operation: WorktreeOperation?
+  let baseUpdateStep: BaseUpdateStep?
   let autoRename: AutoRenameState?
   let isLocked: Bool
   let standing: BranchStanding
@@ -28,6 +29,8 @@ struct WorktreeRowBadges: View {
         failureGlyph(saying: operation.title)
       }
     }
+    if let baseUpdateStep { runningGlyph(help: baseUpdateStep.help) }
+    if let alert = gitBadge?.crowdedAlert(in: fit) { failureGlyph(saying: alert) }
     switch autoRename {
     case .running:
       runningGlyph(help: t("sidebar.auto-renaming"))
@@ -76,7 +79,20 @@ struct WorktreeRowBadges: View {
         .help(standing.mergeState.tooltip)
         .accessibilityLabel(standing.mergeState.tooltip)
     }
-    if let status = WorktreeStatus.badged(status) {
+    switch gitBadge {
+    case .unfinishedUpdate(let text, let help):
+      Button(action: showModifiedFiles) {
+        Text(text)
+          .font(metrics.font(size: metrics.badge, weight: .semibold))
+          .foregroundStyle(theme.failureColor)
+          .lineLimit(1)
+          .fixedSize()
+          .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .help(help)
+
+    case .counts(let status):
       Button(action: showModifiedFiles) {
         GitStatusBadge(
           status: status,
@@ -87,8 +103,13 @@ struct WorktreeRowBadges: View {
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
+
+    case nil:
+      EmptyView()
     }
   }
+
+  private var gitBadge: WorktreeRowGitBadge? { WorktreeRowGitBadge(status) }
 
   /// At least two digits wide, so 9 and 10 terminals leave the glyphs before it put.
   private var countCapsule: some View {

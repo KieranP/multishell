@@ -11,6 +11,7 @@ extension ProjectSettings {
     case autoStartsAgent = "autoStartAgent"
     case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
     case opensTerminalOnSelect, worktreeSortOrder, showsActiveWorktreesFirst, opensTerminalOnCreate
+    case sendsConflictsToPreferredAgent = "sendConflictsToPreferredAgent"
     case preferredShellID = "defaultShell"
     case iconGlyph, iconTint
     case disabledIntegrations
@@ -50,6 +51,10 @@ extension ProjectSettings {
     opensTerminalOnCreate = try container.decodeIfPresent(
       Bool.self,
       forKey: .opensTerminalOnCreate,
+    )
+    sendsConflictsToPreferredAgent = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .sendsConflictsToPreferredAgent,
     )
     // Tolerated: an order a newer build named costs the override, not the project.
     worktreeSortOrder = container.decodeTolerantly(

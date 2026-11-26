@@ -4,9 +4,6 @@ import SwiftUI
 /// of `SettingsToggleStyle`'s row.
 struct SettingsSwitchStyle: ToggleStyle {
   func makeBody(configuration: Configuration) -> some View {
-    Toggle(isOn: configuration.$isOn) { configuration.label }
-      .labelsHidden()
-      .toggleStyle(.switch)
-      .controlSize(.small)
+    SettingsSwitchFace(isOn: configuration.$isOn, label: configuration.label)
   }
 }

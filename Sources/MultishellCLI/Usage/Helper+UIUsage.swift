@@ -6,10 +6,11 @@ extension Helper {
         Open what the menu item or click opens: the Agents Dashboard, its Show
         all terminals, or the Settings window on All Projects or on a
         project, turned to PAGE as its sidebar's row would. All Projects
-        has general, worktrees, terminal, agent-settings, agent-hooks,
-        notifications, appearance, shortcuts-file, shortcuts-edit,
-        shortcuts-view and shortcuts-terminal, and agents opens its first
-        part. A project has general, worktrees, hooks-create, hooks-delete,
+        has general, worktrees-new, worktrees-existing, terminal,
+        agent-settings, agent-hooks, notifications, appearance,
+        shortcuts-file, shortcuts-edit, shortcuts-view and
+        shortcuts-terminal, and worktrees and agents open their first part.
+        A project has general, worktrees, hooks-create, hooks-delete,
         hooks-environment, terminal, agents and integrations.
     usage: multishell ui show pull-request|ci [WORKTREE_ID]
         Open the Files panel on the worktree's pull request or CI page, the

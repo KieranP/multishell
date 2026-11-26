@@ -60,7 +60,7 @@ extension AppModel {
 
   /// A mention where the agent reads them, else `sentence` around the path, which
   /// alone says nothing. Absolute: the drops directory is outside every worktree.
-  private func handoffMention(
+  func handoffMention(
     of file: URL,
     prefixed prefix: String?,
     sentence: (String) -> String,

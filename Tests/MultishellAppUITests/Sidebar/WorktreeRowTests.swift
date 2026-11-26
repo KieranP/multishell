@@ -54,6 +54,7 @@ struct WorktreeRowTests {
     terminalCount: Int = 1,
     state: SessionState? = nil,
     status: WorktreeStatus? = nil,
+    baseUpdateStep: BaseUpdateStep? = nil,
     autoRename: AutoRenameState? = nil,
     services: WorktreeServices = .empty,
     isSelected: Bool = false,
@@ -74,6 +75,7 @@ struct WorktreeRowTests {
       terminalCount: terminalCount,
       state: state,
       operation: nil,
+      baseUpdateStep: baseUpdateStep,
       autoRename: autoRename,
       isSelected: isSelected,
       isDropTarget: false,
@@ -99,6 +101,10 @@ struct WorktreeRowTests {
     var dirty = WorktreeStatus()
     dirty.changedFiles = 1
     #expect(row() != row(status: dirty))
+  }
+
+  @Test func aWorktreeRowWhoseBaseUpdateStartedIsADifferentRow() {
+    #expect(row() != row(baseUpdateStep: .updating(.rebase)))
   }
 
   @Test func aWorktreeRowWhoseServicesChangedIsADifferentRow() {

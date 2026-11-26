@@ -76,6 +76,28 @@ struct DefaultBranchTests {
     #expect(localOnly?.shortName == "main")
   }
 
+  @Test func aWorktreeOnTheBaseIsToldByTheFullRefWhateverTheRemotesName() {
+    func base(_ fullName: String, short: String, withoutRemote: String) -> DefaultBranch {
+      DefaultBranch(
+        shortName: short,
+        nameWithoutRemote: withoutRemote,
+        tip: "a",
+        fullName: fullName,
+      )
+    }
+    let slashed = base(
+      "refs/remotes/team/origin/main",
+      short: "team/origin/main",
+      withoutRemote: "origin/main",
+    )
+    let local = base("refs/heads/main", short: "main", withoutRemote: "main")
+
+    #expect(slashed.isSameBranch(as: "main"))
+    #expect(!slashed.isSameBranch(as: "feature"))
+    #expect(local.isSameBranch(as: "main"))
+    #expect(!local.isSameBranch(as: "heads/main"))
+  }
+
   @Test func anOverrideNamingNothingLeavesNoDefaultBranchRatherThanAGuess() {
     let refs = [BranchRef(fullName: "refs/remotes/origin/main", tip: "a")]
     #expect(DefaultBranch.resolve(from: refs, override: "trunk") == nil)
