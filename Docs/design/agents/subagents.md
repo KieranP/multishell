@@ -175,3 +175,7 @@ hold, and the chip that shows them. Newest at the bottom.
   pane.
 - **Cost: the list is never on screen unless the pointer is on the chip**, and a
   screen reader gets it as the chip's label rather than as rows.
+- **A session start naming a worker reports nothing.** Claude 2.1.323 sends a
+  worker's post-compaction SessionStart with its `agent_id`, which got it past
+  the drop of a start on a busy pane; read as an Idle, it cleared the pane and
+  every worker mid-turn. A program's hold kept the dot, the hooks alone did not.

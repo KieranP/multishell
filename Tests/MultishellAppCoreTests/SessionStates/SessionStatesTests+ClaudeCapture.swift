@@ -6,6 +6,33 @@ import Testing
 @testable import MultishellAppCore
 
 extension SessionStatesTests {
+  @Test(arguments: [false, true])
+  func aClaudeWorkerCompactingMidTurnLeavesThePaneWorkingAndTheWorkerOut(
+    underProgramHold: Bool
+  ) throws {
+    var replay = try ClaudeHookReplay()
+    defer { Scratch.remove(replay.directory) }
+    if underProgramHold {
+      replay.states.apply(
+        programStatus: ProgramStatus(state: .working, app: "claude-code"),
+        pid: 42,
+        for: .session(a),
+        isSeen: false,
+        at: Date(timeIntervalSince1970: 0),
+      )
+    }
+    for line in [
+      #"{"hook_event_name":"UserPromptSubmit","session_id":"s1"}"#,
+      #"{"hook_event_name":"SubagentStart","agent_id":"a1","agent_type":"Explore"}"#,
+      #"{"hook_event_name":"PreToolUse","agent_id":"a1","agent_type":"Explore"}"#,
+      #"{"hook_event_name":"SessionStart","source":"compact","agent_id":"a1","agent_type":"Explore"}"#,
+    ] {
+      try replay.feed(line, for: .session(a))
+    }
+    #expect(replay.states[.session(a)] == .running)
+    #expect(workersOut(replay.states) == ["a1"])
+  }
+
   @Test func claudesCapturedFanOutNeverDropsListedWorkOrLosesALauncher() throws {
     var replay = try ClaudeHookReplay()
     defer { Scratch.remove(replay.directory) }

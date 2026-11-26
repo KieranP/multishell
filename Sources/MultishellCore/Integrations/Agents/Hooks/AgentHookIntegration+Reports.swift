@@ -27,6 +27,9 @@ extension AgentHookIntegration {
     if let type = payload.notificationType, event.ignoredNotificationTypes.contains(type) {
       return nil
     }
+    // Claude 2.1.323 names the worker on its post-compaction SessionStart; read
+    // as the pane's own, it cleared the pane and its roster mid-turn.
+    if event.startsSession, payload.subagentID != nil { return nil }
     // A subagent's own Stop, which its SubagentStop follows: read as the
     // agent's, it put the pane at Done in the middle of the turn.
     if subagentsAreConversations, event.state.isFinished, payload.isFiledUnderAnotherConversation {

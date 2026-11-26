@@ -132,6 +132,12 @@ how it decides a pane's dot. Newest at the bottom.
 - **Patch 0007 passes every key the parser reads**, `progress` and `title`
   included, though the app reads neither yet: a feature that wants them then
   needs no new cut of the patch and no libghostty rebuild to try.
+- **Claude 2.1.332 holds its own Done while a Monitor runs**, so the hooks'
+  roster leaving every `monitor` out costs nothing under a hold
+  (agents/background-work.md). Watched in the release app's log on 2026-11-27:
+  the Monitor came as a working child record, each tick's turn reported Working
+  and never Done, and the child's clear landed with the last tick, two seconds
+  before the one Done and its one banner.
 
 ## Reviewed and left as is
 

@@ -87,8 +87,8 @@ of what is out and the workers launched under others. Newest at the bottom.
   Done again rather than Working for good.
 - **Only the kinds whose end is announced to the model count**: subagents,
   shells, workflows, MCP tasks and cloud sessions, each read from Claude's
-  binary to end in a task notice to the main agent. The Monitor tool is a shell
-  and counts with them, holding the pane Working while it runs.
+  binary to end in a task notice to the main agent. The Monitor tool's script
+  counted as a shell until Claude 2.1.329 labelled it `monitor`; see below.
 - **Left out, because counted they would hold the pane Working for good**: an
   MCP or websocket monitor, which includes the ambient artifact watchers that
   never end; a teammate, listed while idle and announcing its idle rather than
@@ -229,6 +229,14 @@ of what is out and the workers launched under others. Newest at the bottom.
 - **The last worker out leaves a woken turn's own prompt on the dot.** That
   turn's Stop pays the owed Done, so the end has nothing to pay; settling it
   emptied the prompt's raisers and the dot went Working with the dialog up.
+- **No `monitor` is counted, the Monitor tool's included**, from Claude 2.1.329,
+  which labels its script so. A plugin's monitor runs the session long and lists
+  exactly as a script does, `command` and all, as does a persistent Monitor;
+  read from 2.1.332's binary. Counted, either would hold the pane Working for
+  good. Cost: a pane on hooks alone goes Done while a bounded Monitor runs.
+- **Code Mode's background scripts come in the list as `code`** and are left out
+  as a kind added later: whether one's end wakes Claude is unread in 2.1.332's
+  binary and waits on a captured run (develop/tests/conventions.md).
 
 ## Reviewed and left as is
 

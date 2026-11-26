@@ -383,4 +383,19 @@ struct AgentHookIntegrationReportsTests {
     #expect(!busy.walked, "the list names the shell")
     #expect(busy.report?.backgroundShells == nil)
   }
+
+  @Test func claudesStopCountsNoMonitorSinceAPluginsSessionLongWatchListsAsAScriptDoes() {
+    let pluginWatch =
+      #"{"id":"b2","type":"monitor","status":"running","description":"d","command":"tail -f x"}"#
+    let payload = AgentHookPayload(
+      json: Data(#"{"hook_event_name":"Stop","background_tasks":[\#(pluginWatch)]}"#.utf8)
+    )!
+    let report = AgentHookCatalogue.claude.report(
+      for: payload,
+      sessionID: nil,
+      workingDirectory: nil,
+      pid: nil,
+    )
+    #expect(report?.workersOut == [])
+  }
 }
