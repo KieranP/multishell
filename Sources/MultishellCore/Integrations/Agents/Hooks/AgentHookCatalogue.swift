@@ -25,12 +25,12 @@ public enum AgentHookCatalogue {
     claude, codex, gemini, antigravity, copilot, openCode,
   ]
 
-  /// The notification types of Claude's that announce rather than ask, out of
-  /// fifteen in its list and two sent outside it. A deny list; see agents/reports-and-hooks.md.
+  /// The notification types of Claude's that announce rather than ask, a plugin's
+  /// `ui.notify` among them. A deny list; see agents/reports-and-hooks.md.
   private static let claudeAnnouncements: Set<String> = [
     "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
     "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
-    "push_notification",
+    "push_notification", "plugin_notification",
   ]
 
   /// Claude Code: `~/.claude/settings.json`, asked for a permission or MCP request and a notification.
@@ -52,7 +52,12 @@ public enum AgentHookCatalogue {
       ),
       AgentHookEvent("Elicitation", .attention, isSilent: true),
       AgentHookEvent("ElicitationResult", .running),
-      AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
+      AgentHookEvent(
+        "Notification",
+        .attention,
+        ignoredNotificationTypes: claudeAnnouncements,
+        announcesRaisedPrompt: true,
+      ),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),

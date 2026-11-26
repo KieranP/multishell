@@ -32,60 +32,70 @@ extension FileTree {
       repositories: repositories,
       ignored: ignored,
     )
-    return nodes(below: "", from: paths.map(\.slashSeparatedParts), depth: 0, marks: marks)
+    let entries = trie(of: paths)
+    // Bottom up without recursion: a path from a Linux push can nest past what
+    // a Dispatch thread's 512 KiB stack holds. A child's index exceeds its parent's.
+    var built = [[Node]](repeating: [], count: entries.count)
+    for index in entries.indices.dropFirst().reversed() {
+      let entry = entries[index]
+      let children = sorted(entry.children.flatMap { built[$0] })
+      for child in entry.children { built[child] = [] }
+      built[index] = nodes(for: entry, children: children, marks: marks)
+    }
+    return sorted(entries[0].children.flatMap { built[$0] })
   }
 
-  /// Each path split once and grouped by its part at `depth`, so a level is
-  /// one pass over the paths below it and the tree builds in linear time.
+  /// Each path walked once from the root at index 0, so the tree builds in linear time.
+  private static func trie(of paths: [String]) -> [PathTrieEntry] {
+    var entries = [PathTrieEntry(name: "", path: "")]
+    for path in paths {
+      var parent = 0
+      for part in path.slashSeparatedParts {
+        if let child = entries[parent].childByName[part] {
+          parent = child
+          continue
+        }
+        let parentPath = entries[parent].path
+        let name = String(part)
+        let child = entries.count
+        entries.append(
+          PathTrieEntry(name: part, path: parentPath.isEmpty ? name : parentPath + "/" + name)
+        )
+        entries[parent].children.append(child)
+        entries[parent].childByName[part] = child
+        parent = child
+      }
+      if parent != 0 { entries[parent].endsAPath = true }
+    }
+    return entries
+  }
+
   private static func nodes(
-    below parentPath: String,
-    from paths: [[Substring]],
-    depth: Int,
+    for entry: PathTrieEntry,
+    children: [Node],
     marks: NodeMarks,
   ) -> [Node] {
-    var names: [Substring] = []
-    var pathsBelow: [Substring: [[Substring]]] = [:]
-    var endingHere: Set<Substring> = []
-    for parts in paths where parts.count > depth {
-      let name = parts[depth]
-      if pathsBelow[name] == nil {
-        names.append(name)
-        pathsBelow[name] = []
-      }
-      if parts.count > depth + 1 {
-        pathsBelow[name, default: []].append(parts)
-      } else {
-        endingHere.insert(name)
-      }
-    }
-    return sorted(
-      names.flatMap { part -> [Node] in
-        let name = String(part)
-        let path = parentPath.isEmpty ? name : parentPath + "/" + name
-        let below = pathsBelow[part] ?? []
-        let node = Node(
-          name: name,
-          path: path,
-          children: below.isEmpty
-            ? [] : nodes(below: path, from: below, depth: depth + 1, marks: marks),
-          isFolder: !below.isEmpty || marks.folders.contains(path),
-          isRepository: marks.repositories.contains(path),
-          isIgnored: marks.ignored.contains(path),
-        )
-        // A file replaced by a folder of its name, or the reverse: both are listed.
-        guard !below.isEmpty, endingHere.contains(part), !marks.folders.contains(path) else {
-          return [node]
-        }
-        let file = Node(
-          name: name,
-          path: path,
-          children: [],
-          isFolder: false,
-          isRepository: false,
-          isIgnored: marks.ignored.contains(path),
-        )
-        return [node, file]
-      }
+    let hasChildren = !entry.children.isEmpty
+    let node = Node(
+      name: String(entry.name),
+      path: entry.path,
+      children: children,
+      isFolder: hasChildren || marks.folders.contains(entry.path),
+      isRepository: marks.repositories.contains(entry.path),
+      isIgnored: marks.ignored.contains(entry.path),
     )
+    // A file replaced by a folder of its name, or the reverse: both are listed.
+    guard hasChildren, entry.endsAPath, !marks.folders.contains(entry.path) else {
+      return [node]
+    }
+    let file = Node(
+      name: String(entry.name),
+      path: entry.path,
+      children: [],
+      isFolder: false,
+      isRepository: false,
+      isIgnored: marks.ignored.contains(entry.path),
+    )
+    return [node, file]
   }
 }

@@ -119,6 +119,53 @@ struct WorktreeGitRemotesTests {
     #expect(try await followed(by: "feat", in: fixture) == "fork/feat")
   }
 
+  @Test func askingARemoteSaysWhetherItHasTheBranch() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
+    let path = fixture.project.path
+
+    #expect(await fixture.git.remoteHasBranch("feat", on: "origin", in: path) == false)
+    try await fixture.git.publish("feat", as: "feat", to: "origin", in: path)
+    #expect(await fixture.git.remoteHasBranch("feat", on: "origin", in: path) == true)
+  }
+
+  @Test func aRemoteNamedLikeAnOptionIsNeverReadAsOneWhenAsked() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let marker = fixture.root.appending(path: "upload-pack-ran")
+    let remote = "--upload-pack=touch \(marker.path);"
+    try await addRemote(named: remote, to: fixture)
+
+    _ = await fixture.git.remoteHasBranch("main", on: remote, in: fixture.project.path)
+
+    #expect(!FileManager.default.fileExists(atPath: marker.path))
+  }
+
+  @Test func aRemoteNamedLikeAnOptionIsNeverReadAsOneWhenPushedTo() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let marker = fixture.root.appending(path: "receive-pack-ran")
+    let remote = "--receive-pack=touch \(marker.path);"
+    try await addRemote(named: remote, to: fixture)
+    _ = try await fixture.runner.run(
+      ["config", "push.default", "current"],
+      in: fixture.project.path,
+    )
+
+    try? await fixture.git.publish("main", as: "main", to: remote, in: fixture.project.path)
+
+    #expect(!FileManager.default.fileExists(atPath: marker.path))
+  }
+
+  private func addRemote(named name: String, to fixture: RepositoryFixture) async throws {
+    _ = try await fixture.runner.run(
+      ["config", "remote.\(name).url", "https://example.invalid/x"],
+      in: fixture.project.path,
+    )
+  }
+
   private func follow(
     _ upstream: String,
     from branch: String,

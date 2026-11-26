@@ -685,4 +685,34 @@ struct FileTabReaderTests {
 
     #expect(second == first)
   }
+
+  @Test func aFileUnderAFolderSwappedForALinkLeavingTheWorktreeShowsNothingOutside()
+    async throws
+  {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    try await TestRepository.commit(
+      "dir",
+      files: ["dir/file": ""],
+      in: repository.path,
+      using: repository.runner,
+    )
+    let outside = repository.root.appending(path: "outside", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+    try "outside text\n".write(
+      to: outside.appending(path: "file"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    try FileManager.default.removeItem(at: repository.path.appending(path: "dir"))
+    try FileManager.default.createSymbolicLink(
+      at: repository.path.appending(path: "dir"),
+      withDestinationURL: outside,
+    )
+
+    let reading = await repository.read("dir/file")
+
+    #expect(Self.text(reading)?.lines.contains { $0.text == "outside text" } != true)
+    #expect(reading.isFileGone)
+  }
 }

@@ -38,7 +38,8 @@ extension ShellIntegrationScriptsTests {
     // Separated by a newline, not `; `: a user's own PROMPT_COMMAND ending
     // in a separator composed to `;;` and bash refused the whole string.
     #expect(
-      text.contains("_multishell_prompt_marks\n_multishell_arm"),
+      text.contains("${newline}_multishell_prompt_marks\"")
+        && text.contains("${newline}_multishell_arm\""),
       "put back last, after a framework has rebuilt PS1 from a PROMPT_COMMAND of its own",
     )
     #expect(
@@ -209,6 +210,17 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(output.contains(PromptMarks.claim))
     #expect(output.contains("> " + PromptMarks.input))
+  }
+
+  @Test(arguments: InstalledBashes.all)
+  func aBashPromptEndingInABackslashKeepsItAndStillGetsTheInputMark(bash: String) async throws {
+    let output = try await bashOutput(
+      bash,
+      features: nil,
+      input: "true\nexit\n",
+      usersRC: "PS1='ready\\'\n",
+    )
+    #expect(output.contains("ready\\" + PromptMarks.input), "\(output)")
   }
 
   /// `zsh -i script` runs preexec for each line, and no prompt is ever shown.

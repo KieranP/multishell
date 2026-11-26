@@ -10,10 +10,14 @@ extension AppModel {
     prepared.shellOverride = shellPath(forWorktree: session.worktreeID)
     prepared.port = workspace.port(of: session.worktreeID)
     guard let agentID = session.agentID else { return prepared }
+    let besideAnotherTabOfItsAgent = workspace.sessions.contains { other in
+      other.id != session.id && other.worktreeID == session.worktreeID && other.agentID == agentID
+    }
     prepared.command = agentCommand(
       agentID,
       resume: restoredSessionIDs.contains(session.id),
       conversation: session.agentConversationID,
+      besideAnotherTabOfItsAgent: besideAnotherTabOfItsAgent,
       shell: prepared.shellPath,
       in: session.worktreeID,
       task: pendingAgentTasks.removeValue(forKey: session.id),
@@ -36,6 +40,7 @@ extension AppModel {
     _ id: String,
     resume: Bool,
     conversation: String?,
+    besideAnotherTabOfItsAgent: Bool,
     shell tabShell: String,
     in worktreeID: Worktree.ID,
     task: String?,
@@ -64,6 +69,7 @@ extension AppModel {
         for: agent,
         resume: resume,
         conversation: conversation,
+        besideAnotherTabOfItsAgent: besideAnotherTabOfItsAgent,
       )
     else { return nil }
     // No flag line and each placeholder left as typed where the project has gone.

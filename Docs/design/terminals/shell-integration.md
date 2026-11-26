@@ -43,16 +43,58 @@ Newest at the bottom.
   at startup: a `.bashrc` sourced again puts its prepended entry first, which
   ours then read the status of. Not in front of bash-preexec's, which reads
   `PIPESTATUS` there, and before 5.1 into element 0, the only one bash runs.
+- **The arm goes back last at each prompt**, behind only bash-preexec's: an
+  entry a `.bashrc` sourced again appended ran armed and was reported as a
+  command at every prompt. **One that set `PROMPT_COMMAND` outright has ours put
+  back by the DEBUG trap**, the prompt's own repair having gone with them. Cost:
+  bash has read the prompt command by then, so for one prompt the appended entry
+  is still reported, or a finish goes unsent.
+- **bash-preexec's counts only as an exact `__bp_interactive_mode`**, a line or
+  element of its own straight after the arm's: an append on its line, or into
+  the arm's element, ran after the arm and took it at every prompt.
+- **An array is told by a second element being set, never by a count**: under
+  `set -u` bash calls a scalar's count unbound, and the arm died unarmed with an
+  error at every prompt.
+- **A readonly `PROMPT_COMMAND` is left alone for good**, found once: the DEBUG
+  trap's repair failed and complained at every command. Cost: that tab reports
+  nothing, as before.
+- **An unset `PROMPT_COMMAND` reads as empty**: the failing `declare -p` of one
+  ended a `set -e` shell at startup, or at the command after an `unset`.
 - **The user's DEBUG trap's status is ours to return**: under `extdebug` a
-  non-zero one skips the command, and returning our own ran it.
+  non-zero one skips the command, and returning our own ran it. A skipped
+  `exec bash` is not re-execed either.
 - **A shell that replaces itself keeps the integration.** The new shell read
   only the user's files, so the pane's last report was `running` for good. zsh
   points `ZDOTDIR` back at ours for an interactive `exec zsh` or omz's `reload`;
   `-f`, `-c` or a script read no `.zshrc` to hand it back. bash cannot be handed
   `--init-file` through the environment, so the DEBUG trap execs a plain
   `exec bash` as a tab's bash is started, only where the target is there, a
-  failed exec in a trap ending the shell. Cost: one with a redirection or
-  another flag runs as typed, without.
+  failed exec in a trap ending the shell. fish's preexec execs a plain
+  `exec fish` with `-C`, as a tab's fish is started. Cost: one with a
+  redirection or another flag runs as typed, without. **`exec "$SHELL"`
+  counts**, the reload pyenv, rbenv and nvm document; the words being
+  unexpanded, it matched neither.
+- **fish's re-exec with a job running keeps fish's rule**: on a terminal fish
+  refuses the exec, then lets the next line's through and hangs the jobs up; off
+  one it lets the first through. Ours went past the refusal and orphaned the
+  jobs; standing back from both, the second started a plain fish. No suite test
+  runs the fish that replaces ours: piped input is read ahead by the fish it
+  replaces, and under `script` fish drops what was typed before its prompt, so
+  the terminal half is checked in a pty by hand.
+- **zsh sends no start for a line that replaces it**, as bash and fish re-exec
+  before theirs: the new zsh never finishes that line, so the pane read Running
+  until the next command ended.
+- **No shell sends one for an exec of a shell left at its prompt**,
+  `exec zsh -f` from bash or `exec bash --norc` from bash itself: the pid stays,
+  nothing in the new shell reports, and the pane read Running until it closed.
+  An exec given a command, `-c` or a script, keeps its start, as any other
+  exec's does: the pid ends when the command does, and an exec'd agent is named
+  by it.
+- **A flag's value is no script**: `-o`, `-O`, `--rcfile`, `--emulate` and
+  fish's `-C`, a line run before its prompt; exec's own `-a` names the process.
+  Cost: a value flag missing from the list reads its value as a script and
+  starts, and zsh's `-C` is taken for fish's, so `exec zsh -C x.zsh` starts
+  nothing. bash splits the line at spaces, following quotes only to skip one.
 - **A tab's bash logs out as a login shell does**: `logout` exits and
   `~/.bash_logout` runs on `exit`, `logout` or end of input, which bash does
   only for a login shell. Not on a hangup, which every pane close sends. Cost:

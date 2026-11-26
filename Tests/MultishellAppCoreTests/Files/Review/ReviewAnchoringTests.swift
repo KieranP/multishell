@@ -80,6 +80,20 @@ struct ReviewAnchoringTests {
     #expect(after.lines == 7...7)
   }
 
+  @Test func aLongQuoteMissingFromARepetitiveFileIsJudgedWithinASecond() {
+    let quote = Array(repeating: "0", count: 4_999) + ["1"]
+    let comment = Self.comment(on: 100_000...104_999, quoting: quote)
+    let rows = Self.context(Array(repeating: "0", count: 200_000))
+
+    var after: ReviewComment?
+    let elapsed = ContinuousClock().measure {
+      after = Self.reanchored(comment, to: rows)
+    }
+
+    #expect(after?.hasChangedLines == true)
+    #expect(elapsed < .seconds(1))
+  }
+
   @Test func aPendingCommentWhoseLinesChangedStaysMarkedOnItsOldLines() {
     let comment = Self.comment(on: 2...3, quoting: ["b", "c"])
 

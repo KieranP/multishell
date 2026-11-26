@@ -41,7 +41,9 @@ public final class WorkspaceStore {
       return (WorkspaceStore(workspace: workspace, file: file), nil)
     } catch {
       let store = WorkspaceStore(workspace: Workspace(), file: file)
-      store.refusesToSave = file.existsOnDisk || file.danglingLinkTarget != nil
+      // A linked file set aside is still at the path, copied rather than moved.
+      let isSetAside = error is UnreadableStateFile
+      store.refusesToSave = !isSetAside && (file.existsOnDisk || file.danglingLinkTarget != nil)
       return (store, error)
     }
   }
@@ -81,8 +83,7 @@ extension WorkspaceStore {
   @discardableResult
   public func removeProject(_ id: Project.ID) -> [Worktree.ID] {
     workspace.projects.removeAll { $0.id == id }
-    let discarded = workspace.worktrees(of: id).map(\.id)
-    for id in discarded { discardWorktree(id) }
+    let discarded = workspace.worktrees(of: id).map(\.id).filter { discardWorktree($0, of: id) }
     keptPastTheirRecord.subtract(discarded)
     for id in discarded { removalHookBlocks[id] = nil }
     workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
@@ -155,8 +156,9 @@ extension WorkspaceStore {
     let fresh = (discovered + stillRemoving).map(keepingKnownCreationDate)
     guard workspace.worktrees(of: id) != fresh else { return [] }
     let survivors = Set(fresh.map(\.id))
-    let discarded = workspace.worktrees(of: id).map(\.id).filter { !survivors.contains($0) }
-    for id in discarded { discardWorktree(id) }
+    let discarded = workspace.worktrees(of: id).map(\.id).filter { worktreeID in
+      !survivors.contains(worktreeID) && discardWorktree(worktreeID, of: id)
+    }
     workspace.worktrees.removeAll { $0.projectID == id }
     workspace.worktrees.append(contentsOf: fresh)
     workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))
@@ -202,10 +204,12 @@ extension WorkspaceStore {
     }
   }
 
-  /// Forgets a worktree and everything hanging off it. Removing the
-  /// directory itself is git's job, not the store's.
-  private func discardWorktree(_ id: Worktree.ID) {
-    workspace.worktrees.removeAll { $0.id == id }
+  /// Forgets a project's row of a worktree, and what hangs off it unless another project
+  /// lists that path too; `true` where all of it went. The directory is git's job.
+  private func discardWorktree(_ id: Worktree.ID, of projectID: Project.ID) -> Bool {
+    workspace.worktrees.removeAll { $0.id == id && $0.projectID == projectID }
+    // Paths are ids, and a repository copied with `cp -R` lists its original's worktrees.
+    guard !workspace.worktrees.contains(where: { $0.id == id }) else { return false }
     workspace.customWorktreeNames[id] = nil
     workspace.hiddenWorktreeIDs.remove(id)
     workspace.portBlocks[id] = nil
@@ -218,6 +222,7 @@ extension WorkspaceStore {
     if workspace.selectedWorktreeID == id {
       workspace.selectedWorktreeID = nil
     }
+    return true
   }
 }
 

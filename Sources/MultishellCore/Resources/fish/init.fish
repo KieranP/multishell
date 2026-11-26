@@ -18,6 +18,7 @@ end
 
 if status is-interactive; and test -n "$MULTISHELL_SESSION"; and test -x "__MULTISHELL_HELPER__"
     set -g _multishell_bin "__MULTISHELL_HELPER__"
+    set -g _multishell_init_file (status filename)
     set -g _multishell_agents __MULTISHELL_AGENTS__
 
     # include session-reports.fish

@@ -318,6 +318,39 @@ struct AppModelSessionLaunchTests {
     )
   }
 
+  @Test func anAgentTabWithNoConversationBesideAnotherOfItsAgentStartsFreshNotTheLatest() {
+    let file = Scratch.statePath("agent-conversation-missing")
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
+    let before = Harness(stateFile: file)
+    before.model.select(before.main)
+    let first = before.store.openTab(in: before.main.id, title: "A", agentID: "claude")!
+    before.store.openTab(in: before.main.id, title: "B", agentID: "claude")
+    before.model.reconcileSessions(takingFocus: false)
+    before.messageSource.send(
+      SessionStateReport(
+        state: .running,
+        sessionID: first.focusedSessionID,
+        agentID: "claude",
+        resumableConversationID: "conv-a",
+      )
+    )
+
+    let (after, engine, store, _) = before.relaunched()
+    after.select(before.main)
+
+    let byTitle = Dictionary(
+      uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) }
+    )
+    #expect(
+      byTitle["A"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude --resume conv-a\n")
+        == true
+    )
+    #expect(
+      byTitle["B"]?.command?.last?.withoutLeadingPathStatement.hasPrefix("claude\n") == true,
+      "\(byTitle["B"]?.command ?? [])",
+    )
+  }
+
   @Test func anotherAgentRunAtATabsPromptLeavesTheTabsConversationAlone() throws {
     let harness = Harness()
     harness.model.select(harness.main)

@@ -136,6 +136,26 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("HOOKSOK"), "the hooks outlive the rest of the file")
   }
 
+  /// The DEBUG trap puts back a prompt command set over ours, and on a readonly
+  /// one each try failed and complained, at every command.
+  @Test(arguments: InstalledBashes.all)
+  func aReadonlyPromptCommandIsComplainedOfOnceAtMost(bash: String) async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    try files.writeHomeFile(".profile", "PS1='> '\nreadonly PROMPT_COMMAND='history -a'\n")
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "readonly-prompt-command"
+
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "true\ntrue\nexit\n",
+    )
+
+    #expect(output.components(separatedBy: "readonly variable").count <= 2, "\(output)")
+  }
+
   /// Only a login shell reads ~/.zprofile.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {

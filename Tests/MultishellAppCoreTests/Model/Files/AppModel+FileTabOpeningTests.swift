@@ -118,6 +118,30 @@ struct AppModelFileTabOpeningTests {
     #expect(harness.platform.beeps == 1)
   }
 
+  @Test func aFileUnderAFolderLinkLeavingTheWorktreeBeeps() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
+    let files = FileManager.default
+    let outside = harness.root.appending(path: "outside", directoryHint: .isDirectory)
+    try files.createDirectory(at: outside, withIntermediateDirectories: true)
+    try "away\n".write(to: outside.appending(path: "f.txt"), atomically: true, encoding: .utf8)
+    let ignored = main.path.appending(path: "build", directoryHint: .isDirectory)
+    try files.createDirectory(at: ignored, withIntermediateDirectories: true)
+    try files.createSymbolicLink(
+      atPath: ignored.appending(path: "out").path,
+      withDestinationPath: outside.path,
+    )
+    _ = await harness.model.refreshStatus(of: main.id)
+
+    let tab = await harness.model.openFileAsTab("build/out/f.txt", in: main.id, as: .click)
+
+    #expect(tab == nil)
+    #expect(harness.model.workspace.fileTabs.isEmpty)
+    #expect(harness.platform.beeps == 1)
+  }
+
   @Test func aCommittedLinkWhoseTargetIsGoneBeeps() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

@@ -85,6 +85,10 @@ hold, and the chip that shows them. Newest at the bottom.
 - **A Waiting is cleared by the thread that raised it and by nothing less.**
   Otherwise, with two workers out, the second's tool call withdrew the first's
   prompt from the dot and the banner with the prompt still on screen.
+- **Claude's Notification of a prompt claims it only where nothing has.** Its
+  payload never carries `agent_id`, so a worker's prompt arrived as the agent's
+  own too, and the worker's next call left the dot Waiting until the main thread
+  moved. The silent PermissionRequest has already named the asker.
 - **A worker ending with its prompt still up takes the prompt with it**, the
   user having denied it, or nothing the agent did afterwards could.
 - **The agent's stop over a worker's prompt is held**, the Done owed, and the

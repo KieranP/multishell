@@ -15,6 +15,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case command
     case isFromShellIntegration = "shell"
     case isSilent = "silent"
+    case announcesRaisedPrompt = "announces"
     case legacyWorkerCount = "subagents"
     case worker = "subagent"
     case launched
@@ -58,6 +59,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Set where the report moves a dot and another about the same thing will
   /// raise the banner. Absent keeps an older helper's banners.
   public internal(set) var isSilent: Bool?
+  /// Set on a notification that names no worker and may only announce a prompt
+  /// a silent request raised, a worker's included; see Docs/design/agents/subagents.md.
+  public internal(set) var announcesRaisedPrompt: Bool?
   /// The count a helper from before workers had names wrote: `1` started, `-1`
   /// ended. Read as an unnamed worker; see Docs/design/agents/subagents.md.
   var legacyWorkerCount: Int?
@@ -109,6 +113,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     command: String? = nil,
     isFromShellIntegration: Bool? = nil,
     isSilent: Bool? = nil,
+    announcesRaisedPrompt: Bool? = nil,
     worker: WorkerReport? = nil,
     launched: WorkerReport? = nil,
     killedTaskID: String? = nil,
@@ -133,6 +138,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.command = Self.commandWord(command)
     self.isFromShellIntegration = isFromShellIntegration
     self.isSilent = isSilent
+    self.announcesRaisedPrompt = announcesRaisedPrompt
     self.legacyWorkerCount = Self.legacyCount(of: worker)
     self.worker = worker
     self.launched = launched.flatMap { $0.id == WorkerReport.anonymousID ? nil : $0 }
@@ -166,6 +172,10 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
         forKey: .isFromShellIntegration,
       ),
       isSilent: try container.decodeIfPresent(Bool.self, forKey: .isSilent),
+      announcesRaisedPrompt: try container.decodeIfPresent(
+        Bool.self,
+        forKey: .announcesRaisedPrompt,
+      ),
       worker: try container.decodeIfPresent(WorkerReport.self, forKey: .worker),
       launched: try container.decodeIfPresent(WorkerReport.self, forKey: .launched),
       killedTaskID: try container.decodeIfPresent(String.self, forKey: .killedTaskID),

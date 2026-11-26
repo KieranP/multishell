@@ -115,17 +115,17 @@ struct HelperAgentHookReportsTests {
     #expect(report?.message == nil)
   }
 
-  @Test func aPermissionRequestAClassifierAnswersSaysNothing() async throws {
+  @Test func aPermissionRequestInAModeThatNeverAsksSaysNothing() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
-    let classifier = try await HelperBinary.run(
+    let unasked = try await HelperBinary.run(
       ["agent-hook", "--agent", "claude"],
       environment: ["MULTISHELL_SOCKET": listener.path.path],
       stdin: #"""
-        {"hook_event_name":"PermissionRequest","cwd":"/w/repo","permission_mode":"auto"}
+        {"hook_event_name":"PermissionRequest","cwd":"/w/repo","permission_mode":"dontAsk"}
         """#,
     )
-    #expect(classifier.succeeded && classifier.standardError.isEmpty)
+    #expect(unasked.succeeded && unasked.standardError.isEmpty)
     try await expectOnlyTheBarrier(on: listener)
   }
 

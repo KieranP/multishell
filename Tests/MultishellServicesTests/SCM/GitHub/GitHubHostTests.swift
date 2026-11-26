@@ -9,6 +9,9 @@ import Testing
 @Suite
 struct GitHubHostTests {
   private let pullRequest = Self.pullRequest(at: URL(fileURLWithPath: "/pull/44"))
+  private let pullRequestOnGitHub = Self.pullRequest(
+    at: URL(string: "https://github.com/me/demo/pull/44")!
+  )
 
   private static func pullRequest(at url: URL) -> PullRequest {
     PullRequest(
@@ -335,7 +338,12 @@ struct GitHubHostTests {
       link: URL(string: "https://github.com/me/demo/actions/runs/7/job/135205394571"),
     )
 
-    let log = try await host(for: tool).failedLog(of: check, keepingLast: 160, in: tool.directory)
+    let log = try await host(for: tool).failedLog(
+      of: check,
+      on: pullRequestOnGitHub,
+      keepingLast: 160,
+      in: tool.directory,
+    )
 
     #expect(log?.text == "error: boom\n")
     #expect(
@@ -355,8 +363,37 @@ struct GitHubHostTests {
       link: URL(string: "https://circleci.com/gh/me/demo/12"),
     )
 
-    let log = try await host(for: tool).failedLog(of: check, keepingLast: 160, in: tool.directory)
+    let log = try await host(for: tool).failedLog(
+      of: check,
+      on: pullRequestOnGitHub,
+      keepingLast: 160,
+      in: tool.directory,
+    )
 
+    #expect(log == nil)
+    #expect(tool.calls.isEmpty)
+  }
+
+  @Test func aCheckLinkingToAnotherHostsActionsHasNoLogAndAsksNothing() async throws {
+    let tool = try FakeTool(named: "gh", "exit 0")
+    defer { tool.tearDown() }
+    let check = PullRequestCheck(
+      name: "test",
+      workflow: "CI",
+      status: .failed,
+      isRequired: true,
+      link: URL(string: "https://evil.example/me/demo/actions/runs/7/job/135205394571"),
+    )
+    let host = host(for: tool)
+
+    let log = try await host.failedLog(
+      of: check,
+      on: pullRequestOnGitHub,
+      keepingLast: 160,
+      in: tool.directory,
+    )
+
+    #expect(!host.readsFailedLog(of: check, on: pullRequestOnGitHub))
     #expect(log == nil)
     #expect(tool.calls.isEmpty)
   }

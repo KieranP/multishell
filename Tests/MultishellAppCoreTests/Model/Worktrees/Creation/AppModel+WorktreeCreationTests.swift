@@ -110,7 +110,9 @@ struct AppModelWorktreeCreationTests {
     )
   }
 
-  @Test func aRepositorySaysWhatItsWorktreesOpenAndTheUsersOwnAnswerStillWins() async throws {
+  @Test func aTrustedRepositorySaysWhatItsWorktreesOpenAndTheUsersOwnAnswerStillWins()
+    async throws
+  {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     harness.model.setPreferredAgent("claude")
@@ -118,6 +120,7 @@ struct AppModelWorktreeCreationTests {
       #"{ "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false }"#
     )
     await harness.model.refreshWorktrees(of: harness.project)
+    harness.model.setTrustsSharedSettings(true, for: harness.project)
 
     let main = try #require(harness.worktree(onBranch: "main"))
     harness.model.select(main)

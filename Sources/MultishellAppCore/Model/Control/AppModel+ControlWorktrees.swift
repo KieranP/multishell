@@ -92,6 +92,11 @@ extension AppModel {
     if refusesOverWorkingAgent(in: sessions, force: order.force) {
       return .refused(.agentWorking)
     }
+    // The row's dialog asks about these even with confirmation off.
+    if worktree.isDetached, !order.force {
+      let count = await coordinator?.git.commitsOnNoBranch(in: worktree)
+      if count != 0 { return .refused(.commitsOnNoBranch(id: id, count: count)) }
+    }
     let failure = await removeWorktree(
       worktree,
       deletesBranch: order.deletesBranch,

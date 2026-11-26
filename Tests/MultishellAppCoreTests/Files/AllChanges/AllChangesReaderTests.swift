@@ -336,4 +336,36 @@ struct AllChangesReaderTests {
     #expect(reading.files.map(\.path) == ["a.txt", "b.txt", "c.txt"])
     #expect(reading.files.map { $0.content == .unread } == [true, false, true])
   }
+
+  @Test func aFileUnderAFolderSwappedForALinkLeavingTheWorktreeShowsNothingOutside()
+    async throws
+  {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    try await TestRepository.commit(
+      "dir",
+      files: ["dir/file": "", "a.txt": "a\n"],
+      in: repository.path,
+      using: repository.runner,
+    )
+    let outside = repository.root.appending(path: "outside", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+    try "outside text\n".write(
+      to: outside.appending(path: "file"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    try FileManager.default.removeItem(at: repository.path.appending(path: "dir"))
+    try FileManager.default.createSymbolicLink(
+      at: repository.path.appending(path: "dir"),
+      withDestinationURL: outside,
+    )
+    try repository.write("b\n", to: "a.txt")
+
+    let reading = await Self.read(try await Self.status(of: repository), in: repository)
+
+    #expect(reading.files.map(\.path).contains("dir/file"))
+    let texts = reading.files.flatMap { $0.rows?.lines.map(\.text) ?? [] }
+    #expect(!texts.contains("outside text"))
+  }
 }

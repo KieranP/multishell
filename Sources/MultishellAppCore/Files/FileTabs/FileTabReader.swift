@@ -24,10 +24,8 @@ enum FileTabReader {
     let url = worktree.appending(path: pathInWorktree)
     let (onDisk, repository, isImage, image, isSpelledAsGiven) = await runOnDispatch {
       let isImage = imageRule.opensAsImage(pathInWorktree)
-      let onDisk = FileOnDisk.read(
-        url,
-        sizeLimit: isImage ? FileTabImageReader.sizeLimit : sizeLimit,
-      )
+      let limit = isImage ? FileTabImageReader.sizeLimit : sizeLimit
+      let onDisk = FileOnDisk.read(pathInWorktree, in: worktree, sizeLimit: limit)
       return (
         onDisk,
         RepositoryLocation.innermost(holding: pathInWorktree, in: worktree),

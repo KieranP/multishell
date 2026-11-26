@@ -76,9 +76,7 @@ extension WorktreeCoordinator {
     onStep: (@Sendable (WorktreeRemovalStep) -> Void)?,
   ) async throws {
     let path = worktree.path
-    if directoryExists, let work = try await git.workHeld(by: worktree, in: project) {
-      throw WorktreeHoldsOtherWork(path: path, work: work)
-    }
+    if directoryExists { try await refuseIfHoldingOtherWork(worktree, in: project) }
     let branchOrHead = worktree.branch ?? worktree.head
     try await WorktreeHooks.run(
       .preDelete,
@@ -92,7 +90,16 @@ extension WorktreeCoordinator {
       onWillRun: { onStep?(.preDeleteHook) },
     )
     onStep?(.removingWorktree)
-    if directoryExists {
+    // Read again: a volume remounted during the hook brings the checkout back.
+    if await runOnDispatch({ FileManager.default.fileExists(atPath: path.path) }) {
+      // Back during the hook, so judged as one present at the start: neither check ran.
+      if !directoryExists {
+        guard try await git.isCheckout(of: worktree, in: project) else {
+          try await git.removeStaleRecord(worktree, in: project)
+          return
+        }
+        try await refuseIfHoldingOtherWork(worktree, in: project)
+      }
       do {
         try await trash(path)
       } catch {
@@ -115,5 +122,11 @@ extension WorktreeCoordinator {
       stopper: stopper,
       onWillRun: { onStep?(.postDeleteHook) },
     )
+  }
+
+  private func refuseIfHoldingOtherWork(_ worktree: Worktree, in project: Project) async throws {
+    if let work = try await git.workHeld(by: worktree, in: project) {
+      throw WorktreeHoldsOtherWork(path: worktree.path, work: work)
+    }
   }
 }

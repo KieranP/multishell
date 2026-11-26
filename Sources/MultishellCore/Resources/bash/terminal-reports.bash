@@ -54,6 +54,10 @@ _multishell_prompt_marks() {
   [ -n "${PS1-}" ] || return 0
   case "$PS1" in
     *'133;B'*) ;;
-    *) PS1="$PS1"'\[\e]133;B\a\]' ;;
+    *)
+      # A lone backslash at the end would escape our `\[`; doubled, it shows as one.
+      local trailing="${PS1##*[!\\]}"
+      if (( ${#trailing} % 2 )); then PS1="$PS1\\"; fi
+      PS1="$PS1"'\[\e]133;B\a\]' ;;
   esac
 }

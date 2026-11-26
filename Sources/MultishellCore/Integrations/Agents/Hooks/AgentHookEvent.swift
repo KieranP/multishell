@@ -19,6 +19,9 @@ struct AgentHookEvent: Hashable, Sendable {
   /// Whether the event moves the dot and says nothing else, for the second
   /// of two events standing for one thing.
   let isSilent: Bool
+  /// Whether the event names no worker though it may announce a worker's
+  /// prompt, which a silent request already raised.
+  let announcesRaisedPrompt: Bool
   /// What the event says about the subagent its payload names: its start or
   /// its end. Any other event naming one is a tool call inside it.
   let subagentPhase: WorkerReport.Phase?
@@ -39,6 +42,7 @@ struct AgentHookEvent: Hashable, Sendable {
     ignoredNotificationTypes: Set<String> = [],
     meansWaitingOnlyWhenPrompting: Bool = false,
     isSilent: Bool = false,
+    announcesRaisedPrompt: Bool = false,
     subagentPhase: WorkerReport.Phase? = nil,
     isPrompt: Bool = false,
     startsSession: Bool = false,
@@ -51,6 +55,7 @@ struct AgentHookEvent: Hashable, Sendable {
     self.ignoredNotificationTypes = ignoredNotificationTypes
     self.meansWaitingOnlyWhenPrompting = meansWaitingOnlyWhenPrompting
     self.isSilent = isSilent
+    self.announcesRaisedPrompt = announcesRaisedPrompt
     self.subagentPhase = subagentPhase
     self.isPrompt = isPrompt
     self.timeoutSeconds = timeoutSeconds

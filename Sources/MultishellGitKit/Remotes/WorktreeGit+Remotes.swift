@@ -7,6 +7,9 @@ extension WorktreeGit {
   private static let lookupTimeout: Duration = .seconds(30)
   /// `ls-remote --exit-code`'s answer where nothing matched.
   private static let noMatchingRefStatus: Int32 = 2
+  /// Before a remote's name, which the repository's config gives and git would
+  /// take as an option, `--upload-pack=` running what it names.
+  private static let endOfOptions = "--"
 
   /// Every remote with its fetch URL. `nil` is a failed read, not no remotes.
   public func remotes(_ project: Project) async -> [GitRemote]? {
@@ -55,7 +58,7 @@ extension WorktreeGit {
     let setsUpstream = !(isTriangular && pushedTo == remote)
     _ = try await runner.run(
       ["push", "--quiet"] + (setsUpstream ? ["--set-upstream"] : []) + [
-        remote, "\(RefName.local(branch)):\(RefName.local(remoteBranch))",
+        Self.endOfOptions, remote, "\(RefName.local(branch)):\(RefName.local(remoteBranch))",
       ],
       in: directory,
       environment: Self.networkEnvironment,
@@ -72,7 +75,7 @@ extension WorktreeGit {
   ) async -> Bool? {
     do {
       _ = try await runner.run(
-        ["ls-remote", "--exit-code", "--heads", remote, RefName.local(branch)],
+        ["ls-remote", "--exit-code", "--heads", Self.endOfOptions, remote, RefName.local(branch)],
         in: directory,
         environment: Self.networkEnvironment,
         timeout: Self.lookupTimeout,

@@ -245,6 +245,23 @@ the bottom.
   default being one. Nearly all of an add is writing files: on 9,467 files it
   went from 2.8s to 1.2s cold and 1.4s to 0.9s warm. A count the user set wins.
   A git before 2.32 ignores the key; git stays sequential below 100 files.
+- **A checkout back during the pre-delete hook is judged as one there at the
+  start**: not the record's checkout, it is left and only the record goes, with
+  no post-delete hook; holding another worktree or a populated submodule, the
+  removal is refused. Trashed unasked, a plain folder made there went, and the
+  record took a returned checkout's submodule repository with it.
+- **A list naming none of the project's own path proves nothing about a
+  record**, as worktrees/sidebar.md has it for the list. With the project's
+  `.git` gone, the enclosing repository's list lacked the path, the record read
+  as gone, and the branch delete that followed took that repository's branch of
+  the same name.
+- **A submodule's path is everything after the first tab of its index entry**,
+  a path holding a tab itself: read after the last, `sub\tx` read as `x`, an
+  unpopulated submodule, and the removal took its repository.
+- **A failed remove asks whether the project's own git answers before it
+  prunes**: with the project's `.git` gone, prune ran in the enclosing
+  repository and took its stale records, a write to another repository, before
+  the list check refused.
 
 ## Reviewed and left as is
 

@@ -62,7 +62,7 @@ struct AppModelFetchTests {
           echo "fatal: unable to access remote" >&2
           exit 128 ;;
         worktree\\ list*)
-          printf 'worktree %s\\nHEAD abc\\nbranch refs/heads/main\\n\\n' "$SCRATCH/demo" ;;
+          printf 'worktree %s\\0HEAD abc\\0branch refs/heads/main\\0\\0' "$SCRATCH/demo" ;;
         *) exit 0 ;;
       esac
       """
@@ -94,7 +94,7 @@ struct AppModelFetchTests {
           \(harness.holdLine(until: fetchGate))
           touch "$SCRATCH/fetched" ;;
         worktree\\ list*)
-          printf 'worktree %s\\nHEAD abc\\nbranch refs/heads/main\\n\\n' "$SCRATCH/demo" ;;
+          printf 'worktree %s\\0HEAD abc\\0branch refs/heads/main\\0\\0' "$SCRATCH/demo" ;;
         for-each-ref*)
           if [ -e "$SCRATCH/fetched" ]; then
             touch "$SCRATCH/rereading"

@@ -18,6 +18,10 @@ extension WorktreeGit {
         in: project.path,
       )
     } catch let refusal {
+      // With the project's `.git` gone, prune would take an enclosing repository's records.
+      guard await listsWorktree(at: worktree.path, in: project) != nil else {
+        throw WorktreeRecordRemovalFailure(path: worktree.path, underlying: refusal)
+      }
       // A record git cannot match to the path; see Docs/design/worktrees/creating-and-removing.md.
       do {
         _ = try await runner.run(["worktree", "prune"], in: project.path)
@@ -124,8 +128,10 @@ extension WorktreeGit {
       ["--no-optional-locks", "ls-files", "-z", "--stage"],
       in: worktree.path,
     )
-    let submodules = index.split(separator: "\0").compactMap { entry in
-      entry.hasPrefix(Self.gitlinkModePrefix) ? entry.split(separator: "\t").last : nil
+    let submodules = index.split(separator: "\0").compactMap { entry -> Substring? in
+      // The first tab ends the fields; a path may hold more.
+      guard entry.hasPrefix(Self.gitlinkModePrefix) else { return nil }
+      return entry.split(separator: "\t", maxSplits: 1).last
     }
     let checkout = worktree.path
     let isPopulated = await runOnDispatch {

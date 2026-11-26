@@ -72,6 +72,22 @@ extension WorkspaceStoreTests {
     )
   }
 
+  @Test func aWorktreeTwoProjectsListKeepsItsTabAfterARestoreAndTheFirstProjectsRemoval()
+    throws
+  {
+    let file = Scratch.statePath()
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
+    let (saving, original, shared, copy) = Self.twoProjectsListingOneWorktree()
+    let tab = try #require(saving.openTab(in: shared.id))
+    try StateFile(fileURL: file).save(saving.workspace)
+    let (store, _) = WorkspaceStore.restored(from: StateFile(fileURL: file))
+
+    store.removeProject(original.id)
+
+    #expect(store.workspace.tabs.map(\.id) == [tab.id])
+    #expect(store.workspace.worktrees(of: copy.id).map(\.id) == [shared.id])
+  }
+
   @Test func restoringRepairsDanglingReferencesBeforeTheStoreSeesThem() throws {
     let file = Scratch.statePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
@@ -140,6 +156,31 @@ extension WorkspaceStoreTests {
 extension WorkspaceStoreTests {
   /// A dotfiles link whose target is away, on a volume not mounted or a branch
   /// without it, started empty unasked and saved that over where it points.
+  @Test func aLinkedStateFileThatWillNotDecodeKeepsItsLinkAndIsSavedThrough() throws {
+    let directory = try Scratch.directory("broken-linked-state")
+    defer { Scratch.remove(directory) }
+    let target = directory.appendingPathComponent("dotfiles/state.json")
+    try FileManager.default.createDirectory(
+      at: target.deletingLastPathComponent(),
+      withIntermediateDirectories: true,
+    )
+    try Data("<<<<<<< HEAD".utf8).write(to: target)
+    let link = directory.appendingPathComponent("state.json")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+    let (store, error) = WorkspaceStore.restored(from: StateFile(fileURL: link))
+    store.addProject(at: URL(fileURLWithPath: "/repos/other"))
+    try store.save()
+
+    let backup = try #require((error as? UnreadableStateFile)?.backup)
+    #expect(try String(contentsOf: backup, encoding: .utf8) == "<<<<<<< HEAD")
+    #expect(
+      try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == target.path
+    )
+    let saved = try StateFile(fileURL: target).load()
+    #expect(saved.projects.map(\.path.path) == ["/repos/other"])
+  }
+
   @Test func aLinkedStateFileWhoseTargetIsAwayIsSaidSoAndNotSavedThrough() throws {
     let directory = try Scratch.directory("dangling-state")
     defer { Scratch.remove(directory) }

@@ -352,6 +352,74 @@ struct WorktreeCoordinatorRemovalTests {
     #expect(try await fixture.git.list(fixture.project).count == 2, "still on record")
   }
 
+  @Test func aCheckoutBackDuringThePreDeleteHookGoesToTheTrashNotUnlinked() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "remounted",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
+    try "work\n".write(
+      to: path.appendingPathComponent("wip.txt"),
+      atomically: true,
+      encoding: .utf8,
+    )
+    let worktree = try await fixture.worktree(onBranch: "remounted")
+    let away = try Scratch.directory("unmounted").appendingPathComponent("remounted")
+    defer { Scratch.remove(away.deletingLastPathComponent()) }
+    try FileManager.default.moveItem(at: path, to: away)
+    project.settings = ProjectSettings(
+      preDeleteHook: "mv '\(away.path)' \"$MULTISHELL_WORKTREE_PATH\""
+    )
+    let bin = try Scratch.directory("bin")
+    defer { Scratch.remove(bin) }
+
+    try await fixture.coordinator.remove(
+      worktree,
+      in: project,
+      trash: moveToBin(bin),
+      port: nil,
+      shellPath: "/bin/sh",
+    )
+
+    #expect(FileManager.default.fileExists(atPath: bin.appending(path: "dirty/wip.txt").path))
+  }
+
+  @Test func aPlainFolderMadeAtTheGonePathDuringThePreDeleteHookIsLeftAndOnlyTheRecordGoes()
+    async throws
+  {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "vanished",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
+    let worktree = try await fixture.worktree(onBranch: "vanished")
+    try FileManager.default.removeItem(at: path)
+    project.settings = ProjectSettings(
+      preDeleteHook: """
+        mkdir "$MULTISHELL_WORKTREE_PATH" && echo notes > "$MULTISHELL_WORKTREE_PATH/notes.txt"
+        """
+    )
+    let bin = try Scratch.directory("bin")
+    defer { Scratch.remove(bin) }
+
+    try await fixture.coordinator.remove(
+      worktree,
+      in: project,
+      trash: moveToBin(bin),
+      port: nil,
+      shellPath: "/bin/sh",
+    )
+
+    #expect(FileManager.default.fileExists(atPath: path.appending(path: "notes.txt").path))
+    #expect(try await fixture.git.list(fixture.project).count == 1)
+  }
+
   /// A trash standing in for the Finder's: the worktree moved into `bin` as
   /// `dirty`.
   private func moveToBin(_ bin: URL) -> @Sendable (URL) async throws -> Void {

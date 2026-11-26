@@ -51,6 +51,9 @@ panel's Review page (issue #6). Newest at the bottom.
   differently.
 - **A missed quote keeps the comment's lines**, so the next read searches near
   them: a read landing mid-save sees a cut file.
+- **The quote is found in one pass over the side's text** (Knuth-Morris-Pratt),
+  on the main actor at every read. Comparing the whole quote at each start took
+  78 s in debug for a 5,000-line quote missing from 200,000 repeated lines.
 - **A sent comment whose lines changed is Outdated** and can only be dismissed:
   it is what the agent read. A read that finds its quote again makes it Sent, a
   read landing mid-save having missed it. **A pending one is kept, marked Lines

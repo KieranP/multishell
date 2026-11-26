@@ -5,10 +5,9 @@ extension DiffDisplayText {
     guard !previous.lines.isEmpty, !lines.isEmpty else { return nil }
     let touched = previous.rows(touching: range)
     let (firstRow, lastRow) = (touched.lowerBound, touched.upperBound)
-    let selectedLines = previous.lines[firstRow...lastRow]
-    guard selectedLines.count <= lines.count else { return nil }
-    let matches = (0...(lines.count - selectedLines.count)).filter { start in
-      zip(lines[start...], selectedLines).allSatisfy { $0.kind == $1.kind && $0.text == $1.text }
+    let selectedLines = Array(previous.lines[firstRow...lastRow])
+    let matches = lines.startsOfOccurrences(of: selectedLines) { line, selected in
+      line.kind == selected.kind && line.text == selected.text
     }
     guard let start = matches.min(by: { abs($0 - firstRow) < abs($1 - firstRow) }) else {
       return nil

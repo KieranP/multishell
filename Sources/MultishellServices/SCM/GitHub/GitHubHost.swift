@@ -110,16 +110,26 @@ public struct GitHubHost: PullRequestHost {
   }
 
   /// One job's log, by the job its link names. A check from another CI links elsewhere.
-  public func readsFailedLog(of check: PullRequestCheck) -> Bool {
-    check.link.flatMap(GitHubJobAddress.init) != nil
+  public func readsFailedLog(of check: PullRequestCheck, on pullRequest: PullRequest) -> Bool {
+    job(of: check, on: pullRequest) != nil
+  }
+
+  /// Only a job on the pull request's own host: `gh api --hostname` sends that
+  /// host the login's token, and a check's link is whatever its poster wrote.
+  private func job(of check: PullRequestCheck, on pullRequest: PullRequest) -> GitHubJobAddress? {
+    guard let job = check.link.flatMap(GitHubJobAddress.init),
+      job.host.lowercased() == pullRequest.url.host()?.lowercased()
+    else { return nil }
+    return job
   }
 
   public func failedLog(
     of check: PullRequestCheck,
+    on pullRequest: PullRequest,
     keepingLast lineLimit: Int,
     in directory: URL,
   ) async throws -> FailedCheckLog? {
-    guard let link = check.link, let job = GitHubJobAddress(link) else { return nil }
+    guard let job = job(of: check, on: pullRequest) else { return nil }
     // `gh run view --job` refuses every job until the whole run ends.
     let output = try await runner.read(
       ["api", "--hostname", job.host, "--allow-escape-sequences", job.logsEndpoint],

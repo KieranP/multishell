@@ -80,8 +80,11 @@ user's settings file. Newest at the bottom.
   decides whether anyone need answer**, so under a full-auto mode every tool
   call would post a banner. It counts as waiting only in a mode that stops for
   the user, and an unknown mode is taken to stop.
-- **Another's request is the same shape and narrowed the same way**, its
-  classifier mode being one more that answers without the user.
+- **Another's request is the same shape and narrowed the same way**, bar its
+  `auto` mode: Claude 2.1.332 runs the hook only once the classifier has decided
+  to ask, and names the mode `auto` all the same. Dropped there, a prompt
+  reached the dot only by the notification six seconds on, and a worker's was
+  claimed as the agent's, holding Waiting past that worker's next call.
 - **That agent's notification carries many types on one event**, most of which
   announce rather than ask, including an idle prompt that landed on top of the
   Done the same turn had just reported.
@@ -102,7 +105,9 @@ user's settings file. Newest at the bottom.
   interruption.** The general rule: move a dot silently where another report
   about the same thing will do the talking.
 - **Nothing reports the answer**, so the dot stays until the next tool call or
-  the end of the turn: an approved call taking minutes holds it that long.
+  the end of the turn: an approved call taking minutes holds it that long. Cost:
+  Gemini declined at its prompt fires neither AfterTool nor AfterAgent, so its
+  Waiting stands to the next prompt or a Clear; no hook says it.
 - **The denial event is not the missing half**, whatever its name suggests: it
   fires only for a call the auto mode's classifier turned down, and a person
   refusing at the prompt fires nothing.

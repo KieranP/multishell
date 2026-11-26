@@ -118,22 +118,65 @@ _multishell_owns_debug_or_saves_theirs() {
 _multishell_reexec_if_replacing_itself() {
   local -a words
   read -r -a words <<< "$1"
-  case "${words[1]-}" in bash | */bash) ;; *) return 0 ;; esac
+  # The words are as typed, unexpanded; a failed exec in this trap ends the shell.
+  local target="${words[1]-}"
+  case "$target" in '$SHELL' | '"$SHELL"' | '${SHELL}' | '"${SHELL}"') target="${SHELL-}" ;; esac
+  case "$target" in bash | */bash) ;; *) return 0 ;; esac
   local word
   for word in "${words[@]:2}"; do
     case "$word" in -i | -l | -il | -li | --login) ;; *) return 0 ;; esac
   done
-  # The words are as typed, unexpanded; a failed exec in this trap ends the shell.
-  local target="${words[1]}"
   case "$target" in */*) ;; *) target="$(type -P "$target")" ;; esac
   [ -x "$target" ] || return 0
   builtin exec "$target" --init-file "$_multishell_init_file" -i
+}
+
+# A shell exec'd to sit at its prompt keeps the pid and reports nothing, so a
+# start sent for it held the pane Running until it closed. One given a command runs it.
+_multishell_execs_a_shell_at_its_prompt() {
+  local -a words
+  read -r -a words <<< "$1"
+  [ "${words[0]-}" = exec ] || return 1
+  local -i i=1
+  # exec's own `-a` takes the name the program is given.
+  while :; do
+    case "${words[i]-}" in -a | -[!-]*a) i=i+2 ;; -*) i=i+1 ;; *) break ;; esac
+  done
+  local program="${words[i]-}"
+  case "$program" in '$SHELL' | '"$SHELL"' | '${SHELL}' | '"${SHELL}"') program="${SHELL-}" ;; esac
+  case "${program##*/}" in zsh | bash | sh | dash | ksh | fish | tcsh | csh | nu) ;; *) return 1 ;; esac
+  local word quote="" takes_value=0
+  for word in "${words[@]:i+1}"; do
+    # The words are split at spaces, so a quoted value holding one is skipped to its close.
+    if [ -n "$quote" ]; then
+      case "$word" in *"$quote"*) quote="" ;; esac
+      continue
+    fi
+    if [ "$takes_value" = 1 ]; then
+      takes_value=0
+    else
+      # fish's -C is a line run before its prompt, not a command in place of one.
+      case "$word" in
+        -c | -[!-]*c* | --command | --command=* | --commands) return 1 ;;
+        -o | +o | -O | +O | -C | --rcfile | --init-file | --init-command | --emulate) takes_value=1 ;;
+        [-+]*) ;;
+        *) return 1 ;;
+      esac
+    fi
+    case "$word" in
+      *\'*) case "${word#*\'}" in *\'*) ;; *) quote="'" ;; esac ;;
+      *\"*) case "${word#*\"}" in *\"*) ;; *) quote='"' ;; esac ;;
+    esac
+  done
+  return 0
 }
 
 _multishell_debug() {
   # Before theirs is called, so their trap never sees our own prompt
   # functions: without us it would not have.
   case "$BASH_COMMAND" in _multishell_*) return 0 ;; esac
+  # Gone only where something set PROMPT_COMMAND over ours, which the prompt cannot mend.
+  case "${PROMPT_COMMAND[*]-}" in *_multishell_arm*) ;; *) _multishell_compose_prompt_command ;; esac
   # Theirs sees no arguments of ours, and `:` puts the user's `$_` back for it.
   # Its status is ours to return: under extdebug a non-zero one skips the command.
   local _multishell_their_status=0
@@ -154,8 +197,17 @@ _multishell_debug() {
   [ -n "${READLINE_POINT-}" ] && return $_multishell_their_status
   # bash-preexec adds its prompt entry after our arm, at the first prompt.
   case "$BASH_COMMAND" in __bp_*) return $_multishell_their_status ;; esac
-  case "$BASH_COMMAND" in "exec "*) _multishell_reexec_if_replacing_itself "$BASH_COMMAND" ;; esac
   _multishell_armed=0
+  case "$BASH_COMMAND" in
+    "exec "*)
+      # Under extdebug their non-zero status skips the command, an exec included.
+      if [ "$_multishell_their_status" = 0 ] || ! shopt -q extdebug; then
+        _multishell_reexec_if_replacing_itself "$BASH_COMMAND"
+      fi
+      # The new shell never finishes this line, so it starts nothing.
+      _multishell_execs_a_shell_at_its_prompt "$BASH_COMMAND" && return $_multishell_their_status
+      ;;
+  esac
   _multishell_command_started "$BASH_COMMAND"
   return $_multishell_their_status
 }
@@ -197,7 +249,8 @@ _multishell_keep_precmd_first() {
   esac
   export -n PROMPT_COMMAND
   # Before 5.1 bash runs element 0 alone, so ours goes into it, not beside it.
-  if [ "${#PROMPT_COMMAND[@]}" -gt 1 ] &&
+  # A second element, not a count: under `set -u` a scalar's count is unbound.
+  if [ -n "${PROMPT_COMMAND[1]+set}" ] &&
     (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
     PROMPT_COMMAND=("$_multishell_precmd_entry" "${PROMPT_COMMAND[@]//$_multishell_precmd_entry/:}")
   else
@@ -207,7 +260,59 @@ _multishell_keep_precmd_first() {
   fi
 }
 
+# Ours around the user's entries, at startup and wherever a .bashrc sourced
+# again set PROMPT_COMMAND over them.
+_multishell_compose_prompt_command() {
+  [ -z "${_multishell_prompt_command_readonly-}" ] || return 0
+  local declared attributes
+  # Fails where it is unset, which under the user's `set -e` ended the shell.
+  declared="$(declare -p PROMPT_COMMAND 2>/dev/null)" || declared=""
+  attributes="${declared#declare -}"
+  # A readonly one is left alone for good: the DEBUG trap composed again at every
+  # command, and each failed set complained.
+  case "${attributes%% *}" in *r*) _multishell_prompt_command_readonly=1; return 0 ;; esac
+  # A profile's export would hand our hooks to every child bash, which
+  # has none of the functions they call and complains at each prompt.
+  export -n PROMPT_COMMAND
+  # Before 5.1 bash runs only element 0 of an array, so the scalar form
+  # below, which writes element 0, is the one that runs there.
+  if [[ "$declared" == "declare -a"* ]] &&
+    (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
+    PROMPT_COMMAND=(
+      "$_multishell_precmd_entry" "${PROMPT_COMMAND[@]}" "$_multishell_claim_debug"
+      _multishell_prompt_marks _multishell_arm)
+  else
+    # Newlines, not `;`: a user value ending in a separator composed to
+    # `;;`, which bash refuses, so none of ours ran.
+    local newline=$'\n'
+    PROMPT_COMMAND="$_multishell_precmd_entry$newline${PROMPT_COMMAND-}$newline"
+    PROMPT_COMMAND+="$_multishell_claim_debug${newline}_multishell_prompt_marks"
+    PROMPT_COMMAND+="${newline}_multishell_arm"
+  fi
+}
+
+# A .bashrc sourced again appends after the arm, whose entry then took the arm
+# meant for the user's command. Behind bash-preexec's, which adds its own there.
+_multishell_keep_arm_last() {
+  # bash-preexec's entry stands alone, as an element or a line: one appended to
+  # on its line or in the arm's element runs that append after the arm.
+  if [ -n "${PROMPT_COMMAND[1]+set}" ] &&
+    (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
+    local -i holder=${#PROMPT_COMMAND[@]}-1
+    [ "${PROMPT_COMMAND[holder]}" = __bp_interactive_mode ] && holder=holder-1
+    case "${PROMPT_COMMAND[holder]}" in _multishell_arm | *$'\n'_multishell_arm) return 0 ;; esac
+    PROMPT_COMMAND=("${PROMPT_COMMAND[@]//_multishell_arm/:}" _multishell_arm)
+  else
+    local first="${PROMPT_COMMAND[0]}"
+    case "${first%$'\n'__bp_interactive_mode}" in
+      _multishell_arm | *$'\n'_multishell_arm) return 0 ;;
+    esac
+    PROMPT_COMMAND[0]="${first//_multishell_arm/:}"$'\n'_multishell_arm
+  fi
+}
+
 _multishell_arm() {
   _multishell_keep_precmd_first
+  _multishell_keep_arm_last
   _multishell_armed=1
 }

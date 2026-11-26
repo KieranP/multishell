@@ -13,7 +13,8 @@ extension Workspace {
     // so a dead copy listed first is kept and the live one goes with it.
     let projectIDs = Set(projects.map(\.id))
     worktrees.removeAll { !projectIDs.contains($0.projectID) }
-    worktrees = worktrees.uniqued(by: \.id)
+    // Per project: a path two projects list keeps a row in each; see state-and-store.md.
+    worktrees = worktrees.uniqued(by: { [$0.projectID, $0.id] })
 
     let worktreeIDs = Set(worktrees.map(\.id))
     tabs.removeAll { !worktreeIDs.contains($0.worktreeID) }

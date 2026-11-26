@@ -24,6 +24,9 @@ extension SharedProjectSettings {
     for field in Self.trustCoveredFields {
       kept[keyPath: field] = self[keyPath: field] ?? existing[keyPath: field]
     }
+    for start in Self.trustCoveredStarts {
+      kept[keyPath: start] = self[keyPath: start] ?? existing[keyPath: start]
+    }
     kept.unrecognisedKeys = existing.unrecognisedKeys
     return kept
   }

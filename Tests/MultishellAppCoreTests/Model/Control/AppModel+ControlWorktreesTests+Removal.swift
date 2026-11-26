@@ -46,6 +46,38 @@ extension AppModelControlWorktreesTests {
     )
   }
 
+  @Test func aDetachedWorktreeHoldingCommitsOnNoBranchIsRefusedUnlessForced() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.model.setTrashesRemovedWorktrees(false)
+    let worktree = try await harness.createWorktree(onBranch: "pinned")
+    _ = try await harness.git.run(["checkout", "--detach"], in: worktree.path)
+    try await TestRepository.commit(
+      "adrift",
+      files: ["adrift.txt": "work"],
+      in: worktree.path,
+      using: harness.git,
+    )
+    await harness.model.refreshWorktrees(of: harness.project)
+    let id = ControlID.worktree(worktree.id)
+    let removal = { (force: Bool) in
+      WorktreeRemovalOrder(
+        worktreeID: id,
+        deletesBranch: false,
+        forcesBranchDeletion: false,
+        force: force,
+      )
+    }
+
+    let refused = await harness.model.answer(.removeWorktree(removal(false)))
+    let stillListed = harness.model.workspace.worktree(worktree.id) != nil
+    let forced = await harness.model.answer(.removeWorktree(removal(true)))
+
+    #expect(refused == .refused(.commitsOnNoBranch(id: id, count: 1)))
+    #expect(stillListed)
+    #expect(forced == .done)
+  }
+
   @Test func aBranchGitKeepsOnARemovalIsRefusedInTheAlertsWordsWithNoAlertLeftUp() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

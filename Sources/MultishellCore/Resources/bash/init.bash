@@ -65,25 +65,6 @@ _multishell_owns_debug_or_saves_theirs || trap '\''_multishell_debug "$_"'\'' DE
   trap '_multishell_debug "$_"' DEBUG
   case "${PROMPT_COMMAND-}" in
     *_multishell_precmd*) ;;
-    *)
-      # A profile's export would hand our hooks to every child bash, which
-      # has none of the functions they call and complains at each prompt.
-      export -n PROMPT_COMMAND
-      # Before 5.1 bash runs only element 0 of an array, so the scalar form
-      # below, which writes element 0, is the one that runs there.
-      if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]] &&
-        (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
-        PROMPT_COMMAND=(
-          "$_multishell_precmd_entry" "${PROMPT_COMMAND[@]}" "$_multishell_claim_debug"
-          _multishell_prompt_marks _multishell_arm)
-      else
-        # Newlines, not `;`: a user value ending in a separator composed to
-        # `;;`, which bash refuses, so none of ours ran.
-        PROMPT_COMMAND="$_multishell_precmd_entry
-${PROMPT_COMMAND-}
-$_multishell_claim_debug
-_multishell_prompt_marks
-_multishell_arm"
-      fi ;;
+    *) _multishell_compose_prompt_command ;;
   esac
 fi

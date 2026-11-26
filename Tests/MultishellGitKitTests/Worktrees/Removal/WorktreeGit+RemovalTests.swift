@@ -294,7 +294,7 @@ struct WorktreeGitRemovalTests {
       """
       case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
       case "$1 $2" in "worktree remove") exit 128 ;; esac
-      printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n'
+      printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n' "$SCRATCH"
       """
     )
     defer { fake.tearDown() }

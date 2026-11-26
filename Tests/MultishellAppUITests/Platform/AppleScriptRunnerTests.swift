@@ -8,22 +8,15 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct AppleScriptRunnerTests {
-  /// The same script, without the clause that would ask for an administrator,
-  /// so what the shell would be given can be read rather than run.
-  private let probe = """
-    on buildCommand(target, link)
-      return "mkdir -p /usr/local/bin && ln -sf " & quoted form of target & " " & quoted form of link
-    end buildCommand
-    """
-
   @Test func aHandlerGivesBackWhatItReturned() throws {
     let command = try AppleScriptRunner.call(
-      probe,
-      handler: "buildCommand",
-      arguments: ["/a/multishell", "/usr/local/bin/multishell"],
+      MacPlatform.installToolScript,
+      handler: "installCommand",
+      arguments: ["/a/multishell", "/usr/local/bin", "/usr/local/bin/multishell"],
     )
     #expect(
-      command == "mkdir -p /usr/local/bin && ln -sf '/a/multishell' '/usr/local/bin/multishell'"
+      command
+        == "mkdir -p '/usr/local/bin' && ln -sfh '/a/multishell' '/usr/local/bin/multishell'"
     )
   }
 
@@ -32,9 +25,9 @@ struct AppleScriptRunnerTests {
   @Test func aPathHoldingQuotesAndSemicolonsArrivesAsOneArgument() throws {
     let hostile = #"/Users/od"d/x'; rm -rf /"#
     let command = try AppleScriptRunner.call(
-      probe,
-      handler: "buildCommand",
-      arguments: [hostile, "/usr/local/bin/multishell"],
+      MacPlatform.installToolScript,
+      handler: "installCommand",
+      arguments: [hostile, "/usr/local/bin", "/usr/local/bin/multishell"],
     )
 
     #expect(command?.contains("rm -rf /") == true, "it is in there")

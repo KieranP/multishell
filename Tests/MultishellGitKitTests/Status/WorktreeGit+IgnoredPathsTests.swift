@@ -43,4 +43,16 @@ struct WorktreeGitIgnoredPathsTests {
 
     #expect(ignored == [separated])
   }
+
+  @Test func aNameThatReadsAsPathspecMagicIsOneNameAndSpoilsNoOther() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try fixture.write("*.log\n", to: ".gitignore")
+    for name in ["a.log", ":!notes", ":(glob)x"] { try fixture.write("x\n", to: name) }
+
+    let ignored = await fixture.git.ignoredPaths(["a.log", ":!notes", ":(glob)x"], in: path)
+
+    #expect(ignored == ["a.log"])
+  }
 }

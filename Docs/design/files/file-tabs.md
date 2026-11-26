@@ -117,6 +117,10 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   asks `NSString` only otherwise, for case and composed forms past ASCII. One
   `NSString` search per match took 24 to 30 ms in release for a first letter or
   a space in a 1 MiB file, on every keystroke; the byte pass takes 2 ms.
+- **That pass is one walk of the folded bytes** (Knuth-Morris-Pratt), matches
+  kept leftmost and apart as `NSString` returns them. Comparing the find text at
+  each start was text times find text: 10,000 `=` and an `x` over 1 MiB of `=`
+  ran past a minute in debug per keystroke.
 - **Find's matches are painted under the text with the line tints**, not as
   TextKit 2 rendering attributes, which marked none of its line views for
   drawing: a search typed into the bar showed its matches only at the next
@@ -193,6 +197,21 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   (files/all-changes-tab.md).
 - **The step buttons are chevrons**, as the All changes mockup drew them, in a
   file tab's bar and the All changes bar alike (owner's pick, 2026-11-17).
+- **A link leading out is judged on every link along the path, not only the
+  last**: a file under a folder link in an ignored folder opened in a tab from
+  outside the worktree. Foundation resolves nothing in a path that is not there,
+  so a gone file is resolved through the deepest part still on disk.
+- **Every read of a worktree file passes the same link check, not only the
+  open**: a folder swapped for a link out after a tab opened, or before a
+  restore, rendered the outside file as context rows, git listing the tracked
+  file deleted and its patch headers only. A path leading out reads as gone, as
+  git sees it. The check and the read are two steps; a swap between them still
+  reads once.
+- **Each part of the path is checked as a link, a dangling one included**
+  (lstat, then `realpath`): a test for existence follows links, so a folder link
+  to nothing was climbed over unresolved and accepted. Paths compare as
+  `realpath` gives them, standardizing dropping `/private` only from a path on
+  disk.
 
 ## Reviewed and left as is
 

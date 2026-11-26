@@ -12,6 +12,9 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case autoRenameUnavailable(id: String)
   /// A worktree's checks could not be read for a Send, in the tool's words.
   case checksNotRead(id: String, reason: String)
+  /// A detached worktree's commits no branch holds, which its removal would
+  /// lose; `nil` where git could not count them.
+  case commitsOnNoBranch(id: String, count: Int?)
   case debugToolsOff
   /// Not a file the worktree holds that opens as text or an image, which a click beeps at.
   case fileNotOpenable(path: String)

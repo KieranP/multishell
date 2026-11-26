@@ -13,6 +13,13 @@ extension ControlRefusal {
     case .checksNotRead(let id, let reason):
       "worktree \(id)'s checks could not be read, so nothing was sent: \(reason)"
 
+    case .commitsOnNoBranch(let id, let count?):
+      "worktree \(id) holds \(count) commit(s) on no branch, which removing it would lose; "
+        + "--force goes ahead anyway"
+
+    case .commitsOnNoBranch(let id, nil):
+      "worktree \(id)'s commits on no branch could not be counted; --force goes ahead anyway"
+
     case .debugToolsOff: "debug tools are off; `multishell debug tools on` turns them on"
 
     case .fileNotOpenable(let path):

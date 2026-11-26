@@ -20,8 +20,9 @@ extension Helper {
     usage: multishell worktrees remove WORKTREE_ID [--delete-branch]
                                        [--force-delete-branch] [--force]
         Remove it as its row's Remove does, without the dialog, to the Trash
-        where the settings say. Refused while an agent in it is working,
-        unless --force. --delete-branch deletes its branch too, as
+        where the settings say. Refused while an agent in it is working, or
+        while it is detached with commits no branch holds, unless --force.
+        --delete-branch deletes its branch too, as
         git branch -d; --force-delete-branch deletes one holding commits no
         other branch has, as git branch -D.
     usage: multishell worktrees show WORKTREE_ID

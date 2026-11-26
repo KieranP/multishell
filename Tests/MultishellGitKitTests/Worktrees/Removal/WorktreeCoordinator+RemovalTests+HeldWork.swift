@@ -35,14 +35,19 @@ extension WorktreeCoordinatorRemovalTests {
     #expect(try await fixture.git.list(fixture.project).count == 3)
   }
 
-  @Test func aWorktreeWhoseSubmoduleIsInitialisedIsRefusedAndKeepsItsRepository() async throws {
+  @Test(arguments: ["sub", "sub\tx"])
+  func aWorktreeWhoseSubmoduleIsInitialisedIsRefusedAndKeepsItsRepository(
+    at submodule: String
+  )
+    async throws
+  {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let upstream = fixture.root.appendingPathComponent("upstream", isDirectory: true)
     try await TestRepository.initialise(at: upstream, withFirstCommit: true)
     let allowingFile = ["-c", "protocol.file.allow=always"]
     _ = try await fixture.runner.run(
-      allowingFile + ["submodule", "add", "-q", upstream.path, "sub"],
+      allowingFile + ["submodule", "add", "-q", upstream.path, submodule],
       in: fixture.project.path,
     )
     _ = try await fixture.runner.run(["commit", "-q", "-m", "add sub"], in: fixture.project.path)
@@ -56,9 +61,55 @@ extension WorktreeCoordinatorRemovalTests {
       in: path,
     )
     let worktree = try await fixture.worktree(onBranch: "feature")
+    let checkout = path.appendingPathComponent(submodule, isDirectory: true)
+    let repository = try #require(WorktreeGit.recordDirectoryFromGitFile(in: checkout))
 
     await #expect(throws: WorktreeHoldsOtherWork.self) {
       try await fixture.coordinator.removeUnlinking(worktree, in: fixture.project)
+    }
+
+    #expect(FileManager.default.fileExists(atPath: checkout.appendingPathComponent(".git").path))
+    #expect(FileManager.default.fileExists(atPath: repository.appendingPathComponent("HEAD").path))
+    #expect(try await fixture.git.list(fixture.project).count == 2)
+  }
+
+  @Test func aCheckoutBackDuringThePreDeleteHookWithAnInitialisedSubmoduleIsRefused() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let upstream = fixture.root.appendingPathComponent("upstream", isDirectory: true)
+    try await TestRepository.initialise(at: upstream, withFirstCommit: true)
+    let allowingFile = ["-c", "protocol.file.allow=always"]
+    _ = try await fixture.runner.run(
+      allowingFile + ["submodule", "add", "-q", upstream.path, "sub"],
+      in: fixture.project.path,
+    )
+    _ = try await fixture.runner.run(["commit", "-q", "-m", "add sub"], in: fixture.project.path)
+    var project = fixture.project
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "feature",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
+    _ = try await fixture.runner.run(
+      allowingFile + ["submodule", "update", "--init", "-q"],
+      in: path,
+    )
+    let worktree = try await fixture.worktree(onBranch: "feature")
+    let away = try Scratch.directory("unmounted").appendingPathComponent("feature")
+    defer { Scratch.remove(away.deletingLastPathComponent()) }
+    try FileManager.default.moveItem(at: path, to: away)
+    project.settings = ProjectSettings(
+      preDeleteHook: "mv '\(away.path)' \"$MULTISHELL_WORKTREE_PATH\""
+    )
+
+    await #expect(throws: WorktreeHoldsOtherWork.self) {
+      try await fixture.coordinator.remove(
+        worktree,
+        in: project,
+        trash: { url in try FileManager.default.removeItem(at: url) },
+        port: nil,
+        shellPath: "/bin/sh",
+      )
     }
 
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("sub/.git").path))

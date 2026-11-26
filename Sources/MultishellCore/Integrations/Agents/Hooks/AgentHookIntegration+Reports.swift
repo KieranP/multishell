@@ -54,6 +54,7 @@ extension AgentHookIntegration {
       message: payload.message,
       agentID: id,
       isSilent: event.isSilent.trueOrNil,
+      announcesRaisedPrompt: event.announcesRaisedPrompt.trueOrNil,
       worker: event.workerChange(for: payload)
         .map { withMetadata(pausedOrFailedAtItsOwnStop($0, at: payload), from: payload) },
       launched: launchedTask(in: payload),

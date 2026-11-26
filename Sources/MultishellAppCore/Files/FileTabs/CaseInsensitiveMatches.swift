@@ -14,22 +14,17 @@ enum CaseInsensitiveMatches {
     let pattern = findText.utf8.map(lowercased)
     guard pattern.allSatisfy({ $0 < 0x80 }) else { return nil }
     var text = text
-    return text.withUTF8 { bytes in
-      var ranges: [Range<Int>] = []
-      var index = 0
-      while index < bytes.count {
-        guard bytes[index] < 0x80 else { return nil }
-        if index + pattern.count <= bytes.count,
-          pattern.indices.allSatisfy({ lowercased(bytes[index + $0]) == pattern[$0] })
-        {
-          ranges.append(index..<(index + pattern.count))
-          index += pattern.count
-        } else {
-          index += 1
-        }
-      }
-      return ranges
+    let folded: [UInt8]? = text.withUTF8 { bytes in
+      bytes.allSatisfy { $0 < 0x80 } ? bytes.map(lowercased) : nil
     }
+    guard let folded else { return nil }
+    var ranges: [Range<Int>] = []
+    // Leftmost first, each match ending where the next may start, as Foundation's search goes.
+    for start in folded.startsOfOccurrences(of: pattern, by: ==)
+    where start >= (ranges.last?.upperBound ?? 0) {
+      ranges.append(start..<(start + pattern.count))
+    }
+    return ranges
   }
 
   private static func lowercased(_ byte: UInt8) -> UInt8 {

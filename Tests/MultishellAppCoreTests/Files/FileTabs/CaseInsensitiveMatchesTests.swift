@@ -45,6 +45,19 @@ struct CaseInsensitiveMatchesTests {
     )
   }
 
+  @Test func aLongFindTextMissingFromARepetitiveMebibyteIsJudgedWithinASecond() {
+    let findText = String(repeating: "=", count: 10_000) + "x"
+    let text = String(repeating: "=", count: 1 << 20)
+
+    var ranges: [Range<Int>]?
+    let elapsed = ContinuousClock().measure {
+      ranges = CaseInsensitiveMatches.ranges(of: findText, in: text)
+    }
+
+    #expect(ranges == [])
+    #expect(elapsed < .seconds(1))
+  }
+
   @Test func anEmptyFindTextMatchesNothing() {
     #expect(CaseInsensitiveMatches.ranges(of: "", in: "text").isEmpty)
   }

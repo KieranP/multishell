@@ -44,25 +44,32 @@ struct ProjectSettingsLayeringTests {
     )
   }
 
-  /// Unlike a hook this runs nothing the repository wrote, only the shell or agent the user
-  /// chose, so it needs no trust decision.
-  @Test func aRepositoryMaySayWhatItsWorktreesOpenAndTheUsersOwnAnswerWins() throws {
-    let shared = try decodeJSON(
-      SharedProjectSettings.self,
-      #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#,
+  @Test func aRepositoryMaySayWhatItsWorktreesOpenOnceTrustedAndTheUsersOwnAnswerWins() throws {
+    let shared = try writtenAndReadBack(
+      try decodeJSON(
+        SharedProjectSettings.self,
+        #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#,
+      )
     )
     #expect(shared.autoStartsAgent == true && shared.autoStartsAgentOnCreate == true)
     #expect(shared.opensTerminalOnSelect == false && shared.opensTerminalOnCreate == true)
 
-    let blank = ProjectSettings().layered(over: shared)
+    let untrusted = ProjectSettings().layered(over: shared)
+    #expect(untrusted.autoStartsAgent == nil && untrusted.opensTerminalOnCreate == nil)
+    #expect(untrusted.opensTerminalOnSelect == false, "turning one off needs no yes")
+
+    var trusting = ProjectSettings()
+    trusting.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
+    let blank = trusting.layered(over: shared)
     #expect(blank.autoStartsAgent == true && blank.autoStartsAgentOnCreate == true)
     #expect(blank.opensTerminalOnSelect == false && blank.opensTerminalOnCreate == true)
 
-    let own = ProjectSettings(autoStartsAgent: false, opensTerminalOnSelect: true)
-      .layered(over: shared)
-    #expect(own.autoStartsAgent == false, "the user's off stands over the file's on")
-    #expect(own.opensTerminalOnSelect == true)
-    #expect(own.autoStartsAgentOnCreate == true, "left alone, so the file's")
+    var own = ProjectSettings(autoStartsAgent: false, opensTerminalOnSelect: true)
+    own.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
+    let layered = own.layered(over: shared)
+    #expect(layered.autoStartsAgent == false, "the user's off stands over the file's on")
+    #expect(layered.opensTerminalOnSelect == true)
+    #expect(layered.autoStartsAgentOnCreate == true, "left alone, so the file's")
 
     let exported = SharedProjectSettings(exporting: blank)
     #expect(exported.autoStartsAgentOnCreate == true && exported.opensTerminalOnSelect == false)

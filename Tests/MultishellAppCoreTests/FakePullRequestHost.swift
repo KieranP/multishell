@@ -142,12 +142,13 @@ final class FakePullRequestHost: PullRequestHost {
     state.withLock { $0.holdsLogs = true }
   }
 
-  func readsFailedLog(of check: PullRequestCheck) -> Bool {
+  func readsFailedLog(of check: PullRequestCheck, on pullRequest: PullRequest) -> Bool {
     state.withLock { state in check.link.flatMap { state.logs[$0] } != nil }
   }
 
   func failedLog(
     of check: PullRequestCheck,
+    on pullRequest: PullRequest,
     keepingLast lineLimit: Int,
     in directory: URL,
   ) async throws -> FailedCheckLog? {

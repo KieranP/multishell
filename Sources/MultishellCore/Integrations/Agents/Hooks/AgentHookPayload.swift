@@ -47,10 +47,10 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// Whether the payload's mode stops for the user. An unknown one is taken
   /// to prompt: a needless blue dot costs less than a missing one.
   var promptsForPermission: Bool {
+    // Not Claude's `auto`: its classifier has already decided to ask by the time
+    // the hook runs; see Docs/design/agents/reports-and-hooks.md.
     switch permissionMode {
-    // Claude's `auto` has a classifier answer the request, so it is one
-    // more mode where the agent asks the hook and nobody is waiting.
-    case "dontAsk", "bypassPermissions", "auto": false
+    case "dontAsk", "bypassPermissions": false
     default: true
     }
   }

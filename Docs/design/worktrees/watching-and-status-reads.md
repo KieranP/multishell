@@ -188,3 +188,20 @@ that write nothing. Newest at the bottom.
   once.** Its rows' files were written before the watcher armed, so no event
   brings them, and the round is a minute off: an added project showed no badge
   for up to a minute.
+- **`check-ignore` is handed each path as `./<path>`** and its answers mapped
+  back: it reads pathspec magic after `--` and refuses `--literal-pathspecs`, so
+  one file named `:!notes` failed the batch. That file read unreadable, every
+  All changes file fell back to reading alone (0.08 s became 3.3 s for 300), and
+  every event read status.
+
+## Reviewed and left as is
+
+Raised by reviews and settled; a review need not raise these again.
+
+- **A repository's own fsmonitor command and filter drivers run on the poll**
+  (bug hunt, 2026-11-26): a `core.fsmonitor` command runs on every index read,
+  and `filter.<name>.clean` with a `.gitattributes` line on `status`,
+  `diff-index` and the patch reads once a file's stat goes stale. Owner's
+  choice: the repository's own config is trusted, as running git in that folder
+  does the same. Blanking repo-local filters broke git-crypt and
+  `git lfs install --local`, whose files then read as modified.

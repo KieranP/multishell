@@ -138,12 +138,12 @@ extension AppModel {
   /// level at a time, as each opens.
   func scheduleIgnoredFolderRead(_ path: String, in id: Worktree.ID) {
     guard showsIgnoredFiles, let worktree = workspace.worktree(id) else { return }
-    let folder = worktree.path.appending(path: path)
+    let worktreePath = worktree.path
     schedulePacedPanelRead(
       PanelFolderRead(kind: .ignoredFolder, path: path, worktreeID: id),
       in: id,
       on: \.panelFolderReads,
-      reading: { await runOnDispatch { IgnoredFolderReader.entries(of: folder) } },
+      reading: { await runOnDispatch { IgnoredFolderReader.entries(of: path, in: worktreePath) } },
       landing: { model, entries in
         guard model.ignoredFolderEntries[id]?[path] != entries else { return }
         model.ignoredFolderEntries[id, default: [:]][path] = entries

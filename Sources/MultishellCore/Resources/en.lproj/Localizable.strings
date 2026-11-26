@@ -553,11 +553,15 @@
 "shared-settings.copied" = "copied";
 "shared-settings.decline" = "Ignore";
 "shared-settings.linked" = "linked";
-"shared-settings.message" = "The repository asks for this. A hook runs through your shell when a worktree is created or removed, where your own hook for that stage is blank. A linked or copied path is read from your checkout into each new worktree, including files git does not track.\n\n%@";
+"shared-settings.message" = "The repository asks for this. A hook runs through your shell when a worktree is created or removed, where your own hook for that stage is blank. A linked or copied path is read from your checkout into each new worktree, including files git does not track. An agent it starts runs with your own flags.\n\n%@";
 "shared-settings.post-create" = "post-create";
+"shared-settings.opens-terminal" = "open a terminal when a worktree is turned to";
+"shared-settings.opens-terminal-on-create" = "open a terminal in each new worktree";
 "shared-settings.post-delete" = "post-delete";
 "shared-settings.pre-create" = "pre-create";
 "shared-settings.pre-delete" = "pre-delete";
+"shared-settings.starts-agent" = "start the agent in a worktree's first tab";
+"shared-settings.starts-agent-on-create" = "start the agent in each new worktree";
 "shared-settings.title" = "Trust what %1$@'s %2$@ asks for?";
 "shared-settings.trust" = "Trust";
 "shared-settings.worktree-directory" = "worktree directory";

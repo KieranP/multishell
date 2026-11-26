@@ -15,7 +15,10 @@ enum FileOnDisk: Sendable {
 
   /// Blocking: callers run it through `runOnDispatch`. Unmapped, as a mapped
   /// file truncated under the read faults; see worktrees/line-count-badge.md.
-  static func read(_ url: URL, sizeLimit: Int) -> Self {
+  static func read(_ path: String, in worktree: URL, sizeLimit: Int) -> Self {
+    // git stops at a folder link, so a file under one leading out is gone to it too.
+    guard WorktreeLinkTarget.path(of: path, in: worktree) != nil else { return .gone }
+    let url = worktree.appending(path: path)
     let values: URLResourceValues
     do {
       values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])

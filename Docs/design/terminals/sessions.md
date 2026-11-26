@@ -144,6 +144,11 @@ What a shell is launched as, and what its state means. Newest at the bottom.
   shell whose own files rebuild PATH and for `Multishell help` typed against the
   bundle. AppKit's are a single dash and a name, as `-psn_` and
   `-AppleLanguages` are, `-h` excepted.
+- **A restored agent tab with no conversation id starts afresh beside another of
+  its agent in the worktree**, a split pane counting. The latest flag reopened
+  the conversation the other tab resumes by id, two processes writing one
+  transcript. Alone, it keeps the latest flag. Cost: two OpenCode or Antigravity
+  tabs, which report no id, both start afresh.
 
 ## Reviewed and left as is
 

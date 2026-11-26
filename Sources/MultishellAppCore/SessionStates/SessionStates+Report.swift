@@ -12,7 +12,6 @@ extension SessionStates {
     isSeen: Bool,
   ) -> SessionNote? {
     if spendOnProgramHold(report, pid: pid, on: key) { return nil }
-    let resumesAfterWorkers = report.resumesAfterWorkers == true
     // Copilot's prompt mode starts its session after the first prompt, so a start
     // on a pane already working is dropped before it can re-point the conversation.
     if report.startsSession == true, report.workerChange == nil,
@@ -56,6 +55,7 @@ extension SessionStates {
         to: report.state,
         worker: worker,
         turnFollows: isOwnStop && report.turnFollows == true,
+        announcesRaisedPrompt: report.announcesRaisedPrompt == true,
         for: key,
       )
     else { return nil }
@@ -66,7 +66,7 @@ extension SessionStates {
     case .done, .failed:
       landFinished(state, on: key, isSeen: isSeen)
       // Written again, a Stop with nothing out having landed on an empty entry.
-      if isOwnStop { update(key) { $0.resumesAfterWorkers = resumesAfterWorkers } }
+      if isOwnStop { update(key) { $0.resumesAfterWorkers = report.resumesAfterWorkers == true } }
 
     case .running, .attention:
       landUnderway(state, pid: pid, on: key)

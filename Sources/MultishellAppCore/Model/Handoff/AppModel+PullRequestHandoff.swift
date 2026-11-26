@@ -102,9 +102,10 @@ extension AppModel {
   ) async -> HandoffSendOutcome {
     guard let worktree = workspace.worktree(worktreeID),
       let project = workspace.project(worktree.projectID),
-      let (integration, host) = pullRequestHost(for: project),
+      let service = pullRequestHost(for: project),
       case .pullRequest(let pullRequest) = pullRequestPage(of: worktree)
     else { return .noPage }
+    let (integration, host) = service
     // Each Send says only its own outcome, not the last one's.
     noteHandoffMiss(nil, on: .pullRequest, in: worktreeID)
     // Claimed before any read, so a second click cannot read the same logs again.
@@ -139,7 +140,7 @@ extension AppModel {
     else {
       return .noRecipient
     }
-    let logs = await readFailedLogs(of: items, with: host, integration: integration, in: worktree)
+    let logs = await readFailedLogs(of: items, on: pullRequest, via: service, in: worktree)
     // A script's Ctrl-C during the reads means the paste is no longer wanted.
     guard !Task.isCancelled else { return .cancelled }
     guard let recipient = handoffRecipient(id: named.id, in: worktreeID) else {
@@ -212,12 +213,14 @@ extension AppModel {
   /// off while they read, and a check from another CI goes without one.
   private func readFailedLogs(
     of items: [PullRequestHandoffItem],
-    with host: any PullRequestHost,
-    integration: ServiceIntegration,
+    on pullRequest: PullRequest,
+    via service: (ServiceIntegration, any PullRequestHost),
     in worktree: Worktree,
   ) async -> [HandoffItemID: CheckLogRead] {
+    let (integration, host) = service
     let checks = items.compactMap { item -> (HandoffItemID, PullRequestCheck)? in
-      guard case .check(let check, _) = item, host.readsFailedLog(of: check) else { return nil }
+      guard case .check(let check, _) = item, host.readsFailedLog(of: check, on: pullRequest)
+      else { return nil }
       return (item.candidate.id, check)
     }
     guard !checks.isEmpty else { return [:] }
@@ -229,7 +232,12 @@ extension AppModel {
       item -> (HandoffItemID, CheckLogRead) in
       let (id, check) = item
       do {
-        let log = try await host.failedLog(of: check, keepingLast: lineLimit, in: directory)
+        let log = try await host.failedLog(
+          of: check,
+          on: pullRequest,
+          keepingLast: lineLimit,
+          in: directory,
+        )
         return (id, log.map(CheckLogRead.read) ?? .noLog)
       } catch {
         return (id, .failed(ServiceReadFailure(error).reason(integration: integration)))

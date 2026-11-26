@@ -226,6 +226,9 @@ of what is out and the workers launched under others. Newest at the bottom.
 - **A start for a worker whose `meta.json` exists is a resume**, Claude starting
   a worker again under its id after a SendMessage, not a second worker under one
   place.
+- **The last worker out leaves a woken turn's own prompt on the dot.** That
+  turn's Stop pays the owed Done, so the end has nothing to pay; settling it
+  emptied the prompt's raisers and the dot went Working with the dialog up.
 
 ## Reviewed and left as is
 

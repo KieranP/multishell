@@ -203,7 +203,7 @@ struct AppModelWorktreeListRefreshTests {
       """
       case "$1 $2" in
         "rev-parse --path-format=absolute") printf '%s/.git\\n' "\(repository)" ;;
-        "worktree list") printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n' "\(repository)" ;;
+        "worktree list") printf 'worktree %s\\0HEAD 1111111\\0branch refs/heads/main\\0' "\(repository)" ;;
       esac
       """
     )

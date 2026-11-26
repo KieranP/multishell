@@ -6,6 +6,12 @@ import Testing
 
 /// What a real shell reports about the commands typed at it, and the agent it names.
 extension ShellIntegrationScriptsTests {
+  private static let shellsLeftAtAPrompt =
+    [
+      "/bin/zsh -f", "/bin/zsh", "/bin/sh", "/bin/bash --norc", "/bin/bash -O extglob",
+      "-a name /bin/zsh -f", "/bin/zsh --emulate sh",
+    ] + InstalledShells.fishes.map { "\($0) -C 'set x 1'" }
+
   private static func lines(of log: URL) -> [String] {
     ((try? String(contentsOf: log, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
   }
@@ -45,6 +51,36 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("survived 1"))
   }
 
+  @Test(arguments: InstalledBashes.all)
+  func aUsersErrExitWithNoPromptCommandDoesNotEndTheShellAtStartup(bash: String) async throws {
+    let output = try await errExitOutput(bash, input: "echo alive\nexit\n")
+    #expect(output.contains("alive"), "\(output)")
+  }
+
+  @Test(arguments: InstalledBashes.all)
+  func aUsersErrExitDoesNotEndTheShellOncePromptCommandIsUnset(bash: String) async throws {
+    let output = try await errExitOutput(bash, input: "unset PROMPT_COMMAND\necho two\nexit\n")
+    #expect(output.contains("two"), "\(output)")
+  }
+
+  private func errExitOutput(_ bash: String, input: String) async throws -> String {
+    let scratch = try Scratch.directory("bash-errexit-unset")
+    defer { Scratch.remove(scratch) }
+    let helper = try relayLogging(to: scratch.appendingPathComponent("log"), in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "set -e\nPS1='> '\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "errexit-unset"
+    return try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: input,
+    )
+  }
+
   /// The shared-history recipe prepends to PROMPT_COMMAND, so sourcing the
   /// .bashrc again put the user's entry before ours, which then read its 0.
   @Test(arguments: InstalledBashes.all)
@@ -73,6 +109,116 @@ extension ShellIntegrationScriptsTests {
     let statuses = Self.lines(of: log).filter { $0.hasPrefix("command-finished") }
       .map { $0.split(separator: " ")[1] }
     #expect(statuses == ["1", "0", "1", "1"])
+  }
+
+  @Test(arguments: InstalledBashes.all)
+  func aBashrcSourcedAgainThatSetsThePromptCommandGetsTheHooksBack(bash: String) async throws {
+    let scratch = try Scratch.directory("bash-resourced-set")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\nmine() { :; }\nPROMPT_COMMAND=mine\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-resourced-set"
+    _ = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "source ~/.bashrc\ntrue\nfalse\nexit\n",
+    )
+
+    try await waitUntil { Self.lines(of: log).count { $0.hasPrefix("command-finished") } >= 2 }
+    let statuses = Self.lines(of: log).filter { $0.hasPrefix("command-finished") }
+      .map { $0.split(separator: " ")[1] }
+    #expect(statuses.last == "1", "\(statuses)")
+  }
+
+  @Test(arguments: InstalledBashes.all)
+  func aPromptEntryAppendedBySourcingTheBashrcAgainIsReportedAsACommandOnceAtMost(
+    bash: String
+  ) async throws {
+    let scratch = try Scratch.directory("bash-resourced-append")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      "PS1='> '\ngemini() { :; }\nPROMPT_COMMAND=\"${PROMPT_COMMAND:+$PROMPT_COMMAND;}gemini\"\n",
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-resourced-append"
+    _ = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "source ~/.bashrc\ntrue\ntrue\ntrue\nfalse\nexit\n",
+    )
+
+    try await waitUntil {
+      Self.lines(of: log).contains { $0.hasPrefix("command-finished 1") }
+    }
+    let starts = Self.lines(of: log).filter { $0.hasPrefix("command-started") }
+    #expect(starts.count { $0.hasSuffix("gemini") } <= 1, "\(starts)")
+  }
+
+  /// bash calls a scalar's element count unbound under `set -u`, so the arm's
+  /// repair died before arming at every prompt and printed the error there.
+  @Test(arguments: InstalledBashes.all)
+  func aBashUnderNounsetStillReportsTheAgentItStarts(bash: String) async throws {
+    let scratch = try Scratch.directory("bash-nounset-arm")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\nset -u\ngemini() { :; }\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-nounset-arm"
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "gemini\nexit\n",
+    )
+
+    #expect(!output.contains("unbound variable"), "\(output)")
+    try await waitUntil { Self.lines(of: log).contains { $0.hasSuffix(" gemini") } }
+    let starts = Self.lines(of: log).filter { $0.hasPrefix("command-started") }
+    #expect(starts.contains { $0.hasSuffix(" gemini") }, "\(starts)")
+  }
+
+  @Test(arguments: InstalledBashes.all)
+  func aPrependingBashrcSourcedAgainUnderNounsetKeepsTheReports(bash: String) async throws {
+    let scratch = try Scratch.directory("bash-nounset-first")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      "PS1='> '\nset -u\nmine() { :; }\nPROMPT_COMMAND=\"mine; ${PROMPT_COMMAND-}\"\n",
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-nounset-first"
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "source ~/.bashrc\nfalse\nfalse\nexit\n",
+    )
+
+    #expect(!output.contains("unbound variable"), "\(output)")
+    try await waitUntil { Self.lines(of: log).contains { $0.hasPrefix("command-finished 1") } }
+    #expect(Self.lines(of: log).contains { $0.hasPrefix("command-finished 1") })
   }
 
   /// Before 5.1 bash runs element 0 alone, so putting ours back as an element of
@@ -145,6 +291,52 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("first=[__bp_precmd_invoke_cmd]"), "\(output)")
   }
 
+  /// An entry appended on the line of bash-preexec's own, or into the element
+  /// holding our arm, ran after the arm and took it at every prompt.
+  @Test(arguments: InstalledBashes.all)
+  func anEntryAppendedBehindBashPreexecLeavesTheAgentReported(bash: String) async throws {
+    let scratch = try Scratch.directory("bash-preexec-append")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      gemini() { :; }
+      gemini_hook() { :; }
+      __bp_precmd_invoke_cmd() { :; }
+      __bp_interactive_mode() { :; }
+      __bp_install() {
+        PROMPT_COMMAND="__bp_precmd_invoke_cmd"$'\\n'"${PROMPT_COMMAND//__bp_install/:}"
+        if (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
+          PROMPT_COMMAND+=(__bp_interactive_mode)
+        else
+          PROMPT_COMMAND+=$'\\n__bp_interactive_mode'
+        fi
+      }
+      if [ -n "${loaded-}" ]; then PROMPT_COMMAND="$PROMPT_COMMAND; gemini_hook"
+      else loaded=1; PROMPT_COMMAND=__bp_install; fi
+
+      """,
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-preexec-append"
+    _ = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "true\nsource ~/.bashrc\ntrue\ngemini\nexit\n",
+    )
+
+    try await waitUntil { Self.lines(of: log).contains { $0.hasSuffix(" gemini") } }
+    let starts = Self.lines(of: log).filter { $0.hasPrefix("command-started") }
+    #expect(starts.contains { $0.hasSuffix(" gemini") }, "\(starts)")
+  }
+
   /// The bash `exec bash` put in the pane read only `.bashrc`, so the pane's last
   /// report was `running`, for good.
   @Test(arguments: InstalledBashes.all)
@@ -169,6 +361,26 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("HOOKED-2"), "\(output)")
   }
 
+  @Test(arguments: InstalledBashes.all)
+  func aBashThatExecsItsShellVariableKeepsTheReports(bash: String) async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-exec-shell"
+    environment["SHELL"] = bash
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input:
+        "exec \"$SHELL\"\ndeclare -F _multishell_precmd >/dev/null && echo HOOKED-$((1+1))\nexit\n",
+    )
+
+    #expect(output.contains("HOOKED-2"), "\(output)")
+  }
+
   /// The re-exec ran the line as typed, unexpanded, and a failed exec inside the
   /// DEBUG trap ends even an interactive bash; the pane closed.
   @Test(arguments: InstalledBashes.all)
@@ -187,6 +399,81 @@ extension ShellIntegrationScriptsTests {
     )
 
     #expect(output.contains("SURVIVED-2"), "\(output)")
+  }
+
+  /// What bash sends for `exec <program>`, up to a line the program writes down
+  /// the relay's pipe, which it inherits, so nothing bash sent can still be on its way.
+  private func bashExecLog(
+    _ bash: String,
+    program: String,
+    path: String? = nil,
+  ) async throws
+    -> [String]
+  {
+    let scratch = try Scratch.directory("bash-exec-shell")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-exec-shell"
+    if let path { environment["PATH"] = path + ":" + (environment["PATH"] ?? "") }
+    _ = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "exec \(program)\necho exec-sentinel >&62\nexit\n",
+    )
+
+    try await waitUntil { Self.lines(of: log).contains("exec-sentinel") }
+    return Self.lines(of: log)
+  }
+
+  /// The exec keeps the pid, so a start sent for a shell left at its prompt
+  /// held the pane Running until it closed.
+  @Test(arguments: InstalledBashes.all, shellsLeftAtAPrompt)
+  func aBashThatExecsAnotherShellLeftAtAPromptSendsNoStart(
+    bash: String,
+    program: String,
+  )
+    async throws
+  {
+    let lines = try await bashExecLog(bash, program: program)
+    #expect(lines.contains("exec-sentinel"), "\(lines)")
+    #expect(!lines.contains { $0.hasPrefix("command-started") }, "\(lines)")
+  }
+
+  @Test(
+    arguments: InstalledBashes.all,
+    ["/bin/sh -c 'echo exec-sentinel >&62'", "/bin/zsh -fc 'echo exec-sentinel >&62'"],
+  )
+  func aBashThatExecsAShellGivenACommandSendsItsStart(
+    bash: String,
+    program: String,
+  )
+    async throws
+  {
+    let lines = try await bashExecLog(bash, program: program)
+    #expect(lines.contains { $0.hasPrefix("command-started") }, "\(lines)")
+  }
+
+  @Test(arguments: InstalledBashes.all)
+  func aBashThatExecsAnAgentSendsItsStartNamingIt(bash: String) async throws {
+    let agents = try Scratch.directory("bash-exec-agent")
+    defer { Scratch.remove(agents) }
+    try Scratch.script(
+      "echo exec-sentinel >&62",
+      at: agents.appendingPathComponent("codex"),
+    )
+
+    let lines = try await bashExecLog(bash, program: "codex --continue", path: agents.path)
+    #expect(
+      lines.contains { $0.hasPrefix("command-started") && $0.hasSuffix(" codex") },
+      "\(lines)",
+    )
   }
 
   /// An empty Enter runs nothing, so the arm lived on into the next
@@ -403,6 +690,36 @@ extension ShellIntegrationScriptsTests {
     #expect(!output.contains("BLOCKED-2"), "\(output)")
   }
 
+  @Test(arguments: InstalledBashes.all)
+  func anExecTheUsersDebugTrapSkipsUnderExtdebugReplacesNothing(bash: String) async throws {
+    let scratch = try Scratch.directory("trap-skip-exec")
+    defer { Scratch.remove(scratch) }
+    let helper = try relayLogging(to: scratch.appendingPathComponent("log"), in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      shopt -s extdebug
+      guard() { case "$BASH_COMMAND" in exec*) return 1 ;; esac; }
+      trap guard DEBUG
+
+      """,
+    )
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "trap-skip-exec"
+    let output = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "marker=kept\nexec \(bash)\necho \"marker=[$marker]\"\nexit\n",
+    )
+
+    #expect(output.contains("marker=[kept]"), "\(output)")
+  }
+
   /// bash sets `$_` after a trap to the trap command's last word, so a bare
   /// `_multishell_debug` broke `mkdir x && cd $_`, and bash-preexec's own `"$_"`.
   @Test(arguments: InstalledBashes.all)
@@ -596,6 +913,64 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("zdotdir=[]"), "\(output)")
   }
 
+  /// The zsh that replaces ours never finishes the line that started it, so a
+  /// start sent for it left the pane Running until the next command ended.
+  @Test func aZshThatExecsZshSendsNoStartForTheExec() async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: "_multishell_send() { print -r -- \"sent $1\" }\nexec zsh -i\nexit\n",
+    )
+    #expect(output.contains("\"state\":\"done\""), "\(output)")
+    #expect(!output.contains("\"state\":\"running\""), "\(output)")
+  }
+
+  /// The exec keeps the pid, so a start sent for a shell left at its prompt
+  /// held the pane Running until it closed.
+  @Test(
+    arguments: [
+      "zsh -f", "zsh -o norcs", "zsh --no-rcs", "bash --norc", "sh", "bash -O extglob",
+      "fish -C 'set x 1'", "fish --init-command 'set x 1'", "zsh --emulate sh",
+      "-a name zsh", "tcsh", "csh", "nu",
+    ]
+  )
+  func aZshThatExecsAShellLeftAtAPromptSendsNoStart(program: String) async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: "_multishell_send() { print -r -- \"sent $1\" }\nexec \(program)\nexit\n",
+    )
+    #expect(output.contains("\"state\":\"done\""), "\(output)")
+    #expect(!output.contains("\"state\":\"running\""), "\(output)")
+  }
+
+  @Test(
+    arguments: [
+      "zsh -c true", "zsh -fc true", "bash missing-script.sh", "true", "-a name zsh -c true",
+      "bash -O extglob missing-script.sh",
+    ]
+  )
+  func aZshThatExecsACommandSendsItsStart(program: String) async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: "_multishell_send() { print -r -- \"sent $1\" }\nexec \(program)\n",
+    )
+    #expect(output.contains("\"state\":\"running\""), "\(output)")
+  }
+
+  @Test(arguments: [#""$SHELL""#, "$SHELL", "${SHELL}"])
+  func aZshThatExecsItsShellVariableKeepsTheReports(word: String) async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: """
+        export SHELL=\(Self.zshPath)
+        exec \(word) -i
+        print -r -- "hooks=[${precmd_functions[*]}]"
+        exit
+
+        """,
+    )
+    #expect(output.contains("_multishell_precmd"), "\(output)")
+  }
+
   /// A zsh that reads no startup file, or runs a command, never reaches ours to
   /// hand ZDOTDIR back, and its own children would load the reports.
   @Test(arguments: ["-f", "-c true"])
@@ -692,6 +1067,87 @@ extension ShellIntegrationScriptsTests {
     ).sent
 
     #expect(!sent.contains { $0.hasPrefix("command-") }, "\(sent)")
+  }
+
+  @Test(arguments: InstalledShells.fishes)
+  func aFishThatExecsFishStartsItWithTheIntegration(fish: String) async throws {
+    let scratch = try Scratch.directory("fish-exec")
+    defer { Scratch.remove(scratch) }
+    let arguments = scratch.appendingPathComponent("arguments")
+    let replacement = try Scratch.script(
+      "printf '%s\\n' \"$@\" > '\(arguments.path)'",
+      at: scratch.appendingPathComponent("fish"),
+    )
+
+    _ = try await fishRun(fish, input: "emit fish_preexec 'exec \(replacement.path) -i'\nexit\n")
+
+    let given = (try? String(contentsOf: arguments, encoding: .utf8)) ?? ""
+    #expect(given.hasPrefix("-i\n-C\nsource "), "\(given)")
+  }
+
+  /// Off a terminal fish lets an exec with jobs running through at once, as it
+  /// does the second one typed on a terminal; ours stood back and a plain fish ran.
+  @Test(arguments: InstalledShells.fishes)
+  func aFishWithJobsRunningExecsFishWithTheIntegrationWhereFishLetsItThrough(
+    fish: String
+  ) async throws {
+    let scratch = try Scratch.directory("fish-exec-jobs")
+    defer { Scratch.remove(scratch) }
+    let arguments = scratch.appendingPathComponent("arguments")
+    let replacement = try Scratch.script(
+      "printf '%s\\n' \"$@\" > '\(arguments.path)'",
+      at: scratch.appendingPathComponent("fish"),
+    )
+
+    _ = try await fishRun(
+      fish,
+      input: """
+        sh -c 'while [ -d "$1" ]; do sleep 0.1; done' sh '\(scratch.path)' </dev/null >/dev/null 2>&1 &
+        emit fish_preexec 'exec \(replacement.path) -i'
+        kill (jobs -p)
+        exit
+
+        """,
+    )
+
+    let given = (try? String(contentsOf: arguments, encoding: .utf8)) ?? ""
+    #expect(given.hasPrefix("-i\n-C\nsource "), "\(given)")
+  }
+
+  @Test(
+    arguments: InstalledShells.fishes,
+    [
+      "/bin/sh", "zsh", "/bin/bash --norc", "fish --no-config", "fish -C 'set x 1'",
+      "fish --init-command 'set x 1'", "tcsh",
+    ],
+  )
+  func aFishThatExecsAnotherShellLeftAtAPromptSendsNoStart(
+    fish: String,
+    program: String,
+  )
+    async throws
+  {
+    let sent = try await fishRun(
+      fish,
+      input:
+        "emit fish_preexec \"exec \(program)\"\nemit fish_postexec \"exec \(program)\"\nexit\n",
+    ).sent
+
+    #expect(!sent.contains { $0.hasPrefix("command-") }, "\(sent)")
+  }
+
+  @Test(
+    arguments: InstalledShells.fishes,
+    ["claude --resume", "/bin/sh -c true", "zsh script.zsh"],
+  )
+  func aFishThatExecsACommandSendsItsStart(fish: String, program: String) async throws {
+    let sent = try await fishRun(fish, input: "emit fish_preexec \"exec \(program)\"\nexit\n").sent
+
+    #expect(sent.first?.hasPrefix("command-started --pid ") == true, "\(sent)")
+    #expect(
+      (sent.first?.hasSuffix(" --command claude") == true) == program.hasPrefix("claude"),
+      "\(sent)",
+    )
   }
 
   @Test(arguments: InstalledShells.fishes)

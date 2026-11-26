@@ -15,6 +15,10 @@
   `worktreeDirectory: ~/.claude/skills` with a `SKILL.md` and install a global
   agent skill on any create, or link `~/.ssh/id_ed25519` into a tree an agent
   reads.
+- **A repo turning on an agent or terminal start waits for the yes too**,
+  reversing 14674ad9's "runs only what the user chose": the agent starts in a
+  checkout the repo wrote, with the reader's flags, unasked. Owner's choice,
+  2026-11-26. Turning one off runs nothing, so asks nothing.
 - **So a repo's three are confined to the checkout**, once at read time and held
   on the project, since the sidebar asks per row per render. The read, and
   export's write, stamp and confine, run off the main actor: each touches the

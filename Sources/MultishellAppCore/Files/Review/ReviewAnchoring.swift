@@ -48,10 +48,8 @@ enum ReviewAnchoring {
   /// The line number where `quote` starts, the start nearest `line` where it
   /// is found more than once; the first above on a tie.
   private static func nearestBlock(_ quote: [String], in text: [String], to line: Int) -> Int? {
-    guard let first = quote.first, quote.count <= text.count else { return nil }
     var nearest: Int?
-    for start in 0...(text.count - quote.count) where text[start] == first {
-      guard text[start..<(start + quote.count)].elementsEqual(quote) else { continue }
+    for start in text.startsOfOccurrences(of: quote, by: ==) {
       let number = start + 1
       // Starts only grow, so once one past `line` is no nearer, none later is.
       if let best = nearest, abs(best - line) <= abs(number - line) { break }

@@ -103,4 +103,34 @@ struct SharedProjectSettingsTrustTests {
     #expect(own.layered(over: shared).copiedPaths == ".env", "the user's list wins whole")
     #expect(own.layered(over: shared).linkedPaths == "vendor")
   }
+
+  @Test func aRepositoryTurningOnAnAgentOrTerminalStartWaitsToBeTrusted() throws {
+    let shared = try writtenAndReadBack(
+      SharedProjectSettings(autoStartsAgent: true, opensTerminalOnSelect: true)
+    )
+    #expect(shared.asksForTrust)
+    #expect(try #require(shared.trustCoveredText).contains(t("shared-settings.starts-agent")))
+
+    let untrusted = ProjectSettings().layered(over: shared)
+    #expect(untrusted.autoStartsAgent == nil && untrusted.opensTerminalOnSelect == nil)
+
+    var settings = ProjectSettings()
+    settings.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
+    #expect(settings.layered(over: shared).autoStartsAgent == true)
+  }
+
+  @Test func aRepositoryTurningAStartOffAsksNothingAndIsHeard() throws {
+    let shared = try writtenAndReadBack(
+      SharedProjectSettings(autoStartsAgent: false, opensTerminalOnCreate: false)
+    )
+    #expect(!shared.asksForTrust)
+    #expect(ProjectSettings().layered(over: shared).autoStartsAgent == false)
+  }
+
+  @Test func everyStartTheYesCoversIsShownInTheQuestion() throws {
+    var shared = SharedProjectSettings()
+    for field in SharedProjectSettings.trustCoveredStarts { shared[keyPath: field] = true }
+    let shown = try #require(shared.trustCoveredText).components(separatedBy: "\n")
+    #expect(shown.count == SharedProjectSettings.trustCoveredStarts.count)
+  }
 }

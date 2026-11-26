@@ -3,11 +3,16 @@ import MultishellAppCore
 import MultishellCore
 
 extension MacPlatform {
-  /// The one script this app runs with administrator rights.
+  /// The one script this app runs with administrator rights. `-h` replaces a
+  /// link to a folder rather than writing inside the folder as root.
   static let installToolScript = """
-    on installTool(target, link)
-      do shell script "mkdir -p /usr/local/bin && ln -sf " & quoted form of target & " " ¬
-        & quoted form of link with administrator privileges
+    on installCommand(target, folder, link)
+      return "mkdir -p " & quoted form of folder & " && ln -sfh " & quoted form of target & " " ¬
+        & quoted form of link
+    end installCommand
+
+    on installTool(target, folder, link)
+      do shell script (my installCommand(target, folder, link)) with administrator privileges
     end installTool
     """
 
@@ -25,7 +30,11 @@ extension MacPlatform {
     try AppleScriptRunner.call(
       Self.installToolScript,
       handler: "installTool",
-      arguments: [Paths.buildHelperLink.path, HelperLink.commandLineToolLink.path],
+      arguments: [
+        Paths.buildHelperLink.path,
+        HelperLink.commandLineToolLink.deletingLastPathComponent().path,
+        HelperLink.commandLineToolLink.path,
+      ],
     )
   }
 }

@@ -31,7 +31,12 @@ _multishell_replaces_itself() {
   [[ $1 == exec ]] || return 1
   shift
   while [[ ${1-} == (-*|*=*) ]]; do shift; done
-  [[ ${1:t} == zsh ]] || return 1
+  # The words are unexpanded; `exec "$SHELL"` is the reload pyenv and nvm document.
+  local program=${(Q)1-}
+  case $program in
+    ('$SHELL'|'${SHELL}') program=${SHELL-} ;;
+  esac
+  [[ ${program:t} == zsh ]] || return 1
   shift
   # Only an interactive zsh reads our .zshrc, which hands ZDOTDIR back.
   local word
@@ -40,25 +45,58 @@ _multishell_replaces_itself() {
   done
 }
 
+# A shell exec'd to sit at its prompt keeps the pid and reports nothing, so a
+# start sent for it held the pane Running until it closed. One given a command runs it.
+_multishell_execs_a_shell_at_its_prompt() {
+  [[ $1 == exec ]] || return 1
+  shift
+  # exec's own `-a` takes the name the program is given.
+  while [[ ${1-} == (-*|*=*) ]]; do
+    [[ $1 == (-a|-[^-]*a) ]] && shift
+    (( $# )) && shift
+  done
+  local program=${(Q)1-}
+  case $program in
+    ('$SHELL'|'${SHELL}') program=${SHELL-} ;;
+  esac
+  [[ ${program:t} == (zsh|bash|sh|dash|ksh|fish|tcsh|csh|nu) ]] || return 1
+  shift
+  # fish's -C is a line run before its prompt, not a command in place of one.
+  while (( $# )); do
+    case $1 in
+      (-c|-[^-]*c*|--command|--command=*|--commands) return 1 ;;
+      (-o|+o|-O|+O|-C|--rcfile|--init-file|--init-command|--emulate) shift ;;
+      ([-+]*) ;;
+      (*) return 1 ;;
+    esac
+    (( $# )) && shift
+  done
+  return 0
+}
+
 # Both reports run inline: a fast command's finished must not overtake
 # its started, and a fast close must not skip either.
 _multishell_preexec() {
   # Words counted from 1 whatever the user set; ksh_arrays lost the command.
   emulate -L zsh
+  local -a parts=(${(z)${2:-$1}})
+  # The new zsh never finishes this line, so it starts nothing: a start left
+  # the pane Running until the next command ended.
+  if [[ -n ${_multishell_self_zdotdir-} ]] && _multishell_replaces_itself "${parts[@]}"; then
+    _multishell_lends_zdotdir=1
+    export ZDOTDIR=$_multishell_self_zdotdir
+    return 0
+  fi
+  _multishell_execs_a_shell_at_its_prompt "${parts[@]}" && return 0
   _multishell_ran=1
   _multishell_started_at=${EPOCHREALTIME:-$SECONDS}
 
   # The program being started, sent only where it is an agent: the expanded
   # line, its words, past any prefix. Docs/design/agents/board-and-pane-rows.md.
-  local -a parts=(${(z)${2:-$1}})
   local -i i=1
   while (( i <= $#parts )) && [[ ${parts[i]} == (*=*|command|env|exec) ]]; do
     (( i++ ))
   done
-  if [[ -n ${_multishell_self_zdotdir-} ]] && _multishell_replaces_itself "${parts[@]}"; then
-    _multishell_lends_zdotdir=1
-    export ZDOTDIR=$_multishell_self_zdotdir
-  fi
   local command_word=${parts[i]:t} fields=",\"pid\":$$"
   if [[ -n "$command_word" && " $_multishell_agents " == *" $command_word "* ]]; then
     fields+=",\"command\":\"$command_word\""

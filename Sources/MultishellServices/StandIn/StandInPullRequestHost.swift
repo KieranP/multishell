@@ -25,12 +25,13 @@ struct StandInPullRequestHost: PullRequestHost {
     standIn.checks[ServiceStandIn.key(of: pullRequest)] ?? []
   }
 
-  func readsFailedLog(of check: PullRequestCheck) -> Bool {
+  func readsFailedLog(of check: PullRequestCheck, on pullRequest: PullRequest) -> Bool {
     standIn.logs[check] != nil
   }
 
   func failedLog(
     of check: PullRequestCheck,
+    on pullRequest: PullRequest,
     keepingLast lineLimit: Int,
     in directory: URL,
   ) async throws -> FailedCheckLog? {

@@ -103,6 +103,23 @@ extension SessionStatesTests {
     #expect(report(&states, .running) == .running)
   }
 
+  @Test func aNotificationAnnouncingAWorkersPromptLeavesItToThatWorkerToAnswer() {
+    var states = SessionStates()
+    _ = report(&states, .running)
+    _ = report(&states, .running, started("w1"))
+    _ = report(&states, .attention, working("w1"))
+    _ = report(&states, .init(state: .attention, announcesRaisedPrompt: true))
+    #expect(report(&states, .running, working("w1")) == .running)
+  }
+
+  @Test func aNotificationOverNoRaisedPromptIsTheAgentsOwn() {
+    var states = SessionStates()
+    _ = report(&states, .running, started("w1"))
+    _ = report(&states, .init(state: .attention, announcesRaisedPrompt: true))
+    #expect(report(&states, .running, working("w1")) == nil)
+    #expect(states[.session(a)] == .attention)
+  }
+
   /// A prompt inside a worker that lifted the dot over nothing does not
   /// make the Working the agent's: the last worker out still clears it.
   @Test func aWorkersPromptKeepsWhatItsStartDisplaced() {
@@ -140,6 +157,28 @@ extension SessionStatesTests {
     _ = report(&states, .done)
     _ = report(&states, .attention)
     #expect(report(&states, .running, ended("w1")) == .done)
+  }
+
+  @Test func theLastWorkerOutLeavesTheWokenTurnsOwnPromptOnTheDot() {
+    var states = SessionStates()
+    _ = report(&states, .init(state: .running, startsTurn: true))
+    _ = report(&states, .running, started("w1"))
+    _ = report(&states, .running, started("w2"))
+    let stop = SessionStateReport(
+      state: .done,
+      resumesAfterWorkers: true,
+      workersOut: [working("w1"), working("w2")],
+    )
+    #expect(report(&states, stop) == .running)
+    _ = report(&states, .running, ended("w1"))
+    _ = report(&states, .running)
+    #expect(report(&states, .attention) == .attention)
+
+    #expect(report(&states, .running, ended("w2")) == nil, "the agent's prompt is still up")
+    #expect(states[.session(a)] == .attention)
+    #expect(report(&states, .running) == .running, "answered")
+    let wokenStop = SessionStateReport(state: .done, resumesAfterWorkers: true, workersOut: [])
+    #expect(report(&states, wokenStop) == .done, "the owed Done, paid once the turn ends")
   }
 
   /// A worker whose start went unseen, the app or its hooks arriving after

@@ -106,6 +106,22 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
   least telling first, a running or failed glyph always staying. At the 18 pt UI
   size and the narrowest sidebar the badges kept their widths and the branch
   drew nothing.
+- **A list that names none of the project's own path is a failure**, dimming the
+  project like any other. With its `.git` gone git walks up to an enclosing
+  repository, a dotfiles repo in the home directory, and taken as a result that
+  list dropped every worktree with its shells, tabs, names and ports. The paths
+  compare resolved and case folded; any listed path will do, a project from a
+  build before projects were main worktrees being a linked one.
+- **A main entry that is the project's git directory is the project's
+  checkout**: git 2.56 lists a submodule's checkout, or one made with
+  `--separate-git-dir`, by its git directory, so the list named none of the
+  project's path and it dimmed. The project's `.git` file naming that directory
+  says so, one small read and no git run. Adding such a checkout asks git for
+  its top level where the main entry has no `.git`: the git directory became the
+  project, terminals and Files opening inside it and new worktrees going into
+  the superproject's `.git`, which removing the submodule deletes. Cost: a
+  linked worktree of such a repository added on its own becomes the project, git
+  recording no main checkout to find.
 
 ## Reviewed and left as is
 

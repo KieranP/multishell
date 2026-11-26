@@ -98,6 +98,14 @@ What the panel lists and why each went the way it did. Newest at the bottom.
   listed ignored files before the switch existed. Hidden means what git ignores,
   and the quick switcher finds none of it either. What was read stays in memory
   while hidden, so turning it on finds the open folders again.
+- **The tree builds without recursion**, a trie of the paths turned into nodes
+  bottom up. A large listing builds on a Dispatch thread, whose 512 KiB stack a
+  recursion per path part overflowed at about 1,400 parts, and Linux allows a
+  path that deep.
+- **In an ignored folder, a link is a folder only where it leads to one inside
+  the worktree**, and a folder reached through one leading out lists nothing:
+  listed as a folder, a link out showed another directory's names. A link inside
+  stays one, as pnpm's `node_modules` is made of them.
 
 ## Reviewed and left as is
 

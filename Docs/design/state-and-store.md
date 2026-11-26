@@ -32,6 +32,9 @@
   is: the atomic write put a plain file where a dotfiles repo's link was, and
   the repo's copy went stale. A repository's `.multishell.json` is not: a
   committed link would let Export write over whatever file it names.
+- **A linked file that cannot be read is copied aside, not moved**, and saving
+  goes on through the link. Moving it renamed the link itself, and the next save
+  left a plain file at the path and the repo's copy broken.
 - **A link whose target is away is said so and saved through by nothing**: the
   app started empty unasked, and its first save wrote that over where the link
   points, a volume not yet mounted included.
@@ -86,3 +89,10 @@
 - **Debug tools keep nothing in the workspace**, the toggle included. A sample a
   second in the store would schedule a save a second; debug-tools.md says why
   the toggle ends with its launch.
+- **A path two projects list keeps its row, tabs, name and block until the
+  last of them drops it.** Paths are ids, so a repository copied with `cp -R`,
+  or moved and added again beside its dimmed self, lists the same linked
+  worktrees, and removing either project took the other's state too.
+- **The load keeps one row per project and path**, not one per path: that undid
+  the rule above after a relaunch, and the surviving project dropping the path
+  before the other's list landed took its tabs, sessions, name and block.

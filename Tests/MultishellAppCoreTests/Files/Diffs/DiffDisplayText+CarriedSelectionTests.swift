@@ -58,6 +58,20 @@ struct DiffDisplayTextCarriedSelectionTests {
     #expect(after.carriedSelection(0..<before.string.utf16.count, from: before) == nil)
   }
 
+  @Test func halfOfAFileOfOneRepeatedLineIsCarriedWithinASecond() {
+    let before = Self.text(Array(repeating: "-", count: 20_000))
+    let after = Self.text(Array(repeating: "-", count: 20_001))
+    let half = 0..<before.rowStarts[10_000]
+
+    var carried: Range<Int>?
+    let elapsed = ContinuousClock().measure {
+      carried = after.carriedSelection(half, from: before)
+    }
+
+    #expect(carried == half)
+    #expect(elapsed < .seconds(1))
+  }
+
   @Test func aSelectedNewlineCarriedOntoTheLastLineStopsAtTheEnd() {
     let before = Self.text(["a", "b"])
     let after = Self.text(["x", "a"])

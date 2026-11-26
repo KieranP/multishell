@@ -47,12 +47,23 @@ struct StateFile: Sendable {
       // the file that was actually written.
       let backup = backupURL
       do {
-        try FileManager.default.moveItem(at: fileURL, to: backup)
+        try setAside(to: backup)
       } catch _ {
         // `_` leaves `error` the decode failure, which both errors report.
         throw UnmovableStateFile(fileURL: fileURL, underlying: error)
       }
       throw UnreadableStateFile(backup: backup, underlying: error)
+    }
+  }
+
+  /// A link stays, its target's bytes copied aside, so saves still reach the
+  /// target; moving the link left a plain file in its place.
+  private func setAside(to backup: URL) throws {
+    let manager = FileManager.default
+    if (try? manager.destinationOfSymbolicLink(atPath: fileURL.path)) != nil {
+      try manager.copyItem(at: fileURL.linkTarget, to: backup)
+    } else {
+      try manager.moveItem(at: fileURL, to: backup)
     }
   }
 

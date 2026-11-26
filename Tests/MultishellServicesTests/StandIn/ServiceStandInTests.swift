@@ -59,8 +59,18 @@ struct ServiceStandInTests {
     let lint = try #require(checks.first { $0.name == "lint" })
 
     let threads = try await host.unresolvedThreads(of: pullRequest, in: Self.here)
-    let testLog = try await host.failedLog(of: test, keepingLast: 160, in: Self.here)
-    let lintLog = try await host.failedLog(of: lint, keepingLast: 160, in: Self.here)
+    let testLog = try await host.failedLog(
+      of: test,
+      on: pullRequest,
+      keepingLast: 160,
+      in: Self.here,
+    )
+    let lintLog = try await host.failedLog(
+      of: lint,
+      on: pullRequest,
+      keepingLast: 160,
+      in: Self.here,
+    )
 
     #expect(threads.map(\.id) == ["t1"])
     #expect(threads.first?.line == nil && threads.first?.isOutdated == false)

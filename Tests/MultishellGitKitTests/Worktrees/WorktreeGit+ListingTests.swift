@@ -23,7 +23,7 @@ struct WorktreeGitListingTests {
   @Test func aListOfTheMainWorktreeAloneIsAResult() async throws {
     // `-z`, as the real one is asked: NUL where the newline was.
     let fake = try FakeGit.make(
-      "printf 'worktree /repos/demo\\0HEAD 1111111\\0branch refs/heads/main\\0'"
+      "printf 'worktree %s\\0HEAD 1111111\\0branch refs/heads/main\\0' \"$SCRATCH\""
     )
     defer { fake.tearDown() }
 
@@ -36,7 +36,7 @@ struct WorktreeGitListingTests {
     let fake = try FakeGit.make(
       """
       case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
-      printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n'
+      printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n' "$SCRATCH"
       """
     )
     defer { fake.tearDown() }
@@ -46,7 +46,42 @@ struct WorktreeGitListingTests {
     let main = try await worktreeGit.mainWorktreePath(containing: fake.directory)
 
     #expect(listed.map(\.branch) == ["main"])
-    #expect(main.path == "/repos/demo")
+    #expect(main.comparablePath == fake.directory.comparablePath)
+  }
+
+  @Test func aProjectWhoseGitWentMissingInsideAnotherRepositoryIsAnErrorNotItsList()
+    async throws
+  {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let outer = fixture.root.appendingPathComponent("home", isDirectory: true)
+    try await TestRepository.initialise(at: outer, withFirstCommit: true)
+    let inner = outer.appendingPathComponent("project", isDirectory: true)
+    try await TestRepository.initialise(at: inner, withFirstCommit: true)
+    try FileManager.default.removeItem(at: inner.appendingPathComponent(".git"))
+
+    await #expect(throws: (any Error).self) {
+      try await fixture.git.list(Project(path: inner))
+    }
+  }
+
+  @Test func anEnclosingRepositorysListProvesNothingAboutAProjectWhoseGitWentMissing()
+    async throws
+  {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let inner = fixture.project.path.appendingPathComponent("inner", isDirectory: true)
+    try await TestRepository.initialise(at: inner, withFirstCommit: true)
+    let linked = fixture.root.appendingPathComponent("inner-side", isDirectory: true)
+    try await TestRepository.addWorktree(
+      onNewBranch: "side",
+      at: linked,
+      in: inner,
+      using: fixture.runner,
+    )
+    try FileManager.default.removeItem(at: inner.appendingPathComponent(".git"))
+
+    #expect(await fixture.git.listsWorktree(at: linked, in: Project(path: inner)) == nil)
   }
 
   /// git records no creation date, so this is the birth time of the directory that
@@ -116,6 +151,42 @@ struct WorktreeGitListingTests {
     #expect(try await root(fixture.project.path) == main)
     #expect(try await root(subdirectory) == main)
     #expect(try await root(linked) == main, "a linked worktree is the same project")
+  }
+
+  @Test func aCheckoutWhoseGitDirectoryLivesElsewhereIsItsOwnMainWorktree() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let checkout = fixture.root.appendingPathComponent("separate", isDirectory: true)
+    let gitDirectory = fixture.root.appendingPathComponent("separate-git", isDirectory: true)
+    try await TestRepository.initialise(at: checkout, withFirstCommit: true)
+    _ = try await fixture.runner.run(
+      ["init", "-q", "--separate-git-dir", gitDirectory.path],
+      in: checkout,
+    )
+
+    let main = try await fixture.git.mainWorktreePath(containing: checkout)
+    let listed = try await fixture.git.list(Project(path: checkout))
+
+    #expect(main.comparablePath == checkout.comparablePath)
+    #expect(listed.map(\.path.comparablePath) == [checkout.comparablePath])
+  }
+
+  @Test func aSubmodulesCheckoutIsItsOwnMainWorktree() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let upstream = fixture.root.appendingPathComponent("upstream", isDirectory: true)
+    try await TestRepository.initialise(at: upstream, withFirstCommit: true)
+    _ = try await fixture.runner.run(
+      ["-c", "protocol.file.allow=always", "submodule", "add", "-q", upstream.path, "sub"],
+      in: fixture.project.path,
+    )
+    let submodule = fixture.project.path.appendingPathComponent("sub", isDirectory: true)
+
+    let main = try await fixture.git.mainWorktreePath(containing: submodule)
+    let listed = try await fixture.git.list(Project(path: submodule))
+
+    #expect(main.comparablePath == submodule.comparablePath)
+    #expect(listed.map(\.path.comparablePath) == [submodule.comparablePath])
   }
 
   @Test func aDirectoryOutsideAnyRepositoryIsAnError() async throws {

@@ -20,6 +20,10 @@ from its page through `gh`.
   push remote is read from those two keys, not `%(push:remotename)`, which falls
   back to the remote the branch follows: a branch cut from `upstream/main` would
   push to `upstream`, not to `origin`.
+- **A remote's name goes to git after `--`**, in the push and the lookup alike.
+  It comes from the repository's config, which a repository unpacked from an
+  archive brings with it, and a name such as `--upload-pack=<command>;` was
+  taken as an option, git running the command.
 - **GitHub's own CLEAN does not offer Merge on a pull request the page holds
   back**, as it did for an admin past a required review or before the checks
   were read: the user called that a bug on 2026-10-29. A newer checks read

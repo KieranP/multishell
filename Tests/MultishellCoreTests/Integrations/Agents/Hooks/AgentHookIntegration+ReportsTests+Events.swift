@@ -105,18 +105,44 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(codex, "Stop", mode: "dontAsk") == .done, "the mode governs that event only")
   }
 
-  /// Claude, like Codex, asks the hook before deciding a call needs anyone, so the mode
-  /// governs the request; its `auto` is the mode a classifier answers in.
   @Test func claudeOnlyWaitsOnARequestInAModeThatStopsForTheUser() {
     let claude = AgentHookCatalogue.claude
     #expect(state(claude, "PermissionRequest", mode: "default") == .attention)
     #expect(state(claude, "PermissionRequest", mode: "plan") == .attention)
-    #expect(state(claude, "PermissionRequest", mode: "auto") == nil)
     #expect(state(claude, "PermissionRequest", mode: "bypassPermissions") == nil)
+    #expect(state(claude, "PermissionRequest", mode: "dontAsk") == nil)
     #expect(
       state(claude, "Notification", mode: "auto") == .attention,
       "the mode governs that event only",
     )
+  }
+
+  /// Claude 2.1.332 runs the hook only once auto mode's classifier has decided to ask, and
+  /// names the mode `auto` all the same.
+  @Test func claudesRequestInAutoModeMovesTheDotSilently() {
+    let report = AgentHookCatalogue.claude.report(
+      for: AgentHookPayload(eventName: "PermissionRequest", permissionMode: "auto"),
+      sessionID: nil,
+      workingDirectory: nil,
+      pid: nil,
+    )
+    #expect(report?.state == .attention)
+    #expect(report?.isSilent == true)
+  }
+
+  @Test func claudesNotificationSaysItMayOnlyAnnounceAPromptItsRequestRaised() {
+    let claude = AgentHookCatalogue.claude
+    func announces(_ event: String) -> Bool? {
+      claude.report(
+        for: AgentHookPayload(eventName: event, notificationType: "permission_prompt"),
+        sessionID: nil,
+        workingDirectory: nil,
+        pid: nil,
+      )?
+      .announcesRaisedPrompt
+    }
+    #expect(announces("Notification") == true)
+    #expect(announces("PermissionRequest") == nil)
   }
 
   /// Claude reports a standing prompt twice, immediately and again six
@@ -187,7 +213,7 @@ extension AgentHookIntegrationReportsTests {
     #expect(state("quota_auto_resume_fired") == nil)
     for announcement in [
       "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
-      "push_notification",
+      "push_notification", "plugin_notification",
     ] {
       #expect(state(announcement) == nil, "\(announcement)")
     }

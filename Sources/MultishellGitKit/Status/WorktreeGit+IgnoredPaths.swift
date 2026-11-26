@@ -7,14 +7,18 @@ extension WorktreeGit {
   /// a tracked file is not one. `nil` where git could not answer.
   public func ignoredPaths(_ paths: [String], in directory: URL) async -> Set<String>? {
     guard !paths.isEmpty else { return [] }
+    // check-ignore reads pathspec magic after `--` and refuses `--literal-pathspecs`,
+    // so `:!notes` failed the batch; `./` makes each a plain path, echoed back with it.
+    let asked = paths.map { "./" + $0 }
+    let pathByAnswer = Dictionary(keepingFirst: zip(asked, paths))
     // `-z` needs `--stdin`, which the runner does not feed. A name git still
     // quotes then matches nothing, so it reads as not ignored, and is read.
-    let arguments = ["-c", "core.quotePath=false", "check-ignore", "--"] + paths
+    let arguments = ["-c", "core.quotePath=false", "check-ignore", "--"] + asked
     // Exit 1 is "none ignored", an answer like any other.
     guard let outcome = await runner.capture(arguments, in: directory),
       outcome.status == 0 || outcome.status == 1
     else { return nil }
-    return Set(outcome.standardOutput.gitLines)
+    return Set(outcome.standardOutput.gitLines.compactMap { pathByAnswer[$0] })
   }
 
   /// What git ignores, a wholly ignored folder one entry ending in `/`, so its

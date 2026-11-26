@@ -18,13 +18,15 @@ public protocol PullRequestHost: Sendable {
   /// The checks on the pull request's head, each once, and which are required.
   func checks(of pullRequest: PullRequest, in directory: URL) async throws -> [PullRequestCheck]
 
-  /// Whether `failedLog` can read the check's log: it ran on the host's own CI.
-  func readsFailedLog(of check: PullRequestCheck) -> Bool
+  /// Whether `failedLog` can read the check's log: it ran on the pull
+  /// request's own host's CI.
+  func readsFailedLog(of check: PullRequestCheck, on pullRequest: PullRequest) -> Bool
 
   /// The last `lineLimit` lines of a failed check's log; `nil` for a check
   /// from anywhere else. Throws `ServiceReadFailure`.
   func failedLog(
     of check: PullRequestCheck,
+    on pullRequest: PullRequest,
     keepingLast lineLimit: Int,
     in directory: URL,
   ) async throws -> FailedCheckLog?

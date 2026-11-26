@@ -6,7 +6,7 @@ public struct WorktreeRemovalOrder: Codable, Equatable, Sendable {
   public let deletesBranch: Bool
   /// `git branch -D`: a branch holding commits no other branch has goes too.
   public let forcesBranchDeletion: Bool
-  /// Past a working agent, which is otherwise refused.
+  /// Past a working agent or commits on no branch, which are otherwise refused.
   public let force: Bool
 
   public init(worktreeID: String, deletesBranch: Bool, forcesBranchDeletion: Bool, force: Bool) {

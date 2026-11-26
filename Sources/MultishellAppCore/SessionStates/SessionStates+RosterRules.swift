@@ -8,6 +8,7 @@ extension SessionStates {
     to state: SessionState,
     worker: WorkerReport?,
     turnFollows: Bool,
+    announcesRaisedPrompt: Bool,
     for key: Key,
   ) -> SessionState? {
     // A Stop, a failure or an end naming a worker, which no agent documents,
@@ -17,6 +18,7 @@ extension SessionStates {
         state,
         entry: entries[key] ?? Entry(),
         turnFollows: turnFollows,
+        announcesRaisedPrompt: announcesRaisedPrompt,
         for: key,
       )
     }
@@ -100,6 +102,7 @@ extension SessionStates {
     _ state: SessionState,
     entry: Entry,
     turnFollows: Bool,
+    announcesRaisedPrompt: Bool,
     for key: Key,
   ) -> SessionState? {
     // Its Working is a turn running and its Stop the end of one; its prompt
@@ -120,7 +123,10 @@ extension SessionStates {
       // it owed is still owed.
       update(key) { stored in
         if stored.displaced == .nothing { stored.displaced = nil }
-        stored.promptRaisers.insert(.agent)
+        // Claude's notification of a worker's prompt names no worker.
+        if !announcesRaisedPrompt || stored.promptRaisers.isEmpty {
+          stored.promptRaisers.insert(.agent)
+        }
       }
       return state
 
@@ -173,6 +179,14 @@ extension SessionStates {
   ) -> SessionState? {
     guard displaced == .owedDone, entry.resumesAfterWorkers, entry.isTurnUnderway else {
       return restore(displaced, for: key)
+    }
+    // The woken turn's own prompt is still on screen, and its Stop pays.
+    if entry.state == .attention, entry.promptRaisers.contains(.agent) {
+      update(key) { stored in
+        stored.displaced = nil
+        stored.promptRaisers = [.agent]
+      }
+      return nil
     }
     update(key) { $0.clearDisplaced() }
     return entry.state == .running ? nil : .running
