@@ -27,15 +27,15 @@ extension UIMetrics {
   /// The debug tables' number columns, which their headers line up over.
   var debugCountColumnWidth: Double { (bodySize * 5.5).rounded() }
   var debugDurationColumnWidth: Double { (bodySize * 4.8).rounded() }
-  /// A memory figure with the bar beside it, and one without.
-  var debugMemoryBarColumnWidth: Double { (bodySize * 8.5).rounded() }
   var debugMemoryValueColumnWidth: Double { (bodySize * 5.5).rounded() }
-  private var debugMemoryBarWidth: Double { (bodySize * 3.5).rounded() }
+  /// The Memory Breakdown's bars, a column apart from Total so the figure's
+  /// width never moves them.
+  var debugMemoryBarColumnWidth: Double { (bodySize * 3.5).rounded() }
   /// A debug table row's chevron and a process line's nesting arrow.
   var debugTableGlyphSize: Double { small - 1 }
 
   /// Two points at least, so a row holding any memory shows a bar.
   func debugMemoryBarLength(forFraction fraction: Double) -> Double {
-    max(2, fraction * debugMemoryBarWidth)
+    max(2, fraction * debugMemoryBarColumnWidth)
   }
 }

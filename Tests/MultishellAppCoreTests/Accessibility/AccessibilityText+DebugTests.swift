@@ -45,7 +45,7 @@ struct AccessibilityTextDebugTests {
     let spoken = AccessibilityText.debugQuickStats(stats)
 
     #expect(spoken.hasPrefix("Debug Info, 34% CPU, "))
-    #expect(spoken.contains(" memory, "))
+    #expect(spoken.contains(", \(stats.totalMemoryText) memory, "))
     #expect(spoken.hasSuffix(" of disk a second"))
   }
 

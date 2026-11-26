@@ -79,8 +79,9 @@ struct DebugMemoryTableView: View {
         .debugColumnTitle(width: metrics.debugCountColumnWidth)
       headers.button(t("debug.column.self"), .selfMemory)
         .debugColumnTitle(width: metrics.debugMemoryValueColumnWidth)
+      Color.clear.frame(width: metrics.debugMemoryBarColumnWidth, height: 1)
       headers.button(t("debug.column.total-memory"), .totalMemory)
-        .debugColumnTitle(width: metrics.debugMemoryBarColumnWidth)
+        .debugColumnTitle(width: metrics.debugMemoryValueColumnWidth)
     }
     .debugTableHeader(theme, metrics, leadingInset: UIMetrics.debugTableTitleInset)
   }

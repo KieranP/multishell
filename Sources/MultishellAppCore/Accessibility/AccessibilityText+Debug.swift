@@ -8,8 +8,8 @@ extension AccessibilityText {
     if let totalCPUPercent = stats.totalCPUPercent {
       parts.append(t("spoken.cpu", DebugValueText.percent(totalCPUPercent)))
     }
-    if let memory = stats.totalMemory {
-      parts.append(t("spoken.memory", DebugValueText.memory(memory)))
+    if stats.totalMemory != nil {
+      parts.append(t("spoken.memory", stats.totalMemoryText))
     }
     if stats.diskBytesPerSecond != nil {
       parts.append(t("spoken.disk-per-second", stats.diskText))

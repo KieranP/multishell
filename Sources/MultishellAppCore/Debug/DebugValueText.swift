@@ -3,13 +3,45 @@ import MultishellCore
 import MultishellProcess
 
 /// Debug Info's numbers in words, through the catalogue so a unit can
-/// move. Only memory, ByteCountFormatter's, follows the locale; translation.md.
+/// move. Only memory follows the locale; translation.md.
 enum DebugValueText {
   /// What a cell shows where there is nothing to measure yet.
   static var noValue: String { t("debug.no-value") }
 
+  private static let memoryUnits: [ByteCountFormatter.Units] = [
+    .useKB, .useMB, .useGB, .useTB, .usePB,
+  ]
+
   static func memory(_ bytes: UInt64) -> String {
+    memory(bytes, locale: .autoupdatingCurrent)
+  }
+
+  /// Two places, where ByteCountFormatter drops trailing zeros and gives MB one,
+  /// and never four whole digits, which overflow the debug tables' columns.
+  static func memory(_ bytes: UInt64, locale: Locale) -> String {
+    var count = Double(bytes)
+    var unit: ByteCountFormatter.Units?
+    for nextUnit in memoryUnits where (count * 100).rounded() >= 100_000 {
+      count /= 1024
+      unit = nextUnit
+    }
+    guard let unit else { return compactMemory(bytes) }
+    let figure = count.formatted(.number.precision(.fractionLength(2)).locale(locale))
+    return "\(figure) \(memoryUnitName(unit))"
+  }
+
+  /// ByteCountFormatter's own form, trailing zeros dropped, for a lone figure
+  /// with no column to line up in: the sidebar's cells, which "999.99 MB" overflows.
+  static func compactMemory(_ bytes: UInt64) -> String {
     ByteCountFormatter.string(fromByteCount: Int64(clamping: bytes), countStyle: .memory)
+  }
+
+  private static func memoryUnitName(_ unit: ByteCountFormatter.Units) -> String {
+    let formatter = ByteCountFormatter()
+    formatter.countStyle = .memory
+    formatter.allowedUnits = unit
+    formatter.includesCount = false
+    return formatter.string(fromByteCount: 0)
   }
 
   static func framesPerSecond(_ value: Double) -> String {
@@ -26,7 +58,15 @@ enum DebugValueText {
 
   /// A rate or a mean in bytes, rounded to whole bytes.
   static func bytes(_ value: Double) -> String {
-    memory(UInt64(max(value, 0).rounded()))
+    memory(wholeBytes(value))
+  }
+
+  static func compactBytes(_ value: Double) -> String {
+    compactMemory(wholeBytes(value))
+  }
+
+  private static func wholeBytes(_ value: Double) -> UInt64 {
+    UInt64(max(value, 0).rounded())
   }
 
   static func bytesPerSecond(_ value: Double) -> String {

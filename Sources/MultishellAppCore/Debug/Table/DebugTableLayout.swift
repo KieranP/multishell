@@ -5,7 +5,7 @@ public enum DebugTableLayout: Sendable, Equatable {
   case stacked
 
   /// What each table's columns need, in multiples of the body font size.
-  public static let memoryTableColumnsWidthInEms = 46.0
+  public static let memoryTableColumnsWidthInEms = 47.0
   public static let cliActivityTableColumnsWidthInEms = 60.0
   public static let threadTableColumnsWidthInEms = 36.0
   public static let appActivityTableColumnsWidthInEms = 46.0

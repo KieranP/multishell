@@ -32,9 +32,10 @@ struct DebugNestedRowView: View {
           width: metrics.debugMemoryValueColumnWidth,
           color: theme.debugInfo.textSecondary,
         )
+        Color.clear.frame(width: metrics.debugMemoryBarColumnWidth, height: 1)
         DebugNumberCell(
           text: memory.totalMemoryText,
-          width: metrics.debugMemoryBarColumnWidth,
+          width: metrics.debugMemoryValueColumnWidth,
           color: theme.debugInfo.textSecondary,
         )
 

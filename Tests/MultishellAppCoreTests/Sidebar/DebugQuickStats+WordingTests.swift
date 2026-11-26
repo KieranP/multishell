@@ -28,7 +28,7 @@ struct DebugQuickStatsWordingTests {
       ])
     )
     #expect(stats.totalCPUText == "34%")
-    #expect(stats.totalMemoryText == DebugValueText.memory(1_400))
-    #expect(stats.diskText == DebugValueText.memory(2_048), "the title carries the /s")
+    #expect(stats.totalMemoryText == DebugValueText.compactMemory(1_400))
+    #expect(stats.diskText == DebugValueText.compactMemory(2_048), "the title carries the /s")
   }
 }

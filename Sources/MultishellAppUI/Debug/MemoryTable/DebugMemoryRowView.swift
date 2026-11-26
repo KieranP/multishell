@@ -63,20 +63,22 @@ struct DebugMemoryRowView: View {
         color: theme.debugInfo.text,
       )
       totalCell
-        .frame(width: metrics.debugMemoryBarColumnWidth, alignment: .trailing)
     }
   }
 
+  /// The bar and the figure in their own columns, the bar centred on the text.
   private var totalCell: some View {
-    HStack(spacing: 6) {
-      if row.barFraction > 0 {
-        Capsule()
-          .fill(theme.debugChildrenSeriesColor)
-          .frame(width: metrics.debugMemoryBarLength(forFraction: row.barFraction), height: 5)
-      }
-      Text(row.totalMemoryText)
-        .monospacedDigit()
-        .foregroundStyle(theme.debugInfo.text)
+    HStack(spacing: UIMetrics.debugTableColumnSpacing) {
+      Capsule()
+        .fill(theme.debugChildrenSeriesColor)
+        .frame(width: metrics.debugMemoryBarLength(forFraction: row.barFraction), height: 5)
+        .opacity(row.barFraction > 0 ? 1 : 0)
+        .frame(width: metrics.debugMemoryBarColumnWidth, alignment: .leading)
+      DebugNumberCell(
+        text: row.totalMemoryText,
+        width: metrics.debugMemoryValueColumnWidth,
+        color: theme.debugInfo.text,
+      )
     }
   }
 }

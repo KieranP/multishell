@@ -7,12 +7,12 @@ extension DebugQuickStats {
   }
 
   public var totalMemoryText: String {
-    totalMemory.map(DebugValueText.memory) ?? DebugValueText.noValue
+    totalMemory.map(DebugValueText.compactMemory) ?? DebugValueText.noValue
   }
 
   /// Bytes alone: the cell's title carries the "/s", which the narrowest
   /// sidebar has no room for beside the widest figures.
   public var diskText: String {
-    diskBytesPerSecond.map(DebugValueText.bytes) ?? DebugValueText.noValue
+    diskBytesPerSecond.map(DebugValueText.compactBytes) ?? DebugValueText.noValue
   }
 }
