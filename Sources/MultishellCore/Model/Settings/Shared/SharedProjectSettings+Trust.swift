@@ -40,6 +40,10 @@ extension SharedProjectSettings {
       self[keyPath: pair.1] == true ? pair.0 : nil
     }
     if !starts.isEmpty { present.append(starts.joined(separator: "\n")) }
+    if let actions {
+      let lines = actions.map { "\($0.name): \($0.command)" }
+      present.append(([t("shared-settings.actions") + ":"] + lines).joined(separator: "\n"))
+    }
     return present.isEmpty ? nil : present.joined(separator: "\n\n")
   }
 
@@ -48,6 +52,7 @@ extension SharedProjectSettings {
   public var asksForTrust: Bool {
     Self.trustCoveredFields.contains { self[keyPath: $0] != nil }
       || Self.trustCoveredStarts.contains { self[keyPath: $0] == true }
+      || actions != nil
   }
 
   /// The same file with everything the yes covers dropped: what an untrusted
@@ -58,6 +63,7 @@ extension SharedProjectSettings {
     for start in Self.trustCoveredStarts where self[keyPath: start] == true {
       stripped[keyPath: start] = nil
     }
+    stripped.actions = nil
     return stripped
   }
 }

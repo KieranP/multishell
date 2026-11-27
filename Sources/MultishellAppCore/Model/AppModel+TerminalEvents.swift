@@ -7,9 +7,10 @@ extension AppModel {
     mutateStates { $0.noteActivity(in: id, isSeen: isSeen(id)) }
   }
 
-  /// A retitle is activity for the pane's dot.
+  /// A retitle is activity for the pane's dot. An action's tab keeps its
+  /// action's name over whatever its shell reports.
   func noteTitle(_ title: String, of id: TerminalSession.ID) {
-    setIfChanged(\.sessionTitles[id], title)
+    if workspace.session(id)?.actionName == nil { setIfChanged(\.sessionTitles[id], title) }
     noteActivity(in: id)
   }
 
@@ -17,6 +18,8 @@ extension AppModel {
     // An agent typed at the prompt was the foreground command, so the pane is
     // a plain shell again; with the board closed no pid poll would say so.
     forgetReportedAgent(in: id)
+    // The first end in an action's tab is the action's own, its wrapper's mark.
+    setIfChanged(\.actionRunStarts, actionRunStarts.filter { $0.key != id })
     mutateStates { $0.noteCommandFinished(in: id, exitCode: exitCode, isSeen: isSeen(id)) }
     updateDockBadge()
     updatePIDWatch()

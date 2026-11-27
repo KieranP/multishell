@@ -1,6 +1,8 @@
 /// What the settings window's detail shows: a page, or one part of a page
 /// split because it would not fit the window (Docs/design/settings.md).
 public enum SettingsSection: Hashable, Sendable {
+  /// A project's actions, its whole Actions page.
+  case actions
   case agentHooks
   /// A project's agent overrides, its whole Agents page.
   case agents
@@ -31,12 +33,16 @@ public enum SettingsSection: Hashable, Sendable {
     case .agentHooks, .agentSettings, .hooksCreate, .hooksDelete, .hooksEnvironment: true
     case .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView: true
     case .worktreesExisting, .worktreesNew: true
-    case .agents, .appearance, .general, .integrations, .notifications, .terminal, .worktrees: false
+
+    case .actions, .agents, .appearance, .general, .integrations, .notifications, .terminal,
+      .worktrees:
+      false
     }
   }
 
   public var page: SettingsPage {
     switch self {
+    case .actions: .actions
     case .agentHooks, .agents, .agentSettings: .agents
     case .appearance: .appearance
     case .general: .general

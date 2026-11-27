@@ -11,8 +11,9 @@ import UniformTypeIdentifiers
 /// every other test reads one constant for both, so a rename on one side passes them all.
 @Suite
 struct InfoPlistTemplateTests {
-  @Test func theDraggedTabTypeIsDeclaredInTheBundleTheScriptWrites() throws {
-    let identifier = TabTransfer.contentType.identifier
+  @Test(arguments: [TabTransfer.contentType, ActionRowTransfer.contentType])
+  func eachInAppDragTypeIsDeclaredInTheBundleTheScriptWrites(type: UTType) throws {
+    let identifier = type.identifier
     // A Bool rather than `contains(…)` in the #expect, since swift-testing prints that
     // expression, the whole template, over the message.
     let isDeclared = try infoPlistTemplate().contains(
@@ -21,8 +22,8 @@ struct InfoPlistTemplateTests {
     #expect(
       isDeclared,
       """
-      Info.plist.in does not declare \(identifier) as an exported type. TabTransfer and the \
-      Info.plist have to agree, or the drag type the app uses is not the one the bundle exports.
+      Info.plist.in does not declare \(identifier) as an exported type. The drag type and \
+      the Info.plist have to agree, or the type the app uses is not the one the bundle exports.
       """,
     )
   }

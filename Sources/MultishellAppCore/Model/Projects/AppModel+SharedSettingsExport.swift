@@ -53,7 +53,7 @@ extension AppModel {
     // Every word the user's own answers itself; otherwise the answer given
     // about the file this rewrites travels, and no answer leaves the question.
     let answer =
-      kept.trustCoveredText == mine.trustCoveredText
+      mine.ownsEverythingTrustCovers(in: kept)
       ? true
       : project.sharedSettingsSnapshot.confined.flatMap { confined in
         project.settings.trustDecision(about: confined)

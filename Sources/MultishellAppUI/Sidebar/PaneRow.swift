@@ -21,6 +21,7 @@ struct PaneRow: View, @MainActor Equatable {
     HStack(spacing: UIMetrics.sidebarGlyphGap) {
       AgentMarkView(
         agentID: pane.agentID,
+        unmarkedSymbol: TerminalTabGlyph(paneIsAction: pane.isAction).symbol,
         markTint: pane.agentID.flatMap(theme.agentMarkRGB),
         plainTint: pane.isFocused
           ? theme.projectsPanel.text : theme.projectsPanel.textSecondary,

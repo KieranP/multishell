@@ -49,7 +49,8 @@ struct WorktreeHeader: View {
       .font(.system(size: model.metrics.caption, design: .monospaced))
       .foregroundStyle(theme.header.textTertiary)
       Spacer(minLength: 8)
-      actionsMenu
+      ActionsPlayMenu(model: model, worktree: worktree, theme: theme)
+      worktreeMenu
       if model.worktreeHeaderShowsFilesPanelToggle {
         FilesPanelToggle(model: model, theme: theme)
       }
@@ -59,7 +60,7 @@ struct WorktreeHeader: View {
 
   /// Everything that acts on the selected worktree, in one place a new user
   /// can find; the sidebar's context menu has the same items.
-  private var actionsMenu: some View {
+  private var worktreeMenu: some View {
     HeaderActionsMenu(help: t("action.worktree-actions"), palette: theme.header) {
       WorktreeActions(model: model, worktree: worktree)
     }

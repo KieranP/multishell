@@ -13,18 +13,14 @@ struct ProjectHooksPage: View {
   var body: some View {
     let shared = project.sharedSettingsSnapshot.confined
     SettingsForm {
-      if let shared, shared.asksForTrust {
-        SharedSettingsTrustSection(model: model, project: project)
-      } else if let problem = project.sharedSettingsSnapshot.problem {
-        SettingsGroup { SettingsCaption(problem) }
-      }
+      SharedSettingsHeader(model: model, project: project)
 
       switch section {
       case .hooksCreate: createSection(shared)
       case .hooksDelete: deleteSection(shared)
       case .hooksEnvironment: HookEnvironmentSection(model: model)
 
-      case .agentHooks, .agents, .agentSettings, .appearance, .general, .integrations,
+      case .actions, .agentHooks, .agents, .agentSettings, .appearance, .general, .integrations,
         .notifications, .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView,
         .terminal, .worktrees, .worktreesExisting, .worktreesNew:
         EmptyView()

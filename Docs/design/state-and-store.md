@@ -89,10 +89,10 @@
 - **Debug tools keep nothing in the workspace**, the toggle included. A sample a
   second in the store would schedule a save a second; debug-tools.md says why
   the toggle ends with its launch.
-- **A path two projects list keeps its row, tabs, name and block until the
-  last of them drops it.** Paths are ids, so a repository copied with `cp -R`,
-  or moved and added again beside its dimmed self, lists the same linked
-  worktrees, and removing either project took the other's state too.
+- **A path two projects list keeps its row, tabs, name and block until the last
+  of them drops it.** Paths are ids, so a repository copied with `cp -R`, or
+  moved and added again beside its dimmed self, lists the same linked worktrees,
+  and removing either project took the other's state too.
 - **The load keeps one row per project and path**, not one per path: that undid
   the rule above after a relaunch, and the surviving project dropping the path
   before the other's list landed took its tabs, sessions, name and block.

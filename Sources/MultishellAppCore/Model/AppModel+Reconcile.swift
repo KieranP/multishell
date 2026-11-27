@@ -48,6 +48,7 @@ extension AppModel {
     }
     pruneStates()
     prunePendingClose()
+    pruneActions()
     pruneTabRename()
     pruneFind()
     pruneFileTabs()

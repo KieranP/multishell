@@ -128,6 +128,11 @@ extension AppModel {
     case .refreshProject(let id): await replyToRefreshProject(id)
     case .fetchProject(let id): await replyToFetchProject(id)
     case .autoRenameWorktree(let id): replyToAutoRenameWorktree(id)
+    case .listActions(let id): replyToListActions(of: id)
+
+    case .runAction(let id, let name, let restart, let force):
+      replyToRunAction(id, name: name, restart: restart, force: force)
+
     case .setWorktreeHidden(let id, let hidden): replyToSetWorktreeHidden(id, hidden: hidden)
 
     case .setHiddenSectionExpanded(let id, let expanded):

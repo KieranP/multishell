@@ -8,10 +8,11 @@ enum TabCommand {
   /// The login shell a command runs through, and the line that hands the
   /// tab to `tabShell` once the command quits.
   static func loginShell(
-    handingOverTo tabShell: String
+    handingOverTo tabShell: String,
+    loginShell: String = ShellChoice.loginShellPath(),
   ) -> (shell: ShellInvocation, handOver: String) {
     (
-      ShellInvocation.forCommandLine(inShellAt: ShellChoice.loginShellPath()),
+      ShellInvocation.forCommandLine(inShellAt: loginShell),
       AnyShellQuoting.commandLine(ShellLaunch.execArguments(forShell: tabShell)),
     )
   }

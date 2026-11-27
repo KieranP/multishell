@@ -16,8 +16,11 @@ extension ProjectSettings {
     case iconGlyph, iconTint
     case disabledIntegrations
     case trustDecisions = "sharedHooks"
+    case actions, actionShortcuts
   }
 
+  // A field per line.
+  // swiftlint:disable function_body_length
   /// `""` overrides to "none" for the four fields with no other spelling for
   /// it, and is noise elsewhere; see Docs/design/settings.md.
   public init(from decoder: any Decoder) throws {
@@ -83,5 +86,15 @@ extension ProjectSettings {
       TrustDecision.self,
       forKey: .trustDecisions,
     )
+    // Lossy: a blank or broken action costs that action alone.
+    actions = ProjectAction.uniquelyNamed(
+      container.decodeLossy(ProjectAction.self, forKey: .actions)
+    )
+    actionShortcuts = container.decodeTolerantly(
+      ActionShortcuts.self,
+      forKey: .actionShortcuts,
+      or: ActionShortcuts(),
+    )
   }
+  // swiftlint:enable function_body_length
 }

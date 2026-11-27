@@ -103,4 +103,15 @@ struct ProjectSettingsTests {
     #expect(settings.branchPrefix == "", "the project is still pinned to no prefix")
     #expect(settings.effectiveWorktreeSettings(defaults: defaults).branchPrefix == "")
   }
+
+  @Test func theUsersOwnActionsSurviveAReload() throws {
+    let settings = ProjectSettings(actions: [.serve, .migrate])
+
+    let reloaded = try JSONDecoder().decode(
+      ProjectSettings.self,
+      from: try JSONEncoder().encode(settings),
+    )
+
+    #expect(reloaded.actions == [.serve, .migrate])
+  }
 }

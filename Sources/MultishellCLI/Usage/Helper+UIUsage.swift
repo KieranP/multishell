@@ -11,7 +11,7 @@ extension Helper {
         shortcuts-file, shortcuts-edit, shortcuts-view and
         shortcuts-terminal, and worktrees and agents open their first part.
         A project has general, worktrees, hooks-create, hooks-delete,
-        hooks-environment, terminal, agents and integrations.
+        hooks-environment, terminal, agents, actions and integrations.
     usage: multishell ui show pull-request|ci [WORKTREE_ID]
         Open the Files panel on the worktree's pull request or CI page, the
         one in view's by default, as a click on its row's glyph does.

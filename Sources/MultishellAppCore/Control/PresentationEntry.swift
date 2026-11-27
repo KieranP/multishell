@@ -4,6 +4,7 @@ struct PresentationEntry: Encodable, Equatable {
   enum Kind: String, Encodable {
     case alert
     case closeConfirmation = "close-confirmation"
+    case actionRestart = "action-restart"
     case worktreeRemoval = "worktree-removal"
     case projectRemoval = "project-removal"
     case sharedSettingsTrust = "shared-settings-trust"

@@ -525,6 +525,13 @@
 "panel.turned-off-detail" = "Turn it on in the project's Integrations settings.";
 "port-block.caption" = "No port block ending by %2$d is left for %1$@, so MULTISHELL_PORT is unset there.";
 "port-block.worktree" = "%1$@ (%2$@)";
+"project-action.done" = "done";
+"project-action.failed" = "failed";
+"project-action.restart-button" = "Restart";
+"project-action.restart-message" = "Something is still running in its tab. Restarting stops it first.";
+"project-action.restart-title" = "Restart %@?";
+"project-action.running" = "running";
+"project-action.running-for" = "running %@";
 "project-removal.nothing-on-disk" = "Nothing on disk is touched; the repository and its worktrees stay where they are.";
 "project-removal.takes" = "Takes the project and its worktrees out of the sidebar.";
 "project-removal.title" = "Remove project %@?";
@@ -599,10 +606,11 @@
 "settings.applies-to-all" = "Applies to every project";
 "settings.preferred-agent-needed" = "Needs a preferred agent. Pick one in All Projects > Agents > Preferred agent.";
 "settings.project-agent-needed" = "Needs an agent. Pick one on this project's Agents page, or in All Projects > Agents.";
+"shared-settings.actions" = "actions";
 "shared-settings.copied" = "copied";
 "shared-settings.decline" = "Ignore";
 "shared-settings.linked" = "linked";
-"shared-settings.message" = "The repository asks for this. A hook runs through your shell when a worktree is created or removed, where your own hook for that stage is blank. A linked or copied path is read from your checkout into each new worktree, including files git does not track. An agent it starts runs with your own flags.\n\n%@";
+"shared-settings.message" = "The repository asks for this. A hook runs through your shell when a worktree is created or removed, where your own hook for that stage is blank. A linked or copied path is read from your checkout into each new worktree, including files git does not track. An agent it starts runs with your own flags. An action runs through your shell when you pick it.\n\n%@";
 "shared-settings.post-create" = "post-create";
 "shared-settings.opens-terminal" = "open a terminal when a worktree is turned to";
 "shared-settings.opens-terminal-on-create" = "open a terminal in each new worktree";
@@ -631,6 +639,7 @@
 "sort.committed-oldest-first" = "Last commit, oldest first";
 "sort.created-newest-first" = "Created, newest first";
 "sort.created-oldest-first" = "Created, oldest first";
+"spoken.action" = "action";
 "spoken.agent" = "agent";
 "spoken.auto-rename-failed" = "Auto Rename failed";
 "spoken.auto-renaming" = "Auto Rename running";

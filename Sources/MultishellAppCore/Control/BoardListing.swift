@@ -17,6 +17,8 @@ struct BoardListing: Encodable, Equatable {
     let title: String
     /// The catalogue id, `nil` for a shell.
     let agent: String?
+    /// A project action's tab, counted on the board as an agent's is.
+    let isAction: Bool
     /// Its project's `ControlID`, `nil` once the worktree has gone.
     let project: String?
     let projectName: String

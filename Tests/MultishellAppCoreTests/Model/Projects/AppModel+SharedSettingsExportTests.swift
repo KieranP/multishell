@@ -235,4 +235,54 @@ struct AppModelSharedSettingsExportTests {
     )
     #expect(json["postCreateHook"] as? String == "make setup" && json["iconTint"] as? Int == 3)
   }
+
+  @Test func exportTrustsAFileOfTheUsersOwnActionsInWhateverOrder() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    try harness.writeSharedSettings(
+      #"{ "actions": [ { "name": "B", "command": "b" }, { "name": "A", "command": "a" } ] }"#
+    )
+    await harness.model.refreshWorktrees(of: harness.project)
+    try harness.answerTrust(false)
+    harness.model.setSettings(
+      ProjectSettings(actions: [
+        ProjectAction(name: "A", command: "a2"), ProjectAction(name: "B", command: "b2"),
+      ]),
+      for: harness.project,
+    )
+
+    await harness.model.exportSharedSettings(for: harness.project)
+
+    #expect(harness.model.trustsSharedSettings(of: harness.project))
+  }
+
+  @Test func exportWritesTheUsersActionsInTheirOrderAndTheFilesOthersAfter() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let file = try harness.writeSharedSettings(
+      #"""
+      { "actions": [
+        { "name": "A", "command": "a", "cwd": "web" },
+        { "name": "Team", "command": "t" },
+        { "name": "B", "command": "b" }
+      ] }
+      """#
+    )
+    await harness.model.refreshWorktrees(of: harness.project)
+    harness.model.setSettings(
+      ProjectSettings(actions: [
+        ProjectAction(name: "B", command: "b"), ProjectAction(name: "A", command: "a"),
+      ]),
+      for: harness.project,
+    )
+
+    await harness.model.exportSharedSettings(for: harness.project)
+
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+    )
+    let entries = try #require(json["actions"] as? [[String: Any]])
+    #expect(entries.compactMap { $0["name"] as? String } == ["B", "A", "Team"])
+    #expect(entries[1]["cwd"] as? String == "web")
+  }
 }

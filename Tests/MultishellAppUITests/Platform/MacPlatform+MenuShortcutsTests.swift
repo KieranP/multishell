@@ -88,6 +88,26 @@ struct MacPlatformMenuShortcutsTests {
     #expect(themes.items[0].keyEquivalent.isEmpty)
   }
 
+  @Test func anActionNamedAsACommandKeepsItsOwnKeys() throws {
+    let actions = NSMenu(title: MultishellAppUI.t("menu.actions"))
+    actions.addItem(
+      NSMenuItem(title: ShortcutCommand.nextTab.menuTitle, action: nil, keyEquivalent: "s")
+    )
+    let menu = bar(holding: [])
+    let terminal = try #require(menu.items.first?.submenu)
+    let submenu = NSMenuItem(
+      title: MultishellAppUI.t("menu.actions"),
+      action: nil,
+      keyEquivalent: "",
+    )
+    submenu.submenu = actions
+    terminal.addItem(submenu)
+
+    MacPlatform.setMenuShortcuts([Self.nextTabDefault], in: menu)
+
+    #expect(actions.items[0].keyEquivalent == "s")
+  }
+
   @Test func aDefaultKeepsTheSystemsLayoutLocalization() throws {
     let menu = bar(holding: [ShortcutCommand.nextTab.menuTitle])
 

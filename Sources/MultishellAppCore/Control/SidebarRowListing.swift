@@ -37,6 +37,8 @@ struct SidebarRowListing: Encodable, Equatable {
     let isFocused: Bool
     let state: SessionState?
     let agent: String?
+    /// A project action's pane, drawn with the play mark.
+    let isAction: Bool
   }
 
   let filterText: String

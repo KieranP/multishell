@@ -9,11 +9,15 @@ extension AppModel {
   /// default is unbound too, or Ghostty's own binding, ⌘F's search, takes it.
   var surfaceUnbinds: [KeyCombination] {
     let overrides = workspace.shortcutOverrides
-    return ShortcutCommand.allCases.filter { !$0.surfaceKeepsBinding }.flatMap { command in
+    let commandKeys = ShortcutCommand.allCases.filter { !$0.surfaceKeepsBinding }.flatMap {
+      command in
       var keys = [command.defaultCombination]
       if case .keys(let override) = overrides[command] { keys.append(override) }
       return keys
     }
+    // Every project's, whichever worktree is in view.
+    let actionKeys = workspace.projects.flatMap(actionKeysInForce)
+    return commandKeys + Set(actionKeys).sorted { $0.spelled < $1.spelled }
   }
 
   /// The keys in force for the command, `nil` for none.

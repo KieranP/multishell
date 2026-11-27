@@ -37,7 +37,7 @@ public struct ShellInvocation: Equatable, Sendable {
 
   /// The shell is interactive, so an inherited HISTFILE is its history: bash
   /// truncates it and ksh rewrites it in its own format; see hooks.md.
-  static func historyless(_ environment: [String: String]) -> [String: String] {
+  public static func historyless(_ environment: [String: String]) -> [String: String] {
     environment.merging(["HISTFILE": ""]) { _, empty in empty }
   }
 }

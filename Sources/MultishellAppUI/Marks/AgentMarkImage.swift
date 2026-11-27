@@ -12,10 +12,6 @@ enum AgentMarkImage {
     let scale: CGFloat
   }
 
-  /// Sized against a menu title, not a tab: the marks run to the edges of
-  /// their square, so 15 drew larger than the items read for.
-  private static let size: Double = 13
-
   /// Keyed by the scale it was drawn at too: a window moved to a display of
   /// another one keeps the marks it rendered, and they would be soft there.
   private static var rendered: [Key: Image] = [:]
@@ -44,13 +40,18 @@ enum AgentMarkImage {
   @ViewBuilder
   private static func content(for agentID: String?, tint: RGB?) -> some View {
     if let agentID {
-      AgentMarkView(agentID: agentID, markTint: tint, plainTint: .black, size: size)
+      AgentMarkView(
+        agentID: agentID,
+        markTint: tint,
+        plainTint: .black,
+        size: UIMetrics.menuMarkSide,
+      )
     } else {
       Image(systemName: PaneSymbol.terminal)
         .resizable()
         .scaledToFit()
         .foregroundStyle(.black)
-        .frame(width: size, height: size)
+        .frame(width: UIMetrics.menuMarkSide, height: UIMetrics.menuMarkSide)
     }
   }
 }

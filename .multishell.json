@@ -1,3 +1,37 @@
 {
+  "actions" : [
+    {
+      "command" : "make test",
+      "name" : "Run Tests"
+    },
+    {
+      "command" : "make lint",
+      "name" : "Run Linter"
+    },
+    {
+      "command" : "make format",
+      "name" : "Run Formatter"
+    },
+    {
+      "command" : "make build",
+      "name" : "Build Debug App"
+    },
+    {
+      "command" : "make run",
+      "name" : "Run Debug App"
+    },
+    {
+      "command" : "make release",
+      "name" : "Build Release App"
+    },
+    {
+      "command" : "make install",
+      "name" : "Install Release App"
+    },
+    {
+      "command" : "make theme-audit",
+      "name" : "Run Theme Audit"
+    }
+  ],
   "copiedPaths" : ".build/ghostty\n.build/grammars"
 }

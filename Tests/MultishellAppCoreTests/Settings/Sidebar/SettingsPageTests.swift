@@ -14,7 +14,7 @@ struct SettingsPageTests {
     )
     #expect(
       SettingsPage.pages(in: Self.project)
-        == [.general, .worktrees, .hooks, .terminal, .agents, .integrations]
+        == [.general, .worktrees, .hooks, .terminal, .agents, .actions, .integrations]
     )
   }
 

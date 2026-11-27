@@ -29,6 +29,10 @@ struct SettingsPageGlyph: View {
   private var solid: Path {
     var path = Path()
     switch page {
+    case .actions:
+      path.addLines(points([5, 2.5, 13, 8, 5, 13.5]))
+      path.closeSubpath()
+
     case .agents:
       path.addLines(
         points([6.5, 2, 7.7, 5.3, 11, 6.5, 7.7, 7.7, 6.5, 11, 5.3, 7.7, 2, 6.5, 5.3, 5.3])

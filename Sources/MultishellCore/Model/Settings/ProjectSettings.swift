@@ -73,6 +73,11 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// settings.md.
   var trustDecisions: [TrustDecision]
 
+  /// The user's own actions; layered, the file's too (Docs/design/actions.md).
+  public var actions: [ProjectAction]
+  /// Keys for any action in force here, the file's included.
+  public var actionShortcuts: ActionShortcuts
+
   init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
@@ -96,6 +101,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
     disabledIntegrations: [ServiceIntegration] = [],
+    actions: [ProjectAction] = [],
+    actionShortcuts: ActionShortcuts = ActionShortcuts(),
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -120,5 +127,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.iconTint = ProjectIcon.ownTint(iconTint)
     self.disabledIntegrations = disabledIntegrations
     self.trustDecisions = []
+    self.actions = actions
+    self.actionShortcuts = actionShortcuts
   }
 }

@@ -186,10 +186,10 @@ and a base other than the project's default branch.
   rows do not hold Send conflicts (round 3, 2026-11-27). The search finds pages,
   and each split page, Agents and Hooks included, opens its first part; finding
   parts is a change to the search for all of them.
-- **A failed read of the unmerged paths shows git's failure, not a stop**
-  (round 10, 2026-11-27). git's words hold its CONFLICT lines and the row still
-  reads the stop, its menu offering Abort; a stop with no paths listed would
-  tell an agent to resolve nothing.
+- **A failed read of the unmerged paths shows git's failure, not a stop** (round
+  10, 2026-11-27). git's words hold its CONFLICT lines and the row still reads
+  the stop, its menu offering Abort; a stop with no paths listed would tell an
+  agent to resolve nothing.
 - **`UnmergedPathParser` keeps its own loop beside `TrackedFileListParser`'s**
   (round 10, 2026-11-27). Sharing the NUL split and tab cut would cost the
   tracked list its stop at the cap in a large repository, or need a lazy

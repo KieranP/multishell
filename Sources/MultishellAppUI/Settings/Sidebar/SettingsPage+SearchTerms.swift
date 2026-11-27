@@ -57,12 +57,18 @@ extension SettingsPage {
         t("worktrees.send-conflicts"),
       ]
 
-    case .hooks, .integrations: []
+    case .actions, .hooks, .integrations: []
     }
   }
 
   private var projectRowLabels: [String] {
     switch self {
+    case .actions:
+      [
+        t("actions.yours"), t("actions.column-command"), t("actions.column-keys"),
+        t("actions.add"), t("actions.from-file", SharedProjectSettings.fileName),
+      ]
+
     case .agents:
       [
         t("project.preferred-agent"), t("project.flags"), t("agents.auto-start-tab"),

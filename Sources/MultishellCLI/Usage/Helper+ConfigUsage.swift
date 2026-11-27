@@ -22,7 +22,8 @@ extension Helper {
         to the global; a key that takes text keeps VALUE as typed, quotes and
         all, and any other reads it as JSON, so `true` and `12` mean what
         they say. The shared-settings trust answers are the app's own
-        question to ask.
+        question to ask, and actions and their keys are set on the project's
+        Actions page, which judges the keys.
 
     """
 }

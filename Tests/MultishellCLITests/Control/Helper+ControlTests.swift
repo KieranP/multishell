@@ -197,6 +197,19 @@ struct HelperControlTests {
       (["tabs", "clear-status", id.uuidString], .clearTabState(id: id)),
       (["panes", "clear-status", id.uuidString], .clearPaneState(id: id)),
       (["worktrees", "auto-rename", "w-89abcdef"], .autoRenameWorktree(id: "w-89abcdef")),
+      (["actions", "list", "w-89abcdef"], .listActions(worktree: "w-89abcdef")),
+      (
+        ["actions", "run", "w-89abcdef", "Run Migrations"],
+        .runAction(worktree: "w-89abcdef", name: "Run Migrations", restart: false, force: false),
+      ),
+      (
+        ["actions", "run", "w-89abcdef", "Start Server", "--restart"],
+        .runAction(worktree: "w-89abcdef", name: "Start Server", restart: true, force: false),
+      ),
+      (
+        ["actions", "run", "w-89abcdef", "Start Server", "--restart", "--force"],
+        .runAction(worktree: "w-89abcdef", name: "Start Server", restart: true, force: true),
+      ),
       (["worktrees", "clear-status", "w-89abcdef"], .clearWorktreeState(id: "w-89abcdef")),
       (
         ["worktrees", "resize-groups", "w-89abcdef", "2", "1"],
