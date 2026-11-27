@@ -41,9 +41,7 @@ struct SettingsScopePicker: View {
       .padding(UIMetrics.settingsScopeCardInset)
       .settingsCardFace(radius: UIMetrics.settingsScopeCardRadius)
     }
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
+    .labelOnlyMenuStyle()
     .accessibilityLabel(t("settings.scope"))
     .accessibilityValue(scopeName)
   }

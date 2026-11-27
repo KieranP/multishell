@@ -131,6 +131,17 @@ struct AgentHookFileTests: AgentHookFixtures {
     )
   }
 
+  @Test func aCommentedFileKeepsAURLInAStringStartingWithACombiningMark() throws {
+    let (directory, file) = try scratchSettingsFile()
+    defer { Scratch.remove(directory) }
+    try #"{"a": "\#u{0301}see https://x", "b": 1} // note"#
+      .write(to: file, atomically: true, encoding: .utf8)
+
+    let settings = try AgentHookFile.readIgnoringComments(file)
+
+    #expect(settings["a"] as? String == "\u{0301}see https://x")
+  }
+
   @Test func aLinkIntoADirectoryNotYetMadeIsWrittenThroughRatherThanReplaced() throws {
     let directory = Scratch.path("hooks")
     defer { Scratch.remove(directory) }

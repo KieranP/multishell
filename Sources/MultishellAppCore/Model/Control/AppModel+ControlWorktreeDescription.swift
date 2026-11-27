@@ -49,7 +49,7 @@ extension AppModel {
             didTimeOut: operation.didTimeOut,
           )
         },
-        baseUpdateStep: baseUpdateSteps[worktree.id]?.commandLineName,
+        baseUpdateStep: baseUpdateSteps[worktree.id]?.commandName,
         pullRequest: services.shownPullRequest.flatMap { pullRequest in
           services.pullRequestIntegration.map { integration in
             WorktreeDescription.PullRequestRecord(

@@ -16,7 +16,7 @@ struct ActionsPlayMenu: View {
   var body: some View {
     if let menu = model.actionMenu(for: worktree) {
       PlainGlyphButton(help: t("actions.play-help"), action: showMenu) {
-        HeaderGlyph(symbol: "play.fill")
+        HeaderGlyph(symbol: PaneSymbol.action)
           .glyphHover(isHovered, palette: theme.header, resting: theme.header.textSecondary)
           .overlay { runningBadge(menu) }
           .background(theme.header.background)

@@ -1,8 +1,7 @@
 import Foundation
 
-/// A worktree whose removal would take work kept nowhere else: another
-/// worktree checked out inside it, or work in a submodule's repository, which
-/// git keeps under the worktree's record; see worktrees/creating-and-removing.md.
+/// A worktree whose removal would take work kept nowhere else: an inner worktree or
+/// a submodule's work; see worktrees/creating-and-removing.md.
 public struct WorktreeHoldsOtherWork: Error, CustomStringConvertible {
   public enum Work: Sendable, Equatable {
     case worktree(URL)

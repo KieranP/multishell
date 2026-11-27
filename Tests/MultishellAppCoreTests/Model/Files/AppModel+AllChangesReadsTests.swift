@@ -9,23 +9,10 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelAllChangesReadsTests {
-  private static func paths(_ harness: GitHarness, _ tab: AllChangesTab) -> [String]? {
-    harness.model.allChangesReadings[tab.id]?.files.map(\.path)
-  }
-
-  private static func openOnFeature(_ harness: GitHarness) async throws -> (AllChangesTab, Worktree)
-  {
-    let feature = try await harness.createWorktree(onBranch: "feature")
-    await harness.model.refreshBranchScan(of: harness.project)
-    harness.model.select(feature)
-    let tab = try #require(harness.model.openAllChangesTab(in: feature.id))
-    return (tab, feature)
-  }
-
   @Test func aShownTabReadsTheWorktreesChangesWithThePanelShut() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     try "edited\n".write(
       to: feature.path.appending(path: "README.md"),
       atomically: true,
@@ -34,15 +21,15 @@ struct AppModelAllChangesReadsTests {
 
     await harness.model.refreshStatuses()
 
-    try await waitUntil { Self.paths(harness, tab) == ["README.md"] }
-    #expect(Self.paths(harness, tab) == ["README.md"])
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["README.md"] }
+    #expect(harness.allChangesPaths(in: tab) == ["README.md"])
     #expect(!harness.model.showsFilesPanel)
   }
 
   @Test func underBranchTheTabAsksForTheBranchReadThePanelWouldMake() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     try await TestRepository.commit(
       "work",
       files: ["work.txt": "one\ntwo\n"],
@@ -53,29 +40,29 @@ struct AppModelAllChangesReadsTests {
     harness.model.setChangeScope(.branch)
     await harness.model.refreshStatuses()
 
-    try await waitUntil { Self.paths(harness, tab) == ["work.txt"] }
-    #expect(Self.paths(harness, tab) == ["work.txt"])
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["work.txt"] }
+    #expect(harness.allChangesPaths(in: tab) == ["work.txt"])
     #expect(harness.model.branchChanges[feature.id] != nil, "kept with the panel shut")
   }
 
   @Test func aHiddenTabLetsGoOfItsRowsAndReadsAgainWhenShown() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     try "edited\n".write(
       to: feature.path.appending(path: "README.md"),
       atomically: true,
       encoding: .utf8,
     )
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab) == ["README.md"] }
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["README.md"] }
 
     harness.model.newShellTab()
     #expect(harness.model.allChangesReadings[tab.id] == nil)
 
     harness.model.activateTab(tab.id)
-    try await waitUntil { Self.paths(harness, tab) == ["README.md"] }
-    #expect(Self.paths(harness, tab) == ["README.md"])
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["README.md"] }
+    #expect(harness.allChangesPaths(in: tab) == ["README.md"])
   }
 
   @Test func aReadLandingAfterItsTabWasHiddenLetsGoOfItsRowsAndKeepsWhatItWasToRead()
@@ -83,14 +70,14 @@ struct AppModelAllChangesReadsTests {
   {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     try "edited\n".write(
       to: feature.path.appending(path: "README.md"),
       atomically: true,
       encoding: .utf8,
     )
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab) == ["README.md"] }
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["README.md"] }
     try await waitUntil { harness.model.pendingAllChangesReads.isEmpty }
     harness.model.allChangesStaleFiles.mark(.everything, in: tab.id)
     let read = Task { await harness.model.readAllChangesTab(tab.id) }
@@ -266,14 +253,14 @@ struct AppModelAllChangesReadsTests {
   @Test func aStatusListingANewFileOwesAReadOfThatFileAlone() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     try "edited\n".write(
       to: feature.path.appending(path: "README.md"),
       atomically: true,
       encoding: .utf8,
     )
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab) == ["README.md"] }
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["README.md"] }
     try await harness.statusReadsSettle(feature)
     try await waitUntil { harness.model.pendingAllChangesReads.isEmpty }
     _ = harness.model.allChangesStaleFiles.take(tab.id)
@@ -292,14 +279,14 @@ struct AppModelAllChangesReadsTests {
   @Test func everythingKeptForAClosedTabGoesWithIt() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     try "edited\n".write(
       to: feature.path.appending(path: "README.md"),
       atomically: true,
       encoding: .utf8,
     )
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab) != nil }
+    try await waitUntil { harness.allChangesPaths(in: tab) != nil }
 
     harness.model.closeTab(tab.id)
 
@@ -310,16 +297,14 @@ struct AppModelAllChangesReadsTests {
   @Test func aReadMovesTheCommentsOfAFileNearTheScreenToFollowTheLinesTheyQuote() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     let readme = feature.path.appending(path: "README.md")
     try "kept\nedited\n".write(to: readme, atomically: true, encoding: .utf8)
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab) == ["README.md"] }
+    try await waitUntil { harness.allChangesPaths(in: tab) == ["README.md"] }
     harness.model.noteAllChangesFilesNear(["README.md"], in: tab.id)
-    let comment = ReviewComment(
+    let comment = ReviewComment.sample(
       path: "README.md",
-      side: .onDisk,
-      scope: .modified,
       lines: 2...2,
       quote: ["edited"],
       text: "Why?",
@@ -337,7 +322,7 @@ struct AppModelAllChangesReadsTests {
   @Test func aReadMovingCommentsKeepsTheFindSelectionOnItsMatch() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     let readme = feature.path.appending(path: "README.md")
     try "q\nedited\n".write(to: readme, atomically: true, encoding: .utf8)
     try "q long\nz\nq\n".write(
@@ -351,14 +336,7 @@ struct AppModelAllChangesReadsTests {
       harness.model.allChangesDocument(of: tab.id)?.text.string.contains("q long") == true
     }
     harness.model.addReviewComment(
-      ReviewComment(
-        path: "README.md",
-        side: .onDisk,
-        scope: .modified,
-        lines: 2...2,
-        quote: ["edited"],
-        text: "Why?",
-      ),
+      ReviewComment.sample(path: "README.md", lines: 2...2, quote: ["edited"], text: "Why?"),
       in: feature.id,
     )
     harness.model.showFind()
@@ -378,7 +356,7 @@ struct AppModelAllChangesReadsTests {
   @Test func aFileScrolledToWhileAReadRunsIsReadAgainIfThatReadLeftItStale() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     for name in ["a.txt", "b.txt"] {
       try "\(name)\n".write(
         to: feature.path.appending(path: name),
@@ -387,7 +365,7 @@ struct AppModelAllChangesReadsTests {
       )
     }
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab)?.count == 2 }
+    try await waitUntil { harness.allChangesPaths(in: tab)?.count == 2 }
     harness.model.noteAllChangesFilesNear(["a.txt", "b.txt"], in: tab.id)
     try await waitUntil {
       harness.model.allChangesReadings[tab.id]?.files.allSatisfy { $0.rows != nil } == true
@@ -406,62 +384,21 @@ struct AppModelAllChangesReadsTests {
     #expect(owesB() == false)
   }
 
-  @Test func aFileChangedWhileAReadRunsIsMarkedStaleThoughThatReadIsReadingIt() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
-    let file = feature.path.appending(path: "a.txt")
-    try "a\n".write(to: file, atomically: true, encoding: .utf8)
-    await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab)?.count == 1 }
-    harness.model.noteAllChangesFilesNear(["a.txt"], in: tab.id)
-    try await waitUntil {
-      harness.model.allChangesReadings[tab.id]?.files.allSatisfy { $0.rows != nil } == true
-    }
-    try await waitUntil { harness.model.pendingAllChangesReads.isEmpty }
-    harness.model.allChangesStaleFiles.mark(.everything, in: tab.id)
-    let read = Task { await harness.model.readAllChangesTab(tab.id) }
-    while !harness.model.allChangesReadLog.isReading(tab.id) { await Task.yield() }
-    let common = try #require(
-      try await harness.model.coordinator?.git.commonGitDirectory(harness.project)
-    )
-
-    harness.model.noteAllChangesTabChanges(
-      FileChangeTargets(
-        changed: [file],
-        projects: [harness.project],
-        gitDirectories: [harness.project.id: common],
-        worktrees: harness.model.workspace.worktrees,
-        themesDirectory: harness.model.themesDirectory,
-      )
-    )
-
-    #expect(harness.model.allChangesStaleFiles.pending(tab.id).contains("a.txt"))
-    await read.value
-  }
-
   @Test func aFileKeptStaleLeavesTheCommentsItsOwnTabMovedWhereThatTabPutThem() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    let (tab, feature) = try await Self.openOnFeature(harness)
+    let (tab, feature) = try await harness.openAllChangesTabOnFeature()
     let b = feature.path.appending(path: "b.txt")
     try "a\n".write(to: feature.path.appending(path: "a.txt"), atomically: true, encoding: .utf8)
     try "b1\nb2\n".write(to: b, atomically: true, encoding: .utf8)
     await harness.model.refreshStatuses()
-    try await waitUntil { Self.paths(harness, tab)?.count == 2 }
+    try await waitUntil { harness.allChangesPaths(in: tab)?.count == 2 }
     harness.model.noteAllChangesFilesNear(["a.txt", "b.txt"], in: tab.id)
     try await waitUntil {
       harness.model.allChangesReadings[tab.id]?.files.allSatisfy { $0.rows != nil } == true
     }
     harness.model.addReviewComment(
-      ReviewComment(
-        path: "b.txt",
-        side: .onDisk,
-        scope: .modified,
-        lines: 2...2,
-        quote: ["b2"],
-        text: "Why?",
-      ),
+      ReviewComment.sample(path: "b.txt", lines: 2...2, quote: ["b2"], text: "Why?"),
       in: feature.id,
     )
     try "x\ny\nb1\nb2\n".write(to: b, atomically: true, encoding: .utf8)

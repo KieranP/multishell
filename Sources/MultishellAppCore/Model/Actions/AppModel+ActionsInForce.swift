@@ -19,12 +19,11 @@ extension AppModel {
   /// Whether one of the user's own actions, filled in, stands in for the
   /// file's action of this name, for the Actions page's note on its row.
   public func ownActionStandsIn(forFileAction name: String, in project: Project) -> Bool {
-    currentCopy(of: project).settings.actions.contains { $0.isFilledIn && $0.name == name }
+    ownActionNamesStandingIn(in: currentCopy(of: project)).contains(name)
   }
 
-  /// Keys are stored by name, so an own row of the name, filled in or not, has
-  /// the one keys cell: two would record at once.
-  public func fileRowShowsKeys(forFileAction name: String, in project: Project) -> Bool {
-    !ownSettings(of: project).actions.contains { $0.name == name }
+  /// The names of the user's own actions filled in, each standing in for the file's of its name.
+  func ownActionNamesStandingIn(in project: Project) -> Set<String> {
+    Set(project.settings.actions.filter(\.isFilledIn).map(\.name))
   }
 }

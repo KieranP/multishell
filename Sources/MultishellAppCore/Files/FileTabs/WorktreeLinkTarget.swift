@@ -9,11 +9,7 @@ enum WorktreeLinkTarget {
   static func path(of path: String, in worktree: URL) -> String? {
     let url = worktree.appending(path: path)
     let isLink = (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == true
-    guard let resolved = url.resolvedAsFarAsItExists()?.pathComponents,
-      let root = worktree.resolvedAsFarAsItExists()?.pathComponents,
-      // Not `pathComponents(under:)`: standardizing drops `/private` only from a path on disk.
-      resolved.count > root.count, resolved.starts(with: root)
-    else { return nil }
-    return isLink ? resolved.dropFirst(root.count).joined(separator: "/") : path
+    guard let inside = url.resolvedComponents(strictlyUnder: worktree) else { return nil }
+    return isLink ? inside.joined(separator: "/") : path
   }
 }

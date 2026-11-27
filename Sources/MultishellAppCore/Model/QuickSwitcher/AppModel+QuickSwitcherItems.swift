@@ -125,7 +125,7 @@ extension AppModel {
     let paneTitle = shownTitle(ofPane: session, in: tab, of: worktree, titles: titles)
     return QuickSwitcherItem(
       target: .pane(session.id),
-      kind: agentID.map { .agent(id: $0) } ?? .shell,
+      kind: agentID.map { .agent(id: $0) } ?? .shell(isAction: session.actionName != nil),
       title: QuickSwitcherItem.path([place, agentID.map(agentDisplayName) ?? paneTitle]),
       location: agentID == nil ? "" : paneTitle,
       position: .of(paneAt: offset, in: tab),

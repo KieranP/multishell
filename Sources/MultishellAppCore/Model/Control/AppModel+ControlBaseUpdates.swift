@@ -2,13 +2,13 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  private static func entry(of run: BaseUpdateRun) -> WorktreeUpdateEntry {
+  private static func receipt(of run: BaseUpdateRun) -> WorktreeUpdateReceipt {
     switch run.outcome {
     case .updated:
-      WorktreeUpdateEntry(outcome: .updated, conflicts: [], pane: nil)
+      WorktreeUpdateReceipt(outcome: .updated, conflicts: [], pane: nil)
 
     case .unfinished(let paths):
-      WorktreeUpdateEntry(outcome: .conflicts, conflicts: paths, pane: run.conflictPane)
+      WorktreeUpdateReceipt(outcome: .conflicts, conflicts: paths, pane: run.conflictPane)
     }
   }
 
@@ -63,7 +63,7 @@ extension AppModel {
     case .success: break
     }
     switch await runBaseUpdate(worktree, by: order.method, onto: base, consenting: consent) {
-    case .ran(let run): return .json(Self.entry(of: run))
+    case .ran(let run): return .json(Self.receipt(of: run))
 
     case .refused(let refusal):
       return await reply(refusing: refusal, of: worktree, by: order.method, onto: base, id: id)

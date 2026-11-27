@@ -12,10 +12,8 @@ struct AppModelReviewAnchoringTests {
     defer { harness.tearDown() }
     let (tab, main) = try harness.openFileTab()
     _ = try await harness.rowsArrive(in: tab.id)
-    let comment = ReviewComment(
+    let comment = ReviewComment.sample(
       path: "README.md",
-      side: .onDisk,
-      scope: .modified,
       lines: 1...1,
       quote: ["hello"],
       text: "Say more.",

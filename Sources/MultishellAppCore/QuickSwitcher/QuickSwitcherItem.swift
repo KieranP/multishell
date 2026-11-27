@@ -13,8 +13,8 @@ public struct QuickSwitcherItem: Identifiable, Equatable, Sendable {
     case fileTab
     /// A project, with what its icon is drawn from.
     case project(settings: ProjectSettings, isMissing: Bool)
-    /// A pane with a shell at its prompt, not an agent.
-    case shell
+    /// A pane with a shell at its prompt, not an agent; one a project action started is marked.
+    case shell(isAction: Bool)
     case worktree
 
     var isAgent: Bool {

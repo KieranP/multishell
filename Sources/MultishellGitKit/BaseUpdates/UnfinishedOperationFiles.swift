@@ -3,7 +3,7 @@ import MultishellCore
 
 /// What a checkout's git directory says is stopped partway, read from the files
 /// git leaves there: no git run, so the status poll pays a few stats.
-enum UnfinishedOperationReading {
+enum UnfinishedOperationFiles {
   static func unfinishedUpdate(inCheckout checkout: URL) -> UpdateMethod? {
     guard let gitDirectory = gitDirectory(ofCheckout: checkout) else { return nil }
     if exists("rebase-merge", in: gitDirectory)

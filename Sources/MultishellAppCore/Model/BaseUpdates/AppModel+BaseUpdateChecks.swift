@@ -76,13 +76,11 @@ extension AppModel {
       await refreshStatus(of: worktree.id, forced: true)
 
     case .uncommittedChanges(let changes):
-      present(
-        UncommittedChangesRefusal(
-          branch: worktree.name,
-          method: method,
-          base: base,
-          changes: changes,
-        )
+      presentedError = .uncommittedChanges(
+        on: worktree.name,
+        method: method,
+        base: base,
+        changes: changes,
       )
 
     case .pickingCommits: presentedError = .pickingCommits(on: worktree.name)
@@ -90,13 +88,6 @@ extension AppModel {
     case .baseChanged(let current): presentedError = .baseChanged(of: worktree.name, to: current)
     case .unreadable(let error): present(error)
     }
-  }
-
-  /// What the worktree is called while a rebase stops there: its user's name, else
-  /// the branch git lists it without until the rebase ends, not the short commit.
-  func displayNameWhileUnfinished(of worktree: Worktree, using git: WorktreeGit) async -> String {
-    if let custom = workspace.customName(of: worktree.id) { return custom }
-    return await git.branchBeingRebased(in: worktree.path) ?? worktree.name
   }
 
   /// The first working agent's name there, for the question.

@@ -29,7 +29,7 @@ extension WorktreeGit {
       ["rev-list", "--count", "--all", "--not", "--remotes", "--"],
       in: submodule,
     )
-    guard unpushed.trimmingCharacters(in: .whitespacesAndNewlines) == "0" else { return true }
+    guard RevListCountParser.parse(unpushed) == 0 else { return true }
     return try await submodulesHoldWork(in: submodule)
   }
 

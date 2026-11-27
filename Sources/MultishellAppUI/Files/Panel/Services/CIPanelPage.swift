@@ -54,7 +54,7 @@ struct CIPanelPage: View {
               ServicePageNote(text: problem, theme: theme, metrics: metrics)
             }
           }
-          .padding(.bottom, 8)
+          .padding(.bottom, UIMetrics.filesPanelListBottomInset)
         }
         .ticking($now, every: Self.ageTickInterval)
         CISendFooter(model: model, worktree: worktree, listing: listing, theme: theme)

@@ -17,5 +17,5 @@ public struct PendingActionRestart: Identifiable, Equatable, Sendable {
 
   public var title: String { t("project-action.restart-title", actionName) }
   public var message: String { t("project-action.restart-message") }
-  public var buttonLabel: String { t("project-action.restart-button") }
+  public var confirmLabel: String { t("project-action.restart-button") }
 }

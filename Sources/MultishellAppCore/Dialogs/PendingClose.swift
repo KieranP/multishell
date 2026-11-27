@@ -30,7 +30,7 @@ public enum PendingClose: Identifiable, Equatable, Sendable {
     }
   }
 
-  public var buttonLabel: String {
+  public var confirmLabel: String {
     switch self {
     case .pane: t("close.pane-button")
     case .reviewTab, .tab: t("close.tab-button")

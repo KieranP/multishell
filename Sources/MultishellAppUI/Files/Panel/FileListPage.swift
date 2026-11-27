@@ -28,7 +28,7 @@ struct FileListPage: View {
         FileListRows(model: model, worktreeID: worktree.id, rows: rows, theme: theme)
       }
       .padding(.horizontal, UIMetrics.filesPanelListSideInset)
-      .padding(.bottom, 8)
+      .padding(.bottom, UIMetrics.filesPanelListBottomInset)
     }
     PanelFooter(
       text: FilesPanelFooterText.changes(summary),

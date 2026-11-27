@@ -20,7 +20,7 @@ struct HeaderGlyphMenu<Items: View>: View {
         .background(palette.background)
         .contentShape(.rect)
     }
-    .glyphMenuStyle()
+    .labelOnlyMenuStyle()
     .fixedSize()
     .tracksHover($isHovered)
     .help(help)

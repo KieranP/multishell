@@ -12,17 +12,6 @@ public enum BaseUpdateStep: Equatable, Sendable {
   /// The merge or rebase itself.
   case updating(UpdateMethod)
 
-  /// `worktrees show`'s word for it.
-  var commandLineName: String {
-    switch self {
-    case .aborting: "aborting"
-    case .checking: "checking"
-    case .fetching: "fetching"
-    case .updating(.merge): "merging"
-    case .updating(.rebase): "rebasing"
-    }
-  }
-
   /// The spinner's tooltip.
   public var help: String {
     switch self {

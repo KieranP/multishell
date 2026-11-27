@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 extension AppModel {
   /// Whether the shell picker is on the custom path, whose field shows.
@@ -13,7 +14,7 @@ extension AppModel {
     guard let path = ShellChoice.trimmedCustomPath(workspace.customShellPath) else {
       return t("shell.path-blank", shellDetection.loginShell)
     }
-    if !FileManager.default.isExecutableFile(atPath: path) {
+    if !FileManager.default.isRunnableFile(atPath: path) {
       return t("shell.path-not-executable")
     }
     return nil

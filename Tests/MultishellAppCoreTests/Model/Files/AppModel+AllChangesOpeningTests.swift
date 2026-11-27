@@ -42,14 +42,7 @@ struct AppModelAllChangesOpeningTests {
     harness.model.select(harness.main)
     let tab = try #require(harness.model.openAllChangesTab(in: harness.main.id))
     let comments = ["a.swift", "b.swift", "b.swift"].map { path in
-      ReviewComment(
-        path: path,
-        side: .onDisk,
-        scope: .modified,
-        lines: 1...1,
-        quote: ["x"],
-        text: "Look.",
-      )
+      ReviewComment.sample(path: path, lines: 1...1, quote: ["x"], text: "Look.")
     }
     for comment in comments { harness.model.addReviewComment(comment, in: harness.main.id) }
     harness.model.addReviewComment(comments[0], in: harness.feature.id)

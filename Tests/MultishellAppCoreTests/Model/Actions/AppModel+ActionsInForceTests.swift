@@ -38,20 +38,4 @@ struct AppModelActionsInForceTests {
 
     #expect(harness.model.actionMenu(for: harness.main)?.items.map(\.name) == ["Deploy"])
   }
-
-  @Test func aFileRowLeavesItsKeysToAnOwnRowOfItsNameEvenUnfilled() async throws {
-    let harness = Harness()
-    try #"{ "actions": [ { "name": "Serve", "command": "npm start" } ] }"#.write(
-      to: SharedProjectSettings.file(in: harness.root),
-      atomically: true,
-      encoding: .utf8,
-    )
-    await harness.model.refreshSharedSettingsIfChanged()
-    #expect(harness.model.fileRowShowsKeys(forFileAction: "Serve", in: harness.project))
-
-    harness.model.addAction(to: harness.project)
-    harness.model.setActionName("Serve", at: 0, in: harness.project)
-
-    #expect(!harness.model.fileRowShowsKeys(forFileAction: "Serve", in: harness.project))
-  }
 }

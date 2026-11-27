@@ -38,18 +38,14 @@ struct PullRequestPanelPage: View {
                   theme: theme,
                 )
               }
-              let services = model.services(of: worktree)
-              let notes = [
-                services.outgrownText, services.pullRequestReadProblemText, path.staleChecksNote,
-                model.threadsReadProblem(of: pullRequest, in: worktree),
-              ]
-              ForEach(Array(notes.compactMap(\.self).enumerated()), id: \.offset) { _, note in
+              let notes = model.pullRequestPageNotes(of: pullRequest, path: path, in: worktree)
+              ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
                 ServicePageNote(text: note, theme: theme, metrics: model.metrics)
               }
               mergePath(path, of: pullRequest, threads: threads)
                 .padding(.top, 10)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, UIMetrics.filesPanelListBottomInset)
           }
           PullRequestSendFooter(
             model: model,

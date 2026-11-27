@@ -30,14 +30,7 @@ struct FileTabBar: View {
       bar(switchesInMenu: false, offersChangeScope: offersChangeScope, offersLayout: offersLayout)
       bar(switchesInMenu: true, offersChangeScope: offersChangeScope, offersLayout: offersLayout)
     }
-    .font(model.metrics.font(size: model.metrics.secondary))
-    .padding(.leading, UIMetrics.fileTabBarLeadingPadding)
-    .padding(.trailing, UIMetrics.fileTabBarTrailingPadding)
-    .frame(height: UIMetrics.fileTabBarHeight)
-    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-    .clipped()
-    .background(theme.fileTab.background)
-    .hairline(.bottom, theme.fileTab)
+    .fileTabBarFace(palette: theme.fileTab, metrics: model.metrics)
   }
 
   /// The folder and the name as one, the folder carrying the gap to the name

@@ -107,9 +107,8 @@ extension WorktreeGit {
     }
   }
 
-  /// What removing `worktree` would take that nothing else keeps: an inner worktree,
-  /// or work in a populated submodule, whose repository lives in the worktree's
-  /// record. `nil` where it holds neither; a throw where git failed.
+  /// What removing `worktree` would take that nothing else keeps: an inner worktree or
+  /// a populated submodule's work. `nil` where it holds neither; a throw where git failed.
   func workHeld(
     by worktree: Worktree,
     in project: Project,

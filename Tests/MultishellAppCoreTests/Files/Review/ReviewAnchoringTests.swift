@@ -163,10 +163,8 @@ struct ReviewAnchoringTests {
   }
 
   @Test func aCommentOnAnotherFileIsLeftAlone() {
-    let other = ReviewComment(
+    let other = ReviewComment.sample(
       path: "Other.swift",
-      side: .onDisk,
-      scope: .modified,
       lines: 1...1,
       quote: ["zzz"],
       text: "Fix it.",

@@ -32,7 +32,7 @@ enum GitExecutable {
     else { return found }
     let resolved = output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !resolved.isEmpty,
-      await runOnDispatch({ FileManager.default.isExecutableFile(atPath: resolved) })
+      await runOnDispatch({ FileManager.default.isRunnableFile(atPath: resolved) })
     else { return found }
     return URL(fileURLWithPath: resolved)
   }

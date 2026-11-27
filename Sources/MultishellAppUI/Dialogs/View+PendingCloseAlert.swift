@@ -10,7 +10,7 @@ extension View {
       DestructiveAlert.make(
         title: pending.title,
         message: pending.message,
-        choices: [pending.buttonLabel],
+        choices: [pending.confirmLabel],
       )
     } answer: { pending, choice in
       model.answerClose(pending, confirmed: choice != nil)

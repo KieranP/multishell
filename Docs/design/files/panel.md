@@ -120,3 +120,7 @@ Raised by reviews and settled; a review need not raise these again.
   value throughout (`setFilesPanelMode`, `showFilesPanel(_ mode:of:)`,
   `lastReadFilesPanelMode`); renaming the type would touch the persisted
   `filesPanelMode` key, the command line's setting name and about 140 sites.
+- `FilesPanelRow.activate()` picks between `toggleFolder` and `activateFileRow`
+  in the view (review of 2026-11-27). It dispatches on the row's kind and
+  decides nothing; one async model method would put each folder toggle behind a
+  Task.

@@ -31,7 +31,7 @@ extension AppModel {
       return
     }
     let attempt = await runBaseUpdate(worktree, by: method, onto: base, consenting: .init())
-    await answer(attempt, of: worktree, by: method, onto: base)
+    await present(attempt, of: worktree, by: method, onto: base)
   }
 
   /// The dialog's answer. The run reads everything again after its fetch: the agent
@@ -53,7 +53,7 @@ extension AppModel {
         onto: pending.base,
         consenting: pending.consent,
       )
-      await answer(attempt, of: pending.worktree, by: pending.method, onto: pending.base)
+      await present(attempt, of: pending.worktree, by: pending.method, onto: pending.base)
     }
   }
 
@@ -69,7 +69,7 @@ extension AppModel {
     setIfChanged(\.baseUpdateSteps[worktree.id], .fetching)
     defer { setIfChanged(\.baseUpdateSteps[worktree.id], nil) }
     do {
-      try await git.fetch(base, into: worktree)
+      try await git.fetch(base, in: worktree)
     } catch {
       if workspace.worktree(worktree.id) != nil { present(error) }
       return .failed
@@ -109,7 +109,7 @@ extension AppModel {
   }
 
   /// What the click says of a run: a refusal's alert, or the question a new reason asks.
-  private func answer(
+  private func present(
     _ attempt: BaseUpdateAttempt,
     of worktree: Worktree,
     by method: UpdateMethod,
@@ -122,13 +122,17 @@ extension AppModel {
     }
   }
 
-  /// One question at a time, an update's or an Abort's: another still waits on its answer.
   private func ask(_ question: PendingBaseUpdate) {
-    guard pendingBaseUpdate == nil, pendingUpdateAbort == nil else {
-      platform.beep()
-      return
-    }
+    guard !beepIfAQuestionWaits() else { return }
     pendingBaseUpdate = question
+  }
+
+  /// One question at a time, an update's or an Abort's: a click beside one beeps,
+  /// and `true` says it did.
+  func beepIfAQuestionWaits() -> Bool {
+    guard pendingBaseUpdate != nil || pendingUpdateAbort != nil else { return false }
+    platform.beep()
+    return true
   }
 
   /// A rebase leaves the branch detached while it stops, which only the list
@@ -136,5 +140,12 @@ extension AppModel {
   func refreshAfterBaseUpdate(of worktree: Worktree) async {
     if let project = workspace.project(worktree.projectID) { await refreshWorktrees(of: project) }
     await refreshStatus(of: worktree.id, forced: true)
+  }
+
+  /// What the worktree is called while a rebase stops there: its user's name, else
+  /// the branch git lists it without until the rebase ends, not the short commit.
+  func displayNameWhileUnfinished(of worktree: Worktree, using git: WorktreeGit) async -> String {
+    if let custom = workspace.customName(of: worktree.id) { return custom }
+    return await git.branchBeingRebased(in: worktree.path) ?? worktree.name
   }
 }

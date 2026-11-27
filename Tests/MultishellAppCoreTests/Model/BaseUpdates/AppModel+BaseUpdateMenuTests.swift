@@ -45,7 +45,7 @@ struct AppModelBaseUpdateMenuTests {
     )
     #expect(harness.engine.opened.count == opened, "nothing opened unasked with the setting off")
 
-    await harness.model.abortBaseUpdate(of: feature, method: .rebase)
+    await harness.model.requestUpdateAbort(of: feature, method: .rebase)
 
     #expect(try await harness.tip(of: feature) == before)
     #expect(harness.model.statuses[feature.id]?.unfinishedUpdate == nil)

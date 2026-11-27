@@ -20,7 +20,7 @@ public struct ShellDetection: Equatable, Sendable {
   init(found: [String], loginShell: String) {
     self.found = found
     self.loginShell = loginShell
-    self.loginShellExists = FileManager.default.isExecutableFile(atPath: loginShell)
+    self.loginShellExists = FileManager.default.isRunnableFile(atPath: loginShell)
   }
 
   init(
@@ -41,7 +41,7 @@ public struct ShellDetection: Equatable, Sendable {
   /// skipped.
   private static func listed(in file: URL) -> [String] {
     guard let text = try? String(contentsOf: file, encoding: .utf8) else { return [] }
-    return LineList.entries(in: text).filter { FileManager.default.isExecutableFile(atPath: $0) }
+    return LineList.entries(in: text).filter { FileManager.default.isRunnableFile(atPath: $0) }
   }
 
   private static func sorted(_ paths: Set<String>) -> [String] {

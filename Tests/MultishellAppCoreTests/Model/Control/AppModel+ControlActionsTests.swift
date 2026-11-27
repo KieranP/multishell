@@ -94,41 +94,6 @@ struct AppModelControlActionsTests {
     #expect(harness.model.workspace.tabs.isEmpty)
   }
 
-  @Test func actionsAndTheirKeysAreNotSetThroughConfigProject() async {
-    let (harness, _) = harnessWithServe()
-    let project = ControlID.project(harness.project.id)
-
-    let keys = await harness.model.answer(
-      .writeProjectSetting(
-        project: project,
-        key: "actionShortcuts",
-        value: #"{"Start Server":"cmd+t"}"#,
-      )
-    )
-    let actions = await harness.model.answer(
-      .writeProjectSetting(project: project, key: "actions", value: "[]")
-    )
-
-    #expect(keys == .refused(.noSetting(key: "actionShortcuts")))
-    #expect(actions == .refused(.noSetting(key: "actions")))
-  }
-
-  @Test func anotherSettingSetThroughConfigProjectKeepsAnUnfilledActionRow() async {
-    let harness = Harness()
-    harness.model.addAction(to: harness.project)
-
-    let reply = await harness.model.answer(
-      .writeProjectSetting(
-        project: ControlID.project(harness.project.id),
-        key: "branchPrefix",
-        value: "feat/",
-      )
-    )
-
-    #expect(reply == .done)
-    #expect(harness.model.ownSettings(of: harness.project).actions.count == 1)
-  }
-
   @Test func aRestartOverAWorkingAgentIsRefusedWithoutForce() async throws {
     let (harness, id) = harnessWithServe()
     _ = await harness.model.answer(

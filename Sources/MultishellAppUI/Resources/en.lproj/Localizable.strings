@@ -58,6 +58,9 @@
 "actions.remove-help" = "Remove %@";
 "actions.replaced-by-yours" = "Yours of the same name runs in its place.";
 "actions.review-and-trust" = "Review and Trust…";
+"actions.shared-ignored" = "Its actions are listed below and do not run.";
+"actions.shared-info" = "The repository ships actions in %1$@. They stay off until you trust them, and an edit asks again. One of yours with the same name runs in its place.";
+"actions.shared-run" = "Its actions run beside yours.";
 "actions.untrusted-title" = "From .multishell.json, not trusted yet";
 "actions.yours" = "Yours";
 "agents.auto-rename" = "Auto Rename";
@@ -238,12 +241,9 @@
 "hooks.pre-create-info" = "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path and MULTISHELL_PORT unset. A non-zero exit stops the create; git is never asked.";
 "hooks.pre-delete" = "Pre-delete";
 "hooks.pre-delete-info" = "Runs in the worktree before git worktree remove, after the confirmation, or in the repository when the directory is already gone. A non-zero exit stops the removal; the worktree stays.";
-"hooks.shared-header" = "From %@";
-"hooks.shared-ignored" = "Its hooks and file lists are shown in grey above and are not used.";
+"hooks.shared-ignored" = "Its hooks and file lists are shown in grey below and are not used.";
 "hooks.shared-info" = "The repository ships hooks and file lists in %1$@. They stay off until you trust them, and an edit asks again. A whitespace-only hook or list of yours turns the repository's off.";
 "hooks.shared-run" = "Its hooks and file lists are used where yours are blank.";
-"hooks.stop-trusting" = "Stop Trusting";
-"hooks.trust" = "Trust";
 "icon-picker.folder" = "Folder";
 "label.agents" = "Agents";
 "label.agents-dashboard" = "Agents Dashboard";
@@ -407,6 +407,9 @@
 "settings.worktrees" = "Worktrees";
 "settings.worktrees-existing" = "Existing worktrees";
 "settings.worktrees-new" = "New worktrees";
+"shared-settings.header" = "From %@";
+"shared-settings.stop-trusting" = "Stop Trusting";
+"shared-settings.trust" = "Trust";
 "sheet.agent" = "Agent:";
 "sheet.all-branches-checked-out" = "Every local branch is already checked out. Switch to New branch to create one.";
 "sheet.based-on" = "Based on:";

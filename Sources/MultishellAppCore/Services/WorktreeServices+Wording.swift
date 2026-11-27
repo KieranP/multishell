@@ -14,7 +14,7 @@ extension WorktreeServices {
   }
 
   /// A merged pull request the branch has gone past.
-  public var outgrownText: String? {
+  var outgrownText: String? {
     outgrownPullRequest.map { t("pull-request.outgrown", String($0.number)) }
   }
 
@@ -33,7 +33,7 @@ extension WorktreeServices {
 
   /// The pull request list's own failure, for its page, which offers Merge from
   /// it; a CI read's failure is the CI page's to say.
-  public var pullRequestReadProblemText: String? {
+  var pullRequestReadProblemText: String? {
     readProblem?.source == .pullRequests ? readProblemText : nil
   }
 

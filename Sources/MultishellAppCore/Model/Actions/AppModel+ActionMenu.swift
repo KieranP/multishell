@@ -18,7 +18,7 @@ extension AppModel {
     for worktree: Worktree,
     of project: Project,
   ) -> [[ProjectAction]] {
-    let own = Set(project.settings.actions.filter(\.isFilledIn).map(\.name))
+    let own = ownActionNamesStandingIn(in: project)
     let actions = actionsInForce(for: worktree)
     let groups = [
       actions.filter { own.contains($0.name) }, actions.filter { !own.contains($0.name) },
@@ -32,7 +32,7 @@ extension AppModel {
     guard !trustsSharedSettings(of: project),
       let shared = project.sharedSettingsSnapshot.confined?.actions
     else { return [] }
-    let own = Set(project.settings.actions.filter(\.isFilledIn).map(\.name))
+    let own = ownActionNamesStandingIn(in: project)
     return shared.map(\.name).filter { !own.contains($0) }
   }
 

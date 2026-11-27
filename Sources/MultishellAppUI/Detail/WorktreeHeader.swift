@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Project › name, a renamed one's branch, the path, the actions menu and, while
-/// the panel is shut, the Files toggle. The path gives way first; the names never do.
+/// Project › name, a renamed one's branch, the path, the play button, the worktree menu
+/// and, panel shut, the Files toggle. The path gives way first; the names never do.
 struct WorktreeHeader: View {
   /// A renamed worktree's branch gives way after the path and before the names.
   private static let branchPriority = WorktreeBreadcrumb.headerNamePriority / 2

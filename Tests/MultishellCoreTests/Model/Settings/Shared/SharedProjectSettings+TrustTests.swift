@@ -144,4 +144,24 @@ struct SharedProjectSettingsTrustTests {
         + "Run Migrations: bin/rails db:migrate"
     )
   }
+
+  @Test func theUsersOwnActionsInTheFilesOrderAreStillWhollyTheirs() throws {
+    let file = try writtenAndReadBack(SharedProjectSettings(actions: [.migrate, .serve]))
+    let mine = SharedProjectSettings(actions: [.serve, .migrate])
+    let onlyServe = SharedProjectSettings(actions: [.serve])
+
+    #expect(mine.ownsEverythingTrustCovers(in: mine.carryingOver(from: file)))
+    #expect(!onlyServe.ownsEverythingTrustCovers(in: onlyServe.carryingOver(from: file)))
+  }
+
+  @Test func aTeammatesEntryThisBuildCannotReadIsNotTheUsersOwn() throws {
+    let file = try writtenAndReadBack(SharedProjectSettings(actions: [.serve]))
+    var withDeploy = file
+    withDeploy.actionEntriesAsWritten =
+      try SharedProjectSettings.entries(of: [.serve]) + [.object(["name": .string("Deploy")])]
+    let mine = SharedProjectSettings(actions: [.serve])
+
+    #expect(mine.ownsEverythingTrustCovers(in: mine.carryingOver(from: file)))
+    #expect(!mine.ownsEverythingTrustCovers(in: mine.carryingOver(from: withDeploy)))
+  }
 }

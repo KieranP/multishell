@@ -1,4 +1,5 @@
 import AppKit
+import MultishellCore
 
 /// A menu item's keys as the menu draws them, `⌥⌘G`, for the quick switcher's
 /// command rows and `multishell ui menu`.
@@ -18,12 +19,9 @@ enum MenuShortcutText {
     guard let key = item.keyEquivalent.first, let keyName = name(of: key) else { return nil }
     let flags = item.keyEquivalentModifierMask
     // Only a system item keeps fn, Emoji & Symbols' fn E; AppKit refuses it on ours.
-    var text = flags.contains(.function) ? "fn" : ""
-    if flags.contains(.control) { text += "⌃" }
-    if flags.contains(.option) { text += "⌥" }
-    if flags.contains(.shift) || key.isUppercase { text += "⇧" }
-    if flags.contains(.command) { text += "⌘" }
-    return text + keyName
+    let function = flags.contains(.function) ? "fn" : ""
+    let modifiers = ShortcutModifiers(flags).union(key.isUppercase ? .shift : [])
+    return function + modifiers.glyphs + keyName
   }
 
   /// A control code or one of AppKit's private-use keys left unnamed has no

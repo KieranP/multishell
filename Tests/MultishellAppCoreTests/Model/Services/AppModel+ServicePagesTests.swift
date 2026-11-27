@@ -52,6 +52,24 @@ struct AppModelServicePagesTests {
     #expect(harness.model.threadsReadProblem(of: pullRequest, in: feat) == nil)
   }
 
+  @Test func anOpenPullRequestsPageEndsItsNotesWithAThreadReadThatFailed() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, _, _) = try await harness.showingAFailingPullRequest()
+    harness.model.remoteState.threads[feat.id] = PullRequestThreads(
+      pullRequestNumber: 9,
+      threads: nil,
+      failure: .failed("SSO required"),
+    )
+
+    let pullRequest = try #require(harness.model.services(of: feat).shownPullRequest)
+    let path = harness.model.mergePath(of: pullRequest, in: feat)
+    let notes = harness.model.pullRequestPageNotes(of: pullRequest, path: path, in: feat)
+
+    #expect(notes.last == harness.model.threadsReadProblem(of: pullRequest, in: feat))
+    #expect(notes.last?.contains("SSO required") == true)
+  }
+
   @Test func checksNotYetReadHoldTheMergeBack() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

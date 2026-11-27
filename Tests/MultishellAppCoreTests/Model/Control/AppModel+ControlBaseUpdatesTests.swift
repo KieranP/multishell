@@ -31,7 +31,7 @@ struct AppModelControlBaseUpdatesTests {
 
     let reply = await harness.model.answer(Self.update(feature, by: .merge))
 
-    #expect(reply == .json(WorktreeUpdateEntry(outcome: .updated, conflicts: [], pane: nil)))
+    #expect(reply == .json(WorktreeUpdateReceipt(outcome: .updated, conflicts: [], pane: nil)))
     #expect(await harness.contains("origin/main", in: feature))
   }
 
@@ -68,7 +68,7 @@ struct AppModelControlBaseUpdatesTests {
     let reply = await harness.model.answer(
       Self.update(feature, by: .rebase, allowsRewritingPushedBranch: true)
     )
-    #expect(reply == .json(WorktreeUpdateEntry(outcome: .updated, conflicts: [], pane: nil)))
+    #expect(reply == .json(WorktreeUpdateReceipt(outcome: .updated, conflicts: [], pane: nil)))
   }
 
   @Test func anUpdateRequestOverAWorkingAgentIsRefusedUnlessForced() async throws {
@@ -83,7 +83,7 @@ struct AppModelControlBaseUpdatesTests {
     #expect(harness.model.pendingBaseUpdate == nil)
 
     let reply = await harness.model.answer(Self.update(feature, by: .merge, force: true))
-    #expect(reply == .json(WorktreeUpdateEntry(outcome: .updated, conflicts: [], pane: nil)))
+    #expect(reply == .json(WorktreeUpdateReceipt(outcome: .updated, conflicts: [], pane: nil)))
   }
 
   @Test func anUpdateRequestStoppedOnConflictsListsThemAndASecondIsRefused() async throws {
@@ -95,7 +95,8 @@ struct AppModelControlBaseUpdatesTests {
     let reply = await harness.model.answer(Self.update(feature, by: .rebase))
 
     #expect(
-      reply == .json(WorktreeUpdateEntry(outcome: .conflicts, conflicts: ["README.md"], pane: nil))
+      reply
+        == .json(WorktreeUpdateReceipt(outcome: .conflicts, conflicts: ["README.md"], pane: nil))
     )
     let again = await harness.model.answer(Self.update(feature, by: .merge))
     #expect(again == .refused(.unfinishedUpdate(id: id, method: .rebase)))
@@ -111,7 +112,8 @@ struct AppModelControlBaseUpdatesTests {
     let reply = await harness.model.answer(Self.update(feature, by: .merge))
 
     #expect(
-      reply == .json(WorktreeUpdateEntry(outcome: .conflicts, conflicts: ["README.md"], pane: nil))
+      reply
+        == .json(WorktreeUpdateReceipt(outcome: .conflicts, conflicts: ["README.md"], pane: nil))
     )
   }
 

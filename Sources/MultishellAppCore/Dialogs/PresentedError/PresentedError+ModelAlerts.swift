@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 
 /// The alerts the model raises itself, rather than from an error. In one
 /// place so the wording is tested and shared by every frontend.
@@ -46,6 +47,28 @@ extension PresentedError {
     PresentedError(
       title: t("base-update.unfinished-title", branch, method.noun),
       message: t("base-update.unfinished-message", method.continueCommand),
+    )
+  }
+
+  /// Refused rather than stashed: an agent may be mid-edit, and the stash is every
+  /// worktree's. `changes` as status prints each, `M src/a.js`.
+  static func uncommittedChanges(
+    on branch: String,
+    method: UpdateMethod,
+    base: DefaultBranch,
+    changes: [String],
+  ) -> PresentedError {
+    let reason =
+      switch method {
+      case .merge: t("base-update.uncommitted-merge-message", base.shortName)
+      case .rebase: t("base-update.uncommitted-rebase-message", base.shortName)
+      }
+    let listed = UncommittedChangeList(changes)
+    var lines = listed.shown
+    if listed.unlisted > 0 { lines.append(t("base-update.uncommitted-more", listed.unlisted)) }
+    return PresentedError(
+      title: t("base-update.uncommitted-title", branch),
+      message: reason + "\n\n" + lines.joined(separator: "\n"),
     )
   }
 

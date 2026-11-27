@@ -10,11 +10,4 @@ struct BaseUpdateStepTests {
     #expect(BaseUpdateStep.updating(.rebase).help == "Rebasing onto the base")
     #expect(BaseUpdateStep.aborting.help == "Putting the branch back where it was")
   }
-
-  @Test func eachStepHasACommandLineWord() {
-    #expect(
-      [BaseUpdateStep.checking, .updating(.merge), .updating(.rebase), .aborting]
-        .map(\.commandLineName) == ["checking", "merging", "rebasing", "aborting"]
-    )
-  }
 }

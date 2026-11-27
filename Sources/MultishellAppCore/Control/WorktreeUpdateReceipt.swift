@@ -1,7 +1,7 @@
 import Foundation
 
 /// How `multishell worktrees update` ended, as it prints it.
-struct WorktreeUpdateEntry: Encodable, Equatable {
+struct WorktreeUpdateReceipt: Encodable, Equatable {
   enum Outcome: String, Encodable {
     case updated
     case conflicts

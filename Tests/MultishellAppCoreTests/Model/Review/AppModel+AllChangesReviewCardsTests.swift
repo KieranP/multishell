@@ -22,14 +22,7 @@ struct AppModelAllChangesReviewCardsTests {
   }
 
   private static func comment(on path: String, line: Int, quote: String) -> ReviewComment {
-    ReviewComment(
-      path: path,
-      side: .onDisk,
-      scope: .modified,
-      lines: line...line,
-      quote: [quote],
-      text: "Look.",
-    )
+    ReviewComment.sample(path: path, lines: line...line, quote: [quote], text: "Look.")
   }
 
   /// `a.txt` and `b.txt` read, each its prefix and number a line, `lines` long.

@@ -6,7 +6,6 @@ extension ProjectAction {
   }
 
   static func uniquelyNamed(_ actions: [ProjectAction]) -> [ProjectAction] {
-    var seen = Set<String>()
-    return actions.filter { seen.insert($0.name).inserted }
+    actions.uniqued(by: \.name)
   }
 }

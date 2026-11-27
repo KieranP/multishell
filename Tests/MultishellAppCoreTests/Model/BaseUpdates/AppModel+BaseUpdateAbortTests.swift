@@ -18,7 +18,7 @@ struct AppModelBaseUpdateAbortTests {
 
     let detached = try #require(harness.model.workspace.worktree(feature.id))
     #expect(detached.branch == nil)
-    await harness.model.abortBaseUpdate(of: detached, method: .rebase)
+    await harness.model.requestUpdateAbort(of: detached, method: .rebase)
     let question = try #require(harness.model.pendingUpdateAbort)
     #expect(question.title == "Abort the rebase of feature?")
     #expect(question.message.hasPrefix("Claude Code is working in this worktree"))
@@ -38,7 +38,7 @@ struct AppModelBaseUpdateAbortTests {
     _ = try harness.openAgentTab(in: feature, working: true)
     let detached = try #require(harness.model.workspace.worktree(feature.id))
     #expect(detached.branch == nil)
-    await harness.model.abortBaseUpdate(of: detached, method: .rebase)
+    await harness.model.requestUpdateAbort(of: detached, method: .rebase)
     let question = try #require(harness.model.pendingUpdateAbort)
     _ = try await harness.git.run(["rebase", "--abort"], in: feature.path)
 
@@ -55,7 +55,7 @@ struct AppModelBaseUpdateAbortTests {
     await harness.model.requestBaseUpdate(of: feature, by: .rebase)
     _ = try harness.openAgentTab(in: feature, working: true)
     let detached = try #require(harness.model.workspace.worktree(feature.id))
-    await harness.model.abortBaseUpdate(of: detached, method: .rebase)
+    await harness.model.requestUpdateAbort(of: detached, method: .rebase)
     let question = try #require(harness.model.pendingUpdateAbort)
     _ = try await harness.git.run(["rebase", "--abort"], in: feature.path)
     _ = try? await harness.git.run(["merge", "--no-edit", "origin/main"], in: feature.path)
@@ -73,7 +73,7 @@ struct AppModelBaseUpdateAbortTests {
     await harness.model.requestBaseUpdate(of: feature, by: .rebase)
     _ = try harness.openAgentTab(in: feature, working: true)
     let detached = try #require(harness.model.workspace.worktree(feature.id))
-    await harness.model.abortBaseUpdate(of: detached, method: .rebase)
+    await harness.model.requestUpdateAbort(of: detached, method: .rebase)
     let question = try #require(harness.model.pendingUpdateAbort)
     _ = try await harness.git.run(["rebase", "--abort"], in: feature.path)
     try "more\n".write(
@@ -98,7 +98,7 @@ struct AppModelBaseUpdateAbortTests {
     await harness.model.requestBaseUpdate(of: feature, by: .rebase)
     let detached = try #require(harness.model.workspace.worktree(feature.id))
 
-    await harness.model.abortBaseUpdate(of: detached, method: .merge)
+    await harness.model.requestUpdateAbort(of: detached, method: .merge)
 
     #expect(harness.model.statuses[feature.id]?.unfinishedUpdate == .rebase)
   }
@@ -111,10 +111,10 @@ struct AppModelBaseUpdateAbortTests {
     _ = try harness.openAgentTab(in: feature, working: true)
     let detached = try #require(harness.model.workspace.worktree(feature.id))
     #expect(detached.branch == nil)
-    await harness.model.abortBaseUpdate(of: detached, method: .rebase)
+    await harness.model.requestUpdateAbort(of: detached, method: .rebase)
     let question = try #require(harness.model.pendingUpdateAbort)
 
-    await harness.model.abortBaseUpdate(of: feature, method: .rebase)
+    await harness.model.requestUpdateAbort(of: feature, method: .rebase)
 
     #expect(harness.platform.beeps == 1)
     #expect(harness.model.pendingUpdateAbort == question)
@@ -126,7 +126,7 @@ struct AppModelBaseUpdateAbortTests {
     let feature = try await harness.featureBehindOrigin(conflicting: true)
     await harness.model.requestBaseUpdate(of: feature, by: .rebase)
     _ = try harness.openAgentTab(in: feature, working: true)
-    await harness.model.abortBaseUpdate(
+    await harness.model.requestUpdateAbort(
       of: try #require(harness.model.workspace.worktree(feature.id)),
       method: .rebase,
     )

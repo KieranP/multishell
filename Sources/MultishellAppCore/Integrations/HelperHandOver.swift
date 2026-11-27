@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 /// What the app's own executable passes to the helper: a shell that rebuilds
 /// PATH can still find the app as `multishell` in `Contents/MacOS`; terminals/sessions.md.
@@ -18,7 +19,7 @@ public enum HelperHandOver {
   public static func helper(inBundleOf executable: URL) -> URL? {
     guard let app = executable.enclosingAppBundle else { return nil }
     let helper = app.appendingPathComponent("Contents/Helpers/multishell", isDirectory: false)
-    return FileManager.default.isExecutableFile(atPath: helper.path) ? helper : nil
+    return FileManager.default.isRunnableFile(atPath: helper.path) ? helper : nil
   }
 
   /// `nil` outside a bundle, where there is no helper to put first.

@@ -9,7 +9,7 @@ extension WorktreeGit {
     from base: DefaultBranch,
     by method: UpdateMethod,
   ) async throws -> BaseUpdateOutcome {
-    try await fetch(base, into: worktree)
+    try await fetch(base, in: worktree)
     return try await update(worktree, from: base, by: method)
   }
 }

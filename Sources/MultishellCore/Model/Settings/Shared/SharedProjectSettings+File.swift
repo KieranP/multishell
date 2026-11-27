@@ -36,19 +36,6 @@ extension SharedProjectSettings {
     return kept
   }
 
-  /// Whether every word a yes covers in `merged`, these carried over a file,
-  /// is these settings' own, whatever order the merge puts their actions in.
-  public func ownsEverythingTrustCovers(in merged: SharedProjectSettings) -> Bool {
-    // An action entry this build cannot read is a teammate's word a newer build runs.
-    let own = Set((try? Self.entries(of: actions)) ?? [])
-    guard let entries = try? merged.mergedActionEntries(), entries.allSatisfy(own.contains)
-    else { return false }
-    var reordered = self
-    let names = Set(actions?.map(\.name) ?? [])
-    reordered.actions = merged.actions?.filter { names.contains($0.name) }
-    return merged.trustCoveredText == reordered.trustCoveredText
-  }
-
   /// The file's bytes, sorted and indented so a diff reads well, and these settings
   /// as they will read back, digest set. The digest is known before the file is there.
   public func fileContents() throws -> (data: Data, settings: SharedProjectSettings) {

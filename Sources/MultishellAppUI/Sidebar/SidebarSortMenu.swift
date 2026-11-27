@@ -43,7 +43,7 @@ struct SidebarSortMenu: View {
         .contentShape(.rect)
         .accessibilityHidden(true)
     }
-    .glyphMenuStyle()
+    .labelOnlyMenuStyle()
     .fixedSize()
     .tracksHover($isHovered)
     .help(t("sidebar.sort-worktrees"))

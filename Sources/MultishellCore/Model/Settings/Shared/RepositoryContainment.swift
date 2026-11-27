@@ -6,11 +6,7 @@ public enum RepositoryContainment {
   /// A directory, resolved the way the setting is, so a committed symlink
   /// cannot carry it out. `false` for the repository root itself.
   static func holds(directory: URL, under repository: URL) -> Bool {
-    guard let resolved = directory.resolvedAsFarAsItExists()?.pathComponents,
-      let root = repository.resolvedAsFarAsItExists()?.pathComponents
-    else { return false }
-    // As spelled: `standardizedFileURL` drops `/private` only from a path that exists.
-    return resolved.count > root.count && resolved.starts(with: root)
+    directory.resolvedComponents(strictlyUnder: repository) != nil
   }
 
   /// Resolved against the root and required to land strictly under it, `..`

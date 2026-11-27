@@ -31,12 +31,12 @@ struct ShortcutRow: View {
   @ViewBuilder private var notes: some View {
     switch step {
     case .recording(let refusal):
-      if let refusal { note(refusal.text, color: .red) }
-      note(t("shortcuts.recording-hint"), color: SettingsColors.secondaryText)
+      if let refusal { KeysNote(text: refusal.text, color: .red) }
+      KeysNote(text: t("shortcuts.recording-hint"), color: SettingsColors.secondaryText)
 
     case .confirming(let keys, let holder):
       HStack(spacing: 8) {
-        note(t("shortcuts.taken", keys.glyphs, holder.menuTitle), color: .orange)
+        KeysNote(text: t("shortcuts.taken", keys.glyphs, holder.menuTitle), color: .orange)
         Spacer(minLength: 0)
         Button(t("action.cancel"), action: model.endShortcutsPageEdit)
         Button(t("shortcuts.replace"), action: model.replaceAskedShortcut)
@@ -44,10 +44,12 @@ struct ShortcutRow: View {
       }
 
     case nil:
-      if let warning = model.shortcutWarning(for: command) { note(warning.text, color: .orange) }
+      if let warning = model.shortcutWarning(for: command) {
+        KeysNote(text: warning.text, color: .orange)
+      }
       if let holder = model.commandHoldingDefault(of: command) {
-        note(
-          t("shortcuts.default-taken", command.defaultCombination.glyphs, holder.menuTitle),
+        KeysNote(
+          text: t("shortcuts.default-taken", command.defaultCombination.glyphs, holder.menuTitle),
           color: .orange,
         )
       }
@@ -84,13 +86,6 @@ struct ShortcutRow: View {
         start: startRecording,
       )
     }
-  }
-
-  private func note(_ text: String, color: Color) -> some View {
-    Text(text)
-      .font(.system(size: UIMetrics.settingsSmallTextSize))
-      .foregroundStyle(color)
-      .fixedSize(horizontal: false, vertical: true)
   }
 
   private func startRecording() {

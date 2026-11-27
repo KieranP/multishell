@@ -31,9 +31,8 @@ public struct WorktreeGit: Sendable {
     await runner.succeeds(["rev-parse", "--git-dir"], in: url)
   }
 
-  /// The folder of an initialised repository: a submodule nobody has
-  /// initialised, as every new worktree's is, runs `git -C` against its parent.
-  /// `nil` where git failed in a folder that is there, which says neither.
+  /// The folder of an initialised repository, where an uninitialised submodule runs
+  /// `git -C` against its parent; `nil` where git failed in a folder that is there.
   public func isRepositoryTop(_ directory: URL) async -> Bool? {
     guard await runOnDispatch({ FileManager.default.fileExists(atPath: directory.path) }) else {
       return false

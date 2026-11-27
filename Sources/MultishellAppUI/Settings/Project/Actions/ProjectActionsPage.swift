@@ -15,7 +15,7 @@ struct ProjectActionsPage: View {
     let shared = project.sharedSettingsSnapshot.confined
     let sharedActions = shared?.actions ?? []
     SettingsForm {
-      SharedSettingsHeader(model: model, project: project)
+      SharedSettingsHeader(model: model, project: project, lines: .actions)
       ownTable
       if !sharedActions.isEmpty { sharedTable(sharedActions) }
     }

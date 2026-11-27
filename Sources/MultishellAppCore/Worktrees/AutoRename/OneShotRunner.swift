@@ -24,7 +24,7 @@ final class OneShotRunner {
     return stopper
   }
 
-  /// Whether the run was still its worktree's, so its answer stands: a
+  /// Whether the run was still its worktree's, so its outcome stands: a
   /// worktree made again at the path has a run of its own.
   func endRun(_ id: Worktree.ID, stopper: ProcessStopper) -> Bool {
     guard stoppers[id] === stopper else { return false }

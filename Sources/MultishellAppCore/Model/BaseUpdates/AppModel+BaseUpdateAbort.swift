@@ -4,7 +4,7 @@ import MultishellGitKit
 extension AppModel {
   /// The menu's Abort Merge or Abort Rebase, asked first where an agent works there,
   /// as it may be resolving the conflicts the abort throws away.
-  public func abortBaseUpdate(of worktree: Worktree, method: UpdateMethod) async {
+  public func requestUpdateAbort(of worktree: Worktree, method: UpdateMethod) async {
     guard let git = coordinator?.git, mayStartBaseUpdate(worktree) else { return }
     guard await git.unfinishedUpdate(in: worktree.path) == method else {
       await refreshAfterBaseUpdate(of: worktree)
@@ -16,11 +16,7 @@ extension AppModel {
       return
     }
     let worktreeName = await displayNameWhileUnfinished(of: worktree, using: git)
-    // One question at a time, an update's or an Abort's: a click beside one waits.
-    guard pendingUpdateAbort == nil, pendingBaseUpdate == nil else {
-      platform.beep()
-      return
-    }
+    guard !beepIfAQuestionWaits() else { return }
     pendingUpdateAbort = PendingUpdateAbort(
       worktree: worktree,
       worktreeName: worktreeName,

@@ -10,14 +10,7 @@ import Testing
 @Suite
 struct AppModelReviewCommentsTests {
   private static func comment(_ text: String = "Guard it.") -> ReviewComment {
-    ReviewComment(
-      path: "Sources/App.swift",
-      side: .onDisk,
-      scope: .modified,
-      lines: 3...4,
-      quote: ["let a = 1", "let b = 2"],
-      text: text,
-    )
+    .sample(text: text)
   }
 
   @Test func aCommentWithOnlyWhitespaceIsRefused() {
@@ -79,18 +72,14 @@ struct AppModelReviewCommentsTests {
     harness.model.writeReviewCommentsNow()
 
     #expect(harness.model.reviewComments(in: harness.feature.id).isEmpty)
-    #expect(reviewFileNames(in: harness.reviews).isEmpty)
-  }
-
-  private func reviewFileNames(in directory: URL) -> [String] {
-    (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    #expect(harness.reviewFileNames.isEmpty)
   }
 
   @Test func aRemovedWorktreeTakesEvenAnUnreadableCommentsFileWithIt() throws {
     let harness = Harness()
     let file = ReviewFile(worktreeID: harness.feature.id, in: harness.reviews)
     try file.save([Self.comment()], as: file.issueTicket())
-    let name = try #require(reviewFileNames(in: harness.reviews).first)
+    let name = try #require(harness.reviewFileNames.first)
     let unreadable = #"{"worktree":"\#(harness.feature.id)","comments":[{}]}"#
     try Data(unreadable.utf8).write(to: harness.reviews.appendingPathComponent(name))
     let (after, _, store, _) = harness.relaunched()
@@ -99,7 +88,7 @@ struct AppModelReviewCommentsTests {
     after.forgetWorktrees(store.replaceWorktrees([harness.main], forProject: harness.project.id))
     after.writeReviewCommentsNow()
 
-    #expect(reviewFileNames(in: harness.reviews).isEmpty)
+    #expect(harness.reviewFileNames.isEmpty)
   }
 
   @Test func clearingSentCommentsWhereThereAreNoneWritesNoFile() {
@@ -115,10 +104,8 @@ struct AppModelReviewCommentsTests {
     let harness = Harness()
     let pending = Self.comment()
     let sent = Self.comment("Sent.")
-    let elsewhere = ReviewComment(
+    let elsewhere = ReviewComment.sample(
       path: "Sources/Other.swift",
-      side: .onDisk,
-      scope: .modified,
       lines: 1...1,
       quote: ["x"],
       text: "Elsewhere.",
@@ -140,10 +127,8 @@ struct AppModelReviewCommentsTests {
 
   @Test func thePanelsPendingCountsAreByPathOverEveryFile() {
     let harness = Harness()
-    let other = ReviewComment(
+    let other = ReviewComment.sample(
       path: "Sources/Other.swift",
-      side: .onDisk,
-      scope: .modified,
       lines: 1...1,
       quote: ["x"],
       text: "Elsewhere.",

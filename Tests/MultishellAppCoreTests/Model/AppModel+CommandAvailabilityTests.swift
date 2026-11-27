@@ -48,6 +48,15 @@ struct AppModelCommandAvailabilityTests {
     #expect(!harness.model.canFocusAnotherGroup)
   }
 
+  @Test func onlyASplitTabHasAnotherPaneToFocus() {
+    let (harness, _) = Harness.withOnePane()
+    #expect(!harness.model.canFocusAnotherPane)
+
+    harness.model.splitActivePane(.horizontal)
+
+    #expect(harness.model.canFocusAnotherPane)
+  }
+
   @Test func twoTabsStepAndMoveAndTwoGroupsFocusEachOther() {
     let harness = Harness()
     _ = harness.openBackgroundTab()

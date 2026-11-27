@@ -225,3 +225,8 @@ The command line's requests on the reports' socket. Newest at the bottom.
 - **A negative number before the options is a word for every command**, not only
   for shares: no option is spelled as a number, so `panes type P -1` types it
   rather than refusing an option that cannot exist.
+- **Control's six `*Order` types keep their names** (`NewTabOrder`,
+  `WorktreeRemovalOrder` and the rest): they are what the command line orders,
+  beside sequences named `*Order` elsewhere (review of 2026-11-27). The family
+  has held since b8f449ea; a rename reaches about fifty sites and every `order`
+  binding, for a clash the folders already tell apart.

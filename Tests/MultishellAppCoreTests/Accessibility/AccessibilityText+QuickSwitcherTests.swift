@@ -54,7 +54,7 @@ struct AccessibilityTextQuickSwitcherTests {
   @Test func anIdleRowSaysNoState() {
     let item = QuickSwitcherItem(
       target: .pane(UUID()),
-      kind: .shell,
+      kind: .shell(isAction: false),
       title: "zsh",
       location: "multishell › main",
       state: .idle,
@@ -66,7 +66,7 @@ struct AccessibilityTextQuickSwitcherTests {
   @Test func aPaneOfASplitSaysWhichPaneItIs() {
     let item = QuickSwitcherItem(
       target: .pane(UUID()),
-      kind: .shell,
+      kind: .shell(isAction: false),
       title: "api",
       location: "multishell › main",
       position: PanePosition(number: 2, count: 3),

@@ -13,11 +13,7 @@ struct DebugCLIActivityTableView: View {
   var body: some View {
     VStack(spacing: 0) {
       if rows.isEmpty {
-        Text(t("debug.no-cli-activity"))
-          .font(metrics.font(size: metrics.secondary))
-          .foregroundStyle(theme.debugInfo.textTertiary)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .debugTableRow(theme, verticalPadding: 6)
+        DebugTableEmptyRow(text: t("debug.no-cli-activity"), theme: theme, metrics: metrics)
       } else {
         if layout == .columns { header }
         ForEach(rows) { row in

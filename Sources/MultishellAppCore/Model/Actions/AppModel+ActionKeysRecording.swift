@@ -66,4 +66,10 @@ extension AppModel {
     let hasRow = (ownActions + fileActions).contains { $0.name == recording.actionName }
     if !hasRow { recordingActionKeys = nil }
   }
+
+  /// Keys are stored by name, so an own row of the name, filled in or not, has
+  /// the one keys cell: two would record at once.
+  public func fileRowShowsKeys(forFileAction name: String, in project: Project) -> Bool {
+    !ownSettings(of: project).actions.contains { $0.name == name }
+  }
 }

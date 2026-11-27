@@ -30,25 +30,11 @@ struct ActionKeysCell: View {
         }
       }
       switch model.actionKeysNote(forAction: name, in: project) {
-      case .refusal(let refusal): note(text(of: refusal), color: .red)
-      case .warning(let warning): note(warning.text, color: .orange)
+      case .refusal(let refusal): KeysNote(text: refusal.text, color: .red)
+      case .warning(let warning): KeysNote(text: warning.text, color: .orange)
       case nil: EmptyView()
       }
     }
-  }
-
-  private func text(of refusal: ActionKeysRecording.Refusal) -> String {
-    switch refusal {
-    case .refused(let refusal): refusal.text
-    case .heldBy(let keys, let holder): t("actions.keys-held", keys.glyphs, holder.menuTitle)
-    }
-  }
-
-  private func note(_ text: String, color: Color) -> some View {
-    Text(text)
-      .font(.system(size: UIMetrics.settingsSmallTextSize))
-      .foregroundStyle(color)
-      .fixedSize(horizontal: false, vertical: true)
   }
 
   private func startRecording() {

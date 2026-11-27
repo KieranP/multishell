@@ -8,6 +8,24 @@ import Testing
 
 @Suite @MainActor
 struct AppModelQuickSwitcherTests {
+  @Test func aPaneRunningAnActionIsMarkedAsOneAndAShellsIsNot() throws {
+    let harness = Harness()
+    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
+    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
+    let shellTab = harness.openBackgroundTab()
+    harness.model.runAction(named: serve.name, in: harness.main)
+    let action = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    let shell = try #require(shellTab.root.sessionIDs.first)
+
+    let kinds = Dictionary(
+      harness.model.quickSwitcherPanesAndTabs().map { ($0.target, $0.kind) },
+      uniquingKeysWith: { first, _ in first },
+    )
+
+    #expect(kinds[.pane(action.id)] == .shell(isAction: true))
+    #expect(kinds[.pane(shell)] == .shell(isAction: false))
+  }
+
   @Test func itsOwnKeyAgainClosesItAndTheOtherKeyChangesItsScope() {
     let model = Harness().model
 

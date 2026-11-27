@@ -13,7 +13,7 @@ struct ProjectHooksPage: View {
   var body: some View {
     let shared = project.sharedSettingsSnapshot.confined
     SettingsForm {
-      SharedSettingsHeader(model: model, project: project)
+      SharedSettingsHeader(model: model, project: project, lines: .hooks)
 
       switch section {
       case .hooksCreate: createSection(shared)

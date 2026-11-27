@@ -15,6 +15,18 @@ struct ShellInvocationTests {
     }
   }
 
+  @Test func aDirectoryNamedForAShellFallsBackToSh() throws {
+    let root = try Scratch.directory("shell-directory")
+    defer { Scratch.remove(root) }
+    let directory = root.appendingPathComponent("zsh", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let invocation = ShellInvocation.forCommandLine(inShellAt: directory.path)
+
+    #expect(invocation.executable.path == "/bin/sh")
+    #expect(invocation.arguments == ["-c"])
+  }
+
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
   func theCshFamilyIsNotGivenTheLoginFlagItRefusesBesideC() async throws {
     #expect(ShellInvocation.forCommandLine(inShellAt: "/bin/tcsh").arguments == ["-i", "-c"])

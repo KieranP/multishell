@@ -6,7 +6,7 @@ import MultishellServices
 extension MergePath {
   /// A failed read after one that answered is said under the card; one with
   /// none answered is the checks step's own.
-  public var staleChecksNote: String? {
+  var staleChecksNote: String? {
     guard let checks, let checksReadProblem else { return nil }
     return checks.isEmpty
       ? t("merge-path.not-read-again", checksReadProblem)

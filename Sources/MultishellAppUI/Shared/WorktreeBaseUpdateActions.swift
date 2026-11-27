@@ -39,7 +39,7 @@ struct WorktreeBaseUpdateActions: View {
         .disabled(isRunning)
       }
       Button(method.abortLabel) {
-        Task { await model.abortBaseUpdate(of: worktree, method: method) }
+        Task { await model.requestUpdateAbort(of: worktree, method: method) }
       }
       .disabled(isRunning)
 

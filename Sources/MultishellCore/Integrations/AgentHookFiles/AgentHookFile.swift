@@ -6,16 +6,16 @@ enum AgentHookFile {
   /// An empty object for a missing or blank file; anything else it cannot read back is an error.
   /// Numbers come back as `NumberLiteral` strings; see agents/reports-and-hooks.md.
   static func read(_ file: URL) throws -> [String: Any] {
-    try read(file, blankingComments: false)
+    try read(file, strippingComments: false)
   }
 
   /// `read` past any comments, for telling whether hooks are there: a file holding
   /// comments is never written, but one the user filled by hand is still installed.
   static func readIgnoringComments(_ file: URL) throws -> [String: Any] {
-    try read(file, blankingComments: true)
+    try read(file, strippingComments: true)
   }
 
-  private static func read(_ file: URL, blankingComments: Bool) throws -> [String: Any] {
+  private static func read(_ file: URL, strippingComments: Bool) throws -> [String: Any] {
     guard FileManager.default.fileExists(atPath: file.path) else { return [:] }
     let data = try Data(contentsOf: file)
     guard data.contains(where: { !" \t\r\n".utf8.contains($0) }) else { return [:] }
@@ -23,7 +23,7 @@ enum AgentHookFile {
     guard let decoded = String(data: data, encoding: .utf8) else {
       throw UnparsableSettingsFile(file: file)
     }
-    let text = blankingComments ? JSONComments.blanked(in: decoded) : decoded
+    let text = strippingComments ? decoded.withoutJSONComments : decoded
     guard !RepeatedJSONKeys.occur(in: text),
       let object = try? JSONSerialization.jsonObject(with: Data(NumberLiteral.marking(text).utf8))
     else {

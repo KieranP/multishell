@@ -580,7 +580,7 @@ struct WorktreeGitBaseUpdatesTests {
     let feature = try await fixture.worktree(onBranch: "feature")
 
     await #expect(throws: BaseRemoteMissing.self) {
-      try await fixture.git.fetch(base, into: feature)
+      try await fixture.git.fetch(base, in: feature)
     }
   }
 

@@ -34,6 +34,9 @@ struct AppModelShellTests {
     harness.model.setCustomShellPath("/no/such/shell")
     #expect(harness.model.customShellPathProblem?.hasPrefix("Nothing executable") == true)
 
+    harness.model.setCustomShellPath("/bin")
+    #expect(harness.model.customShellPathProblem?.hasPrefix("Nothing executable") == true)
+
     harness.model.setCustomShellPath(" /bin/sh ")
     #expect(harness.model.customShellPathProblem == nil)
     #expect(harness.model.shellDisplayName(ShellChoice.customID) == "the custom path /bin/sh")

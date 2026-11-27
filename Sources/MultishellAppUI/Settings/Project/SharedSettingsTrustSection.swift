@@ -3,25 +3,26 @@ import MultishellCore
 import SwiftUI
 
 /// What the repository asks for is used only once trusted, and a change
-/// asks again; the grey text in the hook editors is what it is.
+/// asks again; the page below shows what it asks for.
 struct SharedSettingsTrustSection: View {
   let model: AppModel
   let project: Project
+  let lines: SharedSettingsTrustLines
 
   var body: some View {
     let isTrusted = model.trustsSharedSettings(of: project)
     SettingsGroup {
       HStack(spacing: 8) {
-        Text(isTrusted ? t("hooks.shared-run") : t("hooks.shared-ignored"))
+        Text(isTrusted ? lines.trusted : lines.untrusted)
         Spacer()
-        Button(isTrusted ? t("hooks.stop-trusting") : t("hooks.trust")) {
+        Button(isTrusted ? t("shared-settings.stop-trusting") : t("shared-settings.trust")) {
           model.setTrustsSharedSettings(!isTrusted, for: project)
         }
       }
     } header: {
       InfoLabel(
-        sectionHeader: t("hooks.shared-header", SharedProjectSettings.fileName),
-        info: t("hooks.shared-info", SharedProjectSettings.fileName),
+        sectionHeader: t("shared-settings.header", SharedProjectSettings.fileName),
+        info: lines.info,
       )
     }
   }

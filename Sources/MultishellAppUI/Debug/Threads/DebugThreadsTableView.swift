@@ -16,11 +16,7 @@ struct DebugThreadsTableView: View {
   var body: some View {
     VStack(spacing: 0) {
       if groups.isEmpty {
-        Text(t("debug.no-threads"))
-          .font(metrics.font(size: metrics.secondary))
-          .foregroundStyle(theme.debugInfo.textTertiary)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .debugTableRow(theme, verticalPadding: 6)
+        DebugTableEmptyRow(text: t("debug.no-threads"), theme: theme, metrics: metrics)
       } else {
         if layout == .columns { header }
         ForEach(groups) { group in

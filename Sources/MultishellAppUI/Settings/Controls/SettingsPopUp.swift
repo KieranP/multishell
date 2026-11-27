@@ -34,9 +34,7 @@ struct SettingsPopUp<Value: Hashable, Options: View>: View {
       .padding(.vertical, UIMetrics.settingsControlVerticalInset)
       .settingsControlFace()
     }
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
+    .labelOnlyMenuStyle()
     .accessibilityLabel(label)
     .accessibilityValue(title)
   }

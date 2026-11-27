@@ -167,10 +167,8 @@ struct AppModelControlReviewTests {
       .addReviewComment(Self.order(1...1, side: .onDisk, text: "One"))
     )
     _ = await harness.messageSource.ask(.sendReview(worktree: nil, to: nil))
-    let pending = ReviewComment(
+    let pending = ReviewComment.sample(
       path: "a.swift",
-      side: .onDisk,
-      scope: .modified,
       lines: 2...2,
       quote: ["before 1"],
       text: "Two",

@@ -56,8 +56,8 @@ enum DebugValueText {
     t("debug.per-second", rate(value))
   }
 
-  /// A rate or a mean in bytes, rounded to whole bytes.
-  static func bytes(_ value: Double) -> String {
+  /// A rate in bytes, rounded to whole bytes.
+  private static func bytes(_ value: Double) -> String {
     memory(wholeBytes(value))
   }
 

@@ -42,17 +42,18 @@ struct QuickSwitcherRowGlyph: View {
         size: metrics.glyph,
       )
 
-    case .shell:
-      pane(agentID: nil)
+    case .shell(let isAction):
+      pane(agentID: nil, unmarkedSymbol: TerminalTabGlyph(paneIsAction: isAction).symbol)
 
     case .worktree:
       StateDot(state: item.state.shownState, theme: theme, palette: palette)
     }
   }
 
-  private func pane(agentID: String?) -> some View {
+  private func pane(agentID: String?, unmarkedSymbol: String = PaneSymbol.terminal) -> some View {
     PaneGlyph(
       agentID: agentID,
+      unmarkedSymbol: unmarkedSymbol,
       state: item.state,
       ringFill: palette.background,
       ringWash: ringWash,

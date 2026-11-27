@@ -9,14 +9,7 @@ import Testing
 @Suite
 struct AppModelReviewPageTests {
   private static func comment(_ path: String = "Sources/App.swift") -> ReviewComment {
-    ReviewComment(
-      path: path,
-      side: .onDisk,
-      scope: .modified,
-      lines: 3...3,
-      quote: ["let a = 1"],
-      text: "Guard it.",
-    )
+    .sample(path: path, lines: 3...3, quote: ["let a = 1"])
   }
 
   @Test func reviewsGlyphCarriesADotWhileACommentWaitsAndAnotherPageIsShown() {

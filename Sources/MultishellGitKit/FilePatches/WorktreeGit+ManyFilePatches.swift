@@ -44,28 +44,11 @@ extension WorktreeGit {
   ) async -> [String: FilePatches]? {
     let chunks = paths.chunked(into: Self.pathsPerDiff)
     // A steady few in flight, the next started as each lands: a wave waited on its slowest.
-    return await withTaskGroup(of: [String: FilePatches]?.self) { group in
-      var next = 0
-      func startNext() {
-        guard next < chunks.count else { return }
-        let chunk = chunks[next]
-        next += 1
-        group.addTask {
-          await patches(ofChunk: chunk, in: directory, diffAlgorithm, since: commit, base: base)
-        }
-      }
-      for _ in 0..<Self.runsAtOnce { startNext() }
-      var found: [String: FilePatches] = [:]
-      for await part in group {
-        guard let part else {
-          group.cancelAll()
-          return nil
-        }
-        found.merge(part) { first, _ in first }
-        startNext()
-      }
-      return found
+    let parts = await chunks.mapConcurrentlyUnorderedStoppingAtNil(width: Self.runsAtOnce) {
+      chunk in
+      await patches(ofChunk: chunk, in: directory, diffAlgorithm, since: commit, base: base)
     }
+    return parts?.reduce(into: [:]) { found, part in found.merge(part) { first, _ in first } }
   }
 
   /// One run's paths; a chunk whose headers git quoted gives none, each of its

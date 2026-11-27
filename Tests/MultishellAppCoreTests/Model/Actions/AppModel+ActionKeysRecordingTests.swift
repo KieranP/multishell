@@ -116,4 +116,20 @@ struct AppModelActionKeysRecordingTests {
 
     #expect(harness.model.actionKeysRecording(forAction: "Seed", in: harness.project) == nil)
   }
+
+  @Test func aFileRowLeavesItsKeysToAnOwnRowOfItsNameEvenUnfilled() async throws {
+    let harness = Harness()
+    try #"{ "actions": [ { "name": "Serve", "command": "npm start" } ] }"#.write(
+      to: SharedProjectSettings.file(in: harness.root),
+      atomically: true,
+      encoding: .utf8,
+    )
+    await harness.model.refreshSharedSettingsIfChanged()
+    #expect(harness.model.fileRowShowsKeys(forFileAction: "Serve", in: harness.project))
+
+    harness.model.addAction(to: harness.project)
+    harness.model.setActionName("Serve", at: 0, in: harness.project)
+
+    #expect(!harness.model.fileRowShowsKeys(forFileAction: "Serve", in: harness.project))
+  }
 }

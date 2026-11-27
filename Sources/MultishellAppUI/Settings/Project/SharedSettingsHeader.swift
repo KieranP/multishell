@@ -7,10 +7,11 @@ import SwiftUI
 struct SharedSettingsHeader: View {
   let model: AppModel
   let project: Project
+  let lines: SharedSettingsTrustLines
 
   var body: some View {
     if project.sharedSettingsSnapshot.confined?.asksForTrust == true {
-      SharedSettingsTrustSection(model: model, project: project)
+      SharedSettingsTrustSection(model: model, project: project, lines: lines)
     } else if let problem = project.sharedSettingsSnapshot.problem {
       SettingsGroup { SettingsCaption(problem) }
     }

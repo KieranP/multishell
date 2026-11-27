@@ -46,14 +46,7 @@ struct AllChangesBar: View {
         collapseEveryFileButton(palette: palette)
       }
     }
-    .font(model.metrics.font(size: model.metrics.secondary))
-    .padding(.leading, UIMetrics.fileTabBarLeadingPadding)
-    .padding(.trailing, UIMetrics.fileTabBarTrailingPadding)
-    .frame(height: UIMetrics.fileTabBarHeight)
-    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-    .clipped()
-    .background(palette.background)
-    .hairline(.bottom, palette)
+    .fileTabBarFace(palette: palette, metrics: model.metrics)
   }
 
   private func collapseEveryFileButton(palette: AreaPalette) -> some View {

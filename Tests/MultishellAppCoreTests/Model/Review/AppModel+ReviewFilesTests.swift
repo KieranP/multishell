@@ -10,18 +10,7 @@ import Testing
 @Suite
 struct AppModelReviewFilesTests {
   private static func comment(_ text: String = "Guard it.") -> ReviewComment {
-    ReviewComment(
-      path: "Sources/App.swift",
-      side: .onDisk,
-      scope: .modified,
-      lines: 3...4,
-      quote: ["let a = 1", "let b = 2"],
-      text: text,
-    )
-  }
-
-  private func reviewFileNames(in directory: URL) -> [String] {
-    (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    .sample(text: text)
   }
 
   @Test func aCommentWrittenBeforeARelaunchIsThereAfterIt() {
@@ -75,7 +64,7 @@ struct AppModelReviewFilesTests {
     let harness = Harness()
     let file = ReviewFile(worktreeID: harness.feature.id, in: harness.reviews)
     try file.save([Self.comment()], as: file.issueTicket())
-    let name = try #require(reviewFileNames(in: harness.reviews).first)
+    let name = try #require(harness.reviewFileNames.first)
     let path = harness.reviews.appendingPathComponent(name).path
     let longAgo = Date(timeIntervalSince1970: 1_000_000)
     try FileManager.default.setAttributes([.modificationDate: longAgo], ofItemAtPath: path)
@@ -94,7 +83,7 @@ struct AppModelReviewFilesTests {
     old.markSent(to: "Codex", at: Date() - DropCopies.retention - 60)
     let file = ReviewFile(worktreeID: harness.feature.id, in: harness.reviews)
     try file.save([old, Self.comment("pending")], as: file.issueTicket())
-    let name = try #require(reviewFileNames(in: harness.reviews).first)
+    let name = try #require(harness.reviewFileNames.first)
     let path = harness.reviews.appendingPathComponent(name).path
     let longAgo = Date(timeIntervalSince1970: 1_000_000)
     try FileManager.default.setAttributes([.modificationDate: longAgo], ofItemAtPath: path)
@@ -111,7 +100,7 @@ struct AppModelReviewFilesTests {
     let harness = Harness()
     let file = ReviewFile(worktreeID: harness.feature.id, in: harness.reviews)
     try file.save([Self.comment()], as: file.issueTicket())
-    let name = try #require(reviewFileNames(in: harness.reviews).first)
+    let name = try #require(harness.reviewFileNames.first)
     try Data("not json".utf8).write(to: harness.reviews.appendingPathComponent(name))
 
     let (after, _, _, _) = harness.relaunched()
@@ -125,13 +114,13 @@ struct AppModelReviewFilesTests {
       let file = ReviewFile(worktreeID: worktree.id, in: harness.reviews)
       try file.save([Self.comment()], as: file.issueTicket())
     }
-    for name in reviewFileNames(in: harness.reviews) {
+    for name in harness.reviewFileNames {
       try Data("not json".utf8).write(to: harness.reviews.appendingPathComponent(name))
     }
 
     let (after, _, _, _) = harness.relaunched()
 
-    let backups = reviewFileNames(in: harness.reviews)
+    let backups = harness.reviewFileNames
     #expect(backups.count == 2)
     let message = try #require(after.presentedError?.message)
     #expect(backups.allSatisfy(message.contains))
@@ -170,7 +159,7 @@ struct AppModelReviewFilesTests {
     harness.model.removeProject(harness.project)
     harness.model.writeReviewCommentsNow()
 
-    #expect(reviewFileNames(in: harness.reviews).count == 1)
+    #expect(harness.reviewFileNames.count == 1)
     let project = harness.store.addProject(at: harness.root)
     harness.store.replaceWorktrees([harness.main, harness.feature], forProject: project.id)
     harness.model.readReviewFilesOfNewWorktrees()

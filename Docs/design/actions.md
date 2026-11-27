@@ -232,3 +232,6 @@ bottom.
 - Unproven: an unsaved edit in a name field landing on the next row when its own
   row is removed while the field has focus. It needs SwiftUI to report a removed
   view's focus change, which no run here showed.
+- AppCore's `ActionMenu` and `ActionMenuItem` keep their names beside AppUI's
+  `ActionsPlayMenu` view (review of 2026-11-27): renaming the value to match
+  would give the value and the view one name across the two targets.

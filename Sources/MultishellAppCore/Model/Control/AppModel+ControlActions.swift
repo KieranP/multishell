@@ -1,15 +1,6 @@
 import MultishellCore
 
 extension AppModel {
-  private static func word(for state: ActionRunState) -> String {
-    switch state {
-    case .idle: "idle"
-    case .running: "running"
-    case .done: "done"
-    case .failed: "failed"
-    }
-  }
-
   func replyToListActions(of id: String) -> ControlReply {
     guard let worktree = worktree(withControlID: id) else { return .refused(.noWorktree(id: id)) }
     let menu = actionMenu(for: worktree)
@@ -19,7 +10,7 @@ extension AppModel {
         actions: (menu?.items ?? []).map { item in
           ActionListing.Action(
             name: item.name,
-            state: Self.word(for: item.state),
+            state: item.state.commandName,
             keys: item.keys?.spelled,
           )
         },

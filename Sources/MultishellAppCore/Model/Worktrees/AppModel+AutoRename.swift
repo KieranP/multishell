@@ -42,7 +42,7 @@ extension AppModel {
       finishAutoRename(
         of: worktree,
         namedAtStart: startingName,
-        with: AutoRenameAnswer(branch: worktree.branch, outcome: .failure(failure)),
+        with: AutoRenameOutcome(branch: worktree.branch, result: .failure(failure)),
       )
       return
     }
@@ -56,9 +56,9 @@ extension AppModel {
     )
     let runner = oneShotRunner.run
     Task { @MainActor [weak self] in
-      let answer = await run.answer(using: coordinator.git, runner: runner)
-      guard let self, oneShotRunner.endRun(id, stopper: run.stopper), let answer else { return }
-      finishAutoRename(of: worktree, namedAtStart: startingName, with: answer)
+      let outcome = await run.outcome(using: coordinator.git, runner: runner)
+      guard let self, oneShotRunner.endRun(id, stopper: run.stopper), let outcome else { return }
+      finishAutoRename(of: worktree, namedAtStart: startingName, with: outcome)
     }
   }
 
@@ -106,17 +106,17 @@ extension AppModel {
   private func finishAutoRename(
     of started: Worktree,
     namedAtStart startingName: String?,
-    with answer: AutoRenameAnswer,
+    with outcome: AutoRenameOutcome,
   ) {
     let id = started.id
     guard autoRenames[id] == .running else { return }
     guard let worktree = workspace.worktree(id),
-      worktree.branch == answer.branch || worktree.branch == started.branch
+      worktree.branch == outcome.branch || worktree.branch == started.branch
     else {
       autoRenames[id] = nil
       return
     }
-    switch answer.outcome {
+    switch outcome.result {
     case .success(let name):
       autoRenames[id] = nil
       guard renamingWorktreeID != id, customName(of: worktree) == startingName else { return }

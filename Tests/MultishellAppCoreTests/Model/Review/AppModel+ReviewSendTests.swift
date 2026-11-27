@@ -11,14 +11,7 @@ import Testing
 @Suite
 struct AppModelReviewSendTests {
   private static func comment(_ text: String = "Guard it.") -> ReviewComment {
-    ReviewComment(
-      path: "Sources/App.swift",
-      side: .onDisk,
-      scope: .modified,
-      lines: 3...4,
-      quote: ["let a = 1"],
-      text: text,
-    )
+    .sample(quote: ["let a = 1"], text: text)
   }
 
   /// The main worktree selected, with an agent tab for each id given.

@@ -100,9 +100,23 @@ extension AppModel {
     return reading.threads ?? []
   }
 
+  /// The notes under the pull request page's card, in the order they are shown.
+  public func pullRequestPageNotes(
+    of pullRequest: PullRequest,
+    path: MergePath,
+    in worktree: Worktree,
+  ) -> [String] {
+    let services = services(of: worktree)
+    return [
+      services.outgrownText, services.pullRequestReadProblemText, path.staleChecksNote,
+      threadsReadProblem(of: pullRequest, in: worktree),
+    ]
+    .compactMap(\.self)
+  }
+
   /// Why the threads' last read failed, said under the card until one answers; a
   /// merged or closed pull request lists no threads, so says nothing of them.
-  public func threadsReadProblem(of pullRequest: PullRequest, in worktree: Worktree) -> String? {
+  func threadsReadProblem(of pullRequest: PullRequest, in worktree: Worktree) -> String? {
     guard !pullRequest.state.isSettled, let reading = remoteState.threads[worktree.id],
       reading.pullRequestNumber == pullRequest.number, let failure = reading.failure,
       let project = workspace.project(worktree.projectID),

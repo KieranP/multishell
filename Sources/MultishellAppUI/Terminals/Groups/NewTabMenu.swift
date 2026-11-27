@@ -30,7 +30,7 @@ struct NewTabMenu: View {
     } label: {
       newTabLabel
     }
-    .glyphMenuStyle()
+    .labelOnlyMenuStyle()
     .frame(width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight)
     .tracksHover($isHovered)
     .help(TabStripButtonText.newTabHelp(isFocusedGroup: isFocusedGroup))

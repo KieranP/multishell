@@ -22,7 +22,7 @@ public struct ShellInvocation: Equatable, Sendable {
   /// The shell at `path`, interactive and login, so a script sees a terminal's
   /// PATH: additions live in `.zprofile` for some and `.zshrc` for others.
   public static func forCommandLine(inShellAt path: String) -> Self {
-    guard FileManager.default.isExecutableFile(atPath: path) else {
+    guard FileManager.default.isRunnableFile(atPath: path) else {
       return Self(executable: fallbackShell, arguments: ["-c"])
     }
     let name = URL(fileURLWithPath: path).lastPathComponent

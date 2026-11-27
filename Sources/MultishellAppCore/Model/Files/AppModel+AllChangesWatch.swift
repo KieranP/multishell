@@ -40,8 +40,8 @@ extension AppModel {
   /// reading it replaces held unread or stale and so would not check.
   private func noteChangesDuringRead(_ changed: [String], in tab: AllChangesTab) {
     guard let list = allChangesList(of: tab.worktreeID) else { return }
-    let isTouched = AllChangesReading.isTouched(by: changed)
-    let touched = Set(list.map(\.path).filter(isTouched))
+    let batch = WatcherBatch(changed)
+    let touched = Set(list.map(\.path).filter(batch.touches))
     if !touched.isEmpty { noteAllChangesTabChanged(tab.id, staleness: .paths(touched)) }
   }
 

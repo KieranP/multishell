@@ -35,21 +35,13 @@ struct AppModelPaneFocusTests {
     #expect(harness.engine.focused.last == last)
   }
 
-  @Test func aTabOfOnePaneOffersNoOtherPaneAndFocusGoesNowhere() {
+  @Test func inATabOfOnePaneFocusGoesNowhere() {
     let (harness, _) = Harness.withOnePane()
     let before = harness.model.workspace
 
     harness.model.focusNextPane()
     harness.model.focusPreviousPane()
 
-    #expect(!harness.model.canFocusAnotherPane)
     #expect(harness.model.workspace == before)
-  }
-
-  @Test func aSplitTabOffersAnotherPane() {
-    let (harness, _) = Harness.withOnePane()
-    harness.model.splitActivePane(.horizontal)
-
-    #expect(harness.model.canFocusAnotherPane)
   }
 }

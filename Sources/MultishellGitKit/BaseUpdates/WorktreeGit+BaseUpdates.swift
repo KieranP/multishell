@@ -15,7 +15,7 @@ extension WorktreeGit {
 
   /// The base's remote fetched, the local copy of the trunk being often stale; no
   /// fetch for a local base. Throws `BaseRemoteMissing` where no listed remote holds it.
-  public func fetch(_ base: DefaultBranch, into worktree: Worktree) async throws {
+  public func fetch(_ base: DefaultBranch, in worktree: Worktree) async throws {
     guard base.isRemoteTracking else { return }
     guard let remote = try await remote(holding: base, in: worktree.path) else {
       throw BaseRemoteMissing(base: base.shortName)
@@ -71,17 +71,17 @@ extension WorktreeGit {
 
   /// The merge or rebase stopped partway in the checkout, whoever started it.
   public func unfinishedUpdate(in checkout: URL) async -> UpdateMethod? {
-    await runOnDispatch { UnfinishedOperationReading.unfinishedUpdate(inCheckout: checkout) }
+    await runOnDispatch { UnfinishedOperationFiles.unfinishedUpdate(inCheckout: checkout) }
   }
 
   /// What tells the stop in the checkout from a later one of its kind, `nil` for none.
   public func unfinishedUpdateMark(in checkout: URL) async -> String? {
-    await runOnDispatch { UnfinishedOperationReading.unfinishedUpdateMark(inCheckout: checkout) }
+    await runOnDispatch { UnfinishedOperationFiles.unfinishedUpdateMark(inCheckout: checkout) }
   }
 
   /// The branch a rebase stopped in the checkout will put back, `nil` for none.
   public func branchBeingRebased(in checkout: URL) async -> String? {
-    await runOnDispatch { UnfinishedOperationReading.branchBeingRebased(inCheckout: checkout) }
+    await runOnDispatch { UnfinishedOperationFiles.branchBeingRebased(inCheckout: checkout) }
   }
 
   /// Whether the stop is the update's own, begun from `HEAD` and the base tip as read
@@ -96,22 +96,21 @@ extension WorktreeGit {
     switch method {
     case .merge:
       let mergeHead = await runOnDispatch {
-        UnfinishedOperationReading.firstLine(of: "MERGE_HEAD", inCheckout: checkout)
+        UnfinishedOperationFiles.firstLine(of: "MERGE_HEAD", inCheckout: checkout)
       }
       let origHead = await pseudoRef("ORIG_HEAD", in: checkout)
       return mergeHead == tip && origHead == head
 
     case .rebase:
       return await runOnDispatch {
-        UnfinishedOperationReading.isRebase(from: head, onto: tip, inCheckout: checkout)
+        UnfinishedOperationFiles.isRebase(from: head, onto: tip, inCheckout: checkout)
       }
     }
   }
 
   /// A cherry-pick, revert or `git am` stopped partway in the checkout.
   public func isPickingCommits(in checkout: URL) async -> Bool {
-    if await runOnDispatch({ UnfinishedOperationReading.isPickingFromAList(inCheckout: checkout) })
-    {
+    if await runOnDispatch({ UnfinishedOperationFiles.isPickingFromAList(inCheckout: checkout) }) {
       return true
     }
     for name in ["CHERRY_PICK_HEAD", "REVERT_HEAD"]
@@ -126,8 +125,8 @@ extension WorktreeGit {
   private func pseudoRef(_ name: String, in checkout: URL) async -> String? {
     let (line, isReftable) = await runOnDispatch {
       (
-        UnfinishedOperationReading.firstLine(of: name, inCheckout: checkout),
-        UnfinishedOperationReading.keepsRefsInReftable(inCheckout: checkout),
+        UnfinishedOperationFiles.firstLine(of: name, inCheckout: checkout),
+        UnfinishedOperationFiles.keepsRefsInReftable(inCheckout: checkout),
       )
     }
     guard line == nil, isReftable else { return line }

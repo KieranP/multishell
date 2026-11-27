@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 extension AppModel {
   private static var noShortcutWord: String { "none" }
@@ -229,7 +230,7 @@ extension AppModel {
   /// the picker stores one, or the login or custom entry.
   private func isShellChoice(_ id: String) -> Bool {
     [ShellChoice.loginShellID, ShellChoice.customID].contains(id)
-      || (id.hasPrefix("/") && FileManager.default.isExecutableFile(atPath: id))
+      || (id.hasPrefix("/") && FileManager.default.isRunnableFile(atPath: id))
   }
 
   /// `notifications.attention`, `.error` and `.done`, as the state file has them.

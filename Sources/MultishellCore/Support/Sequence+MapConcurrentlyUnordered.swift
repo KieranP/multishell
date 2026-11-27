@@ -7,7 +7,16 @@ extension Sequence where Element: Sendable {
     isolation: isolated (any Actor)? = #isolation,
     _ transform: @escaping @Sendable (Element) async -> Result,
   ) async -> [Result] {
-    await withTaskGroup(of: Result.self, isolation: isolation) { group in
+    await mapConcurrentlyUnorderedStoppingAtNil(width: width) { await transform($0) } ?? []
+  }
+
+  /// As `mapConcurrentlyUnordered`, except the first `nil` cancels the rest and is the answer.
+  public func mapConcurrentlyUnorderedStoppingAtNil<Result: Sendable>(
+    width: Int,
+    isolation: isolated (any Actor)? = #isolation,
+    _ transform: @escaping @Sendable (Element) async -> Result?,
+  ) async -> [Result]? {
+    await withTaskGroup(of: Result?.self, isolation: isolation) { group in
       var pending = makeIterator()
       func startNext() {
         guard let element = pending.next() else { return }
@@ -17,6 +26,10 @@ extension Sequence where Element: Sendable {
 
       var results: [Result] = []
       for await result in group {
+        guard let result else {
+          group.cancelAll()
+          return nil
+        }
         results.append(result)
         startNext()
       }

@@ -21,9 +21,4 @@ struct AppModelTabGlyphTests {
     let split = try #require(harness.model.workspace.tab(owning: session.id))
     #expect(harness.model.glyph(of: split) == .split)
   }
-
-  @Test func aSidebarRowsOrBoardCardsPaneShowsTheActionMarkOnlyForAnAction() {
-    #expect(TerminalTabGlyph(paneIsAction: true) == .action)
-    #expect(TerminalTabGlyph(paneIsAction: false) == .terminal)
-  }
 }

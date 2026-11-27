@@ -15,9 +15,7 @@ struct ActionTable<Rows: View>: View {
       } keys: {
         Text(t("actions.column-keys"))
       }
-      .font(.system(size: UIMetrics.settingsSmallTextSize, weight: .semibold))
-      .foregroundStyle(SettingsColors.secondaryText)
-      .accessibilityAddTraits(.isHeader)
+      .settingsColumnHeadings()
       rows()
     }
   }

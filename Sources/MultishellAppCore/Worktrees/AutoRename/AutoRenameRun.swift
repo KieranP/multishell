@@ -28,26 +28,26 @@ struct AutoRenameRun: Sendable {
   let stopper: ProcessStopper
 
   /// `nil` where the run was stopped before the agent started.
-  func answer(
+  func outcome(
     using git: WorktreeGit,
     runner: @Sendable (OneShotRequest) async throws -> ProcessOutput,
-  ) async -> AutoRenameAnswer? {
+  ) async -> AutoRenameOutcome? {
     let read: RenameMaterial?
     do {
       read = try await git.renameMaterial(inRepositoryAt: worktree.path, since: base)
     } catch {
       let failure = AutoRenameFailure.unreadableBranch(reason: PresentedError.describe(error))
-      return AutoRenameAnswer(branch: worktree.branch, outcome: .failure(failure))
+      return AutoRenameOutcome(branch: worktree.branch, result: .failure(failure))
     }
     guard let material = read else {
       let failure = AutoRenameFailure.noSharedHistory(base: base.shortName)
-      return AutoRenameAnswer(branch: worktree.branch, outcome: .failure(failure))
+      return AutoRenameOutcome(branch: worktree.branch, result: .failure(failure))
     }
     guard !material.isEmpty else {
-      return AutoRenameAnswer(branch: material.branch, outcome: .failure(.nothingToName))
+      return AutoRenameOutcome(branch: material.branch, result: .failure(.nothingToName))
     }
-    guard let outcome = await ask(about: material, runner: runner) else { return nil }
-    return AutoRenameAnswer(branch: material.branch, outcome: outcome)
+    guard let result = await ask(about: material, runner: runner) else { return nil }
+    return AutoRenameOutcome(branch: material.branch, result: result)
   }
 
   private func ask(
