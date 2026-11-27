@@ -87,7 +87,7 @@ struct WorktreeCoordinatorBranchesTests {
     )
 
     #expect(
-      scan.upstreams?["feat"]
+      scan.upstreams["feat"]
         == BranchUpstream(remote: "origin", branch: "shared/feat", tip: pushed)
     )
   }
@@ -108,7 +108,7 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "fork", branch: "feat", tip: tip))
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "fork", branch: "feat", tip: tip))
   }
 
   @Test func aBranchFollowingItsOwnNameIsPublishedThereThoughItsPushRemoteLacksIt() async throws {
@@ -126,7 +126,7 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
   }
 
   @Test func aBranchPushedWithoutTrackingIsPublishedUnderItsNameOnTheRemote() async throws {
@@ -141,7 +141,7 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
   }
 
   @Test func aBranchFollowingTheTrunkButPushedUnderItsOwnNameIsPublishedThere() async throws {
@@ -161,28 +161,7 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
-  }
-
-  @Test func aScanReadWithoutTheUpstreamAtomsLeavesUpstreamsUnknown() async throws {
-    let fake = try FakeGit.make(
-      """
-      case "$*" in
-        *remotename*) exit 129 ;;
-      esac
-      printf 'refs/heads/feat\\tabc\\trefs/remotes/origin/feat\\t\\t\\n'
-      """
-    )
-    defer { fake.tearDown() }
-
-    let scan = try #require(
-      await fake.coordinator.scanBranches(
-        of: Project(path: fake.directory),
-        defaultBranchOverride: nil,
-      )
-    )
-
-    #expect(scan.upstreams == nil)
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: tip))
   }
 
   @Test func anUpstreamWhoseRefHasGoneHasNoTip() async throws {
@@ -198,7 +177,7 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: nil))
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: nil))
   }
 
   @Test func anOverrideNamingNoBranchBadgesNothingAndKeepsTheDates() async throws {

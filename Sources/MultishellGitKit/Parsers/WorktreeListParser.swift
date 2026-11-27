@@ -4,13 +4,9 @@ import MultishellCore
 /// Parses `git worktree list --porcelain -z`, free of any process or
 /// filesystem access so the format is testable against fixture text alone.
 enum WorktreeListParser {
-  /// Records of `worktree <path>`, `HEAD <sha>` and `branch <ref>` or `detached`, split on NUL for
-  /// `-z` or a newline for an older git's form; see worktrees/watching-and-status-reads.md.
-  static func parse(
-    _ porcelain: String,
-    projectID: Project.ID,
-    separator: Character = "\0",
-  ) -> [Worktree] {
+  /// Records of `worktree <path>`, `HEAD <sha>` and `branch <ref>` or `detached`,
+  /// each field NUL-terminated; see worktrees/watching-and-status-reads.md.
+  static func parse(_ porcelain: String, projectID: Project.ID) -> [Worktree] {
     var worktrees: [Worktree] = []
     var fields: [String: String] = [:]
 
@@ -32,8 +28,8 @@ enum WorktreeListParser {
       )
     }
 
-    // An empty field is the blank line the plain form had: end of record.
-    for line in porcelain.split(separator: separator, omittingEmptySubsequences: false) {
+    // An empty field ends a record.
+    for line in porcelain.split(separator: "\0", omittingEmptySubsequences: false) {
       if line.isEmpty {
         flush()
         continue

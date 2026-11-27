@@ -91,8 +91,6 @@ command-line tool.
   not offered: it would be offered for a branch that has one. Checks not read
   keep a pull request from reading ready, and Create Pull Request opens nothing
   where git cannot count the commits the remote lacks.
-- **A ref read retried without the upstream atoms says nothing of upstreams**,
-  so a failed first query leaves every row's marks as they were.
 - **"Not ours" is asked again when the remotes change, else after ten minutes**:
   `gh` decides it from the remotes and its logins, and an Enterprise host is not
   ours until `gh auth login` names it, which changes no remote.
@@ -146,10 +144,8 @@ command-line tool.
 - **Each reader takes the integration count before its tool and compares it
   after**, nine of them, as the toggles' reads always have: a token type would
   wrap one `Int` and one comparison.
-- **The branch scan's ref query has one retry, not two.** A review asked for a
-  tier keeping the dates where the upstream atoms fail, but
-  `upstream:remotename` (2.16) and `upstream:remoteref` (2.22) predate the 2.36
-  floor, so no supported git refuses them.
+- **The branch scan's ref query has no retry.** Every atom it asks for predates
+  the 2.39 floor, so no supported git refuses one.
 - **`GitRunLog` keeps its name though `gh` and `circleci` runs join it**, so
   Debug Info counts them beside git's. Renaming it means renaming Debug Info's
   git command feature, 23 files written before this work; its comment says what

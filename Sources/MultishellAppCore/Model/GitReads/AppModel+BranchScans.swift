@@ -83,18 +83,13 @@ extension AppModel {
     // No branch to measure against: drop the badges, before any wait, rather
     // than leave them about a base that no longer applies.
     if scan.mergeInputs == nil { forgetMergeStates(ofProject: project.id) }
-    if let upstreams = scan.upstreams {
-      await recordUpstreams(
-        upstreams,
-        fallbacks: scan.fallbackUpstreams,
-        branchTips: scan.branchTips,
-        of: project,
-        fromScan: scanNumber,
-      )
-    } else {
-      // The rows still take the tips moved, though no upstream was read.
-      recomputeWorktreeServices(ofProject: project.id)
-    }
+    await recordUpstreams(
+      scan.upstreams,
+      fallbacks: scan.fallbackUpstreams,
+      branchTips: scan.branchTips,
+      of: project,
+      fromScan: scanNumber,
+    )
     await readChangesPastHead(ofProject: project.id)
     guard let inputs = scan.mergeInputs else { return }
 

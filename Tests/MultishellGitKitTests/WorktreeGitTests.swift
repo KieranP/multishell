@@ -30,9 +30,7 @@ struct WorktreeGitTests {
   }
 
   @Test func pathsGitPrintsAreSplitOnlyWhereGitEndsALine() {
-    let directory = URL(fileURLWithPath: "/repos/x")
-
-    let paths = WorktreeGit.absolutePaths(in: "/repos/a\u{2028}b\n/repos/c\n", from: directory)
+    let paths = WorktreeGit.absolutePaths(in: "/repos/a\u{2028}b\n/repos/c\n")
 
     #expect(paths.map(\.path) == ["/repos/a\u{2028}b", "/repos/c"])
   }

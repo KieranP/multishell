@@ -138,10 +138,6 @@ struct ReflogWorkParserTests {
       "an interactive rebase names itself differently and finishes the same way",
     )
     #expect(
-      !ReflogWorkParser.parse("\(secondSHA) rebase finished: refs/heads/feat onto \(secondSHA)\n"),
-      "the wording before git 2.26",
-    )
-    #expect(
       ReflogWorkParser.parse("\(secondSHA) rebase (finish): refs/heads/feat onto\n"),
       "a finish naming no commit is read as work, the safe side",
     )

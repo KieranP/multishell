@@ -31,9 +31,9 @@ struct WorktreeGitRemotesTests {
     let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
-    #expect(scan.upstreams?["feat"]?.remote == "origin")
-    #expect(scan.upstreams?["feat"]?.branch == "feat")
-    #expect(scan.upstreams?["feat"]?.tip != nil, "the remote has the branch now")
+    #expect(scan.upstreams["feat"]?.remote == "origin")
+    #expect(scan.upstreams["feat"]?.branch == "feat")
+    #expect(scan.upstreams["feat"]?.tip != nil, "the remote has the branch now")
     #expect(try await followed(by: "feat", in: fixture) == "origin/feat")
   }
 
@@ -96,7 +96,7 @@ struct WorktreeGitRemotesTests {
     let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
-    #expect(scan.upstreams?["feat"]?.remote == "fork", "found where its pushes go")
+    #expect(scan.upstreams["feat"]?.remote == "fork", "found where its pushes go")
   }
 
   @Test func publishingToAnotherRemoteWithNoPushRemoteNamedMakesItTrackWhatWasPushed()

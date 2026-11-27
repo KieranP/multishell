@@ -24,7 +24,7 @@ extension WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: main))
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "origin", branch: "feat", tip: main))
     #expect(
       scan.fallbackUpstreams["feat"]
         == .some(BranchUpstream(remote: "origin", branch: "main", tip: main))
@@ -46,7 +46,7 @@ extension WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"]?.branch == "feat")
+    #expect(scan.upstreams["feat"]?.branch == "feat")
     #expect(scan.fallbackUpstreams["feat"] == .some(nil))
   }
 
@@ -64,7 +64,7 @@ extension WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"]?.branch == "feat")
+    #expect(scan.upstreams["feat"]?.branch == "feat")
     #expect(scan.fallbackUpstreams["feat"] == nil)
   }
 
@@ -84,32 +84,10 @@ extension WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)
     )
 
-    #expect(scan.upstreams?["feat"] == BranchUpstream(remote: "fork", branch: "feat", tip: tip))
+    #expect(scan.upstreams["feat"] == BranchUpstream(remote: "fork", branch: "feat", tip: tip))
     #expect(
       scan.fallbackUpstreams["feat"]
         == .some(BranchUpstream(remote: "origin", branch: "feat", tip: tip))
     )
-  }
-
-  @Test func aScanReadWithoutTheUpstreamAtomsHasNothingToFallBackOn() async throws {
-    let fake = try FakeGit.make(
-      """
-      case "$*" in
-        *remotename*) exit 129 ;;
-      esac
-      printf 'refs/heads/feat\\tabc\\trefs/remotes/origin/main\\t\\t\\n'
-      printf 'refs/remotes/origin/feat\\tdef\\t\\t\\t\\n'
-      """
-    )
-    defer { fake.tearDown() }
-
-    let scan = try #require(
-      await fake.coordinator.scanBranches(
-        of: Project(path: fake.directory),
-        defaultBranchOverride: nil,
-      )
-    )
-
-    #expect(scan.fallbackUpstreams.isEmpty)
   }
 }

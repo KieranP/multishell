@@ -57,7 +57,7 @@ struct FileTabRepository {
   func base() async throws -> DefaultBranch {
     try #require(
       DefaultBranch.resolve(
-        from: await git.branchRefs(Project(path: path))?.refs ?? [],
+        from: await git.branchRefs(Project(path: path)) ?? [],
         override: nil,
       )
     )

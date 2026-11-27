@@ -164,7 +164,7 @@ struct WorktreeGitBranchChangesTests {
       in: fixture.root,
     )
     let git = fixture.git
-    let refs = await git.branchRefs(Project(path: clone))?.refs ?? []
+    let refs = await git.branchRefs(Project(path: clone)) ?? []
     let base = try #require(DefaultBranch.resolve(from: refs, override: nil))
 
     await #expect(throws: (any Error).self) {

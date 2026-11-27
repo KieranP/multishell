@@ -7,42 +7,15 @@ import Testing
 
 @Suite(.serialized)
 struct WorktreeGitBranchesTests {
-  /// The ref read carries both the sidebar's commit dates and the badges' tips, and a git that
-  /// cannot give the first must still give the second.
-  @Test func aGitTooOldForTheDateAtomStillAnswersWithTheRest() async throws {
-    // Fails any query naming committerdate, as git does for an unknown
-    // format atom, and answers the rest.
-    let fake = try FakeGit.make(
-      """
-      case "$*" in
-        *committerdate*) echo "fatal: unknown field name: committerdate:unix" >&2; exit 128 ;;
-      esac
-      printf 'refs/heads/main\\t111\\t\\t\\t\\n'
-      """
-    )
+  @Test func aRefCarriesItsTipAndCommitDate() async throws {
+    let fake = try FakeGit.make(#"printf 'refs/heads/main\t111\t\t\t\t1700000000\n'"#)
     defer { fake.tearDown() }
 
     let refs = try #require(
-      await WorktreeGit(runner: fake.runner).branchRefs(Project(path: fake.directory))?.refs
+      await WorktreeGit(runner: fake.runner).branchRefs(Project(path: fake.directory))
     )
 
-    #expect(refs.map(\.fullName) == ["refs/heads/main"], "the badges still have their tips")
     #expect(refs.first?.tip == "111")
-    #expect(refs.first?.committedAt == nil, "the order loses its dates, and only those")
-  }
-
-  @Test func aGitThatAnswersIsAskedOnce() async throws {
-    let fake = try FakeGit.make(
-      #"printf 'refs/heads/main\t111\t\t\t\t1700000000\n'"#,
-      loggingCalls: true,
-    )
-    defer { fake.tearDown() }
-
-    let refs = try #require(
-      await WorktreeGit(runner: fake.runner).branchRefs(Project(path: fake.directory))?.refs
-    )
-
     #expect(refs.first?.committedAt == Date(timeIntervalSince1970: 1_700_000_000))
-    #expect(FakeGit.calls(in: fake.directory).count == 1)
   }
 }

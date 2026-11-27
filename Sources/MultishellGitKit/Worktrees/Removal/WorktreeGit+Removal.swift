@@ -58,7 +58,7 @@ extension WorktreeGit {
         )
       }
     }
-    let paths = Self.absolutePaths(in: output, from: worktree.path)
+    let paths = Self.absolutePaths(in: output)
     // The top level too: a plain directory inside the main checkout answers
     // with the main repository's common directory.
     return await runOnDispatch {

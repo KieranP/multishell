@@ -40,8 +40,7 @@ that write nothing. Newest at the bottom.
   wrote under a watched folder would fire the watcher into reading again.
 - **The worktree list is read NUL-terminated.** git's own documentation calls
   the plain form unsafe for a path holding a newline, whose second half read as
-  another attribute, so the row carried a directory that does not exist. A git
-  under 2.36 refuses `-z` and is asked for the plain form instead.
+  another attribute, so the row carried a directory that does not exist.
 - **A watcher tick checks the worktree records only for the project whose common
   `.git` fired.** Every tick used to re-read every project's records and re-arm
   every watch, for a comparison that almost always came out equal.

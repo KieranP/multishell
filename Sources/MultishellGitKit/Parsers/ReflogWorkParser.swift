@@ -25,9 +25,7 @@ enum ReflogWorkParser {
       return true
     }
     if action.hasPrefix("fetch") { return true }
-    if action.hasSuffix("(finish)") || action.hasSuffix(" finished"),
-      rebaseReplayedNothing(detail, restingAt: tipSHA)
-    {
+    if action.hasSuffix("(finish)"), rebaseReplayedNothing(detail, restingAt: tipSHA) {
       return true
     }
     guard action.hasPrefix("merge") || action.hasPrefix("pull") else { return false }

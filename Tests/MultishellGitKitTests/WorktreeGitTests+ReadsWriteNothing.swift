@@ -47,7 +47,7 @@ extension WorktreeGitTests {
     let worktrees = try await git.list(project)
     #expect(worktrees.count == 2)
     #expect(await git.isListed(side, in: project))
-    #expect(await git.branchRefs(project)?.refs.isEmpty == false)
+    #expect(await git.branchRefs(project)?.isEmpty == false)
     #expect(await git.branchNames(project)?.local.contains("side") == true)
     #expect(try await git.currentBranch(project) == "main")
     #expect(await git.lacksBranch("gone", in: project))

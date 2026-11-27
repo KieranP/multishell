@@ -115,46 +115,6 @@ struct WorktreeGitRemovalTests {
     #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
   }
 
-  /// git before 2.31 echoes `--path-format=absolute` back as an unknown flag
-  /// and prints the common directory relative to where it ran.
-  @Test func aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    var project = fixture.project
-    let path = try await fixture.coordinator.createThenRunPostCreateHook(
-      branch: "older",
-      in: project,
-      settings: fixture.worktreeSettings,
-    )
-    let worktree = try await fixture.worktree(onBranch: "older", in: project)
-    let fake = try FakeGit.make(
-      """
-      if [ "$1" = rev-parse ]; then
-        for arg; do
-          shift
-          if [ "$arg" = --path-format=absolute ]; then echo "$arg"; else set -- "$@" "$arg"; fi
-        done
-      fi
-      exec git "$@"
-      """
-    )
-    defer { fake.tearDown() }
-    let ran = fixture.root.appendingPathComponent("pre-ran")
-    project.settings = ProjectSettings(preDeleteHook: "touch \"\(ran.path)\"")
-    let coordinator = fake.coordinator
-
-    let common = try await coordinator.git.commonGitDirectory(project)
-    try await coordinator.removeUnlinking(worktree, in: project, shellPath: "/bin/sh")
-
-    #expect(
-      common.resolvingSymlinksInPath().path
-        == project.path.appendingPathComponent(".git").resolvingSymlinksInPath().path
-    )
-    #expect(FileManager.default.fileExists(atPath: ran.path))
-    #expect(!FileManager.default.fileExists(atPath: path.path))
-    #expect(try await fixture.git.list(project).map(\.branch) == ["main"])
-  }
-
   @Test func aCheckoutGitListsInAnotherCaseIsStillTheCheckout() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
@@ -287,21 +247,6 @@ struct WorktreeGitRemovalTests {
     let worktree = goneWorktree(of: project, in: fake)
 
     try await WorktreeGit(runner: fake.runner).removeRecord(of: worktree, in: project)
-  }
-
-  @Test func aForgetOnAGitThatRefusesTheNulFormStillReadsWhetherTheRecordWent() async throws {
-    let fake = try FakeGit.make(
-      """
-      case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
-      case "$1 $2" in "worktree remove") exit 128 ;; esac
-      printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n' "$SCRATCH"
-      """
-    )
-    defer { fake.tearDown() }
-    let project = Project(path: fake.directory)
-    let gone = goneWorktree(of: project, in: fake)
-
-    try await WorktreeGit(runner: fake.runner).removeRecord(of: gone, in: project)
   }
 
   /// A worktree on branch `gone` whose directory was never made.

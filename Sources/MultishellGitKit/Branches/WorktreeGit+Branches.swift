@@ -3,39 +3,26 @@ import MultishellCore
 import MultishellProcess
 
 extension WorktreeGit {
-  /// The retry leaves out every atom a git could refuse as unknown, and
-  /// `BranchRefParser` reads a column that is not there as absent.
-  private static func refQuery(withOptionalAtoms: Bool) -> [String] {
-    var format = [
-      "%(refname)", "%(objectname)", "%(upstream)", "%(upstream:track)", "%(symref)",
-    ]
-    if withOptionalAtoms {
-      format += [
-        "%(committerdate:unix)", "%(upstream:remotename)", "%(upstream:remoteref)",
-        "%(push:remotename)",
-      ]
-    }
-    return [
-      "for-each-ref", "--format=" + format.joined(separator: "%09"), "refs/heads", "refs/remotes",
-    ]
-  }
+  private static let refQueryAtoms = [
+    "%(refname)", "%(objectname)", "%(upstream)", "%(upstream:track)", "%(symref)",
+    "%(committerdate:unix)", "%(upstream:remotename)", "%(upstream:remoteref)",
+    "%(push:remotename)",
+  ]
 
-  /// Every branch with its tip, upstream and date, in one process, the date
-  /// and upstream names retried without. `nil` is a failed read, not no branches.
-  func branchRefs(_ project: Project) async -> BranchRefList? {
-    if let output = await runner.output(Self.refQuery(withOptionalAtoms: true), in: project.path) {
-      return BranchRefList(refs: BranchRefParser.parse(output), namesUpstreams: true)
-    }
-    guard
-      let output = await runner.output(Self.refQuery(withOptionalAtoms: false), in: project.path)
-    else { return nil }
-    return BranchRefList(refs: BranchRefParser.parse(output), namesUpstreams: false)
+  /// Every branch with its tip, upstream and date, in one process. `nil` is a
+  /// failed read, not no branches.
+  func branchRefs(_ project: Project) async -> [BranchRef]? {
+    let query = [
+      "for-each-ref", "--format=" + Self.refQueryAtoms.joined(separator: "%09"),
+      "refs/heads", "refs/remotes",
+    ]
+    return await runner.output(query, in: project.path).map(BranchRefParser.parse)
   }
 
   /// The names a new worktree can start from, symbolic refs such as
   /// `origin/HEAD` dropped. `nil` is a failed read.
   public func branchNames(_ project: Project) async -> (local: [String], remote: [String])? {
-    guard let refs = await branchRefs(project)?.refs.filter({ $0.symref == nil }) else {
+    guard let refs = await branchRefs(project)?.filter({ $0.symref == nil }) else {
       return nil
     }
     return (refs.filter(\.isLocal).map(\.shortName), refs.filter(\.isRemote).map(\.shortName))

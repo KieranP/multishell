@@ -32,23 +32,6 @@ struct WorktreeGitListingTests {
     #expect(listed.map(\.branch) == ["main"])
   }
 
-  @Test func aGitThatRefusesTheNulFormIsAskedForTheNewlineOne() async throws {
-    let fake = try FakeGit.make(
-      """
-      case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
-      printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n' "$SCRATCH"
-      """
-    )
-    defer { fake.tearDown() }
-    let worktreeGit = WorktreeGit(runner: fake.runner)
-
-    let listed = try await worktreeGit.list(Project(path: fake.directory))
-    let main = try await worktreeGit.mainWorktreePath(containing: fake.directory)
-
-    #expect(listed.map(\.branch) == ["main"])
-    #expect(main.comparablePath == fake.directory.comparablePath)
-  }
-
   @Test func aProjectWhoseGitWentMissingInsideAnotherRepositoryIsAnErrorNotItsList()
     async throws
   {

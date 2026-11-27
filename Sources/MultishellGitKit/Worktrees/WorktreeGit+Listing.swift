@@ -70,16 +70,9 @@ extension WorktreeGit {
     return await runOnDispatch { worktrees.map(Self.datedByDirectory).map(Self.judgedInitializing) }
   }
 
-  /// `-z` came in git 2.36, and an older one refuses the switch with 129; its
-  /// newline form is read instead, at the cost of a path holding a newline.
   private func parsedList(in directory: URL, projectID: Project.ID) async throws -> [Worktree] {
-    do {
-      let output = try await runner.run(["worktree", "list", "--porcelain", "-z"], in: directory)
-      return WorktreeListParser.parse(output, projectID: projectID)
-    } catch let failure as ProcessFailure where failure.status == 129 {
-      let output = try await runner.run(["worktree", "list", "--porcelain"], in: directory)
-      return WorktreeListParser.parse(output, projectID: projectID, separator: "\n")
-    }
+    let output = try await runner.run(["worktree", "list", "--porcelain", "-z"], in: directory)
+    return WorktreeListParser.parse(output, projectID: projectID)
   }
 
   /// The main worktree of the repository `url` is in, from anywhere in it,
@@ -102,7 +95,7 @@ extension WorktreeGit {
         in: url,
       )
     else { return main.path }
-    let paths = Self.absolutePaths(in: output, from: url)
+    let paths = Self.absolutePaths(in: output)
     let isGitDirectory = await runOnDispatch {
       paths.count == 2 && Self.sameComparablePath(paths[0], main.path)
     }

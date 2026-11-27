@@ -101,15 +101,13 @@
   agent hooks rest on `proc_listchildpids` and `KERN_PROCARGS2`, the debug tools
   on `proc_pid_rusage` too, so a new macOS wants both tried. The quirks found so
   far are in design/debug-tools.md.
-- **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which
-  keeps a path holding a newline from reading as two records. The floor is under
-  what the supported macOS ships, so an older git usually comes from a version
-  manager. That git refuses `-z` with status 129 and `WorktreeGit` asks for the
-  newline form, losing only such a path
-  (`aGitThatRefusesTheNulFormIsAskedForTheNewlineOne`). Under 2.31 `rev-parse`
-  echoes `--path-format=absolute` back and answers relative, and `WorktreeGit`
-  resolves the answer
-  (`aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat`).
+- **git 2.39 or newer.** Rebase onto Base needs `git rebase --no-update-refs`
+  (2.38) to ignore the user's `rebase.updateRefs`. No read keeps a fallback for
+  an older git: not `-z` on `git worktree list --porcelain` (2.36),
+  `--path-format=absolute` (2.31), the branch scan's upstream atoms (2.22), or
+  the reflog's pre-2.26 `rebase finished` wording. The Command Line Tools for
+  the supported macOS ship a later git, so an older one comes from a version
+  manager.
 - **`gh` and `circleci` are optional**, found on the login shell's PATH and
   never shipped: without one its integration shows nothing, and the Integrations
   page says how to install it. `circleci` 1.0 is the floor, the first with the

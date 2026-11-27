@@ -14,31 +14,23 @@ public struct BranchScan: Hashable, Sendable {
   public let mergeInputs: MergeInputs?
   /// What detection alone finds, the override set aside.
   public let detectedDefaultBranch: DefaultBranch?
-  /// Where each local branch is published, by its worktree's name for it; `nil`
-  /// where the retried read did not ask, so none is known gone.
-  public let upstreams: [String: BranchUpstream]?
+  /// Where each local branch is published, by its worktree's name for it.
+  public let upstreams: [String: BranchUpstream]
   /// What a branch follows, `nil` for nothing, where `upstreams` names its own
   /// name untracked: that counts only once the branch held its tip.
   public let fallbackUpstreams: [String: BranchUpstream?]
 
   /// The override is the project's `defaultBranch` setting, `nil` to detect.
-  init(_ list: BranchRefList, defaultBranchOverride override: String?) {
-    let refs = list.refs
+  init(_ refs: [BranchRef], defaultBranchOverride override: String?) {
     let branches = BranchRef.localBranchesByName(refs)
     lastCommitDates = branches.compactMapValues(\.committedAt)
     branchTips = branches.mapValues(\.tip)
     let tips = Dictionary(keepingFirst: refs.map { ($0.fullName, $0.tip) })
-    upstreams =
-      !list.namesUpstreams
-      ? nil
-      : branches.compactMapValues { Self.publishedBranch(of: $0, tips: tips) }
-    fallbackUpstreams =
-      !list.namesUpstreams
-      ? [:]
-      : branches.compactMapValues { ref -> BranchUpstream?? in
-        guard Self.untrackedOwnName(of: ref, tips: tips) != nil else { return nil }
-        return .some(Self.followedBranch(of: ref, tips: tips))
-      }
+    upstreams = branches.compactMapValues { Self.publishedBranch(of: $0, tips: tips) }
+    fallbackUpstreams = branches.compactMapValues { ref -> BranchUpstream?? in
+      guard Self.untrackedOwnName(of: ref, tips: tips) != nil else { return nil }
+      return .some(Self.followedBranch(of: ref, tips: tips))
+    }
     let inForce = DefaultBranch.resolve(from: refs, override: override)
     detectedDefaultBranch =
       override == nil ? inForce : DefaultBranch.resolve(from: refs, override: nil)

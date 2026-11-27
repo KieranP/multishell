@@ -4,12 +4,8 @@ import MultishellCore
 extension WorktreeGit {
   static let absolutePathsFlag = "--path-format=absolute"
 
-  /// The flag came in git 2.31. An older git echoes it back as a flag it does
-  /// not know and answers relative to where it ran, so that is resolved here.
-  static func absolutePaths(in output: String, from directory: URL) -> [URL] {
-    var lines = output.gitLines
-    if lines.first == absolutePathsFlag { lines.removeFirst() }
-    return lines.map { directoryURL($0, relativeTo: directory) }
+  static func absolutePaths(in output: String) -> [URL] {
+    output.gitLines.map { URL(fileURLWithPath: $0, isDirectory: true) }
   }
 
   /// A directory as git wrote it, absolute or relative to `base`.

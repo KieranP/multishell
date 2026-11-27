@@ -119,7 +119,7 @@ struct RepositoryFixture {
   }
 
   func defaultBranch() async throws -> DefaultBranch {
-    let refs = await git.branchRefs(project)?.refs ?? []
+    let refs = await git.branchRefs(project) ?? []
     return try #require(DefaultBranch.resolve(from: refs, override: nil))
   }
 
