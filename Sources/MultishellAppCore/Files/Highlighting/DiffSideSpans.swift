@@ -42,9 +42,10 @@ public enum DiffSideSpans {
     for span in spans {
       var index = lines.firstIndex(endingAfter: span.range.lowerBound)
       while index < lines.count, lines[index].lowerBound < span.range.upperBound {
-        let line = lines[index]
         let row = text.displayRows[index]
-        let onLine = span.range.clamped(to: line)
+        let line = lines[index]
+        let shown = line.lowerBound..<(line.lowerBound + display.shownLength(ofRow: row))
+        let onLine = span.range.clamped(to: shown)
         if !onLine.isEmpty, takes(display.lines[row].kind) {
           let shift = display.rowStarts[row] - line.lowerBound
           mapped.append(HighlightSpan(range: onLine.shifted(by: shift), role: span.role))

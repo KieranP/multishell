@@ -368,4 +368,25 @@ struct AllChangesReaderTests {
     let texts = reading.files.flatMap { $0.rows?.lines.map(\.text) ?? [] }
     #expect(!texts.contains("outside text"))
   }
+
+  @Test func aNewLinkShowsThePathItHoldsAsGitDiffsIt() async throws {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    try await TestRepository.commit(
+      "seed",
+      files: ["a.txt": "a\n"],
+      in: repository.path,
+      using: repository.runner,
+    )
+    try FileManager.default.createSymbolicLink(
+      atPath: repository.path.appending(path: "link.txt").path,
+      withDestinationPath: "a.txt",
+    )
+
+    let reading = await Self.read(try await Self.status(of: repository), in: repository)
+
+    let link = try #require(reading.files.first { $0.path == "link.txt" })
+    #expect(link.reading?.isFileGone == false)
+    #expect(link.rows?.lines.map(\.text) == ["a.txt"])
+  }
 }

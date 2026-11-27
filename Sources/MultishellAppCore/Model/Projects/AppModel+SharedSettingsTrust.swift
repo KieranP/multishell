@@ -12,8 +12,10 @@ extension AppModel {
   func askAboutSharedSettingsIfNeeded(for id: Project.ID) {
     // Never over the new-worktree sheet or its create: two on one window
     // fight, and the question returns on the next selection.
-    guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
-    guard pendingSharedSettingsTrust == nil, let project = workspace.project(id),
+    guard newWorktreeRequest == nil, worktreeCreationStep == nil, !isAskingAQuestion else {
+      return
+    }
+    guard let project = workspace.project(id),
       let shared = project.sharedSettingsSnapshot.confined,
       let trustCoveredText = shared.trustCoveredText, let digest = shared.digest,
       project.settings.needsTrustDecision(for: shared)

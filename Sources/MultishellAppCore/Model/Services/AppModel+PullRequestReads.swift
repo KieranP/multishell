@@ -101,9 +101,9 @@ extension AppModel {
     by listed: [PullRequest],
     of project: Project,
     reading: ProjectPullRequests,
-  ) -> [String: String?] {
+  ) -> [String: LeftOutBranch] {
     let trunk = defaultBranchName(of: project)
-    var branches: [String: String?] = [:]
+    var branches: [String: LeftOutBranch] = [:]
     for worktree in workspace.worktrees(of: project.id) {
       guard let upstream = remoteState.upstreams[worktree.id], upstream.branch != trunk else {
         continue
@@ -113,13 +113,13 @@ extension AppModel {
         among: reading.remotes,
         currentRepositories: reading.currentRepositories,
       )
-      // A remote whose URL names no repository takes any pull request its branch heads.
       let isListed = listed.contains { pullRequest in
         pullRequest.headBranch == upstream.branch
-          && (repositories.isEmpty
-            || repositories.contains(where: pullRequest.headRepository.isSame(as:)))
+          && pullRequest.isHeadedWhereKnown(inAnyOf: repositories)
       }
-      if !isListed { branches[upstream.branch] = upstream.tip }
+      if !isListed {
+        branches[upstream.branch] = LeftOutBranch(tip: upstream.tip, repositories: repositories)
+      }
     }
     return branches
   }
@@ -134,11 +134,13 @@ extension AppModel {
   ) async throws -> [String: BranchPullRequestLookup] {
     var lookups: [String: BranchPullRequestLookup] = [:]
     var asking: [(branch: String, tip: String?)] = []
-    for (branch, tip) in branchesLeftOut(by: listed, of: project, reading: reading) {
-      if let kept = previous[branch], kept.stillAnswers(upstreamTip: tip) {
+    for (branch, leftOut) in branchesLeftOut(by: listed, of: project, reading: reading) {
+      if let kept = previous[branch],
+        kept.stillAnswers(upstreamTip: leftOut.tip, headedIn: leftOut.repositories)
+      {
         lookups[branch] = kept
       } else {
-        asking.append((branch, tip))
+        asking.append((branch, leftOut.tip))
       }
     }
     let directory = project.path

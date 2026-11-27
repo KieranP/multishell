@@ -127,14 +127,6 @@ extension AppModel {
     pendingBaseUpdate = question
   }
 
-  /// One question at a time, an update's or an Abort's: a click beside one beeps,
-  /// and `true` says it did.
-  func beepIfAQuestionWaits() -> Bool {
-    guard pendingBaseUpdate != nil || pendingUpdateAbort != nil else { return false }
-    platform.beep()
-    return true
-  }
-
   /// A rebase leaves the branch detached while it stops, which only the list
   /// says, and the row's status reads the stop.
   func refreshAfterBaseUpdate(of worktree: Worktree) async {

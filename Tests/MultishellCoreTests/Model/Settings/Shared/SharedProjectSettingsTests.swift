@@ -144,6 +144,12 @@ struct SharedProjectSettingsTests {
     )
   }
 
+  @Test func exportWritesASlashAsTheUserWroteIt() throws {
+    let data = try SharedProjectSettings(branchPrefix: "team/").fileContents().data
+
+    #expect(String(decoding: data, as: UTF8.self).contains(#""team/""#))
+  }
+
   @Test func aFilesActionsReadInOrderAndABlankOrBrokenEntryCostsItselfOnly() throws {
     let shared = try decodeJSON(
       SharedProjectSettings.self,

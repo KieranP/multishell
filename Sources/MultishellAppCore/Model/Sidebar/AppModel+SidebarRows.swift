@@ -20,6 +20,15 @@ extension AppModel {
     isExpanded ? nil : state(ofProject: id, sessions: sessions)
   }
 
+  /// The Hidden row stands in for its worktrees' dots as the project's row does.
+  public func hiddenSectionRowState(
+    _ hidden: [Worktree],
+    isExpanded: Bool,
+    sessions: SessionIDsByWorktree,
+  ) -> SessionState? {
+    isExpanded ? nil : state(of: hidden, sessions: sessions)
+  }
+
   /// The pane rows under this worktree's sidebar row, group by group in strip
   /// order: only the one in view has them, so one set takes room at a time.
   func sidebarPanes(of worktree: Worktree) -> [SidebarPane] {

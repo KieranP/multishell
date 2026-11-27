@@ -68,10 +68,11 @@
 - **A list drops blank lines and `#` lines**, the grammar of `/etc/shells`, so
   one reader serves both. Cost: a name starting with `#` is reached only by a
   pattern, `?` in place of the `#`.
-- **A failure shows stderr only from a marker line on**, which the script prints
-  after its `cd`, or the rc files' noise on stderr would lead the message. A
-  script that ends at its `cd` shows all of it. Cost: stdout comes first, the
-  two streams being read apart, so their order against each other is lost.
+- **A failure shows each stream only from a marker line on**, which the script
+  prints to both after its `cd`, or the rc files' noise, a greeting on stdout or
+  a warning on stderr, would lead the message. A script that ends at its `cd`
+  shows all of it. Cost: stdout comes first, the two streams being read apart,
+  so their order against each other is lost.
 - **A stage that fails once its worktree is gone says nothing.** Removed outside
   the app before its hook started, the hook fails to enter the folder, and an
   alert would arrive about a worktree the user removed on purpose.

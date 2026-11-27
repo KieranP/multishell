@@ -21,6 +21,8 @@ public struct SharedSettingsSnapshot: Equatable, Sendable {
   /// False until the file has been read at all this run. A first read says
   /// nothing about trust, so a launch opens with no queue of questions.
   public internal(set) var hasBeenRead: Bool
+  /// Whether what the file names is known: read this run, and absent or parsed.
+  public var isFileKnown: Bool { hasBeenRead && problem == nil }
 
   init(
     asWritten: SharedProjectSettings? = nil,

@@ -28,9 +28,8 @@ extension DiffDisplayText {
     )
   }
 
-  /// The top row putting `scroll`'s line back: the first row with that line or
-  /// a later one, by the committed side's numbering where the file's has none.
-  /// Never past the last row, whatever a saved scroll says.
+  /// The first row with `scroll`'s line or a later one, by the committed side's
+  /// numbering where the file's has none, and never past the last row.
   public func row(of scroll: FileTabScroll) -> Double {
     min(unclampedRow(of: scroll), Double(max(lines.count - 1, 0)))
   }

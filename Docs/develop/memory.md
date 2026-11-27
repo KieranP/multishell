@@ -66,7 +66,7 @@ One shell tab, idle, debug tools off: 193 MB.
   picture.** It sits under the app's heap in use. A shown tab's TextKit 2
   layout, up to 186 MB at the 1 MiB cap, and a shown image's decoded picture, up
   to 36 MB a copy (design/files/image-tabs.md), are left out of the estimate.
-- **Debug Info added 105 to 117 MB while open**, from its `Canvas` strips, now
+- **Debug Info added 105 to 117 MB while open**, from its `Canvas` charts, now
   shapes (design/debug-tools.md).
 
 ## Freed memory is kept, not leaked
@@ -80,9 +80,9 @@ One shell tab, idle, debug tools off: 193 MB.
   A second round reached 96 MB, live heap up 0.2 MB, so the held pages are
   reused and the 6 MB is caches built for the first terminal, kept once.
 
-## Strips: `Canvas` against shapes
+## Charts: `Canvas` against shapes
 
-Five strips of 180 slots and 40 rows of text in a 1777×1237 pt window, three 30
+Five charts of 180 slots and 40 rows of text in a 1777×1237 pt window, three 30
 second runs each:
 
 | Rate  | Drawn with | App CPU | WindowServer CPU | Footprint |

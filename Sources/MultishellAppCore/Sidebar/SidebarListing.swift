@@ -28,7 +28,12 @@ public struct SidebarListing: Sendable {
   var isFiltering: Bool { !filterText.isEmpty }
 
   init(filterText text: String) {
-    filterText = text.trimmingCharacters(in: .whitespaces)
+    filterText = Self.filterText(text)
+  }
+
+  /// The text the rows are matched against, so two that differ only here find the same rows.
+  static func filterText(_ typed: String) -> String {
+    typed.trimmingCharacters(in: .whitespaces)
   }
 
   func entries(

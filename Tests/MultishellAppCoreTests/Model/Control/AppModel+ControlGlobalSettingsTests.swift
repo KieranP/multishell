@@ -22,6 +22,20 @@ struct AppModelControlGlobalSettingsTests {
     #expect(reply.outputFields["preferredAgentID"] is NSNull)
   }
 
+  @Test func noneClearsTheGlobalAgentAsThePickersNoneRowDoes() async {
+    let harness = Harness()
+    _ = await harness.messageSource.ask(
+      .writeGlobalSetting(key: "preferredAgentID", value: "codex")
+    )
+
+    let reply = await harness.messageSource.ask(
+      .writeGlobalSetting(key: "preferredAgentID", value: "none")
+    )
+
+    #expect(reply == .done)
+    #expect(harness.model.workspace.preferredAgentID == nil)
+  }
+
   @Test func ignoredFilesAreAFlagTheCommandLineSets() async throws {
     let harness = Harness()
 

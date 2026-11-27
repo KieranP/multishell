@@ -88,6 +88,25 @@ struct AppModelSidebarRowsTests {
     )
   }
 
+  @Test func theHiddenRowShowsItsWorktreesStateOnlyWhileTheyAreCollapsed() throws {
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    let session = try #require(harness.model.workspace.sessions(in: harness.feature.id).first)
+    harness.messageSource.send(SessionStateReport(state: .attention, sessionID: session.id))
+    harness.model.select(harness.main)
+    harness.model.setHidden(true, worktree: harness.feature)
+    let sessions = harness.model.sessionIDsByWorktree
+
+    #expect(
+      harness.model.hiddenSectionRowState([harness.feature], isExpanded: false, sessions: sessions)
+        == .attention
+    )
+    #expect(
+      harness.model.hiddenSectionRowState([harness.feature], isExpanded: true, sessions: sessions)
+        == nil
+    )
+  }
+
   @Test func aWorktreesRowSaysWhetherItIsNamedOrBeingRenamed() {
     let harness = Harness()
     #expect(!harness.model.sidebarWorktree(harness.feature).hasCustomName)

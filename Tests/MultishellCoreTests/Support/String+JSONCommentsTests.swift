@@ -18,6 +18,22 @@ struct StringJSONCommentsTests {
     #expect(text.withoutJSONComments == #"{"url": "https://example.com"} "#)
   }
 
+  @Test func aBlockCommentStillSeparatesTheTokensBesideIt() {
+    #expect(#"{"a": 1/**/2}"#.withoutJSONComments == #"{"a": 1 2}"#)
+  }
+
+  @Test func aBlockCommentSpanningLinesInsideAnArrayGoes() {
+    let text = "{\"a\": [1, /* one\n two */ 2]}"
+
+    #expect(text.withoutJSONComments == "{\"a\": [1,   2]}")
+  }
+
+  @Test func commentMarksInsideAStringAreText() {
+    let text = #"{"a": "say \"// hi\" /* no */"}"#
+
+    #expect(text.withoutJSONComments == text)
+  }
+
   @Test func aStringStartingWithACombiningMarkIsStillAString() {
     let text = #"{"a": "\#u{0301}see https://x", "b": 1} // note"#
 

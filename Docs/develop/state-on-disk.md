@@ -25,9 +25,9 @@ Under `~/Library/Application Support/Multishell`.
   collapsed files and opened folds, the Files panel's filter and the folders
   opened in it, the pull requests and CI runs last read, which of their checks,
   threads and failures were picked or sent to an agent, the quick switcher's
-  recent worktrees, whether the Agents board is up, or anything about the debug
-  tools. Those are runtime state, so the debug tools start off at every launch
-  and write nothing to disk or defaults.
+  recent worktrees, whether the Agents Dashboard is up, or anything about the
+  debug tools. Those are runtime state, so the debug tools start off at every
+  launch and write nothing to disk or defaults.
 - **Files from before groups and before file tabs are repaired on load**
   (design/tabs-and-groups/groups-and-dragging.md, design/files/file-tabs.md), an
   agent id the catalogue retired is forgotten, and a broken file is moved aside
@@ -98,9 +98,10 @@ Under `~/Library/Application Support/Multishell`.
   its variant, so `window sidebar-width` on a scratch run never moves the
   installed app's. Cost: a debug build starts at the initial widths.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
-  with a project's settings less the agent, its flags, the shell, the
-  integrations and the trust answers. What it said is never saved in the state
-  file, where a restored copy would trust a file nobody looked at.
+  with a project's settings less the agent, its flags, whether conflicts go to
+  it, the shell, the integrations, the actions' keys and the trust answers. What
+  it said is never saved in the state file, where a restored copy would trust a
+  file nobody looked at.
 - **Decide what a blank one means.** Coerce to "none" where that and "no
   opinion" agree, and leave it alone where blank is how "none" is spelled. Left
   uncoerced, a blank hook counts as a hook, and the trust question asks about an

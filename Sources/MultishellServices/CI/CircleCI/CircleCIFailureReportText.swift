@@ -18,7 +18,8 @@ enum CircleCIFailureReportText {
       }
       body = []
     }
-    for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
+    // Swift reads `\r\n` as one Character, which a split on "\n" never finds.
+    for line in text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline) {
       if line.hasPrefix(workflowHeading) {
         closeSection()
         workflow = String(line.dropFirst(workflowHeading.count))

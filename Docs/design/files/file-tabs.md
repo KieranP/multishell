@@ -63,7 +63,8 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   that size. That side's size is asked first, so a small file whose last commit
   is huge never diffs into memory. A line is cut at 10,000 characters, a 1 MiB
   file being able to be one line. Copy takes it whole: the cut text and its mark
-  went on the pasteboard.
+  went on the pasteboard. So does the highlighter: a comment or string open at
+  the cut coloured every row below it.
 - **Text is UTF-8, else the encoding a text editor would guess**, the open rule
   admitting any text-typed file; git copies the file's bytes into the diff, so
   it is decoded the same way.

@@ -24,14 +24,20 @@ extension AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
-  /// The Hidden row under a project's worktrees: whether it is expanded and how
-  /// many it holds.
-  public static func hiddenSection(isExpanded: Bool, worktreeCount: Int) -> String {
-    [
+  /// The Hidden row under a project's worktrees: whether it is expanded, how
+  /// many it holds, and the dot it carries while collapsed.
+  public static func hiddenSection(
+    isExpanded: Bool,
+    worktreeCount: Int,
+    state: SessionState?,
+  ) -> String {
+    var parts = [
       t("spoken.hidden-section"),
       disclosure(isExpanded: isExpanded),
       t("count.worktrees", worktreeCount),
-    ].joined(separator: ", ")
+    ]
+    if let state { parts.append(state.displayName) }
+    return parts.joined(separator: ", ")
   }
 
   /// A worktree row: what its glyphs mean, in drawing order. A renamed row

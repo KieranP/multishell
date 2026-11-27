@@ -71,13 +71,14 @@ the bottom.
   having begun, and git made the branch for nothing.
 - **The branch goes last, after the post-delete hook**, so a hook that pushes it
   still finds it.
-- **The branch the repository's `HEAD` names is never deleted**, and the dialog
-  offers no deletion of the default branch. A bare clone's `HEAD` is a branch no
-  checkout holds, and `branch -d` measures merged against `HEAD`, so removing
-  the trunk's worktree deleted `main` with its unpushed commits. `HEAD` is read
-  as a full refname: `rev-parse --abbrev-ref` says `heads/main` beside a tag
-  `main`, which the guard took for another branch. A failed read deletes no
-  branch, as it once let the delete through.
+- **The branch the repository's `HEAD` names is never deleted**, and neither the
+  dialog nor `worktrees remove --delete-branch` deletes the default branch. A
+  bare clone's `HEAD` is a branch no checkout holds, and `branch -d` measures
+  merged against `HEAD`, so removing the trunk's worktree deleted `main` with
+  its unpushed commits. `HEAD` is read as a full refname:
+  `rev-parse --abbrev-ref` says `heads/main` beside a tag `main`, which the
+  guard took for another branch. A failed read deletes no branch, as it once let
+  the delete through.
 - **A worktree holding another worktree, or a populated submodule with work, is
   refused.** The Trash took the inner worktree's uncommitted files, and the
   record took the submodule's repository, kept under it, with its unpushed

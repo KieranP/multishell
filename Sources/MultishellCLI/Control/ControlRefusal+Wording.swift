@@ -218,7 +218,8 @@ extension ControlRefusal {
     case .worktreeNotCreated: "the worktree was not created"
 
     case .worktreeNotReady(let id):
-      "worktree \(id) is being created or removed, or its directory is missing"
+      "worktree \(id) is being created or removed, shows a failed stage until its pane's "
+        + "Dismiss, or its directory is missing"
 
     case .worktreeNotRemovable(let id):
       "worktree \(id) is the project's own checkout; "

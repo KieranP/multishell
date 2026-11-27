@@ -17,8 +17,8 @@ enum GhosttyClipboardContents {
     }.first
   }
 
-  /// A copy's text, `nil` for one to the selection clipboard or one Ghostty
-  /// wants confirmed, which the app refuses as it refuses such a paste.
+  /// A copy's text, `nil` for one to the selection clipboard or one Ghostty wants
+  /// confirmed, which the app refuses as it refuses a program's read Ghostty would ask about.
   static func textToWrite(
     _ contents: UnsafeBufferPointer<ghostty_clipboard_content_s>,
     at location: ghostty_clipboard_e,

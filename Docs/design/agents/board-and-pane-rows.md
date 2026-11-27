@@ -3,8 +3,8 @@
 The board that shows the agents, the sidebar's pane rows and the mark each agent
 is drawn as. Newest at the bottom.
 
-- **The Agents board is a roster, not a queue.** Every open pane has a card, so
-  nothing is hidden by having been looked at.
+- **The Agents Dashboard is a roster, not a queue.** Every open pane has a card,
+  so nothing is hidden by having been looked at.
 - **Failed waits with Waiting, not in Done**: a failure wants the user, which is
   what that column means, and Done keeps one meaning.
 - **They part on a dead process**: a question was a claim about that process and

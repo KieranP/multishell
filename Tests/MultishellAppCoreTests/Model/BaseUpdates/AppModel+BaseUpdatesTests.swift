@@ -118,6 +118,25 @@ struct AppModelBaseUpdatesTests {
     #expect(await harness.contains("origin/main", in: clean))
   }
 
+  @Test func anUpdatesQuestionWaitsBehindAnotherKindOfQuestionWithABeep() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let feature = try await harness.featureBehindOrigin()
+    _ = try harness.openAgentTab(in: feature, working: true)
+    harness.model.pendingBranchPublish = PendingBranchPublish(
+      worktree: feature,
+      branch: "feature",
+      remote: "origin",
+      remoteBranch: "feature",
+      unpushedCommits: 1,
+    )
+
+    await harness.model.requestBaseUpdate(of: feature, by: .merge)
+
+    #expect(harness.platform.beeps == 1)
+    #expect(harness.model.pendingBaseUpdate == nil)
+  }
+
   @Test func changesMadeWhileTheQuestionStoodRefuseTheConfirmedUpdate() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

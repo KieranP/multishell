@@ -166,7 +166,8 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case worktreeNotCreated
   /// The project's main checkout, which keeps the project a row.
   case worktreeNotHideable(id: String)
-  /// The worktree is being created or removed, or its directory is gone.
+  /// The worktree is being created or removed, holds a failed stage until its
+  /// Dismiss, or its directory is gone.
   case worktreeNotReady(id: String)
   /// The main checkout or a bare repository, which only removing the
   /// project takes away.

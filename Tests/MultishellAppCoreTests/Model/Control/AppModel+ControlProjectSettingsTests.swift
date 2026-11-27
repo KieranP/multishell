@@ -34,6 +34,30 @@ struct AppModelControlProjectSettingsTests {
     #expect(reply == .refused(.invalidValue(key: "iconTint", value: "-1e400")))
   }
 
+  @Test(arguments: [("preferredAgentID", "bogus"), ("defaultShell", "/no/such/shell")])
+  func anAgentOrShellTheGlobalWouldRefuseIsRefusedHereToo(key: String, value: String) async {
+    let harness = Harness()
+
+    let reply = await harness.messageSource.ask(
+      .writeProjectSetting(project: ControlID.project(harness.project.id), key: key, value: value)
+    )
+
+    #expect(reply == .refused(.invalidValue(key: key, value: value)))
+    #expect(harness.model.ownSettings(of: harness.project) == ProjectSettings())
+  }
+
+  @Test(arguments: [("preferredAgentID", "none"), ("preferredAgentID", "codex")])
+  func anAgentThePickerOffersIsTaken(key: String, value: String) async {
+    let harness = Harness()
+
+    let reply = await harness.messageSource.ask(
+      .writeProjectSetting(project: ControlID.project(harness.project.id), key: key, value: value)
+    )
+
+    #expect(reply == .done)
+    #expect(harness.model.ownSettings(of: harness.project).preferredAgentID == value)
+  }
+
   @Test func aValueIsReadAsJSONWhereItParsesAndAsTextOtherwise() async throws {
     let harness = Harness()
     let project = ControlID.project(harness.project.id)

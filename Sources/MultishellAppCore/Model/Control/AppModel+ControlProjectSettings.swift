@@ -62,7 +62,16 @@ extension AppModel {
     settings.actionShortcuts = own.actionShortcuts
     let kept = encodedFields(of: settings)[key]
     let isKept = value is NSNull ? kept == nil : (kept as? NSObject)?.isEqual(value) == true
-    return isKept ? settings : nil
+    return isKept && isPickerChoice(key, in: settings) ? settings : nil
+  }
+
+  /// The decoder keeps any agent or shell text; the picker offers fewer.
+  private func isPickerChoice(_ key: String, in settings: ProjectSettings) -> Bool {
+    switch ProjectSettings.CodingKeys(rawValue: key) {
+    case .preferredAgentID: settings.preferredAgentID.map(Self.isAgentChoice) != false
+    case .preferredShellID: settings.preferredShellID.map(isShellChoice) != false
+    default: true
+    }
   }
 
   private func encodedFields(of settings: ProjectSettings) -> [String: Any] {

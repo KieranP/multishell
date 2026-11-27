@@ -26,6 +26,15 @@ struct ProjectSettingsEffectiveWorktreeSettingsTests {
     #expect(moved.branchPrefix == defaults.branchPrefix)
   }
 
+  @Test func aGlobalPrefixWithATrailingSpaceNamesABranchWithoutIt() {
+    let effective = ProjectSettings().effectiveWorktreeSettings(
+      defaults: WorktreeSettings(worktreeDirectory: " ../trees ", branchPrefix: "feat/ ")
+    )
+
+    #expect(effective.qualifiedBranch("tabs") == "feat/tabs")
+    #expect(effective.worktreeDirectory == "../trees")
+  }
+
   @Test func aWhitespaceOverrideMeansNone() {
     // A lone space typed as the override opts a project out of a global
     // prefix; it must not end up in the branch name.

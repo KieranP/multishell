@@ -19,6 +19,16 @@ struct AppModelProjectExpansionTests {
     #expect(harness.model.sidebarEntries.first?.isExpanded == true)
   }
 
+  @Test func aSpaceThatFindsTheSameRowsLeavesAChevronsCollapse() {
+    let harness = Harness()
+    harness.model.sidebarFilterText = "feat"
+    harness.model.toggleExpansion(of: harness.project)
+
+    harness.model.sidebarFilterText = "feat "
+
+    #expect(harness.model.sidebarEntries.first?.isExpanded == false)
+  }
+
   @Test func withNoFilterTheChevronSetsTheStoredFlag() {
     let harness = Harness()
     harness.model.setExpanded(true, for: harness.project)

@@ -9,6 +9,9 @@ public struct BranchUpstream: Hashable, Sendable {
   /// on a push, a fetch and a pull, which re-reads the pull requests.
   public let tip: String?
 
+  /// The remote-tracking branch's short name, `origin/feat`.
+  public var remoteTrackingName: String { "\(remote)/\(branch)" }
+
   /// The same upstream where the remote no longer has the branch.
   public var goneFromRemote: Self {
     Self(remote: remote, branch: branch, tip: nil)

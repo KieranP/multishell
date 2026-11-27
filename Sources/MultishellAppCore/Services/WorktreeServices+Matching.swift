@@ -70,7 +70,7 @@ extension WorktreeServices {
     return ChangesPastHead(
       head: pullRequest.headCommit,
       tip: localTip,
-      ownRemoteBranch: "\(upstream.remote)/\(upstream.branch)",
+      ownRemoteBranch: upstream.remoteTrackingName,
       ownBranch: localBranch,
     )
   }
@@ -88,7 +88,7 @@ extension WorktreeServices {
     )
     let headed = reading.pullRequests.filter { pullRequest in
       pullRequest.headBranch == upstream.branch
-        && repositories.contains(where: pullRequest.headRepository.isSame(as:))
+        && pullRequest.isHeaded(inAnyOf: repositories)
     }
     return headed.filter { !$0.state.isSettled }.max(by: { $0.updatedAt < $1.updatedAt })
       ?? headed.max(by: { $0.updatedAt < $1.updatedAt })

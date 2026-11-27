@@ -94,6 +94,46 @@ struct AppModelActionKeysTests {
     #expect(!harness.engine.unbound.contains(controlOptionS), "the new bytes are not trusted")
   }
 
+  @Test func removingAnActionBeforeTheFileIsReadKeepsTheFilesActionsKeys() throws {
+    let harness = Harness()
+    try #"{ "actions": [ { "name": "Serve", "command": "x" } ] }"#.write(
+      to: SharedProjectSettings.file(in: harness.root),
+      atomically: true,
+      encoding: .utf8,
+    )
+    harness.model.setSettings(
+      ProjectSettings(actions: [ProjectAction(name: "Serve", command: "npm run dev")]),
+      for: harness.project,
+    )
+    harness.model.setActionKeys(controlOptionS, forAction: "Serve", in: harness.project)
+
+    harness.model.removeAction(at: 0, from: harness.project)
+
+    #expect(
+      harness.model.ownSettings(of: harness.project).actionShortcuts.keys(for: "Serve")
+        == controlOptionS
+    )
+  }
+
+  @Test func renamingOntoANameBeforeTheFileIsReadKeepsTheFilesActionsKeys() throws {
+    let harness = Harness()
+    try #"{ "actions": [ { "name": "Serve", "command": "x" } ] }"#.write(
+      to: SharedProjectSettings.file(in: harness.root),
+      atomically: true,
+      encoding: .utf8,
+    )
+    var settings = ProjectSettings(actions: [ProjectAction(name: "Seed", command: "bin/seed")])
+    settings.actionShortcuts.set(controlOptionS, for: "Serve")
+    harness.model.setSettings(settings, for: harness.project)
+
+    harness.model.setActionName("Serve", at: 0, in: harness.project)
+
+    #expect(
+      harness.model.ownSettings(of: harness.project).actionShortcuts.keys(for: "Serve")
+        == controlOptionS
+    )
+  }
+
   @Test func removingAnActionWhileTheFileWillNotReadKeepsTheFilesActionsKeys() async throws {
     let harness = Harness()
     let controlOptionD = KeyCombination(.character("d"), [.control, .option])

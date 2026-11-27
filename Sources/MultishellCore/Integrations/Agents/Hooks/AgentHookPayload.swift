@@ -20,7 +20,7 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// and Copilot are the ones that do.
   var notificationType: String?
   /// The subagent the event fired inside, or the one a start or stop names.
-  /// Claude Code and Codex set it on every event of a subagent's.
+  /// Claude Code and Codex set it on a subagent's events, Claude's Notification aside.
   var subagentID: String?
   var subagentType: String?
   /// The agent's own id for the conversation. Copilot runs a subagent as a

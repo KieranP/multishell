@@ -68,8 +68,7 @@ extension AppModel {
     guard workspace.worktree(worktree.id) != nil else { return }
     switch step {
     case .ask(let question):
-      // One question at a time: another worktree's still waits on its answer.
-      guard pendingBranchPublish == nil else { return }
+      guard !beepIfAQuestionWaits() else { return }
       pendingBranchPublish = question
 
     case .fail(let error):
@@ -194,8 +193,13 @@ extension AppModel {
     guard let project = workspace.project(worktree.projectID),
       let (integration, host) = pullRequestHost(for: project)
     else { return }
+    // Its name today where the host moved it: the compare page looks for the head there.
     let headRepository = remoteState.pullRequests[project.id].flatMap { reading in
-      RemoteRepository(pushedTo: remote, among: reading.remotes)
+      PushedRepositories.of(
+        remote: remote,
+        among: reading.remotes,
+        currentRepositories: reading.currentRepositories,
+      ).last
     }
     do {
       try await host.openNewPullRequest(

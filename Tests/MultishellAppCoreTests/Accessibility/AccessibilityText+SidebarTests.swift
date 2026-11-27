@@ -56,12 +56,16 @@ struct AccessibilityTextSidebarTests {
 
   @Test func theHiddenRowSaysWhetherItIsOpenAndHowManyItHolds() {
     #expect(
-      AccessibilityText.hiddenSection(isExpanded: false, worktreeCount: 2)
+      AccessibilityText.hiddenSection(isExpanded: false, worktreeCount: 2, state: nil)
         == "Hidden worktrees, collapsed, 2 worktrees"
     )
     #expect(
-      AccessibilityText.hiddenSection(isExpanded: true, worktreeCount: 1)
+      AccessibilityText.hiddenSection(isExpanded: true, worktreeCount: 1, state: nil)
         == "Hidden worktrees, expanded, 1 worktree"
+    )
+    #expect(
+      AccessibilityText.hiddenSection(isExpanded: false, worktreeCount: 1, state: .attention)
+        == "Hidden worktrees, collapsed, 1 worktree, \(SessionState.attention.displayName)"
     )
   }
 

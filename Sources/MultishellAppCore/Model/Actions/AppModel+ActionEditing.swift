@@ -22,19 +22,19 @@ extension AppModel {
     let old = settings.actions[index]
     guard name != old.name else { return name }
     let current = currentCopy(of: project)
-    let isFileReadable = current.sharedSettingsSnapshot.problem == nil
+    let isFileKnown = current.sharedSettingsSnapshot.isFileKnown
     let fileActions = current.sharedSettingsSnapshot.confined?.actions ?? []
     // Keys and tabs under a name no action has were left by a dropped row.
-    // Unreadable, the file may hold either name, so they stay where they are.
+    // Unread or unreadable, the file may hold either name, so they stay put.
     let isNameLeftOver =
-      isFileReadable && !(settings.actions + fileActions).contains { $0.name == name }
+      isFileKnown && !(settings.actions + fileActions).contains { $0.name == name }
     if isNameLeftOver {
       settings.actionShortcuts.set(nil, for: name)
       forgetLeftOverActionTabs(named: name, in: project)
     }
     settings.actions[index] = old.renamed(name)
     let carriesKeysAndTabs =
-      isFileReadable
+      isFileKnown
       && !(trustsSharedSettings(of: current) && fileActions.contains { $0.name == old.name })
     if carriesKeysAndTabs { settings.actionShortcuts.rename(old.name, to: name) }
     setSettings(settings, for: project)
@@ -68,9 +68,10 @@ extension AppModel {
     let removed = settings.actions.remove(at: index)
     let snapshot = currentCopy(of: project).sharedSettingsSnapshot
     let shared = snapshot.confined?.actions ?? []
-    // Unreadable, the file may hold the name, so its keys and tabs stay.
+    // Unread or unreadable, the file may hold the name, so its keys and tabs stay.
     let freesKeysAndTabs =
-      snapshot.problem == nil && !(settings.actions + shared).contains { $0.name == removed.name }
+      snapshot.isFileKnown
+      && !(settings.actions + shared).contains { $0.name == removed.name }
     if freesKeysAndTabs { settings.actionShortcuts.set(nil, for: removed.name) }
     setSettings(settings, for: project)
     if freesKeysAndTabs { forgetLeftOverActionTabs(named: removed.name, in: project) }

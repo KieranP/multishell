@@ -35,8 +35,9 @@ struct AppModelActionEditingTests {
     #expect(harness.model.ownSettings(of: harness.project).actions.first?.id == added.id)
   }
 
-  @Test func aRenamedActionKeepsItsKeysAndARemovedOneFreesThem() throws {
+  @Test func aRenamedActionKeepsItsKeysAndARemovedOneFreesThem() async throws {
     let harness = Harness()
+    await harness.model.refreshSharedSettingsIfChanged()
     harness.model.setSettings(
       ProjectSettings(actions: [ProjectAction(name: "Serve", command: "npm run dev")]),
       for: harness.project,
@@ -73,8 +74,9 @@ struct AppModelActionEditingTests {
     #expect(settings.actionShortcuts.keys(for: "Start") == controlOptionS)
   }
 
-  @Test func aNameIsTrimmedSoItsKeysSurviveARelaunch() throws {
+  @Test func aNameIsTrimmedSoItsKeysSurviveARelaunch() async throws {
     let harness = Harness()
+    await harness.model.refreshSharedSettingsIfChanged()
     harness.model.setSettings(
       ProjectSettings(actions: [ProjectAction(name: "Serve", command: "npm run dev")]),
       for: harness.project,
@@ -178,8 +180,9 @@ struct AppModelActionEditingTests {
     #expect(!harness.engine.unbound.contains(controlOptionS))
   }
 
-  @Test func namingANewRowNeverInheritsKeysADroppedRowLeftUnderThatName() {
+  @Test func namingANewRowNeverInheritsKeysADroppedRowLeftUnderThatName() async {
     let harness = Harness()
+    await harness.model.refreshSharedSettingsIfChanged()
     var leftOver = ActionShortcuts()
     leftOver.set(controlOptionS, for: "Gone")
     harness.model.setSettings(ProjectSettings(actionShortcuts: leftOver), for: harness.project)
@@ -190,8 +193,9 @@ struct AppModelActionEditingTests {
     #expect(harness.model.ownSettings(of: harness.project).actionShortcuts.keys(for: "Gone") == nil)
   }
 
-  @Test func renamingOntoANameOnlyLeftOverKeysHoldKeepsTheActionsOwnKeys() {
+  @Test func renamingOntoANameOnlyLeftOverKeysHoldKeepsTheActionsOwnKeys() async {
     let harness = Harness()
+    await harness.model.refreshSharedSettingsIfChanged()
     let controlOptionD = KeyCombination(.character("d"), [.control, .option])
     var shortcuts = ActionShortcuts()
     shortcuts.set(controlOptionS, for: "Gone")
@@ -212,8 +216,9 @@ struct AppModelActionEditingTests {
     )
   }
 
-  @Test func removingAnActionLetsANewOneOfItsNameStartAfreshInItsOwnTab() throws {
+  @Test func removingAnActionLetsANewOneOfItsNameStartAfreshInItsOwnTab() async throws {
     let harness = Harness()
+    await harness.model.refreshSharedSettingsIfChanged()
     let name = "Serve"
     harness.model.addAction(to: harness.project)
     harness.model.setActionName(name, at: 0, in: harness.project)

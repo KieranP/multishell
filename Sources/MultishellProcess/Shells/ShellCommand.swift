@@ -13,9 +13,9 @@ public enum ShellCommand {
     "exec /bin/sh -c '_multishell_script=$\(scriptVariable); unset \(scriptVariable); "
     + "eval \"$_multishell_script\"'"
 
-  /// Where the script's stderr begins. Written by the script itself, so it
-  /// comes after whatever the rc files printed.
-  static let stderrStartMarker = "--multishell-hook-output--"
+  /// Where the script's own output begins on each stream. Written by the script
+  /// itself, so it comes after whatever the rc files printed.
+  static let outputStartMarker = "--multishell-hook-output--"
 
   /// The line a login shell is handed to run `script` as sh, and the variable
   /// carrying it, for a caller that starts the shell itself: a terminal tab.
@@ -96,33 +96,32 @@ public enum ShellCommand {
         stopReason: output.stopReason,
       )
     }
-    return output.standardOutput
+    return scriptOutput(output.standardOutput)
   }
 
   /// What a failed script printed, stdout first. The two streams are read
   /// apart, so their order against each other is not kept.
   static func failureMessage(standardOutput: String, standardError: String) -> String {
-    [
-      standardOutput.trimmingCharacters(in: .whitespacesAndNewlines),
-      stderrAfterMarker(standardError),
-    ]
+    [standardOutput, standardError].map { stream in
+      scriptOutput(stream).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     .filter { !$0.isEmpty }
     .joined(separator: "\n")
   }
 
   /// Back to the script's directory, as the rc files may leave the shell
-  /// anywhere; then the unsets, `set -e`, and the marker its stderr is read from.
+  /// anywhere; then the unsets, `set -e`, and the marker each stream is read from.
   private static func prologue(entering directory: URL, unsetting: [String]) -> String {
     let unsets = unsetting.map { "unset \(AnyShellQuoting.quote($0))\n" }.joined()
     return "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\n" + unsets
-      + "set -e\nprintf '%s\\n' '\(stderrStartMarker)' >&2\n"
+      + "set -e\nprintf '%s\\n' '\(outputStartMarker)'\n"
+      + "printf '%s\\n' '\(outputStartMarker)' >&2\n"
   }
 
-  /// The part of a failure's stderr after the marker, or all of it where the
+  /// The part of a stream after the marker's line, or all of it where the
   /// script ended before writing one. The login shell `exec`s, so says no `logout`.
-  static func stderrAfterMarker(_ text: String) -> String {
-    let scriptStderr =
-      text.range(of: stderrStartMarker).map { String(text[$0.upperBound...]) } ?? text
-    return scriptStderr.trimmingCharacters(in: .whitespacesAndNewlines)
+  static func scriptOutput(_ text: String) -> String {
+    guard let marker = text.range(of: outputStartMarker + "\n") else { return text }
+    return String(text[marker.upperBound...])
   }
 }

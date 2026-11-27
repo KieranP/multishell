@@ -98,9 +98,13 @@ extension AppModel {
       let count = await coordinator?.git.commitsOnNoBranch(in: worktree)
       if count != 0 { return .refused(.commitsOnNoBranch(id: id, count: count)) }
     }
+    let hasDeletableBranch = PendingWorktreeRemoval.hasDeletableBranch(
+      worktree,
+      defaultBranch: workspace.project(worktree.projectID).map(defaultBranchName(of:)),
+    )
     let failure = await removeWorktree(
       worktree,
-      deletesBranch: order.deletesBranch,
+      deletesBranch: order.deletesBranch && hasDeletableBranch,
       forcesBranchDeletion: order.forcesBranchDeletion,
     )
     switch failure {

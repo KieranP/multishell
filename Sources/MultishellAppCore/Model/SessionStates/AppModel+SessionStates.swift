@@ -60,9 +60,12 @@ extension AppModel {
 
   /// The most urgent of the project's worktrees, for its row while collapsed.
   func state(ofProject id: Project.ID, sessions: SessionIDsByWorktree) -> SessionState? {
-    SessionState.mostUrgent(
-      workspace.worktrees(of: id).compactMap { state(ofWorktree: $0.id, sessions: sessions) }
-    )
+    state(of: workspace.worktrees(of: id), sessions: sessions)
+  }
+
+  /// The most urgent dot among these worktrees', for a row standing in for them.
+  func state(of worktrees: [Worktree], sessions: SessionIDsByWorktree) -> SessionState? {
+    SessionState.mostUrgent(worktrees.compactMap { state(ofWorktree: $0.id, sessions: sessions) })
   }
 
   /// What the quit and close guards ask about: a plain command such as `make`

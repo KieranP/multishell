@@ -90,6 +90,20 @@ extension WorktreeCoordinator {
       onWillRun: { onStep?(.preDeleteHook) },
     )
     onStep?(.removingWorktree)
+    // A Cancel while the hook's pipes outlived its shell finds no child to stop;
+    // the Trash cannot be undone, so it stops here, not at the post-delete hook.
+    if stopper?.isStopRequested == true, WorktreeHooks.hasScript(.preDelete, in: project.settings) {
+      throw HookFailure(
+        stage: .preDelete,
+        underlying: ProcessFailure(
+          executable: shellPath ?? ShellChoice.loginShellPath(),
+          arguments: [],
+          status: 0,
+          message: "stopped as the hook ended",
+          stopReason: .byUser,
+        ),
+      )
+    }
     // Read again: a volume remounted during the hook brings the checkout back.
     if await runOnDispatch({ FileManager.default.fileExists(atPath: path.path) }) {
       // Back during the hook, so judged as one present at the start: neither check ran.

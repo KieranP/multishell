@@ -190,6 +190,29 @@ struct AppModelPullRequestReadsTests {
     #expect(host.askedBranches == ["feat", "feat"])
   }
 
+  @Test func aForksOpenPullRequestFromTheSameBranchNameIsNotAskedForEveryRead() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    host.answer(
+      branch: "feat",
+      .success([
+        .sample(number: 9, state: .closed),
+        .sample(number: 40, state: .open, owner: "someone-else"),
+      ]),
+    )
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    #expect(host.askedBranches == ["feat"])
+    #expect(harness.model.services(of: feat).pullRequest?.number == 9)
+  }
+
   @Test func anOpenPullRequestFoundByItsBranchIsAskedForEveryRead() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

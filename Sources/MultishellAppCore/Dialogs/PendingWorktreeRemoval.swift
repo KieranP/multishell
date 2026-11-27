@@ -56,6 +56,12 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     }
   }
 
+  /// A branch removal may delete: not the default one, which a bare clone's
+  /// `HEAD` names and the coordinator keeps.
+  static func hasDeletableBranch(_ worktree: Worktree, defaultBranch: String?) -> Bool {
+    worktree.branch.map { $0 != defaultBranch } ?? false
+  }
+
   static func decide(
     _ worktree: Worktree,
     confirms: Bool,
@@ -67,8 +73,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     defaultBranch: String? = nil,
     commitsOnNoBranch: Int? = 0,
   ) -> Decision {
-    // The coordinator keeps the branch a bare clone's HEAD names, the default one.
-    let hasBranch = worktree.branch.map { $0 != defaultBranch } ?? false
+    let hasBranch = hasDeletableBranch(worktree, defaultBranch: defaultBranch)
     let deletes = hasBranch && alwaysDeletesBranch
     let asksAboutBranch = hasBranch && !alwaysDeletesBranch
     guard confirms || asksAboutBranch || commitsOnNoBranch != 0 else {

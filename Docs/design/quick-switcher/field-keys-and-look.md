@@ -47,7 +47,7 @@ its look, focus and closing, Return and VoiceOver. Newest at the bottom, above
 
 Raised by reviews and settled; a review need not raise these again.
 
-- **Escape over the Agents board or Debug Info leaving the keyboard on
+- **Escape over the Agents Dashboard or Debug Info leaving the keyboard on
   nothing.** No pane is in view to take it, and none had it before the switcher
   opened.
 - **A background close taking focus closing the switcher.** That close takes the

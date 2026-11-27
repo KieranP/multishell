@@ -61,6 +61,32 @@ extension WorkspaceRepairTests {
     #expect(workspace.sessions.map(\.id) == [live], "its session went with it")
   }
 
+  @Test func aTabIDListedTwiceKeepsTheCopyWhosePanesAreStillThere() throws {
+    let tab = UUID()
+    let dead = UUID()
+    let live = UUID()
+    var workspace = try decodeJSON(
+      Workspace.self,
+      #"""
+      { "projects": [ { "path": "file:///repos/demo/" } ],
+        "worktrees": [
+          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ],
+        "tabs": [
+          \#(tabJSON(id: tab, session: dead)),
+          \#(tabJSON(id: tab, session: live)) ],
+        "sessions": [
+          { "id": "\#(live)", "worktreeID": "/repos/demo",
+            "workingDirectory": "file:///repos/demo/", "title": "Shell" } ] }
+      """#,
+    )
+
+    workspace.repair()
+
+    WorkspaceInvariants.check(workspace, "duplicate tab")
+    #expect(workspace.tabs.map(\.focusedSessionID) == [live])
+    #expect(workspace.sessions.map(\.id) == [live])
+  }
+
   @Test func aProjectListedTwiceKeepsItsFirstEntryAndItsWorktrees() throws {
     var workspace = try decodeJSON(
       Workspace.self,

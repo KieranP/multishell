@@ -169,6 +169,38 @@ extension AppModelControlWorktreesTests {
     #expect(harness.model.presentedError?.id == users.id)
   }
 
+  @Test func removingAWorktreeOnTheDefaultBranchKeepsItAsTheRowsRemoveDoes() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.model.setTrashesRemovedWorktrees(false)
+    _ = try await harness.git.run(["switch", "-q", "-c", "develop"], in: harness.project.path)
+    await harness.model.createWorktree(
+      branch: "main",
+      basedOn: nil,
+      createsBranch: false,
+      in: harness.project,
+    )
+    let onMain = try #require(
+      harness.model.workspace.worktrees(of: harness.project.id).first(where: { worktree in
+        worktree.branch == "main" && worktree.path != harness.project.path
+      })
+    )
+
+    let reply = await harness.model.answer(
+      .removeWorktree(
+        WorktreeRemovalOrder(
+          worktreeID: ControlID.worktree(onMain.id),
+          deletesBranch: true,
+          forcesBranchDeletion: true,
+          force: false,
+        )
+      )
+    )
+
+    #expect(reply == .done)
+    #expect(try await harness.branches().contains("main"))
+  }
+
   @Test func aForcePastAWorkingAgentStillLeavesABranchGitWouldKeep() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

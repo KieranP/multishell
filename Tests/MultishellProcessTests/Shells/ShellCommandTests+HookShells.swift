@@ -302,8 +302,32 @@ extension ShellCommandTests {
     }
   }
 
+  @Test(arguments: ["/bin/zsh", "/bin/bash"])
+  func aFailingScriptsMessageLeavesOutWhatTheRcFilesPrintedToStdout(path: String) async throws {
+    let shell = try ScratchShell(path)
+    defer { shell.tearDown() }
+    for file in [".zshrc", ".zprofile", ".zshenv", ".bashrc", ".bash_profile", ".profile"] {
+      try "echo 'rc noise'\n".write(
+        to: shell.home.appendingPathComponent(file),
+        atomically: true,
+        encoding: .utf8,
+      )
+    }
+
+    let failure = await #expect(throws: ProcessFailure.self) {
+      _ = try await ShellCommand.runScript(
+        "echo hey\nexit 3",
+        in: shell.home,
+        shellPath: shell.path,
+        environment: shell.environment,
+      )
+    }
+
+    #expect(failure?.message == "hey")
+  }
+
   @Test func aFailureMessageIsStdoutThenTheScriptsStderr() {
-    let marker = ShellCommand.stderrStartMarker
+    let marker = ShellCommand.outputStartMarker
     #expect(
       ShellCommand.failureMessage(
         standardOutput: "hey\n",
@@ -318,10 +342,10 @@ extension ShellCommandTests {
     #expect(ShellCommand.failureMessage(standardOutput: "  hey  ", standardError: "") == "hey")
   }
 
-  @Test func aScriptsStderrIsWhatFollowsTheMarkerOrAllOfItWithoutOne() {
-    let marker = ShellCommand.stderrStartMarker
-    #expect(ShellCommand.stderrAfterMarker("noise\n\(marker)\nmine\n") == "mine")
-    #expect(ShellCommand.stderrAfterMarker("noise\n\(marker)\n") == "")
-    #expect(ShellCommand.stderrAfterMarker("no marker here") == "no marker here")
+  @Test func aStreamsScriptOutputIsWhatFollowsTheMarkerOrAllOfItWithoutOne() {
+    let marker = ShellCommand.outputStartMarker
+    #expect(ShellCommand.scriptOutput("noise\n\(marker)\nmine\n") == "mine\n")
+    #expect(ShellCommand.scriptOutput("noise\n\(marker)\n") == "")
+    #expect(ShellCommand.scriptOutput("no marker here") == "no marker here")
   }
 }

@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// One side of a file tab's rows as the highlighter parses it, its lines joined, with
-/// where each line sits in that text and the row showing it.
+/// One side of a file tab's rows as the highlighter parses it, a cut line whole, with
+/// where each line sits in that text and the row showing it; see files/file-tabs.md.
 public struct DiffSideText: Sendable {
   private static let lineSeparator = "\n"
 
@@ -17,8 +17,9 @@ public struct DiffSideText: Sendable {
     var displayRows: [Int] = []
     var offset = 0
     for (row, line) in display.lines.enumerated() where side.shows(line.kind) {
-      let end = offset + line.text.utf16.count
-      lines.append(line.text)
+      let text = display.uncutText(ofRow: row)
+      let end = offset + text.utf16.count
+      lines.append(text)
       lineRanges.append(offset..<end)
       displayRows.append(row)
       offset = end + Self.lineSeparator.utf16.count

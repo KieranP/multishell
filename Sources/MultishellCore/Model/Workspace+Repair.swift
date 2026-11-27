@@ -18,11 +18,11 @@ extension Workspace {
 
     let worktreeIDs = Set(worktrees.map(\.id))
     tabs.removeAll { !worktreeIDs.contains($0.worktreeID) }
+    repairPanes()
     tabs = tabs.uniqued(by: \.id)
     tabGroups.removeAll { !worktreeIDs.contains($0.worktreeID) }
     tabGroups = tabGroups.uniqued(by: \.id)
 
-    repairPanes()
     pruneAndReassignSessions()
     repairFileTabs(worktreeIDs: worktreeIDs)
     repairAllChangesTabs(worktreeIDs: worktreeIDs)

@@ -10,13 +10,13 @@ extension UpdateMethod {
     return "Merge \(kind) '\(base.shortName)' into \(branch)"
   }
 
-  /// Never autostashed: the stash stack is every worktree's. `--ff` stands over a
-  /// `merge.ff=only`; `--no-update-refs` leaves stacked branches, which no one was asked about.
+  /// Never autostashed: the stash stack is every worktree's. `--ff --commit --no-squash` stand
+  /// over `merge.ff` and `branch.*.mergeOptions`; `--no-update-refs` leaves stacked branches.
   func arguments(onto base: DefaultBranch, from branch: String) -> [String] {
     switch self {
     case .merge:
       [
-        "merge", "--no-edit", "--ff", "--no-autostash",
+        "merge", "--no-edit", "--ff", "--commit", "--no-squash", "--no-autostash",
         "-m", Self.mergeMessage(of: base, into: branch), base.fullName,
       ]
 

@@ -45,7 +45,8 @@ command-line tool.
   one under way is.
 - **A pull request found alone is asked again while it is open**, as its review,
   checks and merge move with no push; one merged or closed stands until the
-  branch moves.
+  branch moves. A fork's open one of the same branch name does not count: a
+  branch named `dev` or `patch-1` was asked for every two minutes.
 - **Cost of the hundred**: a closed or merged pull request older than the
   hundred newest, on a branch no worktree has out, reads as none.
 - **Polled, unlike `git fetch`.** A review, a teammate's push, a run finishing

@@ -2,9 +2,8 @@ import MultishellCore
 
 /// The arguments an agent tab starts with; `TabCommand` puts them in a line.
 enum AgentLaunch {
-  /// A reported conversation resumes by id, the latest's flag reopening another tab's,
-  /// so it starts afresh beside another tab of its agent. `nil` when there is nothing to
-  /// resume with: a plain shell keeping the title.
+  /// A reported conversation resumes by id, as the latest's flag reopens another tab's;
+  /// `nil` with nothing to resume, a plain shell keeping the title.
   static func arguments(
     for agent: AgentDescriptor,
     resume: Bool,

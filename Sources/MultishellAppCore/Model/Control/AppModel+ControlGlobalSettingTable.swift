@@ -1,6 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
 
 extension AppModel {
   private static var noShortcutWord: String { "none" }
@@ -64,7 +63,6 @@ extension AppModel {
   }
 
   private var agentSettings: [ControlSetting] {
-    let known = Set(AgentCatalogue.startableIDs)
     // The custom command is a whole line of its own, which takes no flags.
     let flagSettings = AgentCatalogue.agents.map(\.id).sorted().map { id in
       ControlSetting.text(
@@ -77,7 +75,7 @@ extension AppModel {
       .optionalText(
         "preferredAgentID",
         { self.workspace.preferredAgentID },
-        accepts: known.contains,
+        accepts: Self.isAgentChoice,
         setPreferredAgent,
       ),
       .text("customAgentCommand", { self.workspace.customAgentCommand }, setCustomAgentCommand),
@@ -224,13 +222,6 @@ extension AppModel {
       ),
       .text("customEditorCommand", { self.workspace.customEditorCommand }, setCustomEditorCommand),
     ]
-  }
-
-  /// A shell the picker could hold: an executable named by its whole path, as
-  /// the picker stores one, or the login or custom entry.
-  private func isShellChoice(_ id: String) -> Bool {
-    [ShellChoice.loginShellID, ShellChoice.customID].contains(id)
-      || (id.hasPrefix("/") && FileManager.default.isRunnableFile(atPath: id))
   }
 
   /// `notifications.attention`, `.error` and `.done`, as the state file has them.

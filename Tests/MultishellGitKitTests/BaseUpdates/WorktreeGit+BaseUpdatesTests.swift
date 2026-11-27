@@ -392,6 +392,26 @@ struct WorktreeGitBaseUpdatesTests {
     #expect(await Self.contains(landed, feature, fixture))
   }
 
+  @Test(arguments: ["--no-commit", "--squash"])
+  func aMergeStillCommitsWhenTheBranchConfigSaysOtherwise(option: String) async throws {
+    let (fixture, feature, landed) = try await Self.featureBehindOrigin()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(
+      ["config", "branch.feature.mergeOptions", option],
+      in: feature.path,
+    )
+
+    let outcome = try await fixture.git.fetchThenUpdate(
+      feature,
+      from: try await fixture.defaultBranch(),
+      by: .merge,
+    )
+
+    #expect(outcome == .updated)
+    #expect(await Self.contains(landed, feature, fixture))
+    #expect(await fixture.git.unfinishedUpdate(in: feature.path) == nil)
+  }
+
   @Test func aMergeCommitNamesTheBaseByItsShortName() async throws {
     let (fixture, feature, _) = try await Self.featureBehindOrigin()
     defer { fixture.tearDown() }

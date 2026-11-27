@@ -163,8 +163,9 @@ struct AppModelActionRunsTests {
     #expect(harness.model.workspace.tabs.isEmpty)
   }
 
-  @Test func aRenamedActionStillFindsTheTabItIsRunningIn() throws {
+  @Test func aRenamedActionStillFindsTheTabItIsRunningIn() async throws {
     let harness = harnessWithServe()
+    await harness.model.refreshSharedSettingsIfChanged()
     harness.model.runAction(named: serve.name, in: harness.main)
     let session = try actionSession(harness)
     reportRunning(harness, in: session.id)
@@ -189,8 +190,9 @@ struct AppModelActionRunsTests {
     #expect(harness.model.pendingActionRestart?.sessionID == session.id)
   }
 
-  @Test func aRenamedActionsTabTakesItsNewNameAndKeepsItThroughARestart() throws {
+  @Test func aRenamedActionsTabTakesItsNewNameAndKeepsItThroughARestart() async throws {
     let harness = harnessWithServe()
+    await harness.model.refreshSharedSettingsIfChanged()
     harness.model.runAction(named: serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
@@ -206,8 +208,9 @@ struct AppModelActionRunsTests {
     #expect(harness.model.title(of: tab) == "Serve")
   }
 
-  @Test func restartAnsweredAfterARenameStillRestarts() throws {
+  @Test func restartAnsweredAfterARenameStillRestarts() async throws {
     let harness = harnessWithServe()
+    await harness.model.refreshSharedSettingsIfChanged()
     harness.model.runAction(named: serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
@@ -261,8 +264,9 @@ struct AppModelActionRunsTests {
     #expect(harness.model.actionSession(named: "Seed", in: harness.main.id)?.id == seeding.id)
   }
 
-  @Test func theRestartQuestionIsAskedAgainUnderTheActionsNewName() throws {
+  @Test func theRestartQuestionIsAskedAgainUnderTheActionsNewName() async throws {
     let harness = harnessWithServe()
+    await harness.model.refreshSharedSettingsIfChanged()
     harness.model.runAction(named: serve.name, in: harness.main)
     reportRunning(harness, in: try actionSession(harness).id)
     harness.model.runAction(named: serve.name, in: harness.main)

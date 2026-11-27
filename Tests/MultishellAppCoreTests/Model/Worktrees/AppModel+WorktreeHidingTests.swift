@@ -18,6 +18,17 @@ struct AppModelWorktreeHidingTests {
     #expect(!harness.model.sidebarRowIDs().contains(harness.feature.id))
   }
 
+  @Test func aHiddenSectionMadeAgainStartsCollapsed() {
+    let harness = Harness()
+    harness.model.setHidden(true, worktree: harness.feature)
+    harness.model.toggleHiddenSectionExpansion(of: harness.project)
+    harness.model.setHidden(false, worktree: harness.feature)
+
+    harness.model.setHidden(true, worktree: harness.feature)
+
+    #expect(!harness.model.sidebarEntries[0].isHiddenSectionExpanded)
+  }
+
   @Test func showingAHiddenWorktreePutsItBackWithTheRest() {
     let harness = Harness()
     harness.model.setHidden(true, worktree: harness.feature)

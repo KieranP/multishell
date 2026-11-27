@@ -21,9 +21,7 @@ cramped names. Newest at the bottom, above "Reviewed and left as is".
   blinked would cost a save, a re-render and a row's place.
 - **Last commit is runtime state instead**, so a commit does not rewrite the
   workspace. The orders are named for the commit, which is what they measure.
-- **It rides the ref scan the badges already run.** git fails a whole query on
-  an unknown format atom, so the scan asks again without it, or an old git would
-  cost every badge.
+- **It rides the ref scan the badges already run.**
 - **A worktree with no date sorts last in both directions**: "oldest first" is
   not a claim that an undated worktree is the oldest. Name breaks ties and is
   the default, being the only order that reads the same everywhere.

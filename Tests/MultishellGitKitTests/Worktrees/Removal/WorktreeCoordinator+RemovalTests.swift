@@ -272,6 +272,35 @@ struct WorktreeCoordinatorRemovalTests {
     #expect(WorktreeRemovalStep.first(for: hooked) == .preDeleteHook)
   }
 
+  @Test func aCancelLandingAsThePreDeleteHookEndsStopsTheRemovalBeforeTheTrash() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
+    project.settings = ProjectSettings(preDeleteHook: "true", postDeleteHook: "true")
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "kept",
+      in: project,
+      settings: fixture.worktreeSettings,
+    )
+    let worktree = try await fixture.worktree(onBranch: "kept", in: project)
+    let stopper = ProcessStopper()
+
+    let failure = await #expect(throws: HookFailure.self) {
+      try await fixture.coordinator.removeUnlinking(
+        worktree,
+        in: project,
+        deletesBranch: true,
+        stopper: stopper,
+        onStep: { step in if step == .removingWorktree { stopper.stop() } },
+      )
+    }
+
+    #expect(failure?.stage == .preDelete)
+    #expect(failure?.stopReason == .byUser)
+    #expect(FileManager.default.fileExists(atPath: path.path))
+    #expect(try await fixture.branches().contains("kept"))
+  }
+
   @Test func theDeleteHooksNeverRunAgainstADirectoryThatTookAStaleRecordsPath() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

@@ -45,6 +45,20 @@ struct AppModelDebugMemoryTableTests {
     #expect(table.totalMemory == 700)
   }
 
+  @Test func aClosedTabsProcessesStayInTheTotalUntilTheNextSample() async throws {
+    let (harness, _, second) = try harnessWithTwoTabs()
+    placeTree(of: 11, in: second, harness)
+    harness.model.enableDebugTools(scan: .sample(appMemory: 400, trees: [(10, [10, 11])]))
+    await harness.model.takeDebugSample()
+
+    harness.model.closeTab(second.id)
+
+    let table = harness.model.debugMemoryTable
+    #expect(table.tabs.count == 1)
+    #expect(table.unattributed.processes.map(\.pid).sorted() == [10, 11])
+    #expect(table.totalMemory == 600)
+  }
+
   @Test func theAppsPartsComeFromTheSampleAndStayStillWhilePaused() async throws {
     let (harness, _) = Harness.withOnePane()
     let parts = ProcessMemoryParts(gpuMemory: 200, heapMemory: 100, heapInUse: 60)

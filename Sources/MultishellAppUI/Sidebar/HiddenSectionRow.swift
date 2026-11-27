@@ -7,6 +7,8 @@ import SwiftUI
 struct HiddenSectionRow: View, @MainActor Equatable {
   let isExpanded: Bool
   let worktreeCount: Int
+  /// Its worktrees' most urgent dot while they are collapsed away.
+  let state: SessionState?
   let theme: Theme
   let metrics: UIMetrics
   let toggleExpansion: () -> Void
@@ -25,6 +27,10 @@ struct HiddenSectionRow: View, @MainActor Equatable {
       Text("\(worktreeCount)")
         .font(metrics.font(size: metrics.badge))
         .monospacedDigit()
+      if let state {
+        StateDot(state: state, theme: theme, palette: theme.projectsPanel)
+          .help(t("sidebar.collapsed-state", state.displayName))
+      }
       Spacer(minLength: 0)
     }
     .foregroundStyle(theme.projectsPanel.textTertiary)
@@ -35,7 +41,11 @@ struct HiddenSectionRow: View, @MainActor Equatable {
     .onTapGesture(perform: toggleExpansion)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
-      AccessibilityText.hiddenSection(isExpanded: isExpanded, worktreeCount: worktreeCount)
+      AccessibilityText.hiddenSection(
+        isExpanded: isExpanded,
+        worktreeCount: worktreeCount,
+        state: state,
+      )
     )
     .accessibilityAddTraits(.isButton)
     .accessibilityAction(
@@ -46,7 +56,7 @@ struct HiddenSectionRow: View, @MainActor Equatable {
 
   /// Everything but the closure, which captures only the project.
   static func == (a: Self, b: Self) -> Bool {
-    a.isExpanded == b.isExpanded && a.worktreeCount == b.worktreeCount && a.theme == b.theme
-      && a.metrics == b.metrics
+    a.isExpanded == b.isExpanded && a.worktreeCount == b.worktreeCount && a.state == b.state
+      && a.theme == b.theme && a.metrics == b.metrics
   }
 }

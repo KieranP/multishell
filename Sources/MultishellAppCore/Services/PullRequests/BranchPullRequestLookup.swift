@@ -6,9 +6,12 @@ struct BranchPullRequestLookup: Equatable {
   let upstreamTip: String?
   let pullRequests: [PullRequest]
 
-  /// Asked again once the branch is pushed to, or while one is open: its
-  /// review, checks and merge move with no push. See services/reads.md.
-  func stillAnswers(upstreamTip tip: String?) -> Bool {
-    tip == upstreamTip && !pullRequests.contains { !$0.state.isSettled }
+  /// Asked again once the branch is pushed to, or while one of its own is open:
+  /// its review, checks and merge move with no push. See services/reads.md.
+  func stillAnswers(upstreamTip tip: String?, headedIn repositories: [RemoteRepository]) -> Bool {
+    tip == upstreamTip
+      && !pullRequests.contains { pullRequest in
+        !pullRequest.state.isSettled && pullRequest.isHeadedWhereKnown(inAnyOf: repositories)
+      }
   }
 }

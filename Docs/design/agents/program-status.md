@@ -176,7 +176,8 @@ how it decides a pane's dot. Newest at the bottom.
   left; any later remote command's end spends it.
 - **An agent of the same kind run inside the holder counts as the holder**
   (round 15): its hooks list workers and may rewrite the roster at its Stop.
-  Hooks alone had the same exposure, and only the agent tells nesting apart.
+  Hooks alone had the same exposure, and only the agent tells nesting apart. Its
+  prompt also moves the conversation the tab resumes, as a `/clear` must.
 - **A session-end hook after the program's clear names the agent again** (round
   15): an unknown program's next hold in that pane adopts the name. It needs no
   shell integration, the board closed and such a program next.

@@ -26,8 +26,8 @@ extension SessionStates {
       reporting: report.state,
       for: key,
     )
-    // A prompt starts a turn, so whatever the last one left out is gone: an
-    // agent interrupted, Codex aside, fires no hook and its workers send no stop.
+    // A prompt starts a turn, so a worker no Stop saw out is gone: an agent
+    // interrupted, Codex aside, fires no hook and its workers send no stop.
     if report.startsTurn == true, !isAnotherConversation { update(key) { $0.startTurn() } }
     let isOwnStop = report.state == .done && worker == nil
     if isOwnStop { syncRoster(toStop: report, for: key) }

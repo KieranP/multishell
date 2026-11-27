@@ -27,6 +27,15 @@ struct CircleCIFailureReportTextTests {
     #expect(report.excerpts.map(\.job) == ["build (arm64)", "lint (arm64)"])
   }
 
+  @Test func aLineEndingInACarriageReturnLeavesTheNextJobsHeadingItsOwn() {
+    let report = CircleCIFailureReportText.report(
+      from: "### job: lint\nlint failed 100%\r\n### job: test\ntest failed\n"
+    )
+
+    #expect(report.excerpts.map(\.job) == ["lint", "test"])
+    #expect(report.excerpts.last?.text == "test failed")
+  }
+
   @Test func aReportWithoutSectionsIsOneExcerptForNoJob() {
     let report = CircleCIFailureReportText.report(from: "Something went wrong\n")
 

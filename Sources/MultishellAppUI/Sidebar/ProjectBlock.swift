@@ -39,6 +39,11 @@ struct ProjectBlock: View {
         HiddenSectionRow(
           isExpanded: isHiddenSectionExpanded,
           worktreeCount: hiddenWorktrees.count,
+          state: model.hiddenSectionRowState(
+            hiddenWorktrees,
+            isExpanded: isHiddenSectionExpanded,
+            sessions: sessions,
+          ),
           theme: theme,
           metrics: metrics,
           toggleExpansion: { model.toggleHiddenSectionExpansion(of: project) },

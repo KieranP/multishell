@@ -60,12 +60,16 @@ extension AppModel {
         processes: liveSessions.flatMap { processesBySession[$0] ?? [] }.heaviestFirst(),
       )
     }
+    // A pane closed since the sample has no row; its processes stay in the measured total.
+    let shownSessions = Set(workspace.tabs.flatMap(\.sessionIDs).filter(liveSessionIDs.contains))
+    let ofClosedPanes = processesBySession.filter { !shownSessions.contains($0.key) }.values
     return DebugMemoryTable(
       appMemory: snapshot.history.latest?.appMemory ?? 0,
       tabs: tabs.sorted { lhs, rhs in
         (lhs.totalMemory ?? 0, rhs.title) > (rhs.totalMemory ?? 0, lhs.title)
       },
-      unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst(),
+      unattributedProcesses: (snapshot.attribution.unattributedProcesses + ofClosedPanes.joined())
+        .heaviestFirst(),
       fileTabs: debugFileTabMemory,
       appParts: snapshot.appMemoryParts,
     )

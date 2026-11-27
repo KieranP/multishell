@@ -19,7 +19,7 @@
   **TreeSitterScanners** compiles the four scanners copied under
   `ThirdParty/tree-sitter/` and gives Swift nothing (dependencies.md).
 - **WorktreeGit and WorktreeCoordinator sit at GitKit's root** with their
-  extensions under each concern, since nine concerns extend them and none owns
+  extensions under each concern, since ten concerns extend them and none owns
   them.
 - **AppModel's extensions sit under `Model/` by concern**: the concerns are too
   many for one alphabetical listing to keep a concern's files together.

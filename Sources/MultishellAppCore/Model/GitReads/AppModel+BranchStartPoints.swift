@@ -24,7 +24,7 @@ extension AppModel {
     for (branch, upstream) in upstreams
     where madeByTheApp.contains(branch) && upstream.branch != branch && upstream.branch != trunk {
       let madeFrom = await startPoint(ofBranch: branch, in: project)
-      if madeFrom == "\(upstream.remote)/\(upstream.branch)" { kept[branch] = nil }
+      if madeFrom == upstream.remoteTrackingName { kept[branch] = nil }
     }
     return kept
   }

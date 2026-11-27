@@ -207,8 +207,6 @@
   - (i) buttons and the Global cell keep the system's `.secondary`; titles,
     headings and captions take `SettingsColors.secondaryText`, so the override
     table's heading matches a group's title.
-  - `ThemePicker` stays in `Shared/` although only the View menu draws it: a
-    folder follows what a file is, not how many places call it.
   - `Theme.builtins` and `theme(from:)`'s default stay public: 20 AppUI test
     files name them without `@testable` importing Core.
 - **Which states raise a banner is three toggles, not one picker.** The picker

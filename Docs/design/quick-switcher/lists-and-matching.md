@@ -77,8 +77,8 @@ choice opens. Newest at the bottom, above "Reviewed and left as is".
 - **Rows list in the sidebar's order**, so a tie in the score falls as the user
   sees it.
 - **A file chosen takes down a cover over its worktree once it has opened**, the
-  Agents board or Debug Info, as a Files panel row would, without a select: that
-  opens a first tab in a worktree with none and can ask the trust question.
+  Agents Dashboard or Debug Info, as a Files panel row would, without a select:
+  that opens a first tab in a worktree with none and can ask the trust question.
 - **Empty, Files lists what changed, a hundred at most**, kept in one pass as a
   search keeps them. A fresh build output of 50,000 untracked files sorted in
   full took 72 ms a render in a debug build; the pass takes 15.
@@ -178,4 +178,4 @@ Raised by reviews and settled; a review need not raise these again.
 What tests cannot reach, to check in `make run` before a release:
 
 - Commands lists no Services, Window, Help, editing or theme item, and drops New
-  Tab at first launch and over the Agents board.
+  Tab at first launch and over the Agents Dashboard.

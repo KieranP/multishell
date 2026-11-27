@@ -45,7 +45,7 @@ bottom.
 - **The wrapper reports the run as a shell reports a command**:
   `command-started` and `command-finished` through the helper, and OSC 133's C
   and D for the engine. So working, done on exit 0 and failed otherwise, a
-  notification, the sidebar and the Agents board come from the paths shell
+  notification, the sidebar and the Agents Dashboard come from the paths shell
   commands already take. An interrupt's 130 is done, a signal not being a
   failure. The end carries its seconds, as a shell's does: without them the
   notification rule took every run for an agent's Stop and announced it.
@@ -168,9 +168,10 @@ bottom.
   rebuilt the menu bar. The header reads none of them; the play button reads the
   run states, so a report redraws only the button.
 
-- **While `.multishell.json` will not read, a removal or rename moves no keys or
-  tabs**: the file may still hold that name, and reading it as empty cost every
-  file action its keys on any removal.
+- **Until `.multishell.json` has been read, or while it will not read, a removal
+  or rename moves no keys or tabs**: the file may still hold that name, and
+  reading it as empty cost every file action its keys on any removal. A project
+  whose folder is missing is never read, so it stays that way all run.
 
 - **`actions run` starts the run in the background**, as `tabs open` does: an
   agent in one worktree running a server in another moved the user's view and

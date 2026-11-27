@@ -3,7 +3,7 @@ import Foundation
 /// A file tab's file as it stands, read only within the size cap.
 enum FileOnDisk: Sendable {
   case bytes(Data)
-  /// Gone, or no longer a regular file.
+  /// Gone, or no longer a regular file or a link.
   case gone
   case tooLarge(bytes: Int)
   /// There, but the read failed: no permission, or no descriptor left.
@@ -16,9 +16,16 @@ enum FileOnDisk: Sendable {
   /// Blocking: callers run it through `runOnDispatch`. Unmapped, as a mapped
   /// file truncated under the read faults; see worktrees/line-count-badge.md.
   static func read(_ path: String, in worktree: URL, sizeLimit: Int) -> Self {
+    let url = worktree.appending(path: path)
+    // git keeps a link as the path it holds and diffs that, wherever it leads.
+    if let held = try? FileManager.default.destinationOfSymbolicLink(atPath: url.path) {
+      let folder = (path as NSString).deletingLastPathComponent
+      let isFolderInside =
+        folder.isEmpty || WorktreeLinkTarget.path(of: folder, in: worktree) != nil
+      return isFolderInside ? .bytes(Data(held.utf8)) : .gone
+    }
     // git stops at a folder link, so a file under one leading out is gone to it too.
     guard WorktreeLinkTarget.path(of: path, in: worktree) != nil else { return .gone }
-    let url = worktree.appending(path: path)
     let values: URLResourceValues
     do {
       values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])

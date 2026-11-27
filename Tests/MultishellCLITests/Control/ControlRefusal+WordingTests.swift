@@ -15,6 +15,10 @@ struct ControlRefusalWordingTests {
     )
   }
 
+  @Test func aWorktreeNotReadyNamesAFailedStageWaitingOnItsDismiss() {
+    #expect(ControlRefusal.worktreeNotReady(id: "w-89abcdef").wording.contains("Dismiss"))
+  }
+
   @Test func aMissingServicePageNamesWhatTheWorktreeLacks() {
     #expect(
       ControlRefusal.noServicePage(.ciRuns, id: "w-89abcdef").wording

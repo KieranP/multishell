@@ -338,6 +338,22 @@ struct AppModelPullRequestActionsTests {
     #expect(host.calls == ["list", "create me:feat into main"])
   }
 
+  @Test func theNewPullRequestPageNamesTheHeadByTheRepositorysOwnerToday() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (host, _) = harness.connectServices()
+    host.rename(GitHarness.gitHubOrigin, to: RemoteRepository(owner: "acme", name: "demo"))
+    try await harness.addOrigin()
+    let feat = try await harness.createWorktree(onBranch: "feat")
+    try await harness.pushToGitHubOrigin(feat)
+    await harness.model.refreshBranchScan(of: harness.project)
+    await harness.model.refreshServices(ofProject: harness.project.id)
+
+    await harness.model.createPullRequest(for: feat)
+
+    #expect(host.calls.last == "create acme:feat into main")
+  }
+
   @Test func commitsTheRemoteLacksAreAskedAboutWithTheirCount() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

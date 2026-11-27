@@ -59,10 +59,12 @@ public final class AppModel<Surface> {
   public var sidebarFilterText = "" {
     didSet {
       guard sidebarFilterText != oldValue else { return }
+      if !sidebarFilterText.isEmpty { showsSidebarFilter = true }
+      guard SidebarListing.filterText(sidebarFilterText) != SidebarListing.filterText(oldValue)
+      else { return }
       let collapsedBefore = projectsCollapsedWhileFiltering
       setIfChanged(\.projectsCollapsedWhileFiltering, [])
       scheduleRevealedRowsRead(from: oldValue, collapsing: collapsedBefore)
-      if !sidebarFilterText.isEmpty { showsSidebarFilter = true }
     }
   }
   /// Projects collapsed by their chevron while the filter holds them open.

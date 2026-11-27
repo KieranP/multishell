@@ -24,8 +24,8 @@ shortcuts, dialogs, icons and row orders.
   goes into `UIMetrics.projectBlockHeight`, or the drop line lands in the wrong
   half. A field a script should read goes on `SidebarRowListing` too, filled
   from the same values the row draws.
-- **A column on the Agents board.** A case in the lane enum in draw order; the
-  compiler asks for the rest. The sidebar's counts are a separate list,
+- **A column on the Agents Dashboard.** A case in the lane enum in draw order;
+  the compiler asks for the rest. The sidebar's counts are a separate list,
   `sidebarLanes`, which nothing forces.
 - **Each further column asks for another column's width and gap**, and four
   already ask for more window than the app's minimum.

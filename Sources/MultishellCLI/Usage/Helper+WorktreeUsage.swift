@@ -24,7 +24,7 @@ extension Helper {
         while it is detached with commits no branch holds, unless --force.
         --delete-branch deletes its branch too, as
         git branch -d; --force-delete-branch deletes one holding commits no
-        other branch has, as git branch -D.
+        other branch has, as git branch -D. Neither deletes the default branch.
     usage: multishell worktrees update WORKTREE_ID --merge|--rebase [--force]
                                        [--rewrite-pushed]
         Fetch, then merge the project's default branch into it or rebase it

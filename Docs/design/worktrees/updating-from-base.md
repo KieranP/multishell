@@ -24,7 +24,10 @@ Merge from Base and Rebase onto Base, and what a stop on conflicts offers (issue
   repository. Both commands take `--no-autostash`, or `rebase.autoStash` or
   `merge.autoStash` in the user's config would stash anyway.
 - **The merge takes `--ff`**, standing over a `merge.ff=only` that refuses the
-  merge commit a branch with work of its own needs.
+  merge commit a branch with work of its own needs. **It takes
+  `--commit --no-squash`** too: a `branch.<name>.mergeOptions` naming either
+  exited 0 with the merge stopped or the base staged, and the menu said it had
+  updated.
 - **Pseudo-refs are read through git where it keeps refs in reftable**: there
   `ORIG_HEAD`, `CHERRY_PICK_HEAD` and `REVERT_HEAD` are no files, and a merge's
   own stop read as git's failure. Other repositories keep the file reads. It is
@@ -151,7 +154,7 @@ Merge from Base and Rebase onto Base, and what a stop on conflicts offers (issue
   `UU` paths would have steered the user to commit mid-rebase. The refusal reads
   the status, which brings the stop's menu. A stopped cherry-pick, revert or
   `git am` is named the same way, by the menu and by `worktrees update`, though
-  its menu offers no Abort. A pick list counts until `sequencer/` goes, as
+  its menu offers no Abort. A pick list counts until `sequencer/todo` goes, as
   committing one stop by hand drops CHERRY_PICK_HEAD and leaves the rest to
   replay. A `git am` writes `rebase-apply` as a rebase does, and
   `rebase-apply/applying` tells them apart.

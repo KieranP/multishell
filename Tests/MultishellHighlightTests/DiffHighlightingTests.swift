@@ -40,6 +40,27 @@ struct DiffHighlightingTests {
     #expect(Self.role(of: "let", in: right, spans: spans) == .keyword)
   }
 
+  @Test func aLineCutForDisplayLeavesTheRowsBelowItTheirOwnColours() async {
+    let cut = "/* " + String(repeating: "x", count: 10_100) + " */"
+    let text = DiffDisplayText(
+      [
+        DiffLine(kind: .context, oldNumber: 1, newNumber: 1, text: cut),
+        DiffLine(kind: .context, oldNumber: 2, newNumber: 2, text: "let x = 1"),
+      ],
+      marksStaging: true,
+    )
+
+    let spans = await DiffHighlighting.spans(for: text, path: "a.swift")
+
+    #expect(Self.role(of: "let", in: text, spans: spans) == .keyword)
+    let cutRow = text.range(ofRow: 0)
+    #expect(
+      spans.allSatisfy { span in
+        span.range.upperBound <= cutRow.upperBound - 1 || span.range.lowerBound > cutRow.upperBound
+      }
+    )
+  }
+
   @Test func anInjectionOnARemovedRowBelowAKeptOneIsHighlighted() async {
     let unified = DiffDisplayText(
       [

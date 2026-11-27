@@ -63,6 +63,7 @@ extension WorktreeCoordinator {
     deletesBranch: Bool = false,
     shellPath: String? = nil,
     port: Int? = nil,
+    stopper: ProcessStopper? = nil,
     onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil,
   ) async throws {
     try await remove(
@@ -72,6 +73,7 @@ extension WorktreeCoordinator {
       port: port,
       deletesBranch: deletesBranch,
       shellPath: shellPath,
+      stopper: stopper,
       onStep: onStep,
     )
   }

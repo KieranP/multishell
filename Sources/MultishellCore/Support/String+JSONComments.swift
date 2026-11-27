@@ -26,6 +26,8 @@ extension String {
           if previous == "*", skipped == "/" { break }
           previous = skipped
         }
+        // A block comment is whitespace, so `1/**/2` stays two tokens and fails to parse.
+        stripped.append(" ")
       } else {
         if scalar == "\"" { inString = true }
         stripped.append(scalar)
