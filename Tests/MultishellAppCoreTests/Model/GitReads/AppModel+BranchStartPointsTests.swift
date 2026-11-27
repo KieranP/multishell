@@ -101,9 +101,12 @@ struct AppModelBranchStartPointsTests {
     _ = try await harness.git.run(["fetch", "-q", "origin"], in: harness.project.path)
     let directory = harness.model.effectiveWorktreeSettings(for: harness.project)
       .worktreePath(forBranch: "feature", in: harness.project)
-    _ = try await harness.git.run(
-      ["worktree", "add", "-q", "-b", "feature", directory.path, "origin/release"],
+    try await TestRepository.addWorktree(
+      onNewBranch: "feature",
+      at: directory,
       in: harness.project.path,
+      using: harness.git,
+      from: "origin/release",
     )
     await harness.model.refreshWorktrees(of: harness.project)
     let feature = try #require(harness.worktree(onBranch: "feature"))

@@ -7,5 +7,5 @@ struct CommittedSide {
   let marksStaging: Bool
   /// What a read of many files asked git once, where this file's repository
   /// is the worktree's own.
-  var bases: WorktreeDiffBases?
+  let bases: WorktreeDiffBases?
 }

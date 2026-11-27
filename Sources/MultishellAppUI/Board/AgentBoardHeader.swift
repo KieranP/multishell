@@ -23,7 +23,7 @@ struct AgentBoardHeader: View {
   }
 
   /// The board's one control, deciding membership and nothing else: a shell
-  /// it lets in lands where its state says, as an agent does.
+  /// it lets in lands where its state says, as an agent's or an action's pane does.
   private var allTerminalsToggle: some View {
     Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsBinding)
       .toggleStyle(KnobToggleStyle(palette: theme.header))

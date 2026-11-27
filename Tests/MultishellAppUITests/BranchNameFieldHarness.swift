@@ -11,7 +11,7 @@ import Testing
 @MainActor
 final class BranchNameFieldHarness {
   @Observable
-  final class SheetState {
+  fileprivate final class SheetState {
     var draft = NewWorktreeDraft(projectID: "/repos/a")
     var defaultButtonPresses = 0
   }

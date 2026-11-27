@@ -47,7 +47,7 @@ extension AppModel {
     createsBranch: Bool,
     in project: Project,
     firstTab: NewWorktreeFirstTab? = nil,
-    takesOverTheSheet: Bool = true,
+    showsInSheet: Bool = true,
     selectsWorktree: Bool = true,
   ) async -> Worktree? {
     // The workspace, not the value handed in: a sheet held open across a
@@ -66,7 +66,7 @@ extension AppModel {
     // first file, and that directory is watched. See worktrees/creating-and-removing.md.
     let claimed = planned.flatMap(claimPath(_:))
     let stopper = ProcessStopper()
-    stageHandles.beginCreation(with: stopper, in: project.id, showsInSheet: takesOverTheSheet)
+    stageHandles.beginCreation(with: stopper, in: project.id, showsInSheet: showsInSheet)
     defer {
       if stageHandles.isCurrentCreation(stopper) { worktreeCreationStep = nil }
       stageHandles.endCreation(with: stopper, in: project.id)

@@ -144,12 +144,7 @@ struct AppModelConflictHandoffTests {
     harness.model.setPreferredAgent(AgentCatalogue.claudeID)
     let feature = try await harness.featureBehindOrigin()
     let hook = harness.project.path.appendingPathComponent(".git/hooks/commit-msg")
-    try "#!/bin/sh\necho 'no ticket in the message' >&2\nexit 1\n".write(
-      to: hook,
-      atomically: true,
-      encoding: .utf8,
-    )
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hook.path)
+    try Scratch.script("echo 'no ticket in the message' >&2\nexit 1", at: hook)
     let opened = harness.engine.opened.count
 
     await harness.model.requestBaseUpdate(of: feature, by: .merge)

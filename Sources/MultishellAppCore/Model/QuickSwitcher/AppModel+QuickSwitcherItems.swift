@@ -97,12 +97,12 @@ extension AppModel {
     let states = sessionStates
     let statuses = statuses
     return order.map { project, worktree in
-      let branch =
+      let name =
         workspace.customName(of: worktree.id).map { "\(worktree.name) (\($0))" } ?? worktree.name
       return QuickSwitcherItem(
         target: .worktree(worktree.id),
         kind: .worktree,
-        title: QuickSwitcherItem.path([project.name, branch]),
+        title: QuickSwitcherItem.path([project.name, name]),
         location: "",
         state: states.state(ofWorktree: worktree.id, sessions: sessions[worktree.id]),
         status: statuses[worktree.id],

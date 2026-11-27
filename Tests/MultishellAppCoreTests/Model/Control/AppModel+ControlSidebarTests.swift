@@ -89,10 +89,8 @@ struct AppModelControlSidebarTests {
   }
 
   @Test func anActionsPaneIsListedAsAnAction() async throws {
-    let harness = Harness()
-    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     let reply = try #require(await harness.messageSource.ask(.listSidebar))
 

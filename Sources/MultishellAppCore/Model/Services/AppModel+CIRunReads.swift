@@ -14,7 +14,7 @@ extension AppModel {
     after previous: ProjectCIRuns?,
   ) async -> ProjectCIRuns? {
     guard let (integration, provider) = ciProvider(for: project) else { return nil }
-    guard await runsOn(provider, project: project) else {
+    guard await isConfigured(provider, in: project) else {
       return ProjectCIRuns(integration: integration, isConfigured: false, runsByBranch: [:])
     }
     let changesBefore = remoteState.integrationChanges[project.id]
@@ -101,7 +101,7 @@ extension AppModel {
 
   /// The provider's file in the project's own checkout or any worktree's,
   /// a bare repository having no checkout of its own.
-  func runsOn(_ provider: any CIProvider, project: Project) async -> Bool {
+  func isConfigured(_ provider: any CIProvider, in project: Project) async -> Bool {
     let directories = [project.path] + workspace.worktrees(of: project.id).map(\.path)
     let path = provider.configurationPath
     return await runOnDispatch {

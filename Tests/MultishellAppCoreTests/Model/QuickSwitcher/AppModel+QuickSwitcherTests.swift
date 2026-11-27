@@ -9,12 +9,12 @@ import Testing
 @Suite @MainActor
 struct AppModelQuickSwitcherTests {
   @Test func aPaneRunningAnActionIsMarkedAsOneAndAShellsIsNot() throws {
-    let harness = Harness()
-    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
+    let harness = Harness.withServeAction()
     let shellTab = harness.openBackgroundTab()
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let action = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let action = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     let shell = try #require(shellTab.root.sessionIDs.first)
 
     let kinds = Dictionary(

@@ -18,9 +18,11 @@ extension WorktreeCoordinatorRemovalTests {
       settings: fixture.worktreeSettings,
     )
     let inner = outer.appendingPathComponent(".worktrees/inner", isDirectory: true)
-    _ = try await fixture.runner.run(
-      ["worktree", "add", "-q", "-b", "inner", inner.path],
+    try await TestRepository.addWorktree(
+      onNewBranch: "inner",
+      at: inner,
       in: outer,
+      using: fixture.runner,
     )
     try "work\n".write(
       to: inner.appendingPathComponent("wip.txt"),

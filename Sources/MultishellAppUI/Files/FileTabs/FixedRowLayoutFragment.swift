@@ -4,8 +4,8 @@ import MultishellAppCore
 /// A row placed where its number says, not where TextKit 2 estimates; an
 /// undocumented override point the drift tests guard. See files/file-tabs.md.
 final class FixedRowLayoutFragment: NSTextLayoutFragment {
-  /// Asked each time the frame is, not kept: a partial re-read and a review card's
-  /// gap both move the rows below them while their fragments stay.
+  /// Asked each time the frame is, not kept: a partial re-read and a row gap
+  /// both move the rows below them while their fragments stay.
   private weak var layoutDelegate: FixedRowLayoutDelegate?
   private let rowHeight: CGFloat
 

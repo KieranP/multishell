@@ -31,8 +31,7 @@ struct AppModelPublishedUpstreamsTests {
     _ = try await harness.git.run(["push", "-q", "-f", "origin", "feat:feat"], in: feat.path)
     await harness.model.refreshBranchScan(of: harness.project)
 
-    let tip = try await harness.git.run(["rev-parse", "feat"], in: feat.path)
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let tip = try await harness.tip(ofBranch: "feat")
     #expect(
       harness.model.remoteState.upstreams[feat.id]
         == BranchUpstream(remote: "origin", branch: "feat", tip: tip)

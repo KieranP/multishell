@@ -1,7 +1,7 @@
 import MultishellAppCore
 
-/// The glyph a Files panel row draws for a path: the one place a file's look
-/// is decided, so an icon pack replaces one function.
+/// The glyph a Files panel row or a Review file group draws: the one place a
+/// file's look is decided, so an icon pack replaces this type.
 enum FileIcon {
   static let file = "doc"
 

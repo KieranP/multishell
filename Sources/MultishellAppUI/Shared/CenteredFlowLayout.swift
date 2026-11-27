@@ -2,7 +2,7 @@ import MultishellAppCore
 import SwiftUI
 
 /// Its subviews in lines that wrap at the width offered, each line centred;
-/// `FlowRows` decides which share a line.
+/// `FlowLines` decides which share a line.
 struct CenteredFlowLayout: Layout {
   let spacing: Double
 
@@ -19,11 +19,11 @@ struct CenteredFlowLayout: Layout {
     subviews: Subviews,
     cache sizes: inout [CGSize],
   ) -> CGSize {
-    let rows = flowRows(of: sizes, within: proposal.width)
-    let lines = rows.lines
+    let flow = flowLines(of: sizes, within: proposal.width)
+    let lines = flow.lines
     let width =
-      zip(lines, rows.lineWidths).map { line, summed in
-        drawnWidth(of: line, summed: summed, subviews: subviews, sizes: sizes, in: rows)
+      zip(lines, flow.lineWidths).map { line, summed in
+        drawnWidth(of: line, summed: summed, subviews: subviews, sizes: sizes, in: flow)
       }.max() ?? 0
     let height =
       lines.map { lineHeight(of: $0, in: sizes) }.reduce(0, +)
@@ -40,16 +40,16 @@ struct CenteredFlowLayout: Layout {
     cache sizes: inout [CGSize],
   ) {
     var top = bounds.minY
-    let rows = flowRows(of: sizes, within: proposal.width)
-    for (line, summed) in zip(rows.lines, rows.lineWidths) {
+    let flow = flowLines(of: sizes, within: proposal.width)
+    for (line, summed) in zip(flow.lines, flow.lineWidths) {
       let height = lineHeight(of: line, in: sizes)
-      let drawnWidths = line.map { drawnWidth(of: subviews[$0], sized: sizes[$0], in: rows) }
+      let drawnWidths = line.map { drawnWidth(of: subviews[$0], sized: sizes[$0], in: flow) }
       let lineWidth = drawnWidth(
         of: line,
         summed: summed,
         subviews: subviews,
         sizes: sizes,
-        in: rows,
+        in: flow,
       )
       var leading = bounds.midX - lineWidth / 2
       for (index, width) in zip(line, drawnWidths) {
@@ -63,32 +63,32 @@ struct CenteredFlowLayout: Layout {
     }
   }
 
-  /// A line's width as its views draw it, summed as `FlowRows` broke it. Only a
+  /// A line's width as its views draw it, summed as `FlowLines` broke it. Only a
   /// view alone on its line can be offered less than it asked, so only it is measured.
   private func drawnWidth(
     of line: Range<Int>,
     summed lineWidth: Double,
     subviews: Subviews,
     sizes: [CGSize],
-    in rows: FlowRows,
+    in flow: FlowLines,
   ) -> Double {
     guard line.count == 1, let index = line.first else { return lineWidth }
-    return drawnWidth(of: subviews[index], sized: sizes[index], in: rows)
+    return drawnWidth(of: subviews[index], sized: sizes[index], in: flow)
   }
 
   /// Its cached width where that fits, else what it draws at when offered less.
   private func drawnWidth(
     of subview: LayoutSubview,
     sized size: CGSize,
-    in rows: FlowRows,
+    in flow: FlowLines,
   ) -> Double {
-    guard rows.isShownNarrower(than: size.width) else { return size.width }
-    let shown = rows.shownWidth(of: size.width)
+    guard flow.isShownNarrower(than: size.width) else { return size.width }
+    let shown = flow.shownWidth(of: size.width)
     return subview.sizeThatFits(ProposedViewSize(width: shown, height: size.height)).width
   }
 
-  private func flowRows(of sizes: [CGSize], within width: CGFloat?) -> FlowRows {
-    FlowRows(
+  private func flowLines(of sizes: [CGSize], within width: CGFloat?) -> FlowLines {
+    FlowLines(
       widths: sizes.map { Double($0.width) },
       maxWidth: width.map(Double.init) ?? .infinity,
       spacing: spacing,

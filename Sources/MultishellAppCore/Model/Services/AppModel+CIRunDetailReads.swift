@@ -55,7 +55,7 @@ extension AppModel {
   /// and once more as it ends; one read at a time per run.
   private func readFailureReport(of run: CIRun, in project: Project) async {
     guard run.status == .failed,
-      remoteState.failureReports[run.id]?.stillDescribe(
+      remoteState.failureReports[run.id]?.stillDescribes(
         run,
         readAt: remoteState.reportsReadAt[run.id],
       )
@@ -87,7 +87,7 @@ extension AppModel {
   /// at a time per run.
   private func readCIWorkflows(of run: CIRun, in project: Project) async {
     let readAt = remoteState.workflowsReadAt[run.id]
-    if remoteState.ciWorkflows[run.id]?.stillDescribe(run, readAt: readAt) == true { return }
+    if remoteState.ciWorkflows[run.id]?.stillDescribes(run, readAt: readAt) == true { return }
     guard let (integration, provider) = ciProvider(for: project),
       remoteState.workflowReads.insert(run.id).inserted
     else { return }

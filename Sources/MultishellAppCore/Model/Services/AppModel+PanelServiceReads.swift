@@ -252,7 +252,7 @@ extension AppModel {
   /// where the configuration file is, and not where the provider disowns it.
   private func providerRunsThere(_ provider: any CIProvider, project: Project) async -> Bool {
     guard let reading = remoteState.ciRuns[project.id] else {
-      return await runsOn(provider, project: project)
+      return await isConfigured(provider, in: project)
     }
     return reading.isConfigured && reading.failure != .notHosted
   }

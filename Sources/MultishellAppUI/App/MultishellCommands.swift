@@ -196,7 +196,7 @@ struct MultishellCommands: Commands {
         ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
           if index > 0 { Divider() }
           ForEach(group) { item in
-            Button(item.name) { model.runActionInView(named: item.name) }
+            Button(item.name) { model.runActionInSelectedWorktree(named: item.name) }
               .keyboardShortcut(item.keys?.keyboardShortcut(isChanged: true))
           }
         }

@@ -16,7 +16,7 @@ public struct SharedSettingsSnapshot: Equatable, Sendable {
   /// The date the file had when read. A stat against this tells an edited
   /// file without a read.
   var modificationDate: Date
-  /// Why it would not parse, for the project's Hooks tab.
+  /// Why it would not parse, for the project's Hooks and Actions pages.
   public internal(set) var problem: String?
   /// False until the file has been read at all this run. A first read says
   /// nothing about trust, so a launch opens with no queue of questions.

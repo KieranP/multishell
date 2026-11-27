@@ -1,7 +1,7 @@
 import Foundation
 
-/// The directory is in the Trash and git still lists the worktree: neither
-/// `worktree remove` nor `prune` would let go of the record.
+/// The directory is gone and git still lists the worktree, or cannot list to say:
+/// neither `worktree remove` nor `prune` would let go of the record.
 public struct WorktreeRecordRemovalFailure: Error, CustomStringConvertible {
   public let path: URL
   public let underlying: any Error

@@ -128,7 +128,7 @@ struct AppModelServiceStandInTests {
     let harness = Harness()
     let provider = try ServiceStandIn(json: "{}").ciProvider
 
-    #expect(await harness.model.runsOn(provider, project: harness.project))
+    #expect(await harness.model.isConfigured(provider, in: harness.project))
   }
 
   @Test func clearingAStandInBeforeAnyToolsWereAdoptedConnectsNone() async throws {

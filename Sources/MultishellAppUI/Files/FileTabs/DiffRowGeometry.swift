@@ -1,7 +1,8 @@
 import AppKit
+import MultishellCore
 
 /// Every row one height at `row × height` below the inset, as the forced fragments hold
-/// TextKit 2, plus the review card gaps above it. Text, tints and gutter place rows here.
+/// TextKit 2, plus the row gaps above it. Text, tints and gutter place rows here.
 struct DiffRowGeometry {
   /// Above the first row and below the last in a file tab, as the prototype
   /// pads them; the All changes tab's boxes run their rows flush (mockups).
@@ -91,7 +92,7 @@ struct DiffRowGeometry {
     guard !y.isNaN else { return 0 }
     let row = rowGaps.row(atContentY: y - verticalInset, rowHeight: rowHeight).rounded(rule)
     guard !row.isNaN else { return 0 }
-    return Int(min(max(row, 0), Double(count)))
+    return Int(row.clamped(to: 0...Double(count)))
   }
 
   func documentHeight(rows count: Int) -> CGFloat {

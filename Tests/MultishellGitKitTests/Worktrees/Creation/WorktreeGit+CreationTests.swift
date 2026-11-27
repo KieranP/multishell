@@ -1,5 +1,6 @@
 import Foundation
 import MultishellProcess
+import TestScratch
 import TestSupport
 import Testing
 
@@ -72,8 +73,7 @@ struct WorktreeGitCreationTests {
     for index in 0..<300 { files["src/dir\(index % 7)/file\(index).txt"] = "line \(index)\n" }
     try await TestRepository.commit("many", files: files, in: repository, using: fixture.runner)
     let script = repository.appending(path: "run.sh")
-    try "#!/bin/sh\n".write(to: script, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+    try Scratch.script("", at: script)
     try FileManager.default.createSymbolicLink(
       atPath: repository.appending(path: "latest").path,
       withDestinationPath: "src/dir0/file0.txt",

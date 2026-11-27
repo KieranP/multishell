@@ -83,7 +83,7 @@ struct WatchedDirectoriesTests {
     defer { Scratch.remove(root) }
     let link = root.deletingLastPathComponent().appending(path: "\(root.lastPathComponent)-link")
     try FileManager.default.createSymbolicLink(at: link, withDestinationURL: root)
-    defer { try? FileManager.default.removeItem(at: link) }
+    defer { Scratch.remove(link) }
     let watched = WatchedDirectories([link])
     let real = try #require(watched.realPaths.first)
 

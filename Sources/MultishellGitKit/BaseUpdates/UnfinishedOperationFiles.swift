@@ -58,12 +58,8 @@ enum UnfinishedOperationFiles {
   /// The branch a stopped rebase will put back, which git lists the worktree
   /// without until it ends, from the `head-name` it keeps.
   static func branchBeingRebased(inCheckout checkout: URL) -> String? {
-    guard let gitDirectory = gitDirectory(ofCheckout: checkout) else { return nil }
     for state in ["rebase-merge", "rebase-apply"] {
-      let file = gitDirectory.appendingPathComponent(state).appendingPathComponent("head-name")
-      guard let text = try? String(contentsOf: file, encoding: .utf8),
-        let ref = text.gitLines.first
-      else { continue }
+      guard let ref = firstLine(of: "\(state)/head-name", inCheckout: checkout) else { continue }
       // A rebase begun detached writes the words "detached HEAD" there.
       return ref.hasPrefix(RefName.localPrefix) ? RefName.shortLocal(ref) : nil
     }

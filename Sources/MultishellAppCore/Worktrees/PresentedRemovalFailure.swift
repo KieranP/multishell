@@ -14,8 +14,8 @@ enum PresentedRemovalFailure: Equatable, Sendable {
   case vetoed(message: String, didTimeOut: Bool)
 
   enum ForcedRetry: Equatable, Sendable {
-    /// `git branch -D` on a branch `-d` refused. The alert's title already
-    /// names the branch, so the button says only what it does.
+    /// `git branch -D` on a branch `-d` refused, while still at `atTip`. The alert's
+    /// title already names the branch, so the button says only what it does.
     case deleteBranchAnyway(String, atTip: String?)
 
     var label: String {
@@ -50,7 +50,7 @@ enum PresentedRemovalFailure: Equatable, Sendable {
       self = .presenting(failure, wasWorktreeRemoved: false)
 
     case let failure as WorktreeRecordRemovalFailure:
-      // The directory is in the Trash, so there is nothing to restore; the
+      // The directory is gone, so there is nothing to restore; the
       // refresh shows the record git kept, directory missing.
       self = .presenting(failure, wasWorktreeRemoved: true)
 

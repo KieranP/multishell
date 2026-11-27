@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// "Same", reading "Override" under the pointer, for a value that follows another:
-/// a project's setting the global, or a command its default.
+/// "Same", reading "Override" under the pointer, for a row with nothing of its own:
+/// a project's setting following the global, a command its default, a keyless action.
 struct OverrideStartButton: View {
   /// The tooltip and VoiceOver's label, naming the row's setting.
   let help: String

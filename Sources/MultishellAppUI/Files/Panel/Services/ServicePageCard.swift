@@ -11,10 +11,7 @@ struct ServicePageCard<Content: View>: View {
     VStack(alignment: .leading, spacing: 6, content: content)
       .padding(12)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(
-        theme.header.background,
-        in: RoundedRectangle(cornerRadius: UIMetrics.columnCornerRadius),
-      )
+      .columnBackground(theme.header.background)
       .overlay {
         RoundedRectangle(cornerRadius: UIMetrics.columnCornerRadius)
           .strokeBorder(theme.filesPanel.border, lineWidth: UIMetrics.hairlineThickness)

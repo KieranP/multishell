@@ -59,7 +59,7 @@ struct PendingWorktreeRemovalTests {
     )
   }
 
-  @Test func withConfirmationOffOnlyAnOpenBranchQuestionStillAsks() throws {
+  @Test func withConfirmationOffAnOpenBranchQuestionStillAsks() throws {
     #expect(
       PendingWorktreeRemoval.decide(
         branched,

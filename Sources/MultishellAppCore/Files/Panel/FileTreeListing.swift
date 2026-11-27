@@ -16,7 +16,7 @@ struct FileTreeListing: Sendable {
     /// a modified one is in the tracked list unless past its cap.
     fileprivate let changedPathsTrackedMayLack: Set<String>
     /// Those of them no other list holds: an added path is tracked or untracked.
-    private let changedPathsBeyondTheLists: Int
+    private let changedPathCountBeyondTheLists: Int
 
     /// Every path a listing builds from, what its build costs.
     var pathCount: Int {
@@ -24,7 +24,7 @@ struct FileTreeListing: Sendable {
         + submodules.values.reduce(0) { $0 + $1.paths.count }
         + submoduleUntrackedPaths.values.reduce(0) { $0 + $1.count }
         + ignoredFolderEntries.values.reduce(0) { $0 + $1.count }
-        + changedPathsBeyondTheLists
+        + changedPathCountBeyondTheLists
     }
 
     init(_ sources: FileTreeSources) {
@@ -37,7 +37,7 @@ struct FileTreeListing: Sendable {
       let isCapped = sources.tracked.isCapped
       let lacked = FileTree.statusChanges(in: sources).filter { isCapped || $0.kind != .modified }
       changedPathsTrackedMayLack = Set(lacked.map(\.path))
-      changedPathsBeyondTheLists = lacked.count { $0.kind != .added }
+      changedPathCountBeyondTheLists = lacked.count { $0.kind != .added }
     }
   }
 

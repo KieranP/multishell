@@ -68,11 +68,11 @@ extension ControlRefusal {
 
     case .noFindBar(let id):
       "\(id) has no find bar up; `multishell panes find \(id) TEXT` opens a pane's, "
-        + "`multishell tabs find \(id) TEXT` a file tab's"
+        + "`multishell tabs find \(id) TEXT` a file or All changes tab's"
 
     case .noFindText(let id):
       "\(id) has no find text; `multishell panes find \(id) TEXT` sets a pane's, "
-        + "`multishell tabs find \(id) TEXT` a file tab's"
+        + "`multishell tabs find \(id) TEXT` a file or All changes tab's"
 
     case .noHiddenWorktrees(let id):
       "project \(id) has no hidden worktrees; `multishell worktrees hide WORKTREE_ID` hides one"
@@ -127,7 +127,7 @@ extension ControlRefusal {
 
     case .noTab(let id): "no tab \(id); `multishell tabs list` names them"
     case .nothingInView: "no worktree's tabs are on screen"
-    case .nothingPresented: "no alert, dialog, sheet or field is up"
+    case .nothingPresented: "no alert, dialog, sheet, quick switcher or name field is up"
 
     case .nothingToHandoff(.ciRuns, let id):
       "worktree \(id)'s CI page has no failure checked and not sent already; it reads "

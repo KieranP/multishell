@@ -70,13 +70,7 @@ extension AppModel {
     onWholeFile path: String,
     in lines: [DiffLine],
   ) -> [ReviewCardPlacement] {
-    let sources = reviewCardSources(of: tab.id, in: tab.worktreeID, side: nil)
-    return ReviewCardPlacement.placements(
-      of: sources.comments(onFile: path),
-      selected: selectedReviewComments[tab.worktreeID],
-      composer: sources.composer(onFile: path),
-      in: lines,
-    )
+    reviewCardPlacements(onFile: path, of: tab.id, in: tab.worktreeID, lines: lines, side: nil)
   }
 
   /// Each file's comments and composer, two lines either side, kept out of its

@@ -26,7 +26,7 @@ extension AppModel {
       ),
       host.paste(mention + " ", into: recipient.id)
     else {
-      DropCopies.remove(file.deletingLastPathComponent())
+      AgentHandoff.discard(file)
       return .notPasted
     }
     if takingFocus {

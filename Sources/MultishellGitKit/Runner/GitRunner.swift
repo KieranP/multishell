@@ -63,8 +63,8 @@ struct GitRunner: Sendable {
     return overrides
   }
 
-  /// `environment` and `timeout` are for the calls that talk to a network:
-  /// fetch, push and `ls-remote`; `stopper` for the checkout a user may end, `add`.
+  /// `environment` is a network call's no-prompt or a merge's no-editor; `timeout` is
+  /// for fetch, push and `ls-remote`; `stopper` for the checkout a user may end, `add`.
   func run(
     _ arguments: [String],
     in directory: URL,

@@ -25,7 +25,7 @@ public struct ReviewPage: Equatable, Sendable {
       let pending = fileComments.count(where: \.isPending)
       return ReviewFileGroup(
         path: path,
-        fileName: String(path.slashSeparatedParts.last ?? Substring(path)),
+        fileName: path.lastSlashSeparatedPart,
         countText: pending > 0
           ? t("count.to-send", pending) : t("count.comments", fileComments.count),
         rows: fileComments.map { comment in

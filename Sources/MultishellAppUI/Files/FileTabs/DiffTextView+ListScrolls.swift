@@ -1,5 +1,6 @@
 import AppKit
 import MultishellAppCore
+import MultishellCore
 
 /// A file in the All changes list hands the list the keys that scroll, so they
 /// scroll the list and not the file the list holds whole.
@@ -58,7 +59,7 @@ extension DiffTextView {
     guard lastRow >= 0 else { return }
     let row = displayText.row(atOffset: selectedRange().location) + delta
     setSelectedRange(
-      NSRange(location: displayText.rowStarts[min(max(0, row), lastRow)], length: 0)
+      NSRange(location: displayText.rowStarts[row.clamped(to: 0...lastRow)], length: 0)
     )
   }
 }

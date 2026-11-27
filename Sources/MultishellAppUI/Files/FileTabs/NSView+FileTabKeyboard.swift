@@ -2,8 +2,8 @@ import AppKit
 import MultishellAppCore
 import MultishellCore
 
-/// The keyboard a reconcile or a closed find bar handed a file tab, taken by
-/// its text view or, for an image or a notice, the view behind it.
+/// The keyboard a reconcile, a closed find bar or a cancelled composer handed a file or
+/// All changes tab, taken by its text view or list, or the view behind an image or notice.
 extension NSView {
   func takeKeyboard(ifAskedBy model: AppModel, for tabID: FileTab.ID) {
     guard model.takeFileTabFocusRequest(tabID) else { return }

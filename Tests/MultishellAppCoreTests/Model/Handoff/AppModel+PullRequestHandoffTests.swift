@@ -373,7 +373,7 @@ struct AppModelPullRequestHandoffTests {
     defer { harness.tearDown() }
     let (feat, _, agent) = try await harness.showingAFailingPullRequest()
     let drops = harness.model.dropsDirectory
-    try? FileManager.default.removeItem(at: drops)
+    Scratch.remove(drops)
     try Data("not a directory".utf8).write(to: drops)
 
     _ = await harness.model.sendPullRequestFeedback(of: feat.id, to: agent.id, takingFocus: false)

@@ -10,7 +10,7 @@ extension View {
       message: \.message,
       dismiss: { model.answerBranchPublish($0, publishes: false) },
       buttons: { pending in
-        Button(pending.pushLabel) { model.answerBranchPublish(pending, publishes: true) }
+        Button(pending.confirmLabel) { model.answerBranchPublish(pending, publishes: true) }
           .keyboardShortcut(.defaultAction)
         Button(t("action.cancel"), role: .cancel) {
           model.answerBranchPublish(pending, publishes: false)

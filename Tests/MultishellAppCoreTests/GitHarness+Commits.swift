@@ -21,8 +21,7 @@ extension GitHarness {
     _ = try await git.run(["commit", "-q", "--allow-empty", "-m", "other"], in: project.path)
     _ = try await git.run(["checkout", "-q", head, "--", "."], in: project.path)
     _ = try await git.run(["commit", "-q", "-m", "squashed"], in: project.path)
-    let tip = try await git.run(["rev-parse", "HEAD"], in: project.path)
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let tip = try await self.tip(ofBranch: "HEAD")
     _ = try await git.run(["checkout", "-q", "main"], in: project.path)
     _ = try await git.run(["branch", "-q", "-D", "side"], in: project.path)
     return tip

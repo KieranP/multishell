@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Where a dragged tab or project will land: a line on the edge of the view
-/// the pointer is over, drawn half past it.
+/// Where a dragged tab, project or action row will land: a line on the edge of
+/// the view the pointer is over, drawn half past it.
 struct InsertionLine: View {
   /// The line's own direction: upright between tabs, lying down between
-  /// project blocks.
+  /// project blocks and action rows.
   let axis: Axis
   /// On the trailing or bottom edge rather than the leading or top one.
   let isAfter: Bool

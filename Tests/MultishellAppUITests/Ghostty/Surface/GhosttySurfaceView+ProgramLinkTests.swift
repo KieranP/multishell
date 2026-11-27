@@ -18,23 +18,6 @@ struct GhosttySurfaceViewProgramLinkTests {
     try mouseEvent(type, at: NSPoint(x: 10, y: 10), flags: flags)
   }
 
-  private func commandKey(_ flags: NSEvent.ModifierFlags) throws -> NSEvent {
-    try #require(
-      NSEvent.keyEvent(
-        with: .flagsChanged,
-        location: .zero,
-        modifierFlags: flags,
-        timestamp: 1,
-        windowNumber: 0,
-        context: nil,
-        characters: "",
-        charactersIgnoringModifiers: "",
-        isARepeat: false,
-        keyCode: UInt16(kVK_Command),
-      )
-    )
-  }
-
   @Test func aProgramLinkTurnsLibghosttysArrowIntoAHand() throws {
     try withPane { view in
       view.pointer = .arrow
@@ -146,7 +129,7 @@ struct GhosttySurfaceViewProgramLinkTests {
     try withPane { view in
       view.programLinkUnderPointer = "Sources/A.swift"
 
-      view.flagsChanged(with: try commandKey([]))
+      view.flagsChanged(with: try keyEvent(.flagsChanged, "", keyCode: UInt16(kVK_Command)))
 
       let isForgotten = view.programLinkUnderPointer == nil
       #expect(isForgotten)

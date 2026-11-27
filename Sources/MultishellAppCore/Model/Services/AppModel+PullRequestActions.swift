@@ -72,7 +72,7 @@ extension AppModel {
       pendingBranchPublish = question
 
     case .fail(let error):
-      present(error)
+      presentedError = error
 
     case .open(let head, let remote):
       await openNewPullRequest(of: worktree, head: head, on: remote)
@@ -122,7 +122,7 @@ extension AppModel {
     var unpushed: Int?
     if let tip = upstream?.tip {
       unpushed = await git.commitCount(ofBranch: branch, past: tip, in: worktree.path)
-      if unpushed == nil { return .fail(UnpushedCommitsUnknown(branch: branch)) }
+      if unpushed == nil { return .fail(.unpushedCommitsUnknown(branch)) }
     }
     if let upstream, upstream.tip != nil, unpushed == 0 {
       return .open(head: upstream.branch, remote: upstream.remote)
@@ -141,11 +141,11 @@ extension AppModel {
     if let upstream {
       remote = upstream.remote
     } else {
-      guard let remotes else { return .fail(RemotesUnknown(branch: branch)) }
+      guard let remotes else { return .fail(.remotesUnknown(branch)) }
       guard
         let chosen = remotes.first(where: { $0.name == pushRemote })
           ?? remotes.first(where: { $0.name == Self.preferredRemoteName }) ?? remotes.first
-      else { return .fail(NoRemoteToPublishTo(branch: branch)) }
+      else { return .fail(.noRemoteToPublishTo(branch)) }
       remote = chosen.name
     }
     // A branch with no upstream of its own may still share a name with one

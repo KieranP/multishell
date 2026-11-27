@@ -41,7 +41,7 @@ struct OwnActionRow: View {
     }
     .opacity(draggedActionID == action.id ? 0.4 : 1)
     .modifier(
-      ActionRowDropTarget(
+      ActionRowDropTargetModifier(
         row: index,
         showsLine: dropDestination != nil,
         drop: $drop,

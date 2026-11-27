@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-/// A file tab opened from the Files panel or the quick switcher, by the
-/// clicked-link rule; see Docs/design/files/file-tabs.md.
+/// A file tab opened from the Files panel, All changes, Review, the switcher or the
+/// command line, by the clicked-link rule; see Docs/design/files/file-tabs.md.
 extension AppModel {
   /// A click on a file's row: its tab, else a beep.
   public func openFileAsTab(_ clicked: String, in id: Worktree.ID) async {

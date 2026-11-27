@@ -9,8 +9,8 @@ import Observation
 @Observable
 @MainActor
 final class RemoteState {
-  /// Projects with a `git fetch` running, which the sidebar shows and a
-  /// second Fetch waits for.
+  /// Projects with a `git fetch` running, which the sidebar shows; a second
+  /// Fetch meanwhile does nothing.
   var fetchingProjects: Set<Project.ID> = []
   /// What the tools were last adopted from.
   @ObservationIgnored var adoption: ServiceToolAdoption?
@@ -54,11 +54,11 @@ final class RemoteState {
   /// The panel's pull request checks and run history, read only while it
   /// shows them, by worktree; and each failed run's report.
   var checks: [Worktree.ID: PullRequestChecks] = [:]
+  var ciHistories: [Worktree.ID: CIRunHistory] = [:]
+  var failureReports: [CIRun.ID: CIRunDetail<CIFailureReport>] = [:]
   /// The panel's worktree's alone, as run details are: thread text is not kept
   /// for rows passed by.
   var threads: [Worktree.ID: PullRequestThreads] = [:]
-  var ciHistories: [Worktree.ID: CIRunHistory] = [:]
-  var failureReports: [CIRun.ID: CIRunDetail<CIFailureReport>] = [:]
   /// Why each run's last workflows or report read failed, until one answers.
   var workflowReadFailures: [CIRun.ID: ServiceReadFailure] = [:]
   var reportReadFailures: [CIRun.ID: ServiceReadFailure] = [:]

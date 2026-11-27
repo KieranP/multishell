@@ -7,7 +7,7 @@ extension AppModel {
   /// operation runs there. The task ends once the dialog is up or the removal is over.
   @discardableResult
   public func requestWorktreeRemoval(of worktree: Worktree) -> Task<Void, Never>? {
-    guard mayRemove(worktree) else { return nil }
+    guard canRemove(worktree) else { return nil }
     // A detached worktree's commits are read first, as they may be on no branch.
     if !worktree.isDetached, case .remove(let deletesBranch) = removalDecision(for: worktree) {
       return Task { await removeWorktree(worktree, deletesBranch: deletesBranch) }
@@ -23,7 +23,7 @@ extension AppModel {
       removalRequests.awaitingStatus.remove(worktree.id)
       let isLatest = removalRequests.latestID == worktree.id
       if isLatest { removalRequests.latestID = nil }
-      guard let current = workspace.worktree(worktree.id), mayRemove(current) else { return }
+      guard let current = workspace.worktree(worktree.id), canRemove(current) else { return }
       let decision = removalDecision(
         for: current,
         isStatusUnread: isStatusUnread,

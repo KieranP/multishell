@@ -6,7 +6,6 @@ import Testing
 
 @Suite @MainActor
 struct AppModelActionMenuTests {
-  private let serve = ProjectAction(name: "Start Server", command: "npm run dev")
   private let migrate = ProjectAction(name: "Run Migrations", command: "bin/rails db:migrate")
 
   @Test func aProjectWithNoActionsStillHasAMenuToEditThemFrom() throws {
@@ -21,20 +20,22 @@ struct AppModelActionMenuTests {
     let harness = Harness()
     let keys = KeyCombination(.character("s"), [.control, .option])
     var shortcuts = ActionShortcuts()
-    shortcuts.set(keys, for: serve.name)
+    shortcuts.set(keys, for: ProjectAction.serve.name)
     harness.model.setSettings(
-      ProjectSettings(actions: [serve, migrate], actionShortcuts: shortcuts),
+      ProjectSettings(actions: [ProjectAction.serve, migrate], actionShortcuts: shortcuts),
       for: harness.project,
     )
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, isFromShellIntegration: true)
     )
 
     let menu = try #require(harness.model.actionMenu(for: harness.main))
 
-    #expect(menu.items.map(\.name) == [serve.name, migrate.name])
+    #expect(menu.items.map(\.name) == [ProjectAction.serve.name, migrate.name])
     #expect(menu.items[0].state.isRunning)
     #expect(menu.items[0].keys == keys)
     #expect(menu.items[1].state == .idle && menu.items[1].keys == nil)
@@ -43,10 +44,11 @@ struct AppModelActionMenuTests {
   }
 
   @Test func aFailedRunShowsAsFailedUntilItRunsAgain() throws {
-    let harness = Harness()
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, isFromShellIntegration: true)
     )
@@ -67,13 +69,15 @@ struct AppModelActionMenuTests {
 
     let menu = try #require(harness.model.actionMenu(for: harness.main))
     #expect(menu.items.isEmpty)
-    #expect(menu.awaitingTrust == [serve.name])
+    #expect(menu.awaitingTrust == [ProjectAction.serve.name])
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     #expect(harness.model.workspace.tabs.isEmpty)
 
     harness.model.setTrustsSharedSettings(true, for: harness.project)
-    #expect(harness.model.actionMenu(for: harness.main)?.items.map(\.name) == [serve.name])
+    #expect(
+      harness.model.actionMenu(for: harness.main)?.items.map(\.name) == [ProjectAction.serve.name]
+    )
     #expect(harness.model.actionMenu(for: harness.main)?.awaitingTrust == [])
   }
 
@@ -81,9 +85,9 @@ struct AppModelActionMenuTests {
     let harness = Harness()
     let keys = KeyCombination(.character("s"), [.control, .option])
     var shortcuts = ActionShortcuts()
-    shortcuts.set(keys, for: serve.name)
+    shortcuts.set(keys, for: ProjectAction.serve.name)
     harness.model.setSettings(
-      ProjectSettings(actions: [serve, migrate], actionShortcuts: shortcuts),
+      ProjectSettings(actions: [ProjectAction.serve, migrate], actionShortcuts: shortcuts),
       for: harness.project,
     )
     #expect(harness.model.actionMenuBarGroups.isEmpty, "nothing selected")
@@ -92,17 +96,18 @@ struct AppModelActionMenuTests {
 
     #expect(
       harness.model.actionMenuBarGroups.flatMap(\.self) == [
-        ActionMenuBarItem(name: serve.name, keys: keys),
+        ActionMenuBarItem(name: ProjectAction.serve.name, keys: keys),
         ActionMenuBarItem(name: migrate.name, keys: nil),
       ]
     )
   }
 
   @Test func aRunsAgeCountsFromItsStartWhateverItsTabsDotDoesSince() throws {
-    let harness = Harness()
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, isFromShellIntegration: true)
     )
@@ -137,13 +142,17 @@ struct AppModelActionMenuTests {
     await harness.model.refreshSharedSettingsIfChanged()
     harness.model.setTrustsSharedSettings(true, for: harness.project)
     var settings = harness.model.ownSettings(of: harness.project)
-    settings.actions = [serve]
+    settings.actions = [ProjectAction.serve]
     harness.model.setSettings(settings, for: harness.project)
     harness.model.select(harness.main)
 
     let menu = try #require(harness.model.actionMenu(for: harness.main))
-    #expect(menu.groups.map { $0.map(\.name) } == [[serve.name], ["Deploy"]])
-    #expect(harness.model.actionMenuBarGroups.map { $0.map(\.name) } == [[serve.name], ["Deploy"]])
+    #expect(menu.groups.map { $0.map(\.name) } == [[ProjectAction.serve.name], ["Deploy"]])
+    #expect(
+      harness.model.actionMenuBarGroups.map { $0.map(\.name) } == [
+        [ProjectAction.serve.name], ["Deploy"],
+      ]
+    )
 
     settings.actions = []
     harness.model.setSettings(settings, for: harness.project)

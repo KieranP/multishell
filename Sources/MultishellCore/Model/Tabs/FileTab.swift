@@ -16,7 +16,7 @@ public struct FileTab: Identifiable, Codable, Hashable, Sendable {
 
   /// The last part of `path`, which titles the tab where no other open file
   /// shares it.
-  public var fileName: String { String(path.slashSeparatedParts.last ?? Substring(path)) }
+  public var fileName: String { path.lastSlashSeparatedPart }
 
   init(worktreeID: Worktree.ID, groupID: TabGroup.ID, path: String) {
     self.id = UUID()

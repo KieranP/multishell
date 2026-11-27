@@ -330,11 +330,11 @@ struct AppModelBaseUpdatesTests {
 
     let update = Task { await harness.model.requestBaseUpdate(of: feature, by: .merge) }
     try await harness.awaitFetch(fetching)
-    let mayRemove = harness.model.mayRemove(feature)
+    let canRemove = harness.model.canRemove(feature)
     try Data().write(to: gate)
     await update.value
 
-    #expect(!mayRemove)
+    #expect(!canRemove)
   }
 
   @Test func aRemovalConfirmedWhileAnUpdateRunsThereRemovesNothing() async throws {

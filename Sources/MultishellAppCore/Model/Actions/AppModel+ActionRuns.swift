@@ -35,7 +35,7 @@ extension AppModel {
   }
 
   /// A menu bar action item, or its keys: the action in the selected worktree.
-  public func runActionInView(named name: String) {
+  public func runActionInSelectedWorktree(named name: String) {
     guard let worktree = workspace.selectedWorktree else { return }
     runAction(named: name, in: worktree)
   }

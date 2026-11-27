@@ -16,8 +16,8 @@ extension Helper {
     return (Array(head[..<firstOption]) + afterEnd, head[firstOption...])
   }
 
-  /// Relative to where this runs, as a shell user means it: the folder to add
-  /// as a project or find one by, or the file a screenshot is written to.
+  /// Relative to where this runs, as a shell user means it: a project's folder,
+  /// the file a screenshot is written to, or the one a stand-in is read from.
   static func absolutePath(_ path: String?) -> String {
     let here = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
     return URL(fileURLWithPath: path ?? ".", isDirectory: true, relativeTo: here)

@@ -84,7 +84,7 @@ extension AppModel {
       reconcileSessions(takingFocus: isInView(worktree))
     }
     guard let opened else {
-      DropCopies.remove(file.deletingLastPathComponent())
+      AgentHandoff.discard(file)
       return nil
     }
     return opened.focusedSessionID

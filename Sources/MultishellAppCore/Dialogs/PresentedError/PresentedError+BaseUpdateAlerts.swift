@@ -2,7 +2,7 @@ import MultishellCore
 import MultishellGitKit
 
 extension PresentedError {
-  /// Why Merge from Base or Rebase onto Base did not start.
+  /// Why Merge from Base, Rebase onto Base or its Abort did not start.
   static func baseUpdateAlert(_ error: any Error) -> Alert? {
     switch error {
     case let missing as BaseRemoteMissing:

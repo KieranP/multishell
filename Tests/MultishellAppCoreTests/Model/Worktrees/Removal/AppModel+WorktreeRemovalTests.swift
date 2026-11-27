@@ -40,7 +40,7 @@ struct AppModelWorktreeRemovalTests {
     let arriving = try await harness.createWorktree(onBranch: "arriving")
     harness.model.pathClaims.claim(arriving.id)
 
-    #expect(!harness.model.mayRemove(arriving))
+    #expect(!harness.model.canRemove(arriving))
     #expect(harness.model.requestWorktreeRemoval(of: arriving) == nil)
     await harness.model.removeWorktree(arriving, deletesBranch: false)
 

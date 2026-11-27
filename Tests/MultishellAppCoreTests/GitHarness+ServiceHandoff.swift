@@ -9,7 +9,7 @@ import Testing
 extension GitHarness {
   static let failingCheckLink = URL(string: "https://github.com/me/demo/actions/runs/7/job/9")!
 
-  static let failedRunWorkflows = [
+  private static let failedRunWorkflows = [
     CIWorkflow(
       name: "build",
       status: .failed,

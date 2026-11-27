@@ -43,8 +43,8 @@ where sluggishness comes from, in every build. Newest at the bottom.
   could not place yet shows its terminal alone, so the rows still add up. With
   no terminal reading either it shows neither, rather than a zero that reads as
   measured.
-- **Child processes means everything the app started**, git and hooks as well as
-  panes, so a burst of git runs shows in the totals.
+- **Child processes means everything the app started**, git, hooks, `gh` and
+  `circleci` as well as panes, so a burst of git runs shows in the totals.
 - **One sample a second, fifteen minutes kept**, the spans a load average is
   taken over. Slots are counted from the first sample, so a slot holds the same
   seconds each time it is drawn.

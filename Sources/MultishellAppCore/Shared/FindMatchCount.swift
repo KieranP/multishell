@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The find bar's count, as Chrome writes it: "1/34". Matches are numbered
-/// down the scrollback, the way Next walks.
+/// down the scrollback or the rows, the way Next walks.
 public struct FindMatchCount: Equatable, Sendable {
   /// `nil` before a step selects a match.
   let position: Int?

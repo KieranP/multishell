@@ -7,7 +7,7 @@ extension DiffTextView {
   private var selectedRows: ClosedRange<Int>? {
     let range = selectedRange()
     guard range.location != NSNotFound, !displayText.lines.isEmpty else { return nil }
-    return displayText.rows(touching: range.location..<NSMaxRange(range))
+    return displayText.rows(touching: range.integerRange)
   }
 
   /// Comment on Lines first, the way to a comment from the keyboard and

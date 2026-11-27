@@ -119,9 +119,7 @@ struct PresentedErrorHookAndFileListAlertsTests {
   }
 
   @Test func skippedListEntriesAreNamedWithWhatAnEntryMustBe() {
-    let presented = PresentedError(
-      WorktreeFileSkipped(entries: ["~/.aws.json", "../shared/.env"])
-    )
+    let presented = PresentedError.filesSkipped(["~/.aws.json", "../shared/.env"])
 
     #expect(presented.title == "Some listed files were not placed")
     #expect(presented.message.contains("~/.aws.json"))

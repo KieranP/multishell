@@ -31,7 +31,7 @@ enum CaseInsensitiveMatches {
     (0x41...0x5A).contains(byte) ? byte + 0x20 : byte
   }
 
-  private static func foundationRanges(of findText: String, in text: String) -> [Range<Int>] {
+  static func foundationRanges(of findText: String, in text: String) -> [Range<Int>] {
     let searched = text as NSString
     var ranges: [Range<Int>] = []
     var from = 0

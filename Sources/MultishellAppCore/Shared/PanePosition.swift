@@ -1,6 +1,6 @@
 import MultishellCore
 
-/// Which pane of a split this is, on a board card and a sidebar row alike. A
+/// Which pane of a split this is, on a board card, a sidebar or switcher row alike. A
 /// renamed tab gives both its panes one title, so each says which it is.
 public struct PanePosition: Equatable, Sendable {
   public let number: Int

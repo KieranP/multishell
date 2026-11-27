@@ -10,7 +10,7 @@ extension AppModel {
     case .open(let text): openFind(on: text, in: id)
     case .next: findNext(in: id)
     case .previous: findPrevious(in: id)
-    case .close: endFind(in: id)
+    case .close: dismissFind(in: id)
     }
     return replyToDescribePane(id)
   }

@@ -13,7 +13,7 @@ extension AllChangesDocument {
     guard let index = section(atRow: start) else { return nil }
     let file = sections[index]
     guard let fileText = file.sideText(on: side), !file.rows.isEmpty else { return nil }
-    let clamped = { (row: Int) in min(max(row, file.rows.lowerBound), file.rows.upperBound - 1) }
+    let clamped = { (row: Int) in row.clamped(to: file.rows.lowerBound...file.rows.upperBound - 1) }
     let reached = file.documentRow(from: clamped(start), towardBeforeFold: clamped(end))
     guard let fileStart = file.fileRow(ofDocumentRow: clamped(start)),
       let fileEnd = file.fileRow(ofDocumentRow: reached),

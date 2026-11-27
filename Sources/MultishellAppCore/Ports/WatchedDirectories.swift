@@ -62,9 +62,8 @@ struct WatchedDirectories: Sendable {
     let root = entries[location.entryIndex].url
     let relative = location.relative
     guard !relative.isEmpty else { return root }
-    let components = relative.slashSeparatedParts
-    let parent = components.dropLast().joined(separator: "/")
-    let name = components.last ?? ""
+    let parent = relative.slashSeparatedFolder
+    let name = relative.lastSlashSeparatedPart
     let keepsWholePath =
       name.hasSuffix(".lock") || name == ".gitignore" || name.hasPrefix("fsmonitor--daemon")
     let reported = keepsWholePath || parent.isEmpty ? relative : parent

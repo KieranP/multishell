@@ -4,4 +4,14 @@ extension String {
   public var slashSeparatedParts: [Substring] {
     unicodeScalars.split(separator: "/").map(Substring.init)
   }
+
+  /// The last part, the whole string where there is none.
+  public var lastSlashSeparatedPart: String {
+    slashSeparatedParts.last.map(Self.init) ?? self
+  }
+
+  /// Every part but the last, empty for a path at the root.
+  public var slashSeparatedFolder: String {
+    slashSeparatedParts.dropLast().joined(separator: "/")
+  }
 }

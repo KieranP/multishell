@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Export from the General tab. A refused hook or path list the file held
+  /// Export from the General page. A refused hook or path list the file held
   /// is kept, and stays refused.
   public func exportSharedSettings(for project: Project) async {
     guard await rereadSharedSettingsBeforeExport(of: project) else { return }

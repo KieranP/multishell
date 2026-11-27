@@ -36,8 +36,8 @@ final class DiffColumn {
   /// Where the cards are laid out again, so views hosted in the same gaps are too:
   /// the All changes tab's folds and notices.
   var onGapViewsLaidOut: ((DiffRowGeometry, CGFloat) -> Void)?
-  /// The gap each card's row needs, as the cards or the clip's width change: a
-  /// split opens both columns' alike, Unified its own.
+  /// The gap each card's row needs, as the cards or the clip's width change: a split
+  /// opens both columns' alike, an All changes file adds its folds; unset, the column's own.
   var onReviewCardGaps: (([Int: CGFloat]) -> Void)?
   /// Lines the gutter or Comment on Lines picked, for the model's composer.
   var onCommentOnLines: ((ReviewLineSelection) -> Void)?

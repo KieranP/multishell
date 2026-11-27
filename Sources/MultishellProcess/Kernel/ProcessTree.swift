@@ -1,5 +1,5 @@
 /// One child of the app and everything under it: a pane's `login` or shell
-/// and what it runs, or a git or hook the app started.
+/// and what it runs, or a git, hook, `gh` or `circleci` the app started.
 public struct ProcessTree: Sendable, Equatable {
   let rootPID: Int32
   /// The root's controlling terminal, `nil` for a child with none.

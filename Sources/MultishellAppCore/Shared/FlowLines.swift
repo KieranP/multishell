@@ -1,6 +1,6 @@
 /// Which items share a line, laid left to right within a width: each line
 /// takes as many as fit, and at least one however wide.
-public struct FlowRows: Sendable {
+public struct FlowLines: Sendable {
   public let lines: [Range<Int>]
   /// Each line's width, summed as the breaking was, so a line offered exactly
   /// its own width is never broken again by a rounding the other way.

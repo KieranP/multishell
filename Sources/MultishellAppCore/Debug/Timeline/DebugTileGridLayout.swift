@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// How Debug Info's tiles fill a width: two to a row where both fit with charts
 /// beside labels, else one, its chart under its label where even that cannot.
 public struct DebugTileGridLayout: Sendable, Equatable {
@@ -6,10 +8,7 @@ public struct DebugTileGridLayout: Sendable, Equatable {
 
   /// Every metric's tile, cut into the grid's rows.
   public var metricRows: [[DebugMetric]] {
-    let metrics = DebugMetric.allCases
-    return stride(from: 0, to: metrics.count, by: columnCount).map { start in
-      Array(metrics[start..<min(start + columnCount, metrics.count)])
-    }
+    DebugMetric.allCases.chunked(into: columnCount)
   }
 
   /// `tilePadding` is each side's; `gap` sits between tiles and between a label and its chart.

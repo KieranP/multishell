@@ -10,11 +10,7 @@ public enum IconGridWalk {
   /// The groups laid out as the grid draws them, `columns` wide.
   public static func rows(of groups: [ProjectIcon.Group], columns: Int) -> [[String]] {
     guard columns > 0 else { return [] }
-    return groups.flatMap { group in
-      stride(from: 0, to: group.symbols.count, by: columns).map { rowStart in
-        Array(group.symbols[rowStart..<min(rowStart + columns, group.symbols.count)])
-      }
-    }
+    return groups.flatMap { $0.symbols.chunked(into: columns) }
   }
 
   /// The symbol `step` lands on, `nil` where there is nowhere to go. Up and

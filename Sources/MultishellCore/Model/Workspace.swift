@@ -1,4 +1,4 @@
-/// The whole sidebar, every open tab, and the current look, as one value.
+/// The whole sidebar, every open tab, and every app-wide setting, as one value.
 /// Collections are flat and joined by id; array order is display order.
 public struct Workspace: Codable, Hashable, Sendable {
   /// A renamed field keeps the key it was written under, as each `= "…"` case
@@ -122,7 +122,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var projectHookTimeoutSeconds = Self.defaultProjectHookTimeoutSeconds
   /// What the git badge on a row and a card counts.
   public internal(set) var gitStatusIndicator = GitStatusIndicator.default
-  /// How that badge's line counts match old lines to new.
+  /// How the badge's counts and every diff match old lines to new.
   public internal(set) var diffAlgorithm = DiffAlgorithm.default
   /// Unified or Split, chosen in any file or All changes tab's bar and kept for the next.
   public internal(set) var fileTabLayout = FileTabLayout.default
@@ -136,7 +136,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// The Files panel and the quick switcher list what git ignores. On by
   /// default, as the panel listed it before it could be hidden.
   public internal(set) var showsIgnoredFiles = true
-  /// The Agents board shows every terminal, not only agents' panes.
+  /// The Agents board shows every terminal, not only agents' and actions' panes.
   public internal(set) var showsAllTerminals = false
   /// The first port of the first block. Changing it or the size moves every
   /// block's ports; only a worktree left without a port changes block.

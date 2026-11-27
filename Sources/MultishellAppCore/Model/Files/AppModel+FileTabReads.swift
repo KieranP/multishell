@@ -148,7 +148,7 @@ extension AppModel {
     // A find opened before an image read has no bar to draw, nor any lines; a
     // field that had the keyboard hands it back, as closing the bar does.
     let fieldHadKeyboard = findFieldTargetID == id
-    if reading.image != nil, endFind(in: id) {
+    if reading.image != nil, dismissFind(in: id) {
       if findFieldRequests.contains(id) { findFieldRequests.remove(id) }
       if fieldHadKeyboard { fileTabFocusRequest = id }
     }

@@ -7,17 +7,6 @@ extension PresentedError {
     case let failure as BranchPublishFailure:
       return (t("error.branch-not-pushed", failure.branch), describe(failure.underlying))
 
-    case let failure as NoRemoteToPublishTo:
-      return (t("error.branch-not-pushed", failure.branch), t("error.no-remote-to-push-to"))
-
-    case let failure as RemotesUnknown:
-      return (t("error.pull-request-not-started", failure.branch), t("error.remotes-unknown"))
-
-    case let failure as UnpushedCommitsUnknown:
-      return (
-        t("error.pull-request-not-started", failure.branch), t("error.unpushed-commits-unknown"),
-      )
-
     case let failure as PullRequestMergeFailure:
       let number = String(failure.number)
       let title =
@@ -37,5 +26,29 @@ extension PresentedError {
     default:
       return nil
     }
+  }
+
+  /// Create Pull Request on a repository with no remote to push the branch to.
+  static func noRemoteToPublishTo(_ branch: String) -> PresentedError {
+    PresentedError(
+      title: t("error.branch-not-pushed", branch),
+      message: t("error.no-remote-to-push-to"),
+    )
+  }
+
+  /// Create Pull Request where git could not list the remotes to push the branch to.
+  static func remotesUnknown(_ branch: String) -> PresentedError {
+    PresentedError(
+      title: t("error.pull-request-not-started", branch),
+      message: t("error.remotes-unknown"),
+    )
+  }
+
+  /// Create Pull Request where git could not count the commits the remote lacks.
+  static func unpushedCommitsUnknown(_ branch: String) -> PresentedError {
+    PresentedError(
+      title: t("error.pull-request-not-started", branch),
+      message: t("error.unpushed-commits-unknown"),
+    )
   }
 }

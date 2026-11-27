@@ -40,4 +40,9 @@ enum AgentHandoff {
     DropCopies.keep(directory)
     return file
   }
+
+  /// Takes back a note `write` made, with the directory it alone holds.
+  static func discard(_ file: URL) {
+    DropCopies.remove(file.deletingLastPathComponent())
+  }
 }

@@ -74,7 +74,7 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
   /// By extension, then by the file's name, then by a shebang; anything else
   /// is plain text.
   public static func language(forPath path: String, firstLine: String?) -> Self? {
-    let name = path.slashSeparatedParts.last.map(String.init) ?? path
+    let name = path.lastSlashSeparatedPart
     if let dot = name.lastIndex(of: "."), dot != name.startIndex,
       let found = byExtension[name[name.index(after: dot)...].lowercased()]
     {
@@ -84,7 +84,7 @@ public enum HighlightLanguage: Hashable, Sendable, CaseIterable {
     guard let command = firstLine?.removingPrefix("#!") else { return nil }
     let words = command.split(separator: " ")
     // `#!/usr/bin/env python3` names the interpreter after `env`.
-    let program = words.first.map { $0.split(separator: "/").last.map(String.init) ?? "" }
+    let program = words.first.map { String($0).lastSlashSeparatedPart }
     let interpreter = program == "env" ? words.dropFirst().first.map(String.init) : program
     return interpreter.flatMap { byInterpreter[$0] }
   }

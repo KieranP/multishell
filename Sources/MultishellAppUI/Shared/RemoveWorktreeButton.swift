@@ -12,6 +12,6 @@ struct RemoveWorktreeButton: View {
     Button(t("action.remove-worktree"), role: .destructive) {
       model.requestWorktreeRemoval(of: worktree)
     }
-    .disabled(!model.mayRemove(worktree))
+    .disabled(!model.canRemove(worktree))
   }
 }

@@ -14,7 +14,7 @@ extension UIMetrics {
   var servicePageRowGlyphSize: Double { badge + 1 }
   /// How far a job, and what failed in it, sits inside its workflow's name.
   var servicePageJobIndent: Double { badge + 8 }
-  /// A section's or an earlier run's chevron, and a check's Required tag.
+  /// A section's, an earlier run's or a merge step's chevron, and a check's Required tag.
   var servicePageMarkSize: Double { small - 1 }
   /// The trailing column a sendable row's checkbox or sent bubble sits in, and
   /// a step's own checkbox above them, on the PR and CI pages alike.

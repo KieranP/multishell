@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A row taking a dragged row, measured so its delegate can tell its halves
 /// apart, with a line where the dragged row will land.
-struct ActionRowDropTarget: ViewModifier {
+struct ActionRowDropTargetModifier: ViewModifier {
   /// Out over the row's padding and half the rule, so the gap between two rows
   /// takes a drop too, and the line lies on the rule.
   private static let reach =

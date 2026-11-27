@@ -3,8 +3,8 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-/// One file or folder in the Files panel, at the sidebar's row metrics: a
-/// click opens a folder or the file's tab, a right-click offers the actions.
+/// One file or folder in the Files panel, at the sidebar's row metrics: a click opens
+/// a folder, or the file in its tab or All changes, a right-click offers the actions.
 struct FilesPanelRow: View {
   /// The indent of each level, as the prototype steps it.
   private static let levelIndent: Double = 12
@@ -14,7 +14,7 @@ struct FilesPanelRow: View {
   let model: AppModel
   let worktreeID: Worktree.ID
   let row: FileTreeRow
-  /// The row's file is the tab in front.
+  /// The row's file is the tab in front, or at the top of the All changes tab in front.
   let isSelected: Bool
   /// Its file's comments waiting to be sent, none for a folder.
   let pendingComments: Int

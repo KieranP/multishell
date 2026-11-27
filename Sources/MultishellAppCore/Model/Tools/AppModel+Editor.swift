@@ -16,8 +16,8 @@ extension AppModel {
     store.setCustomEditorCommand(command)
   }
 
-  /// Open in Editor (Cmd+Shift+O) on the worktree on screen, which over the
-  /// board is none, no row drawing as selected there.
+  /// Open in Editor (Cmd+Shift+O) on the worktree on screen, which under a
+  /// cover is none, no row drawing as selected there.
   public func openWorktreeInViewInEditor() {
     guard let worktree = worktreeInView else { return }
     openInEditor(worktree)

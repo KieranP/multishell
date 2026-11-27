@@ -83,6 +83,6 @@ extension AppModel {
 
   func reportSkipped(_ entries: [String]) {
     guard !entries.isEmpty else { return }
-    present(WorktreeFileSkipped(entries: entries))
+    presentedError = .filesSkipped(entries)
   }
 }

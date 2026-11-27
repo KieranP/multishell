@@ -1,4 +1,4 @@
-import Foundation
+import MultishellCore
 
 /// How `multishell worktrees update` ended, as it prints it.
 struct WorktreeUpdateReceipt: Encodable, Equatable {
@@ -11,5 +11,5 @@ struct WorktreeUpdateReceipt: Encodable, Equatable {
   /// The paths git left unmerged; empty once updated.
   let conflicts: [String]
   /// The pane opened on them where the project sends conflicts to its agent.
-  let pane: UUID?
+  let pane: TerminalSession.ID?
 }

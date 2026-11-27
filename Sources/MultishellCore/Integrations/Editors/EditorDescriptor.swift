@@ -1,4 +1,4 @@
-/// An editor Open in Editor can hand a worktree to, or a clicked link a file.
+/// An editor Open in Editor can hand a worktree or a file to.
 public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   public enum Kind: Hashable, Sendable {
     /// A Mac application, found by bundle identifier, or through its command

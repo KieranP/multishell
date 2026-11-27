@@ -97,7 +97,7 @@ final class DiffTextView: NSTextView {
 
   required init?(coder: NSCoder) { nil }
 
-  /// Opens or closes review cards' gaps. Every row below a gap moves, so the
+  /// Opens or closes the gaps under rows. Every row below a gap moves, so the
   /// whole layout is let go; only the rows around the view are laid out again.
   func setRowGaps(_ gaps: RowGaps) {
     guard geometry.rowGaps != gaps else { return }

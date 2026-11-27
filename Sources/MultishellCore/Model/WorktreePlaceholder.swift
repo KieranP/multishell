@@ -19,8 +19,8 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
 
   var token: String { "{{\(rawValue)}}" }
 
-  /// What a custom command reads the value from, and the hook variable
-  /// meaning the same.
+  /// What a custom command or an action reads the value from, and the hook
+  /// variable meaning the same.
   public var variable: String {
     switch self {
     case .branch: "MULTISHELL_BRANCH"

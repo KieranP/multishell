@@ -1,7 +1,7 @@
 import Foundation
 
 extension WorkerRoster {
-  /// The earliest a failed row is due to go, `nil` with none stamped.
+  /// When the longest-failed row failed, `nil` with none stamped.
   var earliestFailure: Date? { workers.compactMap(\.failedAt).min() }
 
   /// Takes off the failed rows stamped before `cutoff`. Returns their ids.

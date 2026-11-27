@@ -54,7 +54,7 @@ struct UIMetrics: Equatable {
 
   let bodySize: Double
   /// Settings > Appearance's UI font; `nil` is the system font.
-  let fontFamily: String?
+  private let fontFamily: String?
 
   var secondary: Double { bodySize - 1 }
   var caption: Double { bodySize - 2 }
@@ -63,7 +63,7 @@ struct UIMetrics: Equatable {
   var small: Double { bodySize - 4 }
   var monospaced: Double { bodySize - 1 }
   var glyph: Double { bodySize - 2 }
-  /// A pane's glyph, on its sidebar row and on its tab.
+  /// Every tab's glyph, and a pane's on its sidebar row and in the switcher.
   var paneGlyphSize: Double { glyph + 2 }
   /// The same glyph on a board card's location line, sized to the card's text.
   var cardPaneGlyphSize: Double { badge + 4 }

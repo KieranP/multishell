@@ -24,20 +24,20 @@ extension AppModel {
     }
     // A link's tab is keyed by its target, as a click on the link opens it.
     let path = WorktreeLinkTarget.path(of: order.path, in: worktree.path) ?? order.path
-    let host: ReviewTabID
-    switch await readReviewHost(showing: path, asked: order.path, in: worktree) {
-    case .success(let id): host = id
+    let tabID: ReviewTabID
+    switch await readReviewTab(showing: path, asked: order.path, in: worktree) {
+    case .success(let id): tabID = id
     case .failure(let refusal): return .refused(refusal)
     }
     guard workspace.worktree(worktree.id) != nil else {
       return .refused(.noWorktree(id: ControlID.worktree(worktree.id)))
     }
-    let quote = reviewQuote(of: order.lines, on: order.side, ofFile: path, in: host)
+    let quote = reviewQuote(of: order.lines, on: order.side, ofFile: path, in: tabID)
     // Lines start at 1, and a socket line can name any range: `count` traps past `Int.max`.
     guard order.lines.lowerBound >= 1, quote.count == order.lines.count else {
       return .refused(.noReviewLines(path: order.path))
     }
-    guard order.side == .onDisk || holdsRemovedLines(order.lines, ofFile: path, in: host) else {
+    guard order.side == .onDisk || holdsRemovedLines(order.lines, ofFile: path, in: tabID) else {
       return .refused(.noRemovedLines(path: order.path))
     }
     let comment = ReviewComment(
@@ -56,7 +56,7 @@ extension AppModel {
 
   /// The shown file tab whose rows the quote comes from, read now, so an edit made a
   /// moment ago, noticed or not, is what is quoted; `asked` is the path as named.
-  private func readReviewHost(
+  private func readReviewTab(
     showing path: String,
     asked: String,
     in worktree: Worktree,

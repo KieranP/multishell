@@ -8,92 +8,151 @@ import Testing
 struct AppModelActionKeysRecordingTests {
   private let controlOptionS = KeyCombination(.character("s"), [.control, .option])
 
-  private func harnessWithServe() -> Harness {
-    let harness = Harness()
-    harness.model.setSettings(
-      ProjectSettings(actions: [ProjectAction(name: "Serve", command: "npm run dev")]),
-      for: harness.project,
-    )
-    return harness
-  }
-
   @Test func allowedKeysAreSetAndEndTheRecording() {
-    let harness = harnessWithServe()
-    harness.model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
-    #expect(harness.model.actionKeysRecording(forAction: "Serve", in: harness.project) != nil)
-
-    harness.model.submitRecordedActionKeys(controlOptionS, forAction: "Serve", in: harness.project)
-
-    #expect(harness.model.actionKeysRecording(forAction: "Serve", in: harness.project) == nil)
+    let harness = Harness.withServeAction()
+    harness.model.startRecordingActionKeys(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
     #expect(
-      harness.model.ownSettings(of: harness.project).actionShortcuts.keys(for: "Serve")
+      harness.model.actionKeysRecording(forAction: ProjectAction.serve.name, in: harness.project)
+        != nil
+    )
+
+    harness.model.submitRecordedActionKeys(
+      controlOptionS,
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
+
+    #expect(
+      harness.model.actionKeysRecording(forAction: ProjectAction.serve.name, in: harness.project)
+        == nil
+    )
+    #expect(
+      harness.model.ownSettings(of: harness.project).actionShortcuts.keys(
+        for: ProjectAction.serve.name
+      )
         == controlOptionS
     )
   }
 
   @Test func keysAMenuCommandHoldsKeepTheRecordingGoingAndNameTheHolder() {
-    let harness = harnessWithServe()
-    harness.model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
+    let harness = Harness.withServeAction()
+    harness.model.startRecordingActionKeys(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
 
-    harness.model.submitRecordedActionKeys(.command("t"), forAction: "Serve", in: harness.project)
+    harness.model.submitRecordedActionKeys(
+      .command("t"),
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
 
-    let recording = harness.model.actionKeysRecording(forAction: "Serve", in: harness.project)
+    let recording = harness.model.actionKeysRecording(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
     #expect(recording?.refusal == .heldBy(.command("t"), .newTab))
   }
 
   @Test func clearingAfterARefusalEndsTheRecordingAndItsRefusal() {
-    let harness = harnessWithServe()
-    harness.model.setActionKeys(controlOptionS, forAction: "Serve", in: harness.project)
-    harness.model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
-    harness.model.submitRecordedActionKeys(.command("t"), forAction: "Serve", in: harness.project)
+    let harness = Harness.withServeAction()
+    harness.model.setActionKeys(
+      controlOptionS,
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
+    harness.model.startRecordingActionKeys(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
+    harness.model.submitRecordedActionKeys(
+      .command("t"),
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
 
-    harness.model.clearRecordedActionKeys(forAction: "Serve", in: harness.project)
+    harness.model.clearRecordedActionKeys(forAction: ProjectAction.serve.name, in: harness.project)
 
-    #expect(harness.model.actionKeysRecording(forAction: "Serve", in: harness.project) == nil)
     #expect(
-      harness.model.ownSettings(of: harness.project).actionShortcuts.keys(for: "Serve") == nil
+      harness.model.actionKeysRecording(forAction: ProjectAction.serve.name, in: harness.project)
+        == nil
+    )
+    #expect(
+      harness.model.ownSettings(of: harness.project).actionShortcuts.keys(
+        for: ProjectAction.serve.name
+      ) == nil
     )
   }
 
   @Test func aRefusalIsNotedWhileRecordingAndThePanesWarningOnlyOnceRecordingEnds() {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     let model = harness.model
-    model.setActionKeys(controlOptionS, forAction: "Serve", in: harness.project)
-    let warning = model.actionKeysNote(forAction: "Serve", in: harness.project)
+    model.setActionKeys(controlOptionS, forAction: ProjectAction.serve.name, in: harness.project)
+    let warning = model.actionKeysNote(forAction: ProjectAction.serve.name, in: harness.project)
 
-    model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
-    let whileRecording = model.actionKeysNote(forAction: "Serve", in: harness.project)
-    model.submitRecordedActionKeys(.command("t"), forAction: "Serve", in: harness.project)
-    let refusal = model.actionKeysNote(forAction: "Serve", in: harness.project)
+    model.startRecordingActionKeys(forAction: ProjectAction.serve.name, in: harness.project)
+    let whileRecording = model.actionKeysNote(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
+    model.submitRecordedActionKeys(
+      .command("t"),
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
+    let refusal = model.actionKeysNote(forAction: ProjectAction.serve.name, in: harness.project)
     model.endActionKeysRecording()
 
     #expect(warning == .warning(ShortcutWarning(keys: controlOptionS, shellUse: nil)))
     #expect(whileRecording == nil)
     #expect(refusal == .refusal(.heldBy(.command("t"), .newTab)))
-    #expect(model.actionKeysNote(forAction: "Serve", in: harness.project) == warning)
+    #expect(
+      model.actionKeysNote(forAction: ProjectAction.serve.name, in: harness.project) == warning
+    )
   }
 
   @Test func onlyTheRowBeingRecordedShowsTheRecording() {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
 
-    harness.model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
+    harness.model.startRecordingActionKeys(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
 
     #expect(harness.model.actionKeysRecording(forAction: "Deploy", in: harness.project) == nil)
     harness.model.endActionKeysRecording()
-    #expect(harness.model.actionKeysRecording(forAction: "Serve", in: harness.project) == nil)
+    #expect(
+      harness.model.actionKeysRecording(forAction: ProjectAction.serve.name, in: harness.project)
+        == nil
+    )
   }
 
   @Test func aRecordingEndsWhenItsRowIsRenamedOrRemoved() {
-    let harness = harnessWithServe()
-    harness.model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
+    let harness = Harness.withServeAction()
+    harness.model.startRecordingActionKeys(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
 
     harness.model.setActionName("Start", at: 0, in: harness.project)
-    harness.model.setActionName("Serve", at: 0, in: harness.project)
-    #expect(harness.model.actionKeysRecording(forAction: "Serve", in: harness.project) == nil)
+    harness.model.setActionName(ProjectAction.serve.name, at: 0, in: harness.project)
+    #expect(
+      harness.model.actionKeysRecording(forAction: ProjectAction.serve.name, in: harness.project)
+        == nil
+    )
 
-    harness.model.startRecordingActionKeys(forAction: "Serve", in: harness.project)
+    harness.model.startRecordingActionKeys(
+      forAction: ProjectAction.serve.name,
+      in: harness.project,
+    )
     harness.model.removeAction(at: 0, from: harness.project)
-    #expect(harness.model.actionKeysRecording(forAction: "Serve", in: harness.project) == nil)
+    #expect(
+      harness.model.actionKeysRecording(forAction: ProjectAction.serve.name, in: harness.project)
+        == nil
+    )
   }
 
   @Test func aRecordingEndsWhenTheFileDropsItsAction() async throws {

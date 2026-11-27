@@ -26,10 +26,10 @@ struct ThreadCPUMeter {
         name: thread.name,
       )
     }
-    let byThread = grouped.mapValues { sharingKey in
+    let byThread = grouped.mapValues { threadsSharingKey in
       DebugThreadTally(
-        threadCount: sharingKey.count,
-        cpuTime: sharingKey.reduce(.zero) { total, thread in
+        threadCount: threadsSharingKey.count,
+        cpuTime: threadsSharingKey.reduce(.zero) { total, thread in
           total + max(thread.cpuTime - (lastCPUTimes[thread.id] ?? .zero), .zero)
         },
       )

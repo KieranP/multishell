@@ -16,7 +16,7 @@ public struct SessionStates: Equatable, Sendable {
   /// worker as one of its own. Apart from `entries`, which go on a clear.
   var ownConversationIDs: [Key: String] = [:]
 
-  /// An entry with nothing left in it goes, so `isEmpty` and `==` read true.
+  /// An entry with nothing left in it goes, so a cleared value `==` a fresh one.
   mutating func update(_ key: Key, _ change: (inout Entry) -> Void) {
     var entry = entries[key] ?? Entry()
     change(&entry)

@@ -1,10 +1,10 @@
 import AppKit
 import MultishellCore
 
-/// What a key press means to a Shortcuts row that is recording.
+/// What a key press means to a Shortcuts or Actions row that is recording.
 enum ShortcutRecorderInput: Equatable {
   case cancel
-  /// Delete with no modifier pressed: the command keeps its menu item and no keys.
+  /// Delete with no modifier pressed: no keys, a command keeping its menu item.
   case clear
   /// A key no shortcut can be: keypad Enter, Help, F21 and up, or a dead key.
   case ignored

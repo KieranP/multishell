@@ -59,7 +59,7 @@ extension WorkspaceStoreTests {
     let (store, original, shared, copy) = Self.twoProjectsListingOneWorktree()
     let tab = store.openTab(in: shared.id)!
     store.setCustomName("Shared", forWorktree: shared.id)
-    store.setHidden(true, worktree: shared.id)
+    store.setHidden(true, forWorktree: shared.id)
 
     let discarded = store.removeProject(copy.id)
 

@@ -6,16 +6,8 @@ import Testing
 
 @Suite @MainActor
 struct AppModelActionRunsTests {
-  private let serve = ProjectAction(name: "Start Server", command: "npm run dev")
-
-  private func harnessWithServe() -> Harness {
-    let harness = Harness()
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
-    return harness
-  }
-
   private func actionSession(_ harness: Harness) throws -> TerminalSession {
-    try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    try #require(harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id))
   }
 
   private func reportRunning(_ harness: Harness, in id: TerminalSession.ID) {
@@ -25,39 +17,39 @@ struct AppModelActionRunsTests {
   }
 
   @Test func pickingAnActionOpensATabNamedForItThatRunsItsScript() throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     let session = try actionSession(harness)
     let tab = try #require(harness.model.workspace.tab(owning: session.id))
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
     #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id == tab.id)
-    #expect(harness.model.title(of: tab) == serve.name)
+    #expect(harness.model.title(of: tab) == ProjectAction.serve.name)
     let opened = try #require(harness.engine.opened.last { $0.id == session.id })
     #expect(opened.command?.contains("MULTISHELL_ACTION_SCRIPT=npm run dev") == true)
   }
 
   @Test func whatTheShellReportsAsATitleNeverRenamesAnActionsTab() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
 
     harness.model.noteTitle("~/feature", of: session.id)
 
     let tab = try #require(harness.model.workspace.tab(owning: session.id))
-    #expect(harness.model.shownTitle(of: tab) == serve.name)
+    #expect(harness.model.shownTitle(of: tab) == ProjectAction.serve.name)
   }
 
   @Test func anActionStillRunningAsksBeforeRestartingAndRestartReplacesItInItsTab() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     let tab = try #require(harness.model.workspace.tab(owning: first.id))
     reportRunning(harness, in: first.id)
     let openedBefore = harness.engine.opened.count
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     let pending = try #require(harness.model.pendingActionRestart)
     #expect(pending.sessionID == first.id)
@@ -75,11 +67,11 @@ struct AppModelActionRunsTests {
   }
 
   @Test func decliningTheRestartLeavesTheRunningActionAlone() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     harness.model.answerActionRestart(
       try #require(harness.model.pendingActionRestart),
@@ -92,14 +84,14 @@ struct AppModelActionRunsTests {
   }
 
   @Test func anActionThatEndedRunsAgainInItsOwnTabWithoutAsking() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     let tab = try #require(harness.model.workspace.tab(owning: first.id))
     reportRunning(harness, in: first.id)
     harness.model.noteCommandFinished(in: first.id, exitCode: 1)
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     #expect(harness.model.pendingActionRestart == nil)
     let second = try actionSession(harness)
@@ -108,11 +100,11 @@ struct AppModelActionRunsTests {
   }
 
   @Test func theRestartQuestionGoesWithTheTabItWasAbout() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     #expect(harness.model.pendingActionRestart != nil)
 
     harness.model.closeTab(try #require(harness.model.workspace.tab(owning: first.id)).id)
@@ -121,20 +113,20 @@ struct AppModelActionRunsTests {
   }
 
   @Test func aRelaunchedActionTabOpensAShellAndStartsNothing() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
 
     let relaunch = harness.relaunched()
     relaunch.model.select(try #require(relaunch.store.workspace.worktree(harness.main.id)))
 
     let reopened = try #require(relaunch.engine.opened.first { $0.id == session.id })
-    #expect(reopened.actionName == serve.name)
+    #expect(reopened.actionName == ProjectAction.serve.name)
     #expect(reopened.command?.contains { $0.contains("MULTISHELL_ACTION_SCRIPT") } != true)
   }
 
   @Test func anActionNotInForceDoesNothing() {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
 
     harness.model.runAction(named: "Seed Database", in: harness.main)
 
@@ -142,10 +134,10 @@ struct AppModelActionRunsTests {
   }
 
   @Test func anActionStartedFromTheAppSeesItsWorktreesPort() throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     let port = try #require(harness.model.workspace.port(of: harness.main.id))
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     let session = try actionSession(harness)
     let opened = try #require(harness.engine.opened.last { $0.id == session.id })
@@ -154,19 +146,19 @@ struct AppModelActionRunsTests {
   }
 
   @Test func noActionStartsInAWorktreeWhileItIsBeingRemoved() {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     harness.model.worktreeOperations.begin(.preDeleteHook, on: harness.main.id)
     harness.model.presentedError = nil
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     #expect(harness.model.workspace.tabs.isEmpty)
   }
 
   @Test func aRenamedActionStillFindsTheTabItIsRunningIn() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     await harness.model.refreshSharedSettingsIfChanged()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
     reportRunning(harness, in: session.id)
 
@@ -178,22 +170,22 @@ struct AppModelActionRunsTests {
   }
 
   @Test func aCommandTypedAfterTheActionEndedIsNotTheActionRunningButIsAskedAbout() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
     reportRunning(harness, in: session.id)
     harness.model.noteCommandFinished(in: session.id, exitCode: 1)
     reportRunning(harness, in: session.id)
 
     #expect(harness.model.actionMenu(for: harness.main)?.isAnyRunning == false)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     #expect(harness.model.pendingActionRestart?.sessionID == session.id)
   }
 
   @Test func aRenamedActionsTabTakesItsNewNameAndKeepsItThroughARestart() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     await harness.model.refreshSharedSettingsIfChanged()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
 
@@ -209,12 +201,12 @@ struct AppModelActionRunsTests {
   }
 
   @Test func restartAnsweredAfterARenameStillRestarts() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     await harness.model.refreshSharedSettingsIfChanged()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     harness.model.setActionName("Serve", at: 0, in: harness.project)
     let pending = try #require(harness.model.pendingActionRestart)
@@ -225,8 +217,8 @@ struct AppModelActionRunsTests {
   }
 
   @Test func pickingAnEndedActionAsksFirstWhereSomethingElseNowRunsInItsTab() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
     reportRunning(harness, in: session.id)
     harness.model.noteCommandFinished(in: session.id, exitCode: 1)
@@ -234,7 +226,7 @@ struct AppModelActionRunsTests {
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
     )
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     #expect(harness.model.pendingActionRestart?.sessionID == session.id)
     #expect(!harness.engine.closed.contains(session.id))
@@ -251,11 +243,11 @@ struct AppModelActionRunsTests {
   }
 
   @Test func renamingOntoANameATabAlreadyHasLeavesTheRenamedTabNoActions() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     try await trustFileActionSeed(harness)
     harness.model.runAction(named: "Seed", in: harness.main)
     let seeding = try #require(harness.model.actionSession(named: "Seed", in: harness.main.id))
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let serving = try actionSession(harness)
 
     harness.model.setActionName("Seed", at: 0, in: harness.project)
@@ -265,11 +257,11 @@ struct AppModelActionRunsTests {
   }
 
   @Test func theRestartQuestionIsAskedAgainUnderTheActionsNewName() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     await harness.model.refreshSharedSettingsIfChanged()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     reportRunning(harness, in: try actionSession(harness).id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let asked = try #require(harness.model.pendingActionRestart)
 
     harness.model.setActionName("Serve", at: 0, in: harness.project)
@@ -282,23 +274,25 @@ struct AppModelActionRunsTests {
   }
 
   @Test func aTabMovedToAnotherWorktreeStopsBeingItsActionsThere() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let moving = try actionSession(harness)
 
     let tab = try #require(harness.model.workspace.tab(owning: moving.id))
     #expect(harness.store.moveTab(tab.id, toWorktree: harness.feature.id))
 
     #expect(harness.model.workspace.session(moving.id)?.actionName == nil)
-    #expect(harness.model.actionSession(named: serve.name, in: harness.feature.id) == nil)
+    #expect(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.feature.id) == nil
+    )
   }
 
   @Test func aRestartAnsweredAfterItsTabMovedAwayRestartsNothing() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let first = try actionSession(harness)
     reportRunning(harness, in: first.id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let pending = try #require(harness.model.pendingActionRestart)
     let tab = try #require(harness.model.workspace.tab(owning: first.id))
     #expect(harness.store.moveTab(tab.id, toWorktree: harness.feature.id))
@@ -309,10 +303,10 @@ struct AppModelActionRunsTests {
   }
 
   @Test func aTabARenameLeavesNoActionsLeavesTheDockBadgeToo() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     try await trustFileActionSeed(harness)
     harness.model.runAction(named: "Seed", in: harness.main)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let serving = try actionSession(harness)
     harness.model.showAgentBoard()
     reportRunning(harness, in: serving.id)
@@ -325,15 +319,16 @@ struct AppModelActionRunsTests {
   }
 
   @Test func renamingAnActionToItsOwnNameKeepsItsTab() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
 
     #expect(
-      harness.model.setActionName(" \(serve.name) ", at: 0, in: harness.project) == serve.name
+      harness.model.setActionName(" \(ProjectAction.serve.name) ", at: 0, in: harness.project)
+        == ProjectAction.serve.name
     )
 
-    #expect(harness.model.workspace.session(session.id)?.actionName == serve.name)
+    #expect(harness.model.workspace.session(session.id)?.actionName == ProjectAction.serve.name)
   }
 
   @Test func anActionGivenANameNoActionHasNeverTakesOverATabLeftWithIt() async throws {
@@ -357,8 +352,8 @@ struct AppModelActionRunsTests {
   }
 
   @Test func pickingAnEndedActionAsksFirstWhereAnAgentWaitsAtItsPromptInItsTab() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     let session = try actionSession(harness)
     reportRunning(harness, in: session.id)
     harness.model.noteCommandFinished(in: session.id, exitCode: 0)
@@ -369,19 +364,19 @@ struct AppModelActionRunsTests {
       SessionStateReport(state: .done, sessionID: session.id, agentID: "claude")
     )
 
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
 
     #expect(harness.model.pendingActionRestart?.sessionID == session.id)
     #expect(!harness.engine.closed.contains(session.id))
   }
 
   @Test func theRestartQuestionGoesWhenItsTabStopsBeingTheActions() async throws {
-    let harness = harnessWithServe()
+    let harness = Harness.withServeAction()
     try await trustFileActionSeed(harness)
     harness.model.runAction(named: "Seed", in: harness.main)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     reportRunning(harness, in: try actionSession(harness).id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     #expect(harness.model.pendingActionRestart != nil)
 
     harness.model.setActionName("Seed", at: 0, in: harness.project)
@@ -390,10 +385,10 @@ struct AppModelActionRunsTests {
   }
 
   @Test func theRestartQuestionGoesWithTheActionItAsksAbout() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     reportRunning(harness, in: try actionSession(harness).id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     #expect(harness.model.pendingActionRestart != nil)
 
     harness.model.removeAction(at: 0, from: harness.project)
@@ -402,10 +397,10 @@ struct AppModelActionRunsTests {
   }
 
   @Test func theRestartQuestionGoesWhenItsActionsCommandIsCleared() throws {
-    let harness = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
+    let harness = Harness.withServeAction()
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     reportRunning(harness, in: try actionSession(harness).id)
-    harness.model.runAction(named: serve.name, in: harness.main)
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
     #expect(harness.model.pendingActionRestart != nil)
 
     harness.model.setActionCommand("", at: 0, in: harness.project)

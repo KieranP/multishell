@@ -26,8 +26,8 @@ enum NotificationPolicy {
     return !isOnScreen
   }
 
-  /// The reporting pane's title, or the worktree's name for a worktree-level report,
-  /// then where it is.
+  /// The reporting pane's title, the worktree's name for a worktree-level report or a
+  /// failed Auto Rename's label, then where it is.
   static func title(subject: String, project: String, worktree: String) -> String {
     t("notification.title", subject, project, worktree)
   }

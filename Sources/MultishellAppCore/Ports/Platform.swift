@@ -17,7 +17,7 @@ public protocol Platform: AnyObject, Sendable {
   /// a sheet on the workspace window, key itself, is not.
   var isSettingsWindowKey: Bool { get }
   /// Whether any of the workspace window is on screen, frontmost or not: file
-  /// tabs and the Files panel stay current while it is; see files/panel.md.
+  /// tabs, All changes tabs and the Files panel stay current while it is; see files/panel.md.
   var isWorkspaceWindowVisible: Bool { get }
   /// In the Dock, which `isWorkspaceWindowVisible` alone cannot tell from covered.
   var isWorkspaceWindowMinimized: Bool { get }

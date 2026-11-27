@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Whether the board shows every terminal or only agent panes. On the model
+  /// Whether the board shows every terminal or only agent and action panes. On the model
   /// and not the view, the Dock badge reading the same filter.
   public var showsAllTerminals: Bool { workspace.showsAllTerminals }
 

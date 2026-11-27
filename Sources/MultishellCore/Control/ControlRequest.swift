@@ -8,7 +8,7 @@ public enum ControlRequest: Codable, Equatable, Sendable {
   case addReviewComment(ReviewCommentOrder)
   /// Auto Rename, started; the row says when it is done.
   case autoRenameWorktree(id: String)
-  /// Clear Status on one pane, a tab's panes or a worktree's.
+  /// Clear Status on one pane.
   case clearPaneState(id: UUID)
   /// Review's Clear sent, or every comment where `sentOnly` is false.
   case clearReviewComments(worktree: String?, sentOnly: Bool)

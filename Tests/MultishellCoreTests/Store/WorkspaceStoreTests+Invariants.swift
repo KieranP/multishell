@@ -166,7 +166,7 @@ extension WorkspaceStoreTests {
 
       case 20:
         if let worktree = worktrees.randomElement(using: &rng) {
-          store.setHidden(Bool.random(using: &rng), worktree: worktree.id)
+          store.setHidden(Bool.random(using: &rng), forWorktree: worktree.id)
         }
 
       default:

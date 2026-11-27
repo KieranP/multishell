@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension View {
-  /// Keys as the Yours cell draws them, so the button, the recorder and a
+  /// Keys as the Yours and Keys cells draw them, so the button, the recorder and a
   /// pending answer line up at one width.
   func shortcutKeysFace() -> some View {
     font(.system(size: UIMetrics.settingsControlTextSize))

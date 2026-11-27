@@ -195,7 +195,7 @@ extension WorkspaceStore {
 
   /// Moves a worktree into its project's Hidden section or back out. The main
   /// worktree stays out, so every project keeps a row.
-  public func setHidden(_ hidden: Bool, worktree id: Worktree.ID) {
+  public func setHidden(_ hidden: Bool, forWorktree id: Worktree.ID) {
     guard let worktree = workspace.worktree(id), worktree.isHideable else { return }
     if hidden {
       workspace.hiddenWorktreeIDs.insert(id)

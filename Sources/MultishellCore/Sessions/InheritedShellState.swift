@@ -7,8 +7,8 @@ public enum InheritedShellState {
     "DIRENV_DIR", "DIRENV_FILE", "DIRENV_DIFF", "DIRENV_WATCHES",
   ]
 
-  /// What `SessionEnvironment` and a custom agent command gave the launching
-  /// pane. Kept, hooks reported to that pane and named another app's worktree.
+  /// What `SessionEnvironment`, a custom agent command or an action gave the
+  /// launching pane. Kept, hooks reported to that pane and named another app's worktree.
   private static let paneRecord = Set(
     [
       SessionEnvironment.sessionVariable, SessionEnvironment.worktreeVariable,

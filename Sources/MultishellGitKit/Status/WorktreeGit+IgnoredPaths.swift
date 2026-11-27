@@ -6,7 +6,11 @@ extension WorktreeGit {
   /// Which of `paths`, relative to `directory`, git ignores; a directory holding
   /// a tracked file is not one. `nil` where git could not answer.
   public func ignoredPaths(_ paths: [String], in directory: URL) async -> Set<String>? {
-    guard !paths.isEmpty else { return [] }
+    await Self.runs(over: paths) { chunk in await ignoredPathsInOneRun(chunk, in: directory) }
+      .map { Set($0.joined()) }
+  }
+
+  private func ignoredPathsInOneRun(_ paths: [String], in directory: URL) async -> Set<String>? {
     // check-ignore reads pathspec magic after `--` and refuses `--literal-pathspecs`,
     // so `:!notes` failed the batch; `./` makes each a plain path, echoed back with it.
     let asked = paths.map { "./" + $0 }

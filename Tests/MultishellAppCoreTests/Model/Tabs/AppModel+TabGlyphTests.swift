@@ -6,12 +6,12 @@ import Testing
 @Suite @MainActor
 struct AppModelTabGlyphTests {
   @Test func aTabShowsTheSplitMarkOverItsActionsAndTheActionsOverAShells() throws {
-    let harness = Harness()
-    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
+    let harness = Harness.withServeAction()
     let shell = harness.openBackgroundTab()
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     let action = try #require(harness.model.workspace.tab(owning: session.id))
 
     #expect(harness.model.glyph(of: shell) == .terminal)

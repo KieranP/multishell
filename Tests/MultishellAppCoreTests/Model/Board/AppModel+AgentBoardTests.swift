@@ -302,12 +302,12 @@ struct AppModelAgentBoardTests {
   }
 
   @Test func aRunningActionCountsOnTheBoardAndInTheSidebarAsAnAgentDoes() throws {
-    let harness = Harness()
+    let harness = Harness.withServeAction()
     harness.model.setShowsAllTerminals(false)
-    let serve = ProjectAction(name: "Start Server", command: "npm run dev")
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, isFromShellIntegration: true)
     )

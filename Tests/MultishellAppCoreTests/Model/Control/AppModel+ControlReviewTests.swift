@@ -145,7 +145,7 @@ struct AppModelControlReviewTests {
       .addReviewComment(Self.order(1...1, side: .onDisk, text: "One"))
     )
     let drops = harness.model.dropsDirectory
-    try? FileManager.default.removeItem(at: drops)
+    Scratch.remove(drops)
     try FileManager.default.createDirectory(
       at: drops.deletingLastPathComponent(),
       withIntermediateDirectories: true,

@@ -18,7 +18,8 @@ public enum FileTabContent: Equatable, Sendable {
   case text(FileTabRows)
   /// Past `FileTabReader.sizeLimit`, on disk or on the committed side.
   case tooLarge(bytes: Int)
-  /// Git could not say what the file is counted from, nor any rows or image kept.
+  /// Git could not say what the file is counted from, or the disk refused the read,
+  /// and no rows or image were kept.
   case unreadable
 
   /// A notice or an image, with no arrows or find bar over it.

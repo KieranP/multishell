@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// A review card's box in a file tab, outlined while Review has it selected.
-struct ReviewCardFrame: ViewModifier {
+struct ReviewCardFrameModifier: ViewModifier {
   private static var cornerRadius: Double { 8 }
 
   let theme: Theme

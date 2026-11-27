@@ -19,7 +19,7 @@ extension AppModel {
   /// Open, and with a worktree to list: what both edges' widths allow for.
   public var isFilesPanelOnScreen: Bool { showsFilesPanel && filesPanelWorktree != nil }
 
-  /// Files or Changes shows: a services' page lists no files, so reads none.
+  /// Files or Changes shows: Review and the services' pages list no files, so read none.
   var isFileListOnScreen: Bool { isFilesPanelOnScreen && shownFilesPanelMode.listsFiles }
 
   /// Modified or Branch, drawn over the Changes list alone, Files counting from `HEAD`.
@@ -102,7 +102,7 @@ extension AppModel {
   }
 
   /// The panel's page, kept for every worktree's panel and the next launch.
-  /// Leaving or reaching a services' page reads what the new one shows.
+  /// Leaving or reaching a page that lists no files reads what the new one shows.
   public func setFilesPanelMode(_ mode: FilesPanelMode) {
     guard workspace.filesPanelMode != mode else { return }
     store.setFilesPanelMode(mode)

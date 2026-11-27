@@ -1,14 +1,14 @@
 import Foundation
 import MultishellCore
 
-/// The copies a pane is handed a path to: files a drag promised rather than
-/// handed over, and images pasted from the clipboard; see terminals/paste-and-drop.md.
+/// The files a pane is handed a path to: files a drag promised rather than handed
+/// over, pasted images and notes written for an agent; see terminals/paste-and-drop.md.
 public enum DropCopies {
   /// How long a copy is kept: long enough that a prompt written today still
   /// resolves next week.
   static let retention: TimeInterval = 7 * 24 * 60 * 60
 
-  /// A directory for one drag's or paste's files, made fresh so their names
+  /// A directory for one drag's, paste's or note's files, made fresh so their names
   /// land in it unchanged.
   public static func makeDirectory(in parent: URL = Paths.dropsDirectory) throws -> URL {
     let directory = parent.appendingPathComponent(UUID().uuidString, isDirectory: true)

@@ -12,7 +12,7 @@ struct ProcessActivityTests {
 
   @Test func bytesWrittenAndSyncedToDiskCountAsWritten() throws {
     let directory = try Scratch.directory("activity")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("written")
     FileManager.default.createFile(atPath: file.path, contents: nil)
     let before = try #require(ProcessActivity.of(ownPID))

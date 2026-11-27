@@ -25,7 +25,7 @@ final class DiffGutterView: NSView {
   var hoveredRow: Int? { didSet { if hoveredRow != oldValue { needsDisplay = true } } }
   /// The row a drag started on and the one under the pointer.
   var draggedRows: (start: Int, end: Int)? { didSet { needsDisplay = true } }
-  /// The text's, its review card gaps included.
+  /// The text's, its row gaps included.
   var geometry: DiffRowGeometry { didSet { needsDisplay = true } }
   private var colors: (number: NSColor, added: NSColor, removed: NSColor, background: NSColor) =
     (.secondaryLabelColor, .systemGreen, .systemRed, .clear)

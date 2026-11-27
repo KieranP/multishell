@@ -47,7 +47,7 @@ extension AppModel {
     if pendingSharedSettingsTrust == pending { pendingSharedSettingsTrust = nil }
   }
 
-  /// From the project's Hooks tab: trust what the file currently asks for,
+  /// From the project's Hooks or Actions page: trust what the file asks for,
   /// or stop.
   public func setTrustsSharedSettings(_ trusts: Bool, for project: Project) {
     // A button's action runs after the render that built it, so this one

@@ -5,7 +5,7 @@ import MultishellCore
 extension DiffDisplayText {
   /// `row` is the top row, a fraction where one is cut.
   public func scroll(atRow row: Double, x: Double) -> FileTabScroll {
-    let top = min(max(Int(row.rounded(.down)), 0), max(lines.count - 1, 0))
+    let top = Int(row.rounded(.down)).clamped(to: 0...max(lines.count - 1, 0))
     if lines.indices.contains(top), lines[top].newNumber == nil, let line = lines[top].oldNumber {
       return FileTabScroll(
         line: line,

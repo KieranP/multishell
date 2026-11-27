@@ -1,8 +1,8 @@
 import AppKit
 import MultishellAppCore
 
-/// Gaps opened under rows for review cards, by the row they follow, summed
-/// once so a row's top is a binary search rather than a walk of a 1 MiB file.
+/// Gaps opened under rows for review cards and All changes folds, by the row
+/// they follow, summed once so a row's top is a binary search, not a walk of a 1 MiB file.
 struct RowGaps: Equatable {
   static let empty = Self([:])
 

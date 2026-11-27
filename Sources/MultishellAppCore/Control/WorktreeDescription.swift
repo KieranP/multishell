@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellServices
 
 /// What `multishell worktrees show` prints: its `worktrees list` line, then its
-/// row's git status, merge badge, stage under way, pull request and CI run.
+/// row's git status, merge badge, stage or base update under way, pull request and CI run.
 struct WorktreeDescription: Encodable, Equatable {
   enum CodingKeys: String, CodingKey {
     case status, isStatusFresh, merge, mergedInto, lastCommit, operation, baseUpdateStep

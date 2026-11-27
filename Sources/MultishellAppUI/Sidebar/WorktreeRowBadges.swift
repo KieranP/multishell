@@ -62,7 +62,7 @@ struct WorktreeRowBadges: View {
     if fit.showsCount(of: terminalCount) { countCapsule }
   }
 
-  /// The lock, the merged glyph and the change counts.
+  /// The lock, the merged glyph, and the change counts or a stopped merge or rebase.
   @ViewBuilder
   private var gitState: some View {
     if isLocked {
@@ -128,7 +128,7 @@ struct WorktreeRowBadges: View {
     .help(t("count.terminals", terminalCount))
   }
 
-  /// One look for anything under way on the row, a stage or an Auto Rename.
+  /// One look for anything under way on the row: a stage, a base update or an Auto Rename.
   private func runningGlyph(help: String) -> some View {
     ProgressView()
       .controlSize(.mini)

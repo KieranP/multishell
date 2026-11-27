@@ -68,7 +68,7 @@ final class FakePlatform: Platform {
   var settingsWindowScreenshot: Data?
   var signposts: [String] = []
   var openedWebPages: [URL] = []
-  var fontFamilies: Set<String> = ["Menlo", "SF Mono"]
+  private let fontFamilies: Set<String> = ["Menlo", "SF Mono"]
 
   func log(_ message: String) { logged.append(message) }
 

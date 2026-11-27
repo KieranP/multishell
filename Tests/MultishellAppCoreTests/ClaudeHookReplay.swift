@@ -11,7 +11,7 @@ struct ClaudeHookReplay {
   let directory: URL
   private let claude = AgentHookCatalogue.integration("claude")!
   var states = SessionStates()
-  var lastListedIDs: Set<String> = []
+  private var lastListedIDs: Set<String> = []
   var launcherByWorkerID: [String: String] = [:]
   private var startedWorkerIDs: Set<String> = []
 

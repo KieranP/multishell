@@ -3,7 +3,7 @@ import MultishellCore
 /// A read of many paths split into runs a command's worth long.
 extension WorktreeGit {
   /// `run` once a chunk of `paths`, in turn; `nil` where any run fails.
-  public static func runs<Part>(
+  static func runs<Part>(
     over paths: [String],
     _ run: ([String]) async -> Part?,
   ) async -> [Part]? {

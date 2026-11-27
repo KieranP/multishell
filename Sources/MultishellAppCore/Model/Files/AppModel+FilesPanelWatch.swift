@@ -8,7 +8,7 @@ extension AppModel {
   /// The panel's worktree is read on its own events, frontmost or not, and its
   /// tracked files when its project's git moved.
   func noteFilesPanelChanges(_ targets: FileChangeTargets) {
-    // A services' page keeps no listing to bring up to date.
+    // Review or a services' page keeps no listing to bring up to date.
     guard isFileListOnScreen, let worktree = filesPanelWorktree
     else { return }
     let expanded = expandedSubmodules(of: worktree.id).keys

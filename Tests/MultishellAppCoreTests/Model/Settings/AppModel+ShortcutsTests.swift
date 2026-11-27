@@ -6,7 +6,6 @@ import Testing
 @Suite @MainActor
 struct AppModelShortcutsTests {
   private let backslash = KeyCombination(.character("\\"), .command)
-  private let commandK = KeyCombination(.character("k"), .command)
 
   @Test func anAllowedSetChangesTheKeysTheMenuAndTheEngine() {
     let harness = Harness()

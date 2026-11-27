@@ -12,7 +12,7 @@ struct PaneProcessAttribution: Sendable, Equatable {
   )
 
   let processesBySession: [TerminalSession.ID: [ProcessUsage]]
-  /// A git or hook the app started, or a pane the engine could not place.
+  /// A git, hook, `gh` or `circleci` the app started, or a pane the engine could not place.
   let unattributedProcesses: [ProcessUsage]
 
   init(

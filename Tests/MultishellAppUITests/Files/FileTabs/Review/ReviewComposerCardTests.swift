@@ -48,25 +48,6 @@ struct ReviewComposerCardTests {
     return (field, window)
   }
 
-  private static func key(
-    _ characters: String,
-    code: UInt16,
-    modifiers: NSEvent.ModifierFlags,
-  ) -> NSEvent? {
-    NSEvent.keyEvent(
-      with: .keyDown,
-      location: .zero,
-      modifierFlags: modifiers,
-      timestamp: 0,
-      windowNumber: 0,
-      context: nil,
-      characters: characters,
-      charactersIgnoringModifiers: characters,
-      isARepeat: false,
-      keyCode: code,
-    )
-  }
-
   @Test func theFieldKeepsQuotesAndDashesAsTyped() throws {
     let (field, window) = try #require(Self.shown(Calls()))
     defer { withExtendedLifetime(window) {} }
@@ -82,8 +63,8 @@ struct ReviewComposerCardTests {
     window.makeFirstResponder(field)
     field.insertText("Fix it.", replacementRange: field.selectedRange())
 
-    field.keyDown(with: try #require(Self.key("\r", code: 36, modifiers: .command)))
-    field.keyDown(with: try #require(Self.key("\u{1B}", code: 53, modifiers: [])))
+    field.keyDown(with: try keyDown("\r", keyCode: 36, flags: .command))
+    field.keyDown(with: try keyDown("\u{1B}", keyCode: 53))
 
     #expect(calls.commits == 1)
     #expect(calls.cancels == 1)
@@ -97,11 +78,11 @@ struct ReviewComposerCardTests {
     window.makeFirstResponder(field)
     field.insertText("Fix it.", replacementRange: field.selectedRange())
 
-    field.keyDown(with: try #require(Self.key("\r", code: 36, modifiers: [.command, .capsLock])))
+    field.keyDown(with: try keyDown("\r", keyCode: 36, flags: [.command, .capsLock]))
     field.keyDown(
-      with: try #require(Self.key("\u{3}", code: 76, modifiers: [.command, .numericPad]))
+      with: try keyDown("\u{3}", keyCode: 76, flags: [.command, .numericPad])
     )
-    field.keyDown(with: try #require(Self.key("\u{1B}", code: 53, modifiers: .capsLock)))
+    field.keyDown(with: try keyDown("\u{1B}", keyCode: 53, flags: .capsLock))
 
     #expect(calls.commits == 2)
     #expect(calls.cancels == 1)
@@ -118,7 +99,7 @@ struct ReviewComposerCardTests {
       replacementRange: field.selectedRange(),
     )
 
-    field.keyDown(with: try #require(Self.key("\u{1B}", code: 53, modifiers: [])))
+    field.keyDown(with: try keyDown("\u{1B}", keyCode: 53))
 
     #expect(calls.cancels == 0)
   }
@@ -130,7 +111,7 @@ struct ReviewComposerCardTests {
     window.makeFirstResponder(field)
 
     field.insertText("Fix it.", replacementRange: field.selectedRange())
-    field.keyDown(with: try #require(Self.key("\r", code: 36, modifiers: .command)))
+    field.keyDown(with: try keyDown("\r", keyCode: 36, flags: .command))
 
     #expect(calls.notedAtCommit == "Fix it.")
   }

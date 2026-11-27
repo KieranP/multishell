@@ -2,7 +2,7 @@ import AppKit
 import MultishellCore
 import SwiftUI
 
-/// The Yours cell while a row records: the modifiers pressed so far, or a prompt.
+/// The Yours or Keys cell while a row records: the modifiers pressed so far, or a prompt.
 /// It ends when the row's step changes, which takes the view and its monitor away.
 struct ShortcutRecorder: View {
   let take: (ShortcutRecorderInput) -> Void

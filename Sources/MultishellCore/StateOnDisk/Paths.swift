@@ -41,8 +41,8 @@ public enum Paths {
       .appendingPathComponent("init.fish", isDirectory: false)
   }
 
-  /// Where a drag's promised files and pasted images are copied, somewhere the
-  /// pane's own shell can read; see terminals/paste-and-drop.md.
+  /// Where a drag's files, pasted images and notes sent to an agent go, somewhere
+  /// the pane's own shell can read; see terminals/paste-and-drop.md.
   public static var dropsDirectory: URL {
     stateDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
   }

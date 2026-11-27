@@ -1,6 +1,6 @@
 import Foundation
 
-/// The grammars' highlights queries, read from their packages' resource bundles:
+/// The grammars' highlights and locals queries, read from their packages' bundles:
 /// in the app's `Contents/Resources`, else beside the binary or test bundle.
 enum GrammarQueries {
   /// The bundle holding this code is the app, or a test bundle, which lists

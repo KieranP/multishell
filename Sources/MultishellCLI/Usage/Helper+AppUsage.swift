@@ -9,7 +9,7 @@ extension Helper {
     usage: multishell info
         Print the answering app's pid, state file and socket as JSON,
         whether its debug tools are on, its open windows, and every alert,
-        dialog, sheet or name field up, topmost first.
+        dialog, sheet, quick switcher or name field up, topmost first.
 
     """
 }

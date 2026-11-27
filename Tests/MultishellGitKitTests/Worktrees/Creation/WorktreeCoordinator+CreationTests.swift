@@ -217,8 +217,7 @@ struct WorktreeCoordinatorCreationTests {
     let hooks = fixture.project.path.appendingPathComponent(".git/hooks")
     try FileManager.default.createDirectory(at: hooks, withIntermediateDirectories: true)
     let hook = hooks.appendingPathComponent("post-checkout")
-    try "#!/bin/sh\nexit 1\n".write(to: hook, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hook.path)
+    try Scratch.script("exit 1", at: hook)
 
     let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "made",

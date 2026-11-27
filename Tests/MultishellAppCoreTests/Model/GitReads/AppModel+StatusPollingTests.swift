@@ -69,8 +69,7 @@ struct AppModelStatusPollingTests {
       ["commit", "-q", "--allow-empty", "-m", "base"],
       in: harness.project.path,
     )
-    let baseTip = try await harness.git.run(["rev-parse", "main"], in: harness.project.path)
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let baseTip = try await harness.tip(ofBranch: "main")
     harness.model.mergeReadLog.budget = .zero
     func askedAgainstTheNewBase() -> Int {
       worktrees.count { harness.model.mergeVerdictBases[$0.id]?.defaultBranchTip == baseTip }

@@ -3,7 +3,7 @@ import MultishellCore
 import MultishellProcess
 
 extension AppModel {
-  /// What the reconciler opens: the session's shell or agent line. A restored tab
+  /// What the reconciler opens: the session's shell, agent or action line. A restored tab
   /// resumes where it can, four not starting four agents; a task rides the first launch.
   func preparedForLaunch(_ session: TerminalSession) -> TerminalSession {
     var prepared = session

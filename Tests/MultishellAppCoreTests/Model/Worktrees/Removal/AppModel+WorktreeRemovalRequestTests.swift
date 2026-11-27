@@ -27,7 +27,7 @@ struct AppModelWorktreeRemovalRequestTests {
       forProject: harness.main.projectID,
     )
 
-    #expect(!harness.model.mayRemove(checkingOut))
+    #expect(!harness.model.canRemove(checkingOut))
     await harness.model.requestWorktreeRemoval(of: checkingOut)?.value
     #expect(harness.model.pendingWorktreeRemoval == nil)
   }

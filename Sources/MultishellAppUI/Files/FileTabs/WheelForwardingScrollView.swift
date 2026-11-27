@@ -1,7 +1,7 @@
 import AppKit
 
-/// A diff canvas's scroller, which can leave room for the vertical scroller and
-/// hand its vertical wheel on, as an All changes file does to the list.
+/// A diff canvas's or the All changes list's scroller: the list leaves room for the
+/// vertical scroller, and an All changes file hands its vertical wheel on to it.
 final class WheelForwardingScrollView: NSScrollView {
   /// A file as tall as its rows bouncing vertically under a sideways swipe jolted it.
   weak var forwardsWheelTo: NSView? {

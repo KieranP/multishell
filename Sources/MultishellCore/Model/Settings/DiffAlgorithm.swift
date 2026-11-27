@@ -1,4 +1,4 @@
-/// How the badge's line counts match old lines to new, passed so a user's own
+/// How every diff the app reads matches old lines to new, passed so a user's own
 /// `diff.algorithm` cannot move them. Raw values are git's names: never rename.
 public enum DiffAlgorithm: String, Codable, Hashable, Sendable, CaseIterable {
   case histogram

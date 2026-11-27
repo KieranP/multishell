@@ -1,7 +1,8 @@
 /// Parses `ls-files -z -t --cached --stage`, `<tag> <mode> <object>
 /// <stage>\t<path>` a record; a conflicted path, listed once a stage, is kept once.
 enum TrackedFileListParser {
-  private static let gitlinkMode = "160000"
+  /// The mode `ls-files --stage` gives a submodule's entry.
+  static let gitlinkMode = "160000"
   /// git's tag for a path a sparse checkout leaves off disk.
   private static let skipWorktreeTag = "S"
 

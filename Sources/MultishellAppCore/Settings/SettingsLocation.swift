@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// Where the settings window is: whose settings, and which section of them.
 public struct SettingsLocation: Hashable, Sendable {
   /// Where Multishell > Settings opens.
@@ -27,7 +29,7 @@ public struct SettingsLocation: Hashable, Sendable {
     }
     guard let last = sections.indices.last else { return self }
     let start = sections.firstIndex(of: section) ?? (offset > 0 ? -1 : last + 1)
-    let next = min(max(start + offset, 0), last)
+    let next = (start + offset).clamped(to: 0...last)
     return Self(scope: scope, section: sections[next])
   }
 

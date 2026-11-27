@@ -2,7 +2,7 @@
 /// command line spells it with.
 public enum ControlView: String, Codable, CaseIterable, Sendable {
   case agentBoard = "board"
-  /// The board's Show all terminals, not only agents' panes.
+  /// The board's Show all terminals, not only agents' and actions' panes.
   case allTerminals = "all-terminals"
   case projectSettings = "project-settings"
   case settings

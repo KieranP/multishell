@@ -45,8 +45,8 @@ extension AppModel {
     tabTakesKeystrokes ? menuFindTarget : nil
   }
 
-  /// Cmd+F: a bar on the focused pane of the tab in front, or on its file, or the
-  /// field's own bar asked for again, finding the selection or the last find text.
+  /// Cmd+F: a bar on the focused pane of the tab in front, on its file or All changes
+  /// tab, or the field's own bar asked for again, finding the selection or the last find text.
   public func showFind() {
     guard let id = keystrokeFindTarget else { return }
     let wasUp = !findBarTargetIDs.insert(id).inserted
@@ -105,7 +105,7 @@ extension AppModel {
     search(text, in: id, replacing: searched)
   }
 
-  /// The command line's: a pane's or file tab's bar up on `text`, as typing it there.
+  /// The command line's: a pane's, file tab's or All changes tab's bar up on `text`.
   func openFind(on text: String, in id: FindTargetID) {
     let wasUp = !findBarTargetIDs.insert(id).inserted
     replaceFindText(with: text, in: id, barWasUp: wasUp)
@@ -205,14 +205,14 @@ extension AppModel {
   /// Escape or the close: the keyboard goes to the bar's own target, not the
   /// focused one, as clicking into a field moved the store's focus nowhere.
   public func closeFind(in id: FindTargetID) {
-    guard endFind(in: id) else { return }
+    guard dismissFind(in: id) else { return }
     if searchesRowsInModel(id) { fileTabFocusRequest = id } else { host.focus(id) }
   }
 
   /// The bar down with the keyboard left where it was, as the command line
   /// closes it. `false` where there was no bar.
   @discardableResult
-  func endFind(in id: FindTargetID) -> Bool {
+  func dismissFind(in id: FindTargetID) -> Bool {
     guard findBarTargetIDs.remove(id) != nil else { return false }
     steppedFindTargetIDs.remove(id)
     setIfChanged(\.searchCounts[id], nil)

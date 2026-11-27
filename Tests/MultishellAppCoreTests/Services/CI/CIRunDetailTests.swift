@@ -14,24 +14,24 @@ struct CIRunDetailTests {
 
   @Test func anEndedRunsDetailStillDescribesItWhileItsStatusHolds() {
     let run = CIRun.sample(status: .passed)
-    #expect(detail(.passed, runWasFinished: true).stillDescribe(run, readAt: longAgo))
-    #expect(!detail(.running, runWasFinished: false).stillDescribe(run, readAt: longAgo))
+    #expect(detail(.passed, runWasFinished: true).stillDescribes(run, readAt: longAgo))
+    #expect(!detail(.running, runWasFinished: false).stillDescribes(run, readAt: longAgo))
   }
 
   @Test func aRunStillGoingIsReadAgainOnceAMinuteThoughOneJobHasFailed() {
     let failing = CIRun.sample(status: .failed, isFinished: false)
-    #expect(detail(.failed, runWasFinished: false).stillDescribe(failing, readAt: .now))
-    #expect(!detail(.failed, runWasFinished: false).stillDescribe(failing, readAt: longAgo))
+    #expect(detail(.failed, runWasFinished: false).stillDescribes(failing, readAt: .now))
+    #expect(!detail(.failed, runWasFinished: false).stillDescribes(failing, readAt: longAgo))
   }
 
   @Test func detailReadWhileTheRunWentIsReadOnceMoreWhenItEnds() {
     let ended = CIRun.sample(status: .failed, isFinished: true)
-    #expect(!detail(.failed, runWasFinished: false).stillDescribe(ended, readAt: .now))
+    #expect(!detail(.failed, runWasFinished: false).stillDescribes(ended, readAt: .now))
   }
 
   @Test func twoCopiesOfARunThatDisagreeDoNotReadItEveryTimeEachAsks() {
     let rowsCopy = CIRun.sample(status: .running)
     let readByTheHistorysCopy = detail(.passed, runWasFinished: true)
-    #expect(readByTheHistorysCopy.stillDescribe(rowsCopy, readAt: .now))
+    #expect(readByTheHistorysCopy.stillDescribes(rowsCopy, readAt: .now))
   }
 }

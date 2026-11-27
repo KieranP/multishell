@@ -44,7 +44,7 @@ struct WorktreeDiffBases: Sendable {
       in: worktree,
       at: branchCommit ?? headOrEmptyTree,
     )
-    async let ignored = ignoredPaths(paths, in: worktree, git: git)
+    async let ignored = git.ignoredPaths(paths, in: worktree)
     async let indexed = git.indexedPaths(paths, in: worktree)
     guard let sizes = await sizes, let ignored = await ignored, let indexed = await indexed
     else { return nil }
@@ -69,15 +69,6 @@ struct WorktreeDiffBases: Sendable {
       patches: patches ?? [:],
       paths: Set(paths),
     )
-  }
-
-  private static func ignoredPaths(
-    _ paths: [String],
-    in worktree: URL,
-    git: WorktreeGit,
-  ) async -> Set<String>? {
-    await WorktreeGit.runs(over: paths) { await git.ignoredPaths($0, in: worktree) }
-      .map { Set($0.joined()) }
   }
 
   /// The committed size of a path the read asked about, `.some(nil)` where

@@ -6,7 +6,7 @@ extension AppModel {
   }
 
   /// What a row or a header calls this worktree: the user's name where they
-  /// gave one, else its branch.
+  /// gave one, else the branch, SHA or folder `Worktree.name` gives.
   public func displayName(of worktree: Worktree) -> String {
     workspace.displayName(of: worktree)
   }

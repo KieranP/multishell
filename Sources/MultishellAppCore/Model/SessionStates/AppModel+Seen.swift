@@ -8,7 +8,7 @@ extension AppModel {
   }
 
   /// The focused pane and the selected worktree are seen; every pane in view
-  /// loses its banner. Guarded on the board and frontmost, as `isSeen` is.
+  /// loses its banner. Guarded on a cover and frontmost, as `isSeen` is.
   func markInViewSeen() {
     guard platform.isActive, let worktree = worktreeIDInView else { return }
     let focused = tabInView.map { [$0.focusedSessionID] } ?? []

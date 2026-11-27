@@ -48,7 +48,15 @@ struct GhosttyPaneEventMonitorTests {
     defer { pane.freeSurface() }
 
     let isTaken = try withExtendedLifetime(window) {
-      GhosttyPaneEventMonitor.deliver(try keyUp(flags: .command, in: window))
+      GhosttyPaneEventMonitor.deliver(
+        try keyEvent(
+          .keyUp,
+          "c",
+          keyCode: 0x08,
+          flags: .command,
+          windowNumber: window.windowNumber,
+        )
+      )
     }
 
     #expect(isTaken)
@@ -59,7 +67,9 @@ struct GhosttyPaneEventMonitorTests {
     defer { pane.freeSurface() }
 
     let isTaken = try withExtendedLifetime(window) {
-      GhosttyPaneEventMonitor.deliver(try keyUp(flags: [], in: window))
+      GhosttyPaneEventMonitor.deliver(
+        try keyEvent(.keyUp, "c", keyCode: 0x08, windowNumber: window.windowNumber)
+      )
     }
 
     #expect(!isTaken)
@@ -107,22 +117,5 @@ struct GhosttyPaneEventMonitorTests {
     window.contentView = pane
     window.makeFirstResponder(pane)
     return (pane, window)
-  }
-
-  private func keyUp(flags: NSEvent.ModifierFlags, in window: NSWindow) throws -> NSEvent {
-    try #require(
-      NSEvent.keyEvent(
-        with: .keyUp,
-        location: .zero,
-        modifierFlags: flags,
-        timestamp: 1,
-        windowNumber: window.windowNumber,
-        context: nil,
-        characters: "c",
-        charactersIgnoringModifiers: "c",
-        isARepeat: false,
-        keyCode: 0x08,
-      )
-    )
   }
 }

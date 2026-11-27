@@ -9,19 +9,7 @@ import Testing
 struct DiffTextViewCommentOnLinesTests {
   private static func menuTitles(of textView: DiffTextView, in window: NSWindow) throws -> [String]
   {
-    let event = try #require(
-      NSEvent.mouseEvent(
-        with: .rightMouseDown,
-        location: .zero,
-        modifierFlags: [],
-        timestamp: 0,
-        windowNumber: window.windowNumber,
-        context: nil,
-        eventNumber: 0,
-        clickCount: 1,
-        pressure: 1,
-      )
-    )
+    let event = try mouseEvent(.rightMouseDown, at: .zero, in: window)
     return textView.menu(for: event)?.items.map(\.title) ?? []
   }
 

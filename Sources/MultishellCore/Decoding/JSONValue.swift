@@ -1,5 +1,5 @@
-/// Any JSON, kept as read. For the keys of a committed file this build has
-/// no field for, which an export writes back rather than drops.
+/// Any JSON, kept as read: a key this build has no field for, written back
+/// rather than dropped, or a value whose shape the reader does not fix.
 public enum JSONValue: Codable, Hashable, Sendable {
   case array([Self])
   case bool(Bool)

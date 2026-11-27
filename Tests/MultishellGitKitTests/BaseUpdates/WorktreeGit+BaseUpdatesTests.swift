@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import TestSupport
 import Testing
 
@@ -373,8 +374,7 @@ struct WorktreeGitBaseUpdatesTests {
       by: .rebase,
     )
 
-    let part = try await fixture.runner.run(["rev-parse", "feature-part"], in: feature.path)
-    #expect(part.trimmingCharacters(in: .whitespacesAndNewlines) == stacked)
+    #expect(try await fixture.tip(of: "feature-part") == stacked)
   }
 
   @Test func aMergeConfiguredFastForwardOnlyStillMakesItsMergeCommit() async throws {
@@ -510,12 +510,7 @@ struct WorktreeGitBaseUpdatesTests {
     let (fixture, feature, _) = try await Self.featureBehindOrigin()
     defer { fixture.tearDown() }
     let hook = fixture.project.path.appendingPathComponent(".git/hooks/commit-msg")
-    try "#!/bin/sh\necho 'no ticket in the message' >&2\nexit 1\n".write(
-      to: hook,
-      atomically: true,
-      encoding: .utf8,
-    )
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hook.path)
+    try Scratch.script("echo 'no ticket in the message' >&2\nexit 1", at: hook)
 
     await #expect {
       _ = try await fixture.git.fetchThenUpdate(

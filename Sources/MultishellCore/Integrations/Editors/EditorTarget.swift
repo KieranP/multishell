@@ -1,7 +1,7 @@
 import Foundation
 
 /// What an editor is handed: a worktree's directory, from Open in Editor, or
-/// a text file a link clicked in one of its panes names.
+/// one of its text files, from a clicked link or Open in Editor on a file.
 public enum EditorTarget: Sendable {
   case file(URL)
   case worktree(URL)

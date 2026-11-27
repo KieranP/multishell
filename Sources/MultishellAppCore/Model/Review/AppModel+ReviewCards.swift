@@ -8,11 +8,28 @@ extension AppModel {
     in lines: [DiffLine],
     side: DiffSide? = nil,
   ) -> [ReviewCardPlacement] {
-    let sources = reviewCardSources(of: tab.id, in: tab.worktreeID, side: side)
+    reviewCardPlacements(
+      onFile: tab.path,
+      of: tab.id,
+      in: tab.worktreeID,
+      lines: lines,
+      side: side,
+    )
+  }
+
+  /// One file's cards on `lines`, the file's own rows.
+  func reviewCardPlacements(
+    onFile path: String,
+    of tabID: ReviewTabID,
+    in worktreeID: Worktree.ID,
+    lines: [DiffLine],
+    side: DiffSide?,
+  ) -> [ReviewCardPlacement] {
+    let sources = reviewCardSources(of: tabID, in: worktreeID, side: side)
     return ReviewCardPlacement.placements(
-      of: sources.comments(onFile: tab.path),
-      selected: selectedReviewComments[tab.worktreeID],
-      composer: sources.composer(onFile: tab.path),
+      of: sources.comments(onFile: path),
+      selected: selectedReviewComments[worktreeID],
+      composer: sources.composer(onFile: path),
       in: lines,
     )
   }

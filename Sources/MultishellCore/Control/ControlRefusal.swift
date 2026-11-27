@@ -89,7 +89,7 @@ public enum ControlRefusal: Error, Codable, Equatable, Sendable {
   case noTab(id: UUID)
   /// No worktree's tabs are on screen: none selected, or a cover over them.
   case nothingInView
-  /// No alert, dialog, sheet or field is up to dismiss.
+  /// No alert, dialog, sheet, quick switcher or name field is up to dismiss.
   case nothingPresented
   /// Nothing checked and unsent; the CI page reads its run's jobs only while shown.
   case nothingToHandoff(ServicePage, id: String)

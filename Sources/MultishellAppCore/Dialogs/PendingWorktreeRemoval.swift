@@ -2,8 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-/// A worktree removal waiting on its dialog. The branch question is asked
-/// even where confirmation is off, being the one part with no undo.
+/// A worktree removal waiting on its dialog. The branch question and commits on
+/// no branch are asked about even where confirmation is off, neither having an undo.
 public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   enum BranchHandling: Equatable, Sendable {
     /// Settled before the dialog: the worktree is detached or on the default branch, or the

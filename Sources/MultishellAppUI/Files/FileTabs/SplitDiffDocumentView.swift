@@ -14,7 +14,7 @@ final class SplitDiffDocumentView: DiffCanvasView {
   /// Gaps beyond the cards', opened in both columns: the All changes tab's
   /// folds and notices, which `spanningGapViews` holds.
   var extraRowGaps: [Int: CGFloat] = [:] {
-    didSet { if extraRowGaps != oldValue { openMergedReviewCardGaps() } }
+    didSet { if extraRowGaps != oldValue { openMergedRowGaps() } }
   }
   /// Where the divider runs in the document: an All changes file's rows and
   /// gaps; `nil` for the whole height.
@@ -134,7 +134,7 @@ final class SplitDiffDocumentView: DiffCanvasView {
   private func openReviewCardGaps(_ gaps: [Int: CGFloat], of side: DiffColumn) {
     columnGaps[ObjectIdentifier(side)] = gaps
     guard !isGatheringReviewCardGaps else { return }
-    openMergedReviewCardGaps()
+    openMergedRowGaps()
   }
 
   /// Both columns' cards placed before their merged gaps open, once: each
@@ -143,10 +143,10 @@ final class SplitDiffDocumentView: DiffCanvasView {
     isGatheringReviewCardGaps = true
     place()
     isGatheringReviewCardGaps = false
-    openMergedReviewCardGaps()
+    openMergedRowGaps()
   }
 
-  private func openMergedReviewCardGaps() {
+  private func openMergedRowGaps() {
     let rowGaps = RowGaps(mergedCardGaps.merging(extraRowGaps, uniquingKeysWith: +))
     defer { layOutSpanningGapViews() }
     guard

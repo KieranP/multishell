@@ -25,11 +25,7 @@ extension WorktreeGit {
     _ projectPath: URL,
   ) -> [Worktree] {
     guard let main = worktrees.first, main.isPrimary, !main.isBare,
-      let named = directoryNamed(
-        inFile: projectPath.appendingPathComponent(".git"),
-        relativeTo: projectPath,
-        after: "gitdir: ",
-      ),
+      let named = recordDirectoryFromGitFile(in: projectPath),
       sameComparablePath(named, main.path)
     else { return worktrees }
     let checkout = Worktree(

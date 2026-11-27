@@ -55,7 +55,7 @@ extension AppModel {
   func replyToFindInFileTab(_ action: FindBarAction, in id: FileTab.ID) async -> ControlReply {
     if action == .close {
       if let refusal = refusalToReachFileTab(id) { return .refused(refusal) }
-      return endFind(in: id) ? replyToDescribeTab(id) : .refused(.noFindBar(id: id))
+      return dismissFind(in: id) ? replyToDescribeTab(id) : .refused(.noFindBar(id: id))
     }
     let refusal = await refusalToActOnRowsOnceRead(of: id) {
       refusalToReachFileTab(id) ?? refusalToFind(action, in: id) ?? refusalToShowReachedFileTab(id)

@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// The line a tab runs in place of a plain shell, an agent's or an editor's:
+/// The line a tab runs in place of a plain shell, an agent's, an editor's or `tabs open`'s:
 /// through the login shell for its PATH, a shell taking over when it quits.
 enum TabCommand {
   /// The login shell a command runs through, and the line that hands the

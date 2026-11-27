@@ -5,21 +5,12 @@ import Testing
 
 @Suite
 struct CaseInsensitiveMatchesTests {
-  private static func foundationRanges(of findText: String, in text: String) -> [Range<Int>] {
-    let searched = text as NSString
-    var ranges: [Range<Int>] = []
-    var from = 0
-    while from < searched.length {
-      let found = searched.range(
-        of: findText,
-        options: [.caseInsensitive],
-        range: NSRange(location: from, length: searched.length - from),
-      )
-      guard found.location != NSNotFound else { break }
-      ranges.append(found.location..<NSMaxRange(found))
-      from = NSMaxRange(found)
-    }
-    return ranges
+  private static func fastestJudgement(of findText: String, in text: String) -> Duration {
+    (0..<3).map { _ in
+      ContinuousClock().measure {
+        #expect(CaseInsensitiveMatches.ranges(of: findText, in: text) == [])
+      }
+    }.min() ?? .zero
   }
 
   @Test(arguments: [
@@ -41,21 +32,18 @@ struct CaseInsensitiveMatchesTests {
   ) {
     #expect(
       CaseInsensitiveMatches.ranges(of: findText, in: text)
-        == Self.foundationRanges(of: findText, in: text)
+        == CaseInsensitiveMatches.foundationRanges(of: findText, in: text)
     )
   }
 
-  @Test func aLongFindTextMissingFromARepetitiveMebibyteIsJudgedWithinASecond() {
-    let findText = String(repeating: "=", count: 10_000) + "x"
+  @Test func aLongFindTextMissingFromARepetitiveMebibyteCostsUnderTenTimesAShortOne() {
     let text = String(repeating: "=", count: 1 << 20)
+    let short = Self.fastestJudgement(of: String(repeating: "=", count: 10) + "x", in: text)
+    let long = Self.fastestJudgement(of: String(repeating: "=", count: 10_000) + "x", in: text)
 
-    var ranges: [Range<Int>]?
-    let elapsed = ContinuousClock().measure {
-      ranges = CaseInsensitiveMatches.ranges(of: findText, in: text)
-    }
-
-    #expect(ranges == [])
-    #expect(elapsed < .seconds(1))
+    // A search costing text times find text took over 2,000 times the short one's;
+    // against the same run, the bound holds on a runner of any speed.
+    #expect(long < short * 10, "\(long) against \(short)")
   }
 
   @Test func anEmptyFindTextMatchesNothing() {

@@ -6,11 +6,8 @@ import Testing
 
 @Suite @MainActor
 struct AppModelControlActionsTests {
-  private let serve = ProjectAction(name: "Start Server", command: "npm run dev")
-
   private func harnessWithServe() -> (Harness, String) {
-    let harness = Harness()
-    harness.model.setSettings(ProjectSettings(actions: [serve]), for: harness.project)
+    let harness = Harness.withServeAction()
     return (harness, ControlID.worktree(harness.main.id))
   }
 
@@ -20,7 +17,7 @@ struct AppModelControlActionsTests {
     let reply = await harness.model.answer(.listActions(worktree: id))
 
     let actions = try #require(reply.outputFields["actions"] as? [[String: Any]])
-    #expect(actions.first?["name"] as? String == serve.name)
+    #expect(actions.first?["name"] as? String == ProjectAction.serve.name)
     #expect(actions.first?["state"] as? String == "idle")
   }
 
@@ -28,34 +25,41 @@ struct AppModelControlActionsTests {
     let (harness, id) = harnessWithServe()
 
     let reply = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: false, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: false, force: false)
     )
 
     #expect(reply == .done)
-    #expect(harness.model.actionSession(named: serve.name, in: harness.main.id) != nil)
+    #expect(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id) != nil
+    )
   }
 
   @Test func oneStillRunningIsRefusedWithoutRestartAndRestartedWithIt() async throws {
     let (harness, id) = harnessWithServe()
     _ = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: false, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: false, force: false)
     )
-    let first = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    let first = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: first.id, isFromShellIntegration: true)
     )
 
     let refused = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: false, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: false, force: false)
     )
-    #expect(refused == .refused(.actionTabOccupied(name: serve.name)))
+    #expect(refused == .refused(.actionTabOccupied(name: ProjectAction.serve.name)))
     #expect(harness.model.pendingActionRestart == nil, "a script cannot answer a dialog")
 
     let restarted = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: true, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: true, force: false)
     )
     #expect(restarted == .done)
-    #expect(harness.model.actionSession(named: serve.name, in: harness.main.id)?.id != first.id)
+    #expect(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)?.id
+        != first.id
+    )
     #expect(harness.engine.closed.contains(first.id))
   }
 
@@ -87,7 +91,7 @@ struct AppModelControlActionsTests {
     harness.model.worktreeOperations.begin(.preDeleteHook, on: harness.main.id)
 
     let reply = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: false, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: false, force: false)
     )
 
     #expect(reply == .refused(.worktreeNotReady(id: id)))
@@ -97,22 +101,24 @@ struct AppModelControlActionsTests {
   @Test func aRestartOverAWorkingAgentIsRefusedWithoutForce() async throws {
     let (harness, id) = harnessWithServe()
     _ = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: false, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: false, force: false)
     )
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.model.noteCommandFinished(in: session.id, exitCode: 1)
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude")
     )
 
     let refused = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: true, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: true, force: false)
     )
     #expect(refused == .refused(.agentWorking))
     #expect(!harness.engine.closed.contains(session.id))
 
     let forced = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: true, force: true)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: true, force: true)
     )
     #expect(forced == .done)
     #expect(harness.engine.closed.contains(session.id))
@@ -124,13 +130,13 @@ struct AppModelControlActionsTests {
     let feature = ControlID.worktree(harness.feature.id)
 
     let reply = await harness.model.answer(
-      .runAction(worktree: feature, name: serve.name, restart: false, force: false)
+      .runAction(worktree: feature, name: ProjectAction.serve.name, restart: false, force: false)
     )
 
     #expect(reply == .done)
     #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
     let session = try #require(
-      harness.model.actionSession(named: serve.name, in: harness.feature.id)
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.feature.id)
     )
     #expect(harness.engine.opened.contains { $0.id == session.id })
   }
@@ -139,10 +145,10 @@ struct AppModelControlActionsTests {
     let (harness, _) = harnessWithServe()
     let feature = ControlID.worktree(harness.feature.id)
     _ = await harness.model.answer(
-      .runAction(worktree: feature, name: serve.name, restart: false, force: false)
+      .runAction(worktree: feature, name: ProjectAction.serve.name, restart: false, force: false)
     )
     let first = try #require(
-      harness.model.actionSession(named: serve.name, in: harness.feature.id)
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.feature.id)
     )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: first.id, isFromShellIntegration: true)
@@ -150,7 +156,7 @@ struct AppModelControlActionsTests {
     harness.model.select(harness.main)
 
     let reply = await harness.model.answer(
-      .runAction(worktree: feature, name: serve.name, restart: true, force: false)
+      .runAction(worktree: feature, name: ProjectAction.serve.name, restart: true, force: false)
     )
 
     #expect(reply == .done)
@@ -160,8 +166,10 @@ struct AppModelControlActionsTests {
 
   @Test func anAgentWaitingAtItsPromptInTheActionsTabIsRefusedWithoutRestart() async throws {
     let (harness, id) = harnessWithServe()
-    harness.model.runAction(named: serve.name, in: harness.main)
-    let session = try #require(harness.model.actionSession(named: serve.name, in: harness.main.id))
+    harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: harness.main.id)
+    )
     harness.messageSource.send(
       SessionStateReport(state: .running, sessionID: session.id, isFromShellIntegration: true)
     )
@@ -174,10 +182,10 @@ struct AppModelControlActionsTests {
     )
 
     let reply = await harness.model.answer(
-      .runAction(worktree: id, name: serve.name, restart: false, force: false)
+      .runAction(worktree: id, name: ProjectAction.serve.name, restart: false, force: false)
     )
 
-    #expect(reply == .refused(.actionTabOccupied(name: serve.name)))
+    #expect(reply == .refused(.actionTabOccupied(name: ProjectAction.serve.name)))
     #expect(!harness.engine.closed.contains(session.id))
   }
 }

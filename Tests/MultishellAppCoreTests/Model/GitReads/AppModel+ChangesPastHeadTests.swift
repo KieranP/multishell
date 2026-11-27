@@ -110,8 +110,7 @@ struct AppModelChangesPastHeadTests {
       in: project,
     )
     _ = try await harness.git.run(["cherry-pick", work], in: project)
-    let rebasedHead = try await harness.git.run(["rev-parse", "HEAD"], in: project)
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let rebasedHead = try await harness.tip(ofBranch: "HEAD")
     _ = try await harness.git.run(["checkout", "-q", "main"], in: project)
     host.answer(
       .success([.sample(number: 9, state: .merged, headBranch: "feat", headCommit: rebasedHead)])

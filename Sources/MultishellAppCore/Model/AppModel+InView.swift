@@ -31,7 +31,7 @@ extension AppModel {
   }
 
   /// In view with the app in front, which is when a banner about it is not
-  /// needed. Gated on the board as `isPaneInView` is.
+  /// needed. Gated on a cover as `isPaneInView` is.
   func isWorktreeOnScreen(_ id: Worktree.ID) -> Bool {
     worktreeIDInView == id && platform.isActive
   }

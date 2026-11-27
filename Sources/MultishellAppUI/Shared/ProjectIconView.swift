@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A project's glyph as the sidebar and header draw it, tinted from the
+/// A project's glyph as the sidebar, header and switcher draw it, tinted from the
 /// theme's `ui.project_icons`. A missing project is dimmed, not swapped.
 struct ProjectIconView: View {
   let settings: ProjectSettings

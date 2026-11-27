@@ -38,9 +38,6 @@ extension PresentedError {
           .joined(separator: "\n\n"),
       )
 
-    case let skipped as WorktreeFileSkipped:
-      return (t("error.files-skipped-title"), describeSkipped(skipped.entries).joined())
-
     default:
       return nil
     }
@@ -50,6 +47,15 @@ extension PresentedError {
   /// system's own words for what it refused.
   private static func placementCause(_ error: any Error) -> String {
     error is WorktreeFileEscape ? t("worktree-file.escape") : error.localizedDescription
+  }
+
+  /// A user's own list entries that name somewhere other than the repository,
+  /// said once the rest are placed and the hook has been let run.
+  static func filesSkipped(_ entries: [String]) -> PresentedError {
+    PresentedError(
+      title: t("error.files-skipped-title"),
+      message: describeSkipped(entries).joined(),
+    )
   }
 
   /// What an entry must be, and the entries that were not; none for none.

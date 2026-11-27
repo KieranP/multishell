@@ -1,6 +1,6 @@
 import Foundation
 
-/// How a read of many files splits its git runs, for the All changes tab.
+/// How a read of many files splits its git runs.
 extension WorktreeGit {
   /// Paths one command names at once, well under the argument list's limit.
   static let pathsPerCommand = 500

@@ -34,7 +34,7 @@ extension Theme {
   var deletionsColor: Color { color(.removed, in: .git) }
   var unscoredFilesColor: Color { color(.changed, in: .git) }
 
-  /// A create or remove that failed, and a branch that landed.
+  /// A failed create, remove or Auto Rename, a stopped merge or rebase, a branch that landed.
   var failureColor: Color { color(.failed, in: .states) }
   var mergedColor: Color { color(.merged, in: .git) }
 

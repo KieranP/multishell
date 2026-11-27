@@ -51,7 +51,7 @@ public final class AppModel<Surface> {
   public internal(set) var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
   /// A project removal waiting on its dialog, in whichever window asked.
   var pendingProjectRemoval: PendingProjectRemoval?
-  /// A pane or tab close waiting on it, because an agent there is working.
+  /// A close waiting on its dialog: an agent is working, or a review comment is unsent.
   public internal(set) var pendingClose: PendingClose?
   /// An action picked while its tab still runs something, waiting on the restart question.
   public internal(set) var pendingActionRestart: PendingActionRestart?
@@ -230,7 +230,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var reviewComposerKeyboardRequests: Set<ReviewTabID> = []
   /// Worktrees whose review file was read, at launch or when first listed after.
   @ObservationIgnored var worktreesWithReviewFilesRead: Set<Worktree.ID> = []
-  /// Where Review's handoffs are written.
+  /// Where every handoff is written: Review's, the PR and CI pages', a merge's conflicts.
   @ObservationIgnored let dropsDirectory: URL
 
   /// What a tab drag is doing. Here, not in the group tree that draws it,

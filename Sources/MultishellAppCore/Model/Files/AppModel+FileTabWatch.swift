@@ -16,7 +16,7 @@ extension AppModel {
         noteFileTabChanged(tab.id)
         continue
       }
-      let folder = tab.path.slashSeparatedParts.dropLast().joined(separator: "/")
+      let folder = tab.path.slashSeparatedFolder
       let isTouched = (targets.fileChangesByWorktree[worktree.id] ?? []).contains { path in
         path == FileChangeTargets.wholeWorktree || path == folder || path == tab.path
       }
