@@ -78,11 +78,18 @@ the bottom.
   as a full refname: `rev-parse --abbrev-ref` says `heads/main` beside a tag
   `main`, which the guard took for another branch. A failed read deletes no
   branch, as it once let the delete through.
-- **A worktree holding another worktree or a populated submodule is refused**,
-  as `worktree remove` refuses both. The Trash took the inner worktree's
-  uncommitted files, and the record took the submodule's repository, kept under
-  it, with its unpushed commits. Populated, as git judges it: a `.git` in the
-  submodule's folder, so `git submodule deinit` lets the removal through.
+- **A worktree holding another worktree, or a populated submodule with work, is
+  refused.** The Trash took the inner worktree's uncommitted files, and the
+  record took the submodule's repository, kept under it, with its unpushed
+  commits. Work is a change, an untracked file, or a commit on none of the
+  submodule's remotes, a stash's included, at any depth. Populated, as git
+  judges it: a `.git` in the submodule's folder.
+- **A submodule holding nothing else is let through, not deinitialised.**
+  `worktree remove` refuses any populated submodule, so every worktree of a repo
+  with one, Ghostty here, needed `git submodule deinit --all` first. The Trash
+  takes the submodule's files with the rest, ignored build output included,
+  which `deinit` would delete for good, and before a pre-delete hook that may
+  still fail.
 - **A detached worktree's commits on no branch are read before removing it**,
   and the dialog asks about them even with confirmation off. Its record holds
   the only `HEAD` and reflog, so `worktree remove` leaves them dangling.
@@ -247,9 +254,9 @@ the bottom.
   git stays sequential below 100 files.
 - **A checkout back during the pre-delete hook is judged as one there at the
   start**: not the record's checkout, it is left and only the record goes, with
-  no post-delete hook; holding another worktree or a populated submodule, the
-  removal is refused. Trashed unasked, a plain folder made there went, and the
-  record took a returned checkout's submodule repository with it.
+  no post-delete hook; holding another worktree or submodule work, the removal
+  is refused. Trashed unasked, a plain folder made there went, and the record
+  took a returned checkout's submodule repository with it.
 - **A list naming none of the project's own path proves nothing about a
   record**, as worktrees/sidebar.md has it for the list. With the project's
   `.git` gone, the enclosing repository's list lacked the path, the record read

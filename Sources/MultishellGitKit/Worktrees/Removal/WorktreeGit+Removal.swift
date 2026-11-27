@@ -4,9 +4,6 @@ import MultishellCore
 /// Taking a worktree's record out of git, and making sure first that the
 /// directory at its path is still its checkout.
 extension WorktreeGit {
-  /// How `ls-files --stage` begins a submodule's entry.
-  private static let gitlinkModePrefix = "160000 "
-
   /// Takes out one record whose directory has already gone, a lock included.
   /// Only after the trash: with the directory there it would unlink it.
   func removeRecord(of worktree: Worktree, in project: Project) async throws {
@@ -110,9 +107,9 @@ extension WorktreeGit {
     }
   }
 
-  /// What removing `worktree` would take that nothing else keeps, each refused
-  /// by `worktree remove` too: a populated submodule's repository lives in the
-  /// worktree's record. `nil` where it holds neither; a throw where git failed.
+  /// What removing `worktree` would take that nothing else keeps: an inner worktree,
+  /// or work in a populated submodule, whose repository lives in the worktree's
+  /// record. `nil` where it holds neither; a throw where git failed.
   func workHeld(
     by worktree: Worktree,
     in project: Project,
@@ -124,22 +121,7 @@ extension WorktreeGit {
       other.path.resolvingSymlinksInPath().pathComponents(under: outer)?.isEmpty == false
     }
     if let inner { return .worktree(inner.path) }
-    let index = try await runner.run(
-      ["--no-optional-locks", "ls-files", "-z", "--stage"],
-      in: worktree.path,
-    )
-    let submodules = index.split(separator: "\0").compactMap { entry -> Substring? in
-      // The first tab ends the fields; a path may hold more.
-      guard entry.hasPrefix(Self.gitlinkModePrefix) else { return nil }
-      return entry.split(separator: "\t", maxSplits: 1).last
-    }
-    let checkout = worktree.path
-    let isPopulated = await runOnDispatch {
-      submodules.contains { path in
-        FileManager.default.fileExists(atPath: checkout.appending(path: "\(path)/.git").path)
-      }
-    }
-    return isPopulated ? .submodules : nil
+    return try await submodulesHoldWork(in: worktree.path) ? .submodules : nil
   }
 
   /// `worktree remove` with no `--force`, which refuses a tree holding anything
