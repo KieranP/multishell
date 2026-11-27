@@ -24,6 +24,7 @@ struct ProjectSettingsTests {
       autoStartsAgentOnCreate: true,
       opensTerminalOnSelect: true,
       opensTerminalOnCreate: true,
+      sendsConflictsToPreferredAgent: true,
       worktreeSortOrder: .alphabetical,
       showsActiveWorktreesFirst: true,
       preferredShellID: "/bin/zsh",

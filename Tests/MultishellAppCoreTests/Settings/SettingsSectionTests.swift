@@ -20,6 +20,7 @@ struct SettingsSectionTests {
   @Test func onlyThePartsOfASplitPageAreParts() {
     let parts: [SettingsSection] = [
       .agentSettings, .agentHooks, .hooksCreate, .hooksDelete, .hooksEnvironment,
+      .worktreesNew, .worktreesExisting,
     ]
     #expect(parts.allSatisfy { $0.isPart })
     for scope in Self.scopes {

@@ -161,6 +161,14 @@ struct WorkspaceTests {
     )
   }
 
+  @Test func conflictsAreNotSentUnaskedUntilTheStateFileSaysSo() throws {
+    let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
+    let chosen = try decodeJSON(Workspace.self, #"{ "sendConflictsToPreferredAgent": true }"#)
+
+    #expect(!workspace.sendsConflictsToPreferredAgent)
+    #expect(chosen.sendsConflictsToPreferredAgent)
+  }
+
   @Test func theRemovalFieldsDefaultToAskingAndKeepingAndEveryWrittenChoiceStands() throws {
     let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
     #expect(workspace.confirmsWorktreeRemoval, "asks until told not to")

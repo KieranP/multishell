@@ -12,6 +12,8 @@ extension AppModel {
     if pendingProjectRemoval != nil { up.append(PresentationEntry(.projectRemoval)) }
     if pendingSharedSettingsTrust != nil { up.append(PresentationEntry(.sharedSettingsTrust)) }
     if pendingBranchPublish != nil { up.append(PresentationEntry(.branchPublish)) }
+    if pendingBaseUpdate != nil { up.append(PresentationEntry(.baseUpdate)) }
+    if pendingUpdateAbort != nil { up.append(PresentationEntry(.updateAbort)) }
     if newWorktreeRequest != nil { up.append(PresentationEntry(.newWorktree)) }
     if quickSwitcher != nil { up.append(PresentationEntry(.quickSwitcher)) }
     if renamingTabID != nil { up.append(PresentationEntry(.tabRename)) }
@@ -26,6 +28,8 @@ extension AppModel {
     return .json(top)
   }
 
+  // One case a presentation, exhaustive so a new one cannot go undismissed.
+  // swiftlint:disable:next cyclomatic_complexity
   private func dismiss(_ kind: PresentationEntry.Kind) {
     switch kind {
     case .alert:
@@ -44,6 +48,12 @@ extension AppModel {
 
     case .branchPublish:
       if let publish = pendingBranchPublish { answerBranchPublish(publish, publishes: false) }
+
+    case .baseUpdate:
+      if let update = pendingBaseUpdate { answerBaseUpdate(update, confirmed: false) }
+
+    case .updateAbort:
+      if let abort = pendingUpdateAbort { answerUpdateAbort(abort, confirmed: false) }
 
     // Closed, not cancelled: a create running may be a request's, not the sheet's.
     case .newWorktree: newWorktreeRequest = nil

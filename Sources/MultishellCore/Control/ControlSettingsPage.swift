@@ -17,5 +17,8 @@ public enum ControlSettingsPage: String, Codable, CaseIterable, Sendable {
   case shortcutsTerminal = "shortcuts-terminal"
   case shortcutsView = "shortcuts-view"
   case terminal
+  /// A project's Worktrees page, and All Projects' first Worktrees part.
   case worktrees
+  case worktreesExisting = "worktrees-existing"
+  case worktreesNew = "worktrees-new"
 }

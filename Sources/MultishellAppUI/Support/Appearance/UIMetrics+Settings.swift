@@ -4,6 +4,9 @@ import Foundation
 extension UIMetrics {
   /// The square a settings row's small glyph button takes: copy, and (i).
   static let settingsGlyphButtonSide: Double = 20
+  /// A disabled control's opacity: the system switch alone barely changes, and
+  /// off it reads the same whether it can be turned on or not.
+  static let settingsDisabledOpacity: Double = 0.45
 
   /// The settings window's content, fixed; AppKit's 32 pt title bar band on top
   /// makes the mockup's 640. ViewSettingsWindowTests holds the pages to it.

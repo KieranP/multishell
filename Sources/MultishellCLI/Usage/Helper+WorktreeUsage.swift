@@ -25,12 +25,25 @@ extension Helper {
         --delete-branch deletes its branch too, as
         git branch -d; --force-delete-branch deletes one holding commits no
         other branch has, as git branch -D.
+    usage: multishell worktrees update WORKTREE_ID --merge|--rebase [--force]
+                                       [--rewrite-pushed]
+        Fetch, then merge the project's default branch into it or rebase it
+        onto that branch, as Merge from and Rebase onto its base do, and
+        print how it ended. Stopped on conflicts, it stays in progress and
+        prints the conflicted paths, and where the project sends conflicts
+        to its agent, the pane opened for them. Refused over uncommitted
+        changes, which are never stashed, and while an agent in it is
+        working unless --force. A rebase of a branch its remote holds is
+        refused unless --rewrite-pushed; its next push then needs
+        --force-with-lease, and nothing is pushed.
     usage: multishell worktrees show WORKTREE_ID
         Print the worktree as `worktrees list` does, with what its row shows:
         git's status counts and tooltip, read afresh (isStatusFresh false
         where that read failed), the merge badge and the
-        branch it landed in, the last commit, and any create or remove stage
-        under way or failed, with what the hook or git said.
+        branch it landed in, the last commit, any create or remove stage
+        under way or failed, with what the hook or git said, a merge or
+        rebase stopped there with its conflict count, and the step of an
+        update from the base under way.
     usage: multishell worktrees rename WORKTREE_ID [--] [NAME]
         Name its row; no NAME hands the name back to the branch.
     usage: multishell worktrees select WORKTREE_ID

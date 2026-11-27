@@ -88,4 +88,19 @@ struct HelperWorktreeCommandsTests {
     )
     #expect(app.requests.received == [.newWorktree(expected)])
   }
+
+  @Test(arguments: [[String](), ["--merge", "--rebase"]])
+  func anUpdateTakesExactlyOneOfMergeOrRebase(flags: [String]) async throws {
+    let app = try ControlListener(reply: .done)
+    defer { app.stop() }
+
+    let output = try await HelperBinary.run(
+      ["worktrees", "update", "w-89abcdef"] + flags,
+      environment: app.environment,
+    )
+
+    #expect(!output.succeeded)
+    #expect(output.standardError.contains("one of --merge or --rebase"))
+    #expect(app.requests.received.isEmpty)
+  }
 }

@@ -65,6 +65,28 @@ struct HelperControlTests {
           )
         ),
       ),
+      (
+        ["worktrees", "update", "w-89abcdef", "--merge"],
+        .updateWorktree(
+          WorktreeUpdateOrder(
+            worktreeID: "w-89abcdef",
+            method: .merge,
+            force: false,
+            allowsRewritingPushedBranch: false,
+          )
+        ),
+      ),
+      (
+        ["worktrees", "update", "w-89abcdef", "--rebase", "--force", "--rewrite-pushed"],
+        .updateWorktree(
+          WorktreeUpdateOrder(
+            worktreeID: "w-89abcdef",
+            method: .rebase,
+            force: true,
+            allowsRewritingPushedBranch: true,
+          )
+        ),
+      ),
       (["worktrees", "select", "w-89abcdef"], .selectWorktree(id: "w-89abcdef")),
       (["tabs", "list"], .listTabs(worktree: nil)),
       (["tabs", "list", "w-89abcdef"], .listTabs(worktree: "w-89abcdef")),

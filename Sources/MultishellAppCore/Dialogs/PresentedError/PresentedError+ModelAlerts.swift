@@ -41,6 +41,55 @@ extension PresentedError {
     )
   }
 
+  /// Merge from Base or Rebase onto Base over a stop the row had not read yet.
+  static func unfinishedUpdate(_ method: UpdateMethod, on branch: String) -> PresentedError {
+    PresentedError(
+      title: t("base-update.unfinished-title", branch, method.noun),
+      message: t("base-update.unfinished-message", method.continueCommand),
+    )
+  }
+
+  /// Merge from Base or Rebase onto Base over a cherry-pick, revert or `git am` stopped partway.
+  static func pickingCommits(on branch: String) -> PresentedError {
+    PresentedError(
+      title: t("base-update.picking-title", branch),
+      message: t("base-update.picking-message"),
+    )
+  }
+
+  /// An Abort confirmed after the stop it asked about ended and another began.
+  static func abortSkipped(on branch: String) -> PresentedError {
+    PresentedError(
+      title: t("base-update.abort-skipped-title", branch),
+      message: t("base-update.abort-skipped-message"),
+    )
+  }
+
+  /// An update whose worktree switched branch while it was checked, asked or fetched.
+  static func branchMoved(from branch: String, to current: String) -> PresentedError {
+    PresentedError(
+      title: t("base-update.branch-moved-title", branch),
+      message: t("base-update.branch-moved-message", current),
+    )
+  }
+
+  /// An update whose project's base changed while it was checked, asked or fetched.
+  static func baseChanged(of branch: String, to base: String?) -> PresentedError {
+    PresentedError(
+      title: t("base-update.base-changed-title", branch),
+      message: base.map { t("base-update.base-changed-message", $0) }
+        ?? t("base-update.base-gone-message"),
+    )
+  }
+
+  /// Send Conflicts To whose pane took no paste: it closed, or its shell has not started.
+  static func conflictsNotPasted(to agentName: String) -> PresentedError {
+    PresentedError(
+      title: t("conflicts.not-sent-title"),
+      message: t("handoff.not-pasted", agentName),
+    )
+  }
+
   static func worktreeDirectoryUnanswered(_ path: String) -> PresentedError {
     PresentedError(
       title: t("error.worktree-unanswered-title"),

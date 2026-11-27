@@ -135,9 +135,10 @@ that write nothing. Newest at the bottom.
   would end the write but cost the speed-up on the large repositories that turn
   it on.
 - **What writes does so once, on a request**: add, remove, prune, a branch
-  delete, Fetch and the push before a new pull request, each followed by one
-  round of reads that write nothing. The one write the app makes unasked is the
-  index refresh a second after a create, once per worktree.
+  delete, Fetch, the push before a new pull request, and a merge or rebase from
+  the base or its Abort, each followed by one round of reads that write nothing.
+  The one write the app makes unasked is the index refresh a second after a
+  create, once per worktree.
 - **A change in a git directory inside another's is the inner project's.** A
   submodule added as a project keeps its git directory under the outer one's
   `modules/`, and the first match a dictionary yielded picked between them.

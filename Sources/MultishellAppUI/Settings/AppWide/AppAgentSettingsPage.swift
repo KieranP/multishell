@@ -51,8 +51,8 @@ struct AppAgentSettingsPage: View {
           model.keysInParentheses(.newShellTab),
         ),
         isOn: model.settingBinding(\.autoStartsAgent, write: model.setAutoStartsAgent),
+        isSwitchEnabled: model.hasPreferredAgent,
       )
-      .disabled(!model.hasPreferredAgent)
       InfoToggle(
         t("agents.auto-start-create"),
         info: t("agents.auto-start-create-info"),
@@ -60,8 +60,11 @@ struct AppAgentSettingsPage: View {
           \.autoStartsAgentOnCreate,
           write: model.setAutoStartsAgentOnCreate,
         ),
+        isSwitchEnabled: model.hasPreferredAgent,
       )
-      .disabled(!model.hasPreferredAgent)
+      if let caption = model.preferredAgentNeededCaption {
+        SettingsCaption(caption)
+      }
     }
   }
 }

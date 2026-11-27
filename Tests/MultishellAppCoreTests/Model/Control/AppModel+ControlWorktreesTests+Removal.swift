@@ -46,6 +46,33 @@ extension AppModelControlWorktreesTests {
     )
   }
 
+  @Test func aRemovalWhileAnUpdateRunsThereIsRefusedAsAnUpdateUnderWay() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let feature = try await harness.featureBehindOrigin()
+    let gate = harness.root.appendingPathComponent("gate")
+    let fetching = harness.root.appendingPathComponent("fetching")
+    try harness.holdFetches(until: gate, touching: fetching)
+    let update = Task { await harness.model.requestBaseUpdate(of: feature, by: .merge) }
+    try await harness.awaitFetch(fetching)
+    let id = ControlID.worktree(feature.id)
+
+    let reply = await harness.model.answer(
+      .removeWorktree(
+        WorktreeRemovalOrder(
+          worktreeID: id,
+          deletesBranch: false,
+          forcesBranchDeletion: false,
+          force: true,
+        )
+      )
+    )
+    try Data().write(to: gate)
+    await update.value
+
+    #expect(reply == .refused(.updateUnderWay(id: id)))
+  }
+
   @Test func aDetachedWorktreeHoldingCommitsOnNoBranchIsRefusedUnlessForced() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

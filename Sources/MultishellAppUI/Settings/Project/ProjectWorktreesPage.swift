@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Where the project's worktrees go, how their branches are named, and the
-/// branch they merge into, beside the values it follows until overridden.
+/// Where the project's worktrees go, how their branches are named, the branch
+/// they merge into, and where conflicts from it go, beside the values it follows.
 struct ProjectWorktreesPage: View {
   let model: AppModel
   let project: Project
@@ -55,6 +55,22 @@ struct ProjectWorktreesPage: View {
               text: branch,
               prompt: Text(verbatim: AppModel.usualDefaultBranchName),
             )
+          },
+        )
+      }
+      OverrideTable(t("project.table-updating")) {
+        OverrideRow(
+          model: model,
+          project: project,
+          setting: \.sendsConflictsToPreferredAgent,
+          label: t("worktrees.send-conflicts"),
+          info: t("project.send-conflicts-info"),
+          globalValue: model.sendsConflictsGlobalValue,
+          fallback: model.workspace.sendsConflictsToPreferredAgentGlobally,
+          caption: { _ in model.agentNeededCaption(in: project) },
+          control: { isOn in
+            SettingsSwitch(label: t("worktrees.send-conflicts"), isOn: isOn)
+              .disabled(!model.hasAgent(in: project))
           },
         )
       }

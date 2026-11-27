@@ -48,6 +48,8 @@ struct RootView: View {
     .projectRemovalAlert(model: model, window: .workspace)
     .sharedSettingsTrustDialog(model: model)
     .branchPublishDialog(model: model)
+    .baseUpdateDialog(model: model)
+    .updateAbortAlert(model: model)
     .pendingCloseAlert(model: model)
     .newWorktreeSheet(model: model)
     .presentedErrorAlert(model: model, window: .workspace)

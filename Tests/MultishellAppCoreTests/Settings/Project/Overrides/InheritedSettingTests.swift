@@ -30,6 +30,6 @@ struct InheritedSettingTests {
     let blank = InheritedSetting(value: "", isFromRepository: false)
     #expect(blank.prefixGlobalValue.text == "none")
     #expect(blank.directoryGlobalValue.text == "default")
-    #expect(blank.directoryGlobalValue.settingsSection == .worktrees)
+    #expect(blank.directoryGlobalValue.settingsSection == .worktreesNew)
   }
 }

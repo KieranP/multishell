@@ -17,7 +17,8 @@ extension AppModel {
     // Here, before the stage begins, as each request reaches this in a Task of its own.
     // The main worktree goes on, for the coordinator's refusal to say why.
     guard let coordinator, let project = workspace.project(worktree.projectID),
-      !isBusy(worktree.id), !pathClaims.isClaimed(worktree.id)
+      !isBusy(worktree.id), !pathClaims.isClaimed(worktree.id),
+      baseUpdateSteps[worktree.id] == nil
     else { return nil }
     if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
     let effective = effectiveProject(project)

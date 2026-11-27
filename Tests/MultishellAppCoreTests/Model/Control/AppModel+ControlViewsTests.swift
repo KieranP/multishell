@@ -103,9 +103,9 @@ struct AppModelControlViewsTests {
           .noSettingsPage(
             .hooksCreate,
             pages: [
-              .general, .worktrees, .terminal, .agents, .agentSettings, .agentHooks,
-              .notifications, .appearance, .shortcutsFile, .shortcutsEdit, .shortcutsView,
-              .shortcutsTerminal,
+              .general, .worktrees, .worktreesNew, .worktreesExisting, .terminal, .agents,
+              .agentSettings, .agentHooks, .notifications, .appearance, .shortcutsFile,
+              .shortcutsEdit, .shortcutsView, .shortcutsTerminal,
             ],
           )
         )

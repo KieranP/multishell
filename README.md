@@ -240,6 +240,9 @@ press the keys you want; a clash with another command asks before it takes them.
   `.multishell.json`.
 - **A block of ports per worktree**, in `MULTISHELL_PORT` and `{{port}}`, so dev
   servers in two worktrees never collide.
+- **Merge from or rebase onto the base** from a worktree's menu, its remote
+  fetched first. Nothing is stashed, and conflicts wait for you or go to an
+  agent, which a setting can do on its own.
 - **Auto Rename** asks an agent's CLI to name a worktree from its branch's
   changes. No API key, and the git branch keeps its name.
 - **Removing a worktree moves it to the Trash**, or deletes it if you prefer.

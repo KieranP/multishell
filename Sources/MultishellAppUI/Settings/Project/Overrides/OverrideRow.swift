@@ -16,7 +16,7 @@ struct OverrideRow<Value: Equatable & Sendable, Control: View>: View {
   /// repository's file may have decided.
   let fallback: Value
   /// A value computed live under the row, given whether the project overrides.
-  let caption: ((Bool) -> String)?
+  let caption: ((Bool) -> String?)?
   /// The project's own value's control, given its binding.
   @ViewBuilder let control: (Binding<Value>) -> Control
 
@@ -39,8 +39,8 @@ struct OverrideRow<Value: Equatable & Sendable, Control: View>: View {
           }
         }
       }
-      if let caption {
-        SettingsCaption(caption(isOverridden.wrappedValue))
+      if let text = caption?(isOverridden.wrappedValue) {
+        SettingsCaption(text)
       }
     }
   }

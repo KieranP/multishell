@@ -15,7 +15,7 @@ do.
 | Other platforms | None                            |
 | Build           | Xcode 26 or newer               |
 | libghostty      | Ghostty's Zig, Metal toolchain  |
-| git             | 2.36 or newer advised           |
+| git             | 2.39 or newer                   |
 | Release         | Source only, no notarised build |
 | Language        | English                         |
 
@@ -27,9 +27,9 @@ app has never been built on one. Only Xcode 27 has been built with, the floor of
 26 resting on `xcodebuild` behaving there as it does in 27; see
 [#23](https://github.com/KieranP/multishell/issues/23).
 
-A git older than 2.36 has no `-z` for `git worktree list`, so the app reads the
-newline form instead, and a worktree whose path holds a newline shows a
-directory that does not exist.
+git 2.39 is required, not advised: Rebase onto Base passes `--no-update-refs`,
+and no git read keeps a fallback for an older version. The Command Line Tools
+for macOS 26 ship a later git, so an older one comes from a version manager.
 
 ## Shells
 

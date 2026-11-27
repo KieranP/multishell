@@ -103,8 +103,10 @@
   scroller is an overlay, so what is below the fold says nothing, and forcing
   the indicators changes nothing there. Project Hooks' six editors were 973 pt;
   All Projects' agent hooks grow with every agent installed; Shortcuts splits by
-  menu (shortcuts.md). The parts are sidebar rows under their page, not a
-  segmented control in the form, listed only while their page is open (owner,
+  menu (shortcuts.md). All Projects' Worktrees needed 602 pt of 558 once
+  Updating from base joined it, so New worktrees holds Creating and Ports and
+  Existing worktrees the rest. The parts are sidebar rows under their page, not
+  a segmented control in the form, listed only while their page is open (owner,
   2026-11-19). The arrow keys step through the rows listed, a closed page's row
   opening its first part as a click does.
 - **One settings window, a sidebar of pages, for All Projects and each
@@ -180,8 +182,9 @@
   - Unproven: that a page's column is 590 pt, the content running up under the
     title band, rather than the 558 pt `settingsPageSize` holds pages to. The
     tighter bound costs only an earlier split.
-  - The auto-start switches disable whole, (i) included, with no agent chosen,
-    as they did before the merge; only the Flags field is new.
+  - With no agent chosen the auto-start switches grey alone, their (i) still
+    opening, and count as off in every project, a project with its own agent
+    included: it turns one on by its own override (owner's choice, 2026-11-27).
   - Unproven: that a double-click on the header minimises the Settings window,
     which has no minimise button, when the system setting says Minimize.
   - `ProjectHooksPage` takes a `SettingsSection` and draws nothing for one not

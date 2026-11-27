@@ -18,7 +18,7 @@ struct SettingsButtonFace<Label: View>: View {
       .padding(.horizontal, 10)
       .padding(.vertical, UIMetrics.settingsControlVerticalInset)
       .settingsControlFace()
-      .opacity(isEnabled ? (isPressed ? 0.7 : 1) : 0.45)
+      .opacity(isEnabled ? (isPressed ? 0.7 : 1) : UIMetrics.settingsDisabledOpacity)
       .contentShape(.rect)
   }
 }

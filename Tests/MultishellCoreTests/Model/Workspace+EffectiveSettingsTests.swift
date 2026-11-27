@@ -151,6 +151,58 @@ struct WorkspaceEffectiveSettingsTests {
     #expect(!workspace.autoStartsAgent(for: forcedOff))
   }
 
+  @Test func sendingConflictsFollowsTheGlobalUnlessOverriddenAndNeedsAnAgent() {
+    var workspace = Workspace()
+    workspace.preferredAgentID = "claude"
+    let follows = Project(path: URL(fileURLWithPath: "/a"))
+    let forcedOn = Project(
+      path: URL(fileURLWithPath: "/b"),
+      settings: ProjectSettings(sendsConflictsToPreferredAgent: true),
+    )
+    let forcedOff = Project(
+      path: URL(fileURLWithPath: "/c"),
+      settings: ProjectSettings(sendsConflictsToPreferredAgent: false),
+    )
+    let noAgent = Project(
+      path: URL(fileURLWithPath: "/d"),
+      settings: ProjectSettings(preferredAgentID: "none", sendsConflictsToPreferredAgent: true),
+    )
+
+    #expect(!workspace.sendsConflictsToPreferredAgent(for: follows), "off by default")
+    #expect(workspace.sendsConflictsToPreferredAgent(for: forcedOn))
+    #expect(!workspace.sendsConflictsToPreferredAgent(for: noAgent), "no agent to send to")
+
+    workspace.sendsConflictsToPreferredAgent = true
+    #expect(workspace.sendsConflictsToPreferredAgent(for: follows))
+    #expect(!workspace.sendsConflictsToPreferredAgent(for: forcedOff))
+  }
+
+  @Test func anAgentSwitchOnInAllProjectsCountsAsOffWithNoGlobalAgent() {
+    var workspace = Workspace()
+    workspace.autoStartsAgent = true
+    workspace.autoStartsAgentOnCreate = true
+    workspace.sendsConflictsToPreferredAgent = true
+    let ownAgent = Project(
+      path: URL(fileURLWithPath: "/a"),
+      settings: ProjectSettings(preferredAgentID: "codex"),
+    )
+    let ownAgentOverriding = Project(
+      path: URL(fileURLWithPath: "/b"),
+      settings: ProjectSettings(preferredAgentID: "codex", sendsConflictsToPreferredAgent: true),
+    )
+
+    #expect(!workspace.autoStartsAgent(for: ownAgent))
+    #expect(!workspace.autoStartsAgentOnCreate(for: ownAgent))
+    #expect(!workspace.sendsConflictsToPreferredAgent(for: ownAgent))
+    #expect(!workspace.sendsConflictsToPreferredAgentGlobally)
+    #expect(workspace.sendsConflictsToPreferredAgent(for: ownAgentOverriding))
+
+    workspace.preferredAgentID = "claude"
+
+    #expect(workspace.autoStartsAgent(for: ownAgent))
+    #expect(workspace.sendsConflictsToPreferredAgentGlobally)
+  }
+
   @Test func autoStartOnCreationIsAskedApartFromAutoStartOnTabOpen() {
     var workspace = Workspace()
     workspace.preferredAgentID = "claude"

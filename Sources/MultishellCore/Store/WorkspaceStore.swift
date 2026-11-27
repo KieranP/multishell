@@ -815,6 +815,10 @@ extension WorkspaceStore {
     workspace.trashesRemovedWorktrees = enabled
   }
 
+  public func setSendsConflictsToPreferredAgent(_ enabled: Bool) {
+    workspace.sendsConflictsToPreferredAgent = enabled
+  }
+
   public func setPortBlockStart(_ port: Int) {
     workspace.portBlockStart = port.clamped(to: PortBlock.starts)
     workspace.settlePortBlocks(avoiding: Set(removalHookBlocks.values))

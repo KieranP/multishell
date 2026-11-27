@@ -23,6 +23,8 @@ extension SettingsSection {
       case .shortcutsView: .shortcutsView
       case .terminal: .terminal
       case .worktrees: .worktrees
+      case .worktreesExisting: .worktreesExisting
+      case .worktreesNew: .worktreesNew
       }
   }
   // swiftlint:enable cyclomatic_complexity

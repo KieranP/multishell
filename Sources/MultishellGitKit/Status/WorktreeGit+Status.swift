@@ -49,6 +49,7 @@ extension WorktreeGit {
       in: path,
     )
     var (status, entries) = WorktreeStatusParser.parse(output)
+    status.unfinishedUpdate = await unfinishedUpdate(in: path)
     if let base, status.countsAhead(past: base) {
       status.ahead = try await unpushedCommitCount(past: base, in: path)
     }

@@ -65,10 +65,44 @@ struct AccessibilityTextSidebarTests {
     )
   }
 
+  @Test func aStoppedRebaseIsSpokenInPlaceOfTheCountsAndAResolvedOneIsNotClean() {
+    let spoken = { (status: WorktreeStatus) in
+      AccessibilityText.worktree(
+        feature,
+        state: nil,
+        status: status,
+        operation: nil,
+        terminalCount: 0,
+        isSelected: false,
+        customName: nil,
+        standing: BranchStanding(mergeState: .unknown, services: .empty),
+        autoRename: nil,
+      )
+    }
+    var conflicted = WorktreeStatus()
+    conflicted.unfinishedUpdate = .rebase
+    conflicted.conflicted = 2
+    conflicted.changedFiles = 2
+    var resolved = WorktreeStatus()
+    resolved.unfinishedUpdate = .merge
+
+    #expect(spoken(conflicted) == "feat, linked worktree, Nothing running, Rebasing · 2 conflicts")
+    #expect(spoken(resolved) == "feat, linked worktree, Nothing running, Merging")
+    #expect(WorktreeStatus.badged(resolved) == nil, "the board card draws no empty badge")
+  }
+
   @Test func aFailedAutoRenamesReasonIsTheRowsHint() {
     #expect(AccessibilityText.worktreeHint(autoRename: .failed("Not logged in")) == "Not logged in")
     #expect(AccessibilityText.worktreeHint(autoRename: .running) == "")
     #expect(AccessibilityText.worktreeHint(autoRename: nil) == "")
+  }
+
+  @Test func aRunningMergeRebaseOrAbortIsTheRowsValue() {
+    #expect(
+      AccessibilityText.worktreeValue(baseUpdateStep: .updating(.rebase))
+        == "Rebasing onto the base"
+    )
+    #expect(AccessibilityText.worktreeValue(baseUpdateStep: nil) == "")
   }
 
   @Test func aWorktreeRowReadsEverythingItsGlyphsMean() {

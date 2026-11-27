@@ -53,7 +53,8 @@ extension SettingsPage {
         t("worktrees.section-change-counts"), t("worktrees.indicator"),
         t("worktrees.diff-algorithm"), t("worktrees.section-removing"),
         t("worktrees.confirm-removal"), t("worktrees.delete-branch"),
-        t("worktrees.trash-removed"),
+        t("worktrees.trash-removed"), t("worktrees.section-updating"),
+        t("worktrees.send-conflicts"),
       ]
 
     case .hooks, .integrations: []
@@ -93,7 +94,7 @@ extension SettingsPage {
     case .worktrees:
       [
         t("project.table-new-worktrees"), t("project.worktree-path"), t("project.branch-prefix"),
-        t("project.default-branch"),
+        t("project.default-branch"), t("project.table-updating"), t("worktrees.send-conflicts"),
       ]
 
     case .appearance, .notifications, .shortcuts: []

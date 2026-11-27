@@ -18,6 +18,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     case customShellPath, preferredEditorID, customEditorCommand
     case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
+    case sendsConflictsToPreferredAgent = "sendConflictsToPreferredAgent"
     case projectHookTimeoutSeconds = "hookTimeoutSeconds"
     case gitStatusIndicator, diffAlgorithm, fileTabLayout, filesPanelMode, changeScope
     case showsFilesPanel, showsIgnoredFiles, showsAllTerminals
@@ -113,6 +114,9 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// A removed worktree's directory goes to the Trash. Off, it is deleted
   /// outright, for trees too large to keep there.
   public internal(set) var trashesRemovedWorktrees = true
+  /// A merge or rebase from the base that stops on conflicts opens a tab
+  /// running the preferred agent on them. Off, they wait for Send Conflicts To.
+  public internal(set) var sendsConflictsToPreferredAgent = false
   /// How long a project hook may run before it is stopped and reported.
   /// Zero is no limit.
   public internal(set) var projectHookTimeoutSeconds = Self.defaultProjectHookTimeoutSeconds
@@ -246,6 +250,11 @@ public struct Workspace: Codable, Hashable, Sendable {
       Bool.self,
       forKey: .trashesRemovedWorktrees,
       or: true,
+    )
+    sendsConflictsToPreferredAgent = try container.decode(
+      Bool.self,
+      forKey: .sendsConflictsToPreferredAgent,
+      or: false,
     )
     projectHookTimeoutSeconds = try container.decode(
       Int.self,

@@ -29,9 +29,9 @@ extension Helper {
       let order = try worktreeOrder(branch: words[words.count - 1], project: project, optionWords)
       return try ask(.newWorktree(order), environment: environment, timeout: nil)
 
-    case ("remove", 1):
-      let order = try removalOrder(try worktreeID(words[0], topic: topic), optionWords)
-      return try ask(.removeWorktree(order), environment: environment, timeout: nil)
+    case ("remove", 1), ("update", 1):
+      let request = try removalOrUpdateRequest(arguments.first, of: words[0], optionWords)
+      return try ask(request, environment: environment, timeout: nil)
 
     case ("show", 1):
       try noOptions(optionWords, topic: topic)
@@ -73,11 +73,23 @@ extension Helper {
 
     default:
       throw UsageError(
-        "worktrees needs: list, add, show, rename, remove, select, auto-rename, hide, unhide, "
-          + "clear-status or resize-groups",
+        "worktrees needs: list, add, show, rename, remove, update, select, auto-rename, hide, "
+          + "unhide, clear-status or resize-groups",
         topic: topic,
       )
     }
+  }
+
+  /// `remove`'s request, else `update`'s, each answered once git is done, however long.
+  private static func removalOrUpdateRequest(
+    _ word: String?,
+    of worktree: String,
+    _ optionWords: ArraySlice<String>,
+  ) throws -> ControlRequest {
+    let id = try worktreeID(worktree, topic: ControlCommand.worktrees.rawValue)
+    return word == "remove"
+      ? .removeWorktree(try removalOrder(id, optionWords))
+      : .updateWorktree(try updateOrder(id, optionWords))
   }
 
   private static func removalOrder(
@@ -96,6 +108,28 @@ extension Helper {
       deletesBranch: forcesBranchDeletion || options.has("delete-branch"),
       forcesBranchDeletion: forcesBranchDeletion,
       force: options.has("force"),
+    )
+  }
+
+  private static func updateOrder(
+    _ id: String,
+    _ optionWords: ArraySlice<String>,
+  ) throws -> WorktreeUpdateOrder {
+    let topic = ControlCommand.worktrees.rawValue
+    let options = try CommandOptions(
+      optionWords,
+      valued: [],
+      flags: ["merge", "rebase", "force", "rewrite-pushed"],
+      topic: topic,
+    )
+    guard options.has("merge") != options.has("rebase") else {
+      throw UsageError("worktrees update takes one of --merge or --rebase", topic: topic)
+    }
+    return WorktreeUpdateOrder(
+      worktreeID: id,
+      method: options.has("rebase") ? .rebase : .merge,
+      force: options.has("force"),
+      allowsRewritingPushedBranch: options.has("rewrite-pushed"),
     )
   }
 

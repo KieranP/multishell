@@ -26,7 +26,7 @@ struct ProjectHooksPage: View {
 
       case .agentHooks, .agents, .agentSettings, .appearance, .general, .integrations,
         .notifications, .shortcutsEdit, .shortcutsFile, .shortcutsTerminal, .shortcutsView,
-        .terminal, .worktrees:
+        .terminal, .worktrees, .worktreesExisting, .worktreesNew:
         EmptyView()
       }
     }

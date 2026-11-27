@@ -44,6 +44,10 @@ public final class AppModel<Surface> {
   @ObservationIgnored var requestsBeingAnswered: Set<UUID> = []
   public var newWorktreeRequest: NewWorktreeRequest?
   public internal(set) var pendingWorktreeRemoval: PendingWorktreeRemoval?
+  /// Merge from Base or Rebase onto Base's question, until answered.
+  public internal(set) var pendingBaseUpdate: PendingBaseUpdate?
+  /// Abort Merge or Abort Rebase's question over a working agent, until answered.
+  public internal(set) var pendingUpdateAbort: PendingUpdateAbort?
   public internal(set) var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
   /// A project removal waiting on its dialog, in whichever window asked.
   var pendingProjectRemoval: PendingProjectRemoval?
@@ -359,6 +363,8 @@ public final class AppModel<Surface> {
   @ObservationIgnored var alertedMissingAgentIDs: Set<String> = []
 
   public internal(set) var autoRenames: [Worktree.ID: AutoRenameState] = [:]
+  /// What the app is doing about each worktree's base, until it ends.
+  public internal(set) var baseUpdateSteps: [Worktree.ID: BaseUpdateStep] = [:]
   var scannedBranchTips: [Worktree.ID: String] = [:]
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   public internal(set) var statuses: [Worktree.ID: WorktreeStatus] = [:]

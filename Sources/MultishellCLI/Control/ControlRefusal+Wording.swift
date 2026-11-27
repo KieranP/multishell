@@ -10,6 +10,10 @@ extension ControlRefusal {
     case .alert(let title, let message): "\(title) \(message)"
     case .autoRenameUnavailable(let id): "Auto Rename is greyed out for worktree \(id)"
 
+    case .baseUpdateUnavailable(let id):
+      "worktree \(id) has no base to update from: it is detached, bare, on the default "
+        + "branch itself, or its project has none"
+
     case .checksNotRead(let id, let reason):
       "worktree \(id)'s checks could not be read, so nothing was sent: \(reason)"
 
@@ -136,6 +140,10 @@ extension ControlRefusal {
     case .paneNotLive(let id):
       "pane \(id) has no shell yet; `multishell worktrees select WORKTREE_ID` starts its worktree's"
 
+    case .pickingCommits(let id):
+      "worktree \(id) has a cherry-pick, revert or git am stopped partway; finish it "
+        + "with its own --continue, or abort it, first"
+
     case .projectBesideItself(let id): "project \(id) moves beside another project, not itself"
     case .projectFolderMissing(let id): "project \(id)'s folder is gone"
     case .projectNotAdded(let path): "\(path) was not added as a project"
@@ -143,6 +151,11 @@ extension ControlRefusal {
     case .quickSwitcherClosed: "the quick switcher closed before a row was chosen"
     case .removalVetoed(let id, let message): "worktree \(id) was not removed: \(message)"
     case .replyNotEncoded: "Multishell could not write its answer"
+
+    case .rewritesPushedBranch(let id):
+      "worktree \(id)'s branch is on its remote, so after a rebase its next push needs "
+        + "--force-with-lease; --rewrite-pushed rebases anyway"
+
     case .screenshotFailed: "nothing was drawn to capture; the window or pane is off screen"
     case .serviceStandInUnreadable(let reason): "the stand-in was not read: \(reason)"
 
@@ -169,6 +182,18 @@ extension ControlRefusal {
 
     case .tabShowsNoFile(let id): "tab \(id) is a terminal's, with no file's bar"
 
+    case .uncommittedChanges(let id, let changes):
+      "worktree \(id) has uncommitted changes, which are never stashed; commit them first:\n"
+        + Self.listed(changes)
+
+    case .unfinishedUpdate(let id, let method):
+      "worktree \(id) is partway through a \(method.rawValue); `\(method.continueCommand)` "
+        + "finishes it and `git \(method.rawValue) --abort` undoes it"
+
+    case .updateUnderWay(let id):
+      "worktree \(id) is busy with its base: a check, the fetch, the merge or rebase, or an "
+        + "Abort is under way"
+
     case .widthOutOfRange(let minimum, let maximum):
       "the width takes \(Int(minimum)) to \(Int(maximum)) points"
 
@@ -192,5 +217,13 @@ extension ControlRefusal {
     case .worktreeNotRemoved(let id): "worktree \(id) was not removed"
     case .worktreeNotHideable(let id): "worktree \(id) is the project's own checkout, never hidden"
     }
+  }
+
+  /// One change a line, indented, those past the alert's limit counted.
+  private static func listed(_ changes: [String]) -> String {
+    let listed = UncommittedChangeList(changes)
+    var lines = listed.shown.map { "  " + $0 }
+    if listed.unlisted > 0 { lines.append("  and \(listed.unlisted) more") }
+    return lines.joined(separator: "\n")
   }
 }

@@ -6,6 +6,21 @@ extension Workspace {
     EditorCatalogue.effectiveID(preferredEditorID)
   }
 
+  /// The All Projects switches that start the agent as a project follows them: off
+  /// with no global agent, as their switches are then greyed and cannot be turned off.
+  public var autoStartsAgentGlobally: Bool { autoStartsAgent && hasGlobalAgent }
+
+  public var autoStartsAgentOnCreateGlobally: Bool { autoStartsAgentOnCreate && hasGlobalAgent }
+
+  public var sendsConflictsToPreferredAgentGlobally: Bool {
+    sendsConflictsToPreferredAgent && hasGlobalAgent
+  }
+
+  /// Whether All Projects names an agent; a blank or None does not.
+  public var hasGlobalAgent: Bool {
+    AgentCatalogue.effectiveID(global: preferredAgentID, override: nil) != nil
+  }
+
   public func effectiveWorktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effectiveWorktreeSettings(defaults: worktreeDefaults)
   }
@@ -34,12 +49,20 @@ extension Workspace {
   /// Whether a new tab in this project starts its agent: the project's say
   /// when it has one, else the global, and only when an agent is in force.
   public func autoStartsAgent(for project: Project) -> Bool {
-    (project.settings.autoStartsAgent ?? autoStartsAgent) && effectiveAgentID(for: project) != nil
+    (project.settings.autoStartsAgent ?? autoStartsAgentGlobally)
+      && effectiveAgentID(for: project) != nil
   }
 
   /// The same for the tab a worktree created here opens.
   public func autoStartsAgentOnCreate(for project: Project) -> Bool {
-    (project.settings.autoStartsAgentOnCreate ?? autoStartsAgentOnCreate)
+    (project.settings.autoStartsAgentOnCreate ?? autoStartsAgentOnCreateGlobally)
+      && effectiveAgentID(for: project) != nil
+  }
+
+  /// Whether a merge or rebase here that stops on conflicts opens the agent on
+  /// them unasked: the project's say, else the global, and only with an agent in force.
+  public func sendsConflictsToPreferredAgent(for project: Project) -> Bool {
+    (project.settings.sendsConflictsToPreferredAgent ?? sendsConflictsToPreferredAgentGlobally)
       && effectiveAgentID(for: project) != nil
   }
 
