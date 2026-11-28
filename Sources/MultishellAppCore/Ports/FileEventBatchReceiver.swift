@@ -4,8 +4,10 @@ import Foundation
 /// What a `FileEventStream` hands each batch to, on the stream's own queue:
 /// each path becomes the directory holding it, as `WatchedDirectories` reports it.
 final class FileEventBatchReceiver: Sendable {
-  private static let droppedFlags = FSEventStreamEventFlags(
+  /// A drop, or events coalesced into one at a folder whose whole subtree may have changed.
+  private static let rescanFlags = FSEventStreamEventFlags(
     kFSEventStreamEventFlagUserDropped | kFSEventStreamEventFlagKernelDropped
+      | kFSEventStreamEventFlagMustScanSubDirs
   )
 
   private let watched: WatchedDirectories
@@ -16,10 +18,10 @@ final class FileEventBatchReceiver: Sendable {
     self.onChange = onChange
   }
 
-  /// A batch the kernel or fseventsd dropped names nothing usable, so every
-  /// watched directory counts as changed.
+  /// A batch dropped or coalesced names nothing usable, so every watched
+  /// directory counts as changed.
   func receive(_ paths: [String], flags: [FSEventStreamEventFlags]) {
-    if flags.contains(where: { $0 & Self.droppedFlags != 0 }) {
+    if flags.contains(where: { $0 & Self.rescanFlags != 0 }) {
       onChange(watched.directories)
       return
     }

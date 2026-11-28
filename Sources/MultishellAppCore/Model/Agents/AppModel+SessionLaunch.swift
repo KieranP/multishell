@@ -9,8 +9,8 @@ extension AppModel {
     var prepared = session
     prepared.shellOverride = shellPath(forWorktree: session.worktreeID)
     prepared.port = workspace.port(of: session.worktreeID)
-    if let action = pendingActionRuns.removeValue(forKey: session.id) {
-      prepared.command = actionCommand(action, for: prepared)
+    if let run = pendingActionRuns.removeValue(forKey: session.id) {
+      prepared.command = actionCommand(run, for: prepared)
       setIfChanged(\.actionRunStarts, actionRunStarts.merging([session.id: Date()]) { $1 })
       return prepared
     }

@@ -16,9 +16,9 @@ extension AppModel {
         noteFileTabChanged(tab.id)
         continue
       }
-      let folder = tab.path.slashSeparatedFolder
+      // A folder moved or trashed above the tab is heard only at its own parent.
       let isTouched = (targets.fileChangesByWorktree[worktree.id] ?? []).contains { path in
-        path == FileChangeTargets.wholeWorktree || path == folder || path == tab.path
+        path == FileChangeTargets.wholeWorktree || path == tab.path || tab.path.isPath(under: path)
       }
       if isTouched { checkFileTabSignature(tab, in: worktree) }
     }

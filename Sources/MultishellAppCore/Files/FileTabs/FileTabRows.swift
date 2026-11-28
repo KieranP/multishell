@@ -9,7 +9,8 @@ public struct FileTabRows: Equatable, Sendable {
   public let hasModeChange: Bool
   public let lineCounts: FileLineCounts
 
-  var lines: [DiffLine] { displayText.lines }
+  /// Each line whole, a review quoting it and a deleted file keeping it as read.
+  var lines: [DiffLine] { displayText.uncutLines }
   public var hasLineChanges: Bool { !lineCounts.isEmpty }
   /// Every row added, or every row removed: a file new or deleted whole, which
   /// Split would show on one side with the other blank.

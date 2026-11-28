@@ -13,7 +13,7 @@ public struct WorktreeCoordinator: Sendable {
   }
 
   /// The git on the process's own PATH, which from the Finder is the system directories
-  /// alone; `resolved(searchPath:replacing:)` replaces it once the login shell's is known.
+  /// alone; `resolved` replaces it once the login shell's is known.
   public init() throws {
     self.init(git: WorktreeGit(runner: try GitRunner()))
   }
@@ -23,6 +23,7 @@ public struct WorktreeCoordinator: Sendable {
   public static func resolved(
     searchPath: String?,
     replacing previous: Self?,
+    loginVariables: [String: String] = [:],
   ) async throws -> Self {
     let executable = await GitExecutable.resolve(
       searchPath: searchPath,
@@ -31,6 +32,7 @@ public struct WorktreeCoordinator: Sendable {
     let runner = try GitRunner(
       executable: executable,
       searchPath: searchPath,
+      loginVariables: loginVariables,
       runLog: previous?.git.runLog ?? GitRunLog(),
     )
     // Reads still in flight on the previous git hold slots the new one must count.

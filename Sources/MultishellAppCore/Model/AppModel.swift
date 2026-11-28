@@ -279,7 +279,13 @@ public final class AppModel<Surface> {
   public internal(set) var worktreeCreationStep: WorktreeCreationStep?
   /// The create or remove running on each worktree, shown in its detail pane;
   /// see `WorktreeOperations` for who owns an entry.
-  public internal(set) var worktreeOperations = WorktreeOperations()
+  public internal(set) var worktreeOperations = WorktreeOperations() {
+    didSet {
+      guard let id = worktreeIDInView, oldValue[id] != nil, worktreeOperations[id] == nil
+      else { return }
+      markInViewSeen()
+    }
+  }
   /// The work building a worktree, and the paths it is building at. Not
   /// observed: the pane draws from `worktreeOperations` beside them.
   @ObservationIgnored var stageHandles = WorktreeStageHandles()
@@ -291,7 +297,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var pendingAgentTasks: [TerminalSession.ID: String] = [:]
   /// The action each new session runs at its first launch, and only then, so a
   /// relaunch never starts one; see Docs/design/actions.md.
-  @ObservationIgnored var pendingActionRuns: [TerminalSession.ID: ProjectAction] = [:]
+  @ObservationIgnored var pendingActionRuns: [TerminalSession.ID: PendingActionRun] = [:]
   /// When each action still running started: the tab's dot cannot say, as the
   /// shell taking over after it reports its own commands there.
   var actionRunStarts: [TerminalSession.ID: Date] = [:]

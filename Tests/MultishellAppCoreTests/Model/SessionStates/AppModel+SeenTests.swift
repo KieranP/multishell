@@ -28,6 +28,45 @@ struct AppModelSeenTests {
     #expect(harness.model.state(ofPane: other) == nil, "focusing it is seeing it")
   }
 
+  @Test func aDoneInTheFocusedPaneOfAMinimizedWindowIsBanneredAndSeenOnceShown() throws {
+    let harness = Harness()
+    harness.model.setNotificationPreference(.everyState)
+    harness.model.select(harness.main)
+    let pane = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+      .focusedSessionID
+    harness.platform.isWorkspaceWindowMinimized = true
+
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: pane))
+
+    #expect(harness.model.state(ofPane: pane) == .done)
+    #expect(harness.notifier.posted.count == 1)
+
+    harness.platform.isWorkspaceWindowMinimized = false
+    harness.platform.onWorkspaceWindowDidBecomeVisible?()
+
+    #expect(harness.model.state(ofPane: pane) == nil)
+    #expect(harness.notifier.withdrawn.count == 1)
+  }
+
+  @Test func aDoneBehindAFailedRemovalsPaneIsBanneredAndSeenOnceDismissed() throws {
+    let harness = Harness()
+    harness.model.setNotificationPreference(.everyState)
+    harness.model.select(harness.feature)
+    let pane = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+      .focusedSessionID
+    harness.model.worktreeOperations.begin(.preDeleteHook, on: harness.feature.id)
+    harness.model.worktreeOperations.fail(.preDeleteHook, on: harness.feature.id, message: "no")
+
+    harness.messageSource.send(SessionStateReport(state: .done, sessionID: pane))
+
+    #expect(harness.model.state(ofPane: pane) == .done)
+    #expect(harness.notifier.posted.count == 1)
+
+    harness.model.dismissOperationFailure(of: harness.feature)
+
+    #expect(harness.model.state(ofPane: pane) == nil)
+  }
+
   /// A bell or a title is activity in a pane nobody is in, whether or not
   /// that pane is on screen: seen is the pane with the keyboard.
   @Test func activityInAnUnfocusedPaneOfASplitRaisesItsDot() {

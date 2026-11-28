@@ -73,12 +73,13 @@ extension WorktreeGit {
     return own.isDisjoint(with: differing)
   }
 
-  /// `--` for the reason `hasWorkOfItsOwn` gives: `git diff <base> <branch>`
-  /// reads the second name as a path if the repository holds one.
+  /// `--` for the reason `hasWorkOfItsOwn` gives; the flags list a rename's old
+  /// name and a bump of a submodule the user's config ignores.
   private func changedPaths(in revisions: [String], of project: Project) async -> Set<String>? {
     guard
       let output = await runner.output(
-        ["diff", "--name-only", "-z"] + revisions + ["--"],
+        ["diff", "--name-only", "-z", "--no-renames", "--ignore-submodules=none"]
+          + revisions + ["--"],
         in: project.path,
       )
     else { return nil }

@@ -27,23 +27,24 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("LOGGED-OUT-2"), "\(output)")
   }
 
-  /// A login shell runs `~/.bash_logout` on `exit`, `logout` or end of input,
-  /// never on a hangup, which every pane close and quit sends.
+  /// bash holds a trapped signal until the foreground command ends, and the engine
+  /// waits on the shell after each hangup it sends, the main thread with it.
   @Test(arguments: InstalledBashes.all)
-  func aTabsBashHungUpRunsNoLogoutFile(bash: String) async throws {
+  func aTabsBashHungUpOverAForegroundCommandHangsItUpAtOnce(bash: String) async throws {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".bashrc", "PS1='> '\n")
     try files.writeHomeFile(".bash_logout", "echo LOGGED-OUT-$((1+1))\n")
+    let foreground = "sh -c 'trap \"echo GOT-HUP; exit 0\" HUP; sleep 20 >/dev/null 2>&1 & wait'"
 
     let output = try await interactiveShellOutput(
       bash,
       arguments: ["--init-file", files.bashInit.path, "-i"],
       environment: files.environment(termProgram: nil),
-      input: "kill -HUP $$\n",
+      input: "(sleep 1; kill -HUP $$) & \(foreground)\n",
     )
 
-    #expect(!output.contains("LOGGED-OUT-2"), "\(output)")
+    #expect(output.contains("GOT-HUP"), "\(output)")
   }
 
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))

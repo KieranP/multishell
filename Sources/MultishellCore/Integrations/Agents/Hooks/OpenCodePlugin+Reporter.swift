@@ -58,9 +58,9 @@ extension OpenCodePlugin {
       return (args) => {
         // One already queued, with only quiet Workings behind it, says what this would.
         if (isQuietWorking(args)) {
-          const key = args.join("\0")
+          const key = args.join("\\0")
           for (let index = pending.length - 1; index >= 0 && isQuietWorking(pending[index]); index -= 1) {
-            if (pending[index].join("\0") === key) return
+            if (pending[index].join("\\0") === key) return
           }
         }
         pending.push(args)

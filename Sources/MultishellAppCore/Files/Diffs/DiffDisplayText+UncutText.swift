@@ -1,6 +1,11 @@
 /// The text a copy takes: a line cut for display goes whole, its mark standing
 /// for the rest. See Docs/design/files/file-tabs.md.
 extension DiffDisplayText {
+  /// Every row's line whole, for what quotes or keeps a line rather than draws it.
+  var uncutLines: [DiffLine] {
+    cutRemainders.isEmpty ? lines : lines.indices.map(uncutLine(ofRow:))
+  }
+
   /// The row's line whole, for a text built from this one's rows, which cuts
   /// it again and so still copies it whole.
   func uncutLine(ofRow row: Int) -> DiffLine {

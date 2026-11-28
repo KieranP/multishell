@@ -97,9 +97,11 @@ Newest at the bottom.
   nothing. bash splits the line at spaces, following quotes only to skip one.
 - **A tab's bash logs out as a login shell does**: `logout` exits and
   `~/.bash_logout` runs on `exit`, `logout` or end of input, which bash does
-  only for a login shell. Not on a hangup, which every pane close sends. Cost:
-  an EXIT trap the user sets keeps the logout file from running, theirs
-  replacing ours.
+  only for a login shell. It runs on a pane's hangup too, as a login shell's
+  does not: the HUP trap that told them apart held the signal until the
+  foreground command ended, and the engine's close, the main thread with it,
+  waited that long. Cost: an EXIT trap the user sets keeps the logout file from
+  running, theirs replacing ours.
 - **The bash init file is read in place of the rc file**, so the generated one
   reproduces a login shell's chain and reads the rc file only where that found
   no profile, which a login shell would not. Reading the rc file unconditionally
@@ -178,6 +180,8 @@ Newest at the bottom.
 - **Cost: `ssh-terminfo` installs nothing on the host**, only sending that TERM
   as `ssh-env` does. Ghostty installs the entry and remembers each host through
   its own CLI, which the bundle does not carry.
+- **`ssh-env` sends `COLORTERM` by SendEnv, not Ghostty's SetEnv**: ssh keeps
+  the first SetEnv it reads, so ours dropped each one in the user's config.
 - **The cursor follows a keymap change through zle's hook widgets**, chained
   rather than set, and stands back where the user has a keymap widget of their
   own: oh-my-zsh's vi-mode and prezto draw their own shapes there, and ours

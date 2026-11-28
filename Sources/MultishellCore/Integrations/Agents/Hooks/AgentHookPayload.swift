@@ -61,7 +61,7 @@ public struct AgentHookPayload: Hashable, Sendable {
 extension AgentHookPayload {
   init?(json data: Data) {
     guard
-      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+      let object = Self.object(in: data),
       let eventName = object["hook_event_name"] as? String
     else { return nil }
     self.eventName = eventName
@@ -94,5 +94,15 @@ extension AgentHookPayload {
     if object["tool_name"] as? String == "TaskStop" {
       self.killedTaskID = (object["tool_response"] as? [String: Any])?["task_id"] as? String
     }
+  }
+
+  /// Node writes a lone surrogate escape where an agent cut text inside an emoji,
+  /// and Foundation refuses the whole payload over one in a field never read.
+  private static func object(in data: Data) -> [String: Any]? {
+    if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+      return object
+    }
+    return try? JSONSerialization.jsonObject(with: data.withLoneSurrogateEscapesReplaced)
+      as? [String: Any]
   }
 }

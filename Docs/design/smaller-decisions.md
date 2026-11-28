@@ -1,6 +1,6 @@
 # Smaller decisions
 
-- **Install CLI is the one thing run as root.** The two paths go in as Apple
+- **Install CLI is the one thing run as root.** The three paths go in as Apple
   event parameters to a handler in a constant script, never interpolated into
   it, and the script quotes them with AppleScript's own form.
 - **Interpolating and escaping by hand escaped for the shell, not for

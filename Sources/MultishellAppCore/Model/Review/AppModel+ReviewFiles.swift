@@ -6,7 +6,8 @@ import MultishellCore
 extension AppModel {
   /// At launch and after each worktree list read, for a worktree not read yet; a
   /// sent comment past the sweep is dropped, the file left as read.
-  func readReviewFilesOfNewWorktrees(now: Date = Date()) {
+  func readReviewFilesOfNewWorktrees() {
+    let now = Date()
     var unreadableFiles: [UnreadableReviewFile] = []
     defer {
       if unreadableFiles.count == 1, let file = unreadableFiles.first {

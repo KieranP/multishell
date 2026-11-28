@@ -14,13 +14,18 @@ extension AppModel {
     return recording
   }
 
-  /// A refusal while recording; the pane's warning only once it ends, as the
-  /// recorder stands where the keys were.
+  /// A refusal while recording; once it ends, the pane's warning, or the menu
+  /// command since given the keys, which fires in the action's place.
   public func actionKeysNote(forAction name: String, in project: Project) -> ActionKeysNote? {
     if let recording = actionKeysRecording(forAction: name, in: project) {
       return recording.refusal.map(ActionKeysNote.refusal)
     }
-    return actionKeysWarning(forAction: name, in: project).map(ActionKeysNote.warning)
+    guard let keys = ownSettings(of: project).actionShortcuts.keys(for: name) else { return nil }
+    return switch judgeActionKeys(keys) {
+    case .allowed(let warning): warning.map(ActionKeysNote.warning)
+    case .refused(let refusal): .refusal(.refused(refusal))
+    case .taken(let holder): .refusal(.heldBy(keys, holder))
+    }
   }
 
   public func startRecordingActionKeys(forAction name: String, in project: Project) {

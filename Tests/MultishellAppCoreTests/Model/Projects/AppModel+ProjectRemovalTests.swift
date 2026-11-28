@@ -137,6 +137,21 @@ struct AppModelProjectRemovalTests {
     #expect(harness.model.liveTerminalCount == 0)
   }
 
+  @Test func removingACopyCountsNoTerminalOfAPathTheOriginalStillLists() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let copyPath = harness.root.appending(path: "copy")
+    try? FileManager.default.createDirectory(at: copyPath, withIntermediateDirectories: true)
+    let copy = harness.store.addProject(at: copyPath)
+    harness.store.replaceWorktrees(
+      [Worktree(path: harness.main.path, projectID: copy.id, head: "a", branch: "main")],
+      forProject: copy.id,
+    )
+    #expect(harness.model.liveTerminalCount == 1)
+
+    #expect(!harness.model.projectRemovalMessage(for: copy).contains("will be closed"))
+  }
+
   @Test func eachWindowPresentsOnlyTheProjectRemovalItAskedFor() {
     let harness = Harness()
     harness.model.requestProjectRemoval(harness.project, from: .settings)

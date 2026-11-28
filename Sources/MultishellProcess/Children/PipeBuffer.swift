@@ -33,16 +33,32 @@ final class PipeBuffer: Sendable {
     }
   }
 
-  /// Stops reading and counts the pipe as drained. Only the first call does
-  /// anything.
+  /// Stops reading and counts the pipe as drained. Only the first call to
+  /// this or `finishLeavingItOpen` does anything.
   func finish() {
-    let wasUnfinished = state.withLock { state in
+    guard markFinished() else { return }
+    handle.readabilityHandler = nil
+    group.leave()
+  }
+
+  /// Counts the pipe as drained while a descendant still holds its write end,
+  /// reading on and dropping what comes until EOF.
+  func finishLeavingItOpen() {
+    guard markFinished() else { return }
+    // The handler holds the read end open: closing it killed a hook's
+    // backgrounded server with SIGPIPE at its next line.
+    let handle = handle
+    handle.readabilityHandler = { _ in
+      if handle.availableData.isEmpty { handle.readabilityHandler = nil }
+    }
+    group.leave()
+  }
+
+  private func markFinished() -> Bool {
+    state.withLock { state in
       defer { state.finished = true }
       return !state.finished
     }
-    guard wasUnfinished else { return }
-    handle.readabilityHandler = nil
-    group.leave()
   }
 
   /// For a child that never started: stop waiting and release the pipe.

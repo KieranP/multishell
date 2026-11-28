@@ -63,6 +63,22 @@ struct AccessibilityTextQuickSwitcherTests {
     #expect(AccessibilityText.quickSwitcherRow(item, at: .now) == "zsh, multishell, main")
   }
 
+  @Test func aRowWhoseStateClearedSaysNoTimeInIt() {
+    let since = Date(timeIntervalSince1970: 1_000)
+    let item = QuickSwitcherItem(
+      target: .pane(UUID()),
+      kind: .agent(id: "claude"),
+      title: "Claude Code",
+      location: "multishell › main",
+      state: nil,
+      since: since,
+    )
+
+    let spoken = AccessibilityText.quickSwitcherRow(item, at: since.addingTimeInterval(720))
+
+    #expect(spoken == "Claude Code, multishell, main")
+  }
+
   @Test func aPaneOfASplitSaysWhichPaneItIs() {
     let item = QuickSwitcherItem(
       target: .pane(UUID()),

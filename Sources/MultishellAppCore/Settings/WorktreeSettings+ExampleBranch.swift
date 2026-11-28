@@ -10,7 +10,8 @@ extension WorktreeSettings {
 
   /// What a typed name becomes, `nil` with no prefix to show.
   public var prefixExampleCaption: String? {
-    guard !branchPrefix.isEmpty else { return nil }
-    return t("worktrees.prefix-example", Self.exampleBranchName, exampleBranch)
+    let applied = trimmed
+    guard !applied.branchPrefix.isEmpty else { return nil }
+    return t("worktrees.prefix-example", Self.exampleBranchName, applied.exampleBranch)
   }
 }

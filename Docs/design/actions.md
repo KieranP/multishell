@@ -102,7 +102,8 @@ bottom.
   project's. They are stored with the user's project settings by action name,
   the file never carrying keys. They are judged as Shortcuts judges a command's,
   but keys a menu command holds are refused rather than taken: the menu would
-  fire first anyway.
+  fire first anyway. Keys a command is given later stay the action's, and its
+  row names the command that now fires in its place.
 - **A rename carries an action's keys; a removal frees them**, unless the file
   still has an action of that name.
 - **Keys given to a second action move from the first** without asking, both

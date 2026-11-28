@@ -23,7 +23,7 @@ extension AppModel {
       platform.log("login shell environment unavailable, using the process's own: \(reason)")
     }
     await detectTools(on: environment)
-    await adoptGit(on: environment.path)
+    await adoptGit(on: environment)
     await adoptServiceTools(on: environment.path, loginVariables: environment.variables)
     startServicePoll()
     recordInstallState(await runOnDispatch { IntegrationInstallState.read() })
@@ -59,12 +59,13 @@ extension AppModel {
 
   /// Rebuilt even where launch found git: that PATH is what git's own
   /// children are looked up on; see Docs/design/architecture.md.
-  private func adoptGit(on searchPath: String?) async {
+  private func adoptGit(on environment: LoginShellEnvironment) async {
     let hadGit = coordinator != nil
     guard
       let found = try? await WorktreeCoordinator.resolved(
-        searchPath: searchPath,
+        searchPath: environment.path,
         replacing: coordinator,
+        loginVariables: environment.variables,
       )
     else {
       // Not said at launch and taken back here: macOS 27 crashed taking a

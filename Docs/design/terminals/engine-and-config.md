@@ -16,6 +16,9 @@ it reads. Newest at the bottom.
 - **Their `config-file` includes are followed here**, in the engine's order.
   Left to the engine they would resolve from the temp directory the merged text
   is in.
+- **A relative `background-image` or `bell-audio-path` is made absolute** from
+  the file naming it, for the same reason: the image was looked for in the temp
+  directory.
 - **A line ends at `\n` or `\r\n`**, as in Ghostty. Swift reads `\r\n` as one
   character, so a CRLF file split on `\n` was one line: its includes were lost
   and every key after the first rode through the allow list behind it.

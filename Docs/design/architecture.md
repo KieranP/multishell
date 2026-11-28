@@ -25,9 +25,12 @@
 - **git is looked up twice**, on the process's own PATH at launch and on the
   login shell's once that environment lands. Launch does not wait on the login
   shell, and the process's PATH from the Finder misses Nix and version managers.
-- **The login shell's PATH rides on the runner**, so `git-lfs`, credential
-  helpers and diff drivers are found too. Hence the coordinator is rebuilt when
+- **The login shell's environment rides on the runner**, so `git-lfs`,
+  credential helpers and diff drivers are found too, and a key agent, global
+  config or SSH command set there applies. Hence the coordinator is rebuilt when
   the environment lands even if launch found git.
+- **Not its repository variables or locale**: a `GIT_DIR` exported in an rc file
+  would aim every read at one repository, and alerts match git's English.
 - **Apple's `/usr/bin/git` is looked past once the environment lands**, through
   `xcrun --find git`: the shim finds that git again on every call, about 3.6 ms
   each, 180 ms a tick at 50 worktrees. Launch keeps the shim, not to run xcrun
@@ -47,7 +50,9 @@
   why.
 - **Both pipes drain at once**, or the second fills its buffer and blocks the
   child. EOF counts as arrived a second after the exit, a backgrounded server
-  holding them open.
+  holding them open. The read ends then stay open, dropping what comes until
+  that server lets go: closing them killed it with SIGPIPE at its next line.
+  Cost: a descriptor per pipe while it runs.
 - **Out of descriptors is an error, never an empty answer.** At the limit
   `Pipe()` hands back stdin, and `git worktree list` reading as no worktrees
   dropped every tab.

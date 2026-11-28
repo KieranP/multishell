@@ -15,12 +15,14 @@ extension AppModel {
     showFileInAllChangesTab(path, in: id)
   }
 
-  /// Listed by git, or its list still to land, and not a folder: a submodule's
-  /// change, which the tab's read leaves out. Off the main actor, as a dead mount holds an lstat.
+  /// Listed by git, or its list still to land, and deleted or not a folder: a
+  /// submodule's change, which the tab's read leaves out. Off the main actor, as a dead mount holds an lstat.
   private func allChangesTabMayList(_ path: String, in id: Worktree.ID) async -> Bool {
     guard let changes = allChangesListedChanges(of: id) else { return true }
-    guard changes.contains(where: { $0.path == path }), let worktree = workspace.worktree(id)
+    guard let change = changes.first(where: { $0.path == path }),
+      let worktree = workspace.worktree(id)
     else { return false }
+    if change.kind == .deleted { return true }
     let url = worktree.path.appending(path: path)
     return await runOnDispatch { FileSignature.of(url)?.isFolder != true }
   }

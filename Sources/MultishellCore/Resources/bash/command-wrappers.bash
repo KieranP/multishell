@@ -6,14 +6,20 @@
 if _multishell_has_feature sudo && [ -n "${TERMINFO-}" ] && ! declare -F sudo >/dev/null; then
   # `function`, as a user's `alias sudo='sudo '` would expand inside `sudo() {`.
   function sudo {
-    local word next_is_value=0
+    local word flags next_is_value=0
     for word in ${1+"$@"}; do
       if [ "$next_is_value" = 1 ]; then next_is_value=0; continue; fi
       case "$word" in
-        -e | --edit) command sudo ${1+"$@"}; return ;;
-        -[CDgpRrTtUu] | --chdir | --chroot | --close-from | --command-timeout | --group | --host \
+        --edit) command sudo ${1+"$@"}; return ;;
+        --chdir | --chroot | --close-from | --command-timeout | --group | --host \
           | --other-user | --prompt | --role | --type | --user) next_is_value=1 ;;
         --) break ;;
+        -[!-]*)
+          # Short flags bundle, `-ke`; the rest of the word after one taking a value is that value.
+          flags=${word#-}
+          flags=${flags%%[CDgpRrTtUu]*}
+          case "$flags" in *e*) command sudo ${1+"$@"}; return ;; esac
+          [ "${#word}" -eq $((${#flags} + 2)) ] && next_is_value=1 ;;
         -* | *=*) ;;
         *) break ;;
       esac
@@ -27,9 +33,10 @@ fi
 if { _multishell_has_feature ssh-env || _multishell_has_feature ssh-terminfo; } \
   && ! declare -F ssh >/dev/null; then
   function ssh {
+    # SendEnv: ssh keeps the first SetEnv it reads, and ours would drop the user's.
     if _multishell_has_feature ssh-env; then
-      TERM=xterm-256color command ssh -o "SetEnv COLORTERM=truecolor" \
-        -o "SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION" ${1+"$@"}
+      COLORTERM=truecolor TERM=xterm-256color command ssh \
+        -o "SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION" ${1+"$@"}
     else
       TERM=xterm-256color command ssh ${1+"$@"}
     fi

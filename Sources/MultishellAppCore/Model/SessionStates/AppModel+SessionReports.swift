@@ -82,7 +82,7 @@ extension AppModel {
       return SessionVisibility(
         worktreeID: session.worktreeID,
         isSeen: isSeen(id),
-        isOnScreen: isPaneInView(id) && platform.isActive,
+        isOnScreen: isPaneInView(id) && isWorkspaceWindowLookedAt,
       )
 
     case .worktree(let id):

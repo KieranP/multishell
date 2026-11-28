@@ -34,6 +34,22 @@ struct StateFileTests {
     #expect(try StateFile(fileURL: tracked).load().projects.map(\.name) == ["demo"])
   }
 
+  @Test func aLinkWhoseTargetFolderWentMidSessionIsNotSavedThrough() throws {
+    let directory = try Scratch.directory("statelinkaway")
+    defer { Scratch.remove(directory) }
+    let dotfiles = directory.appendingPathComponent("dotfiles", isDirectory: true)
+    try FileManager.default.createDirectory(at: dotfiles, withIntermediateDirectories: true)
+    let target = dotfiles.appendingPathComponent("state.json")
+    try Data("{}".utf8).write(to: target)
+    let link = directory.appendingPathComponent("state.json")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+    let file = StateFile(fileURL: link)
+    try FileManager.default.removeItem(at: dotfiles)
+
+    #expect(throws: GoneStateFileLinkTarget.self) { try file.save(Workspace()) }
+    #expect(!FileManager.default.fileExists(atPath: dotfiles.path))
+  }
+
   @Test func unreadableStateIsMovedAsideNotOverwritten() throws {
     let file = try scratchStateFile(holding: "not json")
     let directory = file.deletingLastPathComponent()

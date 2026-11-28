@@ -175,6 +175,8 @@ _multishell_debug() {
   # Before theirs is called, so their trap never sees our own prompt
   # functions: without us it would not have.
   case "$BASH_COMMAND" in _multishell_*) return 0 ;; esac
+  # Under functrace it fires inside our prompt functions too, before they disarm.
+  case "${FUNCNAME[1]-}" in _multishell_*) return 0 ;; esac
   # Gone only where something set PROMPT_COMMAND over ours, which the prompt cannot mend.
   case "${PROMPT_COMMAND[*]-}" in *_multishell_arm*) ;; *) _multishell_compose_prompt_command ;; esac
   # Theirs sees no arguments of ours, and `:` puts the user's `$_` back for it.

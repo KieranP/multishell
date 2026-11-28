@@ -93,8 +93,7 @@ extension AppModel {
   /// The first working agent's name there, for the question.
   func workingAgentName(in worktreeID: Worktree.ID) -> String? {
     for session in workspace.sessions(in: worktreeID) where isAgentWorking(in: session.id) {
-      let agentID = session.agentID ?? commandAgentIDs[session.id]
-      return agentID.map(agentDisplayName) ?? t("base-update.an-agent")
+      return agentIDAtThePrompt(of: session).map(agentDisplayName) ?? t("base-update.an-agent")
     }
     return nil
   }

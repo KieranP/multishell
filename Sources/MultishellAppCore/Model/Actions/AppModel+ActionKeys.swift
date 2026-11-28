@@ -34,15 +34,7 @@ extension AppModel {
     setActionKeys(nil, forAction: name, in: project)
   }
 
-  /// What a pane gives up to an action's keys, said under its row.
-  func actionKeysWarning(forAction name: String, in project: Project) -> ShortcutWarning? {
-    guard let keys = ownSettings(of: project).actionShortcuts.keys(for: name),
-      case .allowed(let warning) = judgeActionKeys(keys)
-    else { return nil }
-    return warning
-  }
-
-  private func judgeActionKeys(_ keys: KeyCombination) -> ShortcutJudgement {
+  func judgeActionKeys(_ keys: KeyCombination) -> ShortcutJudgement {
     workspace.shortcutOverrides.judgeForAction(keys)
   }
 }

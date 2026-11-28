@@ -1,6 +1,7 @@
 import Foundation
 import Synchronization
 import System
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -22,6 +23,27 @@ extension ProcessRunnerTests {
     #expect(output.succeeded)
     #expect(output.standardOutput == "before")
     #expect(kill(grandchild, 0) == 0, "waited on the grandchild until it exited")
+  }
+
+  @Test func aBackgroundGrandchildCanStillWriteOnceTheCallReturns() async throws {
+    let marker = FileManager.default.temporaryDirectory
+      .appending(path: "grandchild-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: marker) }
+    let script = """
+      (sleep 3; for i in 1 2 3 4 5; do echo tick || exit 3; sleep 0.1; done; touch '\(marker.path)') &
+      echo $! >&2; exit 0
+      """
+    let output = try await runner.capture(bourneShell, ["-c", script], in: workingDirectory)
+    let grandchild = try #require(
+      pid_t(output.standardError.trimmingCharacters(in: .whitespacesAndNewlines))
+    )
+    defer { kill(grandchild, SIGKILL) }
+
+    try await waitUntil {
+      FileManager.default.fileExists(atPath: marker.path) || kill(grandchild, 0) != 0
+    }
+
+    #expect(FileManager.default.fileExists(atPath: marker.path))
   }
 
   /// Output written right before exit sits in the pipe when the exit is

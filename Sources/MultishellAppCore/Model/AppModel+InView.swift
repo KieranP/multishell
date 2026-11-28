@@ -23,17 +23,29 @@ extension AppModel {
     worktreeInView.flatMap { workspace.activeWorkspaceTab(in: $0.id) }
   }
 
-  /// `workspaceTabInView` where its tabs are drawn: a create's or removal's pane
-  /// takes their place, and closing there ended a shell nobody could see.
-  var workspaceTabDrawn: WorkspaceTab? {
+  /// `worktreeIDInView` where its tabs are drawn: a create's or removal's pane
+  /// takes their place, failed ones until dismissed.
+  var worktreeIDWithTabsDrawn: Worktree.ID? {
     guard let worktree = worktreeIDInView, worktreeOperations[worktree] == nil else { return nil }
-    return workspaceTabInView
+    return worktree
   }
 
-  /// In view with the app in front, which is when a banner about it is not
-  /// needed. Gated on a cover as `isPaneInView` is.
+  /// `workspaceTabInView` where its tabs are drawn: closing under a create's or
+  /// removal's pane ended a shell nobody could see.
+  var workspaceTabDrawn: WorkspaceTab? {
+    worktreeIDWithTabsDrawn == nil ? nil : workspaceTabInView
+  }
+
+  /// The app in front with its window shown: a minimized window is not
+  /// looked at, though the app keeps the menu bar.
+  var isWorkspaceWindowLookedAt: Bool {
+    platform.isActive && platform.isWorkspaceWindowVisible
+  }
+
+  /// Its tabs drawn and looked at, which is when a banner about it is not
+  /// needed. Gated as `isPaneInView` is.
   func isWorktreeOnScreen(_ id: Worktree.ID) -> Bool {
-    worktreeIDInView == id && platform.isActive
+    worktreeIDWithTabsDrawn == id && isWorkspaceWindowLookedAt
   }
 
   /// The active tab's focused pane, with nothing covering it. One per window,
@@ -45,9 +57,9 @@ extension AppModel {
   /// The pane is in view: its worktree selected and its tab shown, asked
   /// of every group. What holds a banner back, saying nothing about focus.
   func isPaneInView(_ id: TerminalSession.ID) -> Bool {
-    // A cover fills the detail area, so no pane is in view behind it, and
-    // a board card would reach Idle having never passed through Done.
-    guard let worktree = worktreeIDInView else { return false }
+    // A cover or an operation's pane fills the detail area, so no pane is in
+    // view behind it, and a board card would reach Idle never having been Done.
+    guard let worktree = worktreeIDWithTabsDrawn else { return false }
     return workspace.shownTabs(in: worktree).contains { $0.root.contains(id) }
   }
 

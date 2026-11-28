@@ -132,6 +132,9 @@ of what is out and the workers launched under others. Newest at the bottom.
   in view, no Done is seen and no banner held back. An agent's pid is still
   polled only for the board, Debug Info showing no agents
   (agents/board-and-pane-rows.md).
+- **A create's or removal's pane covers the tabs the same way**, a failed one
+  until its Dismiss, which sees what the tabs then show. Seen through it, a Done
+  behind a vetoed removal raised no dot and no banner.
 - **A worker another worker launched is listed under it**, as Claude's own list
   draws a skill's workers under the skill. Flat, a review fanning out eight
   angles read as nine unrelated workers, each called `general-purpose`.

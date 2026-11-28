@@ -129,4 +129,30 @@ struct MacPlatformCommandMenuItemsTests {
     )
     #expect(items.map(\.isEnabled) == [true, true, false])
   }
+
+  @Test func anActionNamedLikeACommandIsListedAndJudgedAsItself() {
+    let bar = NSMenu()
+    bar.addItem(Self.menu("Multishell", [("Settings…", "showSettings:")]))
+    let terminal = Self.menu("Terminal", [(t("menu.close-tab"), "swiftUIAction:")])
+    terminal.submenu?.addItem(
+      Self.menu(
+        t("menu.actions"),
+        [(t("action.copy"), "swiftUIAction:"), (t("menu.close-tab"), "swiftUIAction:")],
+      )
+    )
+    bar.addItem(terminal)
+
+    let items = MacPlatform.commandItems(in: bar, leavingOutMenus: []) { title in
+      title != t("menu.close-tab")
+    }
+
+    #expect(
+      items.map(\.path) == [
+        ["Multishell", "Settings…"], ["Terminal", t("menu.close-tab")],
+        ["Terminal", t("menu.actions"), t("action.copy")],
+        ["Terminal", t("menu.actions"), t("menu.close-tab")],
+      ]
+    )
+    #expect(items.map(\.isEnabled) == [true, false, true, true])
+  }
 }

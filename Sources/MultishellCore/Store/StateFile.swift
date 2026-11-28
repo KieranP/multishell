@@ -78,6 +78,10 @@ struct StateFile: Sendable {
   func save(_ workspace: Workspace, as ticket: SaveOrder.Ticket) throws -> Int? {
     let data = try JSONEncoder.forFile().encode(workspace)
     return try order.land(ticket) {
+      // The write would remake the folder where a dotfiles repo or volume was.
+      if let target = danglingLinkTarget {
+        throw GoneStateFileLinkTarget(fileURL: fileURL, target: target)
+      }
       try data.writeAtomicallyCreatingDirectory(to: fileURL.linkTarget)
       return data.count
     }

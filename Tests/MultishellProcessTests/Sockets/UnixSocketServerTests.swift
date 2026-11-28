@@ -80,7 +80,7 @@ struct UnixSocketServerTests {
     var pending: [Int32] = []
     defer { for descriptor in pending { close(descriptor) } }
     var refused = false
-    while pending.count < 64, !refused {
+    while pending.count < 1024, !refused {
       let descriptor = try UnixSocket.newSocket(reportingAs: path.path)
       do {
         try UnixSocket.connectSocket(descriptor, to: path.path)
@@ -91,6 +91,28 @@ struct UnixSocketServerTests {
       }
     }
     #expect(refused, "the backlog never filled, so nothing is being tested")
+  }
+
+  @Test func aServerWhoseQueueIsBusyHoldsAHundredConnectsWithoutRefusingOne() throws {
+    let path = Scratch.socketPath("srvburst")
+    let blocked = DispatchQueue(label: "ms-test-burst")
+    let server = UnixSocketServer(path: path, queue: blocked)
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
+    try server.start()
+    let release = DispatchSemaphore(value: 0)
+    blocked.async { release.wait() }
+    defer { release.signal() }
+    var pending: [Int32] = []
+    defer { for descriptor in pending { close(descriptor) } }
+
+    for _ in 0..<100 {
+      let descriptor = try UnixSocket.newSocket(reportingAs: path.path)
+      pending.append(descriptor)
+      try UnixSocket.connectSocket(descriptor, to: path.path)
+    }
   }
 
   /// So the claim decides: a socket file beside a claim another process holds has a live

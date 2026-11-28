@@ -114,6 +114,19 @@ struct AppModelActionKeysRecordingTests {
     )
   }
 
+  @Test func keysAMenuCommandIsLaterGivenNameThatCommandUnderTheAction() {
+    let harness = Harness.withServeAction()
+    let model = harness.model
+    model.setActionKeys(controlOptionS, forAction: ProjectAction.serve.name, in: harness.project)
+
+    model.setShortcut(controlOptionS, for: .newTab)
+
+    #expect(
+      model.actionKeysNote(forAction: ProjectAction.serve.name, in: harness.project)
+        == .refusal(.heldBy(controlOptionS, .newTab))
+    )
+  }
+
   @Test func onlyTheRowBeingRecordedShowsTheRecording() {
     let harness = Harness.withServeAction()
 

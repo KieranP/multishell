@@ -115,6 +115,24 @@ struct HelperStateReportsTests {
     #expect(reports[1]?.workersOut == [], "nothing out is said, not left unsaid")
   }
 
+  @Test func aStopListingMoreWorkersThanALineHoldsStillArrivesWithoutTheList() async throws {
+    let listener = try ReportListener()
+    defer { listener.stop() }
+    let recorder = listener.recorder
+    let ids = (0..<1000).map { _ in UUID().uuidString + UUID().uuidString + UUID().uuidString }
+
+    let stop = try await HelperBinary.run(
+      ["state", "done", "--agent", "opencode", "--out", ids.joined(separator: ",")],
+      environment: ["MULTISHELL_SOCKET": listener.path.path],
+    )
+
+    #expect(stop.succeeded, "\(stop.standardError)")
+    try await waitUntil { !recorder.received.isEmpty }
+    let report = SessionStateReport.parse(recorder.received.first ?? "")
+    #expect(report?.state == .done)
+    #expect(report?.workersOut == nil)
+  }
+
   /// OpenCode's plugin has no payload to hand over and names a worker by flags.
   /// A phase without a worker, or a worker without a phase, is a usage error.
   @Test func stateNamesAWorkerOnlyWithItsIDAndPhaseTogether() async throws {

@@ -86,6 +86,25 @@ struct AppModelPullRequestHandoffTests {
     )
   }
 
+  @Test func aWorktreeRemovedWhileTheLogsWereReadKeepsNoNote() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (feat, host, agent) = try await harness.showingAFailingPullRequest()
+    host.holdLogs()
+
+    let sending = Task {
+      await harness.model.sendPullRequestFeedback(of: feat.id, to: agent.id, takingFocus: false)
+    }
+    try await waitUntil { harness.readsLogs(of: feat) }
+    try await harness.removeOutsideTheApp(feat.path)
+    await harness.model.refreshWorktrees(of: harness.project)
+    try #require(harness.model.workspace.worktree(feat.id) == nil)
+    host.releaseHeldReads()
+    _ = await sending.value
+
+    #expect(harness.model.handoffMiss(of: feat, on: .pullRequest) == nil)
+  }
+
   @Test func aSendCancelledWhileItsLogsReadPastesNothingAndMarksNothingSent() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

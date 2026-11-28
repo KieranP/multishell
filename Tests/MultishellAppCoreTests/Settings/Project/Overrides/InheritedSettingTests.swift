@@ -32,4 +32,9 @@ struct InheritedSettingTests {
     #expect(blank.directoryGlobalValue.text == "default")
     #expect(blank.directoryGlobalValue.settingsSection == .worktreesNew)
   }
+
+  @Test func aPrefixOfSpacesReadsAsNone() {
+    let spaces = InheritedSetting(value: "  ", isFromRepository: false)
+    #expect(spaces.prefixGlobalValue.text == "none")
+  }
 }

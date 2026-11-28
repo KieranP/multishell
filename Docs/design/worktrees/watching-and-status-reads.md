@@ -110,7 +110,7 @@ that write nothing. Newest at the bottom.
   read for nothing.
 - **A sixty-second poll stays as the backstop**, for what no event reports, such
   as an add's lock growing old. A dropped batch counts as a change to everything
-  watched.
+  watched, as does one FSEvents coalesced at a folder for its whole subtree.
 - **A worktree on a volume that is not local is read every five seconds too**,
   as every worktree was before: FSEvents reports only what this Mac writes to a
   share, not what another machine does.

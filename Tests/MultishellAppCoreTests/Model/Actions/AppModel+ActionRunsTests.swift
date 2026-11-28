@@ -30,6 +30,24 @@ struct AppModelActionRunsTests {
     #expect(opened.command?.contains("MULTISHELL_ACTION_SCRIPT=npm run dev") == true)
   }
 
+  @Test func anActionPickedOnACopysRowOfASharedPathRunsWithTheCopysProject() throws {
+    let harness = Harness.withServeAction()
+    let copyPath = harness.root.appendingPathComponent("copy")
+    let copy = harness.store.addProject(at: copyPath)
+    harness.model.setSettings(ProjectSettings(actions: [.serve]), for: copy)
+    var copysRow = harness.feature
+    copysRow.projectID = copy.id
+    harness.store.replaceWorktrees([copysRow], forProject: copy.id)
+
+    harness.model.runAction(named: ProjectAction.serve.name, in: copysRow)
+
+    let session = try #require(
+      harness.model.actionSession(named: ProjectAction.serve.name, in: copysRow.id)
+    )
+    let opened = try #require(harness.engine.opened.last { $0.id == session.id })
+    #expect(opened.command?.contains("MULTISHELL_PROJECT_PATH=\(copyPath.path)") == true)
+  }
+
   @Test func whatTheShellReportsAsATitleNeverRenamesAnActionsTab() throws {
     let harness = Harness.withServeAction()
     harness.model.runAction(named: ProjectAction.serve.name, in: harness.main)

@@ -645,14 +645,10 @@ extension WorkspaceStore {
 
   /// Splits the focused pane of a tab, the new pane taking the focus.
   @discardableResult
-  public func splitFocusedPane(
-    of tabID: TerminalTab.ID,
-    axis: SplitAxis,
-    command: [String]? = nil,
-  ) -> TerminalSession? {
+  public func splitFocusedPane(of tabID: TerminalTab.ID, axis: SplitAxis) -> TerminalSession? {
     guard let index = workspace.tabIndex(tabID) else { return nil }
     let tab = workspace.tabs[index]
-    guard let session = makeSession(in: tab.worktreeID, title: nil, command: command) else {
+    guard let session = makeSession(in: tab.worktreeID, title: nil, command: nil) else {
       return nil
     }
 

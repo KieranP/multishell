@@ -106,8 +106,9 @@ issue.
 - **Review keeps its own receipt.** It clears when a comment is added, a rule
   about comments; the PR and CI pages' clears when none of their items is marked
   sent. One store would hold two rules.
-- **A worktree removed during the log reads leaves no note behind.** Tried on
-  2026-11-19: the Send finds its pane gone and stores nothing for it.
+- **A worktree removed during the log reads leaves no note behind.** A miss is
+  kept only for a listed worktree. Until 2026-11-28 the Send stored "gone by the
+  time the logs were read", which a worktree made again at that path showed.
 - **A Send whose file cannot be written answers `pr send` with the error's
   alert**, not with a refusal of its own: a request's alert is its answer
   (agents/command-line.md), and the app presents the write's error.

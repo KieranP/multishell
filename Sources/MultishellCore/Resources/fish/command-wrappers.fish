@@ -12,15 +12,24 @@ if _multishell_has_feature sudo; and test -n "$TERMINFO"; and not functions -q s
                 continue
             end
             switch $word
-                case -e --edit
+                case --edit
                     command sudo $argv
                     return
-                case -C -D -g -p -R -r -T -t -U -u --chdir --chroot --close-from \
-                    --command-timeout --group --host --other-user --prompt --role --type --user
+                case --chdir --chroot --close-from --command-timeout --group --host \
+                    --other-user --prompt --role --type --user
                     set next_is_value 1
                 case --
                     break
-                case '-*' '*=*'
+                case '--*' '*=*'
+                case '-*'
+                    # Short flags bundle, `-ke`; the rest of the word after one taking a value is that value.
+                    set -l flags (string sub -s 2 -- $word | string replace -r '[CDgpRrTtUu].*$' '')
+                    if string match -q '*e*' -- "$flags"
+                        command sudo $argv
+                        return
+                    end
+                    test (string length -- $word) -eq (math (string length -- "$flags") + 2)
+                    and set next_is_value 1
                 case '*'
                     break
             end
@@ -35,9 +44,12 @@ if begin
         _multishell_has_feature ssh-env; or _multishell_has_feature ssh-terminfo
     end; and not functions -q ssh
     function ssh --wraps ssh
-        set -l options
-        _multishell_has_feature ssh-env
-        and set options -o "SetEnv COLORTERM=truecolor" -o "SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION"
-        TERM=xterm-256color command ssh $options $argv
+        # SendEnv: ssh keeps the first SetEnv it reads, and ours would drop the user's.
+        if _multishell_has_feature ssh-env
+            COLORTERM=truecolor TERM=xterm-256color command ssh \
+                -o "SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION" $argv
+        else
+            TERM=xterm-256color command ssh $argv
+        end
     end
 end

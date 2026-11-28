@@ -22,6 +22,19 @@ struct AgentHookPayloadTests {
   }
 
   /// It is why one parser serves all four agents.
+  @Test func aLoneSurrogateEscapeInAFieldNotReadStillLeavesTheEvent() throws {
+    let payload = AgentHookPayload(
+      json: Data(
+        #"""
+        { "hook_event_name": "PostToolUse", "cwd": "/w",
+          "tool_response": { "stdout": "abc\ud83d", "stderr": "\ude00 x \\ud83d" } }
+        """#.utf8
+      )
+    )
+    #expect(payload?.eventName == "PostToolUse")
+    #expect(payload?.workingDirectory == "/w")
+  }
+
   @Test func codexAndCopilotWriteTheSameFields() {
     let codex = AgentHookPayload(
       json: Data(

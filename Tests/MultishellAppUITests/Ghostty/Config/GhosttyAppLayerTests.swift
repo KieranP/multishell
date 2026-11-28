@@ -40,6 +40,17 @@ struct GhosttyAppLayerTests {
     #expect(diagnostics.isEmpty, "\(diagnostics)")
   }
 
+  @Test func theFontChosenInSettingsEmptiesTheUsersBoldAndItalicFamilies() throws {
+    let appearance = Appearance(terminalFontName: "Menlo")
+    let rendered = GhosttyAppLayer.configuration(Theme.builtins[0], appearance, unbinding: [])
+      .rendered
+    for key in ["font-family-bold", "font-family-italic", "font-family-bold-italic"] {
+      #expect(rendered.contains("\(key) = \"\"\n"), "\(key)")
+    }
+    let diagnostics = try libghosttyDiagnostics(rendered)
+    #expect(diagnostics.isEmpty, "\(diagnostics)")
+  }
+
   @Test func theAppLayerTurnsTheEnginesShellIntegrationOff() {
     let rendered = GhosttyAppLayer.configuration(Theme.builtins[0], Appearance(), unbinding: [])
       .rendered

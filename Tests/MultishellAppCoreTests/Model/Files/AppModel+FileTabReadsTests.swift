@@ -42,6 +42,22 @@ struct AppModelFileTabReadsTests {
     #expect(harness.model.fileTabReadLog.owed.contains(tab.id))
   }
 
+  @Test func aHiddenTabWhoseFileAFolderReplacedIsStruck() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let (tab, main) = try harness.openFileTab()
+    try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    harness.model.newShellTab()
+    let readme = main.path.appending(path: "README.md")
+
+    try FileManager.default.removeItem(at: readme)
+    try FileManager.default.createDirectory(at: readme, withIntermediateDirectories: false)
+    harness.model.noteFileTabChanged(tab.id)
+
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
+    #expect(harness.model.isFileGone(of: tab.id))
+  }
+
   @Test func aHiddenTabWhoseFileComesBackLosesItsStrike() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

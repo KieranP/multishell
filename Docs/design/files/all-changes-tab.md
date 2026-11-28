@@ -26,7 +26,7 @@ bottom.
 - **The files are the Changes list's, in its order.** A folder listed as a
   change, a submodule or a nested repository, is left out as the list leaves it,
   found by `lstat` since the index read that marks submodules is the panel's
-  alone.
+  alone. A deleted file a folder of its name replaced stays, as the list has it.
 - **A shown tab under Branch asks for its worktree's Branch read**, the one the
   panel makes, rather than a second way of reading git.
 - **Each file is read by the file tab's reader, with its cap**, so a file reads

@@ -37,7 +37,9 @@
   left a plain file at the path and the repo's copy broken.
 - **A link whose target is away is said so and saved through by nothing**: the
   app started empty unasked, and its first save wrote that over where the link
-  points, a volume not yet mounted included.
+  points, a volume not yet mounted included. A target gone after launch stops
+  saves until it is back, as the write remade its folder where the repo had
+  been.
 - **Duplicates are dropped after the prune, not before.** First entry wins, so a
   tab id written twice, once naming a worktree that has gone, kept the dead copy
   and lost the live one to the dangling prune.

@@ -35,7 +35,7 @@ struct AppModelActionKeysTests {
 
     harness.model.setActionKeys(controlOptionS, forAction: "Serve", in: harness.project)
     #expect(harness.engine.unbound.contains(controlOptionS))
-    #expect(harness.model.actionKeysWarning(forAction: "Serve", in: harness.project) != nil)
+    #expect(harness.model.actionKeysNote(forAction: "Serve", in: harness.project) != nil)
 
     harness.model.setActionKeys(nil, forAction: "Serve", in: harness.project)
     #expect(!harness.engine.unbound.contains(controlOptionS))

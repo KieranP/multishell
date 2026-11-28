@@ -246,6 +246,7 @@
 "error.forget-refused" = "Worktree directory gone, but git still lists it";
 "error.git-not-found-message" = "Multishell runs git from your PATH and could not find it.";
 "error.git-not-found-title" = "git not found";
+"error.gone-state-link-message" = "%1$@ is a link to %2$@, which has gone, so Multishell is not saving your state. It saves again once the file is back.";
 "error.holds-other-work-title" = "Worktree not removed: it holds other work";
 "error.holds-submodules-message" = "%@ holds a submodule with work its remote lacks: a change, an untracked file, a stash or a commit not pushed. The submodule's repository would go with the worktree. Push or discard that work, then remove the worktree again.";
 "error.holds-worktree-message" = "%1$@ holds the worktree %2$@, which would go with it. Remove that worktree first, or move it elsewhere with git worktree move.";
@@ -292,6 +293,7 @@
 "error.socket-path-too-long" = "the path %@ is longer than a Unix socket address holds";
 "error.socket-title" = "Session state reports are unavailable";
 "error.something-went-wrong" = "Something went wrong";
+"error.state-not-saved-title" = "State is not being saved";
 "error.stopped-by-you" = "Stopped by you";
 "error.terminal-unavailable" = "The terminal could not be started.";
 "error.theme-unreadable-title" = "A theme file could not be read";
@@ -611,9 +613,9 @@
 "shared-settings.decline" = "Ignore";
 "shared-settings.linked" = "linked";
 "shared-settings.message" = "The repository asks for this. A hook runs through your shell when a worktree is created or removed, where your own hook for that stage is blank. A linked or copied path is read from your checkout into each new worktree, including files git does not track. An agent it starts runs with your own flags. An action runs through your shell when you pick it.\n\n%@";
-"shared-settings.post-create" = "post-create";
 "shared-settings.opens-terminal" = "open a terminal when a worktree is turned to";
 "shared-settings.opens-terminal-on-create" = "open a terminal in each new worktree";
+"shared-settings.post-create" = "post-create";
 "shared-settings.post-delete" = "post-delete";
 "shared-settings.pre-create" = "pre-create";
 "shared-settings.pre-delete" = "pre-delete";

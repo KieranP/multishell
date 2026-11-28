@@ -49,7 +49,10 @@ extension ShellIntegrationScriptsTests {
       usersRC: Self.recordingCommands + "\nsetopt err_exit no_unset ksh_arrays",
     )
     #expect(output.contains("--preserve-env=TERMINFO vim"), "\(output)")
-    #expect(output.contains("SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION host"), "\(output)")
+    #expect(
+      output.contains("SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION host"),
+      "\(output)",
+    )
   }
 
   @Test func zshSudoeditIsPassedOnAsTyped() async throws {
@@ -60,6 +63,16 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(output.contains(" -u root -e notes"), "\(output)")
     #expect(!output.contains("--preserve-env"))
+  }
+
+  @Test func zshSudoeditInABundleOfFlagsIsPassedOnAsTyped() async throws {
+    let output = try await zshOutput(
+      features: "sudo",
+      input: "sudo -ke notes\nsudo -nu www -e notes\nexit\n",
+      usersRC: Self.recordingCommands,
+    )
+    #expect(output.contains(" -ke notes") && output.contains(" -nu www -e notes"), "\(output)")
+    #expect(!output.contains("--preserve-env"), "\(output)")
   }
 
   @Test func zshSudoIsLeftAloneWhereTheUsersFeaturesLeaveItOut() async throws {
@@ -88,11 +101,25 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(
       output.contains(
-        "ssh TERM=xterm-256color -o SetEnv COLORTERM=truecolor"
-          + " -o SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION host"
+        "ssh TERM=xterm-256color -o SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION host"
       ),
       "\(output)",
     )
+  }
+
+  /// ssh keeps the first SetEnv it reads, so one given on the command line
+  /// dropped every SetEnv in the user's config.
+  @Test func zshSSHEnvKeepsTheSetEnvOfTheUsersSSHConfig() async throws {
+    let output = try await zshOutput(
+      features: "ssh-env",
+      input: "ssh host\nexit\n",
+      usersRC: Self.recordingCommands + """
+        printf 'Host host\\n  SetEnv LANG=en_GB.UTF-8\\n' > ~/ssh_config
+        printf '#!/bin/sh\\nexec /usr/bin/ssh -F ~/ssh_config -G "$@"\\n' > ~/bin/ssh
+
+        """,
+    )
+    #expect(output.contains("setenv LANG=en_GB.UTF-8"), "\(output)")
   }
 
   @Test func zshSSHTerminfoSendsATermEveryHostKnows() async throws {
@@ -161,6 +188,18 @@ extension ShellIntegrationScriptsTests {
   }
 
   @Test(arguments: InstalledBashes.all)
+  func bashSudoeditInABundleOfFlagsIsPassedOnAsTyped(bash: String) async throws {
+    let output = try await bashOutput(
+      bash,
+      features: "sudo",
+      input: "sudo -ke notes\nsudo -nu www -e notes\nexit\n",
+      usersRC: Self.recordingCommands,
+    )
+    #expect(output.contains(" -ke notes") && output.contains(" -nu www -e notes"), "\(output)")
+    #expect(!output.contains("--preserve-env"), "\(output)")
+  }
+
+  @Test(arguments: InstalledBashes.all)
   func bashSudoIsLeftAloneWhereTheUsersFeaturesLeaveItOut(bash: String) async throws {
     let output = try await bashOutput(
       bash,
@@ -204,8 +243,7 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(
       output.contains(
-        "ssh TERM=xterm-256color -o SetEnv COLORTERM=truecolor"
-          + " -o SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION host"
+        "ssh TERM=xterm-256color -o SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION host"
       ),
       "\(output)",
     )
@@ -254,6 +292,18 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(output.contains(" -u root -e notes"), "\(output)")
     #expect(!output.contains("--preserve-env"))
+  }
+
+  @Test(arguments: InstalledShells.fishes)
+  func fishSudoeditInABundleOfFlagsIsPassedOnAsTyped(fish: String) async throws {
+    let output = try await fishOutput(
+      fish,
+      features: "sudo",
+      input: "sudo -ke notes\nsudo -nu www -e notes\nexit\n",
+      usersConfig: Self.recordingCommandsForFish,
+    )
+    #expect(output.contains(" -ke notes") && output.contains(" -nu www -e notes"), "\(output)")
+    #expect(!output.contains("--preserve-env"), "\(output)")
   }
 
   @Test(arguments: InstalledShells.fishes)
@@ -315,8 +365,7 @@ extension ShellIntegrationScriptsTests {
     )
     #expect(
       output.contains(
-        "ssh TERM=xterm-256color -o SetEnv COLORTERM=truecolor"
-          + " -o SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION host"
+        "ssh TERM=xterm-256color -o SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION host"
       ),
       "\(output)",
     )

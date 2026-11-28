@@ -79,7 +79,8 @@ _multishell_execs_a_shell_at_its_prompt() {
 _multishell_preexec() {
   # Words counted from 1 whatever the user set; ksh_arrays lost the command.
   emulate -L zsh
-  local -a parts=(${(z)${2:-$1}})
+  # $3, not $2: zsh cuts $2 at 80 characters, dropping the words past the cut.
+  local -a parts=(${(z)${3:-$1}})
   # The new zsh never finishes this line, so it starts nothing: a start left
   # the pane Running until the next command ended.
   if [[ -n ${_multishell_self_zdotdir-} ]] && _multishell_replaces_itself "${parts[@]}"; then

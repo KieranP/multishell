@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 /// What a project's settings table shows in its Global column: the value the
@@ -29,7 +30,7 @@ public struct OverrideGlobalValue: Equatable, Sendable {
   /// `text` as stored, blank shown as `blankWord`: an empty cell reads as a
   /// value still loading.
   init(text: String, blankWord: String, source: Source, settingsSection: SettingsSection?) {
-    self.text = text.isEmpty ? blankWord : text
+    self.text = text.trimmingCharacters(in: .whitespaces).isEmpty ? blankWord : text
     self.source = source
     self.settingsSection = source == .global ? settingsSection : nil
   }

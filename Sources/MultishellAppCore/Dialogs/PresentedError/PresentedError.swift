@@ -28,7 +28,8 @@ public struct PresentedError: Identifiable {
     let alert =
       Self.hookOrFileListAlert(error) ?? Self.worktreeAlert(error)
       ?? Self.baseUpdateAlert(error) ?? Self.processAlert(error)
-      ?? Self.unreadableFileAlert(error) ?? Self.serviceAlert(error)
+      ?? Self.unreadableFileAlert(error) ?? Self.stateFileAlert(error)
+      ?? Self.serviceAlert(error)
       ?? (t("error.something-went-wrong"), Self.describe(error))
     title = alert.title
     message = alert.message

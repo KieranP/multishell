@@ -46,7 +46,7 @@ extension MacPlatform {
       in: bar,
       under: [],
       leavingOut: { isLeftOut($0, appMenu: appMenu, leavingOutMenus: leavingOutMenus) },
-      isAvailable: { isAvailable($0.title) },
+      isAvailable: { isProjectAction($0) || isAvailable($0.title) },
       switcherTitle: { switcherTitles[$0.title] },
     )
   }
@@ -56,7 +56,7 @@ extension MacPlatform {
     appMenu: NSMenu?,
     leavingOutMenus: [NSMenu],
   ) -> Bool {
-    if ownItemsLeftOut.contains(item.title) { return true }
+    if !isProjectAction(item), ownItemsLeftOut.contains(item.title) { return true }
     if let submenu = item.submenu {
       // The app menu's own are About, Settings and Quit; any submenu is Services.
       if let appMenu, item.menu === appMenu { return true }
@@ -65,5 +65,10 @@ extension MacPlatform {
     }
     guard let action = item.action.map(NSStringFromSelector) else { return false }
     return actionsMacOSAdds.contains(action) || action.hasPrefix(autoFillActionStem)
+  }
+
+  /// Named by the user, so a title shared with a command says nothing about it.
+  private static func isProjectAction(_ item: NSMenuItem) -> Bool {
+    item.parent?.title == t("menu.actions")
   }
 }

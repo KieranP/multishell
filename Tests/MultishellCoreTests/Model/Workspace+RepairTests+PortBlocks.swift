@@ -52,6 +52,23 @@ extension WorkspaceRepairTests {
     #expect(workspace.portBlocks == [worktree.id: 1, other.id: 0])
   }
 
+  @Test func aPathTwoProjectsListTakesOneBlockAndIsListedOnceWithoutAPort() {
+    let copy = Project(path: URL(fileURLWithPath: "/repos/copy"))
+    let path = URL(fileURLWithPath: "/repos/demo-b")
+    let shared = Worktree(path: path, projectID: project.id, head: "b", branch: "b")
+    var workspace = Workspace()
+    workspace.projects = [project, copy]
+    workspace.worktrees = [
+      shared, Worktree(path: path, projectID: copy.id, head: "b", branch: "b"),
+    ]
+
+    #expect(workspace.worktreesWithoutPorts.map(\.id) == [shared.id])
+
+    workspace.repair()
+
+    #expect(workspace.portBlocks == [shared.id: 0])
+  }
+
   @Test func aBareRepositorysBlockDoesNotCostAWorktreeSharingItsIndex() {
     let bare = Worktree(path: project.path, projectID: project.id, head: "", isBare: true)
     let linked = Worktree(

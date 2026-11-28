@@ -77,8 +77,9 @@ public struct QuickSwitcherItem: Identifiable, Equatable, Sendable {
     steps.joined(separator: " \(pathStep) ")
   }
 
-  /// How long the pane has been in its state, as a board card says it.
+  /// How long the pane has been in its state, as a board card says it; none
+  /// where no state is labelled, the time then being the last one's.
   public func elapsed(at now: Date) -> String? {
-    ElapsedText.short(since: since, now: now)
+    labelledState == nil ? nil : ElapsedText.short(since: since, now: now)
   }
 }

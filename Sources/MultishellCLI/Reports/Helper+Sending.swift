@@ -11,6 +11,10 @@ extension Helper {
     let socket =
       environment[SessionEnvironment.socketVariable].map { URL(fileURLWithPath: $0) }
       ?? Paths.socketFile
-    try UnixSocketClient.send(try report.encodedLine(), to: socket, timeout: reportTimeout)
+    try UnixSocketClient.send(
+      try report.encodedLineFittingTheSocket(),
+      to: socket,
+      timeout: reportTimeout,
+    )
   }
 }

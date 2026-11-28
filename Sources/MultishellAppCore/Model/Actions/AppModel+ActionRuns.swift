@@ -30,7 +30,10 @@ extension AppModel {
       guard
         let tab = store.openTab(in: worktree.id, title: action.name, actionName: action.name)
       else { return }
-      pendingActionRuns[tab.focusedSessionID] = action
+      pendingActionRuns[tab.focusedSessionID] = PendingActionRun(
+        action: action,
+        projectID: worktree.projectID,
+      )
     }
   }
 
@@ -103,7 +106,10 @@ extension AppModel {
     guard isShellReadyBesidesDirectory(worktree) else { return }
     launch(in: worktree, bringsIntoView: bringsIntoView) {
       guard let session = store.replaceSession(id) else { return }
-      pendingActionRuns[session.id] = action
+      pendingActionRuns[session.id] = PendingActionRun(
+        action: action,
+        projectID: worktree.projectID,
+      )
     }
   }
 

@@ -45,6 +45,24 @@ struct WorktreeCoordinatorCreationTests {
     #expect(try await fixture.head(of: path) == first)
   }
 
+  @Test func aBaseBranchATagSharesItsNameWithIsStillTheBranch() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let first = try await fixture.head(of: fixture.project.path)
+    try await fixture.commit("second", file: "b.txt", content: "b\n")
+    _ = try await fixture.runner.run(["branch", "release", first], in: fixture.project.path)
+    _ = try await fixture.runner.run(["tag", "release"], in: fixture.project.path)
+
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
+      branch: "hotfix",
+      in: fixture.project,
+      settings: fixture.worktreeSettings,
+      basedOn: "release",
+    )
+
+    #expect(try await fixture.head(of: path) == first)
+  }
+
   @Test func withoutABaseTheNewBranchStartsAtHEAD() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

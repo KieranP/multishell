@@ -167,6 +167,34 @@ extension ShellIntegrationScriptsTests {
     #expect(starts.count { $0.hasSuffix("gemini") } <= 1, "\(starts)")
   }
 
+  /// Under functrace the DEBUG trap fires inside our own prompt function too,
+  /// before it disarms.
+  @Test(arguments: InstalledBashes.all)
+  func aBashUnderFunctraceReportsNoCommandForAnEmptyEnter(bash: String) async throws {
+    let scratch = try Scratch.directory("bash-functrace")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(".bashrc", "set -T\nPS1='> '\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionVariable] = "bash-functrace"
+    _ = try await interactiveShellOutput(
+      bash,
+      arguments: ["--init-file", files.bashInit.path, "-i"],
+      environment: environment,
+      input: "\n\nfalse\nexit\n",
+    )
+
+    try await waitUntil {
+      Self.lines(of: log).contains { $0.hasPrefix("command-finished 1") }
+    }
+    let finishes = Self.lines(of: log).filter { $0.hasPrefix("command-finished") }
+    #expect(finishes.count == 1, "\(finishes)")
+  }
+
   /// bash calls a scalar's element count unbound under `set -u`, so the arm's
   /// repair died before arming at every prompt and printed the error there.
   @Test(arguments: InstalledBashes.all)
@@ -807,12 +835,12 @@ extension ShellIntegrationScriptsTests {
     try zshSentLines(calls).filter { $0.contains("\"running\"") }
   }
 
-  /// zsh hands preexec the line as typed and the line with its aliases expanded;
-  /// bash's `BASH_COMMAND` is already expanded.
+  /// zsh hands preexec the line as typed, then expanded cut to 80 characters,
+  /// then expanded whole; bash's `BASH_COMMAND` is already expanded.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
   func zshReadsTheExpandedLineSoAnAliasedAgentIsStillTheAgent() throws {
     let lines = try zshPreexecLines([
-      "_multishell_preexec 'cx' 'codex --continue'",
+      "_multishell_preexec 'cx' 'codex --continue' 'codex --continue'",
       "_multishell_preexec 'FOO=1 codex'",
       "_multishell_preexec 'command opencode'",
       "_multishell_preexec 'MY_CODEX=1 ls'",
@@ -822,6 +850,15 @@ extension ShellIntegrationScriptsTests {
     #expect(lines[1].contains("\"command\":\"codex\"") == true, "an assignment before it")
     #expect(lines[2].contains("\"command\":\"opencode\"") == true, "`command` before it")
     #expect(lines[3].contains("command") == false, "an assignment naming an agent is not one")
+  }
+
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshNamesAnAgentPastWhereItsShortLineIsCut() throws {
+    let assignment = "ANTHROPIC_BASE_URL=https://bedrock-proxy.internal.example.com/anthropic/v1"
+    let lines = try zshPreexecLines([
+      "_multishell_preexec '\(assignment) codex' '\(assignment) =' '\(assignment) codex'"
+    ])
+    #expect(lines.first?.contains("\"command\":\"codex\"") == true, "\(lines)")
   }
 
   /// Our hooks read `precmd_functions`, which a pane outside Ghostty may not

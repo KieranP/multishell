@@ -14,10 +14,10 @@ unset _multishell_profiled
 # Outside a login shell bash refuses `logout` and skips ~/.bash_logout, which a
 # tab's would run; an EXIT trap of the user's own is left to stand.
 declare -F logout >/dev/null || logout() { exit "$@"; }
+# It runs on a pane's hangup too: a HUP trap waits out the foreground command,
+# and the engine's close waits on the shell. Docs/design/terminals/shell-integration.md.
 if [ -f "$HOME/.bash_logout" ] && [ -z "$(trap -p EXIT)" ]; then
-  trap '[ -n "${_multishell_hung_up-}" ] || . "$HOME/.bash_logout"' EXIT
-  # A hangup, a pane closing, is no logout: noted, then the signal goes on as it would.
-  [ -n "$(trap -p HUP)" ] || trap '_multishell_hung_up=1; trap - HUP; kill -HUP $$' HUP
+  trap '. "$HOME/.bash_logout"' EXIT
 fi
 
 # include leading-path.sh

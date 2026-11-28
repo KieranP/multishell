@@ -1,7 +1,8 @@
 extension Workspace {
-  /// Worktrees with shells but no port, which the app warns about.
+  /// Worktrees with shells but no port, which the app warns about; a path two
+  /// projects list is one worktree and takes one block.
   public var worktreesWithoutPorts: [Worktree] {
-    worktrees.filter { !$0.isBare && port(of: $0.id) == nil }
+    worktrees.filter { !$0.isBare && port(of: $0.id) == nil }.uniqued(by: \.id)
   }
 
   /// What `MULTISHELL_PORT` says in the worktree, its block's first port, or

@@ -8,8 +8,9 @@ What a shell is launched as, and what its state means. Newest at the bottom.
 - **An exit code above the signal boundary is a signal**, usually an interrupt,
   not a failure.
 - **Done is about the user, so being seen clears it**: the pane with the
-  keyboard, and the app in front. A pane can be focused for hours with the
-  window behind another app.
+  keyboard, and the app in front with its window shown. A pane can be focused
+  for hours with the window behind another app, or minimized while the app keeps
+  the menu bar.
 - **Not every pane on screen counts as seen.** A split's other pane and the
   other group's tab are in view and not looked at; clearing on the worktree's
   selection took a finished agent's dot away before anyone read it.
@@ -156,3 +157,7 @@ What a shell is launched as, and what its state means. Newest at the bottom.
   (2026-11-20, issue 21): libghostty sets `wait-after-command` on any surface
   given a command, bash and fish tabs included. A key or Cmd+W closes it, and
   the fix needs a Ghostty patch or closing on `SHOW_CHILD_EXITED`.
+- **A bash line that is only a subshell, `(cd web && npm test)`, reports no
+  start or end** (2026-11-28): bash runs no DEBUG trap for it, where zsh and
+  fish run preexec. Telling it from an empty Enter by the history count misfires
+  under the shared-history recipe, which rereads the history at every prompt.

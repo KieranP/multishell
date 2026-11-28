@@ -109,7 +109,8 @@ enum AllChangesReader {
     )
   }
 
-  /// Each change's file and its signature, a folder left out.
+  /// Each change's file and its signature, a folder left out: a submodule's,
+  /// not a deleted file a folder of its name replaced.
   private static func files(
     of changes: [AllChangesFileChange],
     in worktree: URL,
@@ -117,7 +118,7 @@ enum AllChangesReader {
     await runOnDispatch {
       changes.compactMap { change -> (AllChangesFileChange, FileSignature?)? in
         let signature = FileSignature.of(worktree.appending(path: change.path))
-        guard signature?.isFolder != true else { return nil }
+        guard change.kind == .deleted || signature?.isFolder != true else { return nil }
         return (change, signature)
       }
     }

@@ -30,6 +30,10 @@ enum GhosttyAppLayer {
         // A list in Ghostty: emptied first, or ours trails the user's as a fallback.
         config.set("font-family", "\"\"")
         config.set("font-family", name)
+        // A style's own family is used as given, so the user's would outlive the pick.
+        for style in ["bold", "italic", "bold-italic"] {
+          config.set("font-family-\(style)", "\"\"")
+        }
       }
       config.set("font-size", appearance.terminalFontSize)
       // Our hooks write the marks, zsh's the title and cursor, and fish 4 writes both itself, so

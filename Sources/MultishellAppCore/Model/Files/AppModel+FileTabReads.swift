@@ -169,7 +169,8 @@ extension AppModel {
     else { return }
     let url = worktree.path.appending(path: tab.path)
     Task { @MainActor [weak self] in
-      let isGone = await runOnDispatch { FileSignature.of(url) == nil }
+      // A folder in its place is gone too, as the read and git take it.
+      let isGone = await runOnDispatch { FileSignature.of(url)?.isFolder ?? true }
       guard let self, workspace.fileTab(id) != nil else { return }
       let current = fileTabReadings[id]
       guard isGone != (current?.isFileGone ?? false) else { return }

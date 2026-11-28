@@ -16,6 +16,7 @@ extension AppModel {
 
     platform.onWorkspaceWindowDidBecomeVisible = { [weak self] in
       self?.readWhatTheWindowShowsOnceVisible()
+      self?.markInViewSeen()
     }
 
     reconciler.onActivity = { [weak self] id in self?.noteActivity(in: id) }

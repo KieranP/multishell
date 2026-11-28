@@ -21,8 +21,12 @@ extension AppModel {
   }
 
   /// What the confirmation says, with the live terminal count.
+  /// A path another project lists keeps its terminals, so they go uncounted.
   public func projectRemovalMessage(for project: Project) -> String {
-    let live = workspace.worktrees(of: project.id).map { liveTerminalCount(in: $0.id) }
+    let closing = workspace.worktrees(of: project.id).filter { worktree in
+      !workspace.worktrees.contains { $0.id == worktree.id && $0.projectID != project.id }
+    }
+    let live = closing.map { liveTerminalCount(in: $0.id) }
     return PendingProjectRemoval.message(liveTerminals: live.reduce(0, +))
   }
 

@@ -194,4 +194,66 @@ struct GitRunnerTests {
     #expect(activity.finishedRuns.allSatisfy { ($0.exitUsage?.peakFootprint ?? 0) > 0 })
     #expect(activity.finishedRuns.allSatisfy { ($0.exitUsage?.pid ?? 0) > 0 })
   }
+
+  @Test func aGlobalConfigNamedInTheLoginShellIsTheOneGitReads() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let global = try Scratch.directory("gitloginglobal").appendingPathComponent("config")
+    defer { Scratch.remove(global.deletingLastPathComponent()) }
+    try "[ms]\n\tprobe = from the login shell\n".write(
+      to: global,
+      atomically: true,
+      encoding: .utf8,
+    )
+    let git = try TestGit.runner(loginVariables: ["GIT_CONFIG_GLOBAL": global.path])
+
+    let probe = try await git.run(
+      ["config", "--global", "--get", "ms.probe"],
+      in: fixture.project.path,
+    )
+
+    #expect(probe.trimmingCharacters(in: .whitespacesAndNewlines) == "from the login shell")
+  }
+
+  @Test func aLoginShellsRepositoryAndIndexVariablesNeverRedirectGit() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let elsewhere = try Scratch.directory("gitloginelsewhere")
+    defer { Scratch.remove(elsewhere) }
+    let git = try TestGit.runner(loginVariables: [
+      "GIT_DIR": elsewhere.path, "GIT_WORK_TREE": elsewhere.path,
+      "GIT_INDEX_FILE": elsewhere.appendingPathComponent("index").path,
+    ])
+
+    let top = try await git.run(["rev-parse", "--show-toplevel"], in: fixture.project.path)
+    let tracked = try await git.run(["ls-files"], in: fixture.project.path)
+
+    #expect(
+      URL(fileURLWithPath: top.trimmingCharacters(in: .whitespacesAndNewlines))
+        .resolvingSymlinksInPath()
+        == fixture.project.path.resolvingSymlinksInPath()
+    )
+    #expect(!tracked.isEmpty)
+  }
+
+  @Test func aLoginShellsLocaleNeverReachesGitWhoseEnglishMessagesAreMatched() async throws {
+    let directory = try Scratch.directory("gitloginlocale")
+    defer { Scratch.remove(directory) }
+    let git = try Scratch.script(
+      #"printf '%s %s %s %s' "${LANG-none}" "${LC_ALL-none}" "${LC_MESSAGES-none}" "${SSH_AUTH_SOCK-none}""#,
+      at: directory.appendingPathComponent("git"),
+    )
+    let runner = try GitRunner(
+      executable: git,
+      loginVariables: [
+        "LANG": "de_DE.UTF-8", "LC_ALL": "de_DE.UTF-8", "LC_MESSAGES": "de_DE.UTF-8",
+        "SSH_AUTH_SOCK": "/agent.sock",
+      ],
+    )
+
+    let seen = try await runner.run(["status"], in: directory).split(separator: " ")
+
+    #expect(seen.last == "/agent.sock")
+    #expect(!seen.contains("de_DE.UTF-8"))
+  }
 }

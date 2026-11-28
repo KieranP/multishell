@@ -34,4 +34,24 @@ struct AppModelFileTabWatchTests {
 
     #expect(harness.model.fileTabReadLog.owed.contains(tab.id))
   }
+
+  @Test func aTabWhoseFolderIsMovedIsStruckByTheEventAtTheFolderAbove() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let main = try #require(harness.worktree(onBranch: "main"))
+    let folder = main.path.appending(path: "docs/a")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try "notes\n".write(to: folder.appending(path: "notes.txt"), atomically: true, encoding: .utf8)
+    let (tab, _) = try harness.openFileTab("docs/a/notes.txt")
+    try await waitUntil { harness.model.fileTabReadings[tab.id] != nil }
+    harness.model.newShellTab()
+
+    try FileManager.default.moveItem(at: folder, to: main.path.appending(path: "docs/b"))
+    harness.model.noteFileTabChanges(
+      harness.model.fileChangeTargets([main.path.appending(path: "docs")])
+    )
+
+    try await waitUntil { harness.model.isFileGone(of: tab.id) }
+    #expect(harness.model.isFileGone(of: tab.id))
+  }
 }

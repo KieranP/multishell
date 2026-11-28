@@ -12,11 +12,23 @@ struct GitRunner: Sendable {
     "status.showUntrackedFiles": "normal",
   ]
 
+  /// `git rev-parse --local-env-vars`: one exported in the user's rc would point
+  /// every read at that repository, index or object store.
+  private static let repositoryLocatingVariables: Set<String> = [
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_CONFIG", "GIT_CONFIG_COUNT",
+    "GIT_CONFIG_PARAMETERS", "GIT_DIR", "GIT_GRAFT_FILE", "GIT_IMPLICIT_WORK_TREE",
+    "GIT_INDEX_FILE", "GIT_NO_REPLACE_OBJECTS", "GIT_OBJECT_DIRECTORY", "GIT_PREFIX",
+    "GIT_REPLACE_REF_BASE", "GIT_SHALLOW_FILE", "GIT_WORK_TREE",
+  ]
+
   private let executable: URL
   private let processRunner = ProcessRunner()
   private let configuration: [String: String]
   /// The login shell's PATH where one was captured.
   private let searchPath: String?
+  /// The login shell's, so a key agent, global config or SSH command set there
+  /// reaches git as it does in a terminal.
+  private let inheritedVariables: [String: String]
   /// Shared with the runner a later PATH builds, so Debug Info's counts
   /// carry across it.
   let runLog: GitRunLog
@@ -24,12 +36,14 @@ struct GitRunner: Sendable {
   /// The git on `searchPath`, or on the process's own PATH where there is none.
   init(
     searchPath: String? = nil,
+    loginVariables: [String: String] = [:],
     configuration: [String: String] = [:],
     runLog: GitRunLog = GitRunLog(),
   ) throws {
     try self.init(
       executable: ExecutableLookup.find("git", searchPath: searchPath),
       searchPath: searchPath,
+      loginVariables: loginVariables,
       configuration: configuration,
       runLog: runLog,
     )
@@ -40,14 +54,22 @@ struct GitRunner: Sendable {
   init(
     executable: URL?,
     searchPath: String? = nil,
+    loginVariables: [String: String] = [:],
     configuration: [String: String] = [:],
     runLog: GitRunLog = GitRunLog(),
   ) throws {
     guard let executable else { throw GitUnavailable() }
+    inheritedVariables = loginVariables.filter { Self.isInheritable($0.key) }
     self.executable = executable
     self.runLog = runLog
     self.configuration = Self.forcedConfiguration.merging(configuration) { _, callers in callers }
     self.searchPath = searchPath
+  }
+
+  /// Neither a repository-locating variable nor the locale, as alerts match git's English.
+  private static func isInheritable(_ name: String) -> Bool {
+    !repositoryLocatingVariables.contains(name) && name != "LANG" && name != "LANGUAGE"
+      && !name.hasPrefix("LC_")
   }
 
   /// `GIT_CONFIG_*`, which git reads as config of the highest precedence, with
@@ -60,7 +82,7 @@ struct GitRunner: Sendable {
       overrides["GIT_CONFIG_VALUE_\(index)"] = entry.value
     }
     if let searchPath { overrides["PATH"] = searchPath }
-    return overrides
+    return inheritedVariables.merging(overrides) { _, ours in ours }
   }
 
   /// `environment` is a network call's no-prompt or a merge's no-editor; `timeout` is

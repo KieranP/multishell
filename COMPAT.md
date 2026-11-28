@@ -114,19 +114,20 @@ agent.
 
 ## Pull requests and CI
 
-| Service  | Tool       | Version      | Read where                             |
-| -------- | ---------- | ------------ | -------------------------------------- |
-| GitHub   | `gh`       | No floor set | A remote `gh` says is its own          |
-| CircleCI | `circleci` | 1.0 or newer | A checkout with `.circleci/config.yml` |
-| Others   | None       | None         | Nowhere, the row shows no marks        |
+| Service  | Tool       | Version         | Read where                             |
+| -------- | ---------- | --------------- | -------------------------------------- |
+| GitHub   | `gh`       | 2.97.0 or newer | A remote `gh` says is its own          |
+| CircleCI | `circleci` | 1.0 or newer    | A checkout with `.circleci/config.yml` |
+| Others   | None       | None            | Nowhere, the row shows no marks        |
 
 Both tools are optional and never shipped. They are found on the login shell's
 PATH and run with its environment, so `GH_TOKEN` or `CIRCLECI_CLI_TOKEN` set
 there reaches them; the app never reads or stores a token. A GitHub Enterprise
 host counts once `gh auth login` names it. Reads run while the app is in front:
 one call per project for the newest hundred pull requests, and one more for each
-pushed worktree branch the hundred left out. Pushing for Create Pull Request is
-the only write to a remote, and it asks every time.
+pushed worktree branch the hundred left out. The writes to a remote are the push
+for Create Pull Request, which asks every time, and a merge or auto-merge sent
+from the pull request page's form.
 
 ## Reporting from anything else
 

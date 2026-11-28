@@ -18,13 +18,28 @@ extension WorktreeGit {
     if createsBranch { arguments += ["-b", branch] }
     if createsBranch, !tracksStartPoint { arguments.append("--no-track") }
     // `--` keeps a start point from the command line, such as `--lock`, from being read as a flag.
-    arguments += ["--", path.path, createsBranch ? (startPoint ?? "HEAD") : branch]
+    var checkedOut = branch
+    if createsBranch {
+      checkedOut = "HEAD"
+      if let startPoint { checkedOut = await branchRef(named: startPoint, in: project) }
+    }
+    arguments += ["--", path.path, checkedOut]
     _ = try await runner.run(
       arguments,
       in: project.path,
       configuration: await checkoutWorkers(in: project),
       stopper: stopper,
     )
+  }
+
+  /// The branch's full refname, a bare name reaching a tag of that name first;
+  /// the name as given where no local or remote branch has it.
+  private func branchRef(named name: String, in project: Project) async -> String {
+    for ref in [RefName.local(name), RefName.remote(name)]
+    where await runner.succeeds(["show-ref", "--verify", "--quiet", ref], in: project.path) {
+      return ref
+    }
+    return name
   }
 
   /// One worker per core, where git's default is one in all, unless the user

@@ -11,10 +11,10 @@ struct CIRunDetail<Value: Equatable & Sendable>: Equatable, Sendable {
 
   /// Read once more when the run ends, and else at most at the pace a run under
   /// way is polled: two copies of a run read at different times can disagree.
-  func stillDescribes(_ run: CIRun, readAt: Date?, now: Date = .now) -> Bool {
+  func stillDescribes(_ run: CIRun, readAt: Date?) -> Bool {
     if runWasFinished, runStatus == run.status { return true }
     if run.isFinished, !runWasFinished { return false }
     guard let readAt else { return false }
-    return now.timeIntervalSince(readAt) < ServiceReadInterval.underWay.inSeconds
+    return Date.now.timeIntervalSince(readAt) < ServiceReadInterval.underWay.inSeconds
   }
 }

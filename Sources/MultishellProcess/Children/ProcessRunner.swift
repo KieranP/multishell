@@ -32,8 +32,8 @@ public struct ProcessRunner: Sendable {
     // Weak, or each run's read ends stay open until the timer fires.
     ProcessTimerQueue.shared.asyncAfter(deadline: .now() + Self.eofGraceAfterExit) {
       [weak standardOutput, weak standardError] in
-      standardOutput?.finish()
-      standardError?.finish()
+      standardOutput?.finishLeavingItOpen()
+      standardError?.finishLeavingItOpen()
     }
     await withCheckedContinuation { continuation in
       group.notify(queue: ProcessTimerQueue.shared) { continuation.resume() }

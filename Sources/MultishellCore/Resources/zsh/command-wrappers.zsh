@@ -6,14 +6,19 @@
 if _multishell_has_feature sudo && [[ -n "${TERMINFO-}" ]] && (( ! ${+functions[sudo]} )); then
   function sudo {
     emulate -L zsh
-    local word next_is_value=0
+    local word flags next_is_value=0
     for word in "$@"; do
       if (( next_is_value )); then next_is_value=0; continue; fi
       case "$word" in
-        (-e|--edit) command sudo "$@"; return ;;
-        (-[CDgpRrTtUu]|--(chdir|chroot|close-from|command-timeout|group|host|other-user|prompt|role|type|user))
+        (--edit) command sudo "$@"; return ;;
+        (--(chdir|chroot|close-from|command-timeout|group|host|other-user|prompt|role|type|user))
           next_is_value=1 ;;
         (--) break ;;
+        (-[^-]*)
+          # Short flags bundle, `-ke`; the rest of the word after one taking a value is that value.
+          flags=${${word#-}%%[CDgpRrTtUu]*}
+          if [[ $flags == *e* ]]; then command sudo "$@"; return; fi
+          (( ${#word} == ${#flags} + 2 )) && next_is_value=1 ;;
         (-*|*=*) ;;
         (*) break ;;
       esac
@@ -28,9 +33,12 @@ if { _multishell_has_feature ssh-env || _multishell_has_feature ssh-terminfo; } 
   && (( ! ${+functions[ssh]} )); then
   function ssh {
     emulate -L zsh
-    local -a options
-    _multishell_has_feature ssh-env \
-      && options=(-o "SetEnv COLORTERM=truecolor" -o "SendEnv TERM_PROGRAM TERM_PROGRAM_VERSION")
-    TERM=xterm-256color command ssh "${options[@]}" "$@"
+    # SendEnv: ssh keeps the first SetEnv it reads, and ours would drop the user's.
+    if _multishell_has_feature ssh-env; then
+      COLORTERM=truecolor TERM=xterm-256color command ssh \
+        -o "SendEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION" "$@"
+    else
+      TERM=xterm-256color command ssh "$@"
+    fi
   }
 fi

@@ -132,4 +132,22 @@ struct AppModelLoginEnvironmentTests {
 
     #expect(git.runLog.drain().startedCount == (enabled ? 1 : 0))
   }
+
+  @Test func theLoginShellsVariablesReachTheGitItFinds() async throws {
+    let harness = Harness()
+    let bin = try Scratch.directory("loginvariablesgit")
+    defer { Scratch.remove(bin) }
+    try Scratch.script(#"printf '%s' "$SSH_AUTH_SOCK""#, at: bin.appendingPathComponent("git"))
+    harness.model.captureLoginEnvironment = {
+      LoginShellEnvironment(
+        variables: ["PATH": bin.path, "SSH_AUTH_SOCK": "/agent.sock"],
+        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")),
+      )
+    }
+
+    await harness.model.refreshLoginEnvironment()
+    let git = try #require(harness.model.coordinator?.git)
+
+    #expect(try await git.runner.run(["version"], in: bin) == "/agent.sock")
+  }
 }

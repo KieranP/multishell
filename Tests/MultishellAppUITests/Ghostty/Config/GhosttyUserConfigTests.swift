@@ -174,6 +174,33 @@ struct GhosttyUserConfigTests {
     #expect(!rendered.contains("config-file"))
   }
 
+  @Test func aRelativeImageOrSoundIsReadFromBesideTheFileThatNamesIt() throws {
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
+    let config = directory.appendingPathComponent("config", isDirectory: false)
+    try """
+    background-image = wallpaper.png
+    bell-audio-path = ?"sounds/ding.aiff"
+    background-image-opacity = 0.5
+    """.write(to: config, atomically: true, encoding: .utf8)
+
+    let rendered = GhosttyUserConfig.base(reading: [config])
+
+    #expect(rendered.contains("background-image = \"\(directory.path)/wallpaper.png\""))
+    #expect(rendered.contains("bell-audio-path = ?\"\(directory.path)/sounds/ding.aiff\""))
+    #expect(rendered.contains("background-image-opacity = 0.5"))
+    let diagnostics = try libghosttyDiagnostics(rendered)
+    #expect(diagnostics.isEmpty, "\(diagnostics)")
+  }
+
+  @Test func anAbsoluteOrHomeImageIsPassedOnAsWritten() {
+    let rendered = GhosttyUserConfig.base(userContents: [
+      "background-image = /pictures/a.png\nbackground-image = ~/b.png"
+    ])
+    #expect(rendered.contains("background-image = /pictures/a.png"))
+    #expect(rendered.contains("background-image = ~/b.png"))
+  }
+
   @Test func anIncludeWhoseNameStartsWithACombiningMarkIsFollowedQuotedOrNot() throws {
     let directory = try Scratch.directory("ghostty-config")
     defer { Scratch.remove(directory) }

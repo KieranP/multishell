@@ -157,6 +157,29 @@ struct AllChangesReaderTests {
     #expect(reading.files.map(\.path) == ["a.txt"])
   }
 
+  @Test func aDeletedFileAFolderOfItsNameReplacedIsListedDeleted() async throws {
+    let repository = try await FileTabRepository.make()
+    defer { repository.tearDown() }
+    try await TestRepository.commit(
+      "seed",
+      files: ["foo": "bye\n"],
+      in: repository.path,
+      using: repository.runner,
+    )
+    try FileManager.default.removeItem(at: repository.path.appending(path: "foo"))
+    try FileManager.default.createDirectory(
+      at: repository.path.appending(path: "foo"),
+      withIntermediateDirectories: true,
+    )
+    try repository.write("x\n", to: "foo/bar")
+
+    let reading = await Self.read(try await Self.status(of: repository), in: repository)
+
+    let deleted = try #require(reading.files.first { $0.path == "foo" })
+    #expect(deleted.change.kind == .deleted)
+    #expect(deleted.reading?.isFileGone == true)
+  }
+
   @Test func aReadNamingOneFileRunsGitForThatFileAloneAndKeepsTheRest() async throws {
     let plain = try await FileTabRepository.make()
     defer { plain.tearDown() }

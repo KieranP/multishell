@@ -90,7 +90,9 @@ public final class UnixSocketServer: Sendable {
       unlink(staging)
       throw SocketFailure(kind: .system(operation: "rename", code: code), path: path)
     }
-    guard listen(descriptor, 16) == 0 else {
+    // Every pane's shell reports each command, and sixteen refused the rest of a
+    // burst that arrived while the main thread was busy.
+    guard listen(descriptor, SOMAXCONN) == 0 else {
       let code = errno
       close(descriptor)
       unlink(path)

@@ -13,6 +13,7 @@ public enum TestGit {
   public static func runner(
     executable: URL? = nil,
     searchPath: String? = nil,
+    loginVariables: [String: String] = [:],
     configuration: [String: String] = [:],
   ) throws -> GitRunner {
     let fixture = [
@@ -21,9 +22,18 @@ public enum TestGit {
     ]
     let merged = fixture.merging(configuration) { _, added in added }
     guard let executable else {
-      return try GitRunner(searchPath: searchPath, configuration: merged)
+      return try GitRunner(
+        searchPath: searchPath,
+        loginVariables: loginVariables,
+        configuration: merged,
+      )
     }
-    return try GitRunner(executable: executable, searchPath: searchPath, configuration: merged)
+    return try GitRunner(
+      executable: executable,
+      searchPath: searchPath,
+      loginVariables: loginVariables,
+      configuration: merged,
+    )
   }
 
   /// A runner whose git is a script at `url` running `prelude`, then the real git.

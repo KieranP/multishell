@@ -42,7 +42,8 @@ What a file tab shows and why each went the way it did. Newest at the bottom.
   project's git changes**, ahead of the frontmost and ignored-folder guards: the
   window is often beside the editor making the change, and a tracked file can
   sit forced in under an ignored folder. By directory, FSEvents' file flags
-  lingering for seconds.
+  lingering for seconds; a folder above the tab counts too, as a folder moved or
+  trashed is heard only at its parent. A folder in the file's place is gone.
 - **A tab in an embedded repository re-reads on that repository's git**, a
   vendored clone or a submodule never absorbed: its `.git` is no project's, and
   a commit there left the tab's lines marked uncommitted until the file moved.

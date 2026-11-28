@@ -55,6 +55,22 @@ struct AppModelReviewComposerTests {
     #expect(harness.model.pendingReviewCommentCount(of: tab) == 1)
   }
 
+  @Test func aCommentOnALineCutForDisplayQuotesTheWholeLine() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let long = String(repeating: "x", count: 12_000)
+    let (tab, main) = try await Self.tabShowing("hello\ntwo\n\(long)\n", in: harness)
+    let selection = try #require(
+      ReviewLineSelection(from: 2, to: 2, in: Self.rows(of: tab, in: harness), side: .onDisk)
+    )
+
+    harness.model.openReviewComposer(on: selection, ofFile: tab.path, in: tab.id)
+    harness.model.noteReviewDraft("Split this.", in: tab.id)
+    _ = harness.model.commitReviewComposer(in: tab.id)
+
+    #expect(harness.model.reviewComments(in: main.id).first?.quote == [long])
+  }
+
   @Test func anEmptyDraftLeavesTheComposerOpenAndAddsNothing() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
